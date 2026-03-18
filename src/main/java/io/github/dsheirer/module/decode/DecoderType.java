@@ -74,7 +74,8 @@ public enum DecoderType
      * Auxiliary decoders that operate on in-band signalling in the decoded audio channel
      */
     public static final EnumSet<DecoderType> AUX_DECODERS =
-        EnumSet.of(DecoderType.DCS,
+        EnumSet.of(DecoderType.CTCSS,
+        DecoderType.DCS,
         DecoderType.FLEETSYNC2,
         DecoderType.LJ_1200,
         DecoderType.MDC1200,

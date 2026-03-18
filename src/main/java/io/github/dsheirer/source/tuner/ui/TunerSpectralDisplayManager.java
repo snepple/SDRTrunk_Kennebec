@@ -102,7 +102,11 @@ public class TunerSpectralDisplayManager implements Listener<TunerEvent>
 
                         if(event.hasCenterFrequency())
                         {
+                            //Reset zoom first to ensure re-centering works even if already zoomed
+                            //setZoom has a guard (zoom != mZoom) that skips re-centering otherwise
                             mSpectralDisplayPanel.setZoom(0, event.getCenterFrequency(), 0.5);
+                            //Zoom to level 4 (16x) and center on the channel frequency
+                            mSpectralDisplayPanel.setZoom(4, event.getCenterFrequency(), 0.5);
                         }
                     });
                 }

@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
  * - Channel: Zello channel name to stream audio to
  * - Username: Zello account username
  * - Password: Zello account password
- * - Auth Token: JWT token (optional for Zello Work)
  * - Max Recording Age: Maximum age of audio recording before it is discarded
  */
 public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
@@ -52,7 +51,6 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
     private TextField mChannelTextField;
     private TextField mUsernameTextField;
     private PasswordField mPasswordField;
-    private TextField mAuthTokenTextField;
     private IntegerTextField mMaxAgeTextField;
     private GridPane mEditorPane;
 
@@ -74,7 +72,6 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
         getChannelTextField().setDisable(item == null);
         getUsernameTextField().setDisable(item == null);
         getPasswordField().setDisable(item == null);
-        getAuthTokenTextField().setDisable(item == null);
         getMaxAgeTextField().setDisable(item == null);
 
         if(item != null)
@@ -83,7 +80,6 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             getChannelTextField().setText(item.getChannel());
             getUsernameTextField().setText(item.getUsername());
             getPasswordField().setText(item.getPassword());
-            getAuthTokenTextField().setText(item.getAuthToken());
             getMaxAgeTextField().set((int)(item.getMaximumRecordingAge() / 1000));
         }
         else
@@ -92,7 +88,6 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             getChannelTextField().setText(null);
             getUsernameTextField().setText(null);
             getPasswordField().setText(null);
-            getAuthTokenTextField().setText(null);
             getMaxAgeTextField().set(0);
         }
 
@@ -113,7 +108,6 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             getItem().setChannel(getChannelTextField().getText());
             getItem().setUsername(getUsernameTextField().getText());
             getItem().setPassword(getPasswordField().getText());
-            getItem().setAuthToken(getAuthTokenTextField().getText());
             getItem().setMaximumRecordingAge(getMaxAgeTextField().get() * 1000);
         }
 
@@ -205,16 +199,7 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             GridPane.setConstraints(getPasswordField(), 1, row);
             mEditorPane.getChildren().add(getPasswordField());
 
-            // Row 6: Auth Token (optional)
-            Label tokenLabel = new Label("Auth Token (optional)");
-            GridPane.setHalignment(tokenLabel, HPos.RIGHT);
-            GridPane.setConstraints(tokenLabel, 0, ++row);
-            mEditorPane.getChildren().add(tokenLabel);
-
-            GridPane.setConstraints(getAuthTokenTextField(), 1, row);
-            mEditorPane.getChildren().add(getAuthTokenTextField());
-
-            // Row 7: Max Recording Age
+            // Row 6: Max Recording Age
             Label maxAgeLabel = new Label("Max Recording Age (seconds)");
             GridPane.setHalignment(maxAgeLabel, HPos.RIGHT);
             GridPane.setConstraints(maxAgeLabel, 0, ++row);
@@ -271,18 +256,6 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             mPasswordField.textProperty().addListener(mEditorModificationListener);
         }
         return mPasswordField;
-    }
-
-    private TextField getAuthTokenTextField()
-    {
-        if(mAuthTokenTextField == null)
-        {
-            mAuthTokenTextField = new TextField();
-            mAuthTokenTextField.setDisable(true);
-            mAuthTokenTextField.setPromptText("JWT token (optional for Zello Work)");
-            mAuthTokenTextField.textProperty().addListener(mEditorModificationListener);
-        }
-        return mAuthTokenTextField;
     }
 
     private IntegerTextField getMaxAgeTextField()

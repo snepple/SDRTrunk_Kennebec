@@ -493,8 +493,6 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         logon.add("channels", channels);
         logon.addProperty("username", config.getUsername());
         logon.addProperty("password", config.getPassword());
-        String authToken = config.getAuthToken();
-        if(authToken != null && !authToken.isEmpty()) logon.addProperty("auth_token", authToken);
         logon.addProperty("platform_name", "Gateway");
         mWebSocket.sendText(mGson.toJson(logon), true);
     }

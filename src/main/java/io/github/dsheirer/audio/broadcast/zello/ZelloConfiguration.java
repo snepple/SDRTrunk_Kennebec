@@ -39,14 +39,12 @@ import javafx.beans.property.StringProperty;
  * - Channel: The Zello channel name to stream to
  * - Username: Zello account username
  * - Password: Zello account password
- * - Auth Token: JWT authentication token (optional for Zello Work)
  */
 public class ZelloConfiguration extends BroadcastConfiguration
 {
     private StringProperty mNetworkName = new SimpleStringProperty();
     private StringProperty mChannel = new SimpleStringProperty();
     private StringProperty mUsername = new SimpleStringProperty();
-    private StringProperty mAuthToken = new SimpleStringProperty();
 
     /**
      * Default constructor for Jackson XML deserialization
@@ -139,26 +137,6 @@ public class ZelloConfiguration extends BroadcastConfiguration
     }
 
     // ========================================================================
-    // Auth Token (JWT — optional for Zello Work)
-    // ========================================================================
-
-    public StringProperty authTokenProperty()
-    {
-        return mAuthToken;
-    }
-
-    @JacksonXmlProperty(isAttribute = true, localName = "auth_token")
-    public String getAuthToken()
-    {
-        return mAuthToken.get();
-    }
-
-    public void setAuthToken(String authToken)
-    {
-        mAuthToken.set(authToken);
-    }
-
-    // ========================================================================
     // Helpers
     // ========================================================================
 
@@ -192,7 +170,6 @@ public class ZelloConfiguration extends BroadcastConfiguration
         copy.setChannel(getChannel());
         copy.setUsername(getUsername());
         copy.setPassword(getPassword());
-        copy.setAuthToken(getAuthToken());
         return copy;
     }
 }

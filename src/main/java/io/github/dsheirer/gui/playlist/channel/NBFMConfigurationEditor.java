@@ -27,7 +27,10 @@ import io.github.dsheirer.gui.playlist.source.FrequencyEditor;
 import io.github.dsheirer.gui.playlist.source.SourceConfigurationEditor;
 import io.github.dsheirer.module.decode.DecoderType;
 import io.github.dsheirer.module.decode.config.AuxDecodeConfiguration;
+import io.github.dsheirer.module.decode.config.ChannelToneFilter;
 import io.github.dsheirer.module.decode.config.DecodeConfiguration;
+import io.github.dsheirer.module.decode.ctcss.CTCSSCode;
+import io.github.dsheirer.module.decode.dcs.DCSCode;
 import io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM;
 import io.github.dsheirer.module.log.EventLogType;
 import io.github.dsheirer.module.log.config.EventLogConfiguration;
@@ -48,8 +51,7 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
-import javafx.scene.control.Slider;
+import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TitledPane;
@@ -57,21 +59,17 @@ import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
- * Narrow-Band FM channel configuration editor with VoxSend audio processing
+ * Narrow-Band FM channel configuration editor
  */
 public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 {
     private TitledPane mAuxDecoderPane;
     private TitledPane mDecoderPane;
-    private TitledPane mAudioFiltersPane;
     private TitledPane mEventLogPane;
     private TitledPane mRecordPane;
     private TitledPane mSourcePane;
@@ -81,29 +79,18 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private ToggleSwitch mBasebandRecordSwitch;
     private SegmentedButton mBandwidthButton;
 
-    // VoxSend Audio Filter Controls
-    private Slider mInputGainSlider;
-    private Label mInputGainLabel;
-    private ToggleSwitch mLowPassEnabledSwitch;
-    private Slider mLowPassCutoffSlider;
-    private Label mLowPassCutoffLabel;
-    private ToggleSwitch mDeemphasisEnabledSwitch;
-    private ComboBox<String> mDeemphasisTimeConstantCombo;
-    private ToggleSwitch mVoiceEnhanceEnabledSwitch;
-    private Slider mVoiceEnhanceSlider;
-    private Label mVoiceEnhanceLabel;
-    private ToggleSwitch mBassBoostEnabledSwitch;
-    private Slider mBassBoostSlider;
-    private Label mBassBoostLabel;
-    private ToggleSwitch mSquelchEnabledSwitch;
-    private Slider mSquelchThresholdSlider;
-    private Label mSquelchThresholdLabel;
-    private Slider mSquelchReductionSlider;
-    private Label mSquelchReductionLabel;
-    private Slider mHoldTimeSlider;
-    private Label mHoldTimeLabel;
-    private javafx.scene.control.Button mAnalyzeButton;
-    private Label mAnalyzeStatusLabel;
+    // CTCSS/DCS Tone Filter UI
+    private TitledPane mToneFilterPane;
+    private ToggleSwitch mToneFilterEnabledSwitch;
+    private ComboBox<ChannelToneFilter.ToneType> mToneTypeCombo;
+    private ComboBox<CTCSSCode> mCtcssCodeCombo;
+    private ComboBox<DCSCode> mDcsCodeCombo;
+
+    // Squelch Tail Removal UI
+    private TitledPane mSquelchTailPane;
+    private ToggleSwitch mSquelchTailEnabledSwitch;
+    private Spinner<Integer> mTailRemovalSpinner;
+    private Spinner<Integer> mHeadRemovalSpinner;
 
     private SourceConfigurationEditor mSourceConfigurationEditor;
     private AuxDecoderConfigurationEditor mAuxDecoderConfigurationEditor;
@@ -112,10 +99,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private final IntegerFormatter mDecimalFormatter = new IntegerFormatter(1, 65535);
     private final HexFormatter mHexFormatter = new HexFormatter(1, 65535);
 
-    private boolean mLoadingConfiguration = false;
-
     /**
      * Constructs an instance
+     * @param playlistManager for playlists
+     * @param tunerManager for tuners
+     * @param userPreferences for preferences
      */
     public NBFMConfigurationEditor(PlaylistManager playlistManager, TunerManager tunerManager,
                                    UserPreferences userPreferences, IFilterProcessor filterProcessor)
@@ -123,7 +111,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         super(playlistManager, tunerManager, userPreferences, filterProcessor);
         getTitledPanesBox().getChildren().add(getSourcePane());
         getTitledPanesBox().getChildren().add(getDecoderPane());
-        getTitledPanesBox().getChildren().add(getAudioFiltersPane());
+        getTitledPanesBox().getChildren().add(getToneFilterPane());
+        getTitledPanesBox().getChildren().add(getSquelchTailPane());
         getTitledPanesBox().getChildren().add(getAuxDecoderPane());
         getTitledPanesBox().getChildren().add(getEventLogPane());
         getTitledPanesBox().getChildren().add(getRecordPane());
@@ -142,6 +131,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mSourcePane = new TitledPane("Source", getSourceConfigurationEditor());
             mSourcePane.setExpanded(true);
         }
+
         return mSourcePane;
     }
 
@@ -179,400 +169,157 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
             mDecoderPane.setContent(gridPane);
 
+            //Special handling - the pill button doesn't like to set a selected state if the pane is not expanded,
+            //so detect when the pane is expanded and refresh the config view
             mDecoderPane.expandedProperty().addListener((observable, oldValue, newValue) -> {
-                if(newValue && getItem() != null)
+                if(newValue)
                 {
+                    //Reset the config so the editor gets updated
                     setDecoderConfiguration(getItem().getDecodeConfiguration());
                 }
             });
         }
+
         return mDecoderPane;
     }
 
-    private TitledPane getAudioFiltersPane()
+    // === Tone Filter (CTCSS / DCS) pane ===
+    private TitledPane getToneFilterPane()
     {
-        if(mAudioFiltersPane == null)
+        if(mToneFilterPane == null)
         {
-            mAudioFiltersPane = new TitledPane();
-            mAudioFiltersPane.setText("Audio Filters (VoxSend Chain)");
-            mAudioFiltersPane.setExpanded(false);
+            mToneFilterPane = new TitledPane();
+            mToneFilterPane.setText("Tone Filter (CTCSS / DCS)");
+            mToneFilterPane.setExpanded(false);
 
-            VBox contentBox = new VBox(10);
-            contentBox.setPadding(new Insets(10,10,10,10));
+            GridPane gridPane = new GridPane();
+            gridPane.setPadding(new Insets(10, 10, 10, 10));
+            gridPane.setHgap(10);
+            gridPane.setVgap(10);
 
-            // 1. Low-pass filter
-            contentBox.getChildren().add(createLowPassSection());
-            contentBox.getChildren().add(new Separator());
+            // Enable switch
+            Label enableLabel = new Label("Enable Tone Filter");
+            GridPane.setHalignment(enableLabel, HPos.RIGHT);
+            GridPane.setConstraints(enableLabel, 0, 0);
+            gridPane.getChildren().add(enableLabel);
 
-            // 2. Bass Boost
-            contentBox.getChildren().add(createBassBoostSection());
-            contentBox.getChildren().add(new Separator());
+            mToneFilterEnabledSwitch = new ToggleSwitch();
+            mToneFilterEnabledSwitch.selectedProperty()
+                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
+            GridPane.setConstraints(mToneFilterEnabledSwitch, 1, 0);
+            gridPane.getChildren().add(mToneFilterEnabledSwitch);
 
-            // 3. De-emphasis
-            contentBox.getChildren().add(createDeemphasisSection());
-            contentBox.getChildren().add(new Separator());
+            Label helpLabel = new Label("When enabled, audio only passes when the selected tone is detected");
+            GridPane.setConstraints(helpLabel, 2, 0, 3, 1);
+            gridPane.getChildren().add(helpLabel);
 
-            // 4. Voice Enhancement
-            contentBox.getChildren().add(createVoiceEnhanceSection());
-            contentBox.getChildren().add(new Separator());
+            // Tone type selector
+            Label typeLabel = new Label("Type");
+            GridPane.setHalignment(typeLabel, HPos.RIGHT);
+            GridPane.setConstraints(typeLabel, 0, 1);
+            gridPane.getChildren().add(typeLabel);
 
-            // 5. Intelligent Squelch
-            contentBox.getChildren().add(createSquelchSection());
-            contentBox.getChildren().add(new Separator());
+            mToneTypeCombo = new ComboBox<>();
+            mToneTypeCombo.getItems().addAll(ChannelToneFilter.ToneType.CTCSS, ChannelToneFilter.ToneType.DCS);
+            mToneTypeCombo.setValue(ChannelToneFilter.ToneType.CTCSS);
+            mToneTypeCombo.valueProperty().addListener((obs, ov, nv) -> {
+                updateToneCodeVisibility();
+                modifiedProperty().set(true);
+            });
+            GridPane.setConstraints(mToneTypeCombo, 1, 1);
+            gridPane.getChildren().add(mToneTypeCombo);
 
-            // 6. Output Gain (applied last)
-            contentBox.getChildren().add(createInputGainSection());
+            // CTCSS code selector
+            mCtcssCodeCombo = new ComboBox<>();
+            mCtcssCodeCombo.getItems().addAll(CTCSSCode.STANDARD_CODES);
+            mCtcssCodeCombo.setPromptText("Select PL tone");
+            mCtcssCodeCombo.setPrefWidth(200);
+            mCtcssCodeCombo.valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+            GridPane.setConstraints(mCtcssCodeCombo, 2, 1);
+            gridPane.getChildren().add(mCtcssCodeCombo);
 
-            mAudioFiltersPane.setContent(contentBox);
+            // DCS code selector (hidden by default)
+            mDcsCodeCombo = new ComboBox<>();
+            mDcsCodeCombo.getItems().addAll(DCSCode.STANDARD_CODES);
+            mDcsCodeCombo.getItems().addAll(DCSCode.INVERTED_CODES);
+            mDcsCodeCombo.setPromptText("Select DCS code");
+            mDcsCodeCombo.setPrefWidth(200);
+            mDcsCodeCombo.setVisible(false);
+            mDcsCodeCombo.setManaged(false);
+            mDcsCodeCombo.valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+            GridPane.setConstraints(mDcsCodeCombo, 2, 1);
+            gridPane.getChildren().add(mDcsCodeCombo);
+
+            mToneFilterPane.setContent(gridPane);
         }
-        return mAudioFiltersPane;
+        return mToneFilterPane;
     }
 
-    private VBox createInputGainSection()
+    private void updateToneCodeVisibility()
     {
-        VBox section = new VBox(5);
-        Label title = new Label("6. Output Gain (Applied Last)");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        Label gainLabel = new Label("Gain:");
-        GridPane.setConstraints(gainLabel, 0, 0);
-        controlsPane.getChildren().add(gainLabel);
-
-        mInputGainSlider = new Slider(0.1, 5.0, 1.0);
-        mInputGainSlider.setMajorTickUnit(1.0);
-        mInputGainSlider.setMinorTickCount(4);
-        mInputGainSlider.setShowTickMarks(true);
-        mInputGainSlider.setShowTickLabels(true);
-        mInputGainSlider.setPrefWidth(300);
-        mInputGainSlider.setTooltip(new Tooltip("Amplify weak signals before processing\n1.0 = unity, 2.0 = +6dB"));
-        mInputGainSlider.valueProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                mInputGainLabel.setText(String.format("%.1fx (%.1f dB)", val.floatValue(), 
-                    20.0 * Math.log10(val.doubleValue())));
-                modifiedProperty().set(true);
-            }
-        });
-        GridPane.setConstraints(mInputGainSlider, 1, 0);
-        controlsPane.getChildren().add(mInputGainSlider);
-
-        mInputGainLabel = new Label("1.0x (0.0 dB)");
-        GridPane.setConstraints(mInputGainLabel, 2, 0);
-        controlsPane.getChildren().add(mInputGainLabel);
-
-        section.getChildren().addAll(title, controlsPane);
-        return section;
+        boolean isCTCSS = mToneTypeCombo.getValue() == ChannelToneFilter.ToneType.CTCSS;
+        mCtcssCodeCombo.setVisible(isCTCSS);
+        mCtcssCodeCombo.setManaged(isCTCSS);
+        mDcsCodeCombo.setVisible(!isCTCSS);
+        mDcsCodeCombo.setManaged(!isCTCSS);
     }
 
-    private VBox createLowPassSection()
+    // === Squelch Tail Removal pane ===
+    private TitledPane getSquelchTailPane()
     {
-        VBox section = new VBox(5);
-        Label title = new Label("1. Low-Pass Filter");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
+        if(mSquelchTailPane == null)
+        {
+            mSquelchTailPane = new TitledPane();
+            mSquelchTailPane.setText("Squelch Tail Removal");
+            mSquelchTailPane.setExpanded(false);
 
-        mLowPassEnabledSwitch = new ToggleSwitch("Enable Low-Pass Filter");
-        mLowPassEnabledSwitch.setTooltip(new Tooltip("Remove high-frequency hiss/noise"));
-        mLowPassEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                modifiedProperty().set(true);
-                mLowPassCutoffSlider.setDisable(!val);
-            }
-        });
+            GridPane gridPane = new GridPane();
+            gridPane.setPadding(new Insets(10, 10, 10, 10));
+            gridPane.setHgap(10);
+            gridPane.setVgap(10);
 
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
+            Label enableLabel = new Label("Enable");
+            GridPane.setHalignment(enableLabel, HPos.RIGHT);
+            GridPane.setConstraints(enableLabel, 0, 0);
+            gridPane.getChildren().add(enableLabel);
 
-        Label cutoffLabel = new Label("Cutoff:");
-        GridPane.setConstraints(cutoffLabel, 0, 0);
-        controlsPane.getChildren().add(cutoffLabel);
+            mSquelchTailEnabledSwitch = new ToggleSwitch();
+            mSquelchTailEnabledSwitch.selectedProperty()
+                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
+            GridPane.setConstraints(mSquelchTailEnabledSwitch, 1, 0);
+            gridPane.getChildren().add(mSquelchTailEnabledSwitch);
 
-        mLowPassCutoffSlider = new Slider(2500, 4000, 3400);
-        mLowPassCutoffSlider.setMajorTickUnit(500);
-        mLowPassCutoffSlider.setMinorTickCount(4);
-        mLowPassCutoffSlider.setShowTickMarks(true);
-        mLowPassCutoffSlider.setShowTickLabels(true);
-        mLowPassCutoffSlider.setPrefWidth(300);
-        mLowPassCutoffSlider.setTooltip(new Tooltip("Higher = brighter\nLower = less noise\nDefault: 3400 Hz"));
-        mLowPassCutoffSlider.valueProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                mLowPassCutoffLabel.setText(val.intValue() + " Hz");
-                modifiedProperty().set(true);
-            }
-        });
-        GridPane.setConstraints(mLowPassCutoffSlider, 1, 0);
-        controlsPane.getChildren().add(mLowPassCutoffSlider);
+            Label tailLabel = new Label("Tail Trim (ms)");
+            GridPane.setHalignment(tailLabel, HPos.RIGHT);
+            GridPane.setConstraints(tailLabel, 0, 1);
+            gridPane.getChildren().add(tailLabel);
 
-        mLowPassCutoffLabel = new Label("3400 Hz");
-        GridPane.setConstraints(mLowPassCutoffLabel, 2, 0);
-        controlsPane.getChildren().add(mLowPassCutoffLabel);
+            mTailRemovalSpinner = new Spinner<>(0, 300, 100, 10);
+            mTailRemovalSpinner.setEditable(true);
+            mTailRemovalSpinner.setPrefWidth(100);
+            mTailRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from end of transmission (removes noise burst)"));
+            mTailRemovalSpinner.getValueFactory().valueProperty()
+                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
+            GridPane.setConstraints(mTailRemovalSpinner, 1, 1);
+            gridPane.getChildren().add(mTailRemovalSpinner);
 
-        section.getChildren().addAll(title, mLowPassEnabledSwitch, controlsPane);
-        return section;
-    }
+            Label headLabel = new Label("Head Trim (ms)");
+            GridPane.setHalignment(headLabel, HPos.RIGHT);
+            GridPane.setConstraints(headLabel, 2, 1);
+            gridPane.getChildren().add(headLabel);
 
-    private VBox createDeemphasisSection()
-    {
-        VBox section = new VBox(5);
-        Label title = new Label("3. FM De-emphasis");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
+            mHeadRemovalSpinner = new Spinner<>(0, 150, 0, 10);
+            mHeadRemovalSpinner.setEditable(true);
+            mHeadRemovalSpinner.setPrefWidth(100);
+            mHeadRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from start of transmission (removes tone ramp-up)"));
+            mHeadRemovalSpinner.getValueFactory().valueProperty()
+                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
+            GridPane.setConstraints(mHeadRemovalSpinner, 3, 1);
+            gridPane.getChildren().add(mHeadRemovalSpinner);
 
-        mDeemphasisEnabledSwitch = new ToggleSwitch("Enable De-emphasis");
-        mDeemphasisEnabledSwitch.setTooltip(new Tooltip("Correct FM pre-emphasis from transmitter"));
-        mDeemphasisEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                modifiedProperty().set(true);
-                mDeemphasisTimeConstantCombo.setDisable(!val);
-            }
-        });
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        Label tcLabel = new Label("Time Constant:");
-        GridPane.setConstraints(tcLabel, 0, 0);
-        controlsPane.getChildren().add(tcLabel);
-
-        mDeemphasisTimeConstantCombo = new ComboBox<>();
-        mDeemphasisTimeConstantCombo.getItems().addAll("75 μs (North America)", "50 μs (Europe)");
-        mDeemphasisTimeConstantCombo.setTooltip(new Tooltip("75μs for North America, 50μs for Europe"));
-        mDeemphasisTimeConstantCombo.setOnAction(e -> {
-            if(!mLoadingConfiguration) modifiedProperty().set(true);
-        });
-        GridPane.setConstraints(mDeemphasisTimeConstantCombo, 1, 0);
-        controlsPane.getChildren().add(mDeemphasisTimeConstantCombo);
-
-        section.getChildren().addAll(title, mDeemphasisEnabledSwitch, controlsPane);
-        return section;
-    }
-
-    private VBox createVoiceEnhanceSection()
-    {
-        VBox section = new VBox(5);
-        Label title = new Label("4. Voice Enhancement");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-
-        mVoiceEnhanceEnabledSwitch = new ToggleSwitch("Enable Voice Enhancement");
-        mVoiceEnhanceEnabledSwitch.setTooltip(new Tooltip("Boost speech clarity (2-4 kHz presence)"));
-        mVoiceEnhanceEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                modifiedProperty().set(true);
-                mVoiceEnhanceSlider.setDisable(!val);
-            }
-        });
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        Label amountLabel = new Label("Amount:");
-        GridPane.setConstraints(amountLabel, 0, 0);
-        controlsPane.getChildren().add(amountLabel);
-
-        mVoiceEnhanceSlider = new Slider(0, 100, 30);
-        mVoiceEnhanceSlider.setMajorTickUnit(25);
-        mVoiceEnhanceSlider.setMinorTickCount(4);
-        mVoiceEnhanceSlider.setShowTickMarks(true);
-        mVoiceEnhanceSlider.setShowTickLabels(true);
-        mVoiceEnhanceSlider.setPrefWidth(300);
-        mVoiceEnhanceSlider.setTooltip(new Tooltip("Boost speech presence\n0% = off, 100% = max clarity\nDefault: 30%"));
-        mVoiceEnhanceSlider.valueProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                mVoiceEnhanceLabel.setText(val.intValue() + "%");
-                modifiedProperty().set(true);
-            }
-        });
-        GridPane.setConstraints(mVoiceEnhanceSlider, 1, 0);
-        controlsPane.getChildren().add(mVoiceEnhanceSlider);
-
-        mVoiceEnhanceLabel = new Label("30%");
-        GridPane.setConstraints(mVoiceEnhanceLabel, 2, 0);
-        controlsPane.getChildren().add(mVoiceEnhanceLabel);
-
-        section.getChildren().addAll(title, mVoiceEnhanceEnabledSwitch, controlsPane);
-        return section;
-    }
-
-    private VBox createBassBoostSection()
-    {
-        VBox section = new VBox(5);
-        Label title = new Label("2. Bass Boost");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-
-        mBassBoostEnabledSwitch = new ToggleSwitch("Enable Bass Boost");
-        mBassBoostEnabledSwitch.setTooltip(new Tooltip("Boost low frequencies below 400 Hz for warmth"));
-        mBassBoostEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                modifiedProperty().set(true);
-                mBassBoostSlider.setDisable(!val);
-            }
-        });
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        Label amountLabel = new Label("Boost Amount:");
-        GridPane.setConstraints(amountLabel, 0, 0);
-        controlsPane.getChildren().add(amountLabel);
-
-        mBassBoostSlider = new Slider(0, 12, 0);
-        mBassBoostSlider.setMajorTickUnit(3);
-        mBassBoostSlider.setMinorTickCount(2);
-        mBassBoostSlider.setShowTickMarks(true);
-        mBassBoostSlider.setShowTickLabels(true);
-        mBassBoostSlider.setPrefWidth(300);
-        mBassBoostSlider.setTooltip(new Tooltip("Low-shelf boost below 400 Hz\n0 dB = off, +12 dB = max bass\nDefault: 0 dB"));
-        mBassBoostSlider.valueProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                mBassBoostLabel.setText(String.format("+%.1f dB", val.doubleValue()));
-                modifiedProperty().set(true);
-            }
-        });
-        GridPane.setConstraints(mBassBoostSlider, 1, 0);
-        controlsPane.getChildren().add(mBassBoostSlider);
-
-        mBassBoostLabel = new Label("+0.0 dB");
-        GridPane.setConstraints(mBassBoostLabel, 2, 0);
-        controlsPane.getChildren().add(mBassBoostLabel);
-
-        section.getChildren().addAll(title, mBassBoostEnabledSwitch, controlsPane);
-        return section;
-    }
-
-    private VBox createSquelchSection()
-    {
-        VBox section = new VBox(5);
-        Label title = new Label("5. Squelch / Noise Gate");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-
-        mSquelchEnabledSwitch = new ToggleSwitch("Enable Squelch/Noise Gate");
-        mSquelchEnabledSwitch.setTooltip(new Tooltip("Silence carrier/static between voice"));
-        mSquelchEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                modifiedProperty().set(true);
-                mSquelchThresholdSlider.setDisable(!val);
-                mSquelchReductionSlider.setDisable(!val);
-                mHoldTimeSlider.setDisable(!val);
-                mAnalyzeButton.setDisable(!val);
-            }
-        });
-
-        // Analyze section (helps user find optimal threshold)
-        GridPane analyzePane = new GridPane();
-        analyzePane.setHgap(10);
-        analyzePane.setVgap(5);
-        analyzePane.setPadding(new Insets(5,0,10,0));
-
-        mAnalyzeButton = new javafx.scene.control.Button("Analyze Audio & Suggest Settings");
-        mAnalyzeButton.setTooltip(new Tooltip("Listen to audio for 5-10 seconds and suggest optimal threshold\nMake sure transmissions are active!"));
-        mAnalyzeButton.setStyle("-fx-font-weight: bold;");
-        mAnalyzeButton.setOnAction(e -> handleAnalyzeClick());
-        GridPane.setConstraints(mAnalyzeButton, 0, 0);
-        analyzePane.getChildren().add(mAnalyzeButton);
-
-        mAnalyzeStatusLabel = new Label("Click 'Analyze' while transmissions are active");
-        mAnalyzeStatusLabel.setStyle("-fx-text-fill: #666;");
-        GridPane.setConstraints(mAnalyzeStatusLabel, 1, 0);
-        analyzePane.getChildren().add(mAnalyzeStatusLabel);
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        // Threshold: 0-100%
-        Label threshLabel = new Label("Threshold:");
-        GridPane.setConstraints(threshLabel, 0, 0);
-        controlsPane.getChildren().add(threshLabel);
-
-        mSquelchThresholdSlider = new Slider(0, 100, 4.0);
-        mSquelchThresholdSlider.setMajorTickUnit(25);
-        mSquelchThresholdSlider.setMinorTickCount(4);
-        mSquelchThresholdSlider.setShowTickMarks(true);
-        mSquelchThresholdSlider.setShowTickLabels(true);
-        mSquelchThresholdSlider.setPrefWidth(300);
-        mSquelchThresholdSlider.setTooltip(new Tooltip("Gate opens when level > threshold\nLower = more sensitive\nDefault: 4%"));
-        mSquelchThresholdSlider.valueProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                mSquelchThresholdLabel.setText(String.format("%.1f%%", val.doubleValue()));
-                modifiedProperty().set(true);
-            }
-        });
-        GridPane.setConstraints(mSquelchThresholdSlider, 1, 0);
-        controlsPane.getChildren().add(mSquelchThresholdSlider);
-
-        mSquelchThresholdLabel = new Label("4.0%");
-        GridPane.setConstraints(mSquelchThresholdLabel, 2, 0);
-        controlsPane.getChildren().add(mSquelchThresholdLabel);
-
-        // Reduction: 0-100%
-        Label reductionLabel = new Label("Reduction:");
-        GridPane.setConstraints(reductionLabel, 0, 1);
-        controlsPane.getChildren().add(reductionLabel);
-
-        mSquelchReductionSlider = new Slider(0, 100, 80);
-        mSquelchReductionSlider.setMajorTickUnit(25);
-        mSquelchReductionSlider.setMinorTickCount(4);
-        mSquelchReductionSlider.setShowTickMarks(true);
-        mSquelchReductionSlider.setShowTickLabels(true);
-        mSquelchReductionSlider.setPrefWidth(300);
-        mSquelchReductionSlider.setTooltip(new Tooltip("How much to reduce carrier noise\n0% = no reduction, 100% = full mute\nDefault: 80%"));
-        mSquelchReductionSlider.valueProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                mSquelchReductionLabel.setText(val.intValue() + "%");
-                modifiedProperty().set(true);
-            }
-        });
-        GridPane.setConstraints(mSquelchReductionSlider, 1, 1);
-        controlsPane.getChildren().add(mSquelchReductionSlider);
-
-        mSquelchReductionLabel = new Label("80%");
-        GridPane.setConstraints(mSquelchReductionLabel, 2, 1);
-        controlsPane.getChildren().add(mSquelchReductionLabel);
-
-        // Hold Time (Delay): 0-1000ms
-        Label holdLabel = new Label("Delay (Hold Time):");
-        GridPane.setConstraints(holdLabel, 0, 2);
-        controlsPane.getChildren().add(holdLabel);
-
-        mHoldTimeSlider = new Slider(0, 1000, 500);
-        mHoldTimeSlider.setMajorTickUnit(250);
-        mHoldTimeSlider.setMinorTickCount(4);
-        mHoldTimeSlider.setShowTickMarks(true);
-        mHoldTimeSlider.setShowTickLabels(true);
-        mHoldTimeSlider.setPrefWidth(300);
-        mHoldTimeSlider.setTooltip(new Tooltip("Keep gate open after voice stops\nSilences carrier/static between voice\nDefault: 500ms"));
-        mHoldTimeSlider.valueProperty().addListener((obs, old, val) -> {
-            if(!mLoadingConfiguration)
-            {
-                mHoldTimeLabel.setText(val.intValue() + " ms");
-                modifiedProperty().set(true);
-            }
-        });
-        GridPane.setConstraints(mHoldTimeSlider, 1, 2);
-        controlsPane.getChildren().add(mHoldTimeSlider);
-
-        mHoldTimeLabel = new Label("500 ms");
-        GridPane.setConstraints(mHoldTimeLabel, 2, 2);
-        controlsPane.getChildren().add(mHoldTimeLabel);
-
-        section.getChildren().addAll(title, mSquelchEnabledSwitch, analyzePane, controlsPane);
-        return section;
+            mSquelchTailPane.setContent(gridPane);
+        }
+        return mSquelchTailPane;
     }
 
     private TitledPane getEventLogPane()
@@ -582,6 +329,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mEventLogPane = new TitledPane("Logging", getEventLogConfigurationEditor());
             mEventLogPane.setExpanded(false);
         }
+
         return mEventLogPane;
     }
 
@@ -592,6 +340,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mAuxDecoderPane = new TitledPane("Additional Decoders", getAuxDecoderConfigurationEditor());
             mAuxDecoderPane.setExpanded(false);
         }
+
         return mAuxDecoderPane;
     }
 
@@ -618,6 +367,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
             mRecordPane.setContent(gridPane);
         }
+
         return mRecordPane;
     }
 
@@ -626,9 +376,12 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         if(mSourceConfigurationEditor == null)
         {
             mSourceConfigurationEditor = new FrequencyEditor(mTunerManager);
+
+            //Add a listener so that we can push change notifications up to this editor
             mSourceConfigurationEditor.modifiedProperty()
                 .addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
+
         return mSourceConfigurationEditor;
     }
 
@@ -639,10 +392,12 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             List<EventLogType> types = new ArrayList<>();
             types.add(EventLogType.CALL_EVENT);
             types.add(EventLogType.DECODED_MESSAGE);
+
             mEventLogConfigurationEditor = new EventLogConfigurationEditor(types);
             mEventLogConfigurationEditor.setPadding(new Insets(5,5,5,5));
             mEventLogConfigurationEditor.modifiedProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
+
         return mEventLogConfigurationEditor;
     }
 
@@ -654,9 +409,14 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mAuxDecoderConfigurationEditor.setPadding(new Insets(5,5,5,5));
             mAuxDecoderConfigurationEditor.modifiedProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
+
         return mAuxDecoderConfigurationEditor;
     }
 
+    /**
+     * Toggle switch for enable/disable the audio filtering in the audio module.
+     * @return toggle switch.
+     */
     private ToggleSwitch getAudioFilterEnable()
     {
         if(mAudioFilterEnable == null)
@@ -665,6 +425,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mAudioFilterEnable.setTooltip(new Tooltip("High-pass filter to remove DC offset and sub-audible signalling"));
             mAudioFilterEnable.selectedProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
+
         return mAudioFilterEnable;
     }
 
@@ -686,11 +447,19 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mBandwidthButton.getToggleGroup().selectedToggleProperty()
                 .addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
 
+            //Note: there is a weird timing bug with the segmented button where the toggles are not added to
+            //the toggle group until well after the control is rendered.  We attempt to setItem() on the
+            //decode configuration and we're unable to correctly set the bandwidth setting.  As a work
+            //around, we'll listen for the toggles to be added and update them here.  This normally only
+            //happens when we first instantiate the editor and load an item for editing the first time.
             mBandwidthButton.getToggleGroup().getToggles().addListener((ListChangeListener<Toggle>)c ->
             {
+                //This change event happens when the toggles are added -- we don't need to inspect the change event
                 if(getItem() != null && getItem().getDecodeConfiguration() instanceof DecodeConfigNBFM)
                 {
+                    //Capture current modified state so that we can reapply after adjusting control states
                     boolean modified = modifiedProperty().get();
+
                     DecodeConfigNBFM config = (DecodeConfigNBFM)getItem().getDecodeConfiguration();
                     DecodeConfigNBFM.Bandwidth bandwidth = config.getBandwidth();
                     if(bandwidth == null)
@@ -707,6 +476,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 }
             });
         }
+
         return mBandwidthButton;
     }
 
@@ -717,9 +487,14 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mTalkgroupField = new TextField();
             mTalkgroupField.setTextFormatter(mTalkgroupTextFormatter);
         }
+
         return mTalkgroupField;
     }
 
+    /**
+     * Updates the talkgroup editor's text formatter.
+     * @param value to set in the control.
+     */
     private void updateTextFormatter(int value)
     {
         if(mTalkgroupTextFormatter != null)
@@ -746,10 +521,14 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         }
 
         mTalkgroupTextFormatter.setValue(value);
+
         getTalkgroupField().setTextFormatter(mTalkgroupTextFormatter);
         mTalkgroupTextFormatter.valueProperty().addListener(mTalkgroupValueChangeListener);
     }
 
+    /**
+     * Change listener to detect when talkgroup value has changed and set modified property to true.
+     */
     public class TalkgroupValueChangeListener implements ChangeListener<Integer>
     {
         @Override
@@ -769,14 +548,13 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mBasebandRecordSwitch.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
+
         return mBasebandRecordSwitch;
     }
 
     @Override
     protected void setDecoderConfiguration(DecodeConfiguration config)
     {
-        mLoadingConfiguration = true;
-
         if(config instanceof DecodeConfigNBFM)
         {
             getBandwidthButton().setDisable(false);
@@ -793,8 +571,45 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             getAudioFilterEnable().setDisable(false);
             getAudioFilterEnable().setSelected(decodeConfigNBFM.isAudioFilter());
 
-            // Load VoxSend audio filter settings
-            loadAudioFilterConfiguration(decodeConfigNBFM);
+            // Load tone filter settings
+            mToneFilterEnabledSwitch.setSelected(decodeConfigNBFM.isToneFilterEnabled());
+            List<ChannelToneFilter> savedFilters = decodeConfigNBFM.getToneFilters();
+            if(savedFilters != null && !savedFilters.isEmpty())
+            {
+                ChannelToneFilter filter = savedFilters.get(0);
+                mToneTypeCombo.setValue(filter.getToneType());
+                updateToneCodeVisibility();
+                if(filter.getToneType() == ChannelToneFilter.ToneType.CTCSS)
+                {
+                    CTCSSCode code = filter.getCTCSSCode();
+                    if(code != null && code != CTCSSCode.UNKNOWN)
+                    {
+                        mCtcssCodeCombo.setValue(code);
+                    }
+                }
+                else if(filter.getToneType() == ChannelToneFilter.ToneType.DCS)
+                {
+                    DCSCode code = filter.getDCSCode();
+                    if(code != null)
+                    {
+                        mDcsCodeCombo.setValue(code);
+                    }
+                }
+            }
+            else
+            {
+                mToneTypeCombo.setValue(ChannelToneFilter.ToneType.CTCSS);
+                mCtcssCodeCombo.setValue(null);
+                mCtcssCodeCombo.setPromptText("Select PL tone");
+                mDcsCodeCombo.setValue(null);
+                mDcsCodeCombo.setPromptText("Select DCS code");
+                updateToneCodeVisibility();
+            }
+
+            // Load squelch tail settings
+            mSquelchTailEnabledSwitch.setSelected(decodeConfigNBFM.isSquelchTailRemovalEnabled());
+            mTailRemovalSpinner.getValueFactory().setValue(decodeConfigNBFM.getSquelchTailRemovalMs());
+            mHeadRemovalSpinner.getValueFactory().setValue(decodeConfigNBFM.getSquelchHeadRemovalMs());
         }
         else
         {
@@ -810,85 +625,20 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             getAudioFilterEnable().setDisable(true);
             getAudioFilterEnable().setSelected(false);
 
-            disableAudioFilterControls();
+            // Reset tone filter controls
+            mToneFilterEnabledSwitch.setSelected(false);
+            mToneTypeCombo.setValue(ChannelToneFilter.ToneType.CTCSS);
+            mCtcssCodeCombo.setValue(null);
+            mCtcssCodeCombo.setPromptText("Select PL tone");
+            mDcsCodeCombo.setValue(null);
+            mDcsCodeCombo.setPromptText("Select DCS code");
+            updateToneCodeVisibility();
+
+            // Reset squelch tail controls
+            mSquelchTailEnabledSwitch.setSelected(false);
+            mTailRemovalSpinner.getValueFactory().setValue(100);
+            mHeadRemovalSpinner.getValueFactory().setValue(0);
         }
-
-        mLoadingConfiguration = false;
-    }
-
-    private void loadAudioFilterConfiguration(DecodeConfigNBFM config)
-    {
-        // Input Gain (map from AGC max gain)
-        float inputGain = (float)Math.pow(10.0, config.getAgcMaxGain() / 40.0);
-        mInputGainSlider.setValue(inputGain);
-        mInputGainLabel.setText(String.format("%.1fx (%.1f dB)", inputGain, 
-            20.0 * Math.log10(inputGain)));
-
-        // Low-pass
-        mLowPassEnabledSwitch.setSelected(config.isLowPassEnabled());
-        mLowPassCutoffSlider.setValue(config.getLowPassCutoff());
-        mLowPassCutoffLabel.setText((int)config.getLowPassCutoff() + " Hz");
-        mLowPassCutoffSlider.setDisable(!config.isLowPassEnabled());
-
-        // De-emphasis
-        mDeemphasisEnabledSwitch.setSelected(config.isDeemphasisEnabled());
-        double tc = config.getDeemphasisTimeConstant();
-        mDeemphasisTimeConstantCombo.setValue(tc == 75.0 ? "75 μs (North America)" : "50 μs (Europe)");
-        mDeemphasisTimeConstantCombo.setDisable(!config.isDeemphasisEnabled());
-
-        // Voice Enhancement - load from AGC target level
-        mVoiceEnhanceEnabledSwitch.setSelected(config.isAgcEnabled());
-        // Map -30 to -6 dB range back to 0-100%
-        float targetLevel = config.getAgcTargetLevel();
-        float voiceAmount = ((targetLevel + 30.0f) / 24.0f) * 100.0f;
-        voiceAmount = Math.max(0, Math.min(100, voiceAmount));
-        mVoiceEnhanceSlider.setValue(voiceAmount);
-        mVoiceEnhanceLabel.setText((int)voiceAmount + "%");
-        mVoiceEnhanceSlider.setDisable(!config.isAgcEnabled());
-
-        // Bass Boost
-        mBassBoostEnabledSwitch.setSelected(config.isBassBoostEnabled());
-        float bassBoostDb = config.getBassBoostDb();
-        mBassBoostSlider.setValue(bassBoostDb);
-        mBassBoostLabel.setText(String.format("+%.1f dB", bassBoostDb));
-        mBassBoostSlider.setDisable(!config.isBassBoostEnabled());
-
-        // Squelch / Noise Gate (Vox-Send style)
-        mSquelchEnabledSwitch.setSelected(config.isNoiseGateEnabled());
-        
-        // Threshold is stored as percentage (0-100%)
-        float thresholdPercent = config.getNoiseGateThreshold();
-        mSquelchThresholdSlider.setValue(thresholdPercent);
-        mSquelchThresholdLabel.setText(String.format("%.1f%%", thresholdPercent));
-        
-        // Reduction
-        mSquelchReductionSlider.setValue(config.getNoiseGateReduction() * 100.0f);
-        mSquelchReductionLabel.setText((int)(config.getNoiseGateReduction() * 100.0f) + "%");
-        
-        // Hold time
-        int holdTime = config.getNoiseGateHoldTime();
-        mHoldTimeSlider.setValue(holdTime);
-        mHoldTimeLabel.setText(holdTime + " ms");
-        
-        // Disable controls if squelch is off
-        boolean squelchEnabled = config.isNoiseGateEnabled();
-        mSquelchThresholdSlider.setDisable(!squelchEnabled);
-        mSquelchReductionSlider.setDisable(!squelchEnabled);
-        mHoldTimeSlider.setDisable(!squelchEnabled);
-    }
-
-    private void disableAudioFilterControls()
-    {
-        mInputGainSlider.setValue(1.0);
-        mLowPassEnabledSwitch.setSelected(false);
-        mLowPassCutoffSlider.setDisable(true);
-        mDeemphasisEnabledSwitch.setSelected(false);
-        mDeemphasisTimeConstantCombo.setDisable(true);
-        mVoiceEnhanceEnabledSwitch.setSelected(false);
-        mVoiceEnhanceSlider.setDisable(true);
-        mSquelchEnabledSwitch.setSelected(false);
-        mSquelchThresholdSlider.setDisable(true);
-        mSquelchReductionSlider.setDisable(true);
     }
 
     @Override
@@ -906,57 +656,52 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         }
 
         DecodeConfigNBFM.Bandwidth bandwidth = DecodeConfigNBFM.Bandwidth.BW_12_5;
+
         if(getBandwidthButton().getToggleGroup().getSelectedToggle() != null)
         {
             bandwidth = (DecodeConfigNBFM.Bandwidth)getBandwidthButton().getToggleGroup().getSelectedToggle().getUserData();
         }
+
         config.setBandwidth(bandwidth);
 
         Integer talkgroup = mTalkgroupTextFormatter.getValue();
-        if(talkgroup == null) talkgroup = 1;
+
+        if(talkgroup == null)
+        {
+            talkgroup = 1;
+        }
+
         config.setTalkgroup(talkgroup);
         config.setAudioFilter(getAudioFilterEnable().isSelected());
 
-        // Save VoxSend audio filter settings
-        saveAudioFilterConfiguration(config);
+        // Save tone filter settings
+        config.setToneFilterEnabled(mToneFilterEnabledSwitch.isSelected());
+        List<ChannelToneFilter> filters = new ArrayList<>();
+        ChannelToneFilter.ToneType selectedType = mToneTypeCombo.getValue();
+        if(selectedType == ChannelToneFilter.ToneType.CTCSS)
+        {
+            CTCSSCode code = mCtcssCodeCombo.getValue();
+            if(code != null && code != CTCSSCode.UNKNOWN)
+            {
+                filters.add(new ChannelToneFilter(selectedType, code.name(), ""));
+            }
+        }
+        else if(selectedType == ChannelToneFilter.ToneType.DCS)
+        {
+            DCSCode code = mDcsCodeCombo.getValue();
+            if(code != null)
+            {
+                filters.add(new ChannelToneFilter(selectedType, code.name(), ""));
+            }
+        }
+        config.setToneFilters(filters);
+
+        // Save squelch tail settings
+        config.setSquelchTailRemovalEnabled(mSquelchTailEnabledSwitch.isSelected());
+        config.setSquelchTailRemovalMs(mTailRemovalSpinner.getValue());
+        config.setSquelchHeadRemovalMs(mHeadRemovalSpinner.getValue());
 
         getItem().setDecodeConfiguration(config);
-    }
-
-    private void saveAudioFilterConfiguration(DecodeConfigNBFM config)
-    {
-        // Input Gain (store as AGC max gain for compatibility)
-        float inputGain = (float)mInputGainSlider.getValue();
-        float maxGainDb = (float)(40.0 * Math.log10(inputGain));
-        config.setAgcMaxGain(maxGainDb);
-        config.setAgcEnabled(true);
-
-        // Low-pass
-        config.setLowPassEnabled(mLowPassEnabledSwitch.isSelected());
-        config.setLowPassCutoff(mLowPassCutoffSlider.getValue());
-
-        // De-emphasis
-        config.setDeemphasisEnabled(mDeemphasisEnabledSwitch.isSelected());
-        String selected = mDeemphasisTimeConstantCombo.getValue();
-        double tc = (selected != null && selected.startsWith("75")) ? 75.0 : 50.0;
-        config.setDeemphasisTimeConstant(tc);
-
-        // Voice Enhancement - store amount as AGC target level
-        config.setAgcEnabled(mVoiceEnhanceEnabledSwitch.isSelected());
-        float voiceAmount = (float)mVoiceEnhanceSlider.getValue();
-        // Map 0-100% to -30 to -6 dB range for storage
-        float targetLevel = -30.0f + (voiceAmount / 100.0f * 24.0f);
-        config.setAgcTargetLevel(targetLevel);
-
-        // Bass Boost
-        config.setBassBoostEnabled(mBassBoostEnabledSwitch.isSelected());
-        config.setBassBoostDb((float)mBassBoostSlider.getValue());
-
-        // Squelch / Noise Gate (Vox-Send style)
-        config.setNoiseGateEnabled(mSquelchEnabledSwitch.isSelected());
-        config.setNoiseGateThreshold((float)mSquelchThresholdSlider.getValue());  // Already percentage
-        config.setNoiseGateReduction((float)mSquelchReductionSlider.getValue() / 100.0f);
-        config.setNoiseGateHoldTime((int)mHoldTimeSlider.getValue());
     }
 
     @Override
@@ -969,6 +714,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     protected void saveEventLogConfiguration()
     {
         getEventLogConfigurationEditor().save();
+
         if(getEventLogConfigurationEditor().getItem().getLoggers().isEmpty())
         {
             getItem().setEventLogConfiguration(null);
@@ -989,6 +735,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     protected void saveAuxDecoderConfiguration()
     {
         getAuxDecoderConfigurationEditor().save();
+
         if(getAuxDecoderConfigurationEditor().getItem().getAuxDecoders().isEmpty())
         {
             getItem().setAuxDecodeConfiguration(null);
@@ -1018,10 +765,12 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     protected void saveRecordConfiguration()
     {
         RecordConfiguration config = new RecordConfiguration();
+
         if(getBasebandRecordSwitch().selectedProperty().get())
         {
             config.addRecorder(RecorderType.BASEBAND);
         }
+
         getItem().setRecordConfiguration(config);
     }
 
@@ -1037,64 +786,5 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         getSourceConfigurationEditor().save();
         SourceConfiguration sourceConfiguration = getSourceConfigurationEditor().getSourceConfiguration();
         getItem().setSourceConfiguration(sourceConfiguration);
-    }
-    
-    /**
-     * Handle analyze button click
-     * TODO: Wire this to the decoder's NBFMAudioFilters instance
-     * For now, this shows the UI flow - actual analysis requires decoder access
-     */
-    private void handleAnalyzeClick()
-    {
-        if (mAnalyzeButton.getText().equals("Analyze Audio & Suggest Settings")) {
-            // Start analysis
-            mAnalyzeButton.setText("Stop Analysis");
-            mAnalyzeStatusLabel.setText("Analyzing... listening to audio (10 seconds)");
-            mAnalyzeStatusLabel.setStyle("-fx-text-fill: #0066cc; -fx-font-weight: bold;");
-            
-            // TODO: Get decoder's audio filter and start analyzing
-            // NBFMAudioFilters filter = getDecoderAudioFilter();
-            // filter.startAnalyzing();
-            
-            // TODO: After 10 seconds (or when stopped), get results
-            // javafx.application.Platform.runLater(() -> {
-            //     float[] results = filter.stopAnalyzing();
-            //     if (results != null) {
-            //         float carrierMax = results[0];
-            //         float voiceMin = results[1];
-            //         float recommended = results[2];
-            //         
-            //         mSquelchThresholdSlider.setValue(recommended);
-            //         mAnalyzeStatusLabel.setText(String.format(
-            //             "✅ Suggested: %.1f%% (Carrier: %.1f%%, Voice: %.1f%%)", 
-            //             recommended, carrierMax, voiceMin));
-            //         mAnalyzeStatusLabel.setStyle("-fx-text-fill: #009900; -fx-font-weight: bold;");
-            //         modifiedProperty().set(true);
-            //     } else {
-            //         mAnalyzeStatusLabel.setText("⚠️ Not enough audio - try again with active transmissions");
-            //         mAnalyzeStatusLabel.setStyle("-fx-text-fill: #cc6600;");
-            //     }
-            //     mAnalyzeButton.setText("Analyze Audio & Suggest Settings");
-            // }, 10000);  // 10 second delay
-            
-            // For now, just show a message after short delay
-            new javafx.animation.Timeline(new javafx.animation.KeyFrame(
-                javafx.util.Duration.millis(1000),
-                ae -> {
-                    mAnalyzeStatusLabel.setText("⚠️ Analysis requires decoder connection (not yet wired)");
-                    mAnalyzeStatusLabel.setStyle("-fx-text-fill: #cc6600;");
-                    mAnalyzeButton.setText("Analyze Audio & Suggest Settings");
-                }
-            )).play();
-            
-        } else {
-            // Stop analysis
-            mAnalyzeButton.setText("Analyze Audio & Suggest Settings");
-            mAnalyzeStatusLabel.setText("Analysis stopped");
-            mAnalyzeStatusLabel.setStyle("-fx-text-fill: #666;");
-            
-            // TODO: Stop analyzing
-            // filter.stopAnalyzing();
-        }
     }
 }

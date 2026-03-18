@@ -215,9 +215,13 @@ public abstract class AbstractAudioModule extends Module implements IAudioSegmen
                     mAudioSegment.monitorPriorityProperty().set(Priority.DO_NOT_MONITOR);
                 }
             }
-
-            closeAudioSegment();
         }
+
+        //Close the current segment in both mute and unmute cases.
+        //On mute: stops the currently playing audio immediately.
+        //On unmute: discards the DO_NOT_MONITOR segment so the next addAudio() creates
+        //a fresh segment with normal priority that AudioPlaybackManager will play.
+        closeAudioSegment();
     }
 
     /**
