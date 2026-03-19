@@ -456,7 +456,7 @@ public class P25P1DecoderState extends DecoderState implements IChannelEventList
      */
     private void processLCChannelUser(LinkControlWord lcw, long timestamp)
     {
-        getIdentifierCollection().update(mPatchGroupManager.update(lcw.getIdentifiers(), timestamp));
+        getIdentifierCollection().update(applyTalkgroupOverride(mPatchGroupManager.update(lcw.getIdentifiers(), timestamp)));
         DecodeEventType decodeEventType = getLCDecodeEventType(lcw);
 
         ServiceOptions serviceOptions = null;
@@ -881,9 +881,15 @@ public class P25P1DecoderState extends DecoderState implements IChannelEventList
             {
                 Identifier talkgroup = headerData.getTalkgroup();
 
+                //Apply talkgroup override for conventional P25 channels
+                if(mTalkgroupOverride > 0 && talkgroup instanceof APCO25Talkgroup)
+                {
+                    talkgroup = APCO25Talkgroup.create(mTalkgroupOverride);
+                }
+
                 //Run the talkgroup through the patch group manager so we don't get a plain talkgroup in addition to the patch
                 //Talkgroup value of zero indicates a unit-to-unit call, so don't attempt to update it as a patch group
-                if(headerData.getTalkgroup().getValue() > 0)
+                if(talkgroup instanceof APCO25Talkgroup apco25Tg && apco25Tg.getValue() > 0)
                 {
                     talkgroup = mPatchGroupManager.update(talkgroup, message.getTimestamp());
                 }

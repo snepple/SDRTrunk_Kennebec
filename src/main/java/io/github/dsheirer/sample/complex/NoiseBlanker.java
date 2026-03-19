@@ -27,7 +27,9 @@ package io.github.dsheirer.sample.complex;
 public class NoiseBlanker
 {
     private static final float ALPHA = 0.001f;   // Smoothing factor for running average
-    private static final float THRESHOLD = 6.0f; // Blanking threshold as multiplier of average power
+    private static final float THRESHOLD = 15.0f; // Blanking threshold as multiplier of average power
+                                                   // Was 6.0 but too aggressive for strong nearby signals
+                                                   // where legitimate voice peaks exceed 36x average power
     private double mAveragePower = 0.001;
     private long mBlankedCount = 0;
     private long mTotalCount = 0;

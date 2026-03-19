@@ -72,10 +72,13 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.RowSorter;
+import javax.swing.SortOrder;
 import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableRowSorter;
 
 public class ChannelMetadataPanel extends JPanel implements ListSelectionListener
 {
@@ -140,7 +143,21 @@ public class ChannelMetadataPanel extends JPanel implements ListSelectionListene
         mTable.getColumnModel().getColumn(ChannelMetadataModel.COLUMN_CONFIGURATION_FREQUENCY)
             .setCellRenderer(new FrequencyCellRenderer());
 
-        //Add a table column width monitor to store/restore column widths
+        //Add a row sorter for clickable column header sorting with case-insensitive string comparison
+        TableRowSorter<ChannelMetadataModel> rowSorter = new TableRowSorter<>(mChannelProcessingManager.getChannelMetadataModel());
+        rowSorter.setComparator(ChannelMetadataModel.COLUMN_CONFIGURATION_CHANNEL, (o1, o2) -> {
+            String s1 = o1 != null ? o1.toString() : "";
+            String s2 = o2 != null ? o2.toString() : "";
+            return s1.compareToIgnoreCase(s2);
+        });
+        rowSorter.setComparator(ChannelMetadataModel.COLUMN_DECODER_LOGICAL_CHANNEL_NAME, (o1, o2) -> {
+            String s1 = o1 != null ? o1.toString() : "";
+            String s2 = o2 != null ? o2.toString() : "";
+            return s1.compareToIgnoreCase(s2);
+        });
+        mTable.setRowSorter(rowSorter);
+
+        //Add a table column width monitor to store/restore column widths, order, and sort state
         mTableColumnMonitor = new JTableColumnWidthMonitor(mUserPreferences, mTable, TABLE_PREFERENCE_KEY);
 
         JScrollPane scrollPane = new JScrollPane(mTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
@@ -819,8 +836,31 @@ public class ChannelMetadataPanel extends JPanel implements ListSelectionListene
                 }
             }
 
-            //Re-apply independent mute for non-alias channels when new processing chains are created
-            if(mMutedChannelIds.contains(channel.getChannelID()))
+            //Re-apply mute state when new processing chains are created.
+            //Check both independent mute tracking (non-alias channels) and alias-based
+            //DO_NOT_MONITOR priority (persisted in playlist across restarts).
+            boolean shouldMute = mMutedChannelIds.contains(channel.getChannelID());
+
+            if(!shouldMute)
+            {
+                //Check if any alias in the channel's alias list has DO_NOT_MONITOR priority
+                String aliasListName = channel.getAliasListName();
+
+                if(aliasListName != null && !aliasListName.isEmpty())
+                {
+                    for(Alias alias : mPlaylistManager.getAliasModel().getAliases())
+                    {
+                        if(alias.hasList() && alias.getAliasListName().equalsIgnoreCase(aliasListName)
+                            && alias.getPlaybackPriority() == Priority.DO_NOT_MONITOR)
+                        {
+                            shouldMute = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if(shouldMute)
             {
                 ProcessingChain processingChain = mChannelProcessingManager.getProcessingChain(channel);
 
@@ -834,7 +874,6 @@ public class ChannelMetadataPanel extends JPanel implements ListSelectionListene
                         }
                     }
                 }
-
             }
         }
     }
