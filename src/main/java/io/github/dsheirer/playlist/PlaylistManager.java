@@ -36,6 +36,12 @@ import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.playlist.IAliasListRefreshListener;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.module.log.EventLogManager;
+import com.google.common.eventbus.Subscribe;
+import io.github.dsheirer.source.tuner.manager.TunerRecoveredEvent;
+import io.github.dsheirer.controller.channel.ChannelEvent;
+import io.github.dsheirer.controller.channel.Channel;
+import java.util.List;
+
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.playlist.PlaylistPreference;
 import io.github.dsheirer.sample.Listener;
@@ -106,11 +112,12 @@ public class PlaylistManager implements Listener<ChannelEvent>
 
         mChannelModel = new ChannelModel(mAliasModel);
         mChannelProcessingManager = new ChannelProcessingManager(mChannelMapModel, eventLogManager, mTunerManager,
-            mAliasModel, mUserPreferences);
-
-        //Register the channel processing manager to receive global channel stop processing requests so that it can
+            mAliasModel, mUserPreferences);        //Register the channel processing manager to receive global channel stop processing requests so that it can
         //respond to tuner shutdown (ie error) events
         MyEventBus.getGlobalEventBus().register(mChannelProcessingManager);
+
+        //Register PlaylistManager to receive tuner recovered events to restart auto-start channels
+        MyEventBus.getGlobalEventBus().register(this);
 
         mChannelModel.addListener(mChannelProcessingManager);
         mChannelProcessingManager.addChannelEventListener(mChannelModel);
@@ -628,6 +635,21 @@ public class PlaylistManager implements Listener<ChannelEvent>
 
             mPlaylistSaveFuture = null;
             mPlaylistSavePending.set(false);
+        }
+    }
+
+    /**
+     * Handles TunerRecoveredEvent by automatically starting channels configured to auto-start.
+     */
+    @Subscribe
+    public void handleTunerRecovered(TunerRecoveredEvent event) {
+        mLog.info("Tuner recovered: " + event.getTuner().getId() + " - Checking for auto-start channels.");
+        List<Channel> autoStartChannels = mChannelModel.getAutoStartChannels();
+        for (Channel channel : autoStartChannels) {
+            if (!mChannelProcessingManager.isProcessing(channel)) {
+                mLog.info("Auto-starting channel after tuner recovery: " + channel.getName());
+                mChannelProcessingManager.receive(ChannelEvent.requestEnable(channel));
+            }
         }
     }
 }

@@ -43,7 +43,12 @@ public enum TunerStatus
     /**
      * A tuner that has an error state and is unusable
      */
-    ERROR("Error");
+    ERROR("Error"),
+
+    /**
+     * A tuner that is recovering from an error
+     */
+    RECOVERING("Recovering");
 
     private String mLabel;
 
