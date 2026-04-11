@@ -205,7 +205,8 @@ public class FxTableColumnMonitor
             if(orderedColumns.size() == columnCount && !orderedColumns.equals(mTableView.getColumns()))
             {
                 @SuppressWarnings({"unchecked", "rawtypes"})
-                List columns = (List) mTableView.getColumns();
+                javafx.collections.ObservableList columns =
+                    (javafx.collections.ObservableList) mTableView.getColumns();
                 columns.setAll(orderedColumns);
             }
 
@@ -240,7 +241,8 @@ public class FxTableColumnMonitor
                 if(!newSortOrder.isEmpty())
                 {
                     @SuppressWarnings({"unchecked", "rawtypes"})
-                    List sortOrder = (List) mTableView.getSortOrder();
+                    javafx.collections.ObservableList sortOrder =
+                        (javafx.collections.ObservableList) mTableView.getSortOrder();
                     sortOrder.setAll(newSortOrder);
                     mTableView.sort();
                 }
@@ -342,11 +344,13 @@ public class FxTableColumnMonitor
     {
         if(value == null)
         {
-            java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.preference.swing.SwingPreference.class).remove(key);
+            java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.preference.swing.SwingPreference.class)
+                .remove(key);
         }
         else
         {
-            java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.preference.swing.SwingPreference.class).put(key, value);
+            java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.preference.swing.SwingPreference.class)
+                .put(key, value);
         }
     }
 }
