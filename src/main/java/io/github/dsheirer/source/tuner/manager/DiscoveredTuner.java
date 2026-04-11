@@ -20,6 +20,12 @@
 package io.github.dsheirer.source.tuner.manager;
 
 import io.github.dsheirer.source.SourceException;
+import io.github.dsheirer.eventbus.MyEventBus;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import io.github.dsheirer.util.ThreadPool;
+
 import io.github.dsheirer.source.tuner.ITunerErrorListener;
 import io.github.dsheirer.source.tuner.Tuner;
 import io.github.dsheirer.source.tuner.TunerClass;
@@ -41,6 +47,8 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
     private List<IDiscoveredTunerStatusListener> mListeners = new CopyOnWriteArrayList();
     protected Tuner mTuner;
     protected TunerConfiguration mTunerConfiguration;
+    private ScheduledFuture<?> mRecoveryTask;
+    private AtomicInteger mRecoveryAttempts = new AtomicInteger(0);
 
     /**
      * Tuner Class
@@ -268,6 +276,21 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
     @Override
     public void setErrorMessage(String errorMessage)
     {
+        if ("USB Error - Transfer Buffers Exhausted".equals(errorMessage)) {
+            mErrorMessage = errorMessage;
+            mLog.info("Tuner Error - Initiating Recovery - " + getId() + " Error: " + errorMessage);
+            stop();
+            setTunerStatus(TunerStatus.RECOVERING);
+
+            if (mRecoveryTask != null && !mRecoveryTask.isDone()) {
+                mRecoveryTask.cancel(true);
+            }
+
+            mRecoveryAttempts.set(0);
+            mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(new RecoveryRunnable(), 30, 30, TimeUnit.SECONDS);
+            return;
+        }
+
         mErrorMessage = errorMessage;
         mLog.info("Tuner Error - Stopping - " + getId() + " Error: " + errorMessage);
         stop();
@@ -309,7 +332,7 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
      */
     public void restart()
     {
-        if(getTunerStatus() == TunerStatus.ERROR)
+        if(getTunerStatus() == TunerStatus.ERROR || getTunerStatus() == TunerStatus.RECOVERING)
         {
             mErrorMessage = null;
 
@@ -336,6 +359,43 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             mLog.info("Stopping Tuner: " + getId());
             getTuner().stop();
             mTuner = null;
+        }
+    }
+
+    private class RecoveryRunnable implements Runnable {
+        @Override
+        public void run() {
+            int attempt = mRecoveryAttempts.incrementAndGet();
+            mLog.info("Attempting tuner recovery for " + getId() + " - Attempt " + attempt + " of 5");
+
+            try {
+                restart();
+
+                if (getTunerStatus() == TunerStatus.ENABLED) {
+                    mLog.info("Successfully recovered tuner " + getId());
+                    if (mRecoveryTask != null) {
+                        mRecoveryTask.cancel(false);
+                    }
+                    MyEventBus.getGlobalEventBus().post(new TunerRecoveredEvent(DiscoveredTuner.this));
+                } else if (attempt >= 5) {
+                    mLog.error("Failed to recover tuner " + getId() + " after 5 attempts.");
+                    if (mRecoveryTask != null) {
+                        mRecoveryTask.cancel(false);
+                    }
+                    setErrorMessage("Permanent USB Error - Transfer Buffers Exhausted");
+                } else {
+                    mLog.warn("Tuner recovery attempt " + attempt + " of 5 failed for " + getId());
+                }
+            } catch (Exception e) {
+                mLog.error("Error during tuner recovery attempt " + attempt + " for " + getId(), e);
+                if (attempt >= 5) {
+                    mLog.error("Failed to recover tuner " + getId() + " after 5 attempts.");
+                    if (mRecoveryTask != null) {
+                        mRecoveryTask.cancel(false);
+                    }
+                    setErrorMessage("Permanent USB Error - Transfer Buffers Exhausted");
+                }
+            }
         }
     }
 }
