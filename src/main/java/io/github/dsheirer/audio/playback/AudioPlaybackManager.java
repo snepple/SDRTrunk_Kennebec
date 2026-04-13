@@ -27,6 +27,10 @@ import io.github.dsheirer.controller.NamingThreadFactory;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.preference.PreferenceType;
 import io.github.dsheirer.preference.UserPreferences;
+
+import io.github.dsheirer.dsp.tone.TwoToneDetector;
+import io.github.dsheirer.audio.broadcast.zello.ZelloBroadcaster;
+
 import io.github.dsheirer.preference.playback.PlayTestAudioRequest;
 import io.github.dsheirer.sample.Broadcaster;
 import io.github.dsheirer.sample.Listener;
@@ -62,6 +66,9 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
     private AudioPlaybackDeviceDescriptor mAudioPlaybackDevice;
     private AudioOutput mAudioOutput;
     private ScheduledFuture<?> mProcessingTask;
+
+    private TwoToneDetector mTwoToneDetector;
+
 
     /**
      * Constructs an instance.
@@ -128,8 +135,14 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
             }
             else if(newSegment.hasAudio())
             {
+                if(mTwoToneDetector != null) {
+                    for(float[] buffer : newSegment.getAudioBuffers()) {
+                        mTwoToneDetector.processAudio(buffer);
+                    }
+                }
                 mAudioSegments.add(newSegment);
             }
+
             else
             {
                 mPendingAudioSegments.add(newSegment);
@@ -266,6 +279,12 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
         mNewAudioSegmentQueue.clear();
         mAudioSegments.clear();
         mAudioRouter.dispose();
+
+        if(mTwoToneDetector != null) {
+            mTwoToneDetector.dispose();
+            mTwoToneDetector = null;
+        }
+
     }
 
     /**

@@ -40,6 +40,10 @@ public class PlaylistV2
     private List<Channel> mChannels = new ArrayList<>();
     private List<ChannelMap> mChannelMaps = new ArrayList<>();
 
+    private List<TwoToneConfiguration> mTwoToneConfigurations = new ArrayList<>();
+    private boolean mToneDiscoveryEnabled = false;
+
+
     public PlaylistV2()
     {
     }
@@ -62,6 +66,34 @@ public class PlaylistV2
     }
 
     @JacksonXmlProperty(isAttribute = false, localName = "alias")
+
+
+    @JacksonXmlProperty(isAttribute = false, localName = "twoTone")
+    public List<TwoToneConfiguration> getTwoToneConfigurations()
+    {
+        return mTwoToneConfigurations;
+    }
+
+    public void setTwoToneConfigurations(List<TwoToneConfiguration> configurations)
+    {
+        if(configurations != null)
+        {
+            mTwoToneConfigurations.clear();
+            mTwoToneConfigurations.addAll(configurations);
+        }
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "toneDiscoveryEnabled")
+    public boolean isToneDiscoveryEnabled()
+    {
+        return mToneDiscoveryEnabled;
+    }
+
+    public void setToneDiscoveryEnabled(boolean enabled)
+    {
+        mToneDiscoveryEnabled = enabled;
+    }
+
     public List<Alias> getAliases()
     {
         return mAliases;

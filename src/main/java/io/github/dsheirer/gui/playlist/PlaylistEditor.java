@@ -28,6 +28,10 @@ import io.github.dsheirer.gui.playlist.channel.ChannelTabRequest;
 import io.github.dsheirer.gui.playlist.manager.PlaylistManagerEditor;
 import io.github.dsheirer.gui.playlist.radioreference.RadioReferenceEditor;
 import io.github.dsheirer.gui.playlist.streaming.StreamingEditor;
+
+import io.github.dsheirer.gui.playlist.twotone.TwoToneEditor;
+import io.github.dsheirer.gui.playlist.twotone.TwoToneTabRequest;
+
 import io.github.dsheirer.gui.preference.PreferenceEditorType;
 import io.github.dsheirer.gui.preference.ViewUserPreferenceEditorRequest;
 import io.github.dsheirer.playlist.PlaylistManager;
@@ -75,6 +79,10 @@ public class PlaylistEditor extends BorderPane
     private Tab mAliasesTab;
     private Tab mRadioReferenceTab;
     private Tab mStreamingTab;
+
+    private Tab mTwoToneTab;
+    private TwoToneEditor mTwoToneEditor;
+
     private AliasEditor mAliasEditor;
     private ChannelEditor mChannelEditor;
 
@@ -114,6 +122,15 @@ public class PlaylistEditor extends BorderPane
                     getAliasEditor().process((AliasTabRequest)request);
                 }
                 break;
+
+            case TWO_TONE:
+                if(request instanceof TwoToneTabRequest)
+                {
+                    getTabPane().getSelectionModel().select(getTwoToneTab());
+                    getTwoToneEditor().process((TwoToneTabRequest)request);
+                }
+                break;
+
             case CHANNEL:
                 if(request instanceof ChannelTabRequest)
                 {
@@ -201,7 +218,7 @@ public class PlaylistEditor extends BorderPane
             mTabPane = new TabPane();
             mTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
             mTabPane.getTabs().addAll(getPlaylistsTab(), getChannelsTab(), getAliasesTab(), getStreamingTab(),
-                getRadioReferenceTab());
+                getRadioReferenceTab(), getTwoToneTab());
         }
 
         return mTabPane;
@@ -247,6 +264,28 @@ public class PlaylistEditor extends BorderPane
         }
 
         return mChannelEditor;
+    }
+
+
+    private Tab getTwoToneTab()
+    {
+        if(mTwoToneTab == null)
+        {
+            mTwoToneTab = new Tab("Two Tones");
+            mTwoToneTab.setContent(getTwoToneEditor());
+        }
+
+        return mTwoToneTab;
+    }
+
+    private TwoToneEditor getTwoToneEditor()
+    {
+        if(mTwoToneEditor == null)
+        {
+            mTwoToneEditor = new TwoToneEditor(mPlaylistManager);
+        }
+
+        return mTwoToneEditor;
     }
 
     private Tab getPlaylistsTab()

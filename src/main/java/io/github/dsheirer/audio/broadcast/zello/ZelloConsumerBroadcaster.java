@@ -648,6 +648,30 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
      * Maps Zello Channel API error strings to Zello Bridge error codes (3001-3009)
      * for consistent diagnostics. See Zello Bridge documentation.
      */
+
+    /**
+     * Sends a text message to the configured Zello channel.
+     * @param text to send
+     */
+    public void sendTextMessage(String text)
+    {
+        if(mWebSocket == null || !mConnected.get() || !mChannelOnline.get())
+        {
+            mLog.warn("{}Cannot send Zello text message - not connected", ch());
+            return;
+        }
+
+        ZelloConfiguration config = getBroadcastConfiguration();
+        JsonObject cmd = new JsonObject();
+        cmd.addProperty("command", "send_text_message");
+        int seq = mSequence.getAndIncrement();
+        cmd.addProperty("seq", seq);
+        mPendingCommands.put(seq, "send_text_message");
+        cmd.addProperty("channel", config.getChannel());
+        cmd.addProperty("text", text);
+        mWebSocket.sendText(mGson.toJson(cmd), true);
+    }
+
     private static int mapBridgeErrorCode(String error)
     {
         if(error == null) return 3008;
