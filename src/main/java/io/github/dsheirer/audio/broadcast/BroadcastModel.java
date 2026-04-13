@@ -56,6 +56,7 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
     public static final String TEMPORARY_STREAM_FILE_SUFFIX = "temporary_streaming_file_";
 
     private static final String UNIQUE_NAME_REGEX = "(.*)\\((\\d*)\\)";
+    private static final Pattern UNIQUE_NAME_PATTERN = Pattern.compile(UNIQUE_NAME_REGEX);
 
     public static final int COLUMN_BROADCAST_SERVER_TYPE = 0;
     public static final int COLUMN_STREAM_NAME = 1;
@@ -195,35 +196,28 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
         while(!isUniqueName(configuration.getName(), configuration))
         {
             String currentName = configuration.getName();
+            Matcher m = UNIQUE_NAME_PATTERN.matcher(currentName);
 
-            if(currentName.matches(UNIQUE_NAME_REGEX))
+            if(m.matches())
             {
                 int currentVersion = 1;
 
                 StringBuilder sb = new StringBuilder();
-                Matcher m = Pattern.compile(UNIQUE_NAME_REGEX).matcher(currentName);
 
-                if(m.find())
+                String version = m.group(2);
+
+                try
                 {
-                    String version = m.group(2);
-
-                    try
-                    {
-                        currentVersion = Integer.parseInt(version);
-                    }
-                    catch(Exception e)
-                    {
-                        //Couldn't parse the version number -- keep incrementing until we find a winner
-                    }
-
-                    currentVersion++;
-
-                    sb.append(m.group(1)).append("(").append(currentVersion).append(")");
+                    currentVersion = Integer.parseInt(version);
                 }
-                else
+                catch(Exception e)
                 {
-                    sb.append(configuration.getName()).append("(").append(currentVersion).append(")");
+                    //Couldn't parse the version number -- keep incrementing until we find a winner
                 }
+
+                currentVersion++;
+
+                sb.append(m.group(1)).append("(").append(currentVersion).append(")");
 
                 configuration.setName(sb.toString());
             }
