@@ -29,6 +29,7 @@ import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.UIManager;
 
 /**
  * Displays one or more audio channel panels.
@@ -46,10 +47,10 @@ public class AudioChannelsPanel extends JPanel
     public AudioChannelsPanel(IconModel iconModel, UserPreferences userPreferences, SettingsManager settingsManager,
                               IAudioController controller, AliasModel aliasModel)
     {
-        setLayout(new MigLayout("insets 0 0 0 0",
+        setLayout(new MigLayout("insets 0 5 0 5, gapx 5",
             "[][sizegroup abc,grow,fill][][sizegroup abc,grow,fill]", "[grow,fill]"));
 
-        setBackground(Color.BLACK);
+        setBackground(UIManager.getColor("Panel.background"));
 
         addSeparator();
 
@@ -92,7 +93,8 @@ public class AudioChannelsPanel extends JPanel
     private void addSeparator()
     {
         JSeparator separator = new JSeparator(JSeparator.VERTICAL);
-        separator.setBackground(Color.DARK_GRAY);
+        separator.setForeground(UIManager.getColor("Component.borderColor") != null ? UIManager.getColor("Component.borderColor") : Color.LIGHT_GRAY);
+        separator.setBackground(UIManager.getColor("Panel.background"));
         add(separator);
     }
 }

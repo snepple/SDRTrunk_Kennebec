@@ -111,6 +111,7 @@ public class ControllerPanel extends JPanel
         mCardPanel.add(mTunerManagerPanel, "tuners");
 
         add(mCardPanel, BorderLayout.CENTER);
+        add(mAudioPanel, BorderLayout.NORTH);
     }
 
     public void addView(String id, java.awt.Component view) {

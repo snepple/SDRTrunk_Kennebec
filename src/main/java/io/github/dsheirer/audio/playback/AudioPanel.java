@@ -44,6 +44,8 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.BorderFactory;
 
 /**
  * Audio playback panel
@@ -85,8 +87,9 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
      */
     private void init()
     {
-        setLayout(new MigLayout("insets 0 0 0 0", "[]0[grow,fill]", "[fill]0[]"));
-        setBackground(Color.BLACK);
+        setLayout(new MigLayout("insets 2 5 2 5", "[]5[grow,fill]", "[fill]0[]"));
+        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor") != null ? UIManager.getColor("Component.borderColor") : Color.LIGHT_GRAY));
+        setBackground(UIManager.getColor("Panel.background"));
         mMuteButton = new MuteButton();
         mMuteButton.setBackground(getBackground());
         add(mMuteButton);

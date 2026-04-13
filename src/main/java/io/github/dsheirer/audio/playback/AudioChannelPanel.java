@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 
 /**
  * UI to wrap an audio channel and provide display of metadata and playback state information.
@@ -78,7 +79,7 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
     private List<Alias> mAliases = Collections.EMPTY_LIST;
     private final Lock mLock = new ReentrantLock();
 
-    private final Font mFont = new Font(Font.MONOSPACED, Font.PLAIN, 16);
+    private final Font mFont = UIManager.getFont("Label.font") != null ? UIManager.getFont("Label.font").deriveFont(13f) : new Font(Font.SANS_SERIF, Font.PLAIN, 13);
     private final Color mBackgroundColor;
     private final Color mLabelColor;
     private final Color mMutedColor;
@@ -113,10 +114,10 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
             mAudioChannel.setIdentifierCollectionListener(new AudioMetadataProcessor());
         }
 
-        mBackgroundColor = SystemProperties.getInstance().get(PROPERTY_COLOR_BACKGROUND, Color.BLACK);
-        mLabelColor = SystemProperties.getInstance().get(PROPERTY_COLOR_LABEL, Color.LIGHT_GRAY);
+        mBackgroundColor = SystemProperties.getInstance().get(PROPERTY_COLOR_BACKGROUND, UIManager.getColor("Panel.background"));
+        mLabelColor = SystemProperties.getInstance().get(PROPERTY_COLOR_LABEL, UIManager.getColor("Label.foreground"));
         mMutedColor = SystemProperties.getInstance().get(PROPERTY_COLOR_MUTED, Color.RED);
-        mValueColor = SystemProperties.getInstance().get(PROPERTY_COLOR_VALUE, Color.GREEN);
+        mValueColor = SystemProperties.getInstance().get(PROPERTY_COLOR_VALUE, UIManager.getColor("Label.foreground"));
 
         init();
     }
@@ -151,8 +152,8 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         //Register to receive preference updates
         MyEventBus.getGlobalEventBus().register(this);
 
-        setLayout(new MigLayout("align center center, insets 0 0 0 0",
-            "[][][align right]0[grow,fill]", ""));
+        setLayout(new MigLayout("align center center, insets 0 2 0 2",
+            "[][][align right]5[grow,fill]", ""));
         setBackground(mBackgroundColor);
 
         mMutedLabel.setFont(mFont);
@@ -161,7 +162,7 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         add(mMutedLabel);
 
         mChannelName = new JLabel(mAudioChannel != null ? mAudioChannel.getChannelName() : " ");
-        mChannelName.setFont(mFont);
+        mChannelName.setFont(mFont.deriveFont(Font.BOLD));
         mChannelName.setForeground(mLabelColor);
         add(mChannelName);
 
@@ -169,7 +170,7 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         mIconLabel.setForeground(mValueColor);
         add(mIconLabel);
 
-        mIdentifierLabel.setFont(mFont);
+        mIdentifierLabel.setFont(mFont.deriveFont(Font.BOLD));
         mIdentifierLabel.setForeground(mValueColor);
         add(mIdentifierLabel, "wmin 10lp");
     }

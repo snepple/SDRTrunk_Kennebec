@@ -63,7 +63,7 @@ public class SidebarPanel extends JPanel {
         removeAll();
 
         // Toggle Button
-        JButton toggleBtn = new JButton(mCollapsed ? "\u2630" : "\u2715");
+        JButton toggleBtn = new JButton(mCollapsed ? "\u276F" : "\u2715");
         toggleBtn.setForeground(TEXT_COLOR);
         toggleBtn.setFont(toggleBtn.getFont().deriveFont(20f));
         toggleBtn.setContentAreaFilled(false);
@@ -155,7 +155,7 @@ public class SidebarPanel extends JPanel {
         }
 
         private void createView() {
-            mView = new JPanel(new MigLayout("insets 8, gapx 10", "[][grow]", "[]"));
+            mView = new JPanel(new MigLayout("insets 8, gapx 10, hidemode 3", "[][grow]", "[]"));
             mView.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
             mIconLabel = new JLabel(IconFontSwing.buildIcon(mIcon, 16, TEXT_COLOR));
@@ -243,7 +243,7 @@ public class SidebarPanel extends JPanel {
             public JPanel getView() { return mView; }
 
             private void createView() {
-                mView = new JPanel(new MigLayout("insets 6 30 6 6", "[grow]", "[]"));
+                mView = new JPanel(new MigLayout("insets 6 30 6 6, hidemode 3", "[grow]", "[]"));
                 mView.setCursor(new Cursor(Cursor.HAND_CURSOR));
                 mTextLabel = new JLabel(mLabel);
                 mTextLabel.setForeground(TEXT_COLOR);
