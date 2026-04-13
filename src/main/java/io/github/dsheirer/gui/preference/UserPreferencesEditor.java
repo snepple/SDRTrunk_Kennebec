@@ -66,11 +66,18 @@ public class UserPreferencesEditor extends BorderPane
      *
      * @param userPreferences to edit
      */
-    public UserPreferencesEditor(UserPreferences userPreferences)
+    private io.github.dsheirer.icon.IconModel mIconModel;
+
+    /**
+     * Constructs an instance
+     *
+     * @param userPreferences to edit
+     */
+    public UserPreferencesEditor(UserPreferences userPreferences, io.github.dsheirer.icon.IconModel iconModel)
     {
         mUserPreferences = userPreferences;
+        mIconModel = iconModel;
 
-        setTop(getMenuBar());
 
         HBox contentBox = new HBox();
         HBox.setHgrow(getEditorAndButtonsBox(), Priority.ALWAYS);
@@ -205,6 +212,11 @@ public class UserPreferencesEditor extends BorderPane
             treeRoot.getChildren().add(sourceItem);
             sourceItem.setExpanded(true);
 
+            TreeItem<String> iconItem = new TreeItem<>("Icons");
+            iconItem.getChildren().add(new TreeItem(PreferenceEditorType.ICON_MANAGER));
+            treeRoot.getChildren().add(iconItem);
+            iconItem.setExpanded(true);
+
             mEditorSelectionTreeView = new TreeView();
             mEditorSelectionTreeView.setShowRoot(false);
             mEditorSelectionTreeView.setRoot(treeRoot);
@@ -277,7 +289,7 @@ public class UserPreferencesEditor extends BorderPane
             }
             else
             {
-                editor = PreferenceEditorFactory.getEditor(type, getUserPreferences());
+                editor = PreferenceEditorFactory.getEditor(type, getUserPreferences(), mIconModel);
                 mEditors.put(type, editor);
             }
         }

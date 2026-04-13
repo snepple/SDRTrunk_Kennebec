@@ -38,6 +38,9 @@ import javax.swing.JToolBar;
 import io.github.dsheirer.gui.VisibilityListener;
 
 import javax.swing.event.ChangeListener;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.swing.IconFontSwing;
+import javax.swing.JLabel;
 
 /**
  * Swing panel for Now Playing channels table and channel details tab set.
@@ -52,6 +55,8 @@ public class NowPlayingPanel extends JPanel
     private JideTabbedPane mTabbedPane;
     private JideSplitPane mSplitPane;
     private boolean mDetailTabsVisible;
+    private javax.swing.JComponent mBroadcastStatusPanel;
+    private boolean mBroadcastStatusVisible = false;
     private VisibilityListener mVisibilityListener;
     private ChangeListener mTabbedPaneChangeListener;
 
@@ -88,6 +93,23 @@ public class NowPlayingPanel extends JPanel
      * Change the visibility of the channel details tabs panel.
      * @param visible true to show or false to hide.
      */
+    public void setBroadcastStatusPanel(javax.swing.JComponent panel) {
+        mBroadcastStatusPanel = panel;
+    }
+
+    public void setBroadcastStatusPanelVisible(boolean visible) {
+        if (visible ^ mBroadcastStatusVisible) {
+            mBroadcastStatusVisible = visible;
+            if (mBroadcastStatusVisible && mBroadcastStatusPanel != null) {
+                add(mBroadcastStatusPanel, "wrap, growx, spanx");
+            } else if (mBroadcastStatusPanel != null) {
+                remove(mBroadcastStatusPanel);
+            }
+            revalidate();
+            repaint();
+        }
+    }
+
     public void setDetailTabsVisible(boolean visible)
     {
         //Only adjust if there is a change in state
@@ -149,26 +171,27 @@ public class NowPlayingPanel extends JPanel
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
 
-        JToggleButton specBtn = new JToggleButton("Spectrum/Waterfall");
+        JToggleButton specBtn = new JToggleButton("Spectrum/Waterfall", IconFontSwing.buildIcon(FontAwesome.PLAY, 14, Color.BLACK));
         specBtn.addActionListener(e -> {
             if(mVisibilityListener != null) mVisibilityListener.onToggleSpectrum();
         });
 
-        JToggleButton detailsBtn = new JToggleButton("Channel Details");
+        JToggleButton detailsBtn = new JToggleButton("Channel Details", IconFontSwing.buildIcon(FontAwesome.LIST, 14, Color.BLACK));
         detailsBtn.addActionListener(e -> {
             if(mVisibilityListener != null) mVisibilityListener.onToggleDetails();
         });
 
-        JToggleButton streamBtn = new JToggleButton("Streaming Status");
+        JToggleButton streamBtn = new JToggleButton("Streaming Status", IconFontSwing.buildIcon(FontAwesome.VOLUME_UP, 14, Color.BLACK));
         streamBtn.addActionListener(e -> {
             if(mVisibilityListener != null) mVisibilityListener.onToggleStreaming();
         });
 
-        JToggleButton resourceBtn = new JToggleButton("Resource Status");
+        JToggleButton resourceBtn = new JToggleButton("Resource Status", IconFontSwing.buildIcon(FontAwesome.MAP, 14, Color.BLACK));
         resourceBtn.addActionListener(e -> {
             if(mVisibilityListener != null) mVisibilityListener.onToggleResource();
         });
 
+        toolBar.add(new JLabel("View Options: "));
         toolBar.add(specBtn);
         toolBar.add(detailsBtn);
         toolBar.add(streamBtn);

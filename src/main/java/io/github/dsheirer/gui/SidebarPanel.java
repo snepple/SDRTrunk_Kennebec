@@ -22,10 +22,10 @@ public class SidebarPanel extends JPanel {
     private boolean mCollapsed = false;
     private SidebarListener mListener;
 
-    private final Color BG_COLOR = new Color(30, 30, 30);
-    private final Color HOVER_COLOR = new Color(50, 50, 50);
-    private final Color ACTIVE_COLOR = new Color(70, 70, 70);
-    private final Color TEXT_COLOR = Color.WHITE;
+    private final Color BG_COLOR = new Color(240, 240, 240);
+    private final Color HOVER_COLOR = new Color(220, 220, 220);
+    private final Color ACTIVE_COLOR = new Color(200, 200, 200);
+    private final Color TEXT_COLOR = Color.BLACK;
 
     private List<SidebarItem> mItems = new ArrayList<>();
 
@@ -53,7 +53,6 @@ public class SidebarPanel extends JPanel {
         mItems.add(new SidebarItem("Logs", FontAwesome.FILE_TEXT, "logs", true));
 
         mItems.add(new SidebarItem("Audio Recordings", FontAwesome.MICROPHONE, "audio_recordings", false));
-        mItems.add(new SidebarItem("Icon Manager", FontAwesome.PICTURE_O, "icon_manager", true));
         mItems.add(new SidebarItem(".bits Viewer", FontAwesome.FILE_CODE_O, "msg_viewer", true));
         mItems.add(new SidebarItem("User Preferences", FontAwesome.COGS, "user_prefs", true));
 
@@ -64,7 +63,9 @@ public class SidebarPanel extends JPanel {
         removeAll();
 
         // Toggle Button
-        JButton toggleBtn = new JButton(IconFontSwing.buildIcon(mCollapsed ? FontAwesome.CHEVRON_RIGHT : FontAwesome.CHEVRON_LEFT, 16, TEXT_COLOR));
+        JButton toggleBtn = new JButton(mCollapsed ? "\u2630" : "\u2715");
+        toggleBtn.setForeground(TEXT_COLOR);
+        toggleBtn.setFont(toggleBtn.getFont().deriveFont(20f));
         toggleBtn.setContentAreaFilled(false);
         toggleBtn.setBorderPainted(false);
         toggleBtn.setFocusPainted(false);
@@ -113,6 +114,7 @@ public class SidebarPanel extends JPanel {
         private boolean mExpanded = false;
         private List<SubItem> mSubItems = new ArrayList<>();
         private JPanel mView;
+            private JLabel mTextLabel;
         private JLabel mIconLabel;
         private JLabel mTextLabel;
 
@@ -158,17 +160,14 @@ public class SidebarPanel extends JPanel {
             mView.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
             mIconLabel = new JLabel(IconFontSwing.buildIcon(mIcon, 16, TEXT_COLOR));
-            mIconLabel.setToolTipText(mLabel);
             mTextLabel = new JLabel(mLabel);
             mTextLabel.setForeground(TEXT_COLOR);
             mTextLabel.setFont(mTextLabel.getFont().deriveFont(Font.BOLD));
 
             mView.add(mIconLabel);
-            if (!mCollapsed) {
-                mView.add(mTextLabel);
-            } else {
-                mView.setLayout(new MigLayout("insets 8", "[center, grow]", "[]"));
-            }
+            mView.add(mTextLabel);
+            mTextLabel.setVisible(!mCollapsed);
+
 
             updateStyle();
 
@@ -215,11 +214,10 @@ public class SidebarPanel extends JPanel {
 
         public void updateStyle() {
             mView.setBackground(mActive ? ACTIVE_COLOR : BG_COLOR);
-            if (!mCollapsed && mView.getComponentCount() == 1) {
-                mView.add(mTextLabel);
-            } else if (mCollapsed && mView.getComponentCount() > 1) {
-                mView.remove(mTextLabel);
-            }
+            if (mTextLabel != null) mTextLabel.setVisible(!mCollapsed);
+            mView.setToolTipText(mCollapsed ? mLabel : null);
+            mView.revalidate();
+            mView.repaint();
         }
 
         private class SubItem {
@@ -227,6 +225,7 @@ public class SidebarPanel extends JPanel {
             private String mId;
             private boolean mActive = false;
             private JPanel mView;
+            private JLabel mTextLabel;
 
             public SubItem(String label, String id) {
                 mLabel = label;
@@ -247,11 +246,10 @@ public class SidebarPanel extends JPanel {
             private void createView() {
                 mView = new JPanel(new MigLayout("insets 6 30 6 6", "[grow]", "[]"));
                 mView.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                mView.setToolTipText(mLabel);
-
-                JLabel textLabel = new JLabel(mLabel);
-                textLabel.setForeground(TEXT_COLOR);
-                mView.add(textLabel);
+                mTextLabel = new JLabel(mLabel);
+                mTextLabel.setForeground(TEXT_COLOR);
+                mView.add(mTextLabel);
+                mTextLabel.setVisible(!mCollapsed);
 
                 updateStyle();
 
@@ -281,6 +279,10 @@ public class SidebarPanel extends JPanel {
 
             private void updateStyle() {
                 mView.setBackground(mActive ? ACTIVE_COLOR : BG_COLOR);
+                if (mTextLabel != null) mTextLabel.setVisible(!mCollapsed);
+                mView.setToolTipText(mCollapsed ? mLabel : null);
+                mView.revalidate();
+                mView.repaint();
             }
         }
     }

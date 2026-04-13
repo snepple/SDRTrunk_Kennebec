@@ -32,7 +32,8 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.control.Button;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.geometry.Insets;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseButton;
@@ -71,28 +72,31 @@ public class MessageRecordingViewer extends VBox
         HBox toolbar = new HBox(10);
         toolbar.setPadding(new Insets(10));
 
-        Button dmrBtn = new Button("New DMR Viewer");
-        dmrBtn.setOnAction(event -> {
+        MenuButton addViewerBtn = new MenuButton("+");
+
+        MenuItem dmrItem = new MenuItem("New DMR Viewer");
+        dmrItem.setOnAction(event -> {
             Tab tab = new LabeledTab("DMR-" + mTabCounterDmr++, new DmrViewer());
             getTabPane().getTabs().add(tab);
             getTabPane().getSelectionModel().select(tab);
         });
 
-        Button p25p1Btn = new Button("New P25 Phase 1 Viewer");
-        p25p1Btn.setOnAction(event -> {
+        MenuItem p25p1Item = new MenuItem("New P25 Phase 1 Viewer");
+        p25p1Item.setOnAction(event -> {
             Tab tab = new LabeledTab("P25P1-" + mTabCounterP25P1++, new P25P1Viewer(mUserPreferences));
             getTabPane().getTabs().add(tab);
             getTabPane().getSelectionModel().select(tab);
         });
 
-        Button p25p2Btn = new Button("New P25 Phase 2 Viewer");
-        p25p2Btn.setOnAction(event -> {
+        MenuItem p25p2Item = new MenuItem("New P25 Phase 2 Viewer");
+        p25p2Item.setOnAction(event -> {
             Tab tab = new LabeledTab("P25P2-" + mTabCounterP25P2++, new P25P2Viewer());
             getTabPane().getTabs().add(tab);
             getTabPane().getSelectionModel().select(tab);
         });
 
-        toolbar.getChildren().addAll(dmrBtn, p25p1Btn, p25p2Btn);
+        addViewerBtn.getItems().addAll(dmrItem, p25p1Item, p25p2Item);
+        toolbar.getChildren().add(addViewerBtn);
         return toolbar;
     }
 

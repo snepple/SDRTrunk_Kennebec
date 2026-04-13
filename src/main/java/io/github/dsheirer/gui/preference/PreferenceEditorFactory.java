@@ -37,7 +37,7 @@ import javafx.scene.Node;
  */
 public class PreferenceEditorFactory
 {
-    public static Node getEditor(PreferenceEditorType preferenceEditorType, UserPreferences userPreferences)
+    public static Node getEditor(PreferenceEditorType preferenceEditorType, UserPreferences userPreferences, io.github.dsheirer.icon.IconModel iconModel)
     {
         switch(preferenceEditorType)
         {
@@ -65,6 +65,8 @@ public class PreferenceEditorFactory
                 return new TalkgroupFormatPreferenceEditor(userPreferences);
             case VECTOR_CALIBRATION:
                 return new VectorCalibrationPreferenceEditor(userPreferences);
+            case ICON_MANAGER:
+                return new io.github.dsheirer.gui.icon.IconManager(iconModel);
         }
 
         return null;

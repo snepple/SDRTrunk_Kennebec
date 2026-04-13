@@ -75,6 +75,7 @@ public class ControllerPanel extends JPanel
     private JPanel mCardPanel;
     private CardLayout mCardLayout;
     private JList<String> mSidebarList;
+    private javax.swing.JComponent mResourcePanel;
 
     public ControllerPanel(PlaylistManager playlistManager, AudioPlaybackManager audioPlaybackManager,
                            IconModel iconModel, MapService mapService, SettingsManager settingsManager,
@@ -118,6 +119,22 @@ public class ControllerPanel extends JPanel
 
     public void showView(String id) {
         mCardLayout.show(mCardPanel, id);
+    }
+
+    public void setResourcePanel(javax.swing.JComponent resourcePanel) {
+        mResourcePanel = resourcePanel;
+    }
+
+    public void setResourcePanelVisible(boolean visible) {
+        if (mResourcePanel != null) {
+            if (visible) {
+                add(mResourcePanel, BorderLayout.SOUTH);
+            } else {
+                remove(mResourcePanel);
+            }
+            revalidate();
+            repaint();
+        }
     }
 
 }

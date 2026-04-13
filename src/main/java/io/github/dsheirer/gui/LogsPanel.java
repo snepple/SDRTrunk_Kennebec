@@ -7,6 +7,9 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.ListSelectionModel;
@@ -26,6 +29,8 @@ public class LogsPanel extends JPanel {
     private DefaultListModel<String> mEventListModel;
     private JList<String> mEventList;
     private UserPreferences mUserPreferences;
+    private JTextField mAppSearchField;
+    private JTextField mEventSearchField;
 
     public LogsPanel(UserPreferences userPreferences) {
         mUserPreferences = userPreferences;
@@ -58,13 +63,35 @@ public class LogsPanel extends JPanel {
 
         loadLogs();
 
+
+        mAppSearchField = new JTextField();
+        mAppSearchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { loadLogs(); }
+            public void removeUpdate(DocumentEvent e) { loadLogs(); }
+            public void changedUpdate(DocumentEvent e) { loadLogs(); }
+        });
+
+        mEventSearchField = new JTextField();
+        mEventSearchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { loadLogs(); }
+            public void removeUpdate(DocumentEvent e) { loadLogs(); }
+            public void changedUpdate(DocumentEvent e) { loadLogs(); }
+        });
+
         JPanel appPanel = new JPanel(new BorderLayout());
-        appPanel.add(new JLabel("Application Logs", JLabel.CENTER), BorderLayout.NORTH);
+        JPanel appHeader = new JPanel(new BorderLayout());
+        appHeader.add(new JLabel("Application Logs", JLabel.CENTER), BorderLayout.NORTH);
+        appHeader.add(mAppSearchField, BorderLayout.SOUTH);
+        appPanel.add(appHeader, BorderLayout.NORTH);
         appPanel.add(new JScrollPane(mAppList), BorderLayout.CENTER);
 
         JPanel eventPanel = new JPanel(new BorderLayout());
-        eventPanel.add(new JLabel("Channel Event Logs", JLabel.CENTER), BorderLayout.NORTH);
+        JPanel eventHeader = new JPanel(new BorderLayout());
+        eventHeader.add(new JLabel("Channel Event Logs", JLabel.CENTER), BorderLayout.NORTH);
+        eventHeader.add(mEventSearchField, BorderLayout.SOUTH);
+        eventPanel.add(eventHeader, BorderLayout.NORTH);
         eventPanel.add(new JScrollPane(mEventList), BorderLayout.CENTER);
+
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, appPanel, eventPanel);
         splitPane.setResizeWeight(0.5);
@@ -75,6 +102,7 @@ public class LogsPanel extends JPanel {
         JPanel btnPanel = new JPanel();
         btnPanel.add(refreshBtn);
 
+        add(new JLabel("Double-click a log file to open it in your text editor", JLabel.CENTER), BorderLayout.NORTH);
         add(splitPane, BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
     }
@@ -94,9 +122,12 @@ public class LogsPanel extends JPanel {
         mAppListModel.clear();
         mEventListModel.clear();
 
+        String appSearch = mAppSearchField != null ? mAppSearchField.getText().toLowerCase() : "";
+        String eventSearch = mEventSearchField != null ? mEventSearchField.getText().toLowerCase() : "";
+
         File appDir = mUserPreferences.getDirectoryPreference().getDirectoryApplicationLog().toFile();
         if (appDir.exists() && appDir.isDirectory()) {
-            File[] files = appDir.listFiles((dir, name) -> name.endsWith(".log"));
+            File[] files = appDir.listFiles((dir, name) -> name.endsWith(".log") && name.toLowerCase().contains(appSearch));
             if (files != null) {
                 for (File file : files) {
                     mAppListModel.addElement(file.getName());
@@ -106,7 +137,7 @@ public class LogsPanel extends JPanel {
 
         File eventDir = mUserPreferences.getDirectoryPreference().getDirectoryEventLog().toFile();
         if (eventDir.exists() && eventDir.isDirectory()) {
-            File[] files = eventDir.listFiles((dir, name) -> name.endsWith(".log"));
+            File[] files = eventDir.listFiles((dir, name) -> name.endsWith(".log") && name.toLowerCase().contains(eventSearch));
             if (files != null) {
                 for (File file : files) {
                     mEventListModel.addElement(file.getName());

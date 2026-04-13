@@ -36,6 +36,7 @@ public enum PreferenceEditorType
     SOURCE_TUNERS("Tuners"),
     TALKGROUP_FORMAT("Talkgroup & Radio ID"),
     VECTOR_CALIBRATION("Vector Calibration"),
+    ICON_MANAGER("Icon Manager"),
     DEFAULT("Default");
 
     private String mLabel;

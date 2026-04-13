@@ -252,6 +252,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
                 public void onItemSelected(String id) {
                     if (id.equals("exit")) {
                         processShutdown();
+                        System.exit(0);
                         return;
                     }
                     mCurrentViewId = id;
@@ -263,6 +264,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
                     }
 
                     mControllerPanel.showView(id);
+                    mControllerPanel.setResourcePanelVisible(mResourceStatusVisible && (id.equals("now_playing") || id.equals("tuners")));
 
                     mMainContentPanel.revalidate();
                     mMainContentPanel.repaint();
@@ -317,7 +319,6 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
                     mSettingsManager, mTunerManager, mUserPreferences, mNowPlayingDetailsVisible, this);
 
             mControllerPanel.addView("playlist_editor", mJavaFxWindowManager.getPlaylistEditorPanel());
-            mControllerPanel.addView("icon_manager", mJavaFxWindowManager.getIconManagerPanel());
             mControllerPanel.addView("user_prefs", mJavaFxWindowManager.getUserPreferencesEditorPanel());
             mControllerPanel.addView("msg_viewer", mJavaFxWindowManager.getRecordingViewerPanel());
 
@@ -491,19 +492,15 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         mBroadcastStatusVisible = mPreferences.getBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, false);
 
         //Show broadcast status panel when user requests - disabled by default
-        if(mBroadcastStatusVisible)
-        {
-            mMainContentPanel.add(getBroadcastStatusPanel(), BorderLayout.SOUTH);
-        }
+        mControllerPanel.getNowPlayingPanel().setBroadcastStatusPanel(getBroadcastStatusPanel());
+        mControllerPanel.getNowPlayingPanel().setBroadcastStatusPanelVisible(mBroadcastStatusVisible);
 
         mMainGui.add(mMainContentPanel, BorderLayout.CENTER);
 
         mResourceMonitor.start();
         mResourceStatusVisible = mPreferences.getBoolean(PREFERENCE_RESOURCE_STATUS_VISIBLE, true);
-        if(mResourceStatusVisible)
-        {
-            mMainGui.add(getResourceStatusPanel(), BorderLayout.SOUTH);
-        }
+        mControllerPanel.setResourcePanel(getResourceStatusPanel());
+        mControllerPanel.setResourcePanelVisible(mResourceStatusVisible && (mCurrentViewId.equals("now_playing") || mCurrentViewId.equals("tuners")));
 
     }
 
@@ -550,24 +547,13 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
     /**
      * Toggles visibility of the broadcast channels status panel at the bottom of the controller panel
      */
-    private void toggleBroadcastStatusPanelVisibility()
-    {
+    private void toggleBroadcastStatusPanelVisibility() {
         mBroadcastStatusVisible = !mBroadcastStatusVisible;
-
+        mPreferences.putBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, mBroadcastStatusVisible);
         EventQueue.invokeLater(() -> {
-            if(mBroadcastStatusVisible)
-            {
-                mMainContentPanel.add(getBroadcastStatusPanel(), BorderLayout.SOUTH);
-            }
-            else
-            {
-                mMainContentPanel.remove(getBroadcastStatusPanel());
-            }
-
+            mControllerPanel.getNowPlayingPanel().setBroadcastStatusPanelVisible(mBroadcastStatusVisible);
             mMainGui.revalidate();
         });
-
-        mPreferences.putBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, mBroadcastStatusVisible);
     }
 
     /**
@@ -587,24 +573,13 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
     /**
      * Toggles visibility of the resource status panel at the bottom of the main UI window
      */
-    private void toggleResourceStatusPanelVisibility()
-    {
+    private void toggleResourceStatusPanelVisibility() {
         mResourceStatusVisible = !mResourceStatusVisible;
+        mPreferences.putBoolean(PREFERENCE_RESOURCE_STATUS_VISIBLE, mResourceStatusVisible);
 
         EventQueue.invokeLater(() -> {
-            if(mResourceStatusVisible)
-            {
-                mMainGui.add(getResourceStatusPanel(), BorderLayout.SOUTH);
-            }
-            else
-            {
-                mMainGui.remove(getResourceStatusPanel());
-            }
-
-            mMainGui.revalidate();
+            mControllerPanel.setResourcePanelVisible(mResourceStatusVisible && (mCurrentViewId.equals("now_playing") || mCurrentViewId.equals("tuners")));
         });
-
-        mPreferences.putBoolean(PREFERENCE_RESOURCE_STATUS_VISIBLE, mResourceStatusVisible);
     }
 
     /**
