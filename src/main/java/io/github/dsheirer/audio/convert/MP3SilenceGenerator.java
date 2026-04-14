@@ -121,7 +121,7 @@ public class MP3SilenceGenerator implements ISilenceGenerator
         return c;
     }
 
-    /* TODO: Rework for MP3SilenceGenerator returning IAudioFrames
+
     public static void main(String[] args)
     {
         mLog.debug("Starting ...");
@@ -132,19 +132,19 @@ public class MP3SilenceGenerator implements ISilenceGenerator
 
 //        for(; x < 1000; x += 10)
 //        {
-        List<byte[]> silenceFrames = generator.generate(x);
+        var silenceFrames = generator.generate(x);
 
-        mLog.debug("Generated [" + silenceFrames.size() + "] silence frames");
+        mLog.debug("Generated [" + silenceFrames.getFrames().size() + "] silence frames");
 
-        for(byte[] silence: silenceFrames)
+        for(byte[] silence: silenceFrames.getFrames())
         {
             mLog.debug("Silence:" + x + " Length:" + silence.length);
         }
 
-        MP3FrameInspector.inspect(silenceFrames);
+        MP3FrameInspector.inspect(silenceFrames.getFrames());
 //        }
 
         mLog.debug("Finished");
     }
-    */
+
 }

@@ -1,46 +1,22 @@
-package io.github.dsheirer.gui.playlist.twotone;
+import sys
 
-import io.github.dsheirer.playlist.PlaylistManager;
-import io.github.dsheirer.playlist.TwoToneConfiguration;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.geometry.Pos;
-import javafx.geometry.Insets;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.scene.control.cell.PropertyValueFactory;
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.stream.Collectors;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import java.nio.file.Path;
-import javafx.beans.binding.Bindings;
-import javafx.util.converter.NumberStringConverter;
+with open('src/main/java/io/github/dsheirer/gui/playlist/twotone/TwoToneEditor.java', 'r') as f:
+    content = f.read()
 
-public class TwoToneEditor extends VBox
-{
-    private final PlaylistManager mPlaylistManager;
-    private TableView<TwoToneConfiguration> mTableView;
-    private ObservableList<TwoToneConfiguration> mObservableConfigs;
-    private TextField mAliasField;
-    private TextField mToneAField;
-    private TextField mToneBField;
-    private TextField mTemplateField;
-    private TextField mZelloChannelField;
-    private CheckBox mZelloAlertEnabledBox;
-    private ComboBox<String> mAlertToneFileBox;
+# From master we see this code was supposed to be there:
+# TextField topicField = new TextField();
+# TextArea payloadArea = new TextArea();
+# payloadArea.setPrefRowCount(3);
+# ...
+# And the listener was using:
+# payloadArea.textProperty().bindBidirectional(...)
 
-    public TwoToneEditor(PlaylistManager playlistManager)
-    {
-        mPlaylistManager = playlistManager;
-        setSpacing(10);
-        setPadding(new Insets(10));
+# Our code changed `payloadArea` (TextArea) to `messageField` (TextField) and messed up the binding blocks. Let's strictly follow master's layout except we will add our CheckBox and ComboBox underneath.
 
+start = content.find("        mObservableConfigs = FXCollections.observableArrayList(TwoToneConfiguration.extractor());")
+end = content.find("    public void process(TwoToneTabRequest request)")
 
-        mObservableConfigs = FXCollections.observableArrayList(TwoToneConfiguration.extractor());
+new_block = """        mObservableConfigs = FXCollections.observableArrayList(TwoToneConfiguration.extractor());
         if (playlistManager.getCurrentPlaylist() != null) {
             mObservableConfigs.addAll(playlistManager.getCurrentPlaylist().getTwoToneConfigurations());
         }
@@ -183,7 +159,9 @@ public class TwoToneEditor extends VBox
         }
     }
 
-    public void process(TwoToneTabRequest request)
-    {
-    }
-}
+"""
+
+content = content[:start] + new_block + content[end:]
+
+with open('src/main/java/io/github/dsheirer/gui/playlist/twotone/TwoToneEditor.java', 'w') as f:
+    f.write(content)

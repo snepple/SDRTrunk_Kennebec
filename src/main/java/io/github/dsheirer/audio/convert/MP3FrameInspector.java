@@ -55,17 +55,17 @@ public class MP3FrameInspector
         }
     }
 
-    /* TODO: Rework for MP3SilenceGenerator returning IAudioFrames
+
     public static void main(String[] args)
     {
         mLog.info("Starting ...");
         MP3SilenceGenerator gen = new MP3SilenceGenerator(InputAudioFormat.SR_8000, MP3Setting.getDefault());
 
-        List<byte[]> audio = gen.generate(173);
+        var audio = gen.generate(173);
 
-        inspect(audio);
+        inspect(audio.getFrames());
 
         mLog.info("Finished");
     }
-    */
+
 }
