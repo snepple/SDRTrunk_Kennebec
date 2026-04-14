@@ -66,6 +66,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * - receiveRealTimeAudio() -> accumulate, resample, Opus encode, send packets
  * - stopRealTimeStream() -> stop_stream command
  */
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import java.io.InputStream;
+import java.net.URL;
+
 public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguration>
     implements IRealTimeAudioBroadcaster
 {
@@ -122,6 +127,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     private volatile long mLastStreamStopTime = 0; // System.currentTimeMillis() when last stream ended
     private volatile int mStreamSessionEpoch = -1; // epoch captured when stream started
     private final LinkedTransferQueue<float[]> mAudioQueue = new LinkedTransferQueue<>();
+    private final LinkedTransferQueue<float[]> mAlertAudioQueue = new LinkedTransferQueue<>();
     private ScheduledFuture<?> mEncoderFuture;
     private ScheduledFuture<?> mRelaxationFuture; // delayed stop for relaxation_time hold-over
     private ScheduledFuture<?> mStreamGuardFuture; // delayed start for stream guard
@@ -387,11 +393,52 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     // Audio Processing
     // ========================================================================
 
+    public void playAlertTone(String resourcePath)
+    {
+        try
+        {
+            URL url = ZelloBroadcaster.class.getResource(resourcePath);
+            if (url == null) {
+                mLog.warn("{}Zello alert tone resource not found: {}", ch(), resourcePath);
+                return;
+            }
+            try (AudioInputStream ais = AudioSystem.getAudioInputStream(url)) {
+                // Read 16-bit PCM assuming 8kHz mono
+                byte[] bytes = ais.readAllBytes();
+                int numSamples = bytes.length / 2;
+                float[] buffer = new float[160];
+                int bufferPos = 0;
+                for (int i = 0; i < numSamples; i++) {
+                    short sample = (short) ((bytes[i*2] & 0xFF) | (bytes[i*2 + 1] << 8));
+                    buffer[bufferPos++] = sample / 32767.0f;
+                    if (bufferPos == 160) {
+                        mAlertAudioQueue.offer(buffer.clone());
+                        bufferPos = 0;
+                    }
+                }
+                if (bufferPos > 0) {
+                    float[] partial = new float[160];
+                    System.arraycopy(buffer, 0, partial, 0, bufferPos);
+                    mAlertAudioQueue.offer(partial);
+                }
+                mLog.info("{}Queued Zello alert tone: {}", ch(), resourcePath);
+            }
+        }
+        catch(Exception e)
+        {
+            mLog.error("{}Error reading Zello alert tone {}", ch(), resourcePath, e);
+        }
+    }
+
     private synchronized void processAudioQueue()
     {
         try
         {
             float[] buffer;
+            while((buffer = mAlertAudioQueue.poll()) != null)
+            {
+                processAudioBuffer(buffer);
+            }
             while((buffer = mAudioQueue.poll()) != null)
             {
                 processAudioBuffer(buffer);

@@ -14,6 +14,11 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.converter.NumberStringConverter;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import java.net.URL;
+
 public class TwoToneEditor extends VBox
 {
     private final PlaylistManager mPlaylistManager;
@@ -77,6 +82,38 @@ public class TwoToneEditor extends VBox
         editorGrid.add(new Label("MQTT Payload:"), 2, 2);
         editorGrid.add(payloadArea, 3, 2, 1, 2);
 
+        CheckBox zelloAlertCheck = new CheckBox("Enable Zello Alert Tone");
+        ComboBox<String> alertToneCombo = new ComboBox<>();
+        alertToneCombo.getItems().addAll("alert1.wav", "alert2.wav");
+
+        Button previewBtn = new Button("Preview");
+        previewBtn.setOnAction(ev -> {
+            String selectedFile = alertToneCombo.getValue();
+            if (selectedFile != null && !selectedFile.isEmpty()) {
+                try {
+                    URL resource = TwoToneEditor.class.getResource("/audio/" + selectedFile);
+                    if (resource != null) {
+                        AudioInputStream ais = AudioSystem.getAudioInputStream(resource);
+                        Clip clip = AudioSystem.getClip();
+                        clip.open(ais);
+                        clip.start();
+                    } else {
+                        System.err.println("Could not find audio resource: /audio/" + selectedFile);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        alertToneCombo.disableProperty().bind(zelloAlertCheck.selectedProperty().not());
+        previewBtn.disableProperty().bind(zelloAlertCheck.selectedProperty().not());
+
+        editorGrid.add(zelloAlertCheck, 0, 4, 2, 1);
+        editorGrid.add(new Label("Alert Tone File:"), 0, 5);
+        editorGrid.add(alertToneCombo, 1, 5);
+        editorGrid.add(previewBtn, 2, 5);
+
         mTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (oldVal != null) {
                 aliasField.textProperty().unbindBidirectional(oldVal.aliasProperty());
@@ -84,6 +121,8 @@ public class TwoToneEditor extends VBox
                 mqttCheck.selectedProperty().unbindBidirectional(oldVal.enableMqttPublishProperty());
                 topicField.textProperty().unbindBidirectional(oldVal.mqttTopicProperty());
                 payloadArea.textProperty().unbindBidirectional(oldVal.mqttPayloadProperty());
+                zelloAlertCheck.selectedProperty().unbindBidirectional(oldVal.enableZelloAlertProperty());
+                alertToneCombo.valueProperty().unbindBidirectional(oldVal.zelloAlertFileProperty());
 
                 oldVal.setToneA(toneAField.getText().isEmpty() ? 0 : Double.parseDouble(toneAField.getText()));
                 oldVal.setToneB(toneBField.getText().isEmpty() ? 0 : Double.parseDouble(toneBField.getText()));
@@ -96,6 +135,8 @@ public class TwoToneEditor extends VBox
                 mqttCheck.selectedProperty().bindBidirectional(newVal.enableMqttPublishProperty());
                 topicField.textProperty().bindBidirectional(newVal.mqttTopicProperty());
                 payloadArea.textProperty().bindBidirectional(newVal.mqttPayloadProperty());
+                zelloAlertCheck.selectedProperty().bindBidirectional(newVal.enableZelloAlertProperty());
+                alertToneCombo.valueProperty().bindBidirectional(newVal.zelloAlertFileProperty());
             } else {
                 aliasField.clear();
                 toneAField.clear();
@@ -104,6 +145,8 @@ public class TwoToneEditor extends VBox
                 mqttCheck.setSelected(false);
                 topicField.clear();
                 payloadArea.clear();
+                zelloAlertCheck.setSelected(false);
+                alertToneCombo.getSelectionModel().clearSelection();
             }
         });
 

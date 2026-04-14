@@ -23,6 +23,9 @@ public class TwoToneConfiguration
     private StringProperty mMqttTopicProperty = new SimpleStringProperty("");
     private StringProperty mMqttPayloadProperty = new SimpleStringProperty("{\"detector\": \"[DetectorName]\", \"state\": \"ON\", \"time\": \"[Timestamp]\"}");
 
+    private BooleanProperty mEnableZelloAlertProperty = new SimpleBooleanProperty(false);
+    private StringProperty mZelloAlertFileProperty = new SimpleStringProperty("");
+
     public TwoToneConfiguration()
     {
     }
@@ -38,6 +41,8 @@ public class TwoToneConfiguration
         copy.setEnableMqttPublish(isEnableMqttPublish());
         copy.setMqttTopic(getMqttTopic());
         copy.setMqttPayload(getMqttPayload());
+        copy.setEnableZelloAlert(isEnableZelloAlert());
+        copy.setZelloAlertFile(getZelloAlertFile());
         return copy;
     }
 
@@ -165,10 +170,45 @@ public class TwoToneConfiguration
     {
         return mMqttPayloadProperty;
     }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "enableZelloAlert")
+    public boolean isEnableZelloAlert()
+    {
+        return mEnableZelloAlertProperty.get();
+    }
+
+    public void setEnableZelloAlert(boolean enableZelloAlert)
+    {
+        mEnableZelloAlertProperty.set(enableZelloAlert);
+    }
+
+    @JsonIgnore
+    public BooleanProperty enableZelloAlertProperty()
+    {
+        return mEnableZelloAlertProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "zelloAlertFile")
+    public String getZelloAlertFile()
+    {
+        return mZelloAlertFileProperty.get();
+    }
+
+    public void setZelloAlertFile(String zelloAlertFile)
+    {
+        mZelloAlertFileProperty.set(zelloAlertFile);
+    }
+
+    @JsonIgnore
+    public StringProperty zelloAlertFileProperty()
+    {
+        return mZelloAlertFileProperty;
+    }
+
     public static Callback<TwoToneConfiguration, Observable[]> extractor()
     {
         return (TwoToneConfiguration config) -> new Observable[]{
-            config.aliasProperty(), config.templateProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty()
+            config.aliasProperty(), config.templateProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty()
         };
     }
 }

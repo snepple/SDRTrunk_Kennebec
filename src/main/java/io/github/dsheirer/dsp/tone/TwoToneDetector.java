@@ -212,6 +212,9 @@ public class TwoToneDetector
                 {
                     mLog.info("Sending Zello Alert to {}: {}", zc.getChannel(), text);
                     broadcaster.sendTextMessage(text);
+                    if (config.isEnableZelloAlert() && config.getZelloAlertFile() != null && !config.getZelloAlertFile().isEmpty()) {
+                        broadcaster.playAlertTone("/audio/" + config.getZelloAlertFile());
+                    }
                 }
             }
         }
