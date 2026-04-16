@@ -25,6 +25,7 @@ public class TwoToneConfiguration
 
     private BooleanProperty mEnableZelloAlertProperty = new SimpleBooleanProperty(false);
     private StringProperty mZelloAlertFileProperty = new SimpleStringProperty("");
+    private BooleanProperty mEnableZelloTextMessageProperty = new SimpleBooleanProperty(true);
 
     public TwoToneConfiguration()
     {
@@ -43,6 +44,7 @@ public class TwoToneConfiguration
         copy.setMqttPayload(getMqttPayload());
         copy.setEnableZelloAlert(isEnableZelloAlert());
         copy.setZelloAlertFile(getZelloAlertFile());
+        copy.setEnableZelloTextMessage(isEnableZelloTextMessage());
         return copy;
     }
 
@@ -205,10 +207,27 @@ public class TwoToneConfiguration
         return mZelloAlertFileProperty;
     }
 
+    @JacksonXmlProperty(isAttribute = true, localName = "enableZelloTextMessage")
+    public boolean isEnableZelloTextMessage()
+    {
+        return mEnableZelloTextMessageProperty.get();
+    }
+
+    public void setEnableZelloTextMessage(boolean enableZelloTextMessage)
+    {
+        mEnableZelloTextMessageProperty.set(enableZelloTextMessage);
+    }
+
+    @JsonIgnore
+    public BooleanProperty enableZelloTextMessageProperty()
+    {
+        return mEnableZelloTextMessageProperty;
+    }
+
     public static Callback<TwoToneConfiguration, Observable[]> extractor()
     {
         return (TwoToneConfiguration config) -> new Observable[]{
-            config.aliasProperty(), config.templateProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty()
+            config.aliasProperty(), config.templateProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty(), config.enableZelloTextMessageProperty()
         };
     }
 }

@@ -182,7 +182,7 @@ public class TwoToneDetector
 
     private void triggerAlert(TwoToneConfiguration config, AudioSegment segment)
     {
-        String template = config.getTemplate() != null ? config.getTemplate() : "Dispatch Received: %ALIAS%";
+        String template = (config.getTemplate() != null && !config.getTemplate().isEmpty()) ? config.getTemplate() : "Dispatch Received: %ALIAS%";
         String text = template.replace("%ALIAS%", config.getAlias() != null ? config.getAlias() : "Unknown");
 
 
@@ -210,7 +210,9 @@ public class TwoToneDetector
                 if(config.getZelloChannel() != null && config.getZelloChannel().equals(zc.getChannel()))
                 {
                     mLog.info("Sending Zello Alert to {}: {}", zc.getChannel(), text);
-                    broadcaster.sendTextMessage(text);
+                    if (config.isEnableZelloTextMessage()) {
+                        broadcaster.sendTextMessage(text);
+                    }
                     if (config.isEnableZelloAlert() && config.getZelloAlertFile() != null && !config.getZelloAlertFile().isEmpty()) {
                         broadcaster.playAlertTone("/audio/" + config.getZelloAlertFile());
                     }
