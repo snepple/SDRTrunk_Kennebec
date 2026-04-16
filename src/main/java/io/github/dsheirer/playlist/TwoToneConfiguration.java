@@ -19,6 +19,7 @@ public class TwoToneConfiguration
     private StringProperty mZelloChannelProperty = new SimpleStringProperty();
     private double mToneA;
     private double mToneB;
+    private BooleanProperty mLongAToneProperty = new SimpleBooleanProperty(false);
     private BooleanProperty mEnableMqttPublishProperty = new SimpleBooleanProperty(false);
     private StringProperty mMqttTopicProperty = new SimpleStringProperty("");
     private StringProperty mMqttPayloadProperty = new SimpleStringProperty("{\"detector\": \"[DetectorName]\", \"state\": \"ON\", \"time\": \"[Timestamp]\"}");
@@ -39,6 +40,7 @@ public class TwoToneConfiguration
         copy.setZelloChannel(getZelloChannel());
         copy.setToneA(getToneA());
         copy.setToneB(getToneB());
+        copy.setLongATone(isLongATone());
         copy.setEnableMqttPublish(isEnableMqttPublish());
         copy.setMqttTopic(getMqttTopic());
         copy.setMqttPayload(getMqttPayload());
@@ -108,6 +110,23 @@ public class TwoToneConfiguration
     public void setToneA(double toneA)
     {
         mToneA = toneA;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "longATone")
+    public boolean isLongATone()
+    {
+        return mLongAToneProperty.get();
+    }
+
+    public void setLongATone(boolean longATone)
+    {
+        mLongAToneProperty.set(longATone);
+    }
+
+    @JsonIgnore
+    public BooleanProperty longAToneProperty()
+    {
+        return mLongAToneProperty;
     }
 
     @JacksonXmlProperty(isAttribute = true, localName = "toneB")
@@ -227,7 +246,7 @@ public class TwoToneConfiguration
     public static Callback<TwoToneConfiguration, Observable[]> extractor()
     {
         return (TwoToneConfiguration config) -> new Observable[]{
-            config.aliasProperty(), config.templateProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty(), config.enableZelloTextMessageProperty()
+            config.aliasProperty(), config.templateProperty(), config.longAToneProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty(), config.enableZelloTextMessageProperty()
         };
     }
 }

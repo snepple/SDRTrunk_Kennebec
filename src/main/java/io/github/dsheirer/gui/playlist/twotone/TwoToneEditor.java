@@ -62,6 +62,9 @@ public class TwoToneEditor extends VBox
         editorGrid.setVgap(5);
 
         TextField aliasField = new TextField();
+        ComboBox<String> typeSelector = new ComboBox<>();
+        typeSelector.getItems().addAll("A/B Tones", "Long A Tone Only");
+        typeSelector.getSelectionModel().select(0);
         TextField toneAField = new TextField();
         TextField toneBField = new TextField();
         ComboBox<String> zelloField = new ComboBox<>();
@@ -83,12 +86,30 @@ public class TwoToneEditor extends VBox
 
         editorGrid.add(new Label("Alias:"), 0, 0);
         editorGrid.add(aliasField, 1, 0);
-        editorGrid.add(new Label("Tone A:"), 0, 1);
-        editorGrid.add(toneAField, 1, 1);
-        editorGrid.add(new Label("Tone B:"), 0, 2);
-        editorGrid.add(toneBField, 1, 2);
-        editorGrid.add(new Label("Zello Channel:"), 0, 3);
-        editorGrid.add(zelloField, 1, 3);
+        editorGrid.add(new Label("Type:"), 0, 1);
+        editorGrid.add(typeSelector, 1, 1);
+        editorGrid.add(new Label("Tone A:"), 0, 2);
+        editorGrid.add(toneAField, 1, 2);
+        Label toneBLabel = new Label("Tone B:");
+        editorGrid.add(toneBLabel, 0, 3);
+        editorGrid.add(toneBField, 1, 3);
+
+        toneBLabel.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
+        toneBField.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
+
+        typeSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
+            TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
+            if (sel != null && newVal != null) {
+                boolean isLong = newVal.equals("Long A Tone Only");
+                sel.setLongATone(isLong);
+                if (isLong) {
+                    toneBField.clear();
+                    sel.setToneB(0.0);
+                }
+            }
+        });
+        editorGrid.add(new Label("Zello Channel:"), 0, 4);
+        editorGrid.add(zelloField, 1, 4);
 
         editorGrid.add(mqttCheck, 2, 0, 2, 1);
         editorGrid.add(new Label("MQTT Topic:"), 2, 1);
@@ -174,8 +195,17 @@ public class TwoToneEditor extends VBox
             }
             if (newVal != null) {
                 aliasField.textProperty().bindBidirectional(newVal.aliasProperty());
+                if (newVal.isLongATone()) {
+                    typeSelector.getSelectionModel().select("Long A Tone Only");
+                } else {
+                    typeSelector.getSelectionModel().select("A/B Tones");
+                }
                 toneAField.setText(String.valueOf(newVal.getToneA()));
-                toneBField.setText(String.valueOf(newVal.getToneB()));
+                if (newVal.getToneB() == 0.0) {
+                    toneBField.setText("");
+                } else {
+                    toneBField.setText(String.valueOf(newVal.getToneB()));
+                }
                 zelloField.valueProperty().bindBidirectional(newVal.zelloChannelProperty());
                 mqttCheck.selectedProperty().bindBidirectional(newVal.enableMqttPublishProperty());
                 topicField.textProperty().bindBidirectional(newVal.mqttTopicProperty());
@@ -188,6 +218,7 @@ public class TwoToneEditor extends VBox
                 aliasField.clear();
                 toneAField.clear();
                 toneBField.clear();
+                typeSelector.getSelectionModel().select("A/B Tones");
                 zelloField.getSelectionModel().clearSelection();
                 mqttCheck.setSelected(false);
                 topicField.clear();
