@@ -42,6 +42,9 @@ public class TwoToneDetector
     private static final int MIN_TONE_DURATION_MS = 300;
     private static final int MIN_TONE_BLOCKS = MIN_TONE_DURATION_MS / 20;
 
+    private static final int MIN_LONG_TONE_DURATION_MS = 3000;
+    private static final int MIN_LONG_TONE_BLOCKS = MIN_LONG_TONE_DURATION_MS / 20;
+
     private static final int POWER_THRESHOLD_DB = 10; // Simple threshold, tune as needed
 
     private final ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
@@ -117,13 +120,17 @@ public class TwoToneDetector
             long freqA = Math.round(config.getToneA());
             long freqB = Math.round(config.getToneB());
 
-            if (freqA <= 0 || freqB <= 0) continue;
+            if (freqA <= 0) continue;
+            if (config.getSequenceType() == TwoToneConfiguration.SequenceType.A_B && freqB <= 0) continue;
 
             GoertzelFilter filterA = new GoertzelFilter(SAMPLE_RATE, freqA, BLOCK_SIZE, WindowType.BLACKMAN);
-            GoertzelFilter filterB = new GoertzelFilter(SAMPLE_RATE, freqB, BLOCK_SIZE, WindowType.BLACKMAN);
-
             int powerA = filterA.getPower(buffer.clone());
-            int powerB = filterB.getPower(buffer.clone());
+
+            int powerB = 0;
+            if (config.getSequenceType() == TwoToneConfiguration.SequenceType.A_B) {
+                GoertzelFilter filterB = new GoertzelFilter(SAMPLE_RATE, freqB, BLOCK_SIZE, WindowType.BLACKMAN);
+                powerB = filterB.getPower(buffer.clone());
+            }
 
             // Tone A detection
             if (powerA > POWER_THRESHOLD_DB)
@@ -140,9 +147,18 @@ public class TwoToneDetector
                     mCurrentToneB = 0;
                     mCurrentToneBBlocks = 0;
                 }
+
+                if (config.getSequenceType() == TwoToneConfiguration.SequenceType.LONG_A && mCurrentToneABlocks >= MIN_LONG_TONE_BLOCKS) {
+                    mLog.info("Two Tone Detected: {} (Long A:{})", config.getAlias(), config.getToneA());
+                    triggerAlert(config, segment);
+                    mCurrentToneA = 0;
+                    mCurrentToneABlocks = 0;
+                    mCurrentToneB = 0;
+                    mCurrentToneBBlocks = 0;
+                }
             }
             // Tone B detection (only valid if Tone A was previously detected and held)
-            else if (powerB > POWER_THRESHOLD_DB && mCurrentToneABlocks >= MIN_TONE_BLOCKS && mCurrentToneA == config.getToneA())
+            else if (config.getSequenceType() == TwoToneConfiguration.SequenceType.A_B && powerB > POWER_THRESHOLD_DB && mCurrentToneABlocks >= MIN_TONE_BLOCKS && mCurrentToneA == config.getToneA())
             {
                 matchedToneBThisBlock = true;
                 if(mCurrentToneB == config.getToneB())

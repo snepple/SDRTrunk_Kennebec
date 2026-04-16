@@ -8,12 +8,20 @@ import javafx.beans.property.StringProperty;
 import javafx.util.Callback;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 
 /**
  * Two Tone configuration mapping
  */
 public class TwoToneConfiguration
 {
+    public enum SequenceType {
+        A_B,
+        LONG_A
+    }
+
+    private ObjectProperty<SequenceType> mSequenceTypeProperty = new SimpleObjectProperty<>(SequenceType.A_B);
     private StringProperty mAliasProperty = new SimpleStringProperty();
     private StringProperty mTemplateProperty = new SimpleStringProperty();
     private StringProperty mZelloChannelProperty = new SimpleStringProperty();
@@ -36,6 +44,7 @@ public class TwoToneConfiguration
         copy.setAlias(getAlias());
         copy.setTemplate(getTemplate());
         copy.setZelloChannel(getZelloChannel());
+        copy.setSequenceType(getSequenceType());
         copy.setToneA(getToneA());
         copy.setToneB(getToneB());
         copy.setEnableMqttPublish(isEnableMqttPublish());
@@ -95,6 +104,30 @@ public class TwoToneConfiguration
     public StringProperty zelloChannelProperty()
     {
         return mZelloChannelProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "sequenceType")
+    public SequenceType getSequenceType()
+    {
+        if (mSequenceTypeProperty.get() == null) {
+            return SequenceType.A_B;
+        }
+        return mSequenceTypeProperty.get();
+    }
+
+    public void setSequenceType(SequenceType type)
+    {
+        if (type == null) {
+            mSequenceTypeProperty.set(SequenceType.A_B);
+        } else {
+            mSequenceTypeProperty.set(type);
+        }
+    }
+
+    @JsonIgnore
+    public ObjectProperty<SequenceType> sequenceTypeProperty()
+    {
+        return mSequenceTypeProperty;
     }
 
     @JacksonXmlProperty(isAttribute = true, localName = "toneA")
@@ -208,7 +241,7 @@ public class TwoToneConfiguration
     public static Callback<TwoToneConfiguration, Observable[]> extractor()
     {
         return (TwoToneConfiguration config) -> new Observable[]{
-            config.aliasProperty(), config.templateProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty()
+            config.aliasProperty(), config.templateProperty(), config.zelloChannelProperty(), config.sequenceTypeProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty()
         };
     }
 }

@@ -40,6 +40,8 @@ public class TwoToneEditor extends VBox
 
         TableColumn<TwoToneConfiguration, String> aliasCol = new TableColumn<>("Alias");
         aliasCol.setCellValueFactory(new PropertyValueFactory<>("alias"));
+        TableColumn<TwoToneConfiguration, TwoToneConfiguration.SequenceType> sequenceTypeCol = new TableColumn<>("Sequence Type");
+        sequenceTypeCol.setCellValueFactory(new PropertyValueFactory<>("sequenceType"));
         TableColumn<TwoToneConfiguration, Double> toneACol = new TableColumn<>("Tone A");
         toneACol.setCellValueFactory(new PropertyValueFactory<>("toneA"));
         TableColumn<TwoToneConfiguration, Double> toneBCol = new TableColumn<>("Tone B");
@@ -47,7 +49,7 @@ public class TwoToneEditor extends VBox
         TableColumn<TwoToneConfiguration, Boolean> mqttCol = new TableColumn<>("MQTT Enabled");
         mqttCol.setCellValueFactory(new PropertyValueFactory<>("enableMqttPublish"));
 
-        mTableView.getColumns().addAll(aliasCol, toneACol, toneBCol, mqttCol);
+        mTableView.getColumns().addAll(aliasCol, sequenceTypeCol, toneACol, toneBCol, mqttCol);
         VBox.setVgrow(mTableView, Priority.ALWAYS);
 
         GridPane editorGrid = new GridPane();
@@ -55,6 +57,8 @@ public class TwoToneEditor extends VBox
         editorGrid.setVgap(5);
 
         TextField aliasField = new TextField();
+        ComboBox<TwoToneConfiguration.SequenceType> sequenceTypeCombo = new ComboBox<>();
+        sequenceTypeCombo.getItems().addAll(TwoToneConfiguration.SequenceType.values());
         TextField toneAField = new TextField();
         TextField toneBField = new TextField();
         TextField zelloField = new TextField();
@@ -69,12 +73,14 @@ public class TwoToneEditor extends VBox
 
         editorGrid.add(new Label("Alias:"), 0, 0);
         editorGrid.add(aliasField, 1, 0);
-        editorGrid.add(new Label("Tone A:"), 0, 1);
-        editorGrid.add(toneAField, 1, 1);
-        editorGrid.add(new Label("Tone B:"), 0, 2);
-        editorGrid.add(toneBField, 1, 2);
-        editorGrid.add(new Label("Zello Channel:"), 0, 3);
-        editorGrid.add(zelloField, 1, 3);
+        editorGrid.add(new Label("Sequence Type:"), 0, 1);
+        editorGrid.add(sequenceTypeCombo, 1, 1);
+        editorGrid.add(new Label("Tone A:"), 0, 2);
+        editorGrid.add(toneAField, 1, 2);
+        editorGrid.add(new Label("Tone B:"), 0, 3);
+        editorGrid.add(toneBField, 1, 3);
+        editorGrid.add(new Label("Zello Channel:"), 0, 4);
+        editorGrid.add(zelloField, 1, 4);
 
         editorGrid.add(mqttCheck, 2, 0, 2, 1);
         editorGrid.add(new Label("MQTT Topic:"), 2, 1);
@@ -109,14 +115,17 @@ public class TwoToneEditor extends VBox
         alertToneCombo.disableProperty().bind(zelloAlertCheck.selectedProperty().not());
         previewBtn.disableProperty().bind(zelloAlertCheck.selectedProperty().not());
 
-        editorGrid.add(zelloAlertCheck, 0, 4, 2, 1);
-        editorGrid.add(new Label("Alert Tone File:"), 0, 5);
-        editorGrid.add(alertToneCombo, 1, 5);
-        editorGrid.add(previewBtn, 2, 5);
+        editorGrid.add(zelloAlertCheck, 0, 5, 2, 1);
+        editorGrid.add(new Label("Alert Tone File:"), 0, 6);
+        editorGrid.add(alertToneCombo, 1, 6);
+        editorGrid.add(previewBtn, 2, 6);
+
+        toneBField.disableProperty().bind(sequenceTypeCombo.valueProperty().isEqualTo(TwoToneConfiguration.SequenceType.LONG_A));
 
         mTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (oldVal != null) {
                 aliasField.textProperty().unbindBidirectional(oldVal.aliasProperty());
+                sequenceTypeCombo.valueProperty().unbindBidirectional(oldVal.sequenceTypeProperty());
                 zelloField.textProperty().unbindBidirectional(oldVal.zelloChannelProperty());
                 mqttCheck.selectedProperty().unbindBidirectional(oldVal.enableMqttPublishProperty());
                 topicField.textProperty().unbindBidirectional(oldVal.mqttTopicProperty());
@@ -129,6 +138,7 @@ public class TwoToneEditor extends VBox
             }
             if (newVal != null) {
                 aliasField.textProperty().bindBidirectional(newVal.aliasProperty());
+                sequenceTypeCombo.valueProperty().bindBidirectional(newVal.sequenceTypeProperty());
                 toneAField.setText(String.valueOf(newVal.getToneA()));
                 toneBField.setText(String.valueOf(newVal.getToneB()));
                 zelloField.textProperty().bindBidirectional(newVal.zelloChannelProperty());
@@ -139,6 +149,7 @@ public class TwoToneEditor extends VBox
                 alertToneCombo.valueProperty().bindBidirectional(newVal.zelloAlertFileProperty());
             } else {
                 aliasField.clear();
+                sequenceTypeCombo.getSelectionModel().clearSelection();
                 toneAField.clear();
                 toneBField.clear();
                 zelloField.clear();
