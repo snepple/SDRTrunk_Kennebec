@@ -66,6 +66,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Callback;
+import javafx.scene.layout.Region;
 import jiconfont.IconCode;
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
@@ -256,7 +257,9 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
 
 
             Label listLabel = new Label("Alias List");
+            listLabel.setMinWidth(Region.USE_PREF_SIZE);
             Label searchLabel = new Label("Search");
+            searchLabel.setMinWidth(Region.USE_PREF_SIZE);
             searchLabel.setAlignment(Pos.CENTER_RIGHT);
 
             HBox searchBox = new HBox();
@@ -264,6 +267,12 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
             searchBox.getChildren().addAll(searchLabel, getSearchField());
             HBox.setHgrow(searchBox, Priority.ALWAYS);
             searchBox.setAlignment(Pos.BASELINE_RIGHT);
+
+            getAliasListNameComboBox().setMinWidth(Region.USE_PREF_SIZE);
+            getNewAliasListButton().setMinWidth(Region.USE_PREF_SIZE);
+            getRenameAliasListButton().setMinWidth(Region.USE_PREF_SIZE);
+            getDeleteAliasListButton().setMinWidth(Region.USE_PREF_SIZE);
+            searchBox.setMinWidth(Region.USE_PREF_SIZE);
 
             mSearchAndListSelectionBox.getChildren().addAll(listLabel, getAliasListNameComboBox(),
                 getNewAliasListButton(), getRenameAliasListButton(), getDeleteAliasListButton(), searchBox);
@@ -368,7 +377,7 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
     private Button getRenameAliasListButton() {
 
         if (mRenameAliasButton == null) {
-            mRenameAliasButton = new Button("Rename Alias List");
+            mRenameAliasButton = new Button("Rename");
             mRenameAliasButton.setOnAction(event -> {
                 String aliasListName = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
 
@@ -400,7 +409,7 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
     private Button getDeleteAliasListButton() {
 
         if (mDeleteAliasListButton == null) {
-            mDeleteAliasListButton = new Button("Delete Alias List");
+            mDeleteAliasListButton = new Button("Delete");
             mDeleteAliasListButton.setOnAction(event -> {
                 String aliasListName = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
                 if (aliasListName.equals(AliasModel.NO_ALIAS_LIST)) {
@@ -563,6 +572,7 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
         if(mButtonBox == null)
         {
             mButtonBox = new VBox();
+            mButtonBox.setMinWidth(Region.USE_PREF_SIZE);
             mButtonBox.setPadding(new Insets(10, 10, 10, 10));
             mButtonBox.setSpacing(10);
 
@@ -570,6 +580,10 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
             fillerButton.setVisible(false);
             mButtonBox.getChildren().addAll(fillerButton, getNewAliasButton(), getCloneAliasButton(),
                     getMoveToAliasButton(), getDeleteAliasButton());
+            getNewAliasButton().setMinWidth(Region.USE_PREF_SIZE);
+            getCloneAliasButton().setMinWidth(Region.USE_PREF_SIZE);
+            getMoveToAliasButton().setMinWidth(Region.USE_PREF_SIZE);
+            getDeleteAliasButton().setMinWidth(Region.USE_PREF_SIZE);
         }
 
         return mButtonBox;

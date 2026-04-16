@@ -108,6 +108,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Callback;
@@ -524,6 +525,9 @@ public class AliasItemEditor extends Editor<Alias>
         {
             VBox buttonsBox = new VBox();
             buttonsBox.setSpacing(10);
+            getAddIdentifierButton().setMinWidth(Region.USE_PREF_SIZE);
+            getDeleteIdentifierButton().setMinWidth(Region.USE_PREF_SIZE);
+            getShowOverlapButton().setMinWidth(Region.USE_PREF_SIZE);
             buttonsBox.getChildren().addAll(getAddIdentifierButton(), getDeleteIdentifierButton(),
                 getShowOverlapButton());
 
@@ -878,15 +882,21 @@ public class AliasItemEditor extends Editor<Alias>
             buttonBox.setMaxHeight(Double.MAX_VALUE);
             buttonBox.setAlignment(Pos.CENTER);
             buttonBox.setSpacing(5);
+            getAddStreamButton().setMinWidth(Region.USE_PREF_SIZE);
+            getRemoveStreamButton().setMinWidth(Region.USE_PREF_SIZE);
             buttonBox.getChildren().addAll(new Label(" "), getAddStreamButton(), getRemoveStreamButton());
 
             VBox availableBox = new VBox();
             VBox.setVgrow(getAvailableStreamsView(), Priority.ALWAYS);
-            availableBox.getChildren().addAll(new Label("Available"), getAvailableStreamsView());
+            Label availableLabel = new Label("Available");
+            availableLabel.setMinWidth(Region.USE_PREF_SIZE);
+            availableBox.getChildren().addAll(availableLabel, getAvailableStreamsView());
 
             VBox selectedBox = new VBox();
             VBox.setVgrow(getSelectedStreamsView(), Priority.ALWAYS);
-            selectedBox.getChildren().addAll(new Label("Selected"), getSelectedStreamsView());
+            Label selectedLabel = new Label("Selected");
+            selectedLabel.setMinWidth(Region.USE_PREF_SIZE);
+            selectedBox.getChildren().addAll(selectedLabel, getSelectedStreamsView());
 
             HBox hbox = new HBox();
             hbox.setSpacing(10);
@@ -898,6 +908,7 @@ public class AliasItemEditor extends Editor<Alias>
             vbox.setSpacing(10);
             VBox.setVgrow(hbox, Priority.ALWAYS);
             Label label = new Label("Stream this Alias as Talkgroup:");
+            label.setMinWidth(Region.USE_PREF_SIZE);
             HBox streamAsHBox = new HBox();
             streamAsHBox.setAlignment(Pos.CENTER_LEFT);
             streamAsHBox.setSpacing(10);
@@ -1046,6 +1057,8 @@ public class AliasItemEditor extends Editor<Alias>
         {
             VBox buttonsBox = new VBox();
             buttonsBox.setSpacing(10);
+            getAddActionButton().setMinWidth(Region.USE_PREF_SIZE);
+            getDeleteActionButton().setMinWidth(Region.USE_PREF_SIZE);
             buttonsBox.getChildren().addAll(getAddActionButton(), getDeleteActionButton());
 
             HBox hbox = new HBox();
@@ -1084,6 +1097,7 @@ public class AliasItemEditor extends Editor<Alias>
             int row = 0;
 
             Label nameLabel = new Label("Alias");
+            nameLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(nameLabel, HPos.RIGHT);
             GridPane.setConstraints(nameLabel, 0, row);
             mTextFieldPane.getChildren().add(nameLabel);
@@ -1092,27 +1106,34 @@ public class AliasItemEditor extends Editor<Alias>
             mTextFieldPane.getChildren().add(getNameField());
 
             Label monitorAudioLabel = new Label("Listen");
+            monitorAudioLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(monitorAudioLabel, HPos.RIGHT);
             GridPane.setConstraints(monitorAudioLabel, 2, row);
             mTextFieldPane.getChildren().add(monitorAudioLabel);
+            getMonitorAudioToggleSwitch().setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setConstraints(getMonitorAudioToggleSwitch(), 3, row);
             mTextFieldPane.getChildren().add(getMonitorAudioToggleSwitch());
 
             Label monitorPriorityLabel = new Label("Priority");
+            monitorPriorityLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(monitorPriorityLabel, HPos.RIGHT);
             GridPane.setConstraints(monitorPriorityLabel, 4, row);
             mTextFieldPane.getChildren().add(monitorPriorityLabel);
+            getMonitorPriorityComboBox().setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setConstraints(getMonitorPriorityComboBox(), 5, row);
             mTextFieldPane.getChildren().add(getMonitorPriorityComboBox());
 
             Label colorLabel = new Label("Color");
+            colorLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(colorLabel, HPos.RIGHT);
             GridPane.setConstraints(colorLabel, 6, row);
             mTextFieldPane.getChildren().add(colorLabel);
+            getColorPicker().setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setConstraints(getColorPicker(), 7, row);
             mTextFieldPane.getChildren().add(getColorPicker());
 
             Label groupLabel = new Label("Group");
+            groupLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(groupLabel, HPos.RIGHT);
             GridPane.setConstraints(groupLabel, 0, ++row);
             mTextFieldPane.getChildren().add(groupLabel);
@@ -1121,16 +1142,20 @@ public class AliasItemEditor extends Editor<Alias>
             mTextFieldPane.getChildren().add(getGroupField());
 
             Label recordAudioLabel = new Label("Record");
+            recordAudioLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(recordAudioLabel, HPos.RIGHT);
             GridPane.setConstraints(recordAudioLabel, 2, row);
             mTextFieldPane.getChildren().add(recordAudioLabel);
+            getRecordAudioToggleSwitch().setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setConstraints(getRecordAudioToggleSwitch(), 3, row);
             mTextFieldPane.getChildren().add(getRecordAudioToggleSwitch());
 
             Label iconLabel = new Label("Icon");
+            iconLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(iconLabel, HPos.RIGHT);
             GridPane.setConstraints(iconLabel, 4, row);
             mTextFieldPane.getChildren().add(iconLabel);
+            getIconNodeComboBox().setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setConstraints(getIconNodeComboBox(), 5, row, 3, 1);
             mTextFieldPane.getChildren().add(getIconNodeComboBox());
         }
@@ -1275,9 +1300,12 @@ public class AliasItemEditor extends Editor<Alias>
         if(mButtonBox == null)
         {
             mButtonBox = new VBox();
+            mButtonBox.setMinWidth(Region.USE_PREF_SIZE);
             mButtonBox.setSpacing(10);
             mButtonBox.setPadding(new Insets(10, 10, 10, 0));
             mButtonBox.getChildren().addAll(getSaveButton(), getResetButton());
+            getSaveButton().setMinWidth(Region.USE_PREF_SIZE);
+            getResetButton().setMinWidth(Region.USE_PREF_SIZE);
         }
 
         return mButtonBox;
