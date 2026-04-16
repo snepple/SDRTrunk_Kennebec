@@ -166,7 +166,7 @@ public class NowPlayingPanel extends JPanel
 
     private void init()
     {
-        setLayout( new MigLayout( "insets 0 0 0 0", "[grow,fill]", "[][grow,fill]") );
+        setLayout( new MigLayout( "insets 0 0 0 0", "[grow,fill]", "[][grow,fill][]") );
 
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
