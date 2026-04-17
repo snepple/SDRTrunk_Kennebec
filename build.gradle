@@ -157,7 +157,7 @@ def jvmArgsWindows =
          '--enable-preview', //Project Panama Vector API is still in incubator
          '--enable-native-access=ALL-UNNAMED', //Suppress unsafe warnings for FFM API Foreign Memory calls
          '--enable-native-access=javafx.graphics', //JDK24 - suppress restricted java.lang.System calls
-         '--sun-misc-unsafe-memory-access=allow', //JDK24 - suppress sun.misc.Unsafe::allocateMemory warning
+
          // '-XX:+UseCompactObjectHeaders',   //JDK25 - use compact object headers
          '-Xmx6g',                         //Set max heap size to 6GB
          '-Dsun.java2d.d3d=true',          //Hardware Acceleration Direct3D
@@ -171,7 +171,7 @@ def jvmArgsLinux =
         ['--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED', //Needed for controls-fx.jar
          '--add-modules=jdk.incubator.vector',   //Needed while Project Panama API is still in incubator
          '--enable-preview', //Project Panama Vector & Foreign Function APIs remain in incubator
-         '--sun-misc-unsafe-memory-access=allow', //JDK24 - suppress sun.misc.Unsafe::allocateMemory warning
+
          // '-XX:+UseCompactObjectHeaders',   //JDK25 - use compact object headers
          '--enable-native-access=javafx.graphics', //JDK24 - suppress restricted java.lang.System calls
          '--enable-native-access=ALL-UNNAMED', //SDRPlay API library path
