@@ -438,26 +438,26 @@ public class IconModel
         {
             mStandardIcons = new IconSet();
 
-            Icon defaultIcon = new Icon(DEFAULT_ICON, "images/no_icon.png");
+            Icon defaultIcon = new Icon(DEFAULT_ICON, "images/no_icon.svg");
             mStandardIcons.add(defaultIcon);
             mStandardIcons.setDefaultIcon(defaultIcon.getName());
 
-            mStandardIcons.add(new Icon("Ambulance", "images/ambulance.png"));
-            mStandardIcons.add(new Icon("Block Truck", "images/concrete_block_truck.png"));
-            mStandardIcons.add(new Icon("CWID", "images/cwid.png"));
-            mStandardIcons.add(new Icon("Dispatcher", "images/dispatcher.png"));
-            mStandardIcons.add(new Icon("Dump Truck", "images/dump_truck_red.png"));
-            mStandardIcons.add(new Icon("Fire Truck", "images/fire_truck.png"));
-            mStandardIcons.add(new Icon("Garbage Truck", "images/garbage_truck.png"));
-            mStandardIcons.add(new Icon("Loader", "images/loader.png"));
-            mStandardIcons.add(new Icon("Police", "images/police.png"));
-            mStandardIcons.add(new Icon("Propane Truck", "images/propane_truck.png"));
-            mStandardIcons.add(new Icon("Rescue Truck", "images/rescue_truck.png"));
-            mStandardIcons.add(new Icon("School Bus", "images/school_bus.png"));
-            mStandardIcons.add(new Icon("Taxi", "images/taxi.png"));
-            mStandardIcons.add(new Icon("Train", "images/train.png"));
-            mStandardIcons.add(new Icon("Transport Bus", "images/opt_bus.png"));
-            mStandardIcons.add(new Icon("Van", "images/van.png"));
+            mStandardIcons.add(new Icon("Ambulance", "images/Ambulance.svg"));
+            mStandardIcons.add(new Icon("Block Truck", "images/concrete_block_truck.svg"));
+            mStandardIcons.add(new Icon("CWID", "images/CWID.svg"));
+            mStandardIcons.add(new Icon("Dispatcher", "images/dispatcher.svg"));
+            mStandardIcons.add(new Icon("Dump Truck", "images/dump_truck_red.svg"));
+            mStandardIcons.add(new Icon("Fire Truck", "images/fire_truck.svg"));
+            mStandardIcons.add(new Icon("Garbage Truck", "images/garbage_truck.svg"));
+            mStandardIcons.add(new Icon("Loader", "images/loader.svg"));
+            mStandardIcons.add(new Icon("Police", "images/thinlineradio.svg"));
+            mStandardIcons.add(new Icon("Propane Truck", "images/propane_truck.svg"));
+            mStandardIcons.add(new Icon("Rescue Truck", "images/ambulance (1).svg"));
+            mStandardIcons.add(new Icon("School Bus", "images/school_bus.svg"));
+            mStandardIcons.add(new Icon("Taxi", "images/taxi.svg"));
+            mStandardIcons.add(new Icon("Train", "images/train.svg"));
+            mStandardIcons.add(new Icon("Transport Bus", "images/opt_bus.svg"));
+            mStandardIcons.add(new Icon("Van", "images/van.svg"));
         }
 
         return mStandardIcons;

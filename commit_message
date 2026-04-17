@@ -1,0 +1,4 @@
+feat: use SVG icons for default IconManager options
+
+- Change `IconModel.java` to use .svg file extensions for standard icons, maintaining the original filenames, except for extension.
+- Added `*.svg` to `IconManager.java`'s file chooser extensions.

@@ -457,7 +457,7 @@ public class IconManager extends Editor<Icon>
             mFileButton.setOnAction(event -> {
                 FileChooser fileChooser = new FileChooser();
                 fileChooser.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("Picture Files", "*.png", "*.tif", "*.tiff",
+                    new FileChooser.ExtensionFilter("Picture Files", "*.png", "*.svg", "*.tif", "*.tiff",
                         "*.gif", "*.jpg", "*.jpeg"),
                     new FileChooser.ExtensionFilter("All Files (*.*)", "*.*"));
 
