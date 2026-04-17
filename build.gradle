@@ -470,5 +470,6 @@ startScripts {
         unixScriptFile.text = unixScriptFile.text.replace('"-Xmx6g"\'', '"-Xmx6g"\'\n\nif [ -f "$HOME/SDRTrunk/SDRTrunk.memory" ]; then\n    MEM_LIMIT=$(cat "$HOME/SDRTrunk/SDRTrunk.memory")\n    SDR_TRUNK_OPTS="$SDR_TRUNK_OPTS \\"-Xmx${MEM_LIMIT}g\\""\nfi')
 
         windowsScriptFile.text = windowsScriptFile.text.replace('"-Xmx6g"', '"-Xmx6g"\n\nif exist "%USERPROFILE%\\SDRTrunk\\SDRTrunk.memory" (\n    set /p MEM_LIMIT=<"%USERPROFILE%\\SDRTrunk\\SDRTrunk.memory"\n)\nif defined MEM_LIMIT (\n    set SDR_TRUNK_OPTS=%SDR_TRUNK_OPTS% "-Xmx%MEM_LIMIT%g"\n)')
+        windowsScriptFile.text = windowsScriptFile.text.replaceAll('set CLASSPATH=.*', 'set CLASSPATH=%APP_HOME%\\\\lib\\\\*')
     }
 }
