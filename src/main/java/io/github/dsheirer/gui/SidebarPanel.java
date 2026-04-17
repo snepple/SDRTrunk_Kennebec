@@ -32,7 +32,6 @@ public class SidebarPanel extends JPanel {
 
     private List<SidebarItem> mItems = new ArrayList<>();
     private JButton mToggleBtn;
-    private Timer mAnimationTimer;
 
     public interface SidebarListener {
         void onItemSelected(String id);
@@ -45,42 +44,25 @@ public class SidebarPanel extends JPanel {
         setPreferredSize(new Dimension(250, 0));
         setLayout(new MigLayout("insets 10 5 10 5, gapy 5, wrap 1, fillx", "[grow, fill]", "[]"));
 
-        mToggleBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.TIMES, 20, TEXT_COLOR));
+        mToggleBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.BARS, 20, TEXT_COLOR));
         mToggleBtn.setContentAreaFilled(false);
         mToggleBtn.setBorderPainted(false);
         mToggleBtn.setFocusPainted(false);
         mToggleBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         mToggleBtn.addActionListener(e -> {
-            if (mAnimationTimer != null && mAnimationTimer.isRunning()) mAnimationTimer.stop();
             mCollapsed = !mCollapsed;
-            mToggleBtn.setIcon(IconFontSwing.buildIcon(mCollapsed ? FontAwesome.BARS : FontAwesome.TIMES, 20, TEXT_COLOR));
 
             if (mCollapsed) {
                 for (SidebarItem item : mItems) item.updateCollapsedState(true);
-                render(); // Remove sub-items immediately when collapsing
+            } else {
+                for (SidebarItem item : mItems) item.updateCollapsedState(false);
             }
 
-            mAnimationTimer = new Timer(15, ae -> {
-                int target = mCollapsed ? 50 : 250;
-                int current = getPreferredSize().width;
-                if (current == target) {
-                    ((Timer)ae.getSource()).stop();
-                    if (!mCollapsed) {
-                        for (SidebarItem item : mItems) item.updateCollapsedState(false);
-                        render(); // Add sub-items back after expanding
-                    }
-                } else {
-                    int step = mCollapsed ? -20 : 20;
-                    int next = current + step;
-                    if (mCollapsed && next < target) next = target;
-                    if (!mCollapsed && next > target) next = target;
-                    setPreferredSize(new Dimension(next, 0));
-                    revalidate();
-                    repaint();
-                }
-            });
-            mAnimationTimer.start();
+            setPreferredSize(new Dimension(mCollapsed ? 50 : 250, 0));
+            render();
+            revalidate();
+            repaint();
         });
 
         initItems();
@@ -106,11 +88,7 @@ public class SidebarPanel extends JPanel {
     private void render() {
         removeAll();
 
-        if (mCollapsed) {
-            add(mToggleBtn, "align center");
-        } else {
-            add(mToggleBtn, "align right");
-        }
+        add(mToggleBtn, "align left");
 
         for (SidebarItem item : mItems) {
             add(item.getView(), "growx");
