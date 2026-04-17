@@ -33,10 +33,12 @@ public class ApplicationPreference extends Preference
 {
     private static final String PREFERENCE_KEY_CHANNEL_AUTO_DIAGNOSTIC_MONITORING = "automatic.diagnostic.monitoring";
     private static final String PREFERENCE_KEY_CHANNEL_AUTO_START_TIMEOUT = "channel.auto.start.timeout";
+    private static final String PREFERENCE_KEY_ALLOCATED_MEMORY = "allocated.memory";
 
     private final static Logger mLog = LoggerFactory.getLogger(ApplicationPreference.class);
     private Preferences mPreferences = Preferences.userNodeForPackage(ApplicationPreference.class);
     private Integer mChannelAutoStartTimeout;
+    private Integer mAllocatedMemory;
     private Boolean mAutomaticDiagnosticMonitoring;
 
     /**
@@ -102,6 +104,44 @@ public class ApplicationPreference extends Preference
     {
         mAutomaticDiagnosticMonitoring = enabled;
         mPreferences.putBoolean(PREFERENCE_KEY_CHANNEL_AUTO_DIAGNOSTIC_MONITORING, enabled);
+        notifyPreferenceUpdated();
+    }
+    /**
+     * Gets the allocated memory in GB
+     * @return memory in GB.
+     */
+    public int getAllocatedMemory()
+    {
+        if(mAllocatedMemory == null)
+        {
+            mAllocatedMemory = mPreferences.getInt(PREFERENCE_KEY_ALLOCATED_MEMORY, 6);
+        }
+
+        return mAllocatedMemory;
+    }
+
+    /**
+     * Sets the allocated memory in GB and writes to SDRTrunk.memory
+     * @param gb memory in GB.
+     */
+    public void setAllocatedMemory(int gb)
+    {
+        mAllocatedMemory = gb;
+        mPreferences.putInt(PREFERENCE_KEY_ALLOCATED_MEMORY, gb);
+
+        try
+        {
+            java.nio.file.Path memoryFile = java.nio.file.Paths.get(System.getProperty("user.home"), "SDRTrunk", "SDRTrunk.memory");
+            if(!java.nio.file.Files.exists(memoryFile.getParent())) {
+                java.nio.file.Files.createDirectories(memoryFile.getParent());
+            }
+            java.nio.file.Files.writeString(memoryFile, String.valueOf(gb));
+        }
+        catch(java.io.IOException e)
+        {
+            mLog.error("Error writing SDRTrunk.memory file", e);
+        }
+
         notifyPreferenceUpdated();
     }
 }

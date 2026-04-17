@@ -44,6 +44,9 @@ public class ApplicationPreferenceEditor extends HBox
     private GridPane mEditorPane;
     private Label mAutoStartTimeoutLabel;
     private Spinner<Integer> mTimeoutSpinner;
+    private Label mMemoryLimitLabel;
+    private Spinner<Integer> mMemorySpinner;
+    private Label mMemoryWarningLabel;
     private ToggleSwitch mAutomaticDiagnosticMonitoringToggle;
 
     /**
@@ -88,6 +91,18 @@ public class ApplicationPreferenceEditor extends HBox
             GridPane.setHalignment(getTimeoutSpinner(), HPos.RIGHT);
             mEditorPane.add(getTimeoutSpinner(), 0, ++row);
             mEditorPane.add(new Label("seconds"), 1, row);
+
+            Separator separator2 = new Separator(Orientation.HORIZONTAL);
+            GridPane.setHgrow(separator2, Priority.ALWAYS);
+            mEditorPane.add(separator2, 0, ++row, 3, 1);
+
+            mEditorPane.add(getMemoryLimitLabel(), 0, ++row, 2, 1);
+            GridPane.setHalignment(getMemorySpinner(), HPos.RIGHT);
+            mEditorPane.add(getMemorySpinner(), 0, ++row);
+            mEditorPane.add(new Label("GB"), 1, row);
+
+            GridPane.setHalignment(getMemoryWarningLabel(), HPos.RIGHT);
+            mEditorPane.add(getMemoryWarningLabel(), 0, ++row, 3, 1);
 
             ColumnConstraints c1 = new ColumnConstraints();
             c1.setPercentWidth(30);
@@ -138,5 +153,36 @@ public class ApplicationPreferenceEditor extends HBox
         }
 
         return mAutomaticDiagnosticMonitoringToggle;
+    }
+    private Label getMemoryLimitLabel()
+    {
+        if(mMemoryLimitLabel == null)
+        {
+            mMemoryLimitLabel = new Label("Allocated Memory");
+        }
+
+        return mMemoryLimitLabel;
+    }
+
+    private Spinner<Integer> getMemorySpinner()
+    {
+        if(mMemorySpinner == null)
+        {
+            mMemorySpinner = new Spinner<>(1, 64, mApplicationPreference.getAllocatedMemory(), 1);
+            mMemorySpinner.valueProperty().addListener((observable, oldValue, newValue) -> mApplicationPreference.setAllocatedMemory(newValue));
+        }
+
+        return mMemorySpinner;
+    }
+
+    private Label getMemoryWarningLabel()
+    {
+        if(mMemoryWarningLabel == null)
+        {
+            mMemoryWarningLabel = new Label("A restart of SDRTrunk is required for this setting to take effect.");
+            mMemoryWarningLabel.setStyle("-fx-font-style: italic; -fx-text-fill: gray;");
+        }
+
+        return mMemoryWarningLabel;
     }
 }
