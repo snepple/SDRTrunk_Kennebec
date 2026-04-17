@@ -18,6 +18,7 @@
  */
 
 package io.github.dsheirer.source.tuner.sdrplay;
+import io.github.dsheirer.source.tuner.ISampleRateConfigurable;
 
 import io.github.dsheirer.buffer.INativeBuffer;
 import io.github.dsheirer.sample.Listener;
@@ -42,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * Abstract/Base RSP tuner controller
  */
 public abstract class RspTunerController<I extends IControlRsp> extends TunerController
-        implements IDeviceEventListener, IStreamListener
+        implements IDeviceEventListener, IStreamListener, ISampleRateConfigurable
 {
     private static final Logger mLog = LoggerFactory.getLogger(RspTunerController.class);
     protected static final long MINIMUM_TUNABLE_FREQUENCY_HZ = 100_000;
@@ -267,6 +268,36 @@ public abstract class RspTunerController<I extends IControlRsp> extends TunerCon
      * @param rspSampleRate to apply
      * @throws SDRPlayException if there is an error
      */
+    @Override
+    public java.util.List<Integer> getAvailableSampleRatesInHz()
+    {
+        if(getControlRsp() != null)
+        {
+            return getControlRsp().getSupportedSampleRates().stream().map(rate -> (int)rate.getEffectiveSampleRate()).sorted().toList();
+        }
+        return java.util.Collections.emptyList();
+    }
+
+    @Override
+    public void setSampleRateInHz(int sampleRateHz) throws io.github.dsheirer.source.SourceException
+    {
+        if(getControlRsp() != null)
+        {
+            for(RspSampleRate rate : getControlRsp().getSupportedSampleRates())
+            {
+                if((int)rate.getEffectiveSampleRate() == sampleRateHz)
+                {
+                    try {
+                        setSampleRate(rate);
+                        return;
+                    } catch(SDRPlayException e) {
+                        throw new io.github.dsheirer.source.SourceException("Failed to set RSP sample rate", e);
+                    }
+                }
+            }
+        }
+    }
+
     public void setSampleRate(RspSampleRate rspSampleRate) throws SDRPlayException
     {
         getControlRsp().setSampleRate(rspSampleRate);

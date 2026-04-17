@@ -22,6 +22,11 @@ import io.github.dsheirer.dsp.filter.channelizer.PolyphaseChannelManager;
 import io.github.dsheirer.source.SourceEvent;
 import io.github.dsheirer.source.SourceException;
 import io.github.dsheirer.source.tuner.TunerController;
+import io.github.dsheirer.source.tuner.ISampleRateConfigurable;
+import io.github.dsheirer.util.ThreadPool;
+import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import io.github.dsheirer.source.tuner.channel.ChannelSpecification;
 import io.github.dsheirer.source.tuner.channel.TunerChannel;
 import io.github.dsheirer.source.tuner.channel.TunerChannelSource;
@@ -40,6 +45,7 @@ public class PolyphaseChannelSourceManager extends ChannelSourceManager
     private final static Logger mLog = LoggerFactory.getLogger(PolyphaseChannelSourceManager.class);
     private PolyphaseChannelManager mPolyphaseChannelManager;
     private TunerController mTunerController;
+    private ScheduledFuture<?> mAutoOptimizeFuture;
 
     /**
      * Constructs an instance
@@ -78,6 +84,58 @@ public class PolyphaseChannelSourceManager extends ChannelSourceManager
      * @param tunerChannel to check
      * @return true if the channel is within the frequency range of the tuner controller
      */
+    private void autoOptimizeSampleRate(SortedSet<TunerChannel> tunerChannels) {
+        if (!mTunerController.isAutoOptimizeSampleRate()) {
+            return;
+        }
+
+        if (!(mTunerController instanceof ISampleRateConfigurable sampleRateConfigurable)) {
+            return;
+        }
+
+        if (tunerChannels.isEmpty()) {
+            return;
+        }
+
+        long minActive = tunerChannels.first().getMinFrequency();
+        long maxActive = tunerChannels.last().getMaxFrequency();
+        long requiredBandwidth = (long) ((maxActive - minActive) / 0.8);
+
+        List<Integer> availableRates = sampleRateConfigurable.getAvailableSampleRatesInHz();
+        if (availableRates == null || availableRates.isEmpty()) {
+            return;
+        }
+
+        int bestRate = availableRates.get(availableRates.size() - 1);
+        for (int rate : availableRates) {
+            double usablePercent = (double)mTunerController.getUsableBandwidth() / (double)mTunerController.getBandwidth();
+            if (rate * usablePercent >= requiredBandwidth) {
+                bestRate = rate;
+                break;
+            }
+        }
+
+        if (bestRate != mTunerController.getSampleRate()) {
+            try {
+                boolean wasLocked = mTunerController.isLockedSampleRate();
+                if (wasLocked) {
+                    mTunerController.setLockedSampleRate(false);
+                }
+                sampleRateConfigurable.setSampleRateInHz(bestRate);
+                long newCenterFreq = getCenterFrequency(tunerChannels, mTunerController.getFrequency());
+                if (newCenterFreq != mTunerController.getFrequency() && newCenterFreq != 0) {
+                    mTunerController.setFrequency(newCenterFreq);
+                }
+                if (wasLocked) {
+                    mTunerController.setLockedSampleRate(true);
+                }
+                mLog.info("Auto-optimized sample rate to " + bestRate + " Hz");
+            } catch (SourceException e) {
+                mLog.error("Failed to auto-optimize sample rate", e);
+            }
+        }
+    }
+
     private boolean isTunable(TunerChannel tunerChannel)
     {
         return mTunerController.canTune(tunerChannel.getMinFrequency()) &&
@@ -439,6 +497,7 @@ public class PolyphaseChannelSourceManager extends ChannelSourceManager
 
                 //Add the requested channel to the list
                 tunerChannels.add(tunerChannel);
+                autoOptimizeSampleRate(tunerChannels);
 
                 if(canTune(tunerChannels))
                 {
@@ -499,6 +558,19 @@ public class PolyphaseChannelSourceManager extends ChannelSourceManager
                 //Lock the frequency and sample rate controls on the tuner controller so users can't change them
                 //when the polyphase manager has channels allocated
                 mTunerController.setLockedSampleRate(getTunerChannelCount() > 0);
+                if (true) {
+                    if (mAutoOptimizeFuture != null && !mAutoOptimizeFuture.isDone()) {
+                        mAutoOptimizeFuture.cancel(false);
+                    }
+                    mAutoOptimizeFuture = ThreadPool.SCHEDULED.schedule(() -> {
+                        try {
+                            mTunerController.getLock().lock();
+                            autoOptimizeSampleRate(getTunerChannels());
+                        } finally {
+                            mTunerController.getLock().unlock();
+                        }
+                    }, 2, TimeUnit.SECONDS);
+                }
                 break;
             case NOTIFICATION_MEASURED_FREQUENCY_ERROR_SYNC_LOCKED:
                 //Rebroadcast these frequency measurement errors to the tuner and tuner controller

@@ -17,6 +17,7 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.source.tuner.rtl;
+import io.github.dsheirer.source.tuner.ISampleRateConfigurable;
 
 import io.github.dsheirer.buffer.ByteNativeBufferFactory;
 import io.github.dsheirer.buffer.INativeBufferFactory;
@@ -45,7 +46,7 @@ import javax.usb.UsbException;
 /**
  * RTL-2832 tuner controller implementation.
  */
-public class RTL2832TunerController extends USBTunerController
+public class RTL2832TunerController extends USBTunerController implements ISampleRateConfigurable
 {
     private static final Logger mLog = LoggerFactory.getLogger(RTL2832TunerController.class);
 
@@ -925,6 +926,25 @@ public class RTL2832TunerController extends USBTunerController
      * @param sampleRate to apply
      * @throws SourceException
      */
+    @Override
+    public java.util.List<Integer> getAvailableSampleRatesInHz()
+    {
+        return java.util.Arrays.stream(SampleRate.values()).map(rate -> rate.getRate()).sorted().toList();
+    }
+
+    @Override
+    public void setSampleRateInHz(int sampleRateHz) throws SourceException
+    {
+        for(SampleRate rate : SampleRate.values())
+        {
+            if(rate.getRate() == sampleRateHz)
+            {
+                setSampleRate(rate);
+                return;
+            }
+        }
+    }
+
     public void setSampleRate(SampleRate sampleRate) throws SourceException
     {
         getLock().lock();

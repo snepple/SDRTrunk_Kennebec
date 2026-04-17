@@ -102,6 +102,7 @@ public interface IControlRsp
      * @return sample rate enumeration.
      */
     RspSampleRate getSampleRateEnumeration();
+    java.util.EnumSet<RspSampleRate> getSupportedSampleRates();
 
     /**
      * Sets the sample rate.

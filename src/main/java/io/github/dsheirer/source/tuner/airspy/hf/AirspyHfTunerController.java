@@ -18,6 +18,7 @@
  */
 
 package io.github.dsheirer.source.tuner.airspy.hf;
+import io.github.dsheirer.source.tuner.ISampleRateConfigurable;
 
 import io.github.dsheirer.buffer.INativeBufferFactory;
 import io.github.dsheirer.buffer.airspy.AirspyHfNativeBufferFactory;
@@ -40,7 +41,7 @@ import org.usb4java.LibUsb;
 /**
  * Airspy HF+ and HF Discovery tuner controller.
  */
-public class AirspyHfTunerController extends USBTunerController
+public class AirspyHfTunerController extends USBTunerController implements ISampleRateConfigurable
 {
     private static final Logger mLog = LoggerFactory.getLogger(AirspyHfTunerController.class);
     private static final AirspyHfSampleRate DEFAULT_SAMPLE_RATE = new AirspyHfSampleRate(0, 768_000, false);
@@ -280,6 +281,32 @@ public class AirspyHfTunerController extends USBTunerController
      * @return available sample rates
      * @throws IllegalStateException if the device has not yet been started
      */
+    @Override
+    public List<Integer> getAvailableSampleRatesInHz()
+    {
+        if(mAvailableSampleRates == null || mAvailableSampleRates.isEmpty())
+        {
+            return java.util.Collections.emptyList();
+        }
+        return mAvailableSampleRates.stream().map(rate -> rate.getSampleRate()).sorted().toList();
+    }
+
+    @Override
+    public void setSampleRateInHz(int sampleRateHz) throws SourceException
+    {
+        if(mAvailableSampleRates != null)
+        {
+            for(AirspyHfSampleRate rate : mAvailableSampleRates)
+            {
+                if(rate.getSampleRate() == sampleRateHz)
+                {
+                    setSampleRate(rate);
+                    return;
+                }
+            }
+        }
+    }
+
     public List<AirspyHfSampleRate> getAvailableSampleRates()
     {
         if(mAvailableSampleRates == null || mAvailableSampleRates.isEmpty())

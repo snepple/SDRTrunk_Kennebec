@@ -88,6 +88,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     private FrequencyPanel mFrequencyPanel;
     private JLabel mTunerIdLabel;
     private JCheckBox mAutoPPMCheckBox;
+    private JCheckBox mAutoOptimizeSampleRateCheckBox;
     private JLabel mMeasuredPPMLabel;
     private JLabel mRecordingStatusLabel;
     private JLabel mTunerStatusLabel;
@@ -232,6 +233,33 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Check box for enable/disable automatic PPM adjustment from decoder(s) frequency error feedback.
      */
+    /**
+     * Check box for enable/disable auto optimizing sample rate.
+     */
+    protected JCheckBox getAutoOptimizeSampleRateCheckBox()
+    {
+        if(mAutoOptimizeSampleRateCheckBox == null)
+        {
+            mAutoOptimizeSampleRateCheckBox = new JCheckBox("Auto-Optimize Sample Rate");
+            mAutoOptimizeSampleRateCheckBox.setToolTipText("Automatically adjust the tuner sample rate and center frequency to fit active channels");
+            mAutoOptimizeSampleRateCheckBox.addActionListener(e ->
+            {
+                if(!isLoading())
+                {
+                    Tuner tuner = getTuner();
+                    if(tuner != null)
+                    {
+                        boolean enabled = getAutoOptimizeSampleRateCheckBox().isSelected();
+                        getConfiguration().setAutoOptimizeSampleRate(enabled);
+                        save();
+                    }
+                }
+            });
+        }
+
+        return mAutoOptimizeSampleRateCheckBox;
+    }
+
     protected JCheckBox getAutoPPMCheckBox()
     {
         if(mAutoPPMCheckBox == null)
@@ -880,6 +908,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             add(getFrequencyCorrectionSpinner());
             add(getMeasuredPPMLabel(), "wrap");
             add(getAutoPPMCheckBox(), "span");
+            add(getAutoOptimizeSampleRateCheckBox(), "span");
 
             JPanel minMaxPanel = new JPanel();
             minMaxPanel.setLayout(new MigLayout("insets 0", "[][][][][][grow,fill]", ""));
@@ -908,6 +937,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             getTunerLockedStatusLabel().setVisible(hasTuner() && getTuner().getTunerController().isLockedSampleRate());
             getFrequencyCorrectionSpinner().setEnabled(hasTuner());
             getAutoPPMCheckBox().setEnabled(hasTuner());
+            getAutoOptimizeSampleRateCheckBox().setEnabled(hasTuner() && getTuner().getTunerController() instanceof io.github.dsheirer.source.tuner.ISampleRateConfigurable);
 
             Tuner tuner = getTuner();
 
@@ -918,6 +948,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                 getMaximumFrequencyTextField().setFrequency(tuner.getTunerController().getMaximumFrequency());
                 getFrequencyCorrectionSpinner().setValue(tuner.getTunerController().getFrequencyCorrection());
                 getAutoPPMCheckBox().setSelected(tuner.getTunerController().getFrequencyErrorCorrectionManager().isEnabled());
+                getAutoOptimizeSampleRateCheckBox().setSelected(getConfiguration().isAutoOptimizeSampleRate());
                 getFrequencyControl().addListener(getTuner().getTunerController());
                 getTuner().getTunerController().addListener(getFrequencyControl());
                 getMeasuredPPMLabel().setText(tuner.getTunerController().getMeasuredErrorStatus());
@@ -927,6 +958,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                 getFrequencyControl().setFrequency(0, false);
                 getFrequencyCorrectionSpinner().setValue(0);
                 getAutoPPMCheckBox().setSelected(false);
+                getAutoOptimizeSampleRateCheckBox().setSelected(false);
                 getMeasuredPPMLabel().setText("");
             }
         }

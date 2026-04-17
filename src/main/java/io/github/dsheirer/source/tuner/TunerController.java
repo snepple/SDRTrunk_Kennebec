@@ -202,6 +202,7 @@ public abstract class TunerController implements Tunable, ISourceEventProcessor,
         //frequency before we give up on the tuner as having an error.
         try
         {
+            setAutoOptimizeSampleRate(config.isAutoOptimizeSampleRate());
             setFrequency(config.getFrequency());
         }
         catch(Exception e)
@@ -262,6 +263,16 @@ public abstract class TunerController implements Tunable, ISourceEventProcessor,
      *
      * @return true if the tuner controller is locked.
      */
+    private boolean mAutoOptimizeSampleRate = false;
+
+    public boolean isAutoOptimizeSampleRate() {
+        return mAutoOptimizeSampleRate;
+    }
+
+    public void setAutoOptimizeSampleRate(boolean autoOptimizeSampleRate) {
+        mAutoOptimizeSampleRate = autoOptimizeSampleRate;
+    }
+
     public boolean isLockedSampleRate()
     {
         //Note: this access is not protected by the mFrequencyControllerLock

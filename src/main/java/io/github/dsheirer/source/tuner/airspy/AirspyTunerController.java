@@ -18,6 +18,7 @@
  */
 
 package io.github.dsheirer.source.tuner.airspy;
+import io.github.dsheirer.source.tuner.ISampleRateConfigurable;
 
 import io.github.dsheirer.buffer.INativeBufferFactory;
 import io.github.dsheirer.buffer.sample.SampleNativeBufferFactory;
@@ -43,7 +44,7 @@ import javax.usb.UsbException;
 /**
  * Airspy tuner controller
  */
-public class AirspyTunerController extends USBTunerController
+public class AirspyTunerController extends USBTunerController implements ISampleRateConfigurable
 {
     private final static Logger mLog = LoggerFactory.getLogger(AirspyTunerController.class);
     public static final Gain LINEARITY_GAIN_DEFAULT = Gain.LINEARITY_14;
@@ -310,6 +311,25 @@ public class AirspyTunerController extends USBTunerController
     /**
      * Returns a list of sample rates supported by the firmware version
      */
+    @Override
+    public List<Integer> getAvailableSampleRatesInHz()
+    {
+        return mSampleRates.stream().map(rate -> rate.getRate()).sorted().toList();
+    }
+
+    @Override
+    public void setSampleRateInHz(int sampleRateHz) throws SourceException
+    {
+        AirspySampleRate sampleRate = getSampleRate(sampleRateHz);
+        if (sampleRate != null) {
+            try {
+                setSampleRate(sampleRate);
+            } catch (Exception e) {
+                throw new SourceException("Failed to set Airspy sample rate", e);
+            }
+        }
+    }
+
     public List<AirspySampleRate> getSampleRates()
     {
         return mSampleRates;

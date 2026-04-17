@@ -18,6 +18,7 @@
  */
 
 package io.github.dsheirer.source.tuner.hydrasdr;
+import io.github.dsheirer.source.tuner.ISampleRateConfigurable;
 
 import io.github.dsheirer.buffer.INativeBufferFactory;
 import io.github.dsheirer.buffer.sample.SampleNativeBufferFactory;
@@ -43,7 +44,7 @@ import javax.usb.UsbException;
 /**
  * HydraSDR tuner controller
  */
-public class HydraSdrTunerController extends USBTunerController
+public class HydraSdrTunerController extends USBTunerController implements ISampleRateConfigurable
 {
     private final static Logger mLog = LoggerFactory.getLogger(HydraSdrTunerController.class);
     public static final Gain LINEARITY_GAIN_DEFAULT = Gain.LINEARITY_14;
@@ -310,6 +311,25 @@ public class HydraSdrTunerController extends USBTunerController
     /**
      * Returns a list of sample rates supported by the firmware version
      */
+    @Override
+    public List<Integer> getAvailableSampleRatesInHz()
+    {
+        return mSampleRates.stream().map(rate -> rate.getRate()).sorted().toList();
+    }
+
+    @Override
+    public void setSampleRateInHz(int sampleRateHz) throws SourceException
+    {
+        HydraSdrSampleRate sampleRate = getSampleRate(sampleRateHz);
+        if (sampleRate != null) {
+            try {
+                setSampleRate(sampleRate);
+            } catch (Exception e) {
+                throw new SourceException("Failed to set HydraSDR sample rate", e);
+            }
+        }
+    }
+
     public List<HydraSdrSampleRate> getSampleRates()
     {
         return mSampleRates;

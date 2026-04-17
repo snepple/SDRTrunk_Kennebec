@@ -41,6 +41,10 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class ControlRsp<T extends Device> implements IControlRsp
 {
+    @Override
+    public java.util.EnumSet<RspSampleRate> getSupportedSampleRates() {
+        return RspSampleRate.SINGLE_TUNER_SAMPLE_RATES;
+    }
     private static final Logger mLog = LoggerFactory.getLogger(ControlRsp.class);
     private T mDevice;
     protected RspSampleRate mSampleRate = RspSampleRate.RATE_8_000;

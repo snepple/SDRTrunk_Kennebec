@@ -65,6 +65,7 @@ public abstract class TunerConfiguration
     private long mMaximumFrequency;
     private double mFrequencyCorrection = 0.0d;
     private boolean mAutoPPMCorrection = true;
+    private boolean mAutoOptimizeSampleRate = false;
 
     /**
      * Default constructor to support Jackson
@@ -143,6 +144,23 @@ public abstract class TunerConfiguration
      *
      * @param enabled
      */
+    /**
+     * Indicates if auto-optimizing the sample rate is enabled.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "auto_optimize_sample_rate")
+    public boolean isAutoOptimizeSampleRate()
+    {
+        return mAutoOptimizeSampleRate;
+    }
+
+    /**
+     * Sets whether auto-optimizing the sample rate is enabled.
+     */
+    public void setAutoOptimizeSampleRate(boolean enabled)
+    {
+        mAutoOptimizeSampleRate = enabled;
+    }
+
     public void setAutoPPMCorrectionEnabled(boolean enabled)
     {
         mAutoPPMCorrection = enabled;

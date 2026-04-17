@@ -17,6 +17,8 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.source.tuner.hackrf;
+import java.util.List;
+import io.github.dsheirer.source.tuner.ISampleRateConfigurable;
 
 import io.github.dsheirer.buffer.INativeBufferFactory;
 import io.github.dsheirer.buffer.SignedByteNativeBufferFactory;
@@ -37,7 +39,7 @@ import org.usb4java.LibUsbException;
 
 import javax.usb.UsbException;
 
-public class HackRFTunerController extends USBTunerController
+public class HackRFTunerController extends USBTunerController implements ISampleRateConfigurable
 {
     private final static Logger mLog = LoggerFactory.getLogger(HackRFTunerController.class);
 
@@ -393,6 +395,31 @@ public class HackRFTunerController extends USBTunerController
      * sample rates.  However, since we're only using integral sample rates, we
      * simply invoke the setSampleRateManual method directly.
      */
+    @Override
+    public List<Integer> getAvailableSampleRatesInHz()
+    {
+        return HackRFSampleRate.VALID_SAMPLE_RATES.stream().map(rate -> rate.getRate()).sorted().toList();
+    }
+
+    @Override
+    public void setSampleRateInHz(int sampleRateHz) throws SourceException
+    {
+        HackRFSampleRate found = null;
+        for (HackRFSampleRate rate : HackRFSampleRate.VALID_SAMPLE_RATES) {
+            if (rate.getRate() == sampleRateHz) {
+                found = rate;
+                break;
+            }
+        }
+        if (found != null) {
+            try {
+                setSampleRate(found);
+            } catch (Exception e) {
+                throw new SourceException("Failed to set HackRF sample rate", e);
+            }
+        }
+    }
+
     public void setSampleRate(HackRFSampleRate rate) throws UsbException, SourceException
     {
         if(!rate.isValidSampleRate())
