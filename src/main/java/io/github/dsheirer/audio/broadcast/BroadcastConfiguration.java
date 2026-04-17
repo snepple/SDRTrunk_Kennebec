@@ -31,6 +31,7 @@ import io.github.dsheirer.audio.broadcast.icecast.IcecastConfiguration;
 import io.github.dsheirer.audio.broadcast.shoutcast.v1.ShoutcastV1Configuration;
 import io.github.dsheirer.audio.broadcast.shoutcast.v2.ShoutcastV2Configuration;
 import io.github.dsheirer.audio.broadcast.zello.ZelloConfiguration;
+import io.github.dsheirer.audio.broadcast.iamresponding.IAmRespondingConfiguration;
 import io.github.dsheirer.audio.broadcast.zello.ZelloConsumerConfiguration;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
@@ -59,6 +60,7 @@ import java.net.SocketAddress;
     @JsonSubTypes.Type(value = ShoutcastV2Configuration.class, name="shoutcastV2Configuration"),
     @JsonSubTypes.Type(value = ZelloConfiguration.class, name="zelloConfiguration"),
     @JsonSubTypes.Type(value = ZelloConsumerConfiguration.class, name="zelloConsumerConfiguration"),
+    @JsonSubTypes.Type(value = IAmRespondingConfiguration.class, name="iamRespondingConfiguration"),
 })
 @JacksonXmlRootElement(localName = "stream")
 public abstract class BroadcastConfiguration

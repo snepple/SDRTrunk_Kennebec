@@ -48,6 +48,11 @@ public enum BroadcastServerType
      */
     ZELLO("Zello Consumer", null),
 
+    /**
+     * IAmResponding TwoToneDetect - real-time UDP raw PCM streaming
+     */
+    IAMRESPONDING("IAmResponding", null),
+
     UNKNOWN("Unknown", null);
 
     private String mLabel;
