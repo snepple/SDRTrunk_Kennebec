@@ -85,6 +85,7 @@ public class IconManager extends Editor<Icon>
     {
         mIconModel = iconModel;
         getChildren().addAll(getAccordion());
+        showEditor(false);
     }
 
     private VBox getAccordion()
@@ -185,6 +186,11 @@ public class IconManager extends Editor<Icon>
                     @Override
                     protected void updateItem(Boolean item, boolean empty)
                     {
+                        super.updateItem(item, empty);
+                        if(empty) {
+                            setText(null);
+                            return;
+                        }
                         Icon icon = getTableRow() != null ? getTableRow().getItem() : null;
 
                         if(icon != null)
@@ -571,6 +577,7 @@ public class IconManager extends Editor<Icon>
                     if(empty)
                     {
                         setGraphic(null);
+                        setText(null);
                     }
                     else
                     {

@@ -239,7 +239,14 @@ public class Icon implements Comparable<Icon>
             {
                 if(getPath().startsWith("images"))
                 {
-                    mFxImage = new Image(getPath(), 0, ICON_HEIGHT_JAVAFX, true, true);
+                    String resourcePath = getPath();
+                    if (!resourcePath.startsWith("/")) {
+                        resourcePath = "/" + resourcePath;
+                    }
+                    URL imageURL = Icon.class.getResource(resourcePath);
+                    if (imageURL != null) {
+                        mFxImage = new Image(imageURL.toExternalForm(), 0, ICON_HEIGHT_JAVAFX, true, true);
+                    }
                 }
                 else
                 {
