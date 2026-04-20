@@ -1,0 +1,13 @@
+--- src/main/java/io/github/dsheirer/gui/playlist/PlaylistEditor.java
++++ src/main/java/io/github/dsheirer/gui/playlist/PlaylistEditor.java
+@@ -82,9 +82,7 @@
+
+         //Throw a new runnable back onto the FX thread to lazy load the editor content after the editor has been
+         //constructed and shown.
+-        Platform.runLater(() -> {
+-            setCenter(getTabPane());
+-        });
++        setCenter(getTabPane());
+     }
+
+     /**

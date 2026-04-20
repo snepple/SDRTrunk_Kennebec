@@ -1,0 +1,18 @@
+--- src/main/java/io/github/dsheirer/gui/JavaFxWindowManager.java
++++ src/main/java/io/github/dsheirer/gui/JavaFxWindowManager.java
+@@ -536,8 +536,13 @@
+     public JFXPanel getPlaylistEditorPanel() {
+         JFXPanel panel = new JFXPanel();
+         execute(() -> {
+-            Scene scene = new Scene(getPlaylistEditor(), 1000, 750);
+-            panel.setScene(scene);
++            try {
++                PlaylistEditor editor = getPlaylistEditor();
++                Scene scene = new Scene(editor, 1000, 750);
++                panel.setScene(scene);
++            } catch (Throwable t) {
++                mLog.error("Error creating playlist editor scene", t);
++            }
+         });
+         return panel;
+     }
