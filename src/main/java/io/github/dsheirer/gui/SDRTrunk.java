@@ -188,6 +188,16 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 
     public SDRTrunk()
     {
+        String operatingSystem = System.getProperty("os.name", "generic").toLowerCase(Locale.ENGLISH);
+        ThemeManager themeManager = new ThemeManager();
+        if(operatingSystem.contains("mac") || operatingSystem.contains("nux")) {
+            try {
+                LookAndFeelFactory.installJideExtension();
+            } catch(Exception e) {
+                mLog.error("Error trying to set LookAndFeelFactory extension for OS [" + operatingSystem + "]");
+            }
+        }
+
         if(!GraphicsEnvironment.isHeadless())
         {
             mMainGui = new JFrame();
@@ -205,16 +215,6 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         }
 
         mResourceMonitor = new ResourceMonitor(mUserPreferences);
-
-        String operatingSystem = System.getProperty("os.name", "generic").toLowerCase(Locale.ENGLISH);
-        ThemeManager themeManager = new ThemeManager();
-        if(operatingSystem.contains("mac") || operatingSystem.contains("nux")) {
-            try {
-                LookAndFeelFactory.installJideExtension();
-            } catch(Exception e) {
-                mLog.error("Error trying to set LookAndFeelFactory extension for OS [" + operatingSystem + "]");
-            }
-        }
 
         ThreadPool.logSettings();
 

@@ -1,4 +1,6 @@
-Fix icon manager UI
+Fix flatlaf window decorations by setting properties early
 
-- Set table view column resize policy to remove extra column
-- Change Add button to directly open file chooser and name prompt dialog
+- Fix flatlaf.useWindowDecorations and flatlaf.window.backdrop being
+  applied after the look and feel was already set.
+- Also initialize the ThemeManager before any JFrame instances are
+  created to ensure that JFrames use the LookAndFeel's decorations.

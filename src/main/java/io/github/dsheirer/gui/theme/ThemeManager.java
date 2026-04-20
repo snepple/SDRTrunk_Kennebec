@@ -63,6 +63,12 @@ public class ThemeManager {
                 }
             }
 
+            // Set system properties for FlatLaf BEFORE initializing LookAndFeel
+            if (mIsWindows11) {
+                System.setProperty("flatlaf.window.backdrop", "mica");
+                System.setProperty("flatlaf.useWindowDecorations", "true");
+            }
+
             if (useLightTheme) {
                 UIManager.setLookAndFeel(new FlatLightLaf());
             } else {
@@ -73,8 +79,8 @@ public class ThemeManager {
             if (mIsWindows11) {
                 UIManager.put("TitlePane.useWindowDecorations", true);
                 UIManager.put("TitlePane.menuBarEmbedded", false);
-                System.setProperty("flatlaf.window.backdrop", "mica");
-                System.setProperty("flatlaf.useWindowDecorations", "true");
+                JFrame.setDefaultLookAndFeelDecorated(true);
+                JDialog.setDefaultLookAndFeelDecorated(true);
             }
 
             // Update UI tree if running
