@@ -63,7 +63,7 @@ public class WidgetContainer extends JPanel {
     }
 
     private void rebuildLayout() {
-        removeAll();
+        super.removeAll();
         for (int i = 0; i < mWidgets.size(); i++) {
             Widget w = mWidgets.get(i);
 
