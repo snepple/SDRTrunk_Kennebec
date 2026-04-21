@@ -77,7 +77,7 @@ public class TwoToneEditor extends VBox
 
         mTableView = new TableView<>(mObservableConfigs);
 
-        TableColumn<TwoToneConfiguration, String> aliasCol = new TableColumn<>("Alias");
+        TableColumn<TwoToneConfiguration, String> aliasCol = new TableColumn<>("Name");
         aliasCol.setCellValueFactory(new PropertyValueFactory<>("alias"));
         TableColumn<TwoToneConfiguration, Double> toneACol = new TableColumn<>("Tone A");
         toneACol.setCellValueFactory(new PropertyValueFactory<>("toneA"));
@@ -154,7 +154,7 @@ public class TwoToneEditor extends VBox
         topicField.disableProperty().bind(mqttCheck.selectedProperty().not());
         payloadArea.disableProperty().bind(mqttCheck.selectedProperty().not());
 
-        editorGrid.add(new Label("Alias:"), 0, 0);
+        editorGrid.add(new Label("Name:"), 0, 0);
         editorGrid.add(aliasField, 1, 0);
         editorGrid.add(new Label("Type:"), 0, 1);
         editorGrid.add(typeSelector, 1, 1);
