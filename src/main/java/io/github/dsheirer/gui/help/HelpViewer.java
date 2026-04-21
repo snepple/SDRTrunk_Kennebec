@@ -91,6 +91,7 @@ public class HelpViewer extends JPanel {
         return null;
     }
 
+
     private void createNodes(DefaultMutableTreeNode root) {
         DefaultMutableTreeNode dspNode = new DefaultMutableTreeNode("DSP Filters");
         dspNode.add(new DefaultMutableTreeNode("De-emphasis Filter"));
@@ -107,29 +108,87 @@ public class HelpViewer extends JPanel {
         dispatchNode.add(new DefaultMutableTreeNode("Automated Audio Archiving"));
         dispatchNode.add(new DefaultMutableTreeNode("Streaming Setup"));
         root.add(dispatchNode);
+
+        DefaultMutableTreeNode decodingNode = new DefaultMutableTreeNode("Decoding");
+        decodingNode.add(new DefaultMutableTreeNode("P25 Phase I"));
+        decodingNode.add(new DefaultMutableTreeNode("P25 Phase II"));
+        decodingNode.add(new DefaultMutableTreeNode("DMR"));
+        root.add(decodingNode);
+
+        DefaultMutableTreeNode systemNode = new DefaultMutableTreeNode("System Configuration");
+        systemNode.add(new DefaultMutableTreeNode("Aliases"));
+        systemNode.add(new DefaultMutableTreeNode("Playlists"));
+        root.add(systemNode);
     }
+
+
+
 
     private void updateContent(String topic) {
         String markdown = "# " + topic + "\n\n";
 
         switch (topic) {
             case "De-emphasis Filter":
-                markdown += "**Purpose:** Restores natural voice balance by reversing the pre-emphasis applied at the transmitter.\n\n";
-                markdown += "**Benefit:** Significantly reduces harsh high-frequency hiss, making dispatch audio much easier to listen to for extended periods.";
+                markdown += "**Purpose:** Restores natural voice balance by reversing the pre-emphasis applied at the transmitter. Pre-emphasis boosts high frequencies before transmission to overcome noise.\n\n";
+                markdown += "**Benefit:** Significantly reduces harsh high-frequency hiss, making dispatch audio much easier to listen to for extended periods, reducing operator fatigue.\n\n";
+                markdown += "**Usage:** Typically enabled automatically for analog FM voice channels to ensure standard audio fidelity.";
+                break;
+            case "Squaring Filter":
+                markdown += "**Purpose:** Used in timing recovery and carrier frequency estimation by squaring the signal to generate a harmonic at twice the carrier frequency.\n\n";
+                markdown += "**Benefit:** Helps in synchronizing the receiver with the incoming digital signal, especially in low signal-to-noise ratio (SNR) environments.\n\n";
+                markdown += "**Usage:** An internal DSP component vital for reliable digital demodulation.";
                 break;
             case "Decimation Filter":
-                 markdown += "**Purpose:** Reduces the sample rate of the signal to lower processing requirements.\n\n";
-                 markdown += "**Benefit:** Vastly improves efficiency, allowing more channels to be decoded simultaneously on the same hardware.";
+                 markdown += "**Purpose:** Reduces the sample rate of the signal to lower processing requirements. It acts as a low-pass filter followed by downsampling.\n\n";
+                 markdown += "**Benefit:** Vastly improves efficiency, allowing more channels to be decoded simultaneously on the same hardware without overloading the CPU.\n\n";
+                 markdown += "**Usage:** Automatically configured by SDRTrunk based on the target channel bandwidth.";
                 break;
             case "Gain Configuration":
-                markdown += "**Purpose:** Adjusts the RF and IF amplification levels of the SDR hardware.\n\n";
-                markdown += "**Benefit:** Optimizes signal-to-noise ratio. Too little gain drops the signal into the noise floor; too much overloads the ADC and distorts digital decoding.";
+                markdown += "**Purpose:** Adjusts the RF and IF amplification levels of the SDR hardware to optimize signal reception.\n\n";
+                markdown += "**Benefit:** Optimizes signal-to-noise ratio. Too little gain drops the signal into the noise floor; too much overloads the Analog-to-Digital Converter (ADC) and distorts digital decoding, causing errors or complete signal loss.\n\n";
+                markdown += "**Usage:** Adjust sliders in the Tuners tab until the signal peaks are clearly visible above the noise floor in the spectrum display without clipping.";
+                break;
+            case "Sample Rate":
+                markdown += "**Purpose:** Determines the bandwidth of the radio spectrum captured by the SDR hardware (e.g., 2.4 MSPS captures 2.4 MHz of bandwidth).\n\n";
+                markdown += "**Benefit:** A higher sample rate allows monitoring a wider frequency range and more channels simultaneously, but increases CPU and USB bus load.\n\n";
+                markdown += "**Usage:** Select a rate high enough to cover your target frequencies but low enough to maintain system stability.";
+                break;
+            case "Automated Audio Archiving":
+                markdown += "**Purpose:** Automatically records and saves audio transmissions to disk as standard audio files (e.g., MP3 or WAV).\n\n";
+                markdown += "**Benefit:** Enables playback of past transmissions, which is extremely useful for record-keeping, auditing, and reviewing missed calls.\n\n";
+                markdown += "**Usage:** Configured via the User Preferences and individual Alias settings to specify which talkgroups or IDs should be recorded.";
+                break;
+            case "Streaming Setup":
+                markdown += "**Purpose:** Configures the software to send decoded audio to external services like Icecast, Broadcastify, or Zello.\n\n";
+                markdown += "**Benefit:** Allows sharing dispatch audio with remote users or integrating with web-based listening platforms seamlessly.\n\n";
+                markdown += "**Usage:** Setup streaming profiles in the Playlist Editor and assign them to specific aliases or channels.";
+                break;
+            case "P25 Phase I":
+                markdown += "**Purpose:** A standard for digital public safety radio communications, using FDMA (Frequency Division Multiple Access).\n\n";
+                markdown += "**Benefit:** Provides clear digital voice and data communications. SDRTrunk can decode this protocol natively.\n\n";
+                break;
+            case "P25 Phase II":
+                markdown += "**Purpose:** An evolution of the P25 standard using TDMA (Time Division Multiple Access) to double the channel capacity.\n\n";
+                markdown += "**Benefit:** Allows two voice paths on a single 12.5 kHz channel, improving spectral efficiency. SDRTrunk handles the TDMA slot decoding automatically.\n\n";
+                break;
+            case "DMR":
+                markdown += "**Purpose:** Digital Mobile Radio, a standard primarily used for commercial and business radio systems.\n\n";
+                markdown += "**Benefit:** Offers cost-effective digital communication with features like text messaging. SDRTrunk supports basic DMR decoding.\n\n";
+                break;
+            case "Aliases":
+                markdown += "**Purpose:** Assigns human-readable names, colors, and actions to specific talkgroups and radio IDs.\n\n";
+                markdown += "**Benefit:** Makes it easier to identify who is speaking, displaying \"Dispatch\" instead of \"TG 1001\". Aliases can also trigger actions like recording or streaming.\n\n";
+                markdown += "**Usage:** Manage aliases in the Playlist Editor under the Aliases tab.";
+                break;
+            case "Playlists":
+                markdown += "**Purpose:** Organizes channels, aliases, and system settings into easily loadable configuration files.\n\n";
+                markdown += "**Benefit:** Allows quickly switching between different monitoring setups, locations, or configurations without reconfiguring the software from scratch.\n\n";
+                markdown += "**Usage:** Create and switch playlists using the Playlist Editor.";
                 break;
             default:
                 markdown += "Detailed documentation for this topic is being migrated from the legacy wiki.";
                 break;
         }
-
         Parser parser = Parser.builder().build();
         Node document = parser.parse(markdown);
         HtmlRenderer renderer = HtmlRenderer.builder().build();
