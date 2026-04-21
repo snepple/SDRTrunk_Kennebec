@@ -277,6 +277,8 @@ public class AliasItemEditor extends Editor<Alias>
     {
         super.setItem(alias);
 
+        mSuppressModification = true;
+
         refreshAutoCompleteBindings();
 
         boolean disable = (alias == null);
@@ -373,6 +375,7 @@ public class AliasItemEditor extends Editor<Alias>
             getMonitorAudioToggleSwitch().setSelected(false);
         }
 
+        mSuppressModification = false;
         modifiedProperty().set(false);
     }
 
@@ -496,7 +499,7 @@ public class AliasItemEditor extends Editor<Alias>
             mStreamAsTalkgroupField.setTooltip(new Tooltip("When specified, all streamed call audio will use this " +
                     "talkgroup value in place of the decoded talkgroup value."));
             mStreamAsTalkgroupField.textProperty().addListener((o, old, newV) -> {
-                if(getItem() != null)
+                if(!mSuppressModification && getItem() != null)
                 {
                     modifiedProperty().set(true);
                 }
@@ -914,43 +917,53 @@ public class AliasItemEditor extends Editor<Alias>
     private void updateStreamViews()
     {
         Platform.runLater(() -> {
-            getAvailableStreamsView().getItems().clear();
-            getSelectedStreamsView().getItems().clear();
-            getAvailableStreamsView().setDisable(getItem() == null);
-            getSelectedStreamsView().setDisable(getItem() == null);
-            getStreamAsTalkgroupField().setDisable(getItem() == null);
+            mSuppressModification = true;
 
-            if(getItem() != null)
+            try
             {
-                List<String> availableStreams = mPlaylistManager.getBroadcastModel().getBroadcastConfigurationNames();
+                getAvailableStreamsView().getItems().clear();
+                getSelectedStreamsView().getItems().clear();
+                getAvailableStreamsView().setDisable(getItem() == null);
+                getSelectedStreamsView().setDisable(getItem() == null);
+                getStreamAsTalkgroupField().setDisable(getItem() == null);
 
-                Set<BroadcastChannel> selectedChannels = getItem().getBroadcastChannels();
-
-                for(BroadcastChannel channel: selectedChannels)
+                if(getItem() != null)
                 {
-                    if(availableStreams.contains(channel.getChannelName()))
+                    List<String> availableStreams = mPlaylistManager.getBroadcastModel().getBroadcastConfigurationNames();
+
+                    Set<BroadcastChannel> selectedChannels = getItem().getBroadcastChannels();
+
+                    for(BroadcastChannel channel: selectedChannels)
                     {
-                        availableStreams.remove(channel.getChannelName());
+                        if(availableStreams.contains(channel.getChannelName()))
+                        {
+                            availableStreams.remove(channel.getChannelName());
+                        }
                     }
-                }
 
-                getSelectedStreamsView().getItems().addAll(selectedChannels);
-                getAvailableStreamsView().getItems().addAll(availableStreams);
+                    getSelectedStreamsView().getItems().addAll(selectedChannels);
+                    getAvailableStreamsView().getItems().addAll(availableStreams);
 
-                AliasID streamAs = getItem().getStreamTalkgroupAlias();
+                    AliasID streamAs = getItem().getStreamTalkgroupAlias();
 
-                if(streamAs instanceof StreamAsTalkgroup sat)
-                {
-                    mStreamAsIntegerTextFormatter.setValue(sat.getValue());
+                    if(streamAs instanceof StreamAsTalkgroup sat)
+                    {
+                        mStreamAsIntegerTextFormatter.setValue(sat.getValue());
+                    }
+                    else
+                    {
+                        mStreamAsIntegerTextFormatter.setValue(null);
+                    }
                 }
                 else
                 {
                     mStreamAsIntegerTextFormatter.setValue(null);
                 }
             }
-            else
+            finally
             {
-                mStreamAsIntegerTextFormatter.setValue(null);
+                mSuppressModification = false;
+                modifiedProperty().set(false);
             }
         });
     }
@@ -1188,7 +1201,12 @@ public class AliasItemEditor extends Editor<Alias>
             mRecordAudioToggleSwitch = new ToggleSwitch();
             mRecordAudioToggleSwitch.setDisable(true);
             mRecordAudioToggleSwitch.selectedProperty()
-                .addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
+                .addListener((observable, oldValue, newValue) -> {
+                    if(!mSuppressModification)
+                    {
+                        modifiedProperty().set(true);
+                    }
+                });
         }
 
         return mRecordAudioToggleSwitch;
@@ -1202,7 +1220,12 @@ public class AliasItemEditor extends Editor<Alias>
             mColorPicker.setDisable(true);
             mColorPicker.setEditable(true);
             mColorPicker.setStyle("-fx-color-rect-width: 60px; -fx-color-label-visible: false;");
-            mColorPicker.setOnAction(event -> modifiedProperty().set(true));
+            mColorPicker.setOnAction(event -> {
+                if(!mSuppressModification)
+                {
+                    modifiedProperty().set(true);
+                }
+            });
         }
 
         return mColorPicker;
@@ -1218,7 +1241,12 @@ public class AliasItemEditor extends Editor<Alias>
             mIconNodeComboBox.setItems(new SortedList(mPlaylistManager.getIconModel().iconsProperty(), Ordering.natural()));
             mIconNodeComboBox.setCellFactory(new IconCellFactory());
             mIconNodeComboBox.getSelectionModel().selectedItemProperty()
-                    .addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
+                    .addListener((observable, oldValue, newValue) -> {
+                        if(!mSuppressModification)
+                        {
+                            modifiedProperty().set(true);
+                        }
+                    });
         }
 
         return mIconNodeComboBox;
@@ -1697,7 +1725,10 @@ public class AliasItemEditor extends Editor<Alias>
         @Override
         public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
         {
-            modifiedProperty().set(true);
+            if(!mSuppressModification)
+            {
+                modifiedProperty().set(true);
+            }
         }
     }
 
