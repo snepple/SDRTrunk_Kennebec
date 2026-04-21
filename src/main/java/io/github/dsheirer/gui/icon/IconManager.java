@@ -170,47 +170,39 @@ public class IconManager extends Editor<Icon>
         {
             mIconTableView = new TableView<>(getIconSortedList());
 
-            TableColumn<Icon,String> iconColumn = new TableColumn("Icon");
-            iconColumn.setCellValueFactory(new PropertyValueFactory<>("path"));
+            TableColumn<Icon,Icon> iconColumn = new TableColumn<>("Icon");
+            iconColumn.setCellValueFactory(param -> new javafx.beans.property.ReadOnlyObjectWrapper<>(param.getValue()));
             iconColumn.setCellFactory(new IconTableCellFactory());
 
             TableColumn<Icon,String> nameColumn = new TableColumn<>("Name");
             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
 
-            TableColumn<Icon,Boolean> typeColumn = new TableColumn<>("Type");
+            TableColumn<Icon,Icon> typeColumn = new TableColumn<>("Type");
             typeColumn.setPrefWidth(100);
-            typeColumn.setCellValueFactory(new PropertyValueFactory<>("defaultIcon"));
+            typeColumn.setCellValueFactory(param -> new javafx.beans.property.ReadOnlyObjectWrapper<>(param.getValue()));
             typeColumn.setCellFactory(param -> {
-                TableCell tableCell = new TableCell<Icon,Boolean>()
+                TableCell<Icon,Icon> tableCell = new TableCell<>()
                 {
                     @Override
-                    protected void updateItem(Boolean item, boolean empty)
+                    protected void updateItem(Icon item, boolean empty)
                     {
                         super.updateItem(item, empty);
-                        if(empty) {
+                        if(empty || item == null) {
                             setText(null);
                             return;
                         }
-                        Icon icon = getTableRow() != null ? getTableRow().getItem() : null;
 
-                        if(icon != null)
+                        if(item.getDefaultIcon())
                         {
-                            if(icon.getDefaultIcon())
-                            {
-                                setText("Default");
-                            }
-                            else if(icon.getStandardIcon())
-                            {
-                                setText("Standard");
-                            }
-                            else
-                            {
-                                setText("Custom");
-                            }
+                            setText("Default");
+                        }
+                        else if(item.getStandardIcon())
+                        {
+                            setText("Standard");
                         }
                         else
                         {
-                            setText(null);
+                            setText("Custom");
                         }
                     }
                 };
@@ -561,40 +553,35 @@ public class IconManager extends Editor<Icon>
         return mCancelButton;
     }
 
-    public class IconTableCellFactory implements Callback<TableColumn<Icon, String>, TableCell<Icon, String>>
+    public class IconTableCellFactory implements Callback<TableColumn<Icon, Icon>, TableCell<Icon, Icon>>
     {
         @Override
-        public TableCell<Icon, String> call(TableColumn<Icon, String> param)
+        public TableCell<Icon, Icon> call(TableColumn<Icon, Icon> param)
         {
-            TableCell<Icon,String> tableCell = new TableCell<>()
+            TableCell<Icon,Icon> tableCell = new TableCell<>()
             {
                 @Override
-                protected void updateItem(String item, boolean empty)
+                protected void updateItem(Icon item, boolean empty)
                 {
                     super.updateItem(item, empty);
                     setAlignment(Pos.CENTER);
 
-                    if(empty)
+                    if(empty || item == null)
                     {
                         setGraphic(null);
                         setText(null);
                     }
                     else
                     {
-                        if(getTableRow() != null)
+                        if(item.getFxImage() != null)
                         {
-                            Icon icon = getTableRow().getItem();
-
-                            if(icon != null && icon.getFxImage() != null)
-                            {
-                                setGraphic(new ImageView(icon.getFxImage()));
-                                setText(null);
-                            }
-                            else
-                            {
-                                setGraphic(null);
-                                setText("Can't load image");
-                            }
+                            setGraphic(new ImageView(item.getFxImage()));
+                            setText(null);
+                        }
+                        else
+                        {
+                            setGraphic(null);
+                            setText("Can't load image");
                         }
                     }
                 }

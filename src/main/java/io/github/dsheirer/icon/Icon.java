@@ -33,6 +33,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.ImageIcon;
+import javafx.embed.swing.SwingFXUtils;
+import java.awt.image.BufferedImage;
+import java.awt.Graphics2D;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import java.io.InputStream;
 
@@ -237,27 +240,17 @@ public class Icon implements Comparable<Icon>
             }
             else
             {
-                if(getPath().startsWith("images"))
-                {
-                    String resourcePath = getPath();
-                    if (!resourcePath.startsWith("/")) {
-                        resourcePath = "/" + resourcePath;
+                try {
+                    ImageIcon icon = io.github.dsheirer.icon.IconModel.getScaledIcon(getIcon(), ICON_HEIGHT_JAVAFX);
+                    if (icon != null) {
+                        BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+                        Graphics2D cg = bImg.createGraphics();
+                        icon.paintIcon(null, cg, 0, 0);
+                        cg.dispose();
+                        mFxImage = SwingFXUtils.toFXImage(bImg, null);
                     }
-                    URL imageURL = Icon.class.getResource(resourcePath);
-                    if (imageURL != null) {
-                        mFxImage = new Image(imageURL.toExternalForm(), 0, ICON_HEIGHT_JAVAFX, true, true);
-                    }
-                }
-                else
-                {
-                    Path filePath = Path.of(getPath());
-                    mFxImage = new Image(filePath.toUri().toString(), 0, ICON_HEIGHT_JAVAFX, true, true);
-                }
-
-                if(mFxImage.getException() != null)
-                {
-                    mLog.error("Error loading icon [" + getName() + " " + getPath() + "] - " +
-                        mFxImage.getException().getLocalizedMessage());
+                } catch (Exception e) {
+                    mLog.error("Error converting icon to FX image [" + getName() + "]", e);
                 }
             }
         }
