@@ -89,7 +89,7 @@ public class ControllerPanel extends JPanel
         mNowPlayingPanel = new NowPlayingPanel(playlistManager, iconModel, userPreferences, settingsManager, tunerManager, detailTabsVisible, visibilityListener);
         mMapPanel = new MapPanel(mapService, playlistManager.getAliasModel(), iconModel, settingsManager);
         mTunerManagerPanel = new TunerViewPanel(tunerManager, userPreferences, visibilityListener);
-        mAudioRecordingsPanel = new AudioRecordingsPanel(userPreferences);
+        mAudioRecordingsPanel = new AudioRecordingsPanel(userPreferences, playlistManager);
 
         init();
     }

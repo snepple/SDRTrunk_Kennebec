@@ -12,6 +12,9 @@ import javafx.embed.swing.JFXPanel;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.ComboBox;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -26,6 +29,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 public class AudioRecordingsPanel extends JPanel {
     private final static Logger mLog = LoggerFactory.getLogger(AudioRecordingsPanel.class);
@@ -35,16 +42,24 @@ public class AudioRecordingsPanel extends JPanel {
     private ObservableList<RecordingItem> mRecordings;
     private FilteredList<RecordingItem> mFilteredRecordings;
     private TableView<RecordingItem> mTableView;
+    private DatePicker mStartDatePicker;
+    private DatePicker mEndDatePicker;
+    private Spinner<Integer> mStartHourSpinner;
+    private Spinner<Integer> mStartMinuteSpinner;
+    private Spinner<Integer> mEndHourSpinner;
+    private Spinner<Integer> mEndMinuteSpinner;
+    private ComboBox<String> mAliasComboBox;
+    private ComboBox<String> mChannelComboBox;
 
-    private TextField mDateFilter;
-    private TextField mTimeFilter;
-    private TextField mAliasFilter;
-    private TextField mChannelFilter;
+
 
     private MediaPlayer mMediaPlayer;
     private Button mStopButton;
 
-    public AudioRecordingsPanel(UserPreferences userPreferences) {
+    private io.github.dsheirer.playlist.PlaylistManager mPlaylistManager;
+
+    public AudioRecordingsPanel(UserPreferences userPreferences, io.github.dsheirer.playlist.PlaylistManager playlistManager) {
+        mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
         setLayout(new BorderLayout());
 
@@ -52,6 +67,27 @@ public class AudioRecordingsPanel extends JPanel {
         add(mJfxPanel, BorderLayout.CENTER);
 
         Platform.runLater(this::initFx);
+    }
+
+
+    private void populateFilterOptions() {
+        if (mPlaylistManager == null) return;
+
+        Platform.runLater(() -> {
+            mAliasComboBox.getItems().clear();
+            mAliasComboBox.getItems().add("All");
+            mPlaylistManager.getAliasModel().getAliases().forEach(alias -> {
+                mAliasComboBox.getItems().add(alias.getName());
+            });
+            mAliasComboBox.getSelectionModel().select("All");
+
+            mChannelComboBox.getItems().clear();
+            mChannelComboBox.getItems().add("All");
+            mPlaylistManager.getChannelModel().getChannels().forEach(channel -> {
+                mChannelComboBox.getItems().add(channel.getName());
+            });
+            mChannelComboBox.getSelectionModel().select("All");
+        });
     }
 
     private void initFx() {
@@ -62,24 +98,46 @@ public class AudioRecordingsPanel extends JPanel {
         mFilteredRecordings = new FilteredList<>(mRecordings, p -> true);
 
         // Top Filter Bar
-        HBox filterBox = new HBox(10);
+        javafx.scene.layout.FlowPane filterBox = new javafx.scene.layout.FlowPane(10, 10);
         filterBox.setPadding(new Insets(0, 0, 10, 0));
 
-        mDateFilter = new TextField();
-        mDateFilter.setPromptText("Filter Date");
-        mDateFilter.textProperty().addListener((obs, oldVal, newVal) -> updateFilters());
+        mStartDatePicker = new DatePicker();
+        mStartDatePicker.setPromptText("Start Date");
+        mStartDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
-        mTimeFilter = new TextField();
-        mTimeFilter.setPromptText("Filter Time");
-        mTimeFilter.textProperty().addListener((obs, oldVal, newVal) -> updateFilters());
+        mEndDatePicker = new DatePicker();
+        mEndDatePicker.setPromptText("End Date");
+        mEndDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
-        mAliasFilter = new TextField();
-        mAliasFilter.setPromptText("Filter Alias");
-        mAliasFilter.textProperty().addListener((obs, oldVal, newVal) -> updateFilters());
+        mStartHourSpinner = new Spinner<>(0, 23, 0);
+        mStartHourSpinner.setPrefWidth(60);
+        mStartHourSpinner.setEditable(true);
+        mStartHourSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
+        mStartMinuteSpinner = new Spinner<>(0, 59, 0);
+        mStartMinuteSpinner.setPrefWidth(60);
+        mStartMinuteSpinner.setEditable(true);
+        mStartMinuteSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
-        mChannelFilter = new TextField();
-        mChannelFilter.setPromptText("Filter Channel");
-        mChannelFilter.textProperty().addListener((obs, oldVal, newVal) -> updateFilters());
+        mEndHourSpinner = new Spinner<>(0, 23, 23);
+        mEndHourSpinner.setPrefWidth(60);
+        mEndHourSpinner.setEditable(true);
+        mEndHourSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
+        mEndMinuteSpinner = new Spinner<>(0, 59, 59);
+        mEndMinuteSpinner.setPrefWidth(60);
+        mEndMinuteSpinner.setEditable(true);
+        mEndMinuteSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
+
+        mAliasComboBox = new ComboBox<>();
+        mAliasComboBox.setPromptText("Filter Alias");
+        mAliasComboBox.getItems().add("All");
+        mAliasComboBox.getSelectionModel().select("All");
+        mAliasComboBox.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
+
+        mChannelComboBox = new ComboBox<>();
+        mChannelComboBox.setPromptText("Filter Channel");
+        mChannelComboBox.getItems().add("All");
+        mChannelComboBox.getSelectionModel().select("All");
+        mChannelComboBox.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
         Button refreshButton = new Button("Refresh");
         refreshButton.setOnAction(e -> loadRecordings());
@@ -88,7 +146,13 @@ public class AudioRecordingsPanel extends JPanel {
         mStopButton.setDisable(true);
         mStopButton.setOnAction(e -> stopPlayback());
 
-        filterBox.getChildren().addAll(new Label("Filters:"), mDateFilter, mTimeFilter, mAliasFilter, mChannelFilter, refreshButton, mStopButton);
+        filterBox.getChildren().addAll(
+            new Label("Filters:"),
+            mStartDatePicker, new Label("-"), mEndDatePicker,
+            new Label(" Time:"), mStartHourSpinner, new Label(":"), mStartMinuteSpinner, new Label("-"), mEndHourSpinner, new Label(":"), mEndMinuteSpinner,
+            mAliasComboBox, mChannelComboBox,
+            refreshButton, mStopButton
+        );
 
         root.setTop(filterBox);
 
@@ -152,22 +216,46 @@ public class AudioRecordingsPanel extends JPanel {
         mJfxPanel.setScene(scene);
 
         loadRecordings();
+        populateFilterOptions();
     }
 
     private void updateFilters() {
-        String dateFilter = mDateFilter.getText().toLowerCase();
-        String timeFilter = mTimeFilter.getText().toLowerCase();
-        String aliasFilter = mAliasFilter.getText().toLowerCase();
-        String channelFilter = mChannelFilter.getText().toLowerCase();
+        LocalDate startDate = mStartDatePicker.getValue();
+        LocalDate endDate = mEndDatePicker.getValue();
+        LocalTime startTime = LocalTime.of(mStartHourSpinner.getValue(), mStartMinuteSpinner.getValue());
+        LocalTime endTime = LocalTime.of(mEndHourSpinner.getValue(), mEndMinuteSpinner.getValue());
+
+        String aliasFilter = mAliasComboBox.getValue() != null && !mAliasComboBox.getValue().equals("All") ? mAliasComboBox.getValue() : null;
+        String channelFilter = mChannelComboBox.getValue() != null && !mChannelComboBox.getValue().equals("All") ? mChannelComboBox.getValue() : null;
+
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
         mFilteredRecordings.setPredicate(item -> {
-            if (dateFilter != null && !dateFilter.isEmpty() && !item.getDate().toLowerCase().contains(dateFilter)) return false;
-            if (timeFilter != null && !timeFilter.isEmpty() && !item.getTime().toLowerCase().contains(timeFilter)) return false;
-            if (channelFilter != null && !channelFilter.isEmpty() && !item.getChannel().toLowerCase().contains(channelFilter)) return false;
-            if (aliasFilter != null && !aliasFilter.isEmpty()) {
-                boolean matchesTo = item.getToAlias().toLowerCase().contains(aliasFilter);
-                boolean matchesFrom = item.getFromAlias().toLowerCase().contains(aliasFilter);
-                if (!matchesTo && !matchesFrom) return false;
+            try {
+                LocalDate itemDate = LocalDate.parse(item.getDate(), dateFormatter);
+                LocalTime itemTime = LocalTime.parse(item.getTime(), timeFormatter);
+
+                if (startDate != null && itemDate.isBefore(startDate)) return false;
+                if (endDate != null && itemDate.isAfter(endDate)) return false;
+
+                if (startTime.isBefore(endTime) || startTime.equals(endTime)) {
+                    if (itemTime.isBefore(startTime) || itemTime.isAfter(endTime)) return false;
+                } else {
+                    // Time range wraps around midnight
+                    if (itemTime.isBefore(startTime) && itemTime.isAfter(endTime)) return false;
+                }
+
+                if (channelFilter != null && !item.getChannel().equals(channelFilter)) return false;
+
+                if (aliasFilter != null) {
+                    boolean matchesTo = item.getToAlias().equals(aliasFilter);
+                    boolean matchesFrom = item.getFromAlias().equals(aliasFilter);
+                    if (!matchesTo && !matchesFrom) return false;
+                }
+            } catch (Exception e) {
+                // If parsing fails, don't filter it out
+                mLog.warn("Could not parse date/time for filter: " + item.getDate() + " " + item.getTime());
             }
             return true;
         });
