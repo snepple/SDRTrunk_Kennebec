@@ -5,6 +5,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import org.controlsfx.control.ToggleSwitch;
@@ -45,6 +46,17 @@ public class AIPreferenceEditor extends VBox {
         Button testButton = new Button("Test");
         Label testResultLabel = new Label("");
 
+        Hyperlink apiKeyLink = new Hyperlink("Get a Gemini API Key here");
+        apiKeyLink.setOnAction(e -> {
+            try {
+                if (java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.BROWSE)) {
+                    java.awt.Desktop.getDesktop().browse(new URI("https://aistudio.google.com/app/apikey"));
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
         testButton.setOnAction(e -> {
             testResultLabel.setText("Testing...");
             String apiKey = apiKeyField.getText();
@@ -81,6 +93,10 @@ public class AIPreferenceEditor extends VBox {
         HBox apiKeyBox = new HBox(10, apiKeyLabel, apiKeyField, testButton, testResultLabel);
         apiKeyBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
-        getChildren().addAll(enableAiSwitch, explanationLabel, apiKeyBox);
+        VBox settingsBox = new VBox(10, explanationLabel, apiKeyBox, apiKeyLink);
+        settingsBox.visibleProperty().bind(enableAiSwitch.selectedProperty());
+        settingsBox.managedProperty().bind(enableAiSwitch.selectedProperty());
+
+        getChildren().addAll(enableAiSwitch, settingsBox);
     }
 }

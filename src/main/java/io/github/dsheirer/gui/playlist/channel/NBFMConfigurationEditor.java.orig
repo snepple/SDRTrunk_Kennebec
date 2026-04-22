@@ -46,10 +46,6 @@ import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.preference.ViewUserPreferenceEditorRequest;
 import io.github.dsheirer.gui.preference.PreferenceEditorType;
 import javafx.scene.control.Hyperlink;
-import io.github.dsheirer.eventbus.MyEventBus;
-import io.github.dsheirer.gui.preference.ViewUserPreferenceEditorRequest;
-import io.github.dsheirer.gui.preference.PreferenceEditorType;
-import javafx.scene.control.Hyperlink;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.beans.value.ChangeListener;
@@ -139,7 +135,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.control.Button mAnalyzeButton;
     private Label mAnalyzeStatusLabel;
     private Timeline mAiPollingTimeline;
-    private Hyperlink mAnalyzeStatusLink;
 
     private boolean mLoadingConfiguration = false;
 
@@ -435,15 +430,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(mAnalyzeStatusLabel, 1, 0);
             analyzePane.getChildren().add(mAnalyzeStatusLabel);
 
-            mAnalyzeStatusLink = new Hyperlink("AI features are turned off. Click here to enable.");
-            mAnalyzeStatusLink.setOnAction(ev -> {
-                MyEventBus.getGlobalEventBus().post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.AI));
-            });
-            mAnalyzeStatusLink.setVisible(false);
-            mAnalyzeStatusLink.setManaged(false);
-            GridPane.setConstraints(mAnalyzeStatusLink, 1, 0);
-            analyzePane.getChildren().add(mAnalyzeStatusLink);
-
             contentBox.getChildren().add(analyzePane);
             contentBox.getChildren().add(new Separator());
 
@@ -477,31 +463,19 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mAudioFiltersPane.setContent(contentBox);
 
             mAiPollingTimeline = new Timeline(new KeyFrame(Duration.seconds(2), e -> {
-                if (mUserPreferences.getAIPreference().isAIEnabled()) {
-                    mAnalyzeStatusLabel.setVisible(true);
-                    mAnalyzeStatusLabel.setManaged(true);
-                    mAnalyzeStatusLink.setVisible(false);
-                    mAnalyzeStatusLink.setManaged(false);
-                    if (getItem() != null && getItem().getName() != null) {
-                        int count = io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager.getBufferedEventCount(mUserPreferences, getItem().getName());
-                        if (count < 5) {
-                            mAnalyzeButton.setDisable(true);
-                            mAnalyzeStatusLabel.setText(count + "/5 transmissions. At least 5 required prior to using AI enhance.");
-                            mAnalyzeStatusLabel.setStyle("-fx-text-fill: #666;");
-                        } else {
-                            if (mSquelchEnabledSwitch.isSelected()) {
-                                mAnalyzeButton.setDisable(false);
-                            }
-                            mAnalyzeStatusLabel.setText("Ready for AI optimization.");
-                            mAnalyzeStatusLabel.setStyle("-fx-text-fill: #009900;");
+                if (getItem() != null && getItem().getName() != null) {
+                    int count = io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager.getBufferedEventCount(mUserPreferences, getItem().getName());
+                    if (count < 5) {
+                        mAnalyzeButton.setDisable(true);
+                        mAnalyzeStatusLabel.setText(count + "/5 transmissions. At least 5 required prior to using AI enhance.");
+                        mAnalyzeStatusLabel.setStyle("-fx-text-fill: #666;");
+                    } else {
+                        if (mSquelchEnabledSwitch.isSelected()) {
+                            mAnalyzeButton.setDisable(false);
                         }
+                        mAnalyzeStatusLabel.setText("Ready for AI optimization.");
+                        mAnalyzeStatusLabel.setStyle("-fx-text-fill: #009900;");
                     }
-                } else {
-                    mAnalyzeButton.setDisable(true);
-                    mAnalyzeStatusLabel.setVisible(false);
-                    mAnalyzeStatusLabel.setManaged(false);
-                    mAnalyzeStatusLink.setVisible(true);
-                    mAnalyzeStatusLink.setManaged(true);
                 }
             }));
             mAiPollingTimeline.setCycleCount(Timeline.INDEFINITE);
