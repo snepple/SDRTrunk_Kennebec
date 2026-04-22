@@ -93,7 +93,17 @@ public class AIPreferenceEditor extends VBox {
         HBox apiKeyBox = new HBox(10, apiKeyLabel, apiKeyField, testButton, testResultLabel);
         apiKeyBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
-        VBox settingsBox = new VBox(10, explanationLabel, apiKeyBox, apiKeyLink);
+        ToggleSwitch enableSystemHealthSwitch = new ToggleSwitch("Enable System Health Advisor");
+        enableSystemHealthSwitch.setSelected(mUserPreferences.getAIPreference().isSystemHealthAdvisorEnabled());
+        enableSystemHealthSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setSystemHealthAdvisorEnabled(newValue);
+        });
+
+        Label systemHealthExplanationLabel = new Label("If turned on, a background AI agent will monitor system metrics and suggest configuration optimizations.");
+        systemHealthExplanationLabel.setWrapText(true);
+        VBox systemHealthBox = new VBox(5, enableSystemHealthSwitch, systemHealthExplanationLabel);
+
+        VBox settingsBox = new VBox(10, explanationLabel, apiKeyBox, apiKeyLink, systemHealthBox);
         settingsBox.visibleProperty().bind(enableAiSwitch.selectedProperty());
         settingsBox.managedProperty().bind(enableAiSwitch.selectedProperty());
 

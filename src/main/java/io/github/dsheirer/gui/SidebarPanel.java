@@ -77,7 +77,7 @@ public class SidebarPanel extends JPanel {
         mItems.add(new SidebarItem("Playlist Editor", FontAwesome.LIST, "playlist_editor", true));
         mItems.add(new SidebarItem("Tuners", FontAwesome.SLIDERS, "tuners", true));
 
-        mItems.add(new SidebarItem("Logs", FontAwesome.FILE_TEXT, "logs", true));
+        mItems.add(new SidebarItem("Performance & Logs", FontAwesome.FILE_TEXT, "logs", true));
 
         mItems.add(new SidebarItem("Audio Recordings", FontAwesome.MICROPHONE, "audio_recordings", true));
         mItems.add(new SidebarItem(".bits Viewer", FontAwesome.FILE_CODE_O, "msg_viewer", true));

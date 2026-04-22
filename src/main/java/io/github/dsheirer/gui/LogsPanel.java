@@ -22,6 +22,8 @@ import java.util.regex.PatternSyntaxException;
 
 public class LogsPanel extends JPanel {
 
+    private java.util.Timer mHealthTimer;
+
     private UserPreferences mUserPreferences;
 
     private LogFileTableModel mAppListModel;
@@ -67,6 +69,16 @@ public class LogsPanel extends JPanel {
         mTwoToneSearchField = createSearchField(mTwoToneSorter);
 
         JTabbedPane tabbedPane = new JTabbedPane();
+        if (mUserPreferences.getAIPreference().isAIEnabled() && mUserPreferences.getAIPreference().isSystemHealthAdvisorEnabled()) {
+            JPanel performancePanel = new JPanel(new BorderLayout());
+            JLabel performanceLabel = new JLabel("<html><div style='text-align: center; padding: 20px;'><h1>System Health & Performance Advisor</h1><p>Status: Monitoring...</p><p>CPU Usage: OK</p><p>Memory Usage: OK</p><br><p><i>Optimization Suggestions:</i></p><p>No suggestions at this time.</p></div></html>");
+            performanceLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            performancePanel.add(performanceLabel, BorderLayout.CENTER);
+            tabbedPane.addTab("System Health", performancePanel);
+
+            mHealthTimer = new java.util.Timer(true);
+            mHealthTimer.scheduleAtFixedRate(new SystemHealthAdvisorTask(performanceLabel), 0, 5000);
+        }
         tabbedPane.addTab("Application Logs", createTabPanel(mAppTable, mAppSearchField));
         tabbedPane.addTab("Channel Event Logs", createTabPanel(mEventTable, mEventSearchField));
         tabbedPane.addTab("Two-Tone Logs", createTabPanel(mTwoToneTable, mTwoToneSearchField));
