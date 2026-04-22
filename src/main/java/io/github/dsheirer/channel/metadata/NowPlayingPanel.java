@@ -189,9 +189,6 @@ public class NowPlayingPanel extends JPanel
     }
 
     private void setupWidgets() {
-        if (mWidgetContainer.getComponentCount() > 0) {
-            return;
-        }
         mWidgetContainer.removeAll();
 
         if (mSpectralPanel != null) {

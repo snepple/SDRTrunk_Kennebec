@@ -46,6 +46,7 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
@@ -229,7 +230,10 @@ public class PlaylistEditor extends BorderPane
         if(mAliasesTab == null)
         {
             mAliasesTab = new Tab("Aliases");
-            mAliasesTab.setContent(getAliasEditor());
+            ScrollPane scrollPane = new ScrollPane(getAliasEditor());
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            mAliasesTab.setContent(scrollPane);
         }
 
         return mAliasesTab;
@@ -250,7 +254,10 @@ public class PlaylistEditor extends BorderPane
         if(mChannelsTab == null)
         {
             mChannelsTab = new Tab("Channels");
-            mChannelsTab.setContent(getChannelEditor());
+            ScrollPane scrollPane = new ScrollPane(getChannelEditor());
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            mChannelsTab.setContent(scrollPane);
         }
 
         return mChannelsTab;
@@ -272,7 +279,10 @@ public class PlaylistEditor extends BorderPane
         if(mTwoToneTab == null)
         {
             mTwoToneTab = new Tab("Two Tones");
-            mTwoToneTab.setContent(getTwoToneEditor());
+            ScrollPane scrollPane = new ScrollPane(getTwoToneEditor());
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            mTwoToneTab.setContent(scrollPane);
         }
 
         return mTwoToneTab;
@@ -293,7 +303,10 @@ public class PlaylistEditor extends BorderPane
         if(mPlaylistsTab == null)
         {
             mPlaylistsTab = new Tab("Playlists");
-            mPlaylistsTab.setContent(new PlaylistManagerEditor(mPlaylistManager, mUserPreferences));
+            ScrollPane scrollPane = new ScrollPane(new PlaylistManagerEditor(mPlaylistManager, mUserPreferences));
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            mPlaylistsTab.setContent(scrollPane);
         }
 
         return mPlaylistsTab;
@@ -304,7 +317,10 @@ public class PlaylistEditor extends BorderPane
         if(mRadioReferenceTab == null)
         {
             mRadioReferenceTab = new Tab("Radio Reference");
-            mRadioReferenceTab.setContent(new RadioReferenceEditor(mUserPreferences, mPlaylistManager));
+            ScrollPane scrollPane = new ScrollPane(new RadioReferenceEditor(mUserPreferences, mPlaylistManager));
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            mRadioReferenceTab.setContent(scrollPane);
         }
 
         return mRadioReferenceTab;
@@ -315,7 +331,10 @@ public class PlaylistEditor extends BorderPane
         if(mStreamingTab == null)
         {
             mStreamingTab = new Tab("Streaming");
-            mStreamingTab.setContent(new StreamingEditor(mPlaylistManager));
+            ScrollPane scrollPane = new ScrollPane(new StreamingEditor(mPlaylistManager));
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            mStreamingTab.setContent(scrollPane);
         }
 
         return mStreamingTab;
