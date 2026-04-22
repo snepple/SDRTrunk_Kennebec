@@ -101,9 +101,16 @@ public class Widget extends JPanel {
         return button;
     }
 
-    public void setHeaderButtonsVisible(boolean visible) {
-        mMinimizeButton.setVisible(visible);
+    public void setCloseButtonVisible(boolean visible) {
         mCloseButton.setVisible(visible);
+    }
+
+    public void setMinimizeButtonVisible(boolean visible) {
+        mMinimizeButton.setVisible(visible);
+    }
+
+    public boolean isMinimizeButtonVisible() {
+        return mMinimizeButton.isVisible();
     }
 
     public String getId() {

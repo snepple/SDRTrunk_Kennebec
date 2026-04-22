@@ -40,15 +40,17 @@ public class WidgetContainer extends JPanel {
         if (!pinned) {
             setupDragAndDrop(widget);
         } else {
-            widget.setHeaderButtonsVisible(true);
+            widget.setCloseButtonVisible(true);
         }
 
         // Setup initial visibility and minimized states from prefs
         boolean isVisible = mPreference.isWidgetVisible(widget.getId(), true);
         widget.setVisible(isVisible);
 
-        boolean isMinimized = mPreference.isWidgetMinimized(widget.getId(), false);
-        widget.setMinimized(isMinimized);
+        if (widget.isMinimizeButtonVisible()) {
+            boolean isMinimized = mPreference.isWidgetMinimized(widget.getId(), false);
+            widget.setMinimized(isMinimized);
+        }
     }
 
     // Allows the widget container to sort based on preferences once all are added
@@ -112,7 +114,9 @@ public class WidgetContainer extends JPanel {
     }
 
     public void onWidgetStateChanged(Widget widget) {
-        mPreference.setWidgetMinimized(widget.getId(), widget.isMinimized());
+        if (widget.isMinimizeButtonVisible()) {
+            mPreference.setWidgetMinimized(widget.getId(), widget.isMinimized());
+        }
     }
 
     private void setupDragAndDrop(Widget widget) {
