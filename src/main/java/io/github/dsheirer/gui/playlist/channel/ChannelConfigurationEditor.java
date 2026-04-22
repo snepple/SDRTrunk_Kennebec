@@ -65,6 +65,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import jiconfont.icons.font_awesome.FontAwesome;
@@ -94,8 +96,8 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     private Button mSaveButton;
     private Button mResetButton;
     private VBox mButtonBox;
-    private ScrollPane mTitledPanesScrollPane;
-    private VBox mTitledPanesBox;
+    private TabPane mTabPane;
+
     private ToggleSwitch mAutoStartSwitch;
     private Spinner<Integer> mAutoStartOrderSpinner;
     private IconNode mPlayGraphicNode;
@@ -126,9 +128,9 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         HBox.setHgrow(getTextFieldPane(), Priority.ALWAYS);
         HBox.setHgrow(getButtonBox(), Priority.NEVER);
         hbox.getChildren().addAll(getTextFieldPane(), getButtonBox());
-        VBox.setVgrow(getTitledPanesScrollPane(), Priority.ALWAYS);
+        VBox.setVgrow(getTabPane(), Priority.ALWAYS);
 
-        getChildren().addAll(hbox, getTitledPanesScrollPane());
+        getChildren().addAll(hbox, getTabPane());
     }
 
     /**
@@ -492,27 +494,16 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         return mAutoStartOrderSpinner;
     }
 
-    protected VBox getTitledPanesBox()
+    protected TabPane getTabPane()
     {
-        if(mTitledPanesBox == null)
+        if(mTabPane == null)
         {
-            mTitledPanesBox = new VBox();
-            mTitledPanesBox.setMaxWidth(Double.MAX_VALUE);
+            mTabPane = new TabPane();
+            mTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+            mTabPane.setMaxWidth(Double.MAX_VALUE);
         }
 
-        return mTitledPanesBox;
-    }
-
-    private ScrollPane getTitledPanesScrollPane()
-    {
-        if(mTitledPanesScrollPane == null)
-        {
-            mTitledPanesScrollPane = new ScrollPane();
-            mTitledPanesScrollPane.setFitToWidth(true);
-            mTitledPanesScrollPane.setContent(getTitledPanesBox());
-        }
-
-        return mTitledPanesScrollPane;
+        return mTabPane;
     }
 
 

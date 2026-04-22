@@ -48,7 +48,7 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TitledPane;
+import javafx.scene.control.Tab;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
@@ -65,10 +65,10 @@ import org.slf4j.LoggerFactory;
 public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
 {
     private final static Logger mLog = LoggerFactory.getLogger(P25P1ConfigurationEditor.class);
-    private TitledPane mDecoderPane;
-    private TitledPane mEventLogPane;
-    private TitledPane mRecordPane;
-    private TitledPane mSourcePane;
+    private Tab mDecoderPane;
+    private Tab mEventLogPane;
+    private Tab mRecordPane;
+    private Tab mSourcePane;
     private SourceConfigurationEditor mSourceConfigurationEditor;
     private EventLogConfigurationEditor mEventLogConfigurationEditor;
     private RecordConfigurationEditor mRecordConfigurationEditor;
@@ -81,7 +81,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     private SegmentedButton mModulationSegmentedButton;
     private ToggleButton mC4FMToggleButton;
     private ToggleButton mLSMToggleButton;
-    private TitledPane mGraphicEQPane;
+    private Tab mGraphicEQPane;
     private ToggleSwitch mGraphicEQEnabledSwitch;
     private Slider[] mEQBandSliders = new Slider[GraphicEqualizer.BAND_COUNT];
     private TextField[] mEQBandFields = new TextField[GraphicEqualizer.BAND_COUNT];
@@ -96,11 +96,11 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
                                     UserPreferences userPreferences, IFilterProcessor filterProcessor)
     {
         super(playlistManager, tunerManager, userPreferences, filterProcessor);
-        getTitledPanesBox().getChildren().add(getSourcePane());
-        getTitledPanesBox().getChildren().add(getDecoderPane());
-        getTitledPanesBox().getChildren().add(getGraphicEQPane());
-        getTitledPanesBox().getChildren().add(getEventLogPane());
-        getTitledPanesBox().getChildren().add(getRecordPane());
+        getTabPane().getTabs().add(getSourcePane());
+        getTabPane().getTabs().add(getDecoderPane());
+        getTabPane().getTabs().add(getGraphicEQPane());
+        getTabPane().getTabs().add(getEventLogPane());
+        getTabPane().getTabs().add(getRecordPane());
     }
 
     @Override
@@ -109,24 +109,24 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         return DecoderType.P25_PHASE1;
     }
 
-    private TitledPane getSourcePane()
+    private Tab getSourcePane()
     {
         if(mSourcePane == null)
         {
-            mSourcePane = new TitledPane("Source", getSourceConfigurationEditor());
-            mSourcePane.setExpanded(true);
+            mSourcePane = new Tab("Source", getSourceConfigurationEditor());
+
         }
 
         return mSourcePane;
     }
 
-    private TitledPane getDecoderPane()
+    private Tab getDecoderPane()
     {
         if(mDecoderPane == null)
         {
-            mDecoderPane = new TitledPane();
+            mDecoderPane = new Tab();
             mDecoderPane.setText("Decoder: P25 Phase 1 (also used for P25 Phase 2 system with FDMA control channels)");
-            mDecoderPane.setExpanded(true);
+
 
             GridPane gridPane = new GridPane();
             gridPane.setPadding(new Insets(10,10,10,10));
@@ -194,24 +194,24 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         return mDecoderPane;
     }
 
-    private TitledPane getEventLogPane()
+    private Tab getEventLogPane()
     {
         if(mEventLogPane == null)
         {
-            mEventLogPane = new TitledPane("Logging", getEventLogConfigurationEditor());
-            mEventLogPane.setExpanded(false);
+            mEventLogPane = new Tab("Logging", getEventLogConfigurationEditor());
+
         }
 
         return mEventLogPane;
     }
 
-    private TitledPane getRecordPane()
+    private Tab getRecordPane()
     {
         if(mRecordPane == null)
         {
-            mRecordPane = new TitledPane();
+            mRecordPane = new Tab();
             mRecordPane.setText("Recording");
-            mRecordPane.setExpanded(false);
+
 
             Label notice = new Label("Note: use aliases to control call audio recording");
             notice.setPadding(new Insets(10, 10, 0, 10));
@@ -225,13 +225,13 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         return mRecordPane;
     }
 
-    private TitledPane getGraphicEQPane()
+    private Tab getGraphicEQPane()
     {
         if(mGraphicEQPane == null)
         {
-            mGraphicEQPane = new TitledPane();
+            mGraphicEQPane = new Tab();
             mGraphicEQPane.setText("5-Band Graphic Equalizer");
-            mGraphicEQPane.setExpanded(false);
+
 
             VBox content = new VBox(10);
             content.setPadding(new Insets(10, 10, 10, 10));

@@ -10,6 +10,7 @@ public class AIPreference extends Preference {
     public static final String KEY_GEMINI_API_KEY = "gemini.api.key";
     public static final String KEY_AI_ENABLED = "ai.enabled";
     public static final String KEY_GEMINI_MODEL = "gemini.model";
+    public static final String KEY_AI_LOG_ANALYSIS_ENABLED = "ai.log.analysis.enabled";
 
     private Preferences mPreferences = Preferences.userNodeForPackage(AIPreference.class);
 
@@ -28,6 +29,15 @@ public class AIPreference extends Preference {
 
     public void setAIEnabled(boolean enabled) {
         mPreferences.putBoolean(KEY_AI_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public boolean isAILogAnalysisEnabled() {
+        return mPreferences.getBoolean(KEY_AI_LOG_ANALYSIS_ENABLED, false);
+    }
+
+    public void setAILogAnalysisEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_AI_LOG_ANALYSIS_ENABLED, enabled);
         notifyPreferenceUpdated();
     }
 
