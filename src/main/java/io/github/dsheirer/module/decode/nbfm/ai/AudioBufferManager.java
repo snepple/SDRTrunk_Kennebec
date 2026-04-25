@@ -14,9 +14,11 @@ import org.slf4j.LoggerFactory;
 import io.github.dsheirer.preference.UserPreferences;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 public class AudioBufferManager {
     private static final Logger mLog = LoggerFactory.getLogger(AudioBufferManager.class);
+    private static final Pattern FILENAME_CLEANUP_PATTERN = Pattern.compile("[^a-zA-Z0-9.-]");
     private static final int MAX_EVENTS = 5;
     private final LinkedList<List<float[]>> mAudioEvents = new LinkedList<>();
     private List<float[]> mCurrentEvent = null;
@@ -26,7 +28,7 @@ public class AudioBufferManager {
     private Path mCurrentFilePath;
 
     public AudioBufferManager(UserPreferences preferences, String channelName) {
-        mChannelName = channelName != null ? channelName.replaceAll("[^a-zA-Z0-9.-]", "_") : "unknown";
+        mChannelName = channelName != null ? FILENAME_CLEANUP_PATTERN.matcher(channelName).replaceAll("_") : "unknown";
         mBufferDir = preferences.getDirectoryPreference().getDirectoryConfiguration().resolve("ai_buffers").resolve(mChannelName);
         try {
             Files.createDirectories(mBufferDir);
@@ -120,7 +122,7 @@ public class AudioBufferManager {
 
     public static int getBufferedEventCount(UserPreferences preferences, String channelName) {
         if (preferences == null || channelName == null) return 0;
-        String safeName = channelName.replaceAll("[^a-zA-Z0-9.-]", "_");
+        String safeName = FILENAME_CLEANUP_PATTERN.matcher(channelName).replaceAll("_");
         Path dir = preferences.getDirectoryPreference().getDirectoryConfiguration().resolve("ai_buffers").resolve(safeName);
         if (!Files.exists(dir)) return 0;
         try (Stream<Path> stream = Files.list(dir)) {
