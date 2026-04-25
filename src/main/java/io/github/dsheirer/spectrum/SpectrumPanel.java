@@ -91,7 +91,7 @@ public class SpectrumPanel extends JPanel implements DFTResultsListener, Setting
 
         if(mSettingsManager != null)
         {
-            mSettingsManager.addListener(this);
+            mSettingsManager.getSettingsModel().addListener(this);
         }
 
         setSampleSize(16.0);
@@ -107,7 +107,7 @@ public class SpectrumPanel extends JPanel implements DFTResultsListener, Setting
     {
         if(mSettingsManager != null)
         {
-            mSettingsManager.removeListener(this);
+            mSettingsManager.getSettingsModel().removeListener(this);
         }
 
         mSettingsManager = null;
@@ -350,7 +350,7 @@ public class SpectrumPanel extends JPanel implements DFTResultsListener, Setting
      */
     private Color getColor(ColorSettingName name)
     {
-        ColorSetting setting = mSettingsManager.getColorSetting(name);
+        ColorSetting setting = mSettingsManager.getSettingsModel().getColorSetting(name);
 
         return setting.getColor();
     }

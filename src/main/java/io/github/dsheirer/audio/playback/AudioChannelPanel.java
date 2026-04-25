@@ -102,7 +102,7 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
     {
         mIconModel = iconModel;
         mSettingsManager = settingsManager;
-        mSettingsManager.addListener(this);
+        mSettingsManager.getSettingsModel().addListener(this);
         mAliasModel = aliasModel;
         mUserPreferences = userPreferences;
         mTalkgroupFormatPreference = mUserPreferences.getTalkgroupFormatPreference();

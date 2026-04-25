@@ -146,7 +146,7 @@ public class MapMouseListener extends MouseInputAdapter implements MouseWheelLis
 					GeoPosition position = mJXMapViewer
 							.convertPointToGeoPosition( mCurrentPoint );
 					
-					mSettingsManager.setMapViewSetting( "Default", position, 
+					mSettingsManager.getSettingsModel().setMapViewSetting( "Default", position,
 							mJXMapViewer.getZoom() );
                 }
 			} );

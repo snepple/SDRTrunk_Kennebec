@@ -83,7 +83,7 @@ public class WaterfallPanel extends JPanel implements DFTResultsListener,
     {
         super();
         mSettingsManager = settingsManager;
-        mSettingsManager.addListener(this);
+        mSettingsManager.getSettingsModel().addListener(this);
         mColorSpectrumCursor = getColor(ColorSettingName.SPECTRUM_CURSOR);
         reset();
     }
@@ -95,7 +95,7 @@ public class WaterfallPanel extends JPanel implements DFTResultsListener,
     {
         if(mSettingsManager != null)
         {
-            mSettingsManager.removeListener(this);
+            mSettingsManager.getSettingsModel().removeListener(this);
         }
 
         mSettingsManager = null;
@@ -199,7 +199,7 @@ public class WaterfallPanel extends JPanel implements DFTResultsListener,
      */
     private Color getColor(ColorSettingName name)
     {
-        ColorSetting setting = mSettingsManager.getColorSetting(name);
+        ColorSetting setting = mSettingsManager.getSettingsModel().getColorSetting(name);
 
         return setting.getColor();
     }

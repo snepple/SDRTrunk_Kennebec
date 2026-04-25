@@ -45,7 +45,7 @@ public class ColorSettingResetAllMenuItem extends JMenuItem
 			@Override
             public void actionPerformed( ActionEvent e )
             {
-				mSettingsManager.resetAllColorSettings();
+				mSettingsManager.getSettingsModel().resetAllColorSettings();
             }
 		} );
 	}

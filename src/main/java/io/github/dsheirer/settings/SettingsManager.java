@@ -27,19 +27,14 @@ import io.github.dsheirer.properties.SystemProperties;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.source.tuner.configuration.TunerConfigurationEvent;
 import io.github.dsheirer.util.ThreadPool;
-import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -47,16 +42,26 @@ public class SettingsManager implements Listener<TunerConfigurationEvent>
 {
     private final static Logger mLog = LoggerFactory.getLogger(SettingsManager.class);
 
-    private Settings mSettings = new Settings();
-    private List<SettingChangeListener> mListeners = new ArrayList<>();
+    private SettingsModel mSettingsModel = new SettingsModel();
     private boolean mLoadingSettings = false;
     private AtomicBoolean mSettingsSavePending = new AtomicBoolean();
 
     public SettingsManager()
     {
-        //TODO: move settings into a SettingsModel
-        //and update this class to only provide loading, saving, and model
-        //change detection producing a save.
+        mSettingsModel.addListener(new SettingChangeListener()
+        {
+            @Override
+            public void settingChanged(Setting setting)
+            {
+                scheduleSettingsSave();
+            }
+
+            @Override
+            public void settingDeleted(Setting setting)
+            {
+                scheduleSettingsSave();
+            }
+        });
 
         init();
     }
@@ -89,141 +94,9 @@ public class SettingsManager implements Listener<TunerConfigurationEvent>
         }
     }
 
-    public Settings getSettings()
+    public SettingsModel getSettingsModel()
     {
-        return mSettings;
-    }
-
-    public void setSettings(Settings settings)
-    {
-        mSettings = settings;
-    }
-
-    public Setting getSetting(String name)
-    {
-        return mSettings.getSetting(name);
-    }
-
-    /**
-     * Returns the current setting, or if the setting doesn't exist
-     * returns a newly created setting with the specified parameters
-     */
-    public ColorSetting getColorSetting(ColorSetting.ColorSettingName name)
-    {
-        ColorSetting setting = mSettings.getColorSetting(name);
-
-        if(setting == null)
-        {
-            setting = new ColorSetting(name);
-
-            addSetting(setting);
-        }
-
-        return setting;
-    }
-
-
-    /**
-     * Fetches the current setting and applies the parameter(s) to it.  Creates
-     * the setting if it does not exist
-     */
-    public void setColorSetting(ColorSetting.ColorSettingName name, Color color)
-    {
-        ColorSetting setting = getColorSetting(name);
-
-        setting.setColor(color);
-
-        broadcastSettingChange(setting);
-
-        scheduleSettingsSave();
-    }
-
-    public void resetColorSetting(ColorSetting.ColorSettingName name)
-    {
-        setColorSetting(name, name.getDefaultColor());
-    }
-
-    public void resetAllColorSettings()
-    {
-        for(ColorSetting color : mSettings.getColorSettings())
-        {
-            resetColorSetting(color.getColorSettingName());
-        }
-    }
-
-    /**
-     * Returns the current setting, or if the setting doesn't exist
-     * returns a newly created setting with the specified parameters
-     */
-    public FileSetting getFileSetting(String name, String defaultPath)
-    {
-        FileSetting setting = mSettings.getFileSetting(name);
-
-        if(setting == null)
-        {
-            setting = new FileSetting(name, defaultPath);
-
-            addSetting(setting);
-        }
-
-        return setting;
-    }
-
-    /**
-     * Fetches the current setting and applies the parameter(s) to it.  Creates
-     * the setting if it does not exist
-     */
-    public void setFileSetting(String name, String path)
-    {
-        FileSetting setting = getFileSetting(name, path);
-
-        setting.setPath(path);
-
-        broadcastSettingChange(setting);
-
-        scheduleSettingsSave();
-    }
-
-    /**
-     * Adds the setting and stores the set of settings
-     *
-     * @param setting
-     */
-    private void addSetting(Setting setting)
-    {
-        mSettings.addSetting(setting);
-
-        scheduleSettingsSave();
-
-        broadcastSettingChange(setting);
-    }
-
-    public MapViewSetting getMapViewSetting(String name, GeoPosition position, int zoom)
-    {
-        MapViewSetting loc = mSettings.getMapViewSetting(name);
-
-        if(loc != null)
-        {
-            return loc;
-        }
-        else
-        {
-            MapViewSetting newLoc = new MapViewSetting(name, position, zoom);
-
-            addSetting(newLoc);
-
-            return newLoc;
-        }
-    }
-
-    public void setMapViewSetting(String name, GeoPosition position, int zoom)
-    {
-        MapViewSetting loc = getMapViewSetting(name, position, zoom);
-
-        loc.setGeoPosition(position);
-        loc.setZoom(zoom);
-
-        scheduleSettingsSave();
+        return mSettingsModel;
     }
 
     private void save()
@@ -246,7 +119,7 @@ public class SettingsManager implements Listener<TunerConfigurationEvent>
             xmlModule.setDefaultUseWrapper(false);
             ObjectMapper objectMapper = new XmlMapper(xmlModule);
             objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-            objectMapper.writeValue(out, mSettings);
+            objectMapper.writeValue(out, mSettingsModel.getSettings());
             out.flush();
         }
         catch(IOException ioe)
@@ -278,7 +151,8 @@ public class SettingsManager implements Listener<TunerConfigurationEvent>
 
             try(InputStream in = Files.newInputStream(settingsPath))
             {
-                mSettings = objectMapper.readValue(in, Settings.class);
+                Settings settings = objectMapper.readValue(in, Settings.class);
+                mSettingsModel.setSettings(settings);
             }
             catch(IOException ioe)
             {
@@ -291,60 +165,12 @@ public class SettingsManager implements Listener<TunerConfigurationEvent>
                 settingsPath.toString() + "]");
         }
 
-        if(mSettings == null)
+        if(mSettingsModel.getSettings() == null)
         {
-            mSettings = new Settings();
+            mSettingsModel.setSettings(new Settings());
         }
 
         mLoadingSettings = false;
-    }
-
-    public void broadcastSettingChange(Setting setting)
-    {
-        Iterator<SettingChangeListener> it = mListeners.iterator();
-
-        while(it.hasNext())
-        {
-            SettingChangeListener listener = it.next();
-
-            if(listener == null)
-            {
-                it.remove();
-            }
-            else
-            {
-                listener.settingChanged(setting);
-            }
-        }
-    }
-
-    public void broadcastSettingDeleted(Setting setting)
-    {
-        Iterator<SettingChangeListener> it = mListeners.iterator();
-
-        while(it.hasNext())
-        {
-            SettingChangeListener listener = it.next();
-
-            if(listener == null)
-            {
-                it.remove();
-            }
-            else
-            {
-                listener.settingDeleted(setting);
-            }
-        }
-    }
-
-    public void addListener(SettingChangeListener listener)
-    {
-        mListeners.add(listener);
-    }
-
-    public void removeListener(SettingChangeListener listener)
-    {
-        mListeners.remove(listener);
     }
 
     /**

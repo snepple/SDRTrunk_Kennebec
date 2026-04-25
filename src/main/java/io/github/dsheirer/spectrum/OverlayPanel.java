@@ -118,7 +118,7 @@ public class OverlayPanel extends JPanel implements Listener<ChannelEvent>, ISou
 
         if(mSettingsManager != null)
         {
-            mSettingsManager.addListener(this);
+            mSettingsManager.getSettingsModel().addListener(this);
         }
 
         mChannelModel = channelModel;
@@ -157,7 +157,7 @@ public class OverlayPanel extends JPanel implements Listener<ChannelEvent>, ISou
 
         if(mSettingsManager != null)
         {
-            mSettingsManager.removeListener(this);
+            mSettingsManager.getSettingsModel().removeListener(this);
         }
 
         mSettingsManager = null;
@@ -239,7 +239,7 @@ public class OverlayPanel extends JPanel implements Listener<ChannelEvent>, ISou
      */
     private Color getColor(ColorSettingName name)
     {
-        ColorSetting setting = mSettingsManager.getColorSetting(name);
+        ColorSetting setting = mSettingsManager.getSettingsModel().getColorSetting(name);
 
         return setting.getColor();
     }

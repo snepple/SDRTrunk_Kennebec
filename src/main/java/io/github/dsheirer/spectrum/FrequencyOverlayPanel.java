@@ -90,7 +90,7 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
 
         if(mSettingsManager != null)
         {
-            mSettingsManager.addListener(this);
+            mSettingsManager.getSettingsModel().addListener(this);
         }
 
         addComponentListener(mLabelSizeMonitor);
@@ -124,7 +124,7 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
     {
         if(mSettingsManager != null)
         {
-            mSettingsManager.removeListener(this);
+            mSettingsManager.getSettingsModel().removeListener(this);
         }
 
         mSettingsManager = null;

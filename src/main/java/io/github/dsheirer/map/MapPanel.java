@@ -551,7 +551,7 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
             GeoPosition syracuse = new GeoPosition(43.048, -76.147);
             int zoom = 7;
 
-            MapViewSetting view = mSettingsManager.getMapViewSetting("Default", syracuse, zoom);
+            MapViewSetting view = mSettingsManager.getSettingsModel().getMapViewSetting("Default", syracuse, zoom);
 
             mMapViewer.setAddressLocation(view.getGeoPosition());
             mMapZoomSpinnerModel.setValue(view.getZoom());

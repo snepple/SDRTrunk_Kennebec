@@ -45,7 +45,7 @@ public class ColorSettingMenuItem extends JMenuItem
 		mSettingsManager = settingsManager;
 		mColorSettingName = colorSettingName;
 
-		mCurrentColor = mSettingsManager
+		mCurrentColor = mSettingsManager.getSettingsModel()
 				.getColorSetting( mColorSettingName ).getColor();
 
 		this.setIcon( new ColorIcon( mCurrentColor ) );
@@ -61,7 +61,7 @@ public class ColorSettingMenuItem extends JMenuItem
 
 				if( newColor != null )
 				{
-					mSettingsManager.setColorSetting( mColorSettingName, newColor );
+					mSettingsManager.getSettingsModel().setColorSetting( mColorSettingName, newColor );
 				}
             }
 		} );
