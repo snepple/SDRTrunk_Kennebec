@@ -119,9 +119,12 @@ public class RealOscillatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] generated = mScalar.generate(BUFFER_SIZE);
-            accumulator += generated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] generated = mScalar.generate(BUFFER_SIZE);
+                accumulator += generated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -136,9 +139,12 @@ public class RealOscillatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] generated = mVector.generate(BUFFER_SIZE);
-            accumulator += generated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] generated = mVector.generate(BUFFER_SIZE);
+                accumulator += generated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);

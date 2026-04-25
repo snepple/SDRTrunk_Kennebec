@@ -200,9 +200,12 @@ public class MagnitudeCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] demodulated = mScalarMagnitude.calculate(i, q);
-            accumulator += demodulated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] demodulated = mScalarMagnitude.calculate(i, q);
+                accumulator += demodulated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -216,9 +219,12 @@ public class MagnitudeCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] demodulated = mVectorMagnitude64.calculate(i, q);
-            accumulator += demodulated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] demodulated = mVectorMagnitude64.calculate(i, q);
+                accumulator += demodulated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -232,9 +238,12 @@ public class MagnitudeCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] demodulated = mVectorMagnitude128.calculate(i, q);
-            accumulator += demodulated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] demodulated = mVectorMagnitude128.calculate(i, q);
+                accumulator += demodulated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -248,9 +257,12 @@ public class MagnitudeCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] demodulated = mVectorMagnitude256.calculate(i, q);
-            accumulator += demodulated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] demodulated = mVectorMagnitude256.calculate(i, q);
+                accumulator += demodulated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -264,9 +276,12 @@ public class MagnitudeCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] demodulated = mVectorMagnitude512.calculate(i, q);
-            accumulator += demodulated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] demodulated = mVectorMagnitude512.calculate(i, q);
+                accumulator += demodulated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);

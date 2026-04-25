@@ -283,9 +283,12 @@ public class FirFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mScalar.filter(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mScalar.filter(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -300,9 +303,12 @@ public class FirFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mVector64.filter(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mVector64.filter(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -317,9 +323,12 @@ public class FirFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mVector128.filter(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mVector128.filter(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -334,9 +343,12 @@ public class FirFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mVector256.filter(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mVector256.filter(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -351,9 +363,12 @@ public class FirFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mVector512.filter(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mVector512.filter(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -368,9 +383,12 @@ public class FirFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mVectorPreferred.filter(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mVectorPreferred.filter(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);

@@ -255,9 +255,12 @@ public class HilbertCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            ComplexSamples complex = mScalar.filter(samples, start);
-            accumulator += complex.i()[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                ComplexSamples complex = mScalar.filter(samples, start);
+                accumulator += complex.i()[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -272,9 +275,12 @@ public class HilbertCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            ComplexSamples complex = mVectorPreferred.filter(samples, start);
-            accumulator += complex.i()[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                ComplexSamples complex = mVectorPreferred.filter(samples, start);
+                accumulator += complex.i()[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -289,9 +295,12 @@ public class HilbertCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            ComplexSamples complex = mVector512.filter(samples, start);
-            accumulator += complex.i()[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                ComplexSamples complex = mVector512.filter(samples, start);
+                accumulator += complex.i()[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -306,9 +315,12 @@ public class HilbertCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            ComplexSamples complex = mVector256.filter(samples, start);
-            accumulator += complex.i()[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                ComplexSamples complex = mVector256.filter(samples, start);
+                accumulator += complex.i()[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -323,9 +335,12 @@ public class HilbertCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            ComplexSamples complex = mVector128.filter(samples, start);
-            accumulator += complex.i()[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                ComplexSamples complex = mVector128.filter(samples, start);
+                accumulator += complex.i()[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -340,9 +355,12 @@ public class HilbertCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            ComplexSamples complex = mVector64.filter(samples, start);
-            accumulator += complex.i()[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                ComplexSamples complex = mVector64.filter(samples, start);
+                accumulator += complex.i()[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);

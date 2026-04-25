@@ -266,9 +266,12 @@ public class RealHalfBandDefaultFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mScalar.decimateReal(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mScalar.decimateReal(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -283,9 +286,12 @@ public class RealHalfBandDefaultFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mVectorPreferred.decimateReal(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mVectorPreferred.decimateReal(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -300,9 +306,12 @@ public class RealHalfBandDefaultFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mVector512.decimateReal(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mVector512.decimateReal(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -317,9 +326,12 @@ public class RealHalfBandDefaultFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mVector256.decimateReal(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mVector256.decimateReal(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -334,9 +346,12 @@ public class RealHalfBandDefaultFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mVector128.decimateReal(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mVector128.decimateReal(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -351,9 +366,12 @@ public class RealHalfBandDefaultFilterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] filtered = mVector64.decimateReal(samples);
-            accumulator += filtered[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] filtered = mVector64.decimateReal(samples);
+                accumulator += filtered[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);

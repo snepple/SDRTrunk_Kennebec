@@ -167,7 +167,7 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
      */
     private Color getColor(ColorSettingName name)
     {
-        ColorSetting setting = mSettingsManager.getColorSetting(name);
+        ColorSetting setting = mSettingsManager.getSettingsModel().getColorSetting(name);
         return setting.getColor();
     }
 

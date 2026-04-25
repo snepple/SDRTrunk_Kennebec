@@ -198,11 +198,14 @@ public class P25P1SoftSyncCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            for(float sample : samples)
+            for(int _b = 0; _b < 1000; _b++)
             {
-                mScalarDetector.process(sample);
+                for(float sample : samples)
+                {
+                    mScalarDetector.process(sample);
+                }
+                count++;
             }
-            count++;
         }
 
         return count;
@@ -215,11 +218,14 @@ public class P25P1SoftSyncCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            for(float sample : samples)
+            for(int _b = 0; _b < 1000; _b++)
             {
-                mVectorDetector64.process(sample);
+                for(float sample : samples)
+                {
+                    mVectorDetector64.process(sample);
+                }
+                count++;
             }
-            count++;
         }
 
         return count;
@@ -232,11 +238,14 @@ public class P25P1SoftSyncCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            for(float sample : samples)
+            for(int _b = 0; _b < 1000; _b++)
             {
-                mVectorDetector128.process(sample);
+                for(float sample : samples)
+                {
+                    mVectorDetector128.process(sample);
+                }
+                count++;
             }
-            count++;
         }
 
         return count;
@@ -249,11 +258,14 @@ public class P25P1SoftSyncCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            for(float sample : samples)
+            for(int _b = 0; _b < 1000; _b++)
             {
-                mVectorDetector256.process(sample);
+                for(float sample : samples)
+                {
+                    mVectorDetector256.process(sample);
+                }
+                count++;
             }
-            count++;
         }
 
         return count;
@@ -266,11 +278,14 @@ public class P25P1SoftSyncCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            for(float sample : samples)
+            for(int _b = 0; _b < 1000; _b++)
             {
-                mVectorDetector512.process(sample);
+                for(float sample : samples)
+                {
+                    mVectorDetector512.process(sample);
+                }
+                count++;
             }
-            count++;
         }
 
         return count;
