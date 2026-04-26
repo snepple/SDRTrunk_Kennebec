@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,12 +48,13 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
 
     private final static int DELAY_BUFFER_DURATION_MILLISECONDS = 2000;
 
+    private final ReentrantLock mLock = new ReentrantLock();
     private List<HalfBandTunerChannelSource> mChannelSources = new CopyOnWriteArrayList<>();
     private SortedSet<TunerChannel> mTunerChannels = new TreeSet<>();
     private TunerController mTunerController;
     private ChannelSourceEventProcessor mChannelSourceEventProcessor = new ChannelSourceEventProcessor();
     private NativeSampleDelayBuffer mSampleDelayBuffer;
-    private boolean mRunning = true;
+    private volatile boolean mRunning = true;
 
     public HeterodyneChannelSourceManager(TunerController tunerController)
     {
@@ -63,44 +65,76 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
     @Override
     public String getStateDescription()
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Heterodyne Channel Source Manager Providing [").append(mTunerChannels.size()).append("] Channels");
-        sb.append("\n\tTuner Controller Frequency: ").append(mTunerController.getFrequency());
-        for(HalfBandTunerChannelSource channelSource: mChannelSources)
+        mLock.lock();
+        try
         {
-            sb.append("\n\tChannel [").append(channelSource.getTunerChannel())
-                    .append("] Frequency [").append(channelSource.getFrequency())
-                    .append("] Mixer [").append(channelSource.getMixerFrequency())
-                    .append("]");
-            sb.append(" HASH:").append(Integer.toHexString(channelSource.hashCode()).toUpperCase());
-        }
+            StringBuilder sb = new StringBuilder();
+            sb.append("Heterodyne Channel Source Manager Providing [").append(mTunerChannels.size()).append("] Channels");
+            sb.append("\n\tTuner Controller Frequency: ").append(mTunerController.getFrequency());
+            for(HalfBandTunerChannelSource channelSource: mChannelSources)
+            {
+                sb.append("\n\tChannel [").append(channelSource.getTunerChannel())
+                        .append("] Frequency [").append(channelSource.getFrequency())
+                        .append("] Mixer [").append(channelSource.getMixerFrequency())
+                        .append("]");
+                sb.append(" HASH:").append(Integer.toHexString(channelSource.hashCode()).toUpperCase());
+            }
 
-        return sb.toString();
+            return sb.toString();
+        }
+        finally
+        {
+            mLock.unlock();
+        }
     }
 
     @Override
     public void stopAllChannels()
     {
-        mRunning = false;
-
-        List<TunerChannelSource> toStop = new ArrayList<>(mChannelSources);
-
-        for(TunerChannelSource tunerChannelSource: toStop)
+        mLock.lock();
+        try
         {
-            MyEventBus.getGlobalEventBus().post(new ChannelStopProcessingRequest(tunerChannelSource));
+            mRunning = false;
+
+            List<TunerChannelSource> toStop = new ArrayList<>(mChannelSources);
+
+            for(TunerChannelSource tunerChannelSource: toStop)
+            {
+                MyEventBus.getGlobalEventBus().post(new ChannelStopProcessingRequest(tunerChannelSource));
+            }
+        }
+        finally
+        {
+            mLock.unlock();
         }
     }
 
     @Override
     public SortedSet<TunerChannel> getTunerChannels()
     {
-        return mTunerChannels;
+        mLock.lock();
+        try
+        {
+            return new TreeSet<>(mTunerChannels);
+        }
+        finally
+        {
+            mLock.unlock();
+        }
     }
 
     @Override
     public int getTunerChannelCount()
     {
-        return mTunerChannels.size();
+        mLock.lock();
+        try
+        {
+            return mTunerChannels.size();
+        }
+        finally
+        {
+            mLock.unlock();
+        }
     }
 
     @Override
@@ -117,35 +151,43 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
         try
         {
             mTunerController.getLock().lock();
-            if(CenterFrequencyCalculator.canTune(tunerChannel, mTunerController, mTunerChannels))
+            mLock.lock();
+            try
             {
-                try
+                if(CenterFrequencyCalculator.canTune(tunerChannel, mTunerController, mTunerChannels))
                 {
-                    //Attempt to create the channel source first, in case we get a filter design exception
-                    HalfBandTunerChannelSource tunerChannelSource = new HalfBandTunerChannelSource(mChannelSourceEventProcessor,
-                            tunerChannel, mTunerController.getSampleRate(), channelSpecification, threadName);
+                    try
+                    {
+                        //Attempt to create the channel source first, in case we get a filter design exception
+                        HalfBandTunerChannelSource tunerChannelSource = new HalfBandTunerChannelSource(mChannelSourceEventProcessor,
+                                tunerChannel, mTunerController.getSampleRate(), channelSpecification, threadName);
 
-                    //Add to the list of channel sources so that it will receive the tuner frequency change
-                    mChannelSources.add(tunerChannelSource);
+                        //Add to the list of channel sources so that it will receive the tuner frequency change
+                        mChannelSources.add(tunerChannelSource);
 
-                    //Set the current tuner frequency
-                    tunerChannelSource.setFrequency(mTunerController.getFrequency());
+                        //Set the current tuner frequency
+                        tunerChannelSource.setFrequency(mTunerController.getFrequency());
 
-                    //Add to the channel list and update the tuner center frequency as needed
-                    mTunerChannels.add(tunerChannel);
-                    updateTunerFrequency();
+                        //Add to the channel list and update the tuner center frequency as needed
+                        mTunerChannels.add(tunerChannel);
+                        updateTunerFrequency();
 
-                    //Lock the tuner controller frequency and sample rate
-                    mTunerController.setLockedSampleRate(true);
+                        //Lock the tuner controller frequency and sample rate
+                        mTunerController.setLockedSampleRate(true);
 
-                    broadcast(SourceEvent.channelCountChange(getTunerChannelCount()));
+                        broadcast(SourceEvent.channelCountChange(getTunerChannelCount()));
 
-                    source = tunerChannelSource;
+                        source = tunerChannelSource;
+                    }
+                    catch(FilterDesignException fde)
+                    {
+                        mLog.error("Error creating CIC tuner channel source - couldn't design cleanup filter", fde);
+                    }
                 }
-                catch(FilterDesignException fde)
-                {
-                    mLog.error("Error creating CIC tuner channel source - couldn't design cleanup filter", fde);
-                }
+            }
+            finally
+            {
+                mLock.unlock();
             }
         }
         finally
@@ -159,9 +201,17 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
     @Override
     public void setErrorMessage(String errorMessage)
     {
-        for(TunerChannelSource tunerChannelSource: mChannelSources)
+        mLock.lock();
+        try
         {
-            tunerChannelSource.setError(errorMessage);
+            for(TunerChannelSource tunerChannelSource: mChannelSources)
+            {
+                tunerChannelSource.setError(errorMessage);
+            }
+        }
+        finally
+        {
+            mLock.unlock();
         }
     }
 
@@ -197,29 +247,37 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
     @Override
     public void process(SourceEvent tunerSourceEvent) throws SourceException
     {
-        switch(tunerSourceEvent.getEvent())
+        mLock.lock();
+        try
         {
-            case NOTIFICATION_FREQUENCY_CHANGE:
-                //Tuner center frequency has changed - update channels
-                updateTunerFrequency(tunerSourceEvent.getValue().longValue());
+            switch(tunerSourceEvent.getEvent())
+            {
+                case NOTIFICATION_FREQUENCY_CHANGE:
+                    //Tuner center frequency has changed - update channels
+                    updateTunerFrequency(tunerSourceEvent.getValue().longValue());
 
-                //Clear the delay buffer since any delayed samples will be centered on the previous frequency
-                if(mSampleDelayBuffer != null)
-                {
-                    mSampleDelayBuffer.clear();
-                }
-                break;
-            case NOTIFICATION_FREQUENCY_CORRECTION_CHANGE:
-                //The tuner is self-correcting for PPM error - relay to channels
-                broadcastToChannels(tunerSourceEvent);
-                break;
-            case NOTIFICATION_SAMPLE_RATE_CHANGE:
-            case NOTIFICATION_FREQUENCY_AND_SAMPLE_RATE_LOCKED:
-            case NOTIFICATION_FREQUENCY_AND_SAMPLE_RATE_UNLOCKED:
-                //no-op
-                break;
-            default:
-                mLog.info("Unrecognized Source Event received from tuner: " + tunerSourceEvent);
+                    //Clear the delay buffer since any delayed samples will be centered on the previous frequency
+                    if(mSampleDelayBuffer != null)
+                    {
+                        mSampleDelayBuffer.clear();
+                    }
+                    break;
+                case NOTIFICATION_FREQUENCY_CORRECTION_CHANGE:
+                    //The tuner is self-correcting for PPM error - relay to channels
+                    broadcastToChannels(tunerSourceEvent);
+                    break;
+                case NOTIFICATION_SAMPLE_RATE_CHANGE:
+                case NOTIFICATION_FREQUENCY_AND_SAMPLE_RATE_LOCKED:
+                case NOTIFICATION_FREQUENCY_AND_SAMPLE_RATE_UNLOCKED:
+                    //no-op
+                    break;
+                default:
+                    mLog.info("Unrecognized Source Event received from tuner: " + tunerSourceEvent);
+            }
+        }
+        finally
+        {
+            mLock.unlock();
         }
     }
 
@@ -228,16 +286,24 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
      */
     private void broadcastToChannels(SourceEvent sourceEvent)
     {
-        for(HalfBandTunerChannelSource channelSource : mChannelSources)
+        mLock.lock();
+        try
         {
-            try
+            for(HalfBandTunerChannelSource channelSource : mChannelSources)
             {
-                channelSource.process(sourceEvent);
+                try
+                {
+                    channelSource.process(sourceEvent);
+                }
+                catch(Exception e)
+                {
+                    mLog.error("Error broadcasting source event to channel: " + sourceEvent);
+                }
             }
-            catch(Exception e)
-            {
-                mLog.error("Error broadcasting source event to channel: " + sourceEvent);
-            }
+        }
+        finally
+        {
+            mLock.unlock();
         }
     }
 
@@ -248,9 +314,17 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
      */
     private void updateTunerFrequency(long tunerFrequency)
     {
-        for(HalfBandTunerChannelSource channelSource : mChannelSources)
+        mLock.lock();
+        try
         {
-            channelSource.setFrequency(tunerFrequency);
+            for(HalfBandTunerChannelSource channelSource : mChannelSources)
+            {
+                channelSource.setFrequency(tunerFrequency);
+            }
+        }
+        finally
+        {
+            mLock.unlock();
         }
     }
 
@@ -260,18 +334,26 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
      */
     private void startDelayBuffer()
     {
-        if(mSampleDelayBuffer == null)
+        mLock.lock();
+        try
         {
-            long bufferDuration = mTunerController.getBufferDuration();
-
-            if(bufferDuration <= 0)
+            if(mSampleDelayBuffer == null)
             {
-                bufferDuration = 1;
-            }
+                long bufferDuration = mTunerController.getBufferDuration();
 
-            int delayBufferSize = (int)(DELAY_BUFFER_DURATION_MILLISECONDS / bufferDuration);
-            mSampleDelayBuffer = new NativeSampleDelayBuffer(delayBufferSize, mTunerController.getBufferDuration());
-            mTunerController.addBufferListener(mSampleDelayBuffer);
+                if(bufferDuration <= 0)
+                {
+                    bufferDuration = 1;
+                }
+
+                int delayBufferSize = (int)(DELAY_BUFFER_DURATION_MILLISECONDS / bufferDuration);
+                mSampleDelayBuffer = new NativeSampleDelayBuffer(delayBufferSize, mTunerController.getBufferDuration());
+                mTunerController.addBufferListener(mSampleDelayBuffer);
+            }
+        }
+        finally
+        {
+            mLock.unlock();
         }
     }
 
@@ -280,11 +362,19 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
      */
     private void stopDelayBuffer()
     {
-        if(mSampleDelayBuffer != null && !mSampleDelayBuffer.hasListeners())
+        mLock.lock();
+        try
         {
-            mTunerController.removeBufferListener(mSampleDelayBuffer);
-            mSampleDelayBuffer.dispose();
-            mSampleDelayBuffer = null;
+            if(mSampleDelayBuffer != null && !mSampleDelayBuffer.hasListeners())
+            {
+                mTunerController.removeBufferListener(mSampleDelayBuffer);
+                mSampleDelayBuffer.dispose();
+                mSampleDelayBuffer = null;
+            }
+        }
+        finally
+        {
+            mLock.unlock();
         }
     }
 
@@ -296,48 +386,57 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
         @Override
         public void receive(SourceEvent sourceEvent)
         {
-            switch(sourceEvent.getEvent())
+            mTunerController.getLock().lock();
+            mLock.lock();
+            try
             {
-//TODO: protect start/stop processing with a reentrant lock
-                case REQUEST_START_SAMPLE_STREAM:
-                    if(sourceEvent.getSource() instanceof HalfBandTunerChannelSource)
-                    {
-                        startDelayBuffer();
-
-                        //The start sample stream request contains a start timestamp and the delay buffer
-                        //will preload the channel with delayed sample buffers that either contain the
-                        //timestamp or occur later/newer than the timestamp.
-                        mSampleDelayBuffer.addListener((HalfBandTunerChannelSource)sourceEvent.getSource(),
-                                sourceEvent.getValue().longValue());
-                    }
-                    break;
-                case REQUEST_STOP_SAMPLE_STREAM:
-                    if(sourceEvent.getSource() instanceof HalfBandTunerChannelSource halfBandSource)
-                    {
-                        mSampleDelayBuffer.removeListener(halfBandSource);
-                        stopDelayBuffer();
-                        mChannelSources.remove(halfBandSource);
-                        mTunerChannels.remove(halfBandSource.getTunerChannel());
-                        halfBandSource.dispose();
-
-                        //Unlock the tuner controller if there are no more channels
-                        if(getTunerChannelCount() == 0)
+                switch(sourceEvent.getEvent())
+                {
+                    case REQUEST_START_SAMPLE_STREAM:
+                        if(sourceEvent.getSource() instanceof HalfBandTunerChannelSource)
                         {
-                            mTunerController.setLockedSampleRate(false);
+                            startDelayBuffer();
+
+                            //The start sample stream request contains a start timestamp and the delay buffer
+                            //will preload the channel with delayed sample buffers that either contain the
+                            //timestamp or occur later/newer than the timestamp.
+                            mSampleDelayBuffer.addListener((HalfBandTunerChannelSource)sourceEvent.getSource(),
+                                    sourceEvent.getValue().longValue());
                         }
-                        broadcast(SourceEvent.channelCountChange(getTunerChannelCount()));
-                    }
-                    break;
-                case NOTIFICATION_MEASURED_FREQUENCY_ERROR_SYNC_LOCKED:
-                    //Rebroadcast so that the tuner source can process this event
-                    broadcast(sourceEvent);
-                    break;
-                case NOTIFICATION_CHANNEL_COUNT_CHANGE:
-                    //Lock the tuner controller frequency & sample rate when we're processing channels
-                    break;
-                default:
-                    mLog.info("Unrecognized Source Event received from channel: " + sourceEvent);
-                    break;
+                        break;
+                    case REQUEST_STOP_SAMPLE_STREAM:
+                        if(sourceEvent.getSource() instanceof HalfBandTunerChannelSource halfBandSource)
+                        {
+                            mSampleDelayBuffer.removeListener(halfBandSource);
+                            stopDelayBuffer();
+                            mChannelSources.remove(halfBandSource);
+                            mTunerChannels.remove(halfBandSource.getTunerChannel());
+                            halfBandSource.dispose();
+
+                            //Unlock the tuner controller if there are no more channels
+                            if(getTunerChannelCount() == 0)
+                            {
+                                mTunerController.setLockedSampleRate(false);
+                            }
+                            broadcast(SourceEvent.channelCountChange(getTunerChannelCount()));
+                        }
+                        break;
+                    case NOTIFICATION_MEASURED_FREQUENCY_ERROR_SYNC_LOCKED:
+                        //Rebroadcast so that the tuner source can process this event
+                        broadcast(sourceEvent);
+                        break;
+                    case NOTIFICATION_CHANNEL_COUNT_CHANGE:
+                        //Lock the tuner controller frequency & sample rate when we're processing channels
+                        break;
+                    default:
+                        mLog.info("Unrecognized Source Event received from channel: " + sourceEvent);
+                        break;
+                }
+            }
+            finally
+            {
+                mLock.unlock();
+                mTunerController.getLock().unlock();
             }
         }
     }
