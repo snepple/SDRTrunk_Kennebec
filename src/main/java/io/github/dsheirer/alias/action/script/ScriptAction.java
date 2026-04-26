@@ -29,7 +29,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class ScriptAction extends RecurringAction
 {
@@ -77,7 +82,19 @@ public class ScriptAction extends RecurringAction
     {
         if(mScript != null)
         {
-            ProcessBuilder pb = new ProcessBuilder(mScript);
+            Path path = Paths.get(mScript);
+
+            if(!Files.exists(path))
+            {
+                throw new FileNotFoundException("Script file not found: " + mScript);
+            }
+
+            if(!Files.isRegularFile(path))
+            {
+                throw new IOException("Script path is not a regular file: " + mScript);
+            }
+
+            ProcessBuilder pb = new ProcessBuilder(path.toAbsolutePath().toString());
 
             pb.redirectErrorStream(true);
 
