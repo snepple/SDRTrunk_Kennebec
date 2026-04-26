@@ -37,8 +37,8 @@ public record InterleavedComplexSamples(float[] samples, long timestamp) impleme
 
         for(int x = 0; x < i.length; x++)
         {
-            i[x] = samples()[x / 2];
-            q[x] = samples()[x / 2 + 1];
+            i[x] = samples()[2 * x];
+            q[x] = samples()[2 * x + 1];
         }
 
         return new ComplexSamples(i, q, timestamp());
