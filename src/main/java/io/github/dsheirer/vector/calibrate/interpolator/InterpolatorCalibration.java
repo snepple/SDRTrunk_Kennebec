@@ -196,12 +196,15 @@ public class InterpolatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            for(int x = 0; x < interpolationPoints.length; x++)
+            for(int _b = 0; _b < 1000; _b++)
             {
-                accumulator += mScalar.filter(samples, 0, interpolationPoints[x]);
-            }
+                for(int x = 0; x < interpolationPoints.length; x++)
+                {
+                    accumulator += mScalar.filter(samples, 0, interpolationPoints[x]);
+                }
 
-            count++;
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -216,12 +219,15 @@ public class InterpolatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            for(int x = 0; x < interpolationPoints.length; x++)
+            for(int _b = 0; _b < 1000; _b++)
             {
-                accumulator += mVector64.filter(samples, 0, interpolationPoints[x]);
-            }
+                for(int x = 0; x < interpolationPoints.length; x++)
+                {
+                    accumulator += mVector64.filter(samples, 0, interpolationPoints[x]);
+                }
 
-            count++;
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -236,12 +242,15 @@ public class InterpolatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            for(int x = 0; x < interpolationPoints.length; x++)
+            for(int _b = 0; _b < 1000; _b++)
             {
-                accumulator += mVector128.filter(samples, 0, interpolationPoints[x]);
-            }
+                for(int x = 0; x < interpolationPoints.length; x++)
+                {
+                    accumulator += mVector128.filter(samples, 0, interpolationPoints[x]);
+                }
 
-            count++;
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -256,11 +265,14 @@ public class InterpolatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            for(int x = 0; x < interpolationPoints.length; x++)
+            for(int _b = 0; _b < 1000; _b++)
             {
-                accumulator += mVector256.filter(samples, 0, interpolationPoints[x]);
+                for(int x = 0; x < interpolationPoints.length; x++)
+                {
+                    accumulator += mVector256.filter(samples, 0, interpolationPoints[x]);
+                }
+                count++;
             }
-            count++;
         }
 
         return count + (long)(accumulator * 0);

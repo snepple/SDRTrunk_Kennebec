@@ -216,7 +216,7 @@ public class UnpackedSampleConverterCalibration extends Calibration
             SampleBufferIteratorScalar iterator = new SampleBufferIteratorScalar(samples, residualI,
                     residualQ, 0.0f, System.currentTimeMillis(), 0.0f);
 
-            while(iterator.hasNext() && ((System.currentTimeMillis() - start) < ITERATION_DURATION_MS))
+            while(iterator.hasNext())
             {
                 accumulator += iterator.next().i()[2];
                 count++;
@@ -237,7 +237,7 @@ public class UnpackedSampleConverterCalibration extends Calibration
             SampleBufferIteratorVector64Bits iterator = new SampleBufferIteratorVector64Bits(samples, residualI,
                     residualQ, 0.0f, System.currentTimeMillis(), 0.0f);
 
-            while(iterator.hasNext() && ((System.currentTimeMillis() - start) < ITERATION_DURATION_MS))
+            while(iterator.hasNext())
             {
                 accumulator += iterator.next().i()[2];
                 count++;
@@ -257,7 +257,7 @@ public class UnpackedSampleConverterCalibration extends Calibration
             SampleBufferIteratorVector128Bits iterator = new SampleBufferIteratorVector128Bits(samples, residualI,
                     residualQ, 0.0f, System.currentTimeMillis(), 0.0f);
 
-            while(iterator.hasNext() && ((System.currentTimeMillis() - start) < ITERATION_DURATION_MS))
+            while(iterator.hasNext())
             {
                 accumulator += iterator.next().i()[2];
                 count++;
@@ -279,7 +279,7 @@ public class UnpackedSampleConverterCalibration extends Calibration
                     new SampleBufferIteratorVector256Bits(samples, residualI, residualQ, 0.0f,
                             System.currentTimeMillis(), 0.0f);
 
-            while(iterator.hasNext() && ((System.currentTimeMillis() - start) < ITERATION_DURATION_MS))
+            while(iterator.hasNext())
             {
                 accumulator += iterator.next().i()[2];
                 count++;
@@ -301,7 +301,7 @@ public class UnpackedSampleConverterCalibration extends Calibration
                     new SampleBufferIteratorVector512Bits(samples, residualI, residualQ, 0.0f,
                             System.currentTimeMillis(), 0.0f);
 
-            while(iterator.hasNext() && ((System.currentTimeMillis() - start) < ITERATION_DURATION_MS))
+            while(iterator.hasNext())
             {
                 accumulator += iterator.next().i()[2];
                 count++;

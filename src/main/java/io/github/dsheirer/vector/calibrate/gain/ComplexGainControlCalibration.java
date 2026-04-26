@@ -116,9 +116,12 @@ public class ComplexGainControlCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            ComplexSamples amplified = mScalarGainControl.process(i, q, 0l);
-            accumulator += amplified.i()[2];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                ComplexSamples amplified = mScalarGainControl.process(i, q, 0l);
+                accumulator += amplified.i()[2];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -133,9 +136,12 @@ public class ComplexGainControlCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            ComplexSamples amplified = mVectorGainControl.process(i, q, 0l);
-            accumulator += amplified.i()[2];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                ComplexSamples amplified = mVectorGainControl.process(i, q, 0l);
+                accumulator += amplified.i()[2];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);

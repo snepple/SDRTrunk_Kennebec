@@ -200,9 +200,12 @@ public class FmDemodulatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] demodulated = mScalarDemodulator.demodulate(i, q);
-            accumulator += demodulated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] demodulated = mScalarDemodulator.demodulate(i, q);
+                accumulator += demodulated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -216,9 +219,12 @@ public class FmDemodulatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] demodulated = mVectorDemodulator64.demodulate(i, q);
-            accumulator += demodulated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] demodulated = mVectorDemodulator64.demodulate(i, q);
+                accumulator += demodulated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -232,9 +238,12 @@ public class FmDemodulatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] demodulated = mVectorDemodulator128.demodulate(i, q);
-            accumulator += demodulated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] demodulated = mVectorDemodulator128.demodulate(i, q);
+                accumulator += demodulated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -248,9 +257,12 @@ public class FmDemodulatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] demodulated = mVectorDemodulator256.demodulate(i, q);
-            accumulator += demodulated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] demodulated = mVectorDemodulator256.demodulate(i, q);
+                accumulator += demodulated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -264,9 +276,12 @@ public class FmDemodulatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] demodulated = mVectorDemodulator512.demodulate(i, q);
-            accumulator += demodulated[1];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] demodulated = mVectorDemodulator512.demodulate(i, q);
+                accumulator += demodulated[1];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);

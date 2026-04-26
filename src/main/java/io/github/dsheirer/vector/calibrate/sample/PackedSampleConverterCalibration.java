@@ -110,9 +110,12 @@ public class PackedSampleConverterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            short[] converted = scalor.convert(buffer);
-            accumulator += converted[2];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                short[] converted = scalor.convert(buffer);
+                accumulator += converted[2];
+                count++;
+            }
         }
 
         return count + (accumulator * 0);
@@ -127,9 +130,12 @@ public class PackedSampleConverterCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            short[] converted = vector.convert(buffer);
-            accumulator += converted[2];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                short[] converted = vector.convert(buffer);
+                accumulator += converted[2];
+                count++;
+            }
         }
 
         return count + (accumulator * 0);

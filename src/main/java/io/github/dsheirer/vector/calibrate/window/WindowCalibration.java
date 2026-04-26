@@ -119,9 +119,12 @@ public class WindowCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            mScalarWindow.apply(samples);
-            accumulator += samples[3];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                mScalarWindow.apply(samples);
+                accumulator += samples[3];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -134,9 +137,12 @@ public class WindowCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            mVectorWindow.apply(samples);
-            accumulator += samples[3];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                mVectorWindow.apply(samples);
+                accumulator += samples[3];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);

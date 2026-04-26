@@ -123,9 +123,12 @@ public class ComplexOscillatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] generated = mScalarOscillator.generate(BUFFER_SIZE);
-            accumulator += generated[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] generated = mScalarOscillator.generate(BUFFER_SIZE);
+                accumulator += generated[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
@@ -144,9 +147,12 @@ public class ComplexOscillatorCalibration extends Calibration
 
         while((System.currentTimeMillis() - start) < ITERATION_DURATION_MS)
         {
-            float[] generated = mVectorOscillator.generate(BUFFER_SIZE);
-            accumulator += generated[0];
-            count++;
+            for(int _b = 0; _b < 1000; _b++)
+            {
+                float[] generated = mVectorOscillator.generate(BUFFER_SIZE);
+                accumulator += generated[0];
+                count++;
+            }
         }
 
         return count + (long)(accumulator * 0);
