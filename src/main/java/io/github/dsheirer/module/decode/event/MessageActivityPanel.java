@@ -53,6 +53,7 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
     private MessageActivityModel mMessageModel = new MessageActivityModel();
     private MessageHistory mCurrentMessageHistory;
     private JTable mTable = new JTable(mMessageModel);
+
     private TableRowSorter<TableModel> mTableRowSorter;
     private JTableColumnWidthMonitor mTableColumnWidthMonitor;
     private UserPreferences mUserPreferences;
@@ -67,6 +68,7 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
     public MessageActivityPanel(UserPreferences userPreferences)
     {
         mUserPreferences = userPreferences;
+        mTable.setFillsViewportHeight(true);
         mTableRowSorter = new TableRowSorter<>(mMessageModel);
         mTableRowSorter.setRowFilter(new MessageRowFilter());
         mTable.setRowSorter(mTableRowSorter);
