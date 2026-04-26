@@ -30,6 +30,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class ScriptAction extends RecurringAction
 {
@@ -77,6 +79,10 @@ public class ScriptAction extends RecurringAction
     {
         if(mScript != null)
         {
+            if (!Files.isRegularFile(Paths.get(mScript))) {
+                throw new IllegalArgumentException("Invalid script path: must be an existing regular file.");
+            }
+
             ProcessBuilder pb = new ProcessBuilder(mScript);
 
             pb.redirectErrorStream(true);
