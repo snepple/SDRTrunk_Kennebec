@@ -1875,4 +1875,7 @@ public class P25TrafficChannelManager extends TrafficChannelManager implements I
                     mLock.unlock();
                 }
             }
+        }
+    }
+}
         

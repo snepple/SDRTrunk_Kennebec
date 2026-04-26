@@ -854,4 +854,41 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         mAudioFilters.setHissReductionEnabled(mNBFMConfig.isHissReductionEnabled());
 
         mLog.info("VoxSend audio filters initialized: lowPass={} ({}Hz), deemphasis={} ({}μs), " +
-                "hissReduction={} ({}dB@{}Hz), bassBoost={} ({}dB), voiceEnhance=
+                "hissReduction={} ({}dB@{}Hz), bassBoost={} ({}dB), voiceEnhance={}, " +
+                "noiseGate={} (threshold={})",
+                mNBFMConfig.isLowPassEnabled(), mNBFMConfig.getLowPassCutoff(),
+                mNBFMConfig.isDeemphasisEnabled(), mNBFMConfig.getDeemphasisTimeConstant(),
+                mNBFMConfig.isHissReductionEnabled(), mNBFMConfig.getHissReductionDb(),
+                mNBFMConfig.getHissReductionCornerHz(),
+                mNBFMConfig.isBassBoostEnabled(), mNBFMConfig.getBassBoostDb(),
+                mNBFMConfig.isAgcEnabled(),
+                mNBFMConfig.isNoiseGateEnabled(), mNBFMConfig.getNoiseGateThreshold());
+    }
+
+    /**
+     * Maps the AGC target level (stored as -30 to -6 dB) to voice enhancement amount (0.0 to 1.0).
+     * The AGC target level field is repurposed to store voice enhancement strength.
+     */
+    private float mapAgcTargetToVoiceEnhancement(float agcTargetLevel)
+    {
+        // agcTargetLevel range is -30 to -6 dB, map to 0.0 to 1.0
+        // -30 dB = 0.0 (no enhancement), -6 dB = 1.0 (max enhancement)
+        float normalized = (agcTargetLevel - (-30.0f)) / ((-6.0f) - (-30.0f));
+        return Math.max(0.0f, Math.min(1.0f, normalized));
+    }
+
+    /**
+     * Monitors sample rate change source event(s) to set up the filters, decimation, and demodulator.
+     */
+    public class SourceEventProcessor implements Listener<SourceEvent>
+    {
+        @Override
+        public void receive(SourceEvent sourceEvent)
+        {
+            if(sourceEvent.getEvent() == SourceEvent.Event.NOTIFICATION_SAMPLE_RATE_CHANGE)
+            {
+                setSampleRate(sourceEvent.getValue().doubleValue());
+            }
+        }
+    }
+}
