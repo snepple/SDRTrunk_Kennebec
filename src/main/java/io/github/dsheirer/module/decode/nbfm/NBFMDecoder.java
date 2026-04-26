@@ -175,13 +175,22 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         //Send squelch controlled audio to the resampler.
         //Only notify call continuation if tone filter is not active, or if tone matches.
         //This makes the channel behave like a real radio: wrong tone = fully squelched/idle.
+        //PR #2384 fix: pass lastBatch=true when squelch is closing so the resampler
+        //zero-pads and flushes its output buffer, preventing BufferOverflowException.
         mNoiseSquelch.setAudioListener(audio -> {
-            mResampler.resample(audio);
-
-            // Only signal call activity if tone matches (or no tone filter configured)
-            if(!mToneFilterEnabled || mToneMatch)
+            if(mNoiseSquelch.isSquelched())
             {
-                notifyCallContinuation();
+                mResampler.resample(audio, true);
+            }
+            else
+            {
+                mResampler.resample(audio);
+
+                // Only signal call activity if tone matches (or no tone filter configured)
+                if(!mToneFilterEnabled || mToneMatch)
+                {
+                    notifyCallContinuation();
+                }
             }
         });
 
@@ -845,39 +854,4 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         mAudioFilters.setHissReductionEnabled(mNBFMConfig.isHissReductionEnabled());
 
         mLog.info("VoxSend audio filters initialized: lowPass={} ({}Hz), deemphasis={} ({}μs), " +
-                "hissReduction={} ({}dB@{}Hz), bassBoost={} ({}dB), voiceEnhance={} ({}), noiseGate={} ({}%)",
-                mNBFMConfig.isLowPassEnabled(), mNBFMConfig.getLowPassCutoff(),
-                mNBFMConfig.isDeemphasisEnabled(), mNBFMConfig.getDeemphasisTimeConstant(),
-                mNBFMConfig.isHissReductionEnabled(), mNBFMConfig.getHissReductionDb(), mNBFMConfig.getHissReductionCornerHz(),
-                mNBFMConfig.isBassBoostEnabled(), mNBFMConfig.getBassBoostDb(),
-                mNBFMConfig.isAgcEnabled(), voiceEnhanceAmount,
-                mNBFMConfig.isNoiseGateEnabled(), mNBFMConfig.getNoiseGateThreshold());
-    }
-
-    /**
-     * Maps the AGC target level (stored as -30 to -6 dB) to voice enhancement amount (0.0 to 1.0).
-     * The AGC target level field is repurposed to store voice enhancement strength.
-     */
-    private float mapAgcTargetToVoiceEnhancement(float agcTargetLevel)
-    {
-        // agcTargetLevel range is -30 to -6 dB, map to 0.0 to 1.0
-        // -30 dB = 0.0 (no enhancement), -6 dB = 1.0 (max enhancement)
-        float normalized = (agcTargetLevel - (-30.0f)) / ((-6.0f) - (-30.0f));
-        return Math.max(0.0f, Math.min(1.0f, normalized));
-    }
-
-    /**
-     * Monitors sample rate change source event(s) to set up the filters, decimation, and demodulator.
-     */
-    public class SourceEventProcessor implements Listener<SourceEvent>
-    {
-        @Override
-        public void receive(SourceEvent sourceEvent)
-        {
-            if(sourceEvent.getEvent() == SourceEvent.Event.NOTIFICATION_SAMPLE_RATE_CHANGE)
-            {
-                setSampleRate(sourceEvent.getValue().doubleValue());
-            }
-        }
-    }
-}
+                "hissReduction={} ({}dB@{}Hz), bassBoost={} ({}dB), voiceEnhance=
