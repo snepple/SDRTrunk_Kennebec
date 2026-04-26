@@ -23,6 +23,8 @@ import io.github.dsheirer.bits.CorrectedBinaryMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Locale;
+
 public class CRCUtil
 {
     private final static Logger mLog = LoggerFactory.getLogger(CRCUtil.class);
@@ -179,7 +181,7 @@ public class CRCUtil
             StringBuilder element = new StringBuilder();
 
             element.append("0x");
-            element.append(Long.toHexString(value).toUpperCase());
+            element.append(Long.toHexString(value).toUpperCase(Locale.ROOT));
 
             if(!integerArray)
             {
@@ -228,7 +230,7 @@ public class CRCUtil
         sb.append("private static int[] CHECKSUMS = new int[]{");
         for(long checksum: checksums)
         {
-            sb.append("0x").append(Long.toHexString(checksum).toUpperCase());
+            sb.append("0x").append(Long.toHexString(checksum).toUpperCase(Locale.ROOT));
             sb.append(",");
         }
 
@@ -254,8 +256,8 @@ public class CRCUtil
         int checksum = message.getInt(messageSize, messageSize + crcSize - 1);
         int residual = calculated ^ checksum;
 
-        mLog.debug("CALC:" + Integer.toHexString(calculated).toUpperCase() +
-                " CHECK:" + Integer.toHexString(checksum).toUpperCase() +
-                " RESIDUAL:" + Integer.toHexString(residual).toUpperCase());
+        mLog.debug("CALC:" + Integer.toHexString(calculated).toUpperCase(Locale.ROOT) +
+                " CHECK:" + Integer.toHexString(checksum).toUpperCase(Locale.ROOT) +
+                " RESIDUAL:" + Integer.toHexString(residual).toUpperCase(Locale.ROOT));
     }
 }
