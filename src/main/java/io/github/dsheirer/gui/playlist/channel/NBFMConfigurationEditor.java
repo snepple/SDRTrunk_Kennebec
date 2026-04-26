@@ -411,7 +411,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             contentBox.getChildren().add(createSquelchSection());
             contentBox.getChildren().add(new Separator());
 
-            // 7. Output Gain (applied last)
+            // 6. Output Gain (applied last)
             contentBox.getChildren().add(createInputGainSection());
 
             mAudioFiltersPane.setContent(contentBox);
@@ -535,7 +535,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createInputGainSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("7. Output Gain (Applied Last)");
+        Label title = new Label("6. Output Gain (Applied Last)");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
 
         GridPane controlsPane = new GridPane();
@@ -546,13 +546,13 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         GridPane.setConstraints(gainLabel, 0, 0);
         controlsPane.getChildren().add(gainLabel);
 
-        mInputGainSlider = new Slider(0.1, 5.0, 1.0);
+        mInputGainSlider = new Slider(0.1, 5.0, 2.0);
         mInputGainSlider.setMajorTickUnit(1.0);
         mInputGainSlider.setMinorTickCount(4);
         mInputGainSlider.setShowTickMarks(true);
         mInputGainSlider.setShowTickLabels(true);
         mInputGainSlider.setPrefWidth(300);
-        mInputGainSlider.setTooltip(new Tooltip("Amplify weak signals before processing\n1.0 = unity, 2.0 = +6dB"));
+        mInputGainSlider.setTooltip(new Tooltip("Output gain applied after all filters\n1.0 = unity, 2.0 = +6dB (default)"));
         mInputGainSlider.valueProperty().addListener((obs, old, val) -> {
             if(!mLoadingConfiguration)
             {
@@ -564,7 +564,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         GridPane.setConstraints(mInputGainSlider, 1, 0);
         controlsPane.getChildren().add(mInputGainSlider);
 
-        mInputGainField = new TextField("1.0x (0.0 dB)");
+        mInputGainField = new TextField("2.0x (6.0 dB)");
         mInputGainField.setPrefWidth(120);
         mInputGainField.setMaxWidth(120);
         mInputGainField.setStyle("-fx-font-size: 11px;");
@@ -1358,7 +1358,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
     private void disableAudioFilterControls()
     {
-        mInputGainSlider.setValue(1.0);
+        mInputGainSlider.setValue(2.0);
         mLowPassEnabledSwitch.setSelected(false);
         mLowPassCutoffSlider.setDisable(true);
         mVoiceEnhanceEnabledSwitch.setSelected(false);
