@@ -1,0 +1,10 @@
+--- src/main/java/io/github/dsheirer/message/AbstractMessage.java
++++ src/main/java/io/github/dsheirer/message/AbstractMessage.java
+@@ -23,6 +23,8 @@
+  */
+ public abstract class AbstractMessage
+ {
++    private static final char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
++
+     private CorrectedBinaryMessage mMessage;
+     private int mOffset;

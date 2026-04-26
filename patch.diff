@@ -1,0 +1,22 @@
+--- src/main/java/io/github/dsheirer/message/AbstractMessage.java
++++ src/main/java/io/github/dsheirer/message/AbstractMessage.java
+@@ -29,6 +29,8 @@
+  */
+ public abstract class AbstractMessage
+ {
++    private static final char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
++
+     public static final int OCTET_0_BIT_0 = 0;
+     public static final int OCTET_1_BIT_8 = 8;
+     public static final int OCTET_2_BIT_16 = 16;
+@@ -211,7 +213,10 @@
+      */
+     public static String formatOctetAsHex(int value)
+     {
+-        return String.format("%02X", value);
++        char[] chars = new char[2];
++        chars[0] = HEX_CHARS[(value >> 4) & 0xF];
++        chars[1] = HEX_CHARS[value & 0xF];
++        return new String(chars);
+     }
+ }
