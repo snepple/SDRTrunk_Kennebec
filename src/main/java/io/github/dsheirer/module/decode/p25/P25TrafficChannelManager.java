@@ -238,6 +238,7 @@ public class P25TrafficChannelManager extends TrafficChannelManager implements I
 
             mTS1ChannelGrantEventMap.clear();
             mTS2ChannelGrantEventMap.clear();
+            mFrequencyBandMap.clear();
 
             //Remove the control channel from the previous frequency
             mAllocatedTrafficChannelMap.remove(previous);
@@ -1874,6 +1875,4 @@ public class P25TrafficChannelManager extends TrafficChannelManager implements I
                     mLock.unlock();
                 }
             }
-        }
-    }
-}
+        
