@@ -219,6 +219,7 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
         if(mTrackHistoryTable == null)
         {
             mTrackHistoryTable = new JTable(EMPTY_HISTORY);
+            mTrackHistoryTable.setFillsViewportHeight(true);
             mTrackHistoryTable.getSelectionModel().addListSelectionListener(e ->
             {
                 if(getCenterOnSelectedCheckBox().isSelected())
@@ -469,6 +470,7 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
         if(mPlottedTracksTable == null)
         {
             mPlottedTracksTable = new JTable(mMapService.getPlottableEntityModel());
+            mPlottedTracksTable.setFillsViewportHeight(true);
             mPlottedTracksTable.setAutoCreateRowSorter(true);
 
             //Register selection listener to update button/label states

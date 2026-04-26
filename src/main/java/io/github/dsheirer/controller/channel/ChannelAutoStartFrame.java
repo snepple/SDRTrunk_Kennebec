@@ -164,6 +164,7 @@ public class ChannelAutoStartFrame extends JFrame
         {
             AutoStartChannelModel model = new AutoStartChannelModel(mChannels);
             mChannelTable = new JTable(model);
+            mChannelTable.setFillsViewportHeight(true);
         }
 
         return mChannelTable;

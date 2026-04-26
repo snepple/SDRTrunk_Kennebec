@@ -133,6 +133,7 @@ public class TunerViewPanel extends JPanel
         mRowSorter.setSortKeys(sortKeys);
 
         mTunerTable = new JTable(mDiscoveredTunerModel);
+        mTunerTable.setFillsViewportHeight(true);
         mTunerTable.setRowSorter(mRowSorter);
         mTunerTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         mTunerTable.getSelectionModel().addListSelectionListener(event ->

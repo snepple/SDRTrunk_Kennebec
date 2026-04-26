@@ -97,6 +97,7 @@ public class DecodeEventPanel extends JPanel implements Listener<ProcessingChain
         mUserPreferences = userPreferences;
         mTimestampCellRenderer = new TimestampCellRenderer();
         mTable = new JTable(mEventModel);
+        mTable.setFillsViewportHeight(true);
         mTableRowSorter = new TableRowSorter<>(mEventModel);
         mTableRowSorter.setRowFilter(new EventRowFilter());
         mTable.setRowSorter(mTableRowSorter);
