@@ -89,6 +89,8 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     private static final long RECONNECT_INTERVAL_MS = 15000;
     private static final long KICKED_BACKOFF_MS = 60000;
     private static final int MAX_KICKED_RETRIES = 5;
+    private static final long ERROR_BACKOFF_MS = 5000;
+    private static final int MAX_ERROR_RETRIES = 5;
 
     /** Default minimum gap (ms) between stop_stream and next start_stream. */
     private static final long DEFAULT_STREAM_GUARD_MS = 500;
@@ -105,6 +107,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     private final AtomicBoolean mStopped = new AtomicBoolean(false);
     private final AtomicInteger mSequence = new AtomicInteger(1);
     private final AtomicInteger mKickedCount = new AtomicInteger(0);
+    private final AtomicInteger mErrorCount = new AtomicInteger(0);
     private ScheduledFuture<?> mReconnectFuture;
 
     /**
@@ -185,6 +188,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         if(mReconnectFuture != null) { mReconnectFuture.cancel(true); mReconnectFuture = null; }
         mKicked.set(false);
         mKickedCount.set(0);
+        mErrorCount.set(0);
         mReconnecting.set(false);
         disconnectWebSocket();
         setBroadcastState(BroadcastState.DISCONNECTED);
@@ -369,6 +373,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
             sendStopStream(streamId);
             mStreamedCount.incrementAndGet();
             mKickedCount.set(0); // Successful stream proves connection is healthy
+            mErrorCount.set(0);
             broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_STREAMED_COUNT_CHANGE));
         }
 
@@ -607,6 +612,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                     mWebSocket = ws;
                     mSessionEpoch.incrementAndGet();
                     mReconnecting.set(false);
+                    mErrorCount.set(0);
                     setLastErrorDetail(null);
                     sendLogon();
                 })
@@ -663,7 +669,17 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         }
         else
         {
-            scheduleReconnectWithDelay(RECONNECT_INTERVAL_MS);
+            int errorCount = mErrorCount.getAndIncrement();
+            if(errorCount >= MAX_ERROR_RETRIES)
+            {
+                mLog.error("{}Zello connection failed {} times - stopping reconnect attempts.", ch(), errorCount);
+                setBroadcastState(BroadcastState.CONFIGURATION_ERROR);
+                return;
+            }
+
+            long backoff = ERROR_BACKOFF_MS * (1L << Math.min(errorCount, 4));
+            mLog.warn("{}Zello connection failed - backing off {}s ({}/{})", ch(), backoff / 1000, errorCount + 1, MAX_ERROR_RETRIES);
+            scheduleReconnectWithDelay(backoff);
         }
     }
 
@@ -893,6 +909,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                         // kickedCount so exponential backoff continues to escalate.
                         // Count only resets when a stream succeeds or on manual stop/restart.
                         mKicked.set(false);
+                        mErrorCount.set(0);
                     }
                     // else: refresh_token while already connected — ignore silently
                 }

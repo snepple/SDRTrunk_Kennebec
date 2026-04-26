@@ -666,12 +666,6 @@ public class PlaylistManager implements Listener<ChannelEvent>
     @Subscribe
     public void handleTunerRecovered(TunerRecoveredEvent event) {
         mLog.info("Tuner recovered: " + event.getTuner().getId() + " - Checking for auto-start channels.");
-        List<Channel> autoStartChannels = mChannelModel.getAutoStartChannels();
-        for (Channel channel : autoStartChannels) {
-            if (!mChannelProcessingManager.isProcessing(channel)) {
-                mLog.info("Auto-starting channel after tuner recovery: " + channel.getName());
-                mChannelProcessingManager.receive(ChannelEvent.requestEnable(channel));
-            }
-        }
+        mChannelProcessingManager.restartChannelsForTuner(event.getTuner().getId());
     }
 }

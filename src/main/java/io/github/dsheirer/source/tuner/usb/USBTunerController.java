@@ -746,8 +746,15 @@ public abstract class USBTunerController extends TunerController
                     if(mAutoResubmitTransfers)
                     {
                         //spin this off onto the thread pool, so it doesn't impact the usb processor thread.
-                        ThreadPool.CACHED.submit(() -> setErrorMessage("LibUsb Transfer Error - stopping device - " +
-                                "status [" + transfer.status() + "] - " + LibUsb.errorName(transfer.status())));
+                        if (transfer.status() == LibUsb.ERROR_IO)
+                        {
+                            ThreadPool.CACHED.submit(() -> setErrorMessage("USB Error - Transfer Buffers Exhausted"));
+                        }
+                        else
+                        {
+                            ThreadPool.CACHED.submit(() -> setErrorMessage("LibUsb Transfer Error - stopping device - " +
+                                    "status [" + transfer.status() + "] - " + LibUsb.errorName(transfer.status())));
+                        }
                     }
                     break;
             }

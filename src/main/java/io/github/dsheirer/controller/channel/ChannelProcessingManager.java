@@ -81,6 +81,7 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
     private Lock mLock = new ReentrantLock();
 
     private ChannelSourceEventErrorListener mSourceErrorListener = new ChannelSourceEventErrorListener();
+    private Map<String, List<Channel>> mTunerToChannelsMap = new ConcurrentHashMap<>();
     private List<Listener<AudioSegment>> mAudioSegmentListeners = new CopyOnWriteArrayList<>();
     private List<Listener<IDecodeEvent>> mDecodeEventListeners = new CopyOnWriteArrayList<>();
     private Broadcaster<ChannelEvent> mChannelEventBroadcaster = new Broadcaster();
@@ -880,7 +881,25 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
                             break;
                         }
                     }
+
+                    if (toShutdown != null && sourceEvent.getSource() != null) {
+                        // Look for the tuner in the list of available tuners from TunerManager
+                        for (io.github.dsheirer.source.tuner.manager.DiscoveredTuner discoveredTuner : mTunerManager.getDiscoveredTunerModel().getAvailableTuners()) {
+                            if (discoveredTuner.isAvailable()) {
+                                io.github.dsheirer.source.tuner.Tuner tuner = discoveredTuner.getTuner();
+                                if (tuner != null && tuner.getChannelSourceManager() != null) {
+                                    if (sourceEvent.getSource() instanceof io.github.dsheirer.source.tuner.channel.TunerChannelSource) {
+                                        io.github.dsheirer.source.tuner.channel.TunerChannelSource tcs = (io.github.dsheirer.source.tuner.channel.TunerChannelSource) sourceEvent.getSource();
+                                        if (tuner.getChannelSourceManager().getTunerChannels().contains(tcs.getTunerChannel())) {
+                                            mTunerToChannelsMap.computeIfAbsent(discoveredTuner.getId(), k -> new ArrayList<>()).add(toShutdown);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                 }
+                    }
                 finally
                 {
                     mLock.unlock();
@@ -910,6 +929,23 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
                     {
                         mLog.error("Error stopping channel [" + toShutdown + "]", t);
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Restarts channels that were halted due to a tuner crash.
+     * @param tunerId The ID of the recovered tuner
+     */
+    public void restartChannelsForTuner(String tunerId)
+    {
+        List<Channel> channels = mTunerToChannelsMap.remove(tunerId);
+        if (channels != null) {
+            for (Channel channel : channels) {
+                if (!isProcessing(channel) && channel.isAutoStart()) {
+                    mLog.info("Auto-starting channel after tuner recovery: " + channel.getName());
+                    receive(ChannelEvent.requestEnable(channel));
                 }
             }
         }

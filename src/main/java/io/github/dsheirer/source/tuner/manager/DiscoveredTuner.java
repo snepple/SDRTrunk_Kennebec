@@ -287,7 +287,7 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             }
 
             mRecoveryAttempts.set(0);
-            mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(new RecoveryRunnable(), 30, 30, TimeUnit.SECONDS);
+            mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(new RecoveryRunnable(), 180, 180, TimeUnit.SECONDS);
             return;
         }
 
