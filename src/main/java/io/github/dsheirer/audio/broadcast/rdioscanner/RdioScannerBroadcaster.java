@@ -628,7 +628,7 @@ public class RdioScannerBroadcaster extends AbstractAudioBroadcaster<RdioScanner
 
         RdioScannerConfiguration config = new RdioScannerConfiguration();
         config.setHost("https://api.RdioScanner.com/call-upload-dev");
-        config.setApiKey("c33aae37-8572-11ea-bd8b-0ecc8ab9ccec");
+        config.setApiKey("YOUR_API_KEY_HERE");
         config.setSystemID(11);
 
         String response = testConnection(config);
