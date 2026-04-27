@@ -214,6 +214,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 
         mTwoToneLog = new TwoToneLog(mUserPreferences);
         mTwoToneLog.start();
+        UsbMonitorManager.start(mUserPreferences);
 
         //Note: invoke this early in the application lifecycle, before the TunerManager causes the sdrplay classes
         //to be loaded since the jextract auto-generated code attempts to load the library by name and that can fail
