@@ -650,7 +650,7 @@ import org.slf4j.LoggerFactory;
 
          OpenMHzConfiguration config = new OpenMHzConfiguration();
          config.setHost("https://api.OpenMHz.com/call-upload-dev");
-         config.setApiKey("c33aae37-8572-11ea-bd8b-0ecc8ab9ccec");
+         config.setApiKey("YOUR_API_KEY_HERE");
          config.setSystemName("systemx");
 
          String response = testConnection(config);
