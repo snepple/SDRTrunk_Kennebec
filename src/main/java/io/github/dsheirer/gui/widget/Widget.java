@@ -39,10 +39,12 @@ public class Widget extends JPanel {
         mHeaderPanel.add(mTitleLabel, "growx");
 
         mMinimizeButton = createHeaderButton("-");
+        mMinimizeButton.setToolTipText("Minimize");
         mMinimizeButton.addActionListener(e -> toggleMinimized());
         mHeaderPanel.add(mMinimizeButton);
 
         mCloseButton = createHeaderButton("x");
+        mCloseButton.setToolTipText("Close");
         mCloseButton.addActionListener(e -> closeWidget());
         mHeaderPanel.add(mCloseButton);
 
@@ -135,6 +137,7 @@ public class Widget extends JPanel {
         mMinimized = minimized;
         mContentComponent.setVisible(!minimized);
         mMinimizeButton.setText(minimized ? "+" : "-");
+        mMinimizeButton.setToolTipText(minimized ? "Expand" : "Minimize");
         revalidate();
         repaint();
     }

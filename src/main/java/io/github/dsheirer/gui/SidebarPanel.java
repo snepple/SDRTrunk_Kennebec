@@ -51,9 +51,14 @@ public class SidebarPanel extends JPanel {
         mToggleBtn.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 10, 4, 10));
         mToggleBtn.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         mToggleBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        mToggleBtn.setToolTipText("Collapse Sidebar");
+        mToggleBtn.getAccessibleContext().setAccessibleName("Toggle Sidebar");
+        mToggleBtn.getAccessibleContext().setAccessibleDescription("Collapses or expands the main navigation sidebar");
 
         mToggleBtn.addActionListener(e -> {
             mCollapsed = !mCollapsed;
+
+            mToggleBtn.setToolTipText(mCollapsed ? "Expand Sidebar" : "Collapse Sidebar");
 
             if (mCollapsed) {
                 for (SidebarItem item : mItems) item.updateCollapsedState(true);
