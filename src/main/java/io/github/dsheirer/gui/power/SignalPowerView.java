@@ -91,6 +91,8 @@ public class SignalPowerView extends JPanel
         Icon iconUp = IconFontSwing.buildIcon(FontAwesome.ANGLE_UP, 12);
         mSquelchUpButton = new JButton(iconUp);
         mSquelchUpButton.setToolTipText("Increases the squelch threshold value");
+        mSquelchUpButton.getAccessibleContext().setAccessibleName("Increase Squelch");
+        mSquelchUpButton.getAccessibleContext().setAccessibleDescription("Increases the squelch threshold value");
         mSquelchUpButton.setEnabled(false);
         mSquelchUpButton.addActionListener(e -> broadcast(SourceEvent.requestSquelchThreshold(null, mSquelchThreshold + 1)));
         valuePanel.add(mSquelchUpButton);
@@ -98,6 +100,8 @@ public class SignalPowerView extends JPanel
         Icon iconDown = IconFontSwing.buildIcon(FontAwesome.ANGLE_DOWN, 12);
         mSquelchDownButton = new JButton(iconDown);
         mSquelchDownButton.setToolTipText("Decreases the squelch threshold value.");
+        mSquelchDownButton.getAccessibleContext().setAccessibleName("Decrease Squelch");
+        mSquelchDownButton.getAccessibleContext().setAccessibleDescription("Decreases the squelch threshold value");
         mSquelchDownButton.setEnabled(false);
         mSquelchDownButton.addActionListener(e -> broadcast(SourceEvent.requestSquelchThreshold(null, mSquelchThreshold - 1)));
         valuePanel.add(mSquelchDownButton, "wrap");
