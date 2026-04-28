@@ -161,7 +161,7 @@ public abstract class Fleetsync2Message extends Message
     private void checkParity()
     {
         //Check message block 1
-        CRC block1Crc  = detectAndCorrect(getMessage(), 21, 85);
+        CRC block1Crc  = CRCFleetsync.detectAndCorrect(getMessage(), 21, 85);
 
         mCRC = new CRC[getBlockCount()];
         mCRC[0] = block1Crc;
@@ -169,34 +169,8 @@ public abstract class Fleetsync2Message extends Message
         for(int x = 1; x < getBlockCount(); x++)
         {
             int blockStart = 21 + (x * 64);
-            mCRC[x] = detectAndCorrect(getMessage(), blockStart, blockStart + 64);
+            mCRC[x] = CRCFleetsync.detectAndCorrect(getMessage(), blockStart, blockStart + 64);
         }
-    }
-
-    public static CRC detectAndCorrect(CorrectedBinaryMessage message, int start, int end)
-    {
-        BitSet original = message.get(start, end);
-
-        CRC retVal = CRCFleetsync.check(original);
-
-        //Attempt to correct single-bit errors
-        if(retVal == CRC.FAILED_PARITY)
-        {
-            int[] errorBitPositions = CRCFleetsync.findBitErrors(original);
-
-            if(errorBitPositions != null)
-            {
-                for(int errorBitPosition : errorBitPositions)
-                {
-                    message.flip(start + errorBitPosition);
-                    message.incrementCorrectedBitCount(1);
-                }
-
-                retVal = CRC.CORRECTED;
-            }
-        }
-
-        return retVal;
     }
 
     public boolean isValid()

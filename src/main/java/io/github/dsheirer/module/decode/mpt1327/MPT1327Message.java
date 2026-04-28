@@ -212,38 +212,9 @@ public class MPT1327Message extends Message
      */
     private void checkParity(int section, int start, int end)
     {
-        mCRC[section] = detectAndCorrect(start, end);
+        mCRC[section] = CRCFleetsync.detectAndCorrect(mMessage, start, end);
     }
 
-    /**
-     * Performs CRC check and corrects some bit errors.
-     */
-
-    //TODO: move this to the CRC class
-    private CRC detectAndCorrect(int start, int end)
-    {
-        BitSet original = mMessage.get(start, end);
-
-        CRC retVal = CRCFleetsync.check(original);
-
-        //Attempt to correct single-bit errors
-        if(retVal == CRC.FAILED_PARITY)
-        {
-            int[] errorBitPositions = CRCFleetsync.findBitErrors(original);
-
-            if(errorBitPositions != null)
-            {
-                for(int errorBitPosition : errorBitPositions)
-                {
-                    mMessage.flip(start + errorBitPosition);
-                }
-
-                retVal = CRC.CORRECTED;
-            }
-        }
-
-        return retVal;
-    }
 
     /**
      * String representing results of the parity check

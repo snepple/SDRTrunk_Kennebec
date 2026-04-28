@@ -15,9 +15,11 @@
  *     You should have received a copy of the GNU General Public License
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
+
 package io.github.dsheirer.edac;
 
 import java.util.BitSet;
+import io.github.dsheirer.bits.CorrectedBinaryMessage;
 
 /**
  * Fleetsync CRC checksum utility
@@ -203,5 +205,60 @@ public class CRCFleetsync
 		}
 
 		return retVal;
+    }
+
+    /**
+     * Performs CRC check and corrects some bit errors in a BitSet.
+     */
+    public static CRC detectAndCorrect(BitSet message, int start, int end)
+    {
+        BitSet original = message.get(start, end);
+
+        CRC retVal = check(original);
+
+        //Attempt to correct single-bit errors
+        if(retVal == CRC.FAILED_PARITY)
+        {
+            int[] errorBitPositions = findBitErrors(original);
+
+            if(errorBitPositions != null)
+            {
+                for(int errorBitPosition : errorBitPositions)
+                {
+                    message.flip(start + errorBitPosition);
+                }
+
+                retVal = CRC.CORRECTED;
+            }
+        }
+
+        return retVal;
+    }
+
+    /**
+     * Performs CRC check and corrects some bit errors in a CorrectedBinaryMessage.
+     */
+    public static CRC detectAndCorrect(CorrectedBinaryMessage message, int start, int end)
+    {
+        BitSet original = message.get(start, end);
+        CRC retVal = check(original);
+
+        if(retVal == CRC.FAILED_PARITY)
+        {
+            int[] errorBitPositions = findBitErrors(original);
+
+            if(errorBitPositions != null)
+            {
+                for(int errorBitPosition : errorBitPositions)
+                {
+                    message.flip(start + errorBitPosition);
+                    message.incrementCorrectedBitCount(1);
+                }
+
+                retVal = CRC.CORRECTED;
+            }
+        }
+
+        return retVal;
     }
 }
