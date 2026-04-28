@@ -29,6 +29,8 @@ import io.github.dsheirer.bits.LongField;
  */
 public abstract class AbstractMessage
 {
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+
     public static final int OCTET_0_BIT_0 = 0;
     public static final int OCTET_1_BIT_8 = 8;
     public static final int OCTET_2_BIT_16 = 16;
@@ -211,6 +213,6 @@ public abstract class AbstractMessage
      */
     public static String formatOctetAsHex(int value)
     {
-        return String.format("%02X", value);
+        return new String(new char[] { HEX_ARRAY[(value >>> 4) & 0x0F], HEX_ARRAY[value & 0x0F] });
     }
 }

@@ -24,6 +24,8 @@ package io.github.dsheirer.util;
  */
 public class ByteUtil
 {
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+
     /**
      * Converts a byte array to an integer using big endian format.
      * @param bytes containing four bytes.
@@ -53,14 +55,13 @@ public class ByteUtil
      */
     public static String toHexString(byte[] bytes)
     {
-        StringBuilder sb = new StringBuilder();
-
-        for(byte b : bytes)
-        {
-            sb.append(String.format("%02X", b));
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
         }
-
-        return sb.toString();
+        return new String(hexChars);
     }
 
     public static String toHexString(int[] intBytes)

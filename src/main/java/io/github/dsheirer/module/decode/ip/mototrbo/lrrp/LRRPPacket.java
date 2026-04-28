@@ -27,6 +27,7 @@ import io.github.dsheirer.module.decode.ip.mototrbo.lrrp.token.RequestedTokens;
 import io.github.dsheirer.module.decode.ip.mototrbo.lrrp.token.Token;
 import io.github.dsheirer.module.decode.ip.mototrbo.lrrp.token.TokenFactory;
 import io.github.dsheirer.module.decode.ip.mototrbo.lrrp.token.TokenType;
+import io.github.dsheirer.message.AbstractMessage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -171,7 +172,7 @@ public class LRRPPacket extends Packet
     private String getTokenIdentifier(int offset)
     {
         int id = getMessage().getInt(BYTE_VALUE, offset);
-        return String.format("%02X", id);
+        return AbstractMessage.formatOctetAsHex( id);
     }
 
     @Override

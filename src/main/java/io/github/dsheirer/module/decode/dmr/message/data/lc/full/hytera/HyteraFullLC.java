@@ -24,6 +24,7 @@ import io.github.dsheirer.identifier.radio.RadioIdentifier;
 import io.github.dsheirer.module.decode.dmr.identifier.DMRRadio;
 import io.github.dsheirer.module.decode.dmr.message.IServiceOptionsProvider;
 import io.github.dsheirer.module.decode.dmr.message.data.lc.full.FullLCMessage;
+import io.github.dsheirer.message.AbstractMessage;
 import io.github.dsheirer.module.decode.dmr.message.type.ServiceOptions;
 
 /**
@@ -108,7 +109,7 @@ public abstract class HyteraFullLC extends FullLCMessage implements IServiceOpti
      */
     public String getPriorityCallHashedAddress()
     {
-        return String.format("%02X", getMessage().getInt(PRIORITY_CALL_HASHED_ADDRESS)).toUpperCase();
+        return AbstractMessage.formatOctetAsHex( getMessage().getInt(PRIORITY_CALL_HASHED_ADDRESS)).toUpperCase();
     }
 
     /**

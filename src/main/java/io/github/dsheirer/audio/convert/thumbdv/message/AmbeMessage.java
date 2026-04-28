@@ -22,6 +22,8 @@
 
 package io.github.dsheirer.audio.convert.thumbdv.message;
 
+import io.github.dsheirer.message.AbstractMessage;
+
 /**
  * AMBE-3000R Message
  */
@@ -32,13 +34,6 @@ public abstract class AmbeMessage
      */
     public static String toHex(byte[] data)
     {
-        StringBuilder sb = new StringBuilder();
-
-        for(byte b: data)
-        {
-            sb.append(String.format("%02X", b));
-        }
-
-        return sb.toString();
+        return io.github.dsheirer.util.ByteUtil.toHexString(data);
     }
 }

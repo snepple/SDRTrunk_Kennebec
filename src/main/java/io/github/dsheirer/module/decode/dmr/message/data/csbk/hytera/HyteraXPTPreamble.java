@@ -29,6 +29,7 @@ import io.github.dsheirer.module.decode.dmr.message.CACH;
 import io.github.dsheirer.module.decode.dmr.message.data.SlotType;
 import io.github.dsheirer.module.decode.dmr.message.data.csbk.standard.Preamble;
 import io.github.dsheirer.module.decode.dmr.sync.DMRSyncPattern;
+import io.github.dsheirer.message.AbstractMessage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -136,7 +137,7 @@ public class HyteraXPTPreamble extends Preamble
      */
     public String getPriorityCallHashedAddress()
     {
-        return String.format("%02X", getMessage().getInt(PRIORITY_CALL_HASHED_ADDRESS)).toUpperCase();
+        return AbstractMessage.formatOctetAsHex( getMessage().getInt(PRIORITY_CALL_HASHED_ADDRESS)).toUpperCase();
     }
 
     /**

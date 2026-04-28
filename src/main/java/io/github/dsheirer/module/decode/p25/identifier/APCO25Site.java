@@ -23,6 +23,7 @@ import io.github.dsheirer.identifier.IdentifierClass;
 import io.github.dsheirer.identifier.Role;
 import io.github.dsheirer.identifier.integer.IntegerIdentifier;
 import io.github.dsheirer.protocol.Protocol;
+import io.github.dsheirer.message.AbstractMessage;
 
 public class APCO25Site extends IntegerIdentifier
 {
@@ -48,6 +49,6 @@ public class APCO25Site extends IntegerIdentifier
     @Override
     public String toString()
     {
-        return getValue() + "/x" + String.format("%02X", getValue());
+        return getValue() + "/x" + AbstractMessage.formatOctetAsHex( getValue());
     }
 }

@@ -21,6 +21,7 @@ package io.github.dsheirer.module.decode.p25.phase2.message.mac.structure;
 
 import io.github.dsheirer.bits.CorrectedBinaryMessage;
 import io.github.dsheirer.identifier.Identifier;
+import io.github.dsheirer.message.AbstractMessage;
 import java.util.Collections;
 import java.util.List;
 
@@ -48,7 +49,7 @@ public class UnknownVendorMessage extends MacStructureVendor
         StringBuilder sb = new StringBuilder();
         sb.append("CUSTOM/UNKNOWN");
         sb.append(" VENDOR:").append(getVendor());
-        sb.append(" ID:").append(String.format("%02X", getVendorID()));
+        sb.append(" ID:").append(AbstractMessage.formatOctetAsHex( getVendorID()));
         sb.append(" OPCODE:").append(getOpcodeNumber());
         sb.append(" LENGTH:").append(getLength());
         sb.append(" MSG:").append(getMessage().getSubMessage(getOffset(), getOffset() + (getLength() * 8)).toHexString());

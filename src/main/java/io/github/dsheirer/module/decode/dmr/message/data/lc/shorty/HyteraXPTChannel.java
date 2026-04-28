@@ -21,6 +21,7 @@ package io.github.dsheirer.module.decode.dmr.message.data.lc.shorty;
 
 import io.github.dsheirer.bits.CorrectedBinaryMessage;
 import io.github.dsheirer.identifier.Identifier;
+import io.github.dsheirer.message.AbstractMessage;
 
 import java.util.Collections;
 import java.util.List;
@@ -111,7 +112,7 @@ public class HyteraXPTChannel extends ShortLCMessage
      */
     public String getPriorityCallHashedAddress()
     {
-        return String.format("%02X", getMessage().getInt(PRIORITY_CALL_HASHED_ADDRESS));
+        return AbstractMessage.formatOctetAsHex( getMessage().getInt(PRIORITY_CALL_HASHED_ADDRESS));
     }
 
 

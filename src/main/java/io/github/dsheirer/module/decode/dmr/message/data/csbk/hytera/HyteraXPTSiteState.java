@@ -24,6 +24,7 @@ import io.github.dsheirer.identifier.Identifier;
 import io.github.dsheirer.module.decode.dmr.message.CACH;
 import io.github.dsheirer.module.decode.dmr.message.data.SlotType;
 import io.github.dsheirer.module.decode.dmr.message.data.csbk.CSBKMessage;
+import io.github.dsheirer.message.AbstractMessage;
 import io.github.dsheirer.module.decode.dmr.sync.DMRSyncPattern;
 import java.util.ArrayList;
 import java.util.List;
@@ -179,7 +180,7 @@ public class HyteraXPTSiteState extends CSBKMessage
      */
     public String getRepeaterATimeslot0HashedAddress()
     {
-        return String.format("%02X", getMessage().getInt(REPEATER_A_TS0_ADDRESS));
+        return AbstractMessage.formatOctetAsHex( getMessage().getInt(REPEATER_A_TS0_ADDRESS));
     }
 
     /**
@@ -187,7 +188,7 @@ public class HyteraXPTSiteState extends CSBKMessage
      */
     public String getRepeaterATimeslot1HashedAddress()
     {
-        return String.format("%02X", getMessage().getInt(REPEATER_A_TS1_ADDRESS));
+        return AbstractMessage.formatOctetAsHex( getMessage().getInt(REPEATER_A_TS1_ADDRESS));
     }
 
     /**
@@ -195,7 +196,7 @@ public class HyteraXPTSiteState extends CSBKMessage
      */
     public String getRepeaterBTimeslot0HashedAddress()
     {
-        return String.format("%02X", getMessage().getInt(REPEATER_B_TS0_ADDRESS));
+        return AbstractMessage.formatOctetAsHex( getMessage().getInt(REPEATER_B_TS0_ADDRESS));
     }
 
     /**
@@ -203,7 +204,7 @@ public class HyteraXPTSiteState extends CSBKMessage
      */
     public String getRepeaterBTimeslot1HashedAddress()
     {
-        return String.format("%02X", getMessage().getInt(REPEATER_B_TS1_ADDRESS));
+        return AbstractMessage.formatOctetAsHex( getMessage().getInt(REPEATER_B_TS1_ADDRESS));
     }
 
     /**
@@ -211,7 +212,7 @@ public class HyteraXPTSiteState extends CSBKMessage
      */
     public String getRepeaterCTimeslot0HashedAddress()
     {
-        return String.format("%02X", getMessage().getInt(REPEATER_C_TS0_ADDRESS));
+        return AbstractMessage.formatOctetAsHex( getMessage().getInt(REPEATER_C_TS0_ADDRESS));
     }
 
     /**
@@ -219,7 +220,7 @@ public class HyteraXPTSiteState extends CSBKMessage
      */
     public String getRepeaterCTimeslot1HashedAddress()
     {
-        return String.format("%02X", getMessage().getInt(REPEATER_C_TS1_ADDRESS));
+        return AbstractMessage.formatOctetAsHex( getMessage().getInt(REPEATER_C_TS1_ADDRESS));
     }
 
     @Override
