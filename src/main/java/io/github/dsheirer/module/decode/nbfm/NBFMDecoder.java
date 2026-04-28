@@ -145,7 +145,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         mNoiseSquelch = new NoiseSquelch(config.getSquelchNoiseOpenThreshold(), config.getSquelchNoiseCloseThreshold(),
                 config.getSquelchHysteresisOpenThreshold(), config.getSquelchHysteresisCloseThreshold());
 
-        // Extract CTCSS/DCS tone filter configuration
+// Extract CTCSS/DCS tone filter configuration
         mToneFilterEnabled = config.hasToneFiltering();
         if(mToneFilterEnabled)
         {
@@ -175,6 +175,26 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             mTargetDCSCodes = null;
             mToneFilterType = null;
         }
+
+        //Send squelch controlled audio to the resampler and notify the decoder state that the call continues.
+        mNoiseSquelch.setAudioListener(audio -> {
+            // if squelch is closing (it hasn't propagated yet to mute the audio)
+            //  call the resampler with lastBatch set to true. This will zero pad the input buffer and ensure
+            //  the output buffer gets emptied.
+            if(mNoiseSquelch.isSquelched())
+            {
+                mResampler.resample(audio, true);
+            }
+            else
+            {
+                mResampler.resample(audio);     // this method will set lastBatch to false
+                // Only signal call activity if tone matches (or no tone filter configured)
+                if(!mToneFilterEnabled || mToneMatch)
+                {
+                    notifyCallContinuation();
+                }
+            }
+        });
 
         // Extract squelch tail removal configuration
         mSquelchTailRemovalEnabled = config.isSquelchTailRemovalEnabled();

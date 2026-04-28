@@ -66,11 +66,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * - receiveRealTimeAudio() -> accumulate, resample, Opus encode, send packets
  * - stopRealTimeStream() -> stop_stream command
  */
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import java.io.InputStream;
-import java.net.URL;
-
 public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguration>
     implements IRealTimeAudioBroadcaster
 {
@@ -89,8 +84,11 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     private static final long RECONNECT_INTERVAL_MS = 15000;
     private static final long KICKED_BACKOFF_MS = 60000;
     private static final int MAX_KICKED_RETRIES = 5;
-    private static final long ERROR_BACKOFF_MS = 5000;
-    private static final int MAX_ERROR_RETRIES = 5;
+
+    /** Client-side keepalive interval — sends a keepalive command to detect dead connections */
+    private static final long KEEPALIVE_INTERVAL_MS = 30000;
+    /** Consecutive missed keepalive acks before declaring the connection dead */
+    private static final int KEEPALIVE_MISSED_ACK_THRESHOLD = 3;
 
     /** Default minimum gap (ms) between stop_stream and next start_stream. */
     private static final long DEFAULT_STREAM_GUARD_MS = 500;
@@ -107,8 +105,10 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     private final AtomicBoolean mStopped = new AtomicBoolean(false);
     private final AtomicInteger mSequence = new AtomicInteger(1);
     private final AtomicInteger mKickedCount = new AtomicInteger(0);
-    private final AtomicInteger mErrorCount = new AtomicInteger(0);
     private ScheduledFuture<?> mReconnectFuture;
+    private ScheduledFuture<?> mKeepaliveFuture;
+    private volatile boolean mKeepaliveAwaitingAck = false;
+    private volatile int mKeepaliveMissedAcks = 0;
 
     /**
      * Session epoch — increments on every WebSocket reconnect. Stream operations
@@ -130,10 +130,8 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     private volatile long mLastStreamStopTime = 0; // System.currentTimeMillis() when last stream ended
     private volatile int mStreamSessionEpoch = -1; // epoch captured when stream started
     private final LinkedTransferQueue<float[]> mAudioQueue = new LinkedTransferQueue<>();
-    private final LinkedTransferQueue<float[]> mAlertAudioQueue = new LinkedTransferQueue<>();
     private ScheduledFuture<?> mEncoderFuture;
     private ScheduledFuture<?> mRelaxationFuture; // delayed stop for relaxation_time hold-over
-    private ScheduledFuture<?> mStreamGuardFuture; // delayed start for stream guard
     private volatile long mLastAudioReceivedTime = 0;
 
     private OpusEncoder mOpusEncoder;
@@ -182,13 +180,12 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     public void stop()
     {
         mStopped.set(true);
+        stopKeepalive();
         if(mRelaxationFuture != null) { mRelaxationFuture.cancel(false); mRelaxationFuture = null; }
-        if(mStreamGuardFuture != null) { mStreamGuardFuture.cancel(false); mStreamGuardFuture = null; }
         if(mStreamActive.get()) doStopRealTimeStream();
         if(mReconnectFuture != null) { mReconnectFuture.cancel(true); mReconnectFuture = null; }
         mKicked.set(false);
         mKickedCount.set(0);
-        mErrorCount.set(0);
         mReconnecting.set(false);
         disconnectWebSocket();
         setBroadcastState(BroadcastState.DISCONNECTED);
@@ -242,10 +239,17 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
             doStopRealTimeStream();
         }
 
-        if(mStreamGuardFuture != null)
+        // Enforce minimum gap between streams (like Bridge's stream_guard_timeout_ms).
+        // On busy channels, the server may not have fully released the previous stream.
+        // A value of 0 disables the guard entirely.
+        long guardMs = getBroadcastConfiguration().getStreamGuardMs();
+        long elapsed = System.currentTimeMillis() - mLastStreamStopTime;
+        if(guardMs > 0 && mLastStreamStopTime > 0 && elapsed < guardMs)
         {
-            mStreamGuardFuture.cancel(false);
-            mStreamGuardFuture = null;
+            long waitMs = guardMs - elapsed;
+            mLog.debug("{}Stream guard: waiting {}ms before starting new stream", ch(), waitMs);
+            try { Thread.sleep(waitMs); }
+            catch(InterruptedException e) { Thread.currentThread().interrupt(); return; }
         }
 
         int epoch = mSessionEpoch.get();
@@ -256,32 +260,6 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         mPreviousSample = 0;
         mAudioQueue.clear();
 
-        // Enforce minimum gap between streams (like Bridge's stream_guard_timeout_ms).
-        // On busy channels, the server may not have fully released the previous stream.
-        // A value of 0 disables the guard entirely.
-        long guardMs = getBroadcastConfiguration().getStreamGuardMs();
-        long elapsed = System.currentTimeMillis() - mLastStreamStopTime;
-        if(guardMs > 0 && mLastStreamStopTime > 0 && elapsed < guardMs)
-        {
-            long waitMs = guardMs - elapsed;
-            mLog.debug("{}Stream guard: scheduling new stream start in {}ms", ch(), waitMs);
-            mStreamGuardFuture = ThreadPool.SCHEDULED.schedule(() -> {
-                synchronized(this) {
-                    // Only start if not stopped in the meantime
-                    if(mStreamActive.get() && mStreamSessionEpoch == epoch) {
-                        doStartRealTimeStream();
-                    }
-                }
-            }, waitMs, TimeUnit.MILLISECONDS);
-        }
-        else
-        {
-            doStartRealTimeStream();
-        }
-    }
-
-    private void doStartRealTimeStream()
-    {
         sendStartStream();
 
         if(mEncoderFuture == null || mEncoderFuture.isDone())
@@ -340,12 +318,6 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
             mRelaxationFuture = null;
         }
 
-        if(mStreamGuardFuture != null)
-        {
-            mStreamGuardFuture.cancel(false);
-            mStreamGuardFuture = null;
-        }
-
         // Cancel the encoder future and wait for it to finish to avoid
         // concurrent access to mResampleBuffer and the Opus encoder
         if(mEncoderFuture != null)
@@ -373,7 +345,6 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
             sendStopStream(streamId);
             mStreamedCount.incrementAndGet();
             mKickedCount.set(0); // Successful stream proves connection is healthy
-            mErrorCount.set(0);
             broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_STREAMED_COUNT_CHANGE));
         }
 
@@ -398,52 +369,11 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     // Audio Processing
     // ========================================================================
 
-    public void playAlertTone(String resourcePath)
-    {
-        try
-        {
-            URL url = ZelloBroadcaster.class.getResource(resourcePath);
-            if (url == null) {
-                mLog.warn("{}Zello alert tone resource not found: {}", ch(), resourcePath);
-                return;
-            }
-            try (AudioInputStream ais = AudioSystem.getAudioInputStream(url)) {
-                // Read 16-bit PCM assuming 8kHz mono
-                byte[] bytes = ais.readAllBytes();
-                int numSamples = bytes.length / 2;
-                float[] buffer = new float[160];
-                int bufferPos = 0;
-                for (int i = 0; i < numSamples; i++) {
-                    short sample = (short) ((bytes[i*2] & 0xFF) | (bytes[i*2 + 1] << 8));
-                    buffer[bufferPos++] = sample / 32767.0f;
-                    if (bufferPos == 160) {
-                        mAlertAudioQueue.offer(buffer.clone());
-                        bufferPos = 0;
-                    }
-                }
-                if (bufferPos > 0) {
-                    float[] partial = new float[160];
-                    System.arraycopy(buffer, 0, partial, 0, bufferPos);
-                    mAlertAudioQueue.offer(partial);
-                }
-                mLog.info("{}Queued Zello alert tone: {}", ch(), resourcePath);
-            }
-        }
-        catch(Exception e)
-        {
-            mLog.error("{}Error reading Zello alert tone {}", ch(), resourcePath, e);
-        }
-    }
-
     private synchronized void processAudioQueue()
     {
         try
         {
             float[] buffer;
-            while((buffer = mAlertAudioQueue.poll()) != null)
-            {
-                processAudioBuffer(buffer);
-            }
             while((buffer = mAudioQueue.poll()) != null)
             {
                 processAudioBuffer(buffer);
@@ -612,7 +542,6 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                     mWebSocket = ws;
                     mSessionEpoch.incrementAndGet();
                     mReconnecting.set(false);
-                    mErrorCount.set(0);
                     setLastErrorDetail(null);
                     sendLogon();
                 })
@@ -669,17 +598,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         }
         else
         {
-            int errorCount = mErrorCount.getAndIncrement();
-            if(errorCount >= MAX_ERROR_RETRIES)
-            {
-                mLog.error("{}Zello connection failed {} times - stopping reconnect attempts.", ch(), errorCount);
-                setBroadcastState(BroadcastState.CONFIGURATION_ERROR);
-                return;
-            }
-
-            long backoff = ERROR_BACKOFF_MS * (1L << Math.min(errorCount, 4));
-            mLog.warn("{}Zello connection failed - backing off {}s ({}/{})", ch(), backoff / 1000, errorCount + 1, MAX_ERROR_RETRIES);
-            scheduleReconnectWithDelay(backoff);
+            scheduleReconnectWithDelay(RECONNECT_INTERVAL_MS);
         }
     }
 
@@ -698,6 +617,98 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                 connectWebSocket();
             }
         }, delayMs, TimeUnit.MILLISECONDS);
+    }
+
+    // ========================================================================
+    // Client-Side Keepalive
+    // ========================================================================
+
+    /**
+     * Starts the client-side keepalive timer. Sends a keepalive command every
+     * {@link #KEEPALIVE_INTERVAL_MS} to proactively detect dead connections
+     * (e.g. silent NAT timeout, network change without TCP RST). If the server
+     * fails to ack {@link #KEEPALIVE_MISSED_ACK_THRESHOLD} consecutive keepalives,
+     * the connection is declared dead and reconnection is triggered.
+     *
+     * This mirrors the approach used by the official Zello JS SDK.
+     */
+    private void startKeepalive()
+    {
+        stopKeepalive();
+        mKeepaliveAwaitingAck = false;
+        mKeepaliveMissedAcks = 0;
+        mKeepaliveFuture = ThreadPool.SCHEDULED.scheduleAtFixedRate(
+            this::keepaliveTick, KEEPALIVE_INTERVAL_MS, KEEPALIVE_INTERVAL_MS, TimeUnit.MILLISECONDS);
+    }
+
+    private void stopKeepalive()
+    {
+        if(mKeepaliveFuture != null)
+        {
+            mKeepaliveFuture.cancel(false);
+            mKeepaliveFuture = null;
+        }
+    }
+
+    private void keepaliveTick()
+    {
+        if(mWebSocket == null || !mConnected.get())
+        {
+            return;
+        }
+
+        if(mKeepaliveAwaitingAck)
+        {
+            mKeepaliveMissedAcks++;
+            mLog.debug("{}Keepalive ack missed ({}/{})", ch(), mKeepaliveMissedAcks, KEEPALIVE_MISSED_ACK_THRESHOLD);
+        }
+
+        if(mKeepaliveMissedAcks >= KEEPALIVE_MISSED_ACK_THRESHOLD)
+        {
+            mLog.warn("{}Keepalive timeout — {} consecutive missed acks, reconnecting", ch(), mKeepaliveMissedAcks);
+            stopKeepalive();
+            mConnected.set(false);
+            mChannelOnline.set(false);
+            mStreamActive.set(false);
+            mCurrentStreamId.set(-1);
+            // Abort the dead WebSocket so connectWebSocket() starts fresh
+            if(mWebSocket != null)
+            {
+                try { mWebSocket.abort(); } catch(Exception e) { /* ignore */ }
+                mWebSocket = null;
+            }
+            setBroadcastState(BroadcastState.TEMPORARY_BROADCAST_ERROR);
+            setLastErrorDetail("Keepalive timeout — connection dead");
+            scheduleReconnect();
+            return;
+        }
+
+        // Send keepalive command
+        try
+        {
+            mKeepaliveAwaitingAck = true;
+            JsonObject cmd = new JsonObject();
+            cmd.addProperty("command", "keepalive");
+            int seq = mSequence.getAndIncrement();
+            cmd.addProperty("seq", seq);
+            mPendingCommands.put(seq, "keepalive");
+            mWebSocket.sendText(mGson.toJson(cmd), true);
+        }
+        catch(Exception e)
+        {
+            mLog.warn("{}Keepalive send failed: {}", ch(), e.getMessage());
+            mKeepaliveMissedAcks++;
+        }
+    }
+
+    /**
+     * Called when a keepalive ack is received from the server. Resets the
+     * missed-ack counter so the connection is considered healthy.
+     */
+    private void handleKeepaliveAck()
+    {
+        mKeepaliveAwaitingAck = false;
+        mKeepaliveMissedAcks = 0;
     }
 
     // ========================================================================
@@ -777,30 +788,6 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
      * Maps Zello Channel API error strings to Zello Bridge error codes (3001-3009)
      * for consistent diagnostics. See Zello Bridge documentation.
      */
-
-    /**
-     * Sends a text message to the configured Zello channel.
-     * @param text to send
-     */
-    public void sendTextMessage(String text)
-    {
-        if(mWebSocket == null || !mConnected.get() || !mChannelOnline.get())
-        {
-            mLog.warn("{}Cannot send Zello text message - not connected", ch());
-            return;
-        }
-
-        ZelloConfiguration config = getBroadcastConfiguration();
-        JsonObject cmd = new JsonObject();
-        cmd.addProperty("command", "send_text_message");
-        int seq = mSequence.getAndIncrement();
-        cmd.addProperty("seq", seq);
-        mPendingCommands.put(seq, "send_text_message");
-        cmd.addProperty("channel", config.getChannel());
-        cmd.addProperty("text", text);
-        mWebSocket.sendText(mGson.toJson(cmd), true);
-    }
-
     private static int mapBridgeErrorCode(String error)
     {
         if(error == null) return 3008;
@@ -856,6 +843,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         public CompletionStage<?> onClose(WebSocket ws, int code, String reason)
         {
             mLog.info("{}Zello disconnected (code={} {})", ch(), code, reason);
+            stopKeepalive();
             mConnected.set(false);
             mChannelOnline.set(false);
             // Always reset stream state on disconnect — prevents stale stream IDs
@@ -878,6 +866,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         public void onError(WebSocket ws, Throwable error)
         {
             mLog.error("{}Zello WebSocket error: {}", ch(), error.getMessage());
+            stopKeepalive();
             mConnected.set(false);
             mChannelOnline.set(false);
             // Reset stream state on error — same as onClose
@@ -909,7 +898,6 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                         // kickedCount so exponential backoff continues to escalate.
                         // Count only resets when a stream succeeds or on manual stop/restart.
                         mKicked.set(false);
-                        mErrorCount.set(0);
                     }
                     // else: refresh_token while already connected — ignore silently
                 }
@@ -961,6 +949,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                             if(!mChannelOnline.getAndSet(true))
                             {
                                 setBroadcastState(BroadcastState.CONNECTED);
+                                startKeepalive();
                                 mLog.info("{}Zello connected", ch());
                             }
                         }
@@ -1017,7 +1006,13 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                 // Clean up pending command tracking on any successful response with seq
                 if(json.has("seq") && json.has("success") && json.get("success").getAsBoolean())
                 {
-                    mPendingCommands.remove(json.get("seq").getAsInt());
+                    int ackSeq = json.get("seq").getAsInt();
+                    String ackCmd = mPendingCommands.remove(ackSeq);
+                    // Handle keepalive ack — reset missed-ack counter
+                    if("keepalive".equals(ackCmd))
+                    {
+                        handleKeepaliveAck();
+                    }
                 }
 
                 if(json.has("stream_id") && json.has("success"))

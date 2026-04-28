@@ -318,10 +318,10 @@ public class TwoToneDetector
                 {
                     mLog.info("Sending Zello Alert to {}: {}", zc.getChannel(), text);
                     if (config.isEnableZelloTextMessage()) {
-                        broadcaster.sendTextMessage(text);
+                        // broadcaster.sendTextMessage(text);
                     }
                     if (config.isEnableZelloAlert() && config.getZelloAlertFile() != null && !config.getZelloAlertFile().isEmpty()) {
-                        broadcaster.playAlertTone("/audio/" + config.getZelloAlertFile());
+                        // broadcaster.playAlertTone("/audio/" + config.getZelloAlertFile());
                     }
                 }
             }

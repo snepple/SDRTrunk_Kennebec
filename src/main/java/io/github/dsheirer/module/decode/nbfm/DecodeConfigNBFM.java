@@ -64,7 +64,7 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     private int mNoiseGateHoldTime = 500; // milliseconds
     private boolean mAgcEnabled = false;
     private float mAgcTargetLevel = -18.0f; // dB (stores voice enhancement amount)
-    private float mAgcMaxGain = 24.0f; // dB (stores input gain)
+    private float mAgcMaxGain = 12.0f; // dB (stores output gain, 12 dB ≈ 2.0x linear)
 
     // Hiss reduction (high-shelf filter above corner frequency)
     private boolean mHissReductionEnabled = true;
