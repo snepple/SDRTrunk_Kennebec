@@ -105,6 +105,8 @@ public class TunerViewPanel extends JPanel
 
         JButton manageBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.COG, 14, Color.BLACK));
         manageBtn.setToolTipText("Settings");
+        manageBtn.getAccessibleContext().setAccessibleName("Tuner Settings");
+        manageBtn.getAccessibleContext().setAccessibleDescription("Opens a menu for tuner settings like spectrum and resource toggles");
         manageBtn.addActionListener(e -> {
             JPopupMenu popup = new JPopupMenu();
 
