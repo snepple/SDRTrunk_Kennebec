@@ -94,6 +94,7 @@ public class UserPreferencesEditor extends BorderPane
 
         Node sidebar = getEditorSelectionTreeView(); // We will rename the inner method but keep variable reference
         contentBox.getChildren().addAll(sidebar, getEditorAndButtonsBox());
+        contentBox.setStyle("-fx-background-color: #F2F2F7;");
         setCenter(contentBox);
 
         // Automatically select the first item (e.g., Application) if nothing is selected
@@ -168,7 +169,7 @@ public class UserPreferencesEditor extends BorderPane
         if(mEditorSelectionTreeView == null)
         {
             ListView<Object> listView = new ListView<>();
-            listView.getStyleClass().add("preferences-sidebar");
+            listView.getStyleClass().addAll("preferences-sidebar", "hig-sidebar-list");
             listView.setMinWidth(250);
 
             listView.getItems().addAll(
@@ -208,22 +209,22 @@ public class UserPreferencesEditor extends BorderPane
                             if (empty || item == null) {
                                 setText(null);
                                 setGraphic(null);
-                                getStyleClass().removeAll("preferences-section-header", "preferences-list-item");
+                                getStyleClass().removeAll("preferences-section-header", "preferences-list-item", "hig-section-header", "hig-sidebar-item");
                                 setMouseTransparent(false);
                                 setFocusTraversable(true);
                             } else if (item instanceof String) {
                                 setText((String) item);
-                                getStyleClass().remove("preferences-list-item");
-                                if(!getStyleClass().contains("preferences-section-header")) {
-                                    getStyleClass().add("preferences-section-header");
+                                getStyleClass().removeAll("preferences-list-item", "hig-sidebar-item");
+                                if(!getStyleClass().contains("hig-section-header")) {
+                                    getStyleClass().add("hig-section-header");
                                 }
                                 setMouseTransparent(true);
                                 setFocusTraversable(false);
                             } else if (item instanceof PreferenceEditorType) {
                                 setText(((PreferenceEditorType) item).toString());
-                                getStyleClass().remove("preferences-section-header");
-                                if(!getStyleClass().contains("preferences-list-item")) {
-                                    getStyleClass().add("preferences-list-item");
+                                getStyleClass().removeAll("preferences-section-header", "hig-section-header");
+                                if(!getStyleClass().contains("hig-sidebar-item")) {
+                                    getStyleClass().add("hig-sidebar-item");
                                 }
                                 setMouseTransparent(false);
                                 setFocusTraversable(true);

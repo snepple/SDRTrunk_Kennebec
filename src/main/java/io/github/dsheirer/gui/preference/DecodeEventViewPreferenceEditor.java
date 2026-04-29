@@ -19,55 +19,39 @@ package io.github.dsheirer.gui.preference;
 import io.github.dsheirer.preference.TimestampFormat;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.event.DecodeEventPreference;
-import javafx.geometry.HPos;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.geometry.Insets;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 import java.util.Date;
-
 
 /**
  * Preference settings for channel event view
  */
-public class DecodeEventViewPreferenceEditor extends HBox
+public class DecodeEventViewPreferenceEditor extends VBox
 {
     private DecodeEventPreference mDecodeEventPreference;
-    private GridPane mEditorPane;
     private ChoiceBox<DisplayableTimestamp> mTimestampFormatChoiceBox;
-    private Label mTimestampFormatLabel;
 
     public DecodeEventViewPreferenceEditor(UserPreferences userPreferences)
     {
         mDecodeEventPreference = userPreferences.getDecodeEventPreference();
-        getChildren().add(getEditorPane());
-    }
 
-    private GridPane getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            mEditorPane = new GridPane();
-            mEditorPane.setPadding(new Insets(10, 10, 10, 10));
-            GridPane.setMargin(getTimestampFormatLabel(), new Insets(0, 10, 0, 0));
-            GridPane.setHalignment(getTimestampFormatLabel(), HPos.LEFT);
-            mEditorPane.add(getTimestampFormatLabel(), 0, 0);
-            mEditorPane.add(getTimestampFormatChoiceBox(), 1, 0);
-        }
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
 
-        return mEditorPane;
-    }
+        Label headerLabel = new Label("Channel Events");
+        headerLabel.getStyleClass().add("hig-section-header");
+        getChildren().add(headerLabel);
 
-    private Label getTimestampFormatLabel()
-    {
-        if(mTimestampFormatLabel == null)
-        {
-            mTimestampFormatLabel = new Label("Timestamp Format");
-        }
+        SettingsCard mainCard = new SettingsCard();
+        SettingsRow row = new SettingsRow("Timestamp Format", getTimestampFormatChoiceBox());
+        mainCard.getChildren().add(row);
 
-        return mTimestampFormatLabel;
+        getChildren().add(mainCard);
     }
 
     private ChoiceBox<DisplayableTimestamp> getTimestampFormatChoiceBox()
