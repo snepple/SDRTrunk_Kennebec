@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-public class TwoToneEditor extends VBox
+public class TwoToneEditor extends SplitPane
 {
     public static final double[] MOTOROLA_QCII = {
             330.5, 349.0, 368.5, 389.0, 410.6, 433.7, 457.9, 483.5, 510.5, 539.0,
@@ -67,8 +67,6 @@ public class TwoToneEditor extends VBox
     public TwoToneEditor(PlaylistManager playlistManager)
     {
         mPlaylistManager = playlistManager;
-        setSpacing(10);
-        setPadding(new Insets(10));
 
         mObservableConfigs = FXCollections.observableArrayList(TwoToneConfiguration.extractor());
         if (playlistManager.getCurrentPlaylist() != null) {
@@ -88,10 +86,6 @@ public class TwoToneEditor extends VBox
 
         mTableView.getColumns().addAll(aliasCol, toneACol, toneBCol, mqttCol);
 
-
-        GridPane editorGrid = new GridPane();
-        editorGrid.setHgap(10);
-        editorGrid.setVgap(5);
 
         TextField aliasField = new TextField();
         ComboBox<String> typeSelector = new ComboBox<>();
@@ -137,6 +131,7 @@ public class TwoToneEditor extends VBox
             });
         };
         toneBField.getEditor().textProperty().addListener(filterListenerB);
+
         ComboBox<String> zelloField = new ComboBox<>();
         for (BroadcastConfiguration bc : mPlaylistManager.getBroadcastModel().getBroadcastConfigurations()) {
             if (bc.getBroadcastServerType() == BroadcastServerType.ZELLO_WORK || bc.getBroadcastServerType() == BroadcastServerType.ZELLO) {
@@ -154,15 +149,18 @@ public class TwoToneEditor extends VBox
         topicField.disableProperty().bind(mqttCheck.selectedProperty().not());
         payloadArea.disableProperty().bind(mqttCheck.selectedProperty().not());
 
-        editorGrid.add(new Label("Name:"), 0, 0);
-        editorGrid.add(aliasField, 1, 0);
-        editorGrid.add(new Label("Type:"), 0, 1);
-        editorGrid.add(typeSelector, 1, 1);
-        editorGrid.add(new Label("Tone A:"), 0, 2);
-        editorGrid.add(toneAField, 1, 2);
+        GridPane generalGrid = new GridPane();
+        generalGrid.setHgap(10);
+        generalGrid.setVgap(8);
+        generalGrid.add(new Label("Name:"), 0, 0);
+        generalGrid.add(aliasField, 1, 0);
+        generalGrid.add(new Label("Type:"), 0, 1);
+        generalGrid.add(typeSelector, 1, 1);
+        generalGrid.add(new Label("Tone A:"), 0, 2);
+        generalGrid.add(toneAField, 1, 2);
         Label toneBLabel = new Label("Tone B:");
-        editorGrid.add(toneBLabel, 0, 3);
-        editorGrid.add(toneBField, 1, 3);
+        generalGrid.add(toneBLabel, 0, 3);
+        generalGrid.add(toneBField, 1, 3);
 
         toneBLabel.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
         toneBField.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
@@ -178,14 +176,6 @@ public class TwoToneEditor extends VBox
                 }
             }
         });
-        editorGrid.add(new Label("Zello Channel:"), 0, 4);
-        editorGrid.add(zelloField, 1, 4);
-
-        editorGrid.add(mqttCheck, 2, 0, 2, 1);
-        editorGrid.add(new Label("MQTT Topic:"), 2, 1);
-        editorGrid.add(topicField, 3, 1);
-        editorGrid.add(new Label("MQTT Payload:"), 2, 2);
-        editorGrid.add(payloadArea, 3, 2, 1, 2);
 
         CheckBox textMessageCheck = new CheckBox("Enable Text Message");
         Label textMessageInfo = new Label("Messages are sent to the Zello Channel.");
@@ -249,16 +239,30 @@ public class TwoToneEditor extends VBox
         fieldsInfo.visibleProperty().bind(textMessageCheck.selectedProperty());
         fieldsInfo.managedProperty().bind(textMessageCheck.selectedProperty());
 
-        editorGrid.add(textMessageCheck, 0, 5);
-        editorGrid.add(textMessageInfo, 1, 5);
-        editorGrid.add(new Label("Message Template:"), 0, 6);
-        editorGrid.add(templateField, 1, 6);
-        editorGrid.add(fieldsInfo, 1, 7);
-        editorGrid.add(previewBox, 1, 8);
-        editorGrid.add(zelloAlertCheck, 0, 9, 2, 1);
-        editorGrid.add(new Label("Alert Tone File:"), 0, 10);
-        editorGrid.add(alertToneCombo, 1, 10);
-        editorGrid.add(previewBtn, 2, 10);
+        GridPane zelloGrid = new GridPane();
+        zelloGrid.setHgap(10);
+        zelloGrid.setVgap(8);
+        zelloGrid.add(new Label("Zello Channel:"), 0, 0);
+        zelloGrid.add(zelloField, 1, 0);
+        zelloGrid.add(textMessageCheck, 0, 1);
+        zelloGrid.add(textMessageInfo, 1, 1);
+        zelloGrid.add(new Label("Message Template:"), 0, 2);
+        zelloGrid.add(templateField, 1, 2);
+        zelloGrid.add(fieldsInfo, 1, 3);
+        zelloGrid.add(previewBox, 1, 4);
+        zelloGrid.add(zelloAlertCheck, 0, 5, 2, 1);
+        zelloGrid.add(new Label("Alert Tone File:"), 0, 6);
+        zelloGrid.add(alertToneCombo, 1, 6);
+        zelloGrid.add(previewBtn, 2, 6);
+
+        GridPane mqttGrid = new GridPane();
+        mqttGrid.setHgap(10);
+        mqttGrid.setVgap(8);
+        mqttGrid.add(mqttCheck, 0, 0, 2, 1);
+        mqttGrid.add(new Label("MQTT Topic:"), 0, 1);
+        mqttGrid.add(topicField, 1, 1);
+        mqttGrid.add(new Label("MQTT Payload:"), 0, 2);
+        mqttGrid.add(payloadArea, 1, 2);
 
 
         mTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
@@ -347,20 +351,17 @@ public class TwoToneEditor extends VBox
             }
         });
 
-        // Save button for the configuration tab
-        HBox configBtnBox = new HBox(10);
-        Button saveBtn = new Button("Save");
-        saveBtn.setOnAction(e -> {
-            mPlaylistManager.schedulePlaylistSave();
-        });
-        configBtnBox.getChildren().addAll(saveBtn);
 
-        // Table buttons (right of the table)
-        VBox tableBtnBox = new VBox(5);
-        tableBtnBox.setMinWidth(Region.USE_PREF_SIZE);
+        // Left Pane (Master): Table + Buttons toolbar
+        VBox leftPane = new VBox(5);
+        leftPane.setPadding(new Insets(10));
+        HBox.setHgrow(mTableView, Priority.ALWAYS);
+        VBox.setVgrow(mTableView, Priority.ALWAYS);
+
+        HBox listToolbar = new HBox(5);
+        listToolbar.setPadding(new Insets(5, 0, 0, 0));
 
         MenuButton newBtn = new MenuButton("New");
-        newBtn.setMaxWidth(Double.MAX_VALUE);
         MenuItem newDetectorItem = new MenuItem("Detector");
         newDetectorItem.setOnAction(e -> {
             TwoToneConfiguration conf = new TwoToneConfiguration();
@@ -373,7 +374,6 @@ public class TwoToneEditor extends VBox
         newBtn.getItems().add(newDetectorItem);
 
         Button delBtn = new Button("Delete");
-        delBtn.setMaxWidth(Double.MAX_VALUE);
         delBtn.setOnAction(e -> {
             TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
             if (sel != null) {
@@ -383,7 +383,6 @@ public class TwoToneEditor extends VBox
         });
 
         Button cloneBtn = new Button("Clone");
-        cloneBtn.setMaxWidth(Double.MAX_VALUE);
         cloneBtn.setOnAction(e -> {
             TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
             if (sel != null) {
@@ -397,27 +396,50 @@ public class TwoToneEditor extends VBox
         });
 
         Button refreshBtn = new Button("Refresh");
-        refreshBtn.setMaxWidth(Double.MAX_VALUE);
         refreshBtn.setOnAction(e -> {
             mObservableConfigs.setAll(mPlaylistManager.getCurrentPlaylist().getTwoToneConfigurations());
         });
 
-        tableBtnBox.getChildren().addAll(newBtn, cloneBtn, delBtn, refreshBtn);
+        listToolbar.getChildren().addAll(newBtn, cloneBtn, delBtn, refreshBtn);
+        leftPane.getChildren().addAll(new Label("Two Tone Paging Detectors"), mTableView, listToolbar);
 
-        HBox tableAndButtonsBox = new HBox(10);
-        HBox.setHgrow(mTableView, Priority.ALWAYS);
-        tableAndButtonsBox.getChildren().addAll(mTableView, tableBtnBox);
-        VBox.setVgrow(tableAndButtonsBox, Priority.ALWAYS);
-
+        // Right Pane (Detail): Configuration Tabs -> TitledPanes
+        VBox rightPane = new VBox(10);
+        rightPane.setPadding(new Insets(10));
 
         mAliasEditor = new TwoToneAliasSelectionEditor(mPlaylistManager);
 
         TabPane tabPane = new TabPane();
         Tab configTab = new Tab("Configuration");
         configTab.setClosable(false);
-        VBox configBox = new VBox(10, editorGrid, configBtnBox);
+
+        TitledPane generalPane = new TitledPane("General Setup", generalGrid);
+        generalPane.setCollapsible(true);
+        TitledPane zelloPane = new TitledPane("Zello Integration", zelloGrid);
+        zelloPane.setCollapsible(true);
+        TitledPane mqttPane = new TitledPane("MQTT Integration", mqttGrid);
+        mqttPane.setCollapsible(true);
+
+        VBox configBox = new VBox(10, generalPane, zelloPane, mqttPane);
         configBox.setPadding(new Insets(10));
-        configTab.setContent(configBox);
+
+        ScrollPane configScrollPane = new ScrollPane(configBox);
+        configScrollPane.setFitToWidth(true);
+        configScrollPane.setStyle("-fx-background-color: transparent;");
+
+        // Save button for the configuration tab
+        HBox configBtnBox = new HBox(10);
+        configBtnBox.setPadding(new Insets(10));
+        Button saveBtn = new Button("Save");
+        saveBtn.setOnAction(e -> {
+            mPlaylistManager.schedulePlaylistSave();
+        });
+        configBtnBox.getChildren().addAll(saveBtn);
+
+        VBox rightConfigLayout = new VBox(configScrollPane, configBtnBox);
+        VBox.setVgrow(configScrollPane, Priority.ALWAYS);
+
+        configTab.setContent(rightConfigLayout);
 
         Tab aliasTab = new Tab("Aliases");
         aliasTab.setClosable(false);
@@ -426,9 +448,12 @@ public class TwoToneEditor extends VBox
         tabPane.getTabs().addAll(configTab, aliasTab);
         VBox.setVgrow(tabPane, Priority.ALWAYS);
 
-        getChildren().addAll(new Label("Two Tone Paging Detectors"), tableAndButtonsBox, tabPane);
-    }
+        rightPane.getChildren().add(tabPane);
 
+        // Add to SplitPane
+        getItems().addAll(leftPane, rightPane);
+        setDividerPositions(0.4);
+    }
     private void syncToPlaylist() {
         if (mPlaylistManager.getCurrentPlaylist() != null) {
             mPlaylistManager.getCurrentPlaylist().setTwoToneConfigurations(mObservableConfigs);
