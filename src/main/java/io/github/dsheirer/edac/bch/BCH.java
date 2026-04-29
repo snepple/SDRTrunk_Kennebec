@@ -44,6 +44,8 @@ public abstract class BCH
     public static final int PRIMITIVE_POLYNOMIAL_GF_127 = 0x83;
     public static final int PRIMITIVE_POLYNOMIAL_GF_255 = 0x11D;
 
+    private static final int[] EMPTY_INT_ARRAY = new int[0];
+
     /**
      * Primitive polynomials for GF(2) to GF(8) are defined in this class via the PRIMITIVE_POLYNOMIAL_GF_xx constants.
      * This is different from the generator polynomial that is used to create message codewords for the BCH code, where
@@ -170,7 +172,7 @@ public abstract class BCH
      */
     public int[] find_poly_roots(GFPoly poly, int k)
     {
-        int[] roots = new int[0];
+        int[] roots = EMPTY_INT_ARRAY;
 
         switch(poly.mDegree)
         {
@@ -539,7 +541,7 @@ public abstract class BCH
 
         if (poly.mC[0] == 0)
         {
-            return new int[0];
+            return EMPTY_INT_ARRAY;
         }
 
         /* transform polynomial into monic X^4 + aX^3 + bX^2 + cX + d */
@@ -576,7 +578,7 @@ public abstract class BCH
             if (d == 0)
             {
                 /* assume all roots have multiplicity 1 */
-                return new int[0];
+                return EMPTY_INT_ARRAY;
             }
 
             c2 = gf_inv(d);
