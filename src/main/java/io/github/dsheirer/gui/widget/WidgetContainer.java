@@ -22,7 +22,7 @@ public class WidgetContainer extends JPanel {
 
     public WidgetContainer(NowPlayingPreference preference) {
         mPreference = preference;
-        setLayout(new MigLayout("wrap 1, insets 0, fillx, gapy 2", "[grow,fill]"));
+        setLayout(new MigLayout("wrap 1, insets 16, fillx, gapy 12", "[grow,fill]"));
     }
 
     public NowPlayingPreference getPreference() {
