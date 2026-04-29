@@ -40,11 +40,15 @@ public class Widget extends JPanel {
 
         mMinimizeButton = createHeaderButton("-");
         mMinimizeButton.setToolTipText("Minimize");
+        mMinimizeButton.getAccessibleContext().setAccessibleName("Minimize Widget");
+        mMinimizeButton.getAccessibleContext().setAccessibleDescription("Minimizes or expands the widget");
         mMinimizeButton.addActionListener(e -> toggleMinimized());
         mHeaderPanel.add(mMinimizeButton);
 
         mCloseButton = createHeaderButton("x");
         mCloseButton.setToolTipText("Close");
+        mCloseButton.getAccessibleContext().setAccessibleName("Close Widget");
+        mCloseButton.getAccessibleContext().setAccessibleDescription("Closes the widget");
         mCloseButton.addActionListener(e -> closeWidget());
         mHeaderPanel.add(mCloseButton);
 
@@ -138,6 +142,7 @@ public class Widget extends JPanel {
         mContentComponent.setVisible(!minimized);
         mMinimizeButton.setText(minimized ? "+" : "-");
         mMinimizeButton.setToolTipText(minimized ? "Expand" : "Minimize");
+        mMinimizeButton.getAccessibleContext().setAccessibleName(minimized ? "Expand Widget" : "Minimize Widget");
         revalidate();
         repaint();
     }
