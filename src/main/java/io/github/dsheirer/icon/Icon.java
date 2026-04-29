@@ -189,7 +189,7 @@ public class Icon implements Comparable<Icon>
                 {
                     // For absolute or external paths
                     try {
-                        mImageIcon = new FlatSVGIcon(svgPath);
+                        mImageIcon = new FlatSVGIcon(new java.io.File(svgPath));
                     } catch (Exception e) {
                         mImageIcon = new ImageIcon(getPath());
                     }
