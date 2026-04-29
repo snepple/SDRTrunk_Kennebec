@@ -1,0 +1,67 @@
+/* radioreference.css - Apple HIG Styling */
+
+/* Remove heavy borders from TableView */
+.table-view {
+    -fx-box-border: transparent;
+    -fx-border-color: transparent;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #e0e0e0 transparent;
+}
+
+/* Remove borders from SplitPane */
+.split-pane {
+    -fx-box-border: transparent;
+    -fx-border-color: transparent;
+    -fx-background-color: transparent;
+}
+.split-pane:horizontal > .split-pane-divider {
+    -fx-background-color: #e0e0e0;
+    -fx-padding: 0 0.5 0 0.5;
+}
+
+/* Segmented Control Styling */
+.segmented-button-bar .toggle-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #555555;
+    -fx-padding: 5 15 5 15;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 1 0 1 1;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-cursor: hand;
+}
+
+.segmented-button-bar .toggle-button:selected {
+    -fx-background-color: #007aff;
+    -fx-text-fill: white;
+}
+
+/* First button in segmented control */
+.segmented-button-bar .toggle-button:first-child {
+    -fx-background-radius: 5 0 0 5;
+    -fx-border-radius: 5 0 0 5;
+}
+
+/* Last button in segmented control */
+.segmented-button-bar .toggle-button:last-child {
+    -fx-background-radius: 0 5 5 0;
+    -fx-border-radius: 0 5 5 0;
+    -fx-border-width: 1 1 1 1;
+}
+
+/* Header Typography */
+.header-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+.secondary-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #888888;
+}

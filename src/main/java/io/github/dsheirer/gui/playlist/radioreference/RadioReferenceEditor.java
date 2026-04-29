@@ -97,6 +97,9 @@ public class RadioReferenceEditor extends BorderPane implements Consumer<Authori
         mRadioReference = playlistManager.getRadioReference();
         mPlaylistManager = playlistManager;
 
+        // Apply external HIG CSS
+        getStylesheets().add(getClass().getResource("/css/radioreference.css").toExternalForm());
+
         setTop(getTopBox());
         setCenter(getTabPane());
 
