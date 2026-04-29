@@ -111,7 +111,11 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
     {
         if(mSourcePane == null)
         {
-            mSourcePane = new Tab("Source", getSourceConfigurationEditor());
+            mSourcePane = new Tab("Source");
+            javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getSourceConfigurationEditor());
+            sp.setFitToWidth(true);
+            sp.setFitToHeight(true);
+            mSourcePane.setContent(sp);
 
         }
 
@@ -166,7 +170,10 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getTalkgroupField(), 5, row);
             gridPane.getChildren().add(getTalkgroupField());
 
-            mDecoderPane.setContent(gridPane);
+            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            mDecoderPaneSp.setFitToWidth(true);
+            mDecoderPaneSp.setFitToHeight(true);
+            mDecoderPane.setContent(mDecoderPaneSp);
 
             //Special handling - the pill button doesn't like to set a selected state if the pane is not expanded,
             //so detect when the pane is expanded and refresh the config view
@@ -186,7 +193,11 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
     {
         if(mEventLogPane == null)
         {
-            mEventLogPane = new Tab("Logging", getEventLogConfigurationEditor());
+            mEventLogPane = new Tab("Logging");
+            javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getEventLogConfigurationEditor());
+            sp.setFitToWidth(true);
+            sp.setFitToHeight(true);
+            mEventLogPane.setContent(sp);
 
         }
 
@@ -214,7 +225,10 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(recordBasebandLabel, 1, 1);
             gridPane.getChildren().add(recordBasebandLabel);
 
-            mRecordPane.setContent(gridPane);
+            javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            mRecordPaneSp.setFitToWidth(true);
+            mRecordPaneSp.setFitToHeight(true);
+            mRecordPane.setContent(mRecordPaneSp);
         }
 
         return mRecordPane;

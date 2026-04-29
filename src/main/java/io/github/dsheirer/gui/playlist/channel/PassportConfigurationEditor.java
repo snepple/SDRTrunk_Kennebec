@@ -87,7 +87,11 @@ public class PassportConfigurationEditor extends ChannelConfigurationEditor
     {
         if(mSourcePane == null)
         {
-            mSourcePane = new Tab("Source", getSourceConfigurationEditor());
+            mSourcePane = new Tab("Source");
+            javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getSourceConfigurationEditor());
+            sp.setFitToWidth(true);
+            sp.setFitToHeight(true);
+            mSourcePane.setContent(sp);
 
         }
 
@@ -111,7 +115,11 @@ public class PassportConfigurationEditor extends ChannelConfigurationEditor
     {
         if(mEventLogPane == null)
         {
-            mEventLogPane = new Tab("Logging", getEventLogConfigurationEditor());
+            mEventLogPane = new Tab("Logging");
+            javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getEventLogConfigurationEditor());
+            sp.setFitToWidth(true);
+            sp.setFitToHeight(true);
+            mEventLogPane.setContent(sp);
 
         }
 
@@ -122,7 +130,11 @@ public class PassportConfigurationEditor extends ChannelConfigurationEditor
     {
         if(mAuxDecoderPane == null)
         {
-            mAuxDecoderPane = new Tab("Additional Decoders", getAuxDecoderConfigurationEditor());
+            mAuxDecoderPane = new Tab("Additional Decoders");
+            javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getAuxDecoderConfigurationEditor());
+            sp.setFitToWidth(true);
+            sp.setFitToHeight(true);
+            mAuxDecoderPane.setContent(sp);
 
         }
 
@@ -143,7 +155,10 @@ public class PassportConfigurationEditor extends ChannelConfigurationEditor
             VBox vBox = new VBox();
             vBox.getChildren().addAll(getRecordConfigurationEditor(), notice);
 
-            mRecordPane.setContent(vBox);
+            javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(vBox);
+            mRecordPaneSp.setFitToWidth(true);
+            mRecordPaneSp.setFitToHeight(true);
+            mRecordPane.setContent(mRecordPaneSp);
         }
 
         return mRecordPane;

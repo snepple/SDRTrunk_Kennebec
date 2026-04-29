@@ -113,7 +113,11 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     {
         if(mSourcePane == null)
         {
-            mSourcePane = new Tab("Source", getSourceConfigurationEditor());
+            mSourcePane = new Tab("Source");
+            javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getSourceConfigurationEditor());
+            sp.setFitToWidth(true);
+            sp.setFitToHeight(true);
+            mSourcePane.setContent(sp);
 
         }
 
@@ -188,7 +192,10 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(ignoreUnaliasedLabel, 5, 2);
             gridPane.getChildren().add(ignoreUnaliasedLabel);
 
-            mDecoderPane.setContent(gridPane);
+            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            mDecoderPaneSp.setFitToWidth(true);
+            mDecoderPaneSp.setFitToHeight(true);
+            mDecoderPane.setContent(mDecoderPaneSp);
         }
 
         return mDecoderPane;
@@ -198,7 +205,11 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     {
         if(mEventLogPane == null)
         {
-            mEventLogPane = new Tab("Logging", getEventLogConfigurationEditor());
+            mEventLogPane = new Tab("Logging");
+            javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getEventLogConfigurationEditor());
+            sp.setFitToWidth(true);
+            sp.setFitToHeight(true);
+            mEventLogPane.setContent(sp);
 
         }
 
@@ -219,7 +230,10 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             VBox vBox = new VBox();
             vBox.getChildren().addAll(getRecordConfigurationEditor(), notice);
 
-            mRecordPane.setContent(vBox);
+            javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(vBox);
+            mRecordPaneSp.setFitToWidth(true);
+            mRecordPaneSp.setFitToHeight(true);
+            mRecordPane.setContent(mRecordPaneSp);
         }
 
         return mRecordPane;
@@ -290,7 +304,10 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             }
 
             content.getChildren().add(gridPane);
-            mGraphicEQPane.setContent(content);
+            javafx.scene.control.ScrollPane mGraphicEQPaneSp = new javafx.scene.control.ScrollPane(content);
+            mGraphicEQPaneSp.setFitToWidth(true);
+            mGraphicEQPaneSp.setFitToHeight(true);
+            mGraphicEQPane.setContent(mGraphicEQPaneSp);
         }
 
         return mGraphicEQPane;
