@@ -41,12 +41,14 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Separator;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
-import javafx.scene.input.MouseButton;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -60,7 +62,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Editor for managing playlists via the playlist manager
  */
-public class PlaylistManagerEditor extends HBox
+public class PlaylistManagerEditor extends BorderPane
 {
     private static final Logger mLog = LoggerFactory.getLogger(PlaylistManagerEditor.class);
 
@@ -71,8 +73,8 @@ public class PlaylistManagerEditor extends HBox
 
     private PlaylistManager mPlaylistManager;
     private UserPreferences mUserPreferences;
-    private TableView<Path> mPlaylistTableView;
-    private VBox mButtonBox;
+    private ListView<Path> mPlaylistListView;
+
     private Button mSelectButton;
     private Button mAddButton;
     private Button mRemoveButton;
@@ -93,9 +95,9 @@ public class PlaylistManagerEditor extends HBox
         //Register to receive preferences updates
         MyEventBus.getGlobalEventBus().register(this);
 
-        setPadding(new Insets(5, 5, 5, 5));
-        HBox.setHgrow(getPlaylistTableView(), Priority.ALWAYS);
-        getChildren().addAll(getPlaylistTableView(), getButtonBox());
+        setPadding(new Insets(16));
+        setCenter(getPlaylistListView());
+        setBottom(getActionBar());
         updateButtons();
     }
 
@@ -118,103 +120,88 @@ public class PlaylistManagerEditor extends HBox
      */
     private void savePlaylistsPreference()
     {
-        mUserPreferences.getPlaylistPreference().setPlaylistList(getPlaylistTableView().getItems());
+        mUserPreferences.getPlaylistPreference().setPlaylistList(getPlaylistListView().getItems());
     }
 
-    private TableView<Path> getPlaylistTableView()
+    private ListView<Path> getPlaylistListView()
     {
-        if(mPlaylistTableView == null)
+        if(mPlaylistListView == null)
         {
-            mPlaylistTableView = new TableView<>();
-            TableColumn<Path,String> iconColumn = new TableColumn("Selected");
-            iconColumn.setPrefWidth(100);
-            iconColumn.setCellFactory(new Callback<TableColumn<Path,String>,TableCell<Path,String>>()
-            {
+            mPlaylistListView = new ListView<>();
+            mPlaylistListView.setStyle("-fx-background-insets: 0; -fx-padding: 0;");
+
+            mPlaylistListView.setCellFactory(new Callback<ListView<Path>, ListCell<Path>>() {
                 @Override
-                public TableCell<Path,String> call(TableColumn<Path,String> param)
-                {
-                    TableCell<Path,String> tableCell = new TableCell<>()
-                    {
-                        @Override
-                        protected void updateItem(String item, boolean empty)
+                public ListCell<Path> call(ListView<Path> param) {
+                    return new ListCell<Path>() {
+                        private HBox root = new HBox(12);
+                        private VBox textContainer = new VBox(2);
+                        private Label titleLabel = new Label();
+                        private Label pathLabel = new Label();
+                        private IconNode statusIcon = new IconNode(FontAwesome.CHECK);
+
                         {
+                            titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+                            pathLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #8E8E93;");
+                            statusIcon.setIconSize(16);
+
+                            root.setAlignment(Pos.CENTER_LEFT);
+                            root.setPadding(new Insets(8, 12, 8, 12));
+
+                            textContainer.getChildren().addAll(titleLabel, pathLabel);
+                            root.getChildren().addAll(statusIcon, textContainer);
+                        }
+
+                        @Override
+                        protected void updateItem(Path item, boolean empty) {
                             super.updateItem(item, empty);
-
-                            if(empty || getTableRow() == null || getTableRow().getItem() == null)
-                            {
+                            if (empty || item == null) {
                                 setGraphic(null);
-                            }
-                            else
-                            {
-                                Path path = getTableRow().getItem();
+                            } else {
+                                titleLabel.setText(item.getFileName().toString());
+                                pathLabel.setText(item.getParent() != null ? item.getParent().toString() : "");
 
-                                if(isCurrent(path))
-                                {
-                                    IconNode iconNode  = new IconNode(FontAwesome.CHECK);
-                                    iconNode.setFill(Color.GREEN);
-                                    setGraphic(iconNode);
+                                if (isCurrent(item)) {
+                                    statusIcon.setIconCode(FontAwesome.CHECK);
+                                    statusIcon.setFill(Color.web("#34C759"));
+                                    statusIcon.setVisible(true);
+                                } else if (!item.toFile().exists()) {
+                                    statusIcon.setIconCode(FontAwesome.TIMES);
+                                    statusIcon.setFill(Color.web("#FF3B30"));
+                                    statusIcon.setVisible(true);
+                                } else {
+                                    statusIcon.setVisible(false);
                                 }
-                                else if(!path.toFile().exists())
-                                {
-                                    IconNode iconNode  = new IconNode(FontAwesome.TIMES);
-                                    iconNode.setFill(Color.RED);
-                                    setGraphic(iconNode);
-                                }
-                                else
-                                {
-                                    setGraphic(null);
-                                }
+
+                                setGraphic(root);
                             }
                         }
                     };
-
-                    tableCell.setAlignment(Pos.BASELINE_RIGHT);
-                    return tableCell;
                 }
             });
 
-            TableColumn<Path,String> pathColumn = new TableColumn<>("Playlist");
-            pathColumn.setCellFactory(param -> new TableCell<Path,String>()
-            {
-                @Override
-                protected void updateItem(String item, boolean empty)
-                {
-                    if(empty || getTableRow() == null || getTableRow().getItem() == null)
-                    {
-                        setText(null);
-                    }
-                    else
-                    {
-                        setText(getTableRow().getItem().toString());
-                    }
-                }
-            });
-            pathColumn.setPrefWidth(650);
-
-            mPlaylistTableView.getColumns().addAll(iconColumn, pathColumn);
-
-            mPlaylistTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateButtons());
+            mPlaylistListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateButtons());
 
             //User double-clicks on an entry - make that entry the selected playlist.
-            mPlaylistTableView.setOnMouseClicked(event ->
+            mPlaylistListView.setOnMouseClicked(event ->
             {
                 if(event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2)
                 {
-                    selectPlayist(getPlaylistTableView().getSelectionModel().getSelectedItem());
+                    selectPlayist(getPlaylistListView().getSelectionModel().getSelectedItem());
                 }
             });
 
             List<Path> playlistPaths = mUserPreferences.getPlaylistPreference().getPlaylistList();
 
-            mPlaylistTableView.getItems().addAll(playlistPaths);
+            mPlaylistListView.getItems().addAll(playlistPaths);
         }
 
-        return mPlaylistTableView;
+        return mPlaylistListView;
     }
 
     private void updateButtons()
     {
-        Path selected = getPlaylistTableView().getSelectionModel().getSelectedItem();
+        Path selected = getPlaylistListView().getSelectionModel().getSelectedItem();
 
         boolean itemSelected = (selected != null);
         boolean isCurrent = isCurrent(selected);
@@ -225,22 +212,26 @@ public class PlaylistManagerEditor extends HBox
         getDeleteButton().setDisable(!itemSelected || isCurrent || (selected != null && !selected.toFile().exists()));
     }
 
-    private VBox getButtonBox()
+    private HBox getActionBar()
     {
-        if(mButtonBox == null)
-        {
-            mButtonBox = new VBox();
-            mButtonBox.setSpacing(10.0);
-            mButtonBox.setPadding(new Insets(5, 5, 5, 10));
-            mButtonBox.setAlignment(Pos.TOP_CENTER);
-            mButtonBox.getChildren().add(getSelectButton());
-            mButtonBox.getChildren().add(new Separator());
-            mButtonBox.getChildren().addAll(getNewButton(), getAddButton(), getRemoveButton(), getCloneButton());
-            mButtonBox.getChildren().add(new Separator());
-            mButtonBox.getChildren().add(getDeleteButton());
-        }
+        HBox actionBar = new HBox(12);
+        actionBar.setPadding(new Insets(12, 0, 0, 0));
+        actionBar.setAlignment(Pos.CENTER_LEFT);
 
-        return mButtonBox;
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        actionBar.getChildren().addAll(
+            getSelectButton(),
+            spacer,
+            getNewButton(),
+            getAddButton(),
+            getCloneButton(),
+            getRemoveButton(),
+            getDeleteButton()
+        );
+
+        return actionBar;
     }
 
     /**
@@ -323,7 +314,7 @@ public class PlaylistManagerEditor extends HBox
             mSelectButton = new Button("Select");
             mSelectButton.setTooltip(new Tooltip("Sets the selected playlist as the current playlist"));
             mSelectButton.setMaxWidth(Double.MAX_VALUE);
-            mSelectButton.setOnAction(event -> {selectPlayist(getPlaylistTableView().getSelectionModel().getSelectedItem());});
+            mSelectButton.setOnAction(event -> {selectPlayist(getPlaylistListView().getSelectionModel().getSelectedItem());});
         }
 
         return mSelectButton;
@@ -348,9 +339,9 @@ public class PlaylistManagerEditor extends HBox
                 {
                     if(PlaylistManager.isPlaylist(playlistToAdd.toPath()))
                     {
-                        if(!getPlaylistTableView().getItems().contains(playlistToAdd.toPath()))
+                        if(!getPlaylistListView().getItems().contains(playlistToAdd.toPath()))
                         {
-                            getPlaylistTableView().getItems().add(playlistToAdd.toPath());
+                            getPlaylistListView().getItems().add(playlistToAdd.toPath());
                             savePlaylistsPreference();
                         }
                         else
@@ -378,7 +369,7 @@ public class PlaylistManagerEditor extends HBox
             mCloneButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected playlist"));
             mCloneButton.setMaxWidth(Double.MAX_VALUE);
             mCloneButton.setOnAction(event -> {
-                Path selected = getPlaylistTableView().getSelectionModel().getSelectedItem();
+                Path selected = getPlaylistListView().getSelectionModel().getSelectedItem();
 
                 if(selected != null)
                 {
@@ -407,7 +398,7 @@ public class PlaylistManagerEditor extends HBox
                         try
                         {
                             Files.copy(selected.toFile(), copyFile);
-                            getPlaylistTableView().getItems().add(copyFile.toPath());
+                            getPlaylistListView().getItems().add(copyFile.toPath());
                             savePlaylistsPreference();
                         }
                         catch(IOException ioe)
@@ -433,11 +424,11 @@ public class PlaylistManagerEditor extends HBox
             mRemoveButton.setTooltip(new Tooltip("Remove the currently selected playlist from the application"));
             mRemoveButton.setMaxWidth(Double.MAX_VALUE);
             mRemoveButton.setOnAction(event -> {
-                Path selected = getPlaylistTableView().getSelectionModel().getSelectedItem();
+                Path selected = getPlaylistListView().getSelectionModel().getSelectedItem();
 
                 if(selected != null)
                 {
-                    getPlaylistTableView().getItems().remove(selected);
+                    getPlaylistListView().getItems().remove(selected);
                     savePlaylistsPreference();
                 }
             });
@@ -482,7 +473,7 @@ public class PlaylistManagerEditor extends HBox
                         }
 
                         mPlaylistManager.createEmptyPlaylist(toCreate);
-                        getPlaylistTableView().getItems().add(toCreate);
+                        getPlaylistListView().getItems().add(toCreate);
                         savePlaylistsPreference();
                     }
                     catch(IOException ioe)
@@ -505,7 +496,7 @@ public class PlaylistManagerEditor extends HBox
             mDeleteButton.setTooltip(new Tooltip("Remove the currently selected playlist and delete it from the file system"));
             mDeleteButton.setMaxWidth(Double.MAX_VALUE);
             mDeleteButton.setOnAction(event -> {
-                Path selected = getPlaylistTableView().getSelectionModel().getSelectedItem();
+                Path selected = getPlaylistListView().getSelectionModel().getSelectedItem();
 
                 if(selected != null)
                 {
@@ -522,7 +513,7 @@ public class PlaylistManagerEditor extends HBox
 
                     if(optional.get() == ButtonType.YES)
                     {
-                        getPlaylistTableView().getItems().remove(selected);
+                        getPlaylistListView().getItems().remove(selected);
                         savePlaylistsPreference();
                         selected.toFile().delete();
                     }
@@ -548,7 +539,7 @@ public class PlaylistManagerEditor extends HBox
                 @Override
                 public void run()
                 {
-                    getPlaylistTableView().refresh();
+                    getPlaylistListView().refresh();
                 }
             });
         }
