@@ -42,7 +42,7 @@ public class UsbMonitorManager {
 
             long currentPid = ProcessHandle.current().pid();
             Path logDir = userPreferences.getDirectoryPreference().getDirectoryApplicationLog();
-            Path logFile = logDir.resolve("sdrtrunk_app.log");
+            Path logFile = logDir.resolve("sdrtrunk_usb_monitor.log");
 
             List<String> command = new ArrayList<>();
             command.add("powershell.exe");
