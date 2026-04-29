@@ -119,7 +119,11 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
     {
         if(mSourcePane == null)
         {
-            mSourcePane = new Tab("Source", getSourceConfigurationEditor());
+            mSourcePane = new Tab("Source");
+            javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getSourceConfigurationEditor());
+            sp.setFitToWidth(true);
+            sp.setFitToHeight(true);
+            mSourcePane.setContent(sp);
 
         }
 
@@ -213,7 +217,10 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(editorBox, 0, row, 4, 1);
             gridPane.getChildren().add(editorBox);
 
-            mDecoderPane.setContent(gridPane);
+            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            mDecoderPaneSp.setFitToWidth(true);
+            mDecoderPaneSp.setFitToHeight(true);
+            mDecoderPane.setContent(mDecoderPaneSp);
         }
 
         return mDecoderPane;
@@ -223,7 +230,11 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
     {
         if(mEventLogPane == null)
         {
-            mEventLogPane = new Tab("Logging", getEventLogConfigurationEditor());
+            mEventLogPane = new Tab("Logging");
+            javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getEventLogConfigurationEditor());
+            sp.setFitToWidth(true);
+            sp.setFitToHeight(true);
+            mEventLogPane.setContent(sp);
 
         }
 
@@ -244,7 +255,10 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             VBox vBox = new VBox();
             vBox.getChildren().addAll(getRecordConfigurationEditor(), notice);
 
-            mRecordPane.setContent(vBox);
+            javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(vBox);
+            mRecordPaneSp.setFitToWidth(true);
+            mRecordPaneSp.setFitToHeight(true);
+            mRecordPane.setContent(mRecordPaneSp);
         }
 
         return mRecordPane;
