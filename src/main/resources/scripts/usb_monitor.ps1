@@ -1,11 +1,33 @@
 #Requires -RunAsAdministrator
 
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$false)]
     [int]$ProcessId,
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$false)]
     [string]$LogFile
 )
+
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ConfigFile = Join-Path $ScriptDir "usb_monitor_config.json"
+
+if (Test-Path $ConfigFile) {
+    try {
+        $Config = Get-Content $ConfigFile -Raw | ConvertFrom-Json
+        if (-not $ProcessId -and $Config.ProcessId) {
+            $ProcessId = $Config.ProcessId
+        }
+        if (-not $LogFile -and $Config.LogFile) {
+            $LogFile = $Config.LogFile
+        }
+    } catch {
+        # Ignore errors reading config
+    }
+}
+
+if (-not $ProcessId -or -not $LogFile) {
+    Write-Error "ProcessId and LogFile must be provided either as parameters or in $ConfigFile."
+    Exit 1
+}
 
 $HardwareIDs = @(
     "VID_0BDA&PID_2838", # RTL-SDR
