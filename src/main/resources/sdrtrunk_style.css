@@ -162,3 +162,10 @@
     -fx-opacity: 0.5;
     -fx-cursor: default;
 }
+
+/* Inspector Panel */
+.inspector-panel {
+    -fx-background-color: #f6f6f6;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 0 1; /* Left border only */
+}

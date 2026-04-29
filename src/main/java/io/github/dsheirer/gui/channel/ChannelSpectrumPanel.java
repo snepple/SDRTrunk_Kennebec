@@ -64,7 +64,9 @@ import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
-import javax.swing.JSplitPane;
+import javax.swing.border.MatteBorder;
+import java.awt.Color;
+import java.awt.CardLayout;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.MouseInputAdapter;
 
@@ -83,6 +85,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
     private final FrequencyOverlayPanel mFrequencyOverlayPanel;
     private final SourceEventProcessor mSourceEventProcessor = new SourceEventProcessor();
     private final SpinnerNumberModel mNoiseFloorSpinnerModel;
+    private final JLabel mEstimatedCarrierOffsetFrequencyTitleLabel;
     private final JLabel mEstimatedCarrierOffsetFrequencyValueLabel;
     private boolean mPanelVisible = false;
     private boolean mDftProcessing = false;
@@ -91,7 +94,8 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
     private final SymbolView mSymbolView = new SymbolView();
     private final JFXPanel mNoiseSquelchPanel;
     private final JFXPanel mSymbolPanel;
-    private JSplitPane mSplitPane;
+    private JPanel mInspectorPanel;
+    private CardLayout mInspectorCardLayout;
 
     /**
      * Constructs an instance.
@@ -110,9 +114,14 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         labelPanel.setLayout(new MigLayout("insets 2", "[grow,fill][grow,fill,left][right][][]", ""));
         labelPanel.add(new JLabel("Channel Spectrum    "));
 
-        mEstimatedCarrierOffsetFrequencyValueLabel = new JLabel(getPaddedCarrierOffsetLabel(0));
+        mEstimatedCarrierOffsetFrequencyTitleLabel = new JLabel("Carrier Offset:");
+        mEstimatedCarrierOffsetFrequencyTitleLabel.setForeground(new java.awt.Color(142, 142, 147)); // HIG subtle gray
+        labelPanel.add(mEstimatedCarrierOffsetFrequencyTitleLabel);
+
+        mEstimatedCarrierOffsetFrequencyValueLabel = new JLabel("0 Hz");
+        mEstimatedCarrierOffsetFrequencyValueLabel.setFont(mEstimatedCarrierOffsetFrequencyValueLabel.getFont().deriveFont(java.awt.Font.BOLD));
         mEstimatedCarrierOffsetFrequencyValueLabel.setEnabled(false);
-        labelPanel.add(mEstimatedCarrierOffsetFrequencyValueLabel);
+        labelPanel.add(mEstimatedCarrierOffsetFrequencyValueLabel, "width 60!");
 
         mNoiseFloorSpinnerModel = new SpinnerNumberModel(18, 8, 36, 1);
         mNoiseFloorSpinnerModel.addChangeListener(e -> {
@@ -216,11 +225,22 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             mSymbolPanel.setScene(scene2);
         });
 
-        mSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        mSplitPane.add(fftPanel, JSplitPane.LEFT);
-        mSplitPane.add(mNoiseSquelchPanel, JSplitPane.RIGHT);
-        add(mSplitPane);
-//        mSplitPane.setDividerLocation(0.5);
+        mInspectorCardLayout = new CardLayout();
+        mInspectorPanel = new JPanel(mInspectorCardLayout);
+        mInspectorPanel.setBorder(new MatteBorder(0, 1, 0, 0, new Color(224, 224, 224))); // Apple HIG subtle border
+
+        mInspectorPanel.add(mNoiseSquelchPanel, "NBFM");
+        mInspectorPanel.add(mSignalPowerView, "AM");
+        mInspectorPanel.add(mSymbolPanel, "FEEDBACK");
+
+        // Ensure inspector has a fixed minimum/preferred width for the sidebar
+        mInspectorPanel.setMinimumSize(new java.awt.Dimension(250, 0));
+        mInspectorPanel.setPreferredSize(new java.awt.Dimension(280, 0));
+
+        // Use MigLayout for the main panel
+        setLayout(new MigLayout("insets 0, gap 0", "[grow,fill][pref!]", "[grow,fill]"));
+        add(fftPanel, "grow");
+        add(mInspectorPanel, "dock east");
 
         mSampleStreamTapModule.setListener(mComplexDftProcessor);
         DFTResultsConverter DFTResultsConverter = new ComplexDecibelConverter();
@@ -229,12 +249,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         mSpectrumPanel.clearSpectrum();
     }
 
-    private String getPaddedCarrierOffsetLabel(long value)
-    {
-        String paddedValue = StringUtils.leftPad(String.valueOf(value), 5);
-        String paddedText = StringUtils.rightPad(paddedValue + " Hz", 20);
-        return "Carrier Offset: " + paddedText;
-    }
+
 
     /**
      * Signals this panel to indicate if this panel is visible to turn on the FFT processor when the panel is visible
@@ -306,7 +321,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         //Note: we flip the sign on the error measurement because the value represents the amount of offset the PLL
         //has to apply to move the signal to center/baseband
         EventQueue.invokeLater(() -> {
-            mEstimatedCarrierOffsetFrequencyValueLabel.setText(getPaddedCarrierOffsetLabel(carrierOffsetFrequency));
+            mEstimatedCarrierOffsetFrequencyValueLabel.setText(carrierOffsetFrequency + " Hz");
             mEstimatedCarrierOffsetFrequencyValueLabel.setEnabled(true);
         });
 
@@ -327,7 +342,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
      */
     private void reset()
     {
-        mEstimatedCarrierOffsetFrequencyValueLabel.setText(getPaddedCarrierOffsetLabel(0));
+        mEstimatedCarrierOffsetFrequencyValueLabel.setText("0 Hz");
         mEstimatedCarrierOffsetFrequencyValueLabel.setEnabled(false);
         mFrequencyOverlayPanel.process(SourceEvent.frequencyChange(null, 0));
         mFrequencyOverlayPanel.process(SourceEvent.sampleRateChange(0));
@@ -410,13 +425,17 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
      */
     private void setRightComponent(Component component)
     {
-        Component rightComponent = mSplitPane.getRightComponent();
-
-        if(rightComponent != component)
-        {
-            mSplitPane.remove(rightComponent);
-            mSplitPane.setRightComponent(component);
-            mSplitPane.setDividerLocation(0.4);
+        if (component == mNoiseSquelchPanel) {
+            mInspectorCardLayout.show(mInspectorPanel, "NBFM");
+            mInspectorPanel.setVisible(true);
+        } else if (component == mSignalPowerView) {
+            mInspectorCardLayout.show(mInspectorPanel, "AM");
+            mInspectorPanel.setVisible(true);
+        } else if (component == mSymbolPanel) {
+            mInspectorCardLayout.show(mInspectorPanel, "FEEDBACK");
+            mInspectorPanel.setVisible(true);
+        } else {
+            mInspectorPanel.setVisible(false);
         }
     }
 
