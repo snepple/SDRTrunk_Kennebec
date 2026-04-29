@@ -450,7 +450,7 @@ public class IconModel
             mStandardIcons.add(new Icon("Fire Truck", "images/fire_truck.png"));
             mStandardIcons.add(new Icon("Garbage Truck", "images/garbage_truck.svg"));
             mStandardIcons.add(new Icon("Loader", "images/loader.png"));
-            mStandardIcons.add(new Icon("Police", "images/police.svg"));
+            mStandardIcons.add(new Icon("Police", "images/police_car_new.svg"));
             mStandardIcons.add(new Icon("Propane Truck", "images/propane_truck.svg"));
             mStandardIcons.add(new Icon("Rescue Truck", "images/rescue_truck.png"));
             mStandardIcons.add(new Icon("School Bus", "images/school_bus.svg"));
