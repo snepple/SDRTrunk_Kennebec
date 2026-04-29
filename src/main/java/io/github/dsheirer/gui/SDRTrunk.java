@@ -83,6 +83,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.awt.BorderLayout;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
@@ -188,6 +190,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
     private ApplicationLog mApplicationLog;
     private TwoToneLog mTwoToneLog;
     private ResourceMonitor mResourceMonitor;
+    private Rectangle mNormalBounds;
     private JFXPanel mResourceStatusPanel;
 
     private String mTitle;
@@ -417,17 +420,22 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         mTitle = SystemProperties.getInstance().getApplicationName();
         mMainGui.setTitle(mTitle);
 
-        Point location = mUserPreferences.getSwingPreference().getLocation(WINDOW_FRAME_IDENTIFIER);
-        if(location != null)
-        {
-            mMainGui.setLocation(location);
-        }
-        else
-        {
-            mMainGui.setLocationRelativeTo(null);
-        }
         mMainGui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mMainGui.addWindowListener(new ShutdownMonitor());
+        mMainGui.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                if (mMainGui.getExtendedState() == JFrame.NORMAL) {
+                    mNormalBounds = mMainGui.getBounds();
+                }
+            }
+            @Override
+            public void componentMoved(java.awt.event.ComponentEvent e) {
+                if (mMainGui.getExtendedState() == JFrame.NORMAL) {
+                    mNormalBounds = mMainGui.getBounds();
+                }
+            }
+        });
 
         Dimension dimension = mUserPreferences.getSwingPreference().getDimension(WINDOW_FRAME_IDENTIFIER);
 
@@ -461,8 +469,22 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         }
         else
         {
-            mMainGui.setSize(new Dimension(1280, 800));
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            int width = (int) (screenSize.width * 0.6);
+            int height = (int) (screenSize.height * 0.6);
+            mMainGui.setSize(new Dimension(width, height));
         }
+
+        Point location = mUserPreferences.getSwingPreference().getLocation(WINDOW_FRAME_IDENTIFIER);
+        if(location != null)
+        {
+            mMainGui.setLocation(location);
+        }
+        else
+        {
+            mMainGui.setLocationRelativeTo(null);
+        }
+
         mMainContentPanel = new JPanel(new BorderLayout());
         mTopContentPanel = new JPanel(new BorderLayout());
         mTopContentPanel.add(mControllerPanel.getAudioPanel(), BorderLayout.NORTH);
@@ -486,8 +508,13 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
     {
         mLog.info("Application shutdown started ...");
         mDiagnosticMonitor.stop();
-        mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, mMainGui.getLocation());
-        mUserPreferences.getSwingPreference().setDimension(WINDOW_FRAME_IDENTIFIER, mMainGui.getSize());
+        if ((mMainGui.getExtendedState() & JFrame.MAXIMIZED_BOTH) != JFrame.MAXIMIZED_BOTH || mNormalBounds == null) {
+            mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, mMainGui.getLocation());
+            mUserPreferences.getSwingPreference().setDimension(WINDOW_FRAME_IDENTIFIER, mMainGui.getSize());
+        } else {
+            mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, mNormalBounds.getLocation());
+            mUserPreferences.getSwingPreference().setDimension(WINDOW_FRAME_IDENTIFIER, mNormalBounds.getSize());
+        }
         mUserPreferences.getSwingPreference().setMaximized(WINDOW_FRAME_IDENTIFIER,
             (mMainGui.getExtendedState() & JFrame.MAXIMIZED_BOTH) == JFrame.MAXIMIZED_BOTH);
         mUserPreferences.getSwingPreference().setDimension(SPECTRAL_PANEL_IDENTIFIER, mSpectralPanel.getSize());
