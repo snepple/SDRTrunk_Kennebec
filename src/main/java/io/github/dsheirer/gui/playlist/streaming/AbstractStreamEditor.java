@@ -105,7 +105,7 @@ public abstract class AbstractStreamEditor<T extends BroadcastConfiguration> ext
         super.save();
     }
 
-    protected abstract GridPane getEditorPane();
+    protected abstract javafx.scene.layout.Pane getEditorPane();
 
     protected TextField getHostTextField()
     {

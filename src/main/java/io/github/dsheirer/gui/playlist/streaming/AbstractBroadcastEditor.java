@@ -63,13 +63,18 @@ public abstract class AbstractBroadcastEditor<T extends BroadcastConfiguration> 
         mPlaylistManager = playlistManager;
         getFormatField().setText(getBroadcastServerType().toString());
 
-        VBox buttonBox = new VBox();
-        buttonBox.setPadding(new Insets(10,10,10,10));
+        HBox buttonBox = new HBox();
+        buttonBox.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+        buttonBox.setPadding(new Insets(10, 10, 10, 10));
         buttonBox.setSpacing(10);
+
+        getSaveButton().getStyleClass().add("flat-button");
+        getResetButton().getStyleClass().add("flat-button");
+        getReconnectButton().getStyleClass().add("flat-button");
+
         buttonBox.getChildren().addAll(getSaveButton(), getResetButton(), getReconnectButton());
 
-        HBox editorBox = new HBox();
-        HBox.setHgrow(getEditorPane(), Priority.ALWAYS);
+        VBox editorBox = new VBox();
         editorBox.getChildren().addAll(getEditorPane(), buttonBox);
         getChildren().addAll(editorBox);
 
@@ -84,7 +89,7 @@ public abstract class AbstractBroadcastEditor<T extends BroadcastConfiguration> 
         return mPlaylistManager;
     }
 
-    protected abstract GridPane getEditorPane();
+    protected abstract javafx.scene.layout.Pane getEditorPane();
 
     public abstract BroadcastServerType getBroadcastServerType();
 

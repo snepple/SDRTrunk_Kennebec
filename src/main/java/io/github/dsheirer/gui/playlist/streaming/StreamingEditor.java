@@ -119,24 +119,30 @@ public class StreamingEditor extends SplitPane
             .addListener((observable, oldValue, newValue) -> refreshBroadcastifyStreams());
         refreshBroadcastifyStreams();
 
-        VBox buttonsBox = new VBox();
-        buttonsBox.getChildren().addAll(getNewButton(), getDeleteButton(), getRefreshButton());
-        buttonsBox.setPadding(new Insets(0, 0, 0, 10));
-        buttonsBox.setSpacing(10);
+        HBox toolbar = new HBox();
+        toolbar.getStyleClass().add("context-toolbar");
+        toolbar.setAlignment(Pos.CENTER_LEFT);
+        toolbar.setPadding(new Insets(0, 0, 10, 0));
+        toolbar.setSpacing(10);
+
+        getNewButton().getStyleClass().add("flat-button");
+        getDeleteButton().getStyleClass().add("flat-button");
+        getRefreshButton().getStyleClass().add("flat-button");
+
+        toolbar.getChildren().addAll(getNewButton(), getDeleteButton(), getRefreshButton());
 
         VBox tableAndLabelBox = new VBox();
         VBox.setVgrow(getConfiguredBroadcastTableView(), Priority.ALWAYS);
         tableAndLabelBox.getChildren().addAll(getConfiguredBroadcastTableView(), getRadioReferenceLoginLabel());
 
-        HBox editorBox = new HBox();
-        editorBox.setPadding(new Insets(10, 10, 10, 10));
-        HBox.setHgrow(tableAndLabelBox, Priority.ALWAYS);
-        editorBox.getChildren().addAll(tableAndLabelBox, buttonsBox);
-        editorBox.setPrefHeight(50);
+        VBox masterBox = new VBox();
+        masterBox.setPadding(new Insets(10, 10, 10, 10));
+        VBox.setVgrow(tableAndLabelBox, Priority.ALWAYS);
+        masterBox.getChildren().addAll(toolbar, tableAndLabelBox);
 
         setOrientation(Orientation.VERTICAL);
 
-        getItems().addAll(editorBox, getTabPane());
+        getItems().addAll(masterBox, getTabPane());
     }
 
     private void setEditor(AbstractBroadcastEditor<?> editor)
@@ -416,6 +422,7 @@ public class StreamingEditor extends SplitPane
         if(mConfiguredBroadcastTableView == null)
         {
             mConfiguredBroadcastTableView = new TableView<>();
+            mConfiguredBroadcastTableView.getStyleClass().add("preferences-table");
             mConfiguredBroadcastTableView.setPlaceholder(new Label("Click the New button to create a new " +
                 "audio streaming configuration"));
             mConfiguredBroadcastTableView.setItems(mPlaylistManager.getBroadcastModel().getConfiguredBroadcasts());
