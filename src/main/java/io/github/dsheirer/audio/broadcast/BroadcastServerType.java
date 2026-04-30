@@ -34,19 +34,19 @@ public enum BroadcastServerType
     RDIOSCANNER_CALL("Rdio Scanner", "images/rdioscanner.png"),
     OPENMHZ("OpenMHz", "images/openmhz.png"),
     ICECAST_TCP("Icecast (v2.3)", "images/icecast.png"),
-    SHOUTCAST_V1("Shoutcast v1.x", "images/shoutcast.png"),
-    SHOUTCAST_V2("Shoutcast v2.x", "images/shoutcast.png"),
+    SHOUTCAST_V1("Shoutcast v1.x", "images/shoutcast.svg"),
+    SHOUTCAST_V2("Shoutcast v2.x", "images/shoutcast.svg"),
     THINLINE_RADIO("ThinLine Radio", "images/thinlineradio.png"),
 
     /**
      * Zello Work - real-time audio streaming to Zello Work channels
      */
-    ZELLO_WORK("Zello Work", "images/zello.png"),
+    ZELLO_WORK("Zello Work", "images/zello.svg"),
 
     /**
      * Zello Consumer (Friends & Family) - real-time audio streaming
      */
-    ZELLO("Zello Consumer", "images/zello.png"),
+    ZELLO("Zello Consumer", "images/zello.svg"),
 
     /**
      * IAmResponding TwoToneDetect - real-time UDP raw PCM streaming
