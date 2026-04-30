@@ -17,7 +17,7 @@ public class MyFontIcon implements Icon {
     private Icon cachedIcon;
     private Color lastColor;
 
-    private static final int RENDER_SCALE = 4;
+    private static final int RENDER_SCALE = 2; // Reduce to avoid getting too big for IconFontSwing
 
     public MyFontIcon(IconCode iconCode, float size, Color color) {
         this.iconCode = iconCode;
@@ -43,16 +43,11 @@ public class MyFontIcon implements Icon {
             g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            int drawSize = Math.round(size);
-
-            // Draw it scaled down
-            hiRes.paintIcon(c, g2, x, y);
-            // Wait, we need to scale the graphics context, OR use drawImage
-            // But hiRes is an Icon. Icon.paintIcon draws at x, y with its own width/height.
-            // If we scale the graphics context:
-            g2.translate(x, y);
-            g2.scale(1.0 / RENDER_SCALE, 1.0 / RENDER_SCALE);
-            hiRes.paintIcon(c, g2, 0, 0);
+            Graphics2D g3 = (Graphics2D) g2.create();
+            g3.translate(x, y);
+            g3.scale(1.0 / RENDER_SCALE, 1.0 / RENDER_SCALE);
+            hiRes.paintIcon(c, g3, 0, 0);
+            g3.dispose();
         } finally {
             g2.dispose();
         }

@@ -5,6 +5,57 @@ DSheirer/sdrtrunk changes are not repeated; only the `ap-` fork deltas are recor
 
 Versioning follows `0.6.2-ap-<n>` where `<n>` increments for each fork release.
 
+## [0.6.2-ap-15] - 2026-05-01
+
+### Added
+- feat: Add Universal SDR USB Monitor for Windows
+- Feat: Add Telegram Notifications and Gemini AI Audio Auditing
+- Add System Health & Performance Advisor
+- Add Intelligent Log Analysis with Gemini API
+- Add Audio Recordings Panel UI
+- Add popup dialogue for AI audio analyzer results
+- Add variable placeholders to TwoTone text message templates
+- Add What's New section to Help Viewer
+- Add AIPreferenceEditor to User Preferences dialog
+- Add new, refresh, clone, and save buttons to Two Tone Editor
+- Add feature to prompt, manage, and update USB Monitor script on Windows 10+
+
+### Changed
+- Refactor PlaylistEditor and AliasEditor to align with HIG
+- Refactor TwoToneEditor layout to remove accordions
+- Replace TitledPane accordions with ScrollPanes in channel configuration editors
+- Refactor LogsPanel to follow Apple HIG using JavaFX
+- Refactor ChannelSpectrumPanel for Apple HIG compliance
+- Refactor User Preferences UI for Apple HIG Compliance
+- Refactor PlaylistManagerEditor to Apple HIG
+- Refactor StreamingEditor to align with Apple HIG
+- Refactor NowPlaying widgets to align with HIG card UI
+- Refactor TunerViewPanel and DiscoveredTunerEditor to JavaFX
+- Separate spectrum/waterfall display controls between Now Playing and Tuners pages
+- ⚡ Bolt: Optimize `getIntAsHex` with fast char array lookup
+- ⚡ Bolt: Optimize Hexadecimal String Formatting
+- ⚡ Optimize empty int array allocation in BCH
+- perf: optimize case conversion in CRCUtil using Locale.ROOT
+- chore(performance): optimize System.currentTimeMillis loops in Calibration WARMUP routines
+- ⚡ Performance: Pre-compile regex Pattern in AudioBufferManager
+- Add ReentrantLock to HeterodyneChannelSourceManager for thread-safe access
+- Security: Prevent command injection in ScriptAction via file validation
+
+### Fixed
+- Fix standard icon display and migration
+- Fix blurry JavaFX and Swing icons on high DPI Windows displays
+- Fix USB monitor powershell script installation
+- Fix GUI stuck at startup by moving UsbMonitorManager dialog to EDT
+- Fix HiDPI fuzzy rendering of icons in JavaFX and Swing on Windows 11
+- Fix channel configuration editor overlapping the table
+- Fix NullPointerException in JavaFX interop by avoiding JFXPanel reparenting
+- Fix absolute path SVG icon loading in user preferences
+- Fix XMLStreamException when parsing large SVG icons
+- Fix TwoToneEditor TableView updates by converting primitive double variables to DoubleProperty
+- Fix 'already set as root' exception for JavaFX embedded panels
+- Fix IconManager selection bugs and missing icon previews
+- Fix UI layout: remove empty space at the bottom of widgets on the now playing page
+
 ## [0.6.2-ap-14.6] - 2026-04-11
 
 Runtime-diagnostics release. Adds per-category DEBUG toggles, persistent channel table sort,
@@ -60,3 +111,4 @@ and ThinLine Radio debug-by-default.
 [0.6.2-ap-14.5]: https://github.com/actionpagezello/sdrtrunk/releases/tag/v14.5
 [0.6.2-ap-14.4]: https://github.com/actionpagezello/sdrtrunk/releases/tag/v14.4
 [0.6.2-ap-14.3]: https://github.com/actionpagezello/sdrtrunk/releases/tag/v14.3
+[0.6.2-ap-15]: https://github.com/actionpagezello/sdrtrunk/releases/tag/v15

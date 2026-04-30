@@ -66,6 +66,15 @@ public class DCSDetector
      */
     private static final int LOSS_CHECK_INTERVAL_SAMPLES = 1400;
 
+    /**
+     * Minimum ratio of low-band energy (DCS sub-audible range, <200 Hz) to wideband energy
+     * for a DCS detection to be considered valid. Real DCS modulation concentrates energy
+     * below 200 Hz. Broadband digital interference has roughly equal energy across all
+     * frequencies, producing a ratio near 1.0. A ratio threshold of 1.5 means the low band
+     * must have at least 50% more energy density than the wideband average.
+     */
+    private static final float DCS_BAND_RATIO_THRESHOLD = 1.5f;
+
     private final Set<DCSCode> mTargetCodes;
     private final DCSDecoder mDCSDecoder;
 
@@ -75,6 +84,11 @@ public class DCSDetector
     private int mLossCounter = 0;
     private int mSamplesSinceLastDetection = 0;
     private int mTotalSamplesProcessed = 0;
+
+    // Band energy tracking for broadband interference rejection
+    private float mLowBandEnergy = 0;
+    private float mWideBandEnergy = 0;
+    private boolean mSignalQualityValid = true;
 
     // Callback
     private DCSDetectorListener mListener;
@@ -126,6 +140,7 @@ public class DCSDetector
     /**
      * Processes a buffer of 8 kHz demodulated FM audio samples.
      * Feeds them to the underlying DCSDecoder for 134.4 bps decoding.
+     * Also computes band energy ratio to detect broadband interference.
      *
      * @param samples demodulated audio samples at 8 kHz
      */
@@ -134,6 +149,41 @@ public class DCSDetector
         if(samples == null || samples.length == 0)
         {
             return;
+        }
+
+        // Compute band energy ratio to detect broadband interference.
+        // DCS modulation is below 200 Hz, so real DCS signals concentrate energy in the low band.
+        // Broadband digital interference spreads energy evenly across all frequencies.
+        // We use a simple time-domain approximation: low-frequency energy correlates with
+        // sample-to-sample differences being small (slowly varying signal), while wideband
+        // energy produces large sample-to-sample differences.
+        float lowBand = 0;
+        float wideBand = 0;
+        for(int i = 1; i < samples.length; i++)
+        {
+            float sample = samples[i] * samples[i];
+            float diff = samples[i] - samples[i - 1];
+            wideBand += sample;
+            // Low-frequency content: energy minus high-frequency component (proportional to diff^2)
+            lowBand += sample - (diff * diff);
+        }
+
+        if(samples.length > 1)
+        {
+            // Exponential moving average for stability across buffers
+            mWideBandEnergy = mWideBandEnergy * 0.7f + (wideBand / samples.length) * 0.3f;
+            mLowBandEnergy = mLowBandEnergy * 0.7f + (Math.max(0, lowBand) / samples.length) * 0.3f;
+
+            // Update signal quality flag
+            if(mWideBandEnergy > 1e-10f)
+            {
+                float bandRatio = mLowBandEnergy / mWideBandEnergy;
+                mSignalQualityValid = bandRatio >= DCS_BAND_RATIO_THRESHOLD;
+            }
+            else
+            {
+                mSignalQualityValid = true; // No signal — don't block
+            }
         }
 
         // Feed audio to the DCS decoder — it will call our message listener when a code is found
@@ -169,11 +219,21 @@ public class DCSDetector
 
     /**
      * Handles detection of a DCS code from the underlying decoder.
+     * Suppresses confirmations when broadband interference is detected (low band energy
+     * ratio below threshold), preventing false DCS matches from digital data bursts.
      */
     private void handleDetection(DCSCode code)
     {
         if(code == null || code == DCSCode.UNKNOWN)
         {
+            return;
+        }
+
+        // Reject detection if signal quality indicates broadband interference
+        if(!mSignalQualityValid)
+        {
+            LOGGER.trace("DCS code {} rejected — broadband interference detected (band ratio below threshold)",
+                    code);
             return;
         }
 
@@ -242,6 +302,9 @@ public class DCSDetector
         mConfirmationCounter = 0;
         mLossCounter = 0;
         mSamplesSinceLastDetection = 0;
+        mLowBandEnergy = 0;
+        mWideBandEnergy = 0;
+        mSignalQualityValid = true;
     }
 
     /**

@@ -44,7 +44,7 @@ public class SidebarPanel extends JPanel {
         setPreferredSize(new Dimension(250, 0));
         setLayout(new MigLayout("insets 10 5 10 5, gapy 5, wrap 1, fillx", "[grow, fill]", "[]"));
 
-        mToggleBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.BARS, 20, TEXT_COLOR));
+        mToggleBtn = new JButton(new io.github.dsheirer.icon.MyFontIcon(FontAwesome.BARS, 20, TEXT_COLOR));
         mToggleBtn.setContentAreaFilled(false);
         mToggleBtn.setBorderPainted(false);
         mToggleBtn.setFocusPainted(false);
@@ -79,7 +79,16 @@ public class SidebarPanel extends JPanel {
     private void initItems() {
         mItems.add(new SidebarItem("Now Playing", FontAwesome.PLAY, "now_playing", true));
         mItems.add(new SidebarItem("Map", FontAwesome.MAP, "map", true));
-        mItems.add(new SidebarItem("Playlist Editor", FontAwesome.LIST, "playlist_editor", true));
+
+        SidebarItem playlistEditorItem = new SidebarItem("Playlist Editor", FontAwesome.LIST, "playlist_editor", false);
+        playlistEditorItem.addSubItem("Playlists", "playlist_playlists");
+        playlistEditorItem.addSubItem("Channels", "playlist_channels");
+        playlistEditorItem.addSubItem("Aliases", "playlist_aliases");
+        playlistEditorItem.addSubItem("Streaming", "playlist_streaming");
+        playlistEditorItem.addSubItem("Radio Reference", "playlist_radioreference");
+        playlistEditorItem.addSubItem("Two Tones", "playlist_twotones");
+        mItems.add(playlistEditorItem);
+
         mItems.add(new SidebarItem("Tuners", FontAwesome.SLIDERS, "tuners", true));
 
         mItems.add(new SidebarItem("Performance & Logs", FontAwesome.FILE_TEXT, "logs", true));
@@ -185,7 +194,7 @@ public class SidebarPanel extends JPanel {
             mView = new JPanel(new MigLayout("insets 8, gapx 10, hidemode 3", "[][grow]", "[]"));
             mView.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-            mIconLabel = new JLabel(IconFontSwing.buildIcon(mIcon, 16, TEXT_COLOR));
+            mIconLabel = new JLabel(new io.github.dsheirer.icon.MyFontIcon(mIcon, 16, TEXT_COLOR));
             mTextLabel = new JLabel(mLabel);
             mTextLabel.setForeground(TEXT_COLOR);
             mTextLabel.setFont(mTextLabel.getFont().deriveFont(Font.BOLD));

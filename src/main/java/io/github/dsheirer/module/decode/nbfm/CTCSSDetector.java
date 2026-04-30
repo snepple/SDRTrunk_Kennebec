@@ -50,11 +50,25 @@ public class CTCSSDetector
     private static final float DETECTION_THRESHOLD_DB = 6.0f;
 
     /**
+     * Minimum dB by which the strongest Goertzel bin must exceed the average of its
+     * nearest neighbor bins. A real CTCSS tone produces a sharp narrowband peak that
+     * easily clears this threshold (typically 15-20+ dB above neighbors). Broadband
+     * interference distributes energy evenly across all bins and fails this check.
+     */
+    private static final float NARROWBAND_THRESHOLD_DB = 3.0f;
+
+    /**
+     * Number of neighbor bins to average on each side of the detected bin for the
+     * narrowband check (2 above + 2 below = 4 total neighbors).
+     */
+    private static final int NARROWBAND_NEIGHBOR_COUNT = 2;
+
+    /**
      * Number of consecutive detections required before reporting a match.
      * Prevents false triggers from transient energy.
-     * 2 blocks at ~75ms each = ~150ms detection latency (matches real radio behavior).
+     * 3 blocks at ~75ms each = ~225ms detection latency (within normal radio PL decode time).
      */
-    private static final int CONFIRMATION_COUNT = 2;
+    private static final int CONFIRMATION_COUNT = 3;
 
     /**
      * Number of consecutive misses before declaring tone lost.
@@ -210,6 +224,11 @@ public class CTCSSDetector
 
     /**
      * Analyzes the current block of samples using Goertzel algorithm for each target frequency.
+     *
+     * Two checks must pass for a detection:
+     * 1. The strongest bin must exceed the total-energy SNR threshold (existing check)
+     * 2. The strongest bin must exceed the average of its nearest neighbor bins by
+     *    NARROWBAND_THRESHOLD_DB (narrowband check — rejects broadband interference)
      */
     private void analyzeBlock()
     {
@@ -228,17 +247,18 @@ public class CTCSSDetector
             return;
         }
 
-        // Run Goertzel for each target frequency and find the strongest
+        // Run Goertzel for each target frequency and store all power values
+        float[] powers = new float[mTargetFrequencies.length];
         float maxPower = 0;
         int maxIndex = -1;
 
         for(int i = 0; i < mTargetFrequencies.length; i++)
         {
-            float power = goertzel(mSampleBuffer, mBlockSize, mCoefficients[i]);
+            powers[i] = goertzel(mSampleBuffer, mBlockSize, mCoefficients[i]);
 
-            if(power > maxPower)
+            if(powers[i] > maxPower)
             {
-                maxPower = power;
+                maxPower = powers[i];
                 maxIndex = i;
             }
         }
@@ -251,6 +271,45 @@ public class CTCSSDetector
 
         if(maxIndex >= 0 && snrDB > DETECTION_THRESHOLD_DB)
         {
+            // Narrowband check: compare the strongest bin against its nearest neighbors.
+            // A real CTCSS tone produces a sharp spike at one frequency. Broadband interference
+            // (e.g. digital data bursts) energizes all bins roughly equally and fails this check.
+            float neighborSum = 0;
+            int neighborCount = 0;
+
+            for(int offset = 1; offset <= NARROWBAND_NEIGHBOR_COUNT; offset++)
+            {
+                int belowIndex = maxIndex - offset;
+                int aboveIndex = maxIndex + offset;
+
+                if(belowIndex >= 0)
+                {
+                    neighborSum += powers[belowIndex];
+                    neighborCount++;
+                }
+                if(aboveIndex < powers.length)
+                {
+                    neighborSum += powers[aboveIndex];
+                    neighborCount++;
+                }
+            }
+
+            if(neighborCount > 0)
+            {
+                float neighborAvg = neighborSum / neighborCount;
+                float narrowbandDB = (float)(10.0 * Math.log10((maxPower / (neighborAvg + 1e-10f)) + 1e-10));
+
+                if(narrowbandDB < NARROWBAND_THRESHOLD_DB)
+                {
+                    // Strongest bin is not significantly above its neighbors — broadband energy, not a tone
+                    LOGGER.trace("CTCSS rejected broadband energy at {} Hz: SNR={} dB but narrowband={} dB (threshold {} dB)",
+                            mTargetFrequencies[maxIndex], String.format("%.1f", snrDB),
+                            String.format("%.1f", narrowbandDB), NARROWBAND_THRESHOLD_DB);
+                    handleNoDetection();
+                    return;
+                }
+            }
+
             CTCSSCode detected = mTargetCodeArray[maxIndex];
             handleDetection(detected);
         }

@@ -212,6 +212,9 @@ public class ChannelizerViewer2 extends JFrame
         if(mBottomFrameAddChannelButton == null)
         {
             mBottomFrameAddChannelButton = new JButton("Bottom - Add Channel");
+            mBottomFrameAddChannelButton.setToolTipText("Add a channel to the bottom frame");
+            mBottomFrameAddChannelButton.getAccessibleContext().setAccessibleName("Add Channel to Bottom Frame");
+            mBottomFrameAddChannelButton.getAccessibleContext().setAccessibleDescription("Prompts for a frequency and adds a new channel to the bottom frame");
 
             mBottomFrameAddChannelButton.addActionListener(new ActionListener()
             {

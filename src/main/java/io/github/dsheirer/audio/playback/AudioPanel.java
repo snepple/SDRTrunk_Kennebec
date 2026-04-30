@@ -291,12 +291,14 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
         {
             updateIcons();
             setBorderPainted(false);
+            setToolTipText("Mute");
             getAccessibleContext().setAccessibleName("Mute");
             addActionListener(e -> {
                 mMuted = !mMuted;
                 mAudioPlaybackManager.getAudioOutput().setMuted(mMuted);
                 EventQueue.invokeLater(() -> {
                     updateIcons();
+                    setToolTipText(mMuted ? "Unmute" : "Mute");
                     getAccessibleContext().setAccessibleName(mMuted ? "Unmute" : "Mute");
                 });
             });

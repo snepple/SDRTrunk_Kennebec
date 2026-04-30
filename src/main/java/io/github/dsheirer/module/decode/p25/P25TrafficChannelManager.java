@@ -154,13 +154,23 @@ public class P25TrafficChannelManager extends TrafficChannelManager implements I
             mIgnoreDataCalls = phase1.getIgnoreDataCalls();
             mIgnoreUnaliasedTalkgroups = phase1.getIgnoreUnaliasedTalkgroups();
             createPhase1TrafficChannels(phase1.getTrafficChannelPoolSize(), phase1);
-            createPhase2TrafficChannels(phase1.getTrafficChannelPoolSize(), new DecodeConfigP25Phase2());
+
+            // Copy EQ settings from Phase 1 parent to Phase 2 traffic channels
+            DecodeConfigP25Phase2 p2Config = new DecodeConfigP25Phase2();
+            p2Config.setGraphicEQEnabled(phase1.isGraphicEQEnabled());
+            p2Config.setGraphicEQBandGains(phase1.getGraphicEQBandGains());
+            createPhase2TrafficChannels(phase1.getTrafficChannelPoolSize(), p2Config);
         }
         else if(parentChannel.getDecodeConfiguration() instanceof DecodeConfigP25Phase2 phase2)
         {
             mIgnoreDataCalls = phase2.getIgnoreDataCalls();
             mIgnoreUnaliasedTalkgroups = phase2.getIgnoreUnaliasedTalkgroups();
-            createPhase1TrafficChannels(phase2.getTrafficChannelPoolSize(), new DecodeConfigP25Phase1());
+
+            // Copy EQ settings from Phase 2 parent to Phase 1 traffic channels
+            DecodeConfigP25Phase1 p1Config = new DecodeConfigP25Phase1();
+            p1Config.setGraphicEQEnabled(phase2.isGraphicEQEnabled());
+            p1Config.setGraphicEQBandGains(phase2.getGraphicEQBandGains());
+            createPhase1TrafficChannels(phase2.getTrafficChannelPoolSize(), p1Config);
             createPhase2TrafficChannels(phase2.getTrafficChannelPoolSize(), phase2);
         }
     }
