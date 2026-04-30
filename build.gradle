@@ -190,12 +190,28 @@ application {
     }
 }
 
+
+
 test {
     if(os.isWindows()) {
         jvmArgs = jvmArgsWindows
     }
     else {
         jvmArgs = jvmArgsLinux
+    }
+}
+
+tasks.named('distZip') {
+    dependsOn compileWindowsWrapper
+    into("${project.name}-${project.version}") {
+        from("${project.buildDir}/sdrtrunk.exe")
+    }
+}
+
+tasks.named('distTar') {
+    dependsOn compileWindowsWrapper
+    into("${project.name}-${project.version}") {
+        from("${project.buildDir}/sdrtrunk.exe")
     }
 }
 
@@ -453,6 +469,36 @@ tasks.register('archiveVersion', Copy) {
     }
 }
 
+// Compile the wrapper executable for Windows
+task compileWindowsWrapper(type: Exec) {
+    doFirst {
+        file(project.buildDir).mkdirs()
+    }
+    commandLine 'x86_64-w64-mingw32-gcc', '-o', "${project.buildDir}/sdrtrunk.exe", 'wrapper.c', '-mwindows'
+    doFirst {
+        file('wrapper.c').text = '''
+#include <windows.h>
+#include <stdio.h>
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    char exePath[MAX_PATH];
+    GetModuleFileName(NULL, exePath, MAX_PATH);
+
+    char *lastBackslash = strrchr(exePath, '\\\\');
+    if (lastBackslash != NULL) {
+        *lastBackslash = '\\0';
+    }
+
+    char batPath[MAX_PATH];
+    snprintf(batPath, MAX_PATH, "%s\\\\bin\\\\sdr-trunk.bat", exePath);
+
+    ShellExecute(NULL, "open", batPath, lpCmdLine, exePath, SW_HIDE);
+    return 0;
+}
+'''
+    }
+}
+
 //Hook the archive task onto every runtimeZip* task as a finalizer so it runs
 //automatically after each build, even if the runtimeZip task fails partway through.
 afterEvaluate {
@@ -460,6 +506,19 @@ afterEvaluate {
         def t = tasks.findByName(name)
         if (t != null) {
             t.finalizedBy('archiveVersion')
+
+            if (name == 'runtimeZipWindows' || (name == 'runtimeZipCurrent' && System.properties.getProperty("os.name").toLowerCase().contains("win"))) {
+                t.dependsOn compileWindowsWrapper
+                // The RuntimeZipTask relies on the 'jre' task (or similar) to build the image.
+                // We must copy our exe before the zip is built.
+                t.doFirst {
+                    def imageDir = t.extension.imageDir.get().asFile
+                    copy {
+                        from "${project.buildDir}/sdrtrunk.exe"
+                        into imageDir
+                    }
+                }
+            }
         }
     }
 }
