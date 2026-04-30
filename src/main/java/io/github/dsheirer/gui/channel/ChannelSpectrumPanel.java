@@ -133,6 +133,9 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         labelPanel.add(new JLabel("Noise Floor"));
 
         JButton logIndexesButton = new JButton("Log Settings");
+        logIndexesButton.setToolTipText("Log channel spectrum settings");
+        logIndexesButton.getAccessibleContext().setAccessibleName("Log Spectrum Settings");
+        logIndexesButton.getAccessibleContext().setAccessibleDescription("Logs the current configuration settings of the channel spectrum to the application log");
         logIndexesButton.addActionListener(e -> {
             if(mProcessingChain != null)
             {

@@ -1,7 +1,0 @@
-docs: import mintlify documentation into help viewer and repository
-
-- Scraped all documentation pages from the Mintlify sitemap
-- Cleaned the documentation to remove MDX/React-specific tags
-- Saved the documentation as Markdown files into src/main/resources/docs/
-- Updated HelpViewer.java to dynamically load these files from the classpath rather than using hard-coded strings
-- Updated HelpViewer's navigation tree to match the available documentation topics

@@ -512,6 +512,9 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
         if(mTunerInfoButton == null)
         {
             mTunerInfoButton = new JButton("Info");
+            mTunerInfoButton.setToolTipText("Provides details and information about the Airspy tuner");
+            mTunerInfoButton.getAccessibleContext().setAccessibleName("Tuner Information");
+            mTunerInfoButton.getAccessibleContext().setAccessibleDescription("Displays hardware and configuration details for the connected Airspy tuner");
             mTunerInfoButton.setEnabled(false);
             mTunerInfoButton.addActionListener(e -> JOptionPane.showMessageDialog(AirspyTunerEditor.this,
                     getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));

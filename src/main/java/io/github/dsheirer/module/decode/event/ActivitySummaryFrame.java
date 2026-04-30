@@ -49,6 +49,9 @@ public class ActivitySummaryFrame extends JFrame
 		add( scroller, "wrap" );
 		
 		JButton close = new JButton( "Close" );
+		close.setToolTipText("Close the activity summary");
+		close.getAccessibleContext().setAccessibleName("Close Summary");
+		close.getAccessibleContext().setAccessibleDescription("Closes the activity summary dialog");
 		close.addActionListener( new ActionListener() 
 		{
 			@Override

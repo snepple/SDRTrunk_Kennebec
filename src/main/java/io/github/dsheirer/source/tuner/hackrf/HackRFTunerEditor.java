@@ -296,6 +296,8 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
         {
             mTunerInfo = new JButton("Tuner Info");
             mTunerInfo.setToolTipText("Provides details and information about the tuner");
+            mTunerInfo.getAccessibleContext().setAccessibleName("Tuner Information");
+            mTunerInfo.getAccessibleContext().setAccessibleDescription("Displays hardware and configuration details for the connected HackRF tuner");
             mTunerInfo.setEnabled(false);
             mTunerInfo.addActionListener(e -> JOptionPane.showMessageDialog(HackRFTunerEditor.this,
                     getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));

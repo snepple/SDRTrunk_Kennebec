@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 public class UsbMonitorManager {
     private static final Logger mLog = LoggerFactory.getLogger(UsbMonitorManager.class);
@@ -103,12 +105,14 @@ public class UsbMonitorManager {
         String userName = System.getProperty("user.name");
         String taskName = "SDRTrunk_UsbMonitor_" + userName;
         try {
+            String uninstallCmd = String.format("Unregister-ScheduledTask -TaskName '%s' -Confirm:$false -ErrorAction SilentlyContinue", taskName);
+            String encodedCmd = Base64.getEncoder().encodeToString(uninstallCmd.getBytes(StandardCharsets.UTF_16LE));
             ProcessBuilder pb = new ProcessBuilder(
                     "powershell.exe",
                     "-NoProfile",
                     "-ExecutionPolicy", "Bypass",
                     "-Command",
-                    String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -Command \"Unregister-ScheduledTask -TaskName ''%s'' -Confirm:$false -ErrorAction SilentlyContinue\"' -Wait", taskName)
+                    String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -EncodedCommand %s' -Wait", encodedCmd)
             );
             Process process = pb.start();
             process.waitFor();
@@ -187,12 +191,13 @@ public class UsbMonitorManager {
                     taskName, scriptPath, taskName
             );
 
+            String encodedCmd = Base64.getEncoder().encodeToString(psCommand.getBytes(StandardCharsets.UTF_16LE));
             ProcessBuilder pb = new ProcessBuilder(
                     "powershell.exe",
                     "-NoProfile",
                     "-ExecutionPolicy", "Bypass",
                     "-Command",
-                    String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -Command \"%s\"' -Wait", psCommand)
+                    String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -EncodedCommand %s' -Wait", encodedCmd)
             );
 
             Process process = pb.start();

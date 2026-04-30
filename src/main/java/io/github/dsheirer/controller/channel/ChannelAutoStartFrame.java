@@ -107,6 +107,9 @@ public class ChannelAutoStartFrame extends JFrame
         panel.add(new JScrollPane(getChannelTable()), "span");
 
         mStartButton = new JButton("Start Now");
+        mStartButton.setToolTipText("Start selected channels immediately");
+        mStartButton.getAccessibleContext().setAccessibleName("Start Channels Now");
+        mStartButton.getAccessibleContext().setAccessibleDescription("Bypasses the countdown timer and immediately starts the listed channels");
         mStartButton.addActionListener(new ActionListener()
         {
             @Override
@@ -120,6 +123,9 @@ public class ChannelAutoStartFrame extends JFrame
         panel.add(mStartButton);
 
         mCancelButton = new JButton("Cancel");
+        mCancelButton.setToolTipText("Cancel channel auto-start");
+        mCancelButton.getAccessibleContext().setAccessibleName("Cancel Auto Start");
+        mCancelButton.getAccessibleContext().setAccessibleDescription("Cancels the auto-start timer and prevents the channels from starting");
         mCancelButton.addActionListener(new ActionListener()
         {
             @Override

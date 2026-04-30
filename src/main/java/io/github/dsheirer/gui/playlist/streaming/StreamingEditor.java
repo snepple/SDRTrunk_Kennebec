@@ -476,6 +476,8 @@ public class StreamingEditor extends SplitPane
                             javafx.scene.image.Image fxImage = icon.getFxImage();
                             if (fxImage != null) {
                                 javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(fxImage);
+                                imageView.setFitWidth(16);
+                                imageView.setFitHeight(16);
                                 setGraphic(imageView);
                             } else {
                                 setGraphic(null);
