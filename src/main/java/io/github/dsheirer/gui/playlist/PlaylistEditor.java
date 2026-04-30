@@ -45,8 +45,8 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+
+
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
@@ -58,6 +58,15 @@ import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.VBox;
+import javafx.scene.control.Label;
+import javafx.geometry.Insets;
+import javafx.scene.control.MultipleSelectionModel;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -75,14 +84,10 @@ public class PlaylistEditor extends BorderPane
     private TunerManager mTunerManager;
     private UserPreferences mUserPreferences;
     private MenuBar mMenuBar;
-    private TabPane mTabPane;
-    private Tab mPlaylistsTab;
-    private Tab mChannelsTab;
-    private Tab mAliasesTab;
-    private Tab mRadioReferenceTab;
-    private Tab mStreamingTab;
-
-    private Tab mTwoToneTab;
+    private SplitPane mSplitPane;
+    private ListView<String> mSidebarList;
+    private BorderPane mDetailView;
+    private Map<String, ScrollPane> mEditorCache = new HashMap<>();
     private TwoToneEditor mTwoToneEditor;
 
     private AliasEditor mAliasEditor;
@@ -104,7 +109,7 @@ public class PlaylistEditor extends BorderPane
         //Throw a new runnable back onto the FX thread to lazy load the editor content after the editor has been
         //constructed and shown.
         Platform.runLater(() -> {
-            setCenter(getTabPane());
+            setCenter(getSplitPane());
         });
     }
 
@@ -116,12 +121,15 @@ public class PlaylistEditor extends BorderPane
      */
     public void process(PlaylistEditorRequest request)
     {
+        // Ensure UI is initialized before processing requests
+        getSplitPane();
+
         switch(request.getTabName())
         {
             case ALIAS:
                 if(request instanceof AliasTabRequest)
                 {
-                    getTabPane().getSelectionModel().select(getAliasesTab());
+                    getSidebarList().getSelectionModel().select("Aliases");
                     getAliasEditor().process((AliasTabRequest)request);
                 }
                 break;
@@ -129,7 +137,7 @@ public class PlaylistEditor extends BorderPane
             case TWO_TONE:
                 if(request instanceof TwoToneTabRequest)
                 {
-                    getTabPane().getSelectionModel().select(getTwoToneTab());
+                    getSidebarList().getSelectionModel().select("Two Tones");
                     getTwoToneEditor().process((TwoToneTabRequest)request);
                 }
                 break;
@@ -137,19 +145,19 @@ public class PlaylistEditor extends BorderPane
             case CHANNEL:
                 if(request instanceof ChannelTabRequest)
                 {
-                    getTabPane().getSelectionModel().select(getChannelsTab());
+                    getSidebarList().getSelectionModel().select("Channels");
                     getChannelEditor().process((ChannelTabRequest)request);
                 }
                 break;
             case STREAM:
                 if(request instanceof StreamTabRequest)
                 {
-                    getTabPane().getSelectionModel().select(getStreamingTab());
+                    getSidebarList().getSelectionModel().select("Streaming");
                     getStreamingEditor().process((StreamTabRequest)request);
                 }
                 break;
             case PLAYLIST:
-                //Ignore - this is a request to simply show te playlist editor
+                //Ignore - this is a request to simply show the playlist editor
                 break;
             default:
                 mLog.warn("Unrecognized playlist editor request: " + request.getClass());
@@ -221,31 +229,69 @@ public class PlaylistEditor extends BorderPane
         return mMenuBar;
     }
 
-    private TabPane getTabPane()
-    {
-        if(mTabPane == null)
-        {
-            mTabPane = new TabPane();
-            mTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-            mTabPane.getTabs().addAll(getPlaylistsTab(), getChannelsTab(), getAliasesTab(), getStreamingTab(),
-                getRadioReferenceTab(), getTwoToneTab());
-        }
+    private ListView<String> getSidebarList() {
+        if (mSidebarList == null) {
+            mSidebarList = new ListView<>();
+            mSidebarList.getItems().addAll("Playlists", "Channels", "Aliases", "Streaming", "Radio Reference", "Two Tones");
+            mSidebarList.setStyle("-fx-background-color: transparent; -fx-border-color: transparent; -fx-control-inner-background: transparent;");
 
-        return mTabPane;
+            mSidebarList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    swapDetailView(newVal);
+                }
+            });
+        }
+        return mSidebarList;
     }
 
-    private Tab getAliasesTab()
-    {
-        if(mAliasesTab == null)
-        {
-            mAliasesTab = new Tab("Aliases");
-            ScrollPane scrollPane = new ScrollPane(getAliasEditor());
-            scrollPane.setFitToWidth(true);
-            scrollPane.setFitToHeight(true);
-            mAliasesTab.setContent(scrollPane);
+    private SplitPane getSplitPane() {
+        if (mSplitPane == null) {
+            mSplitPane = new SplitPane();
+            mSplitPane.setDividerPositions(0.20);
+
+            VBox sidebar = new VBox();
+            sidebar.setStyle("-fx-background-color: #F2F2F7;");
+
+            Label header = new Label("LIBRARY");
+            header.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #8E8E93; -fx-padding: 16 8 8 16;");
+
+            sidebar.getChildren().addAll(header, getSidebarList());
+
+            mDetailView = new BorderPane();
+            mDetailView.setStyle("-fx-background-color: #FFFFFF;");
+
+            mSplitPane.getItems().addAll(sidebar, mDetailView);
+
+            if (getSidebarList().getSelectionModel().getSelectedItem() == null) {
+                getSidebarList().getSelectionModel().select("Playlists");
+            }
         }
 
-        return mAliasesTab;
+        return mSplitPane;
+    }
+
+    private void swapDetailView(String selection) {
+        if (!mEditorCache.containsKey(selection)) {
+            ScrollPane scrollPane = null;
+            switch (selection) {
+                case "Playlists": scrollPane = new ScrollPane(new PlaylistManagerEditor(mPlaylistManager, mUserPreferences)); break;
+                case "Channels": scrollPane = new ScrollPane(getChannelEditor()); break;
+                case "Aliases": scrollPane = new ScrollPane(getAliasEditor()); break;
+                case "Streaming": scrollPane = new ScrollPane(getStreamingEditor()); break;
+                case "Radio Reference": scrollPane = new ScrollPane(new RadioReferenceEditor(mUserPreferences, mPlaylistManager)); break;
+                case "Two Tones": scrollPane = new ScrollPane(getTwoToneEditor()); break;
+            }
+            if (scrollPane != null) {
+                scrollPane.setFitToWidth(true);
+                scrollPane.setFitToHeight(true);
+                mEditorCache.put(selection, scrollPane);
+            }
+        }
+
+        ScrollPane editorPane = mEditorCache.get(selection);
+        if (editorPane != null) {
+            mDetailView.setCenter(editorPane);
+        }
     }
 
     private AliasEditor getAliasEditor()
@@ -258,20 +304,6 @@ public class PlaylistEditor extends BorderPane
         return mAliasEditor;
     }
 
-    private Tab getChannelsTab()
-    {
-        if(mChannelsTab == null)
-        {
-            mChannelsTab = new Tab("Channels");
-            ScrollPane scrollPane = new ScrollPane(getChannelEditor());
-            scrollPane.setFitToWidth(true);
-            scrollPane.setFitToHeight(true);
-            mChannelsTab.setContent(scrollPane);
-        }
-
-        return mChannelsTab;
-    }
-
     private ChannelEditor getChannelEditor()
     {
         if(mChannelEditor == null)
@@ -282,21 +314,6 @@ public class PlaylistEditor extends BorderPane
         return mChannelEditor;
     }
 
-
-    private Tab getTwoToneTab()
-    {
-        if(mTwoToneTab == null)
-        {
-            mTwoToneTab = new Tab("Two Tones");
-            ScrollPane scrollPane = new ScrollPane(getTwoToneEditor());
-            scrollPane.setFitToWidth(true);
-            scrollPane.setFitToHeight(true);
-            mTwoToneTab.setContent(scrollPane);
-        }
-
-        return mTwoToneTab;
-    }
-
     private TwoToneEditor getTwoToneEditor()
     {
         if(mTwoToneEditor == null)
@@ -305,48 +322,6 @@ public class PlaylistEditor extends BorderPane
         }
 
         return mTwoToneEditor;
-    }
-
-    private Tab getPlaylistsTab()
-    {
-        if(mPlaylistsTab == null)
-        {
-            mPlaylistsTab = new Tab("Playlists");
-            ScrollPane scrollPane = new ScrollPane(new PlaylistManagerEditor(mPlaylistManager, mUserPreferences));
-            scrollPane.setFitToWidth(true);
-            scrollPane.setFitToHeight(true);
-            mPlaylistsTab.setContent(scrollPane);
-        }
-
-        return mPlaylistsTab;
-    }
-
-    private Tab getRadioReferenceTab()
-    {
-        if(mRadioReferenceTab == null)
-        {
-            mRadioReferenceTab = new Tab("Radio Reference");
-            ScrollPane scrollPane = new ScrollPane(new RadioReferenceEditor(mUserPreferences, mPlaylistManager));
-            scrollPane.setFitToWidth(true);
-            scrollPane.setFitToHeight(true);
-            mRadioReferenceTab.setContent(scrollPane);
-        }
-
-        return mRadioReferenceTab;
-    }
-
-    private Tab getStreamingTab()
-    {
-        if(mStreamingTab == null)
-        {
-            mStreamingTab = new Tab("Streaming");
-            ScrollPane scrollPane = new ScrollPane(getStreamingEditor());
-            scrollPane.setFitToWidth(true);
-            scrollPane.setFitToHeight(true);
-            mStreamingTab.setContent(scrollPane);
-        }
-
-        return mStreamingTab;
     }
 
     private StreamingEditor getStreamingEditor()
