@@ -516,6 +516,16 @@ public class StreamingEditor extends SplitPane
         {
             mUserFeedBroadcast = userFeedBroadcast;
             setText("Broadcastify Feed: " + mUserFeedBroadcast.getDescription());
+            if (BroadcastServerType.BROADCASTIFY.getIconPath() != null) {
+                io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon("empty", BroadcastServerType.BROADCASTIFY.getIconPath());
+                javafx.scene.image.Image fxImage = icon.getFxImage();
+                if (fxImage != null) {
+                    javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(fxImage);
+                    imageView.setFitWidth(16);
+                    imageView.setFitHeight(16);
+                    setGraphic(imageView);
+                }
+            }
             setOnAction(event -> {
                 BroadcastConfiguration configuration = BroadcastifyFeedConfiguration.from(mUserFeedBroadcast);
 
@@ -541,6 +551,16 @@ public class StreamingEditor extends SplitPane
             setText(type.toString());
             mBroadcastServerType = type;
 
+            if (mBroadcastServerType.getIconPath() != null) {
+                io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon("empty", mBroadcastServerType.getIconPath());
+                javafx.scene.image.Image fxImage = icon.getFxImage();
+                if (fxImage != null) {
+                    javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(fxImage);
+                    imageView.setFitWidth(16);
+                    imageView.setFitHeight(16);
+                    setGraphic(imageView);
+                }
+            }
             setOnAction(event -> {
                 BroadcastConfiguration config = BroadcastFactory.getConfiguration(mBroadcastServerType, BroadcastFormat.MP3);
                 ConfiguredBroadcast configuredBroadcast = mPlaylistManager.getBroadcastModel()
