@@ -152,6 +152,8 @@ public class HistoryManagementPanel<T> extends JPanel
         {
             mFilterButton = new JButton("Filters");
             mFilterButton.setToolTipText("Edit filters");
+            mFilterButton.getAccessibleContext().setAccessibleName("Edit Filters");
+            mFilterButton.getAccessibleContext().setAccessibleDescription("Opens the filter editor to configure which events are displayed");
             mFilterButton.addActionListener(arg0 -> EventQueue.invokeLater(() -> getFilterEditor().setVisible(true)));
         }
 
@@ -167,8 +169,10 @@ public class HistoryManagementPanel<T> extends JPanel
         if(mClearButton == null)
         {
             mClearButton = new JButton("Clear");
-            mClearButton.addActionListener(e -> mModel.clear());
             mClearButton.setToolTipText("Clears the history");
+            mClearButton.getAccessibleContext().setAccessibleName("Clear History");
+            mClearButton.getAccessibleContext().setAccessibleDescription("Clears the current history of events or messages");
+            mClearButton.addActionListener(e -> mModel.clear());
         }
 
         return mClearButton;

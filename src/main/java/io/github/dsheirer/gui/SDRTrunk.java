@@ -228,6 +228,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         mTwoToneLog = new TwoToneLog(mUserPreferences);
         mTwoToneLog.start();
         UsbMonitorManager.manage(mUserPreferences);
+        io.github.dsheirer.gui.WindowsReliabilityManager.manage(mUserPreferences);
 
         //Note: invoke this early in the application lifecycle, before the TunerManager causes the sdrplay classes
         //to be loaded since the jextract auto-generated code attempts to load the library by name and that can fail
@@ -353,6 +354,8 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
                     {
                         updateTitle(tuner.getPreferredName());
                     }
+
+                    UsbMonitorManager.manage(mUserPreferences);
                 }
 
                 if(calibrating && !GraphicsEnvironment.isHeadless())
@@ -520,6 +523,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
     private void processShutdown()
     {
         mLog.info("Application shutdown started ...");
+        io.github.dsheirer.gui.WindowsReliabilityManager.stopWatchdog();
         mDiagnosticMonitor.stop();
         if ((mMainGui.getExtendedState() & JFrame.MAXIMIZED_BOTH) != JFrame.MAXIMIZED_BOTH || mNormalBounds == null) {
             mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, mMainGui.getLocation());
