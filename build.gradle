@@ -474,7 +474,11 @@ task compileWindowsWrapper(type: Exec) {
     doFirst {
         file(project.buildDir).mkdirs()
     }
-    commandLine 'x86_64-w64-mingw32-gcc', '-o', "${project.buildDir}/sdrtrunk.exe", 'wrapper.c', '-mwindows'
+    if (System.properties.getProperty("os.name").toLowerCase().contains("win")) {
+        commandLine 'gcc', '-o', "${project.buildDir}/sdrtrunk.exe", 'wrapper.c', '-mwindows'
+    } else {
+        commandLine 'x86_64-w64-mingw32-gcc', '-o', "${project.buildDir}/sdrtrunk.exe", 'wrapper.c', '-mwindows'
+    }
     doFirst {
         file('wrapper.c').text = '''
 #include <windows.h>
