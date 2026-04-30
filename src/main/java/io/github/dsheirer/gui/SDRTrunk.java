@@ -119,15 +119,23 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 {
     @Override
     public void onToggleSpectrum() {
-        mSpectrumDisabled = !mSpectrumDisabled;
-        if (mSpectrumDisabled || (mCurrentViewId != null && !mCurrentViewId.equals("now_playing") && !mCurrentViewId.equals("tuners"))) {
-            mTopContentPanel.remove(mSpectralPanel);
-        } else if (mCurrentViewId != null && mCurrentViewId.equals("tuners")) {
-            mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
-        }
         if (mCurrentViewId != null && mCurrentViewId.equals("now_playing")) {
-            mControllerPanel.getNowPlayingPanel().setComponents(mSpectralPanel, getBroadcastStatusPanel(), mNowPlayingResourceStatusPanel);
-            mControllerPanel.getNowPlayingPanel().setSpectralPanelVisible(!mSpectrumDisabled);
+            mNowPlayingSpectrumDisabled = !mNowPlayingSpectrumDisabled;
+            mControllerPanel.getNowPlayingPanel().setSpectralPanelVisible(!mNowPlayingSpectrumDisabled);
+            if (mNowPlayingSpectrumDisabled) {
+                mSpectralPanel.stop();
+            } else {
+                mSpectralPanel.start();
+            }
+        } else if (mCurrentViewId != null && mCurrentViewId.equals("tuners")) {
+            mTunerSpectrumDisabled = !mTunerSpectrumDisabled;
+            if (mTunerSpectrumDisabled) {
+                mTopContentPanel.remove(mSpectralPanel);
+                mSpectralPanel.stop();
+            } else {
+                mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
+                mSpectralPanel.start();
+            }
         }
         mMainContentPanel.revalidate();
         mMainContentPanel.repaint();
@@ -169,7 +177,8 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
     private boolean mResourceStatusVisible;
     private boolean mNowPlayingDetailsVisible;
 
-    private boolean mSpectrumDisabled = false;
+    private boolean mNowPlayingSpectrumDisabled = false;
+    private boolean mTunerSpectrumDisabled = false;
     private String mCurrentViewId = "now_playing";
 
     private AudioRecordingManager mAudioRecordingManager;
@@ -779,14 +788,25 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         if (id.equals("now_playing")) {
             mTopContentPanel.remove(mSpectralPanel);
             mControllerPanel.setResourcePanelVisible(false);
-            // Pass null for spectrum if disabled
             mControllerPanel.getNowPlayingPanel().setComponents(mSpectralPanel, getBroadcastStatusPanel(), mNowPlayingResourceStatusPanel);
-            mControllerPanel.getNowPlayingPanel().setSpectralPanelVisible(!mSpectrumDisabled);
-        } else if (id.equals("tuners") && !mSpectrumDisabled) {
-            mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
+            mControllerPanel.getNowPlayingPanel().setSpectralPanelVisible(!mNowPlayingSpectrumDisabled);
+            if (mNowPlayingSpectrumDisabled) {
+                mSpectralPanel.stop();
+            } else {
+                mSpectralPanel.start();
+            }
+        } else if (id.equals("tuners")) {
+            if (!mTunerSpectrumDisabled) {
+                mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
+                mSpectralPanel.start();
+            } else {
+                mTopContentPanel.remove(mSpectralPanel);
+                mSpectralPanel.stop();
+            }
             mControllerPanel.setResourcePanelVisible(mResourceStatusVisible);
         } else {
             mTopContentPanel.remove(mSpectralPanel);
+            mSpectralPanel.stop();
             mControllerPanel.setResourcePanelVisible(false);
         }
 
