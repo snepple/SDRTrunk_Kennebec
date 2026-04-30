@@ -30,6 +30,7 @@ import java.awt.EventQueue;
 import java.util.ArrayList;
 import java.util.List;
 import net.miginfocom.swing.MigLayout;
+import java.awt.BorderLayout;
 import org.jdesktop.swingx.JXMapViewer;
 import org.jdesktop.swingx.OSMTileFactoryInfo;
 import org.jdesktop.swingx.input.PanKeyListener;
@@ -106,48 +107,148 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
 
     private void init()
     {
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
+        setLayout(new BorderLayout());
         mMapService.addListener(this);
 
-        JPanel cp = new JPanel();
-        cp.setLayout(new MigLayout("insets 5", "[grow,fill][grow,fill][grow,fill]",
-                "[grow,fill][][][][][][grow,fill][]"));
-        cp.add(new JScrollPane(getPlottedTracksTable()), "span 3,wrap");
+        // Sidebar (Master-Detail)
+        JPanel sidebar = new JPanel(new MigLayout("insets 0, gap 0", "[grow,fill]", "[][grow,fill][][grow,fill][]"));
+        sidebar.setBackground(new java.awt.Color(242, 242, 247)); // Apple grouped background
 
-        cp.add(getMapZoomSpinner());
-        JPanel zoomCenterPanel = new JPanel();
-        zoomCenterPanel.setLayout(new MigLayout("insets 0", "[]5[grow,fill]", ""));
-        zoomCenterPanel.add(new JLabel("Zoom"));
-        zoomCenterPanel.add(getCenterOnSelectedCheckBox());
-        cp.add(zoomCenterPanel, "span 2, wrap");
+        JLabel header1 = new JLabel(" Plotted Tracks");
+        header1.setFont(header1.getFont().deriveFont(java.awt.Font.BOLD, 11f));
+        header1.setForeground(new java.awt.Color(142, 142, 147));
+        sidebar.add(header1, "wrap, pad 10 5 5 5");
 
-        cp.add(getDeleteTrackButton());
-        cp.add(getDeleteAllTracksButton());
-        cp.add(getClearMapButton(), "wrap");
+        JTable tracksTable = getPlottedTracksTable();
+        tracksTable.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+        JScrollPane tracksScroll = new JScrollPane(tracksTable);
+        tracksScroll.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+        sidebar.add(tracksScroll, "wrap");
 
-        cp.add(getReplotAllTracksButton());
-        cp.add(getFollowButton());
-        cp.add(getFollowedEntityLabel(), "wrap");
+        JPanel detailPanel = new JPanel(new MigLayout("insets 10, gap 5", "[grow,fill]", "[][][grow,fill][]"));
+        detailPanel.setBackground(java.awt.Color.WHITE);
+        detailPanel.setBorder(javax.swing.BorderFactory.createMatteBorder(1, 0, 0, 0, new java.awt.Color(200, 200, 200)));
 
-        cp.add(getTrackHistoryLengthComboBox());
-        cp.add(new JLabel("Track History Length"), "span 2, wrap");
+        detailPanel.add(new JLabel("Selected System:"), "split 2");
+        detailPanel.add(getSelectedTrackSystemLabel(), "wrap");
 
-        cp.add(new JLabel("Selected System:"), "align right");
-        cp.add(getSelectedTrackSystemLabel(), "span 2, wrap");
+        JLabel header2 = new JLabel("Track History");
+        header2.setFont(header2.getFont().deriveFont(java.awt.Font.BOLD, 11f));
+        header2.setForeground(new java.awt.Color(142, 142, 147));
+        detailPanel.add(header2, "wrap");
 
-        cp.add(new JScrollPane(getTrackHistoryTable()), "span 3,wrap");
+        JTable historyTable = getTrackHistoryTable();
+        historyTable.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+        JScrollPane historyScroll = new JScrollPane(historyTable);
+        historyScroll.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(230, 230, 230)));
+        detailPanel.add(historyScroll, "wrap");
 
-//Uncomment this line to add a debug track generator button to the display
-//        cp.add(getTrackGeneratorToggle(), "span 3,wrap");
+        JPanel settingsPanel = new JPanel(new MigLayout("insets 0, gap 5", "[]10[]", ""));
+        settingsPanel.setOpaque(false);
+        settingsPanel.add(new JLabel("History Length:"));
+        settingsPanel.add(getTrackHistoryLengthComboBox(), "wrap");
+        settingsPanel.add(getCenterOnSelectedCheckBox(), "wrap");
+        settingsPanel.add(getTrackGeneratorToggle(), "span 2");
+        detailPanel.add(settingsPanel);
+
+        sidebar.add(detailPanel, "growx");
+
+        // Map Area
+        JXMapViewer map = getMapViewer();
+        map.setLayout(new MigLayout("insets 20", "[grow,right]", "[grow,bottom]"));
+
+        JPanel floatingControls = new JPanel(new MigLayout("insets 8, gap 8", "[center]", "[][][][][]")) {
+            @Override
+            protected void paintComponent(java.awt.Graphics g) {
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new java.awt.Color(255, 255, 255, 220)); // Translucent white
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+                g2.setColor(new java.awt.Color(0, 0, 0, 40)); // Subtle shadow/border
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 16, 16);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        floatingControls.setOpaque(false);
+
+        JButton btnZoomIn = createFloatingButton(jiconfont.icons.font_awesome.FontAwesome.PLUS, "Zoom In");
+        btnZoomIn.addActionListener(e -> adjustZoom(-1));
+
+        JButton btnZoomOut = createFloatingButton(jiconfont.icons.font_awesome.FontAwesome.MINUS, "Zoom Out");
+        btnZoomOut.addActionListener(e -> adjustZoom(1));
+
+        JButton btnFollow = createFloatingButton(jiconfont.icons.font_awesome.FontAwesome.LOCATION_ARROW, "Follow Selected");
+        btnFollow.addActionListener(e -> {
+            if(mFollowedTrack == null) {
+                follow(getSelected());
+            } else {
+                follow(null);
+            }
+        });
+
+        JButton btnOptions = createFloatingButton(jiconfont.icons.font_awesome.FontAwesome.COG, "Map Options");
+        javax.swing.JPopupMenu optionsMenu = new javax.swing.JPopupMenu();
+
+        javax.swing.JMenuItem clearItem = new javax.swing.JMenuItem("Clear Map");
+        clearItem.addActionListener(e -> getClearMapButton().doClick());
+
+        javax.swing.JMenuItem deleteItem = new javax.swing.JMenuItem("Delete Selected");
+        deleteItem.addActionListener(e -> getDeleteTrackButton().doClick());
+
+        javax.swing.JMenuItem deleteAllItem = new javax.swing.JMenuItem("Delete All");
+        deleteAllItem.addActionListener(e -> getDeleteAllTracksButton().doClick());
+
+        javax.swing.JMenuItem replotItem = new javax.swing.JMenuItem("Replot All");
+        replotItem.addActionListener(e -> getReplotAllTracksButton().doClick());
+
+        optionsMenu.add(clearItem);
+        optionsMenu.add(deleteItem);
+        optionsMenu.add(deleteAllItem);
+        optionsMenu.addSeparator();
+        optionsMenu.add(replotItem);
+
+        btnOptions.addActionListener(e -> optionsMenu.show(btnOptions, 0, btnOptions.getHeight()));
+
+        floatingControls.add(btnZoomIn, "wrap");
+        floatingControls.add(btnZoomOut, "wrap");
+
+        javax.swing.JSeparator sep = new javax.swing.JSeparator();
+        sep.setForeground(new java.awt.Color(200, 200, 200));
+        floatingControls.add(sep, "growx, wrap");
+
+        floatingControls.add(btnFollow, "wrap");
+        floatingControls.add(btnOptions, "wrap");
+
+        map.add(floatingControls, "");
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setDividerLocation(300);
-        splitPane.add(cp);
-        splitPane.add(getMapViewer());
-        add(splitPane, "span");
+        splitPane.setLeftComponent(sidebar);
+        splitPane.setRightComponent(map);
+        splitPane.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+
+        add(splitPane, BorderLayout.CENTER);
+
+        // Hide legacy UI components but keep them initialized for background state changes
+        getFollowButton();
+        getFollowedEntityLabel();
+        getDeleteTrackButton();
     }
 
-    private void setSelected(PlottableEntityHistory selected)
+    private JButton createFloatingButton(jiconfont.icons.font_awesome.FontAwesome icon, String tooltip) {
+        JButton btn = new JButton(jiconfont.swing.IconFontSwing.buildIcon(icon, 16, new java.awt.Color(0, 122, 255)));
+        btn.setToolTipText(tooltip);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        return btn;
+    }
+
+
+
+        private void setSelected(PlottableEntityHistory selected)
     {
         if(selected != null)
         {

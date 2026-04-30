@@ -37,6 +37,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import io.github.dsheirer.gui.UsbMonitorManager;
+import io.github.dsheirer.gui.WindowsReliabilityManager;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -85,7 +86,7 @@ public class ApplicationPreferenceEditor extends HBox
             VBox diagCard = new VBox(10);
             diagCard.getStyleClass().add("preferences-card");
             Label monitoringLabel = new Label("Application Health and Diagnostic Monitoring.");
-            monitoringLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #333333;");
+            monitoringLabel.getStyleClass().add("kennebec-header");
 
             HBox diagRow = new HBox(10);
             diagRow.getStyleClass().add("preferences-card-row");
@@ -126,7 +127,7 @@ public class ApplicationPreferenceEditor extends HBox
 
             memoryRow.getChildren().addAll(getMemoryLimitLabel(), spacer3, getMemoryComboBox());
 
-            getMemoryWarningLabel().setStyle("-fx-text-fill: #8e8e93; -fx-font-size: 12px;");
+            getMemoryWarningLabel().getStyleClass().add("kennebec-secondary-text");
             memoryCard.getChildren().addAll(memoryRow, getMemoryWarningLabel());
 
             // Card 4: USB Monitor (Only on Windows 10/11)
@@ -136,7 +137,7 @@ public class ApplicationPreferenceEditor extends HBox
                 usbMonitorCard = new VBox(10);
                 usbMonitorCard.getStyleClass().add("preferences-card");
                 Label usbLabel = new Label("USB Monitor Script");
-                usbLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #333333;");
+                usbLabel.getStyleClass().add("kennebec-header");
 
                 HBox usbRow = new HBox(10);
                 usbRow.getStyleClass().add("preferences-card-row");
@@ -147,18 +148,63 @@ public class ApplicationPreferenceEditor extends HBox
                 usbRow.getChildren().addAll(installUsbLabel, spacer4, getUsbMonitorToggle());
 
                 Label usbDesc = new Label("Installs a background script to auto-reset failing SDR USB devices.");
-                usbDesc.setStyle("-fx-text-fill: #8e8e93; -fx-font-size: 12px;");
+                usbDesc.getStyleClass().add("kennebec-secondary-text");
 
                 usbMonitorCard.getChildren().addAll(usbLabel, usbRow, usbDesc);
+            }
+
+
+            // Card 5: System Reliability (Only on Windows 10/11)
+            VBox systemReliabilityCard = null;
+            if (WindowsReliabilityManager.isWindows10OrNewer()) {
+                systemReliabilityCard = new VBox(10);
+                systemReliabilityCard.getStyleClass().add("preferences-card");
+                Label srLabel = new Label("System Reliability");
+                srLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #333333;");
+
+                // Auto Start Row
+                HBox srAutoStartRow = new HBox(10);
+                srAutoStartRow.getStyleClass().add("preferences-card-row");
+                srAutoStartRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                Label autoStartToggleLabel = new Label("Start SDRTrunk automatically on computer startup");
+                javafx.scene.layout.Region srSpacer1 = new javafx.scene.layout.Region();
+                HBox.setHgrow(srSpacer1, Priority.ALWAYS);
+                ToggleSwitch autoStartToggle = new ToggleSwitch();
+                autoStartToggle.setSelected(mApplicationPreference.isAutoStartEnabled());
+                autoStartToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                    mApplicationPreference.setAutoStartEnabled(newValue);
+                    WindowsReliabilityManager.setAutoStart(newValue);
+                });
+                srAutoStartRow.getChildren().addAll(autoStartToggleLabel, srSpacer1, autoStartToggle);
+
+                // Watchdog Row
+                HBox watchdogRow = new HBox(10);
+                watchdogRow.getStyleClass().add("preferences-card-row");
+                watchdogRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                Label watchdogToggleLabel = new Label("Automatically restart SDRTrunk if it closes unexpectedly");
+                javafx.scene.layout.Region srSpacer2 = new javafx.scene.layout.Region();
+                HBox.setHgrow(srSpacer2, Priority.ALWAYS);
+                ToggleSwitch watchdogToggle = new ToggleSwitch();
+                watchdogToggle.setSelected(mApplicationPreference.isWatchdogEnabled());
+                watchdogToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                    mApplicationPreference.setWatchdogEnabled(newValue);
+                });
+                watchdogRow.getChildren().addAll(watchdogToggleLabel, srSpacer2, watchdogToggle);
+
+                systemReliabilityCard.getChildren().addAll(srLabel, srAutoStartRow, watchdogRow);
             }
 
             mEditorPane.getChildren().addAll(diagCard, autoStartCard, memoryCard);
             if (usbMonitorCard != null) {
                 mEditorPane.getChildren().add(usbMonitorCard);
             }
+            if (systemReliabilityCard != null) {
+                mEditorPane.getChildren().add(systemReliabilityCard);
+            }
         }
 
         return mEditorPane;
+
     }
 
     private Label getAutoStartTimeoutLabel()

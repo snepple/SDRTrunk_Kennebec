@@ -262,14 +262,14 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             mSearchAndListSelectionBox.setAlignment(Pos.CENTER_LEFT);
             mSearchAndListSelectionBox.setPadding(new Insets(10, 14, 10, 14));
             mSearchAndListSelectionBox.setSpacing(10);
-            mSearchAndListSelectionBox.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #E5E5EA; -fx-border-width: 0 0 1 0;");
+            mSearchAndListSelectionBox.getStyleClass().addAll("kennebec-card", "kennebec-border-bottom");
 
 
             Label listLabel = new Label("Alias List");
-            listLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #3A3A3C;");
+            listLabel.getStyleClass().add("kennebec-header");
             listLabel.setMinWidth(Region.USE_PREF_SIZE);
             Label searchLabel = new Label("Search");
-            searchLabel.setStyle("-fx-text-fill: #8E8E93;");
+            searchLabel.getStyleClass().add("kennebec-secondary-text");
             searchLabel.setMinWidth(Region.USE_PREF_SIZE);
             searchLabel.setAlignment(Pos.CENTER_RIGHT);
 
@@ -586,7 +586,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             mButtonBox.setAlignment(Pos.CENTER);
             mButtonBox.setPadding(new Insets(8));
             mButtonBox.setSpacing(8);
-            mButtonBox.setStyle("-fx-background-color: #F2F2F7; -fx-border-color: #E5E5EA; -fx-border-width: 0 1 0 0;"); // Match SplitPane divider
+            mButtonBox.getStyleClass().addAll("kennebec-grouped-bg", "kennebec-border-right");
 
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);

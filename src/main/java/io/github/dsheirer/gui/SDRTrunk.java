@@ -162,6 +162,21 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         mMainContentPanel.repaint();
     }
 
+    @Override
+    public boolean isSpectrumVisible() {
+        if (mCurrentViewId != null && mCurrentViewId.equals("now_playing")) {
+            return !mNowPlayingSpectrumDisabled;
+        } else if (mCurrentViewId != null && mCurrentViewId.equals("tuners")) {
+            return !mTunerSpectrumDisabled;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isResourceVisible() {
+        return mResourceStatusVisible;
+    }
+
     private final static Logger mLog = LoggerFactory.getLogger(SDRTrunk.class);
     private Preferences mPreferences = Preferences.userNodeForPackage(SDRTrunk.class);
 
@@ -228,6 +243,8 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 
         mTwoToneLog = new TwoToneLog(mUserPreferences);
         mTwoToneLog.start();
+        UsbMonitorManager.manage(mUserPreferences);
+        io.github.dsheirer.gui.WindowsReliabilityManager.manage(mUserPreferences);
 
         //Note: invoke this early in the application lifecycle, before the TunerManager causes the sdrplay classes
         //to be loaded since the jextract auto-generated code attempts to load the library by name and that can fail
@@ -522,6 +539,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
     private void processShutdown()
     {
         mLog.info("Application shutdown started ...");
+        io.github.dsheirer.gui.WindowsReliabilityManager.stopWatchdog();
         mDiagnosticMonitor.stop();
         if ((mMainGui.getExtendedState() & JFrame.MAXIMIZED_BOTH) != JFrame.MAXIMIZED_BOTH || mNormalBounds == null) {
             mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, mMainGui.getLocation());

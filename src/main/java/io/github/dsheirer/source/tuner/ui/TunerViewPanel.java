@@ -110,13 +110,21 @@ public class TunerViewPanel extends JPanel
         manageBtn.addActionListener(e -> {
             JPopupMenu popup = new JPopupMenu();
 
-            JMenuItem specItem = new JMenuItem("Toggle Spectrum/Waterfall");
+            String specText = "Toggle Spectrum/Waterfall";
+            if (mVisibilityListener != null) {
+                specText = mVisibilityListener.isSpectrumVisible() ? "Hide Spectrum/Waterfall" : "Show Spectrum/Waterfall";
+            }
+            JMenuItem specItem = new JMenuItem(specText);
             specItem.addActionListener(evt -> {
                 if(mVisibilityListener != null) mVisibilityListener.onToggleSpectrum();
             });
             popup.add(specItem);
 
-            JMenuItem resourceItem = new JMenuItem("Toggle Resource Status");
+            String resourceText = "Toggle Resource Status";
+            if (mVisibilityListener != null) {
+                resourceText = mVisibilityListener.isResourceVisible() ? "Hide Resource Status" : "Show Resource Status";
+            }
+            JMenuItem resourceItem = new JMenuItem(resourceText);
             resourceItem.addActionListener(evt -> {
                 if(mVisibilityListener != null) mVisibilityListener.onToggleResource();
             });

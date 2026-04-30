@@ -5,4 +5,6 @@ public interface VisibilityListener {
     void onToggleDetails();
     void onToggleStreaming();
     void onToggleResource();
+    boolean isSpectrumVisible();
+    boolean isResourceVisible();
 }

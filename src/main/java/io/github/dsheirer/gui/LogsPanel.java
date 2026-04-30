@@ -64,7 +64,7 @@ public class LogsPanel extends BorderPane {
         mUserPreferences = userPreferences;
 
         // Apply HIG-like styling
-        setStyle("-fx-background-color: #F5F5F7;");
+        getStyleClass().add("kennebec-grouped-bg");
 
         mAppFiltered = new FilteredList<>(mAppListModel, p -> true);
         mAppTable = createLogTable(mAppFiltered);
@@ -116,7 +116,7 @@ public class LogsPanel extends BorderPane {
         mAnalyzeBtn = new Button("Analyze Error");
         mAnalyzeBtn.setOnAction(e -> analyzeSelectedLog());
         // HIG primary action styling
-        mAnalyzeBtn.setStyle("-fx-base: #007AFF; -fx-text-fill: white; -fx-background-radius: 5;");
+        mAnalyzeBtn.getStyleClass().add("kennebec-primary-button");
 
         updateAnalyzeButtonState();
         mAppTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> updateAnalyzeButtonState());
@@ -133,7 +133,7 @@ public class LogsPanel extends BorderPane {
         instructionsLabel.setPadding(new Insets(10));
         instructionsLabel.setAlignment(Pos.CENTER);
         instructionsLabel.setMaxWidth(Double.MAX_VALUE);
-        instructionsLabel.setStyle("-fx-text-fill: #8E8E93;"); // HIG secondary label color
+        instructionsLabel.getStyleClass().add("kennebec-secondary-text");
 
         setTop(instructionsLabel);
         setCenter(mTabbedPane);
@@ -307,7 +307,7 @@ public class LogsPanel extends BorderPane {
     private TextField createSearchField(FilteredList<LogFile> filteredData) {
         TextField searchField = new TextField();
         searchField.setPromptText("Search...");
-        searchField.setStyle("-fx-background-radius: 10; -fx-padding: 5 10 5 10;"); // HIG search field style
+        searchField.getStyleClass().add("kennebec-search-field");
 
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(logFile -> {
