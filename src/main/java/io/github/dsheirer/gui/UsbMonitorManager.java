@@ -112,7 +112,7 @@ public class UsbMonitorManager {
                     "-NoProfile",
                     "-ExecutionPolicy", "Bypass",
                     "-Command",
-                    String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', '%s' -Wait", encodedCmd)
+                    String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -EncodedCommand %s' -Wait", encodedCmd)
             );
             Process process = pb.start();
             process.waitFor();
@@ -197,7 +197,7 @@ public class UsbMonitorManager {
                     "-NoProfile",
                     "-ExecutionPolicy", "Bypass",
                     "-Command",
-                    String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', '%s' -Wait", encodedCmd)
+                    String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -EncodedCommand %s' -Wait", encodedCmd)
             );
 
             Process process = pb.start();

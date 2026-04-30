@@ -36,6 +36,8 @@ public class ApplicationPreference extends Preference
     private static final String PREFERENCE_KEY_ALLOCATED_MEMORY = "allocated.memory";
     private static final String PREFERENCE_KEY_USB_MONITOR_INSTALLED = "usb.monitor.installed";
     private static final String PREFERENCE_KEY_USB_MONITOR_PROMPTED = "usb.monitor.prompted";
+    private static final String PREFERENCE_KEY_AUTO_START = "auto.start.enabled";
+    private static final String PREFERENCE_KEY_WATCHDOG_ENABLED = "watchdog.enabled";
 
     private final static Logger mLog = LoggerFactory.getLogger(ApplicationPreference.class);
     private Preferences mPreferences = Preferences.userNodeForPackage(ApplicationPreference.class);
@@ -44,6 +46,8 @@ public class ApplicationPreference extends Preference
     private Boolean mAutomaticDiagnosticMonitoring;
     private Boolean mUsbMonitorInstalled;
     private Boolean mUsbMonitorPrompted;
+    private Boolean mAutoStartEnabled;
+    private Boolean mWatchdogEnabled;
 
     /**
      * Constructs an instance
@@ -190,6 +194,38 @@ public class ApplicationPreference extends Preference
     {
         mUsbMonitorPrompted = prompted;
         mPreferences.putBoolean(PREFERENCE_KEY_USB_MONITOR_PROMPTED, prompted);
+        notifyPreferenceUpdated();
+    }
+
+    public boolean isAutoStartEnabled()
+    {
+        if(mAutoStartEnabled == null)
+        {
+            mAutoStartEnabled = mPreferences.getBoolean(PREFERENCE_KEY_AUTO_START, false);
+        }
+        return mAutoStartEnabled;
+    }
+
+    public void setAutoStartEnabled(boolean enabled)
+    {
+        mAutoStartEnabled = enabled;
+        mPreferences.putBoolean(PREFERENCE_KEY_AUTO_START, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public boolean isWatchdogEnabled()
+    {
+        if(mWatchdogEnabled == null)
+        {
+            mWatchdogEnabled = mPreferences.getBoolean(PREFERENCE_KEY_WATCHDOG_ENABLED, false);
+        }
+        return mWatchdogEnabled;
+    }
+
+    public void setWatchdogEnabled(boolean enabled)
+    {
+        mWatchdogEnabled = enabled;
+        mPreferences.putBoolean(PREFERENCE_KEY_WATCHDOG_ENABLED, enabled);
         notifyPreferenceUpdated();
     }
 }
