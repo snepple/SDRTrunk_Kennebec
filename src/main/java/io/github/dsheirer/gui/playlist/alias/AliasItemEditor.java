@@ -1941,7 +1941,10 @@ public class AliasItemEditor extends Editor<Alias>
                     else
                     {
                         textLabel.setText(item.getName());
-                        iconLabel.setGraphic(new ImageView(item.getFxImage()));
+                        ImageView iv = new ImageView(item.getFxImage());
+                        iv.setFitHeight(16);
+                        iv.setFitWidth(16);
+                        iconLabel.setGraphic(iv);
                         setGraphic(gridPane);
                     }
                 }
