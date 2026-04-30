@@ -497,15 +497,22 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
             return;
         }
 
-        // Clean up any existing dead connection
+        // Clean up any existing connection — send a proper close frame so the
+        // server releases session state (abort() skips the close handshake which
+        // can leave a stale session on Zello's side, causing "invalid username"
+        // on the next logon attempt with the same credentials).
         if(mWebSocket != null)
         {
-            try { mWebSocket.abort(); } catch(Exception e) { /* ignore */ }
+            try { mWebSocket.sendClose(WebSocket.NORMAL_CLOSURE, "reconnecting"); }
+            catch(Exception e) { /* ignore — connection may already be dead */ }
             mWebSocket = null;
         }
         mConnected.set(false);
         mChannelOnline.set(false);
         mPendingCommands.clear();
+        // Clear refresh token so reconnection uses full credentials — a stale
+        // refresh token can cause auth failures after a server-side session reset
+        mRefreshToken = null;
 
         String wsUrl = getBroadcastConfiguration().getWebSocketUrl();
         if(wsUrl == null)
@@ -856,6 +863,13 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
                 return null;
             }
 
+            // If an auth error already set CONFIGURATION_ERROR, don't override it
+            // and don't schedule a reconnect — the credentials won't change by retrying
+            if(getBroadcastState() == BroadcastState.CONFIGURATION_ERROR)
+            {
+                return null;
+            }
+
             setBroadcastState(BroadcastState.TEMPORARY_BROADCAST_ERROR);
             scheduleReconnect();
             return null;
@@ -872,8 +886,8 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
             mStreamActive.set(false);
             mCurrentStreamId.set(-1);
 
-            // If kicked handler already scheduled reconnect, don't double-schedule
-            if(!mKicked.get())
+            // Don't override CONFIGURATION_ERROR or double-schedule after kicked
+            if(!mKicked.get() && getBroadcastState() != BroadcastState.CONFIGURATION_ERROR)
             {
                 setBroadcastState(BroadcastState.TEMPORARY_BROADCAST_ERROR);
                 scheduleReconnect();

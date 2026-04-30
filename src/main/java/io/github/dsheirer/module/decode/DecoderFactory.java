@@ -249,9 +249,17 @@ public class DecoderFactory
         modules.add(decoderState2);
         P25P2AudioModule p25p2Audio1 = new P25P2AudioModule(userPreferences, P25P2Message.TIMESLOT_1, aliasList);
         p25p2Audio1.setAudioHangtimeMs(channel.getDecodeConfiguration().getAudioHangtimeMs());
+        if(channel.getDecodeConfiguration() instanceof DecodeConfigP25 configP25)
+        {
+            p25p2Audio1.setGraphicEQ(configP25.isGraphicEQEnabled(), configP25.getGraphicEQBandGains());
+        }
         modules.add(p25p2Audio1);
         P25P2AudioModule p25p2Audio2 = new P25P2AudioModule(userPreferences, P25P2Message.TIMESLOT_2, aliasList);
         p25p2Audio2.setAudioHangtimeMs(channel.getDecodeConfiguration().getAudioHangtimeMs());
+        if(channel.getDecodeConfiguration() instanceof DecodeConfigP25 configP25_ts2)
+        {
+            p25p2Audio2.setGraphicEQ(configP25_ts2.isGraphicEQEnabled(), configP25_ts2.getGraphicEQBandGains());
+        }
         modules.add(p25p2Audio2);
 
         //Add a channel rotation monitor when we have multiple control channel frequencies specified
