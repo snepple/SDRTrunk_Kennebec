@@ -33,9 +33,12 @@ import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.sample.Listener;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class P25P1AudioModule extends ImbeAudioModule
 {
+    private final static Logger mLog = LoggerFactory.getLogger(P25P1AudioModule.class);
     private boolean mEncryptedCall = false;
     private boolean mEncryptedCallStateEstablished = false;
 
@@ -65,6 +68,9 @@ public class P25P1AudioModule extends ImbeAudioModule
         {
             mGraphicEQ.setBandGains(bandGains);
         }
+
+        mLog.info("P25P1AudioModule graphic EQ configured: enabled={} gains={}",
+            enabled, bandGains != null ? java.util.Arrays.toString(bandGains) : "null");
     }
 
     @Override
