@@ -1,6 +1,7 @@
-Fix flatlaf window decorations by setting properties early
+docs: import mintlify documentation into help viewer and repository
 
-- Fix flatlaf.useWindowDecorations and flatlaf.window.backdrop being
-  applied after the look and feel was already set.
-- Also initialize the ThemeManager before any JFrame instances are
-  created to ensure that JFrames use the LookAndFeel's decorations.
+- Scraped all documentation pages from the Mintlify sitemap
+- Cleaned the documentation to remove MDX/React-specific tags
+- Saved the documentation as Markdown files into src/main/resources/docs/
+- Updated HelpViewer.java to dynamically load these files from the classpath rather than using hard-coded strings
+- Updated HelpViewer's navigation tree to match the available documentation topics
