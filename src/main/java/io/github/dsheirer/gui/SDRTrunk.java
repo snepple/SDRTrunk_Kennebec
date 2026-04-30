@@ -194,6 +194,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
     private JPanel mMainContentPanel;
     private JPanel mTopContentPanel;
     private JavaFxWindowManager mJavaFxWindowManager;
+    private io.github.dsheirer.gui.SidebarPanel mSidebarPanel;
     private UserPreferences mUserPreferences = new UserPreferences();
     private TunerManager mTunerManager;
     private ApplicationLog mApplicationLog;
@@ -270,8 +271,8 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
             mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this);
 
             // Add Sidebar
-            SidebarPanel sidebar = new SidebarPanel(this);
-            mMainGui.add(sidebar, BorderLayout.WEST);
+            mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
+            mMainGui.add(mSidebarPanel, BorderLayout.WEST);
         }
 
 
@@ -784,6 +785,48 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
             System.exit(0);
             return;
         }
+
+        if (mSidebarPanel != null) {
+            mSidebarPanel.setActive(id);
+        }
+
+        if (id.startsWith("playlist_")) {
+            mCurrentViewId = "playlist_editor";
+            mTopContentPanel.remove(mSpectralPanel);
+            mSpectralPanel.stop();
+            mControllerPanel.setResourcePanelVisible(false);
+            mControllerPanel.showView("playlist_editor");
+
+            if (id.equals("playlist_playlists")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.ViewPlaylistRequest());
+            } else if (id.equals("playlist_channels")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.channel.ChannelTabRequest() {
+                    @Override
+                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.CHANNEL; }
+                });
+            } else if (id.equals("playlist_aliases")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.alias.AliasTabRequest() {
+                    @Override
+                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.ALIAS; }
+                });
+            } else if (id.equals("playlist_streaming")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.streaming.StreamTabRequest() {
+                    @Override
+                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.STREAM; }
+                });
+            } else if (id.equals("playlist_radioreference")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.radioreference.ViewRadioReferenceRequest());
+            } else if (id.equals("playlist_twotones")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.twotone.TwoToneTabRequest() {
+                    @Override
+                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.TWO_TONE; }
+                });
+            }
+            mMainContentPanel.revalidate();
+            mMainContentPanel.repaint();
+            return;
+        }
+
         mCurrentViewId = id;
 
         if (id.equals("now_playing")) {

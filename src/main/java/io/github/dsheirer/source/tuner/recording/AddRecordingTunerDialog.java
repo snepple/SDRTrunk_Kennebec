@@ -165,6 +165,9 @@ public class AddRecordingTunerDialog extends JFrame
         content.add(new JLabel(""));
 
         mAddButton = new JButton("Add");
+        mAddButton.setToolTipText("Add the selected recording tuner");
+        mAddButton.getAccessibleContext().setAccessibleName("Add Recording");
+        mAddButton.getAccessibleContext().setAccessibleDescription("Adds the currently selected recording file as a new tuner");
         mAddButton.setEnabled(false);
         mAddButton.addActionListener(e -> {
             if(mSelectedRecording == null)

@@ -938,7 +938,10 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
 
                                 if(icon != null && icon.getFxImage() != null)
                                 {
-                                    setGraphic(new ImageView(icon.getFxImage()));
+                                    ImageView iv = new ImageView(icon.getFxImage());
+                                    iv.setFitHeight(16);
+                                    iv.setFitWidth(16);
+                                    setGraphic(iv);
                                 }
                                 else
                                 {

@@ -1,3 +1,5 @@
+### Latest Compiled Release: [Download pr-K.00.002](https://github.com/snepple/sdrtrunk_Sam/releases/tag/pr-K.00.002)
+
 <h1>sdrtrunk - Kennebec Version</h1>
 
 <p>Welcome to the Kennebec version of sdrtrunk—a modernized, cross-platform Java application engineered for decoding, monitoring, recording, and streaming trunked mobile and related radio protocols using Software Defined Radios (SDR).</p>

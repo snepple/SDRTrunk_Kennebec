@@ -29,6 +29,10 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.Priority;
+import javafx.geometry.Pos;
 import org.controlsfx.control.ToggleSwitch;
 
 import java.util.ArrayList;
@@ -45,12 +49,31 @@ public class RecordConfigurationEditor extends Editor<RecordConfiguration>
 
     public RecordConfigurationEditor(Collection<RecorderType> types)
     {
+        setPadding(new Insets(20, 20, 20, 20));
+
+        Label groupHeader = new Label("Recording Options");
+        groupHeader.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #8E8E93; -fx-padding: 0 0 8 16;");
+
+        VBox formGroup = new VBox();
+        formGroup.getStyleClass().add("hig-form-group");
+
+        int i = 0;
         for(RecorderType type: types)
         {
             RecorderControl control = new RecorderControl(type);
             mControls.add(control);
-            getChildren().add(control);
+            formGroup.getChildren().add(control);
+
+            if (i < types.size() - 1) {
+                HBox divider = new HBox();
+                divider.setStyle("-fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
+                VBox.setMargin(divider, new Insets(0, 0, 0, 16));
+                formGroup.getChildren().add(divider);
+            }
+            i++;
         }
+
+        getChildren().addAll(groupHeader, formGroup);
     }
 
     @Override
@@ -101,7 +124,7 @@ public class RecordConfigurationEditor extends Editor<RecordConfiguration>
 
     }
 
-    public class RecorderControl extends GridPane
+    public class RecorderControl extends HBox
     {
         private RecorderType mRecorderType;
         private ToggleSwitch mToggleSwitch;
@@ -109,17 +132,16 @@ public class RecordConfigurationEditor extends Editor<RecordConfiguration>
         public RecorderControl(RecorderType type)
         {
             mRecorderType = type;
-
-            setPadding(new Insets(5,5,5,0));
-            setHgap(10);
-
-            GridPane.setConstraints(getToggleSwitch(), 0, 0);
-            getChildren().add(getToggleSwitch());
+            getStyleClass().add("hig-form-row");
+            setAlignment(Pos.CENTER_LEFT);
 
             Label label = new Label(mRecorderType.getDisplayString());
-            GridPane.setHalignment(label, HPos.LEFT);
-            GridPane.setConstraints(label, 1, 0);
-            getChildren().add(label);
+            label.getStyleClass().add("hig-form-label");
+
+            HBox spacer = new HBox();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            getChildren().addAll(label, spacer, getToggleSwitch());
         }
 
         private ToggleSwitch getToggleSwitch()
