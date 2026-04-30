@@ -44,7 +44,7 @@ public class SidebarPanel extends JPanel {
         setPreferredSize(new Dimension(250, 0));
         setLayout(new MigLayout("insets 10 5 10 5, gapy 5, wrap 1, fillx", "[grow, fill]", "[]"));
 
-        mToggleBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.BARS, 20, TEXT_COLOR));
+        mToggleBtn = new JButton(new io.github.dsheirer.icon.MyFontIcon(FontAwesome.BARS, 20, TEXT_COLOR));
         mToggleBtn.setContentAreaFilled(false);
         mToggleBtn.setBorderPainted(false);
         mToggleBtn.setFocusPainted(false);
@@ -185,7 +185,7 @@ public class SidebarPanel extends JPanel {
             mView = new JPanel(new MigLayout("insets 8, gapx 10, hidemode 3", "[][grow]", "[]"));
             mView.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-            mIconLabel = new JLabel(IconFontSwing.buildIcon(mIcon, 16, TEXT_COLOR));
+            mIconLabel = new JLabel(new io.github.dsheirer.icon.MyFontIcon(mIcon, 16, TEXT_COLOR));
             mTextLabel = new JLabel(mLabel);
             mTextLabel.setForeground(TEXT_COLOR);
             mTextLabel.setFont(mTextLabel.getFont().deriveFont(Font.BOLD));

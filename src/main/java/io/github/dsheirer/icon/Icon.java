@@ -244,10 +244,15 @@ public class Icon implements Comparable<Icon>
             else
             {
                 try {
-                    ImageIcon icon = io.github.dsheirer.icon.IconModel.getScaledIcon(getIcon(), ICON_HEIGHT_JAVAFX);
+                    // Fetch the scaled icon at 2x resolution to look crisp on high-DPI displays
+                    int renderHeight = ICON_HEIGHT_JAVAFX * 2;
+                    ImageIcon icon = io.github.dsheirer.icon.IconModel.getScaledIcon(getIcon(), renderHeight);
                     if (icon != null) {
                         BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
                         Graphics2D cg = bImg.createGraphics();
+                        cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                        cg.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                        cg.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
                         icon.paintIcon(null, cg, 0, 0);
                         cg.dispose();
                         mFxImage = SwingFXUtils.toFXImage(bImg, null);
