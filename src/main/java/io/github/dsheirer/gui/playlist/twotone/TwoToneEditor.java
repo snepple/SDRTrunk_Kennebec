@@ -414,14 +414,14 @@ public class TwoToneEditor extends SplitPane
         Tab configTab = new Tab("Configuration");
         configTab.setClosable(false);
 
-        TitledPane generalPane = new TitledPane("General Setup", generalGrid);
-        generalPane.setCollapsible(true);
-        TitledPane zelloPane = new TitledPane("Zello Integration", zelloGrid);
-        zelloPane.setCollapsible(true);
-        TitledPane mqttPane = new TitledPane("MQTT Integration", mqttGrid);
-        mqttPane.setCollapsible(true);
+        Label generalLabel = new Label("General Setup");
+        generalLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10 0 5 0;");
+        Label zelloLabel = new Label("Zello Integration");
+        zelloLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10 0 5 0;");
+        Label mqttLabel = new Label("MQTT Integration");
+        mqttLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10 0 5 0;");
 
-        VBox configBox = new VBox(10, generalPane, zelloPane, mqttPane);
+        VBox configBox = new VBox(10, generalLabel, generalGrid, zelloLabel, zelloGrid, mqttLabel, mqttGrid);
         configBox.setPadding(new Insets(10));
 
         ScrollPane configScrollPane = new ScrollPane(configBox);

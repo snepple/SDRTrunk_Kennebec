@@ -47,6 +47,11 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 
 
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.VBox;
+import javafx.scene.control.Label;
+import javafx.scene.layout.Priority;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
@@ -323,7 +328,6 @@ public class PlaylistEditor extends BorderPane
 
         return mTwoToneEditor;
     }
-
     private StreamingEditor getStreamingEditor()
     {
         if(mStreamingEditor == null)

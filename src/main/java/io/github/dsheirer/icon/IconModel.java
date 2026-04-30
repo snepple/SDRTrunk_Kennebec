@@ -227,13 +227,21 @@ public class IconModel
                 return svgIcon.derive(Math.round(svgIcon.getIconWidth() * scale), height);
             }
             double scale = (double) original.getIconHeight() / (double) height;
-
             int scaledWidth = (int) ((double) original.getIconWidth() / scale);
 
-            Image scaledImage = original.getImage().getScaledInstance(scaledWidth,
-                height, java.awt.Image.SCALE_SMOOTH);
-
-            return new ImageIcon(scaledImage);
+            return new ImageIcon(original.getImage()) {
+                @Override
+                public synchronized void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {
+                    java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                    g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                    g2.drawImage(getImage(), x, y, scaledWidth, height, c);
+                    g2.dispose();
+                }
+                @Override
+                public int getIconWidth() { return scaledWidth; }
+                @Override
+                public int getIconHeight() { return height; }
+            };
         }
 
         return null;
