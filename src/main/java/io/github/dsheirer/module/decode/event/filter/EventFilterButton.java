@@ -95,6 +95,9 @@ public class EventFilterButton<T> extends JideButton
             scroller.setViewportView(panel);
             editor.add(scroller, "wrap");
             JButton close = new JButton("Close");
+            close.setToolTipText("Close the filter editor");
+            close.getAccessibleContext().setAccessibleName("Close Event Filter Editor");
+            close.getAccessibleContext().setAccessibleDescription("Closes the event filter editor dialog");
             close.addActionListener(e1 -> editor.dispose());
             editor.add(close);
             EventQueue.invokeLater(() -> editor.setVisible(true));
