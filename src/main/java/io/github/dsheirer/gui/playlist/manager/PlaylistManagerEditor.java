@@ -38,6 +38,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Separator;
@@ -48,6 +49,8 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -60,7 +63,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Editor for managing playlists via the playlist manager
  */
-public class PlaylistManagerEditor extends HBox
+public class PlaylistManagerEditor extends BorderPane
 {
     private static final Logger mLog = LoggerFactory.getLogger(PlaylistManagerEditor.class);
 
@@ -72,7 +75,7 @@ public class PlaylistManagerEditor extends HBox
     private PlaylistManager mPlaylistManager;
     private UserPreferences mUserPreferences;
     private TableView<Path> mPlaylistTableView;
-    private VBox mButtonBox;
+    private HBox mButtonBox;
     private Button mSelectButton;
     private Button mAddButton;
     private Button mRemoveButton;
@@ -94,8 +97,8 @@ public class PlaylistManagerEditor extends HBox
         MyEventBus.getGlobalEventBus().register(this);
 
         setPadding(new Insets(5, 5, 5, 5));
-        HBox.setHgrow(getPlaylistTableView(), Priority.ALWAYS);
-        getChildren().addAll(getPlaylistTableView(), getButtonBox());
+        setCenter(getPlaylistTableView());
+        setBottom(getButtonBox());
         updateButtons();
     }
 
@@ -126,72 +129,60 @@ public class PlaylistManagerEditor extends HBox
         if(mPlaylistTableView == null)
         {
             mPlaylistTableView = new TableView<>();
-            TableColumn<Path,String> iconColumn = new TableColumn("Selected");
-            iconColumn.setPrefWidth(100);
-            iconColumn.setCellFactory(new Callback<TableColumn<Path,String>,TableCell<Path,String>>()
-            {
-                @Override
-                public TableCell<Path,String> call(TableColumn<Path,String> param)
-                {
-                    TableCell<Path,String> tableCell = new TableCell<>()
-                    {
-                        @Override
-                        protected void updateItem(String item, boolean empty)
-                        {
-                            super.updateItem(item, empty);
-
-                            if(empty || getTableRow() == null || getTableRow().getItem() == null)
-                            {
-                                setGraphic(null);
-                            }
-                            else
-                            {
-                                Path path = getTableRow().getItem();
-
-                                if(isCurrent(path))
-                                {
-                                    IconNode iconNode  = new IconNode(FontAwesome.CHECK);
-                                    iconNode.setFill(Color.GREEN);
-                                    setGraphic(iconNode);
-                                }
-                                else if(!path.toFile().exists())
-                                {
-                                    IconNode iconNode  = new IconNode(FontAwesome.TIMES);
-                                    iconNode.setFill(Color.RED);
-                                    setGraphic(iconNode);
-                                }
-                                else
-                                {
-                                    setGraphic(null);
-                                }
-                            }
-                        }
-                    };
-
-                    tableCell.setAlignment(Pos.BASELINE_RIGHT);
-                    return tableCell;
-                }
-            });
-
+            mPlaylistTableView.getStyleClass().add("preferences-table");
             TableColumn<Path,String> pathColumn = new TableColumn<>("Playlist");
             pathColumn.setCellFactory(param -> new TableCell<Path,String>()
             {
+                private HBox contentBox = new HBox(10);
+                private IconNode checkIcon = new IconNode(FontAwesome.CHECK);
+                private IconNode timesIcon = new IconNode(FontAwesome.TIMES);
+                private VBox textBox = new VBox();
+                private Label nameLabel = new Label();
+                private Label pathLabel = new Label();
+
+                {
+                    contentBox.setAlignment(Pos.CENTER_LEFT);
+                    checkIcon.setFill(Color.GREEN);
+                    timesIcon.setFill(Color.RED);
+                    nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 1.1em;");
+                    pathLabel.setStyle("-fx-text-fill: #8e8e93; -fx-font-size: 0.9em;");
+                    textBox.getChildren().addAll(nameLabel, pathLabel);
+                }
+
                 @Override
                 protected void updateItem(String item, boolean empty)
                 {
+                    super.updateItem(item, empty);
                     if(empty || getTableRow() == null || getTableRow().getItem() == null)
                     {
-                        setText(null);
+                        setGraphic(null);
                     }
                     else
                     {
-                        setText(getTableRow().getItem().toString());
+                        Path path = getTableRow().getItem();
+                        contentBox.getChildren().clear();
+
+                        if(isCurrent(path))
+                        {
+                            contentBox.getChildren().add(checkIcon);
+                        }
+                        else if(!path.toFile().exists())
+                        {
+                            contentBox.getChildren().add(timesIcon);
+                        }
+
+                        String filename = path.getFileName() != null ? path.getFileName().toString() : "";
+                        nameLabel.setText(filename);
+                        pathLabel.setText(path.toString());
+
+                        contentBox.getChildren().add(textBox);
+                        setGraphic(contentBox);
                     }
                 }
             });
             pathColumn.setPrefWidth(650);
 
-            mPlaylistTableView.getColumns().addAll(iconColumn, pathColumn);
+            mPlaylistTableView.getColumns().addAll(pathColumn);
 
             mPlaylistTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateButtons());
 
@@ -225,19 +216,27 @@ public class PlaylistManagerEditor extends HBox
         getDeleteButton().setDisable(!itemSelected || isCurrent || (selected != null && !selected.toFile().exists()));
     }
 
-    private VBox getButtonBox()
+    private HBox getButtonBox()
     {
         if(mButtonBox == null)
         {
-            mButtonBox = new VBox();
+            mButtonBox = new HBox();
             mButtonBox.setSpacing(10.0);
-            mButtonBox.setPadding(new Insets(5, 5, 5, 10));
-            mButtonBox.setAlignment(Pos.TOP_CENTER);
+            mButtonBox.setPadding(new Insets(10, 5, 5, 5));
+            mButtonBox.setAlignment(Pos.CENTER_RIGHT);
+
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            mButtonBox.getChildren().addAll(getNewButton(), getAddButton(), getRemoveButton(), getCloneButton(), getDeleteButton());
+            getNewButton().getStyleClass().add("flat-button");
+            getAddButton().getStyleClass().add("flat-button");
+            getRemoveButton().getStyleClass().add("flat-button");
+            getCloneButton().getStyleClass().add("flat-button");
+            getDeleteButton().getStyleClass().add("flat-button");
+            getSelectButton().getStyleClass().add("flat-button");
+            mButtonBox.getChildren().add(spacer);
             mButtonBox.getChildren().add(getSelectButton());
-            mButtonBox.getChildren().add(new Separator());
-            mButtonBox.getChildren().addAll(getNewButton(), getAddButton(), getRemoveButton(), getCloneButton());
-            mButtonBox.getChildren().add(new Separator());
-            mButtonBox.getChildren().add(getDeleteButton());
         }
 
         return mButtonBox;

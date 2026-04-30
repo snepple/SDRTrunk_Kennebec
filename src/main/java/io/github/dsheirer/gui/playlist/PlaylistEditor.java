@@ -226,6 +226,7 @@ public class PlaylistEditor extends BorderPane
         if(mTabPane == null)
         {
             mTabPane = new TabPane();
+            mTabPane.setStyle("-fx-border-color: transparent; -fx-background-color: transparent;");
             mTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
             mTabPane.getTabs().addAll(getPlaylistsTab(), getChannelsTab(), getAliasesTab(), getStreamingTab(),
                 getRadioReferenceTab(), getTwoToneTab());
