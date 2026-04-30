@@ -79,7 +79,16 @@ public class SidebarPanel extends JPanel {
     private void initItems() {
         mItems.add(new SidebarItem("Now Playing", FontAwesome.PLAY, "now_playing", true));
         mItems.add(new SidebarItem("Map", FontAwesome.MAP, "map", true));
-        mItems.add(new SidebarItem("Playlist Editor", FontAwesome.LIST, "playlist_editor", true));
+
+        SidebarItem playlistEditorItem = new SidebarItem("Playlist Editor", FontAwesome.LIST, "playlist_editor", false);
+        playlistEditorItem.addSubItem("Playlists", "playlist_playlists");
+        playlistEditorItem.addSubItem("Channels", "playlist_channels");
+        playlistEditorItem.addSubItem("Aliases", "playlist_aliases");
+        playlistEditorItem.addSubItem("Streaming", "playlist_streaming");
+        playlistEditorItem.addSubItem("Radio Reference", "playlist_radioreference");
+        playlistEditorItem.addSubItem("Two Tones", "playlist_twotones");
+        mItems.add(playlistEditorItem);
+
         mItems.add(new SidebarItem("Tuners", FontAwesome.SLIDERS, "tuners", true));
 
         mItems.add(new SidebarItem("Performance & Logs", FontAwesome.FILE_TEXT, "logs", true));

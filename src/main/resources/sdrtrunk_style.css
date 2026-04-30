@@ -230,3 +230,21 @@
 .hig-separator .line {
     -fx-border-color: #C6C6C8 transparent transparent transparent;
 }
+
+/* HIG Form Groups for Settings */
+.hig-form-group {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 10px;
+    -fx-border-color: #E5E5EA;
+    -fx-border-radius: 10px;
+    -fx-padding: 0;
+}
+
+.hig-form-row {
+    -fx-padding: 12 16 12 16;
+}
+
+.hig-form-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #000000;
+}

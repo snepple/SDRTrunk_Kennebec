@@ -344,7 +344,17 @@ return panel;
         execute(() -> {
             try
             {
-                javax.swing.SwingUtilities.invokeLater(() -> mVisibilityListener.onItemSelected("playlist_editor"));
+                String id = "playlist_playlists";
+                switch(request.getTabName()) {
+                    case ALIAS: id = "playlist_aliases"; break;
+                    case CHANNEL: id = "playlist_channels"; break;
+                    case STREAM: id = "playlist_streaming"; break;
+                    case RADIOREFERENCE: id = "playlist_radioreference"; break;
+                    case TWO_TONE: id = "playlist_twotones"; break;
+                    case PLAYLIST: id = "playlist_playlists"; break;
+                }
+                final String finalId = id;
+                javax.swing.SwingUtilities.invokeLater(() -> mVisibilityListener.onItemSelected(finalId));
                 getPlaylistEditor().process(request);
             }
             catch(Throwable t)
