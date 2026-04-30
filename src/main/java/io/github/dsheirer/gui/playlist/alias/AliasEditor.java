@@ -24,21 +24,30 @@ import io.github.dsheirer.alias.id.AliasID;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
 import javafx.geometry.Insets;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 
 /**
  * Primary alias editor with tabbed panes for view-by alias editing support
  */
-public class AliasEditor extends TabPane
+public class AliasEditor extends BorderPane
 {
     private PlaylistManager mPlaylistManager;
     private UserPreferences mUserPreferences;
     private AliasConfigurationEditor mAliasConfigurationEditor;
     private AliasViewByIdentifierEditor mAliasViewByIdentifierEditor;
-    private Tab mAliasConfigurationTab;
-    private Tab mAliasIdentifierTab;
-    private Tab mAliasRecordingTab;
+    private AliasViewByRecordingEditor mAliasRecordingEditor;
+
+    private ToggleButton mAliasButton;
+    private ToggleButton mIdentifierButton;
+    private ToggleButton mRecordButton;
+    private BooleanProperty mIdentifierTabSelected = new SimpleBooleanProperty(false);
 
     /**
      * Constructs an instance
@@ -51,10 +60,57 @@ public class AliasEditor extends TabPane
         mUserPreferences = userPreferences;
 
         setPadding(new Insets(4,0,0,0));
-        setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        Tab viewByTab = new Tab("View By:");
-        viewByTab.setDisable(true);
-        getTabs().addAll(viewByTab, getAliasConfigurationTab(), getAliasIdentifierTab(), getAliasRecordingTab());
+
+        HBox topToolbar = new HBox(10);
+        topToolbar.setAlignment(Pos.CENTER);
+        topToolbar.setPadding(new Insets(8));
+        topToolbar.setStyle("-fx-background-color: #F2F2F7; -fx-border-color: #E5E5EA; -fx-border-width: 0 0 1 0;");
+
+        Label viewByLabel = new Label("View By:");
+        viewByLabel.setStyle("-fx-text-fill: #8E8E93; -fx-font-weight: bold;");
+
+        ToggleGroup group = new ToggleGroup();
+
+        mAliasButton = new ToggleButton("Alias");
+        mAliasButton.setToggleGroup(group);
+        mAliasButton.setSelected(true);
+        mAliasButton.setOnAction(e -> showAliasEditor());
+
+        mIdentifierButton = new ToggleButton("Identifier");
+        mIdentifierButton.setToggleGroup(group);
+        mIdentifierButton.setOnAction(e -> showIdentifierEditor());
+
+        mRecordButton = new ToggleButton("Record");
+        mRecordButton.setToggleGroup(group);
+        mRecordButton.setOnAction(e -> showRecordingEditor());
+
+        // HIG Segmented Control styling (simplified)
+        String segmentStyle = "-fx-background-radius: 4; -fx-padding: 4 12 4 12;";
+        mAliasButton.setStyle(segmentStyle);
+        mIdentifierButton.setStyle(segmentStyle);
+        mRecordButton.setStyle(segmentStyle);
+
+        HBox segmentedControl = new HBox(mAliasButton, mIdentifierButton, mRecordButton);
+
+        topToolbar.getChildren().addAll(viewByLabel, segmentedControl);
+
+        setTop(topToolbar);
+        showAliasEditor();
+    }
+
+    private void showAliasEditor() {
+        mIdentifierTabSelected.set(false);
+        setCenter(getAliasConfigurationEditor());
+    }
+
+    private void showIdentifierEditor() {
+        mIdentifierTabSelected.set(true);
+        setCenter(getAliasViewByIdentifierEditor());
+    }
+
+    private void showRecordingEditor() {
+        mIdentifierTabSelected.set(false);
+        setCenter(getAliasRecordingEditor());
     }
 
     /**
@@ -72,7 +128,8 @@ public class AliasEditor extends TabPane
 
             if(alias != null)
             {
-                getSelectionModel().select(getAliasConfigurationTab());
+                mAliasButton.setSelected(true);
+                showAliasEditor();
                 getAliasConfigurationEditor().show(alias);
             }
         }
@@ -82,21 +139,11 @@ public class AliasEditor extends TabPane
 
             if(aliasID != null)
             {
-                getSelectionModel().select(getAliasIdentifierTab());
+                mIdentifierButton.setSelected(true);
+                showIdentifierEditor();
                 getAliasViewByIdentifierEditor().show(aliasID);
             }
         }
-    }
-
-    private Tab getAliasConfigurationTab()
-    {
-        if(mAliasConfigurationTab == null)
-        {
-            mAliasConfigurationTab = new Tab("Alias");
-            mAliasConfigurationTab.setContent(getAliasConfigurationEditor());
-        }
-
-        return mAliasConfigurationTab;
     }
 
     private AliasConfigurationEditor getAliasConfigurationEditor()
@@ -109,35 +156,23 @@ public class AliasEditor extends TabPane
         return mAliasConfigurationEditor;
     }
 
-    private Tab getAliasIdentifierTab()
-    {
-        if(mAliasIdentifierTab == null)
-        {
-            mAliasIdentifierTab = new Tab("Identifier");
-            mAliasIdentifierTab.setContent(getAliasViewByIdentifierEditor());
-        }
-
-        return mAliasIdentifierTab;
-    }
-
     private AliasViewByIdentifierEditor getAliasViewByIdentifierEditor()
     {
         if(mAliasViewByIdentifierEditor == null)
         {
-            mAliasViewByIdentifierEditor = new AliasViewByIdentifierEditor(mPlaylistManager, getAliasIdentifierTab().selectedProperty());
+            mAliasViewByIdentifierEditor = new AliasViewByIdentifierEditor(mPlaylistManager, mIdentifierTabSelected);
         }
 
         return mAliasViewByIdentifierEditor;
     }
 
-    private Tab getAliasRecordingTab()
+    private AliasViewByRecordingEditor getAliasRecordingEditor()
     {
-        if(mAliasRecordingTab == null)
+        if(mAliasRecordingEditor == null)
         {
-            mAliasRecordingTab = new Tab("Record");
-            mAliasRecordingTab.setContent(new AliasViewByRecordingEditor(mPlaylistManager));
+            mAliasRecordingEditor = new AliasViewByRecordingEditor(mPlaylistManager);
         }
 
-        return mAliasRecordingTab;
+        return mAliasRecordingEditor;
     }
 }
