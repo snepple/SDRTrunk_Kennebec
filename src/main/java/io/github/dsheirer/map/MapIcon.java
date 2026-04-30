@@ -149,8 +149,21 @@ public class MapIcon extends Setting implements Comparable<MapIcon>
                             width = sMAX_IMAGE_DIMENSION;
                         }
 
-                        mImageIcon = new ImageIcon(mImageIcon.getImage()
-                            .getScaledInstance(width, height, Image.SCALE_SMOOTH));
+                        final int finalWidth = width;
+                        final int finalHeight = height;
+                        mImageIcon = new ImageIcon(mImageIcon.getImage()) {
+                            @Override
+                            public synchronized void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {
+                                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                                g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                                g2.drawImage(getImage(), x, y, finalWidth, finalHeight, c);
+                                g2.dispose();
+                            }
+                            @Override
+                            public int getIconWidth() { return finalWidth; }
+                            @Override
+                            public int getIconHeight() { return finalHeight; }
+                        };
                     }
                 }
             }

@@ -144,7 +144,11 @@ public class JXMapViewer extends JPanel implements DesignMode
 		// make a dummy loading image
 		try
 		{
-			Image loading = IconFontSwing.buildImage(FontAwesome.LINK, 16);
+			// Image loading = IconFontSwing.buildImage(FontAwesome.LINK, 16);
+            // Replace with multi-resolution aware or crisp rendering.
+            // Since buildImage returns Image, we can't easily override paintIcon.
+            // Instead we can use a higher resolution base image if needed, but since it's just a loading icon...
+            Image loading = IconFontSwing.buildImage(FontAwesome.LINK, 16);
 			this.setLoadingImage(loading);
 		}
 		catch (Throwable ex)
