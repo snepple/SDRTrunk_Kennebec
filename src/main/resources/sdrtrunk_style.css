@@ -42,6 +42,7 @@
 
 /* Sidebar and Headers */
 .preferences-sidebar {
+    -fx-background-color: transparent;
     -fx-background-color: #f6f6f6;
     -fx-padding: 20 10 20 10;
     -fx-spacing: 5;
@@ -140,14 +141,15 @@
 }
 
 .preferences-table .column-header {
-    -fx-background-color: #f9f9f9;
+    -fx-background-color: #F2F2F7;
     -fx-border-color: transparent transparent #e5e5ea transparent;
     -fx-border-width: 0 0 1 0;
     -fx-padding: 8 10 8 10;
 }
 
 .preferences-main-area {
-    -fx-background-color: #f9f9f9;
+    -fx-background-color: #F2F2F7;
+    -fx-background-color: #F2F2F7;
 }
 
 .preferences-table .table-row-cell:selected {
@@ -168,4 +170,63 @@
     -fx-background-color: #f6f6f6;
     -fx-border-color: #e0e0e0;
     -fx-border-width: 0 0 0 1; /* Left border only */
+}
+
+/* Apple HIG Styles */
+.hig-page-background {
+    -fx-background-color: #F2F2F7;
+}
+
+.hig-settings-card {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 10;
+    -fx-padding: 0;
+}
+
+.hig-settings-row {
+    -fx-padding: 11 16 11 16;
+    -fx-alignment: center-left;
+    -fx-font-size: 15px;
+}
+
+.hig-section-header {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8E8E93;
+    -fx-padding: 24 16 6 16;
+}
+
+.hig-sidebar-list {
+    -fx-background-color: transparent;
+    -fx-padding: 0 10 0 10;
+}
+
+.hig-sidebar-list:focused {
+    -fx-background-color: transparent;
+}
+
+.hig-sidebar-item {
+    -fx-padding: 6 10 6 10;
+    -fx-background-radius: 6;
+    -fx-font-size: 14px;
+}
+
+.hig-sidebar-item:selected {
+    -fx-background-color: #007AFF;
+    -fx-text-fill: #FFFFFF;
+}
+
+.hig-sidebar-item:hover {
+    -fx-background-color: #E5E5EA;
+}
+
+.hig-sidebar-item:selected:hover {
+    -fx-background-color: #007AFF;
+}
+
+.hig-separator {
+    -fx-padding: 0 0 0 16;
+}
+.hig-separator .line {
+    -fx-border-color: #C6C6C8 transparent transparent transparent;
 }

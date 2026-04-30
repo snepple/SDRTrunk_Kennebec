@@ -75,7 +75,7 @@ import org.slf4j.LoggerFactory;
 /**
  * JavaFX editor for managing channel configurations.
  */
-public class ChannelEditor extends SplitPane implements IFilterProcessor, IAliasListRefreshListener
+public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFilterProcessor, IAliasListRefreshListener
 {
     private final static Logger mLog = LoggerFactory.getLogger(ChannelEditor.class);
     private PlaylistManager mPlaylistManager;
@@ -112,20 +112,17 @@ public class ChannelEditor extends SplitPane implements IFilterProcessor, IAlias
         mUnknownConfigurationEditor = new UnknownConfigurationEditor(mPlaylistManager, mTunerManager,
                 userPreferences, this);
 
-        HBox channelsBox = new HBox();
-        channelsBox.setSpacing(10.0);
-        HBox.setHgrow(getChannelTableView(), Priority.ALWAYS);
-        channelsBox.getChildren().addAll(getChannelTableView(), getButtonBox());
+        HBox topToolbar = new HBox(15);
+        topToolbar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        topToolbar.getStyleClass().add("context-toolbar");
+        topToolbar.setPadding(new Insets(10, 10, 10, 10));
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        topToolbar.getChildren().addAll(getSearchAndViewBox(), spacer, getNewButton(), getCloneButton(), getDeleteButton());
 
-        VBox topBox = new VBox();
-        topBox.setPadding(new Insets(10, 10, 10, 10));
-        topBox.setSpacing(10);
-        VBox.setVgrow(channelsBox, Priority.ALWAYS);
-        topBox.getChildren().addAll(getSearchAndViewBox(), channelsBox);
-
-        setOrientation(Orientation.VERTICAL);
-
-        getItems().addAll(topBox, getChannelConfigurationEditor());
+        setTop(topToolbar);
+        setCenter(getChannelTableView());
+        setBottom(getChannelConfigurationEditor());
     }
 
     /**
@@ -170,7 +167,7 @@ public class ChannelEditor extends SplitPane implements IFilterProcessor, IAlias
             alert.setTitle("Save Changes");
             alert.setHeaderText("Channel configuration has been modified");
             alert.setContentText("Do you want to save these changes?");
-            alert.initOwner(((Node)getButtonBox()).getScene().getWindow());
+            alert.initOwner(((Node)getDeleteButton()).getScene().getWindow());
 
             //Workaround for JavaFX KDE on Linux bug in FX 10/11: https://bugs.openjdk.java.net/browse/JDK-8179073
             alert.setResizable(true);
@@ -310,9 +307,8 @@ public class ChannelEditor extends SplitPane implements IFilterProcessor, IAlias
     {
         if(editor != getChannelConfigurationEditor())
         {
-            getItems().remove(getChannelConfigurationEditor());
             mChannelConfigurationEditor = editor;
-            getItems().add(getChannelConfigurationEditor());
+            setBottom(getChannelConfigurationEditor());
         }
     }
 
@@ -534,18 +530,7 @@ public class ChannelEditor extends SplitPane implements IFilterProcessor, IAlias
         return mPlaceholderLabel;
     }
 
-    private VBox getButtonBox()
-    {
-        if(mButtonBox == null)
-        {
-            mButtonBox = new VBox();
-            mButtonBox.setSpacing(10);
-            mButtonBox.setMinWidth(Region.USE_PREF_SIZE);
-            mButtonBox.getChildren().addAll(getNewButton(), getCloneButton(), getDeleteButton());
-        }
 
-        return mButtonBox;
-    }
 
     private MenuButton getNewButton()
     {

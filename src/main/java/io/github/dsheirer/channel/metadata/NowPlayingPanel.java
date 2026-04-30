@@ -173,6 +173,8 @@ public class NowPlayingPanel extends JPanel
 
         JButton manageWidgetsBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.COG, 14, Color.BLACK));
         manageWidgetsBtn.setToolTipText("Manage Widgets");
+        manageWidgetsBtn.getAccessibleContext().setAccessibleName("Manage Widgets");
+        manageWidgetsBtn.getAccessibleContext().setAccessibleDescription("Opens a menu to manage visible widgets");
         manageWidgetsBtn.addActionListener(e -> {
             showManageWidgetsPopup(manageWidgetsBtn);
         });

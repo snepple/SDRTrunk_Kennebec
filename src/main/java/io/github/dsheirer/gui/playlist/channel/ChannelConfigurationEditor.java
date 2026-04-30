@@ -121,16 +121,22 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
         setMaxWidth(Double.MAX_VALUE);
 
-        HBox hbox = new HBox();
-        hbox.setSpacing(10);
-        hbox.setPadding(new Insets(10,10,10,10));
-        hbox.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(getTextFieldPane(), Priority.ALWAYS);
-        HBox.setHgrow(getButtonBox(), Priority.NEVER);
-        hbox.getChildren().addAll(getTextFieldPane(), getButtonBox());
-        VBox.setVgrow(getTabPane(), Priority.ALWAYS);
+        VBox inspectorCard = new VBox(15);
+        inspectorCard.getStyleClass().add("preferences-card");
+        inspectorCard.setPadding(new Insets(15));
+        inspectorCard.setMaxWidth(Double.MAX_VALUE);
 
-        getChildren().addAll(hbox, getTabPane());
+        Label headerLabel = new Label("Channel Configuration");
+        headerLabel.getStyleClass().add("preferences-section-header");
+
+        HBox actionBox = new HBox(10);
+        actionBox.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+        actionBox.getChildren().addAll(getPlayButton(), getResetButton(), getSaveButton());
+
+        VBox.setVgrow(getTabPane(), Priority.ALWAYS);
+        inspectorCard.getChildren().addAll(headerLabel, getTextFieldPane(), getTabPane(), actionBox);
+
+        getChildren().add(inspectorCard);
     }
 
     /**
@@ -557,8 +563,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             GridPane.setHalignment(getAutoStartSwitch(), HPos.LEFT);
             mTextFieldPane.getChildren().add(getAutoStartSwitch());
 
-            GridPane.setConstraints(getPlayButton(), 4, row, 1, 2);
-            mTextFieldPane.getChildren().add(getPlayButton());
+
 
             Label siteLabel = new Label("Site");
             GridPane.setHalignment(siteLabel, HPos.RIGHT);
@@ -695,24 +700,14 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         return mNewAliasListButton;
     }
 
-    private VBox getButtonBox()
-    {
-        if(mButtonBox == null)
-        {
-            mButtonBox = new VBox();
-            mButtonBox.setSpacing(10);
-            mButtonBox.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
-            mButtonBox.getChildren().addAll(getSaveButton(), getResetButton());
-        }
 
-        return mButtonBox;
-    }
 
     private Button getSaveButton()
     {
         if(mSaveButton == null)
         {
             mSaveButton = new Button("     Save     ");
+            mSaveButton.getStyleClass().add("flat-button");
             mSaveButton.setMaxWidth(Double.MAX_VALUE);
             mSaveButton.disableProperty().bind(modifiedProperty().not());
             mSaveButton.setOnAction(event -> {
@@ -759,6 +754,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         if(mResetButton == null)
         {
             mResetButton = new Button("Reset");
+            mResetButton.getStyleClass().add("flat-button");
             mResetButton.setMaxWidth(Double.MAX_VALUE);
             mResetButton.disableProperty().bind(modifiedProperty().not());
             mResetButton.setOnAction(event -> {

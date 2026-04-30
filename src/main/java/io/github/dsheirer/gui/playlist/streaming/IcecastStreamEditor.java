@@ -37,7 +37,7 @@ import org.controlsfx.control.ToggleSwitch;
  */
 public abstract class IcecastStreamEditor extends AbstractStreamEditor<IcecastConfiguration>
 {
-    private GridPane mEditorPane;
+    private javafx.scene.layout.VBox mEditorPane;
     private ToggleSwitch mInlineToggleSwitch;
     private TextField mMountPointTextField;
     private TextField mUserNameTextField;
@@ -98,131 +98,144 @@ public abstract class IcecastStreamEditor extends AbstractStreamEditor<IcecastCo
         super.save();
     }
 
-    protected GridPane getEditorPane()
+    protected javafx.scene.layout.Pane getEditorPane()
     {
         if(mEditorPane == null)
         {
-            mEditorPane = new GridPane();
+            mEditorPane = new javafx.scene.layout.VBox();
             mEditorPane.setPadding(new Insets(10, 5, 10,10));
-            mEditorPane.setVgap(10);
-            mEditorPane.setHgap(5);
+            mEditorPane.setSpacing(20);
+
+            // Card 1: Connection Settings
+            GridPane connectionCard = new GridPane();
+            connectionCard.getStyleClass().add("preferences-card");
+            connectionCard.setVgap(10);
+            connectionCard.setHgap(5);
 
             Label formatLabel = new Label("Format");
             GridPane.setHalignment(formatLabel, HPos.RIGHT);
             GridPane.setConstraints(formatLabel, 0, 0);
-            mEditorPane.getChildren().add(formatLabel);
+            connectionCard.getChildren().add(formatLabel);
 
             getFormatField().setText(getBroadcastServerType().toString());
             GridPane.setConstraints(getFormatField(), 1, 0);
-            mEditorPane.getChildren().add(getFormatField());
+            connectionCard.getChildren().add(getFormatField());
 
             Label enabledLabel = new Label("Enabled");
             GridPane.setHalignment(enabledLabel, HPos.RIGHT);
             GridPane.setConstraints(enabledLabel, 2, 0);
-            mEditorPane.getChildren().add(enabledLabel);
+            connectionCard.getChildren().add(enabledLabel);
 
             GridPane.setConstraints(getEnabledSwitch(), 3, 0);
-            mEditorPane.getChildren().add(getEnabledSwitch());
+            connectionCard.getChildren().add(getEnabledSwitch());
 
             Label systemLabel = new Label("Name");
             GridPane.setHalignment(systemLabel, HPos.RIGHT);
             GridPane.setConstraints(systemLabel, 0, 1);
-            mEditorPane.getChildren().add(systemLabel);
+            connectionCard.getChildren().add(systemLabel);
 
             GridPane.setConstraints(getNameTextField(), 1, 1);
-            mEditorPane.getChildren().add(getNameTextField());
+            connectionCard.getChildren().add(getNameTextField());
 
             Label hostLabel = new Label("Server");
             GridPane.setHalignment(hostLabel, HPos.RIGHT);
             GridPane.setConstraints(hostLabel, 0, 2);
-            mEditorPane.getChildren().add(hostLabel);
+            connectionCard.getChildren().add(hostLabel);
 
             GridPane.setConstraints(getHostTextField(), 1, 2);
-            mEditorPane.getChildren().add(getHostTextField());
+            connectionCard.getChildren().add(getHostTextField());
 
             Label portLabel = new Label("Port");
             GridPane.setHalignment(portLabel, HPos.RIGHT);
             GridPane.setConstraints(portLabel, 2, 2);
-            mEditorPane.getChildren().add(portLabel);
+            connectionCard.getChildren().add(portLabel);
 
             GridPane.setConstraints(getPortTextField(), 3, 2);
-            mEditorPane.getChildren().add(getPortTextField());
+            connectionCard.getChildren().add(getPortTextField());
 
             Label mountPointLabel = new Label("Mount Point");
             GridPane.setHalignment(mountPointLabel, HPos.RIGHT);
             GridPane.setConstraints(mountPointLabel, 0, 3);
-            mEditorPane.getChildren().add(mountPointLabel);
+            connectionCard.getChildren().add(mountPointLabel);
 
             GridPane.setConstraints(getMountPointTextField(), 1, 3);
-            mEditorPane.getChildren().add(getMountPointTextField());
+            connectionCard.getChildren().add(getMountPointTextField());
 
             Label inlineLabel = new Label("Inline Metadata");
             GridPane.setHalignment(inlineLabel, HPos.RIGHT);
             GridPane.setConstraints(inlineLabel, 2, 3);
-            mEditorPane.getChildren().add(inlineLabel);
+            connectionCard.getChildren().add(inlineLabel);
 
             GridPane.setConstraints(getInlineToggleSwitch(), 3, 3);
-            mEditorPane.getChildren().add(getInlineToggleSwitch());
+            connectionCard.getChildren().add(getInlineToggleSwitch());
 
             Label userNameLabel = new Label("User Name");
             GridPane.setHalignment(userNameLabel, HPos.RIGHT);
             GridPane.setConstraints(userNameLabel, 0, 4);
-            mEditorPane.getChildren().add(userNameLabel);
+            connectionCard.getChildren().add(userNameLabel);
 
             GridPane.setConstraints(getUserNameTextField(), 1, 4);
-            mEditorPane.getChildren().add(getUserNameTextField());
+            connectionCard.getChildren().add(getUserNameTextField());
 
             Label passwordLabel = new Label("Password");
             GridPane.setHalignment(passwordLabel, HPos.RIGHT);
             GridPane.setConstraints(passwordLabel, 2, 4);
-            mEditorPane.getChildren().add(passwordLabel);
+            connectionCard.getChildren().add(passwordLabel);
 
             GridPane.setConstraints(getMaskedPasswordTextField(), 3, 4);
-            mEditorPane.getChildren().add(getMaskedPasswordTextField());
+            connectionCard.getChildren().add(getMaskedPasswordTextField());
             GridPane.setConstraints(getUnMaskedPasswordTextField(), 3, 4);
-            mEditorPane.getChildren().add(getUnMaskedPasswordTextField());
+            connectionCard.getChildren().add(getUnMaskedPasswordTextField());
             GridPane.setConstraints(getShowPasswordSwitch(), 4, 4);
-            mEditorPane.getChildren().add(getShowPasswordSwitch());
+            connectionCard.getChildren().add(getShowPasswordSwitch());
+
+            // Card 2: Metadata Settings
+            GridPane metadataCard = new GridPane();
+            metadataCard.getStyleClass().add("preferences-card");
+            metadataCard.setVgap(10);
+            metadataCard.setHgap(5);
 
             Label maxAgeLabel = new Label("Max Recording Age (seconds)");
             GridPane.setHalignment(maxAgeLabel, HPos.RIGHT);
-            GridPane.setConstraints(maxAgeLabel, 0, 5);
-            mEditorPane.getChildren().add(maxAgeLabel);
+            GridPane.setConstraints(maxAgeLabel, 0, 0);
+            metadataCard.getChildren().add(maxAgeLabel);
 
-            GridPane.setConstraints(getMaxAgeTextField(), 1, 5);
-            mEditorPane.getChildren().add(getMaxAgeTextField());
+            GridPane.setConstraints(getMaxAgeTextField(), 1, 0);
+            metadataCard.getChildren().add(getMaxAgeTextField());
 
             Label delayLabel = new Label("Delay (seconds)");
             GridPane.setHalignment(delayLabel, HPos.RIGHT);
-            GridPane.setConstraints(delayLabel, 2, 5);
-            mEditorPane.getChildren().add(delayLabel);
+            GridPane.setConstraints(delayLabel, 2, 0);
+            metadataCard.getChildren().add(delayLabel);
 
-            GridPane.setConstraints(getDelayTextField(), 3, 5);
-            mEditorPane.getChildren().add(getDelayTextField());
+            GridPane.setConstraints(getDelayTextField(), 3, 0);
+            metadataCard.getChildren().add(getDelayTextField());
 
             Label descriptionLabel = new Label("Description");
             GridPane.setHalignment(descriptionLabel, HPos.RIGHT);
-            GridPane.setConstraints(descriptionLabel, 0, 6);
-            mEditorPane.getChildren().add(descriptionLabel);
+            GridPane.setConstraints(descriptionLabel, 0, 1);
+            metadataCard.getChildren().add(descriptionLabel);
 
-            GridPane.setConstraints(getDescriptionTextField(), 1, 6, 3, 1);
-            mEditorPane.getChildren().add(getDescriptionTextField());
+            GridPane.setConstraints(getDescriptionTextField(), 1, 1, 3, 1);
+            metadataCard.getChildren().add(getDescriptionTextField());
 
             Label genreLabel = new Label("Genre");
             GridPane.setHalignment(genreLabel, HPos.RIGHT);
-            GridPane.setConstraints(genreLabel, 0, 7);
-            mEditorPane.getChildren().add(genreLabel);
+            GridPane.setConstraints(genreLabel, 0, 2);
+            metadataCard.getChildren().add(genreLabel);
 
-            GridPane.setConstraints(getGenreTextField(), 1, 7, 3, 1);
-            mEditorPane.getChildren().add(getGenreTextField());
+            GridPane.setConstraints(getGenreTextField(), 1, 2, 3, 1);
+            metadataCard.getChildren().add(getGenreTextField());
 
             Label urlLabel = new Label("URL");
             GridPane.setHalignment(urlLabel, HPos.RIGHT);
-            GridPane.setConstraints(urlLabel, 0, 8);
-            mEditorPane.getChildren().add(urlLabel);
+            GridPane.setConstraints(urlLabel, 0, 3);
+            metadataCard.getChildren().add(urlLabel);
 
-            GridPane.setConstraints(getURLTextField(), 1, 8, 3, 1);
-            mEditorPane.getChildren().add(getURLTextField());
+            GridPane.setConstraints(getURLTextField(), 1, 3, 3, 1);
+            metadataCard.getChildren().add(getURLTextField());
+
+            mEditorPane.getChildren().addAll(connectionCard, metadataCard);
         }
 
         return mEditorPane;

@@ -24,64 +24,54 @@ import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.identifier.IntegerFormat;
 import io.github.dsheirer.preference.identifier.TalkgroupFormatPreference;
 import io.github.dsheirer.protocol.Protocol;
-import javafx.geometry.HPos;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 import java.util.Set;
-
 
 /**
  * Preference settings for channel event view
  */
-public class TalkgroupFormatPreferenceEditor extends HBox
+public class TalkgroupFormatPreferenceEditor extends VBox
 {
     private TalkgroupFormatPreference mTalkgroupFormatPreference;
-    private GridPane mEditorPane;
 
     public TalkgroupFormatPreferenceEditor(UserPreferences userPreferences)
     {
         mTalkgroupFormatPreference = userPreferences.getTalkgroupFormatPreference();
-        getChildren().add(getEditorPane());
-    }
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
 
-    private GridPane getEditorPane()
-    {
-        if(mEditorPane == null)
+        Label headerLabel = new Label("Talkgroup & Radio ID Formats");
+        headerLabel.getStyleClass().add("hig-section-header");
+        getChildren().add(headerLabel);
+
+        SettingsCard mainCard = new SettingsCard();
+
+        for(Protocol protocol : Protocol.TALKGROUP_PROTOCOLS)
         {
-            mEditorPane = new GridPane();
-            mEditorPane.setPadding(new Insets(10, 10, 10, 10));
+            IntegerFormatEditor formatEditor = new IntegerFormatEditor(mTalkgroupFormatPreference, protocol,
+                TalkgroupFormatPreference.getFormats(protocol));
+            formatEditor.setPrefWidth(120);
 
-            int row = 0;
+            FixedWidthEditor fixedWidthEditor = new FixedWidthEditor(mTalkgroupFormatPreference, protocol);
 
-            mEditorPane.add(new Label("Protocol"), 0, row);
-            mEditorPane.add(new Label("Display Format"), 1, row++);
-            mEditorPane.add(new Separator(Orientation.HORIZONTAL), 0, row++, 3, 1);
+            HBox controlsBox = new HBox(15);
+            controlsBox.getChildren().addAll(fixedWidthEditor, formatEditor);
+            controlsBox.setAlignment(Pos.CENTER_RIGHT);
 
-            for(Protocol protocol : Protocol.TALKGROUP_PROTOCOLS)
-            {
-                Label label = new Label(protocol.toString());
-                GridPane.setMargin(label, new Insets(0, 10, 0, 0));
-                GridPane.setHalignment(label, HPos.LEFT);
-                mEditorPane.add(label, 0, row);
-                IntegerFormatEditor editor = new IntegerFormatEditor(mTalkgroupFormatPreference, protocol,
-                    TalkgroupFormatPreference.getFormats(protocol));
-                GridPane.setMargin(editor, new Insets(5,5,5,5));
-                mEditorPane.add(editor, 1, row);
-                FixedWidthEditor fixedWidthEditor = new FixedWidthEditor(mTalkgroupFormatPreference, protocol);
-                GridPane.setMargin(fixedWidthEditor, new Insets(0,0,0,10));
-                mEditorPane.add(fixedWidthEditor, 2, row);
-                row++;
-            }
+            SettingsRow row = new SettingsRow(protocol.toString(), controlsBox);
+            mainCard.getChildren().add(row);
         }
 
-        return mEditorPane;
+        getChildren().add(mainCard);
     }
 
     /**

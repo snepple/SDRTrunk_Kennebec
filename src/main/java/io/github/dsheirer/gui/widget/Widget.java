@@ -5,6 +5,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.swing.IconFontSwing;
 
 public class Widget extends JPanel {
 
@@ -28,24 +31,26 @@ public class Widget extends JPanel {
         mContainer = container;
         mMinHeight = minHeight;
 
+        setOpaque(false);
         setLayout(new MigLayout("insets 0, fillx, hidemode 3", "[grow,fill]", "[]0[grow,fill]0[]"));
-        setBorder(BorderFactory.createLineBorder(UIManager.getColor("Component.borderColor"), 1));
+        setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         mHeaderPanel = new JPanel(new MigLayout("insets 2 5 2 2, fillx", "[grow][]", "[]"));
-        mHeaderPanel.setBackground(UIManager.getColor("TableHeader.background"));
+        mHeaderPanel.setOpaque(false);
 
         mTitleLabel = new JLabel(title);
         mTitleLabel.setFont(mTitleLabel.getFont().deriveFont(Font.BOLD));
+        mTitleLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         mHeaderPanel.add(mTitleLabel, "growx");
 
-        mMinimizeButton = createHeaderButton("-");
+        mMinimizeButton = createHeaderButton();
         mMinimizeButton.setToolTipText("Minimize");
         mMinimizeButton.getAccessibleContext().setAccessibleName("Minimize Widget");
         mMinimizeButton.getAccessibleContext().setAccessibleDescription("Minimizes or expands the widget");
         mMinimizeButton.addActionListener(e -> toggleMinimized());
         mHeaderPanel.add(mMinimizeButton);
 
-        mCloseButton = createHeaderButton("x");
+        mCloseButton = createHeaderButton();
         mCloseButton.setToolTipText("Close");
         mCloseButton.getAccessibleContext().setAccessibleName("Close Widget");
         mCloseButton.getAccessibleContext().setAccessibleDescription("Closes the widget");
@@ -97,8 +102,8 @@ public class Widget extends JPanel {
         add(mResizeHandle, "growx");
     }
 
-    private JButton createHeaderButton(String text) {
-        JButton button = new JButton(text);
+    private JButton createHeaderButton() {
+        JButton button = new JButton();
         button.setMargin(new Insets(0, 4, 0, 4));
         button.setFocusPainted(false);
         button.setContentAreaFilled(false);
@@ -138,17 +143,18 @@ public class Widget extends JPanel {
     public void setDragging(boolean dragging) {
         if (dragging) {
             mHeaderPanel.setBackground(UIManager.getColor("Component.focusColor"));
-            setBorder(BorderFactory.createLineBorder(UIManager.getColor("Component.focusColor"), 2));
+            mHeaderPanel.setOpaque(true);
         } else {
-            mHeaderPanel.setBackground(UIManager.getColor("TableHeader.background"));
+            mHeaderPanel.setOpaque(false);
             setBorder(BorderFactory.createLineBorder(UIManager.getColor("Component.borderColor"), 1));
         }
+        repaint();
     }
 
     public void setMinimized(boolean minimized) {
         mMinimized = minimized;
         mContentComponent.setVisible(!minimized);
-        mMinimizeButton.setText(minimized ? "+" : "-");
+        updateIcons();
         mMinimizeButton.setToolTipText(minimized ? "Expand" : "Minimize");
         mMinimizeButton.getAccessibleContext().setAccessibleName(minimized ? "Expand Widget" : "Minimize Widget");
         revalidate();
@@ -170,5 +176,35 @@ public class Widget extends JPanel {
         if (mContainer != null) {
             mContainer.hideWidget(mId);
         }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int arc = 12;
+        Shape cardShape = new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, arc, arc);
+
+        g2.setColor(UIManager.getColor("Panel.background"));
+        g2.fill(cardShape);
+
+        g2.setColor(new Color(0, 0, 0, 25)); // 10% opacity black
+        g2.setStroke(new BasicStroke(1.0f));
+        g2.draw(cardShape);
+
+        g2.dispose();
+    }
+
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        updateIcons();
+    }
+
+    private void updateIcons() {
+        if (mMinimizeButton != null) mMinimizeButton.setIcon(IconFontSwing.buildIcon(mMinimized ? FontAwesome.PLUS : FontAwesome.MINUS, 12, UIManager.getColor("Label.disabledForeground")));
+        if (mCloseButton != null) mCloseButton.setIcon(IconFontSwing.buildIcon(FontAwesome.TIMES, 12, UIManager.getColor("Label.disabledForeground")));
     }
 }

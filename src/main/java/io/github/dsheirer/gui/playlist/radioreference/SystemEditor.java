@@ -51,6 +51,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.Region;
+
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -63,7 +68,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Radio Reference editor for trunked radio systems
  */
-public class SystemEditor extends VBox
+public class SystemEditor extends SplitPane
 {
     private static final Logger mLog = LoggerFactory.getLogger(SystemEditor.class);
 
@@ -73,7 +78,7 @@ public class SystemEditor extends VBox
     private Level mLevel;
     private ComboBox<System> mSystemComboBox;
     private IntegerProperty mSystemCountProperty = new SimpleIntegerProperty();
-    private TabPane mTabPane;
+    private VBox mTabPane;
     private Tab mSystemTab;
     private Tab mTalkgroupTab;
     private SystemSiteSelectionEditor mSystemSiteSelectionEditor;
@@ -96,16 +101,30 @@ public class SystemEditor extends VBox
         mLevel = level;
         mSystemCountProperty.bind(Bindings.size(getSystemComboBox().getItems()));
 
-        setPadding(new Insets(20,10,10,10));
-        setSpacing(10);
+        setPadding(new Insets(0)); // SplitPane shouldn't have padding, internal containers will
+
+        VBox leftPane = new VBox();
+        leftPane.setPadding(new Insets(20, 10, 10, 10));
+        leftPane.setSpacing(10);
+
         HBox systemBox = new HBox();
         HBox.setHgrow(getSystemComboBox(), Priority.ALWAYS);
         systemBox.setAlignment(Pos.CENTER_LEFT);
         systemBox.setSpacing(5);
         systemBox.setMaxWidth(Double.MAX_VALUE);
-        systemBox.getChildren().addAll(new Label("System"), getSystemComboBox());
+        systemBox.getChildren().addAll(new Label("System:"), getSystemComboBox());
+
         VBox.setVgrow(getTabPane(), Priority.ALWAYS);
-        getChildren().addAll(systemBox, getTabPane());
+        leftPane.getChildren().addAll(systemBox, getTabPane());
+
+        // Right Pane will be the Inspector. For now, we will add a placeholder.
+        // We will restructure SystemSiteSelectionEditor later to extract the config pane.
+        VBox rightPane = new VBox();
+        rightPane.setPadding(new Insets(20, 10, 10, 10));
+        rightPane.getChildren().add(new Label("Inspector placeholder"));
+
+        getItems().addAll(leftPane, rightPane);
+        setDividerPositions(0.7);
     }
 
     /**
@@ -153,17 +172,45 @@ public class SystemEditor extends VBox
         }
     }
 
-    private TabPane getTabPane()
+    private VBox getTabPane()
     {
         if(mTabPane == null)
         {
-            mTabPane = new TabPane();
-            mTabPane.setMaxHeight(Double.MAX_VALUE);
-            mTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-            mTabPane.getTabs().addAll(getSystemTab(), getTalkgroupTab());
+            mTabPane = new VBox();
+            mTabPane.setSpacing(10);
+
+            HBox segmentedControl = new HBox();
+            segmentedControl.getStyleClass().add("segmented-button-bar");
+            segmentedControl.setAlignment(Pos.CENTER);
+
+            ToggleGroup group = new ToggleGroup();
+
+            ToggleButton btnSysView = new ToggleButton("System View");
+            btnSysView.setToggleGroup(group);
+            btnSysView.setSelected(true);
+            btnSysView.setOnAction(e -> setCenterPane(getSystemSiteSelectionEditor()));
+
+            ToggleButton btnTgView = new ToggleButton("Talkgroup View");
+            btnTgView.setToggleGroup(group);
+            btnTgView.setOnAction(e -> setCenterPane(getSystemTalkgroupSelectionEditor()));
+
+            segmentedControl.getChildren().addAll(btnSysView, btnTgView);
+
+            mTabPane.getChildren().add(segmentedControl);
+
+            // Set default view
+            setCenterPane(getSystemSiteSelectionEditor());
         }
 
         return mTabPane;
+    }
+
+    private void setCenterPane(Region editor) {
+        if (mTabPane.getChildren().size() > 1) {
+            mTabPane.getChildren().remove(1);
+        }
+        VBox.setVgrow(editor, Priority.ALWAYS);
+        mTabPane.getChildren().add(editor);
     }
 
     private SystemSiteSelectionEditor getSystemSiteSelectionEditor()
