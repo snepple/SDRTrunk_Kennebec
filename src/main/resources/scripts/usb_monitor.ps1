@@ -1,4 +1,5 @@
 #Requires -RunAsAdministrator
+# Version: 1
 
 param(
     [Parameter(Mandatory=$false)]

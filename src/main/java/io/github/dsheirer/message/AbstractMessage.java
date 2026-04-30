@@ -120,13 +120,18 @@ public abstract class AbstractMessage
     public String getIntAsHex(IntField field, int places)
     {
         int value = getInt(field);
-        String hex = Integer.toHexString(value).toUpperCase();
-        while(hex.length() < places)
-        {
-            hex = "0" + hex;
+        char[] buf = new char[Math.max(8, places)];
+        int charPos = buf.length;
+        do {
+            buf[--charPos] = HEX_ARRAY[value & 0x0F];
+            value >>>= 4;
+        } while (value != 0 && charPos > 0);
+
+        while (buf.length - charPos < places && charPos > 0) {
+            buf[--charPos] = '0';
         }
 
-        return hex;
+        return new String(buf, charPos, buf.length - charPos);
     }
 
     /**

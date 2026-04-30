@@ -36,6 +36,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import io.github.dsheirer.gui.UsbMonitorManager;
 import org.controlsfx.control.ToggleSwitch;
 
 /**
@@ -51,13 +52,16 @@ public class ApplicationPreferenceEditor extends HBox
     private ComboBox<MemoryOption> mMemoryComboBox;
     private Label mMemoryWarningLabel;
     private ToggleSwitch mAutomaticDiagnosticMonitoringToggle;
+    private ToggleSwitch mUsbMonitorToggle;
 
     /**
      * Constructs an instance
      * @param userPreferences for obtaining reference to preference.
      */
+    private UserPreferences mUserPreferences;
     public ApplicationPreferenceEditor(UserPreferences userPreferences)
     {
+        mUserPreferences = userPreferences;
         mApplicationPreference = userPreferences.getApplicationPreference();
         setMaxWidth(Double.MAX_VALUE);
 
@@ -125,7 +129,33 @@ public class ApplicationPreferenceEditor extends HBox
             getMemoryWarningLabel().setStyle("-fx-text-fill: #8e8e93; -fx-font-size: 12px;");
             memoryCard.getChildren().addAll(memoryRow, getMemoryWarningLabel());
 
+            // Card 4: USB Monitor (Only on Windows 10/11)
+            VBox usbMonitorCard = null;
+            String osName = System.getProperty("os.name");
+            if (osName != null && (osName.startsWith("Windows 10") || osName.startsWith("Windows 11"))) {
+                usbMonitorCard = new VBox(10);
+                usbMonitorCard.getStyleClass().add("preferences-card");
+                Label usbLabel = new Label("USB Monitor Script");
+                usbLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #333333;");
+
+                HBox usbRow = new HBox(10);
+                usbRow.getStyleClass().add("preferences-card-row");
+                usbRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                Label installUsbLabel = new Label("Install Tuner Monitoring Power Script");
+                javafx.scene.layout.Region spacer4 = new javafx.scene.layout.Region();
+                HBox.setHgrow(spacer4, Priority.ALWAYS);
+                usbRow.getChildren().addAll(installUsbLabel, spacer4, getUsbMonitorToggle());
+
+                Label usbDesc = new Label("Installs a background script to auto-reset failing SDR USB devices.");
+                usbDesc.setStyle("-fx-text-fill: #8e8e93; -fx-font-size: 12px;");
+
+                usbMonitorCard.getChildren().addAll(usbLabel, usbRow, usbDesc);
+            }
+
             mEditorPane.getChildren().addAll(diagCard, autoStartCard, memoryCard);
+            if (usbMonitorCard != null) {
+                mEditorPane.getChildren().add(usbMonitorCard);
+            }
         }
 
         return mEditorPane;
@@ -167,6 +197,32 @@ public class ApplicationPreferenceEditor extends HBox
 
         return mAutomaticDiagnosticMonitoringToggle;
     }
+
+    private ToggleSwitch getUsbMonitorToggle()
+    {
+        if(mUsbMonitorToggle == null)
+        {
+            mUsbMonitorToggle = new ToggleSwitch();
+            mUsbMonitorToggle.setSelected(mApplicationPreference.isUsbMonitorInstalled());
+            mUsbMonitorToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                if(newValue) {
+                    // Trigger installation
+                    boolean success = UsbMonitorManager.install(mUserPreferences);
+                    if(!success) {
+                        mUsbMonitorToggle.setSelected(false);
+                    }
+                } else {
+                    // Trigger uninstallation
+                    boolean success = UsbMonitorManager.uninstall(mUserPreferences);
+                    if(!success) {
+                        mUsbMonitorToggle.setSelected(true);
+                    }
+                }
+            });
+        }
+        return mUsbMonitorToggle;
+    }
+
     private Label getMemoryLimitLabel()
     {
         if(mMemoryLimitLabel == null)

@@ -473,6 +473,22 @@ public class SpectralDisplayPanel extends JPanel
     }
 
     /**
+     * Resumes the DFT processor (if a tuner is set).
+     */
+    public void start() {
+        if (mTuner != null) {
+            mComplexDftProcessor.start();
+        }
+    }
+
+    /**
+     * Stops the DFT processor.
+     */
+    public void stop() {
+        mComplexDftProcessor.stop();
+    }
+
+    /**
      * Currently displayed tuner
      */
     public Tuner getTuner()

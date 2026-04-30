@@ -34,12 +34,16 @@ public class ApplicationPreference extends Preference
     private static final String PREFERENCE_KEY_CHANNEL_AUTO_DIAGNOSTIC_MONITORING = "automatic.diagnostic.monitoring";
     private static final String PREFERENCE_KEY_CHANNEL_AUTO_START_TIMEOUT = "channel.auto.start.timeout";
     private static final String PREFERENCE_KEY_ALLOCATED_MEMORY = "allocated.memory";
+    private static final String PREFERENCE_KEY_USB_MONITOR_INSTALLED = "usb.monitor.installed";
+    private static final String PREFERENCE_KEY_USB_MONITOR_PROMPTED = "usb.monitor.prompted";
 
     private final static Logger mLog = LoggerFactory.getLogger(ApplicationPreference.class);
     private Preferences mPreferences = Preferences.userNodeForPackage(ApplicationPreference.class);
     private Integer mChannelAutoStartTimeout;
     private Integer mAllocatedMemory;
     private Boolean mAutomaticDiagnosticMonitoring;
+    private Boolean mUsbMonitorInstalled;
+    private Boolean mUsbMonitorPrompted;
 
     /**
      * Constructs an instance
@@ -142,6 +146,50 @@ public class ApplicationPreference extends Preference
             mLog.error("Error writing SDRTrunk.memory file", e);
         }
 
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Indicates if the USB Monitor script is installed.
+     * @return true if installed.
+     */
+    public boolean isUsbMonitorInstalled()
+    {
+        if(mUsbMonitorInstalled == null)
+        {
+            mUsbMonitorInstalled = mPreferences.getBoolean(PREFERENCE_KEY_USB_MONITOR_INSTALLED, false);
+        }
+        return mUsbMonitorInstalled;
+    }
+
+    /**
+     * Sets the installed state for the USB Monitor script.
+     * @param installed true to mark as installed.
+     */
+    public void setUsbMonitorInstalled(boolean installed)
+    {
+        mUsbMonitorInstalled = installed;
+        mPreferences.putBoolean(PREFERENCE_KEY_USB_MONITOR_INSTALLED, installed);
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Indicates if the user has been prompted to install the USB Monitor script.
+     * @return true if prompted.
+     */
+    public boolean isUsbMonitorPrompted()
+    {
+        if(mUsbMonitorPrompted == null)
+        {
+            mUsbMonitorPrompted = mPreferences.getBoolean(PREFERENCE_KEY_USB_MONITOR_PROMPTED, false);
+        }
+        return mUsbMonitorPrompted;
+    }
+
+    public void setUsbMonitorPrompted(boolean prompted)
+    {
+        mUsbMonitorPrompted = prompted;
+        mPreferences.putBoolean(PREFERENCE_KEY_USB_MONITOR_PROMPTED, prompted);
         notifyPreferenceUpdated();
     }
 }
