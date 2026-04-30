@@ -233,9 +233,18 @@ public class IconModel
                 @Override
                 public synchronized void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {
                     java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
-                    g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                    g2.drawImage(getImage(), x, y, scaledWidth, height, c);
-                    g2.dispose();
+                    try {
+                        g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                        g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
+                        if (getImage() != null) {
+                            g2.drawImage(getImage(), x, y, scaledWidth, height, c);
+                        } else {
+                            super.paintIcon(c, g2, x, y);
+                        }
+                    } finally {
+                        g2.dispose();
+                    }
                 }
                 @Override
                 public int getIconWidth() { return scaledWidth; }

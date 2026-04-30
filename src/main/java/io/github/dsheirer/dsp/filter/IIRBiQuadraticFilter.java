@@ -1,17 +1,17 @@
 /*******************************************************************************
- *     SDR Trunk 
+ *     SDR Trunk
  *     Copyright (C) 2014 Dennis Sheirer
- * 
+ *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     This program is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
@@ -60,22 +60,22 @@ final public class IIRBiQuadraticFilter {
     }
 
     // constructor without gain setting
-    public IIRBiQuadraticFilter(Type type, double center_freq, double sample_rate, double Q) 
+    public IIRBiQuadraticFilter(Type type, double center_freq, double sample_rate, double Q)
     {
         configure(type, center_freq, sample_rate, Q, 0);
     }
 
-    public void reset() 
+    public void reset()
     {
         x1 = x2 = y1 = y2 = 0;
     }
 
-    public double frequency() 
+    public double frequency()
     {
         return center_freq;
     }
 
-    public void configure(Type type, double center_freq, double sample_rate, double Q, double gainDB) 
+    public void configure(Type type, double center_freq, double sample_rate, double Q, double gainDB)
     {
         reset();
         Q = (Q == 0) ? 1e-9 : Q;
@@ -86,7 +86,7 @@ final public class IIRBiQuadraticFilter {
         reconfigure(center_freq);
     }
 
-    public void configure(Type type, double center_freq, double sample_rate, double Q) 
+    public void configure(Type type, double center_freq, double sample_rate, double Q)
     {
         configure(type, center_freq, sample_rate, Q, 0);
     }
@@ -174,7 +174,7 @@ final public class IIRBiQuadraticFilter {
     }
 
     // provide a static decibel result for testing
-    public double log_result(double f) 
+    public double log_result(double f)
     {
         double r;
         try {
@@ -189,13 +189,13 @@ final public class IIRBiQuadraticFilter {
     }
 
     // return the constant set for this filter
-    public double[] constants() 
+    public double[] constants()
     {
         return new double[]{b0, b1, b2, a1, a2};
     }
 
     // perform one filtering step
-    public double filter(double x) 
+    public double filter(double x)
     {
         y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
         x2 = x1;

@@ -28,6 +28,8 @@ import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import org.slf4j.Logger;
@@ -41,7 +43,7 @@ public class RecordPreferenceEditor extends HBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(RecordPreferenceEditor.class);
     private RecordPreference mRecordPreference;
-    private GridPane mEditorPane;
+    private VBox mEditorPane;
     private ComboBox<RecordFormat> mRecordFormatComboBox;
 
     public RecordPreferenceEditor(UserPreferences userPreferences)
@@ -51,19 +53,29 @@ public class RecordPreferenceEditor extends HBox
         getChildren().add(getEditorPane());
     }
 
-    private GridPane getEditorPane()
+    private VBox getEditorPane()
     {
         if(mEditorPane == null)
         {
-            mEditorPane = new GridPane();
-            mEditorPane.setPadding(new Insets(10, 10, 10, 10));
-            mEditorPane.setHgap(10);
-            mEditorPane.setVgap(10);
+            mEditorPane = new VBox();
+            mEditorPane.getStyleClass().add("hig-form-group");
+
+            HBox row = new HBox();
+            row.getStyleClass().add("hig-form-row");
+            row.setAlignment(Pos.CENTER_LEFT);
 
             Label label = new Label("Audio Recording Format:");
-            mEditorPane.add(label, 0, 0);
+            label.getStyleClass().add("hig-form-label");
 
-            mEditorPane.add(getRecordFormatComboBox(), 1, 0);
+            HBox spacer = new HBox();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            row.getChildren().addAll(label, spacer, getRecordFormatComboBox());
+
+            mEditorPane.getChildren().add(row);
+
+            // Apply padding to match typical macOS form group usage
+            HBox.setMargin(mEditorPane, new Insets(20, 20, 20, 20));
         }
 
         return mEditorPane;

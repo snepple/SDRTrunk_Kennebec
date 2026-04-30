@@ -100,7 +100,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.control.TitledPane;
+
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.ColumnConstraints;
@@ -143,9 +143,10 @@ public class AliasItemEditor extends Editor<Alias>
     private ComboBox<Icon> mIconNodeComboBox;
     private SuggestionProvider<String> mGroupSuggestionProvider;
     private VBox mTitledPanesBox;
-    private TitledPane mIdentifierPane;
-    private TitledPane mStreamPane;
-    private TitledPane mActionPane;
+    private VBox mIdentifierPane;
+    private VBox mStreamPane;
+    private Label mStreamLabel;
+    private VBox mActionPane;
     private ListView<String> mAvailableStreamsView;
     private ListView<BroadcastChannel> mSelectedStreamsView;
     private ListView<AliasID> mIdentifiersList;
@@ -195,6 +196,7 @@ public class AliasItemEditor extends Editor<Alias>
 
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
         scrollPane.setContent(vbox);
 
         HBox hbox = new HBox();
@@ -522,7 +524,7 @@ public class AliasItemEditor extends Editor<Alias>
         return mTitledPanesBox;
     }
 
-    private TitledPane getIdentifierPane()
+    private VBox getIdentifierPane()
     {
         if(mIdentifierPane == null)
         {
@@ -539,7 +541,9 @@ public class AliasItemEditor extends Editor<Alias>
             HBox.setHgrow(getIdentifierEditorBox(), Priority.ALWAYS);
             identifiersAndButtonsBox.getChildren().addAll(getIdentifierEditorBox(), buttonsBox);
 
-            mIdentifierPane = new TitledPane("Identifiers", identifiersAndButtonsBox);
+            Label identifierLabel = new Label("Identifiers");
+            identifierLabel.setStyle("-fx-font-weight: bold;");
+            mIdentifierPane = new VBox(5, identifierLabel, identifiersAndButtonsBox);
         }
 
         return mIdentifierPane;
@@ -877,7 +881,7 @@ public class AliasItemEditor extends Editor<Alias>
         return mDeleteIdentifierButton;
     }
 
-    private TitledPane getStreamPane()
+    private VBox getStreamPane()
     {
         if(mStreamPane == null)
         {
@@ -918,8 +922,9 @@ public class AliasItemEditor extends Editor<Alias>
             streamAsHBox.getChildren().addAll(label, getStreamAsTalkgroupField());
             vbox.getChildren().addAll(hbox, streamAsHBox);
 
-            mStreamPane = new TitledPane("Streaming", vbox);
-            mStreamPane.setExpanded(false);
+            mStreamLabel = new Label("Streaming");
+            mStreamLabel.setStyle("-fx-font-weight: bold;");
+            mStreamPane = new VBox(5, mStreamLabel, vbox);
         }
 
         return mStreamPane;
@@ -1006,7 +1011,7 @@ public class AliasItemEditor extends Editor<Alias>
                     title += " (" + getSelectedStreamsView().getItems().size() + ")";
                 }
 
-                getStreamPane().setText(title);
+                if(mStreamLabel != null) { mStreamLabel.setText(title); }
             });
         }
 
@@ -1064,7 +1069,7 @@ public class AliasItemEditor extends Editor<Alias>
         return mRemoveStreamButton;
     }
 
-    private TitledPane getActionPane()
+    private VBox getActionPane()
     {
         if(mActionPane == null)
         {
@@ -1079,8 +1084,9 @@ public class AliasItemEditor extends Editor<Alias>
             HBox.setHgrow(getActionEditorBox(), Priority.ALWAYS);
             hbox.getChildren().addAll(getActionEditorBox(), buttonsBox);
 
-            mActionPane = new TitledPane("Actions", hbox);
-            mActionPane.setExpanded(false);
+            Label actionLabel = new Label("Actions");
+            actionLabel.setStyle("-fx-font-weight: bold;");
+            mActionPane = new VBox(5, actionLabel, hbox);
         }
 
         return mActionPane;
@@ -1941,7 +1947,10 @@ public class AliasItemEditor extends Editor<Alias>
                     else
                     {
                         textLabel.setText(item.getName());
-                        iconLabel.setGraphic(new ImageView(item.getFxImage()));
+                        ImageView iv = new ImageView(item.getFxImage());
+                        iv.setFitHeight(16);
+                        iv.setFitWidth(16);
+                        iconLabel.setGraphic(iv);
                         setGraphic(gridPane);
                     }
                 }
