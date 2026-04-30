@@ -13,33 +13,59 @@
 
 <p>This wideband capture allows the software to monitor entire trunked radio systems, where conversations dynamically jump across multiple frequencies. SDRTrunk automatically tracks system control channels, decodes the digital or analog voice traffic, and pieces the conversations back together in real time. It supports a variety of common public safety and commercial radio protocols, including Project 25 (P25) Phase 1 and 2, DMR, LTR, and standard analog FM. By utilizing software-based digital signal processing, it provides an accessible and highly configurable way to monitor local radio traffic, manage talkgroups, and route the resulting audio to external internet streaming platforms.</p>
 
-<h2>Why the Kennebec Version?</h2>
+<h2>What the Kennebec Version Adds (Versus the Source Fork)</h2>
+<p>The Kennebec version builds on the upstream sdrtrunk codebase with a focused set of improvements for operators who need reliable, unattended streaming and monitoring.</p>
+
+<h3>Modernized Interface and Workflow</h3>
 <ul>
-  <li>Streamlined Monitoring: Focused on optimizing the flow of mission-critical audio and data to internet streaming platforms.</li>
-  <li>Modern Efficiency: Built to reduce cognitive load on operators with deeply integrated contextual help, streamlined configuration, and a modernized interface.</li>
-  <li>In-App Knowledge Base: Say goodbye to alt-tabbing to a wiki. An embedded, searchable technical documentation viewer brings the knowledge you need right to your fingertips.</li>
-  <li>Deep OS Integration: Utilizing modern Java and JNA for advanced desktop integration (e.g., native backdrops and theme syncing).</li>
+  <li>Refreshed GUI with updated icons and an improved Now Playing view</li>
+  <li>Consolidated settings in a single user preference area, eliminating the need to hunt across multiple menus</li>
+  <li>New interface for reviewing logs and browsing recorded audio files</li>
+  <li>Ability to set allocated memory directly via the user preferences Ux/GUI</li>
 </ul>
 
-<h2>Features</h2>
+<h3>In-App Knowledge Base</h3>
 <ul>
-  <li>Comprehensive digital and analog trunking support (P25, DMR, etc.).</li>
-  <li>Automated audio recording, streaming, and metadata tagging.</li>
+  <li>An embedded, searchable help viewer brings documentation directly into the application. You no longer need to switch to a browser to look up configuration details or protocol explanations.</li>
   <li>Contextual DSP explanations and interactive configuration.</li>
-  <li>Fully searchable in-app Help Viewer.</li>
-  <li>Two Tone Detect functionality.</li>
-  <li>Refreshed Ux/GUI with new icons.</li>
-  <li>New Ux/GUI for reviewing logs and recorded audio files.</li>
-  <li>Consolidated all settings into a single user preference area.</li>
-  <li>SDR Tuner width auto calculating.</li>
-  <li>New stream type for IamResponding (local computer only via UDP) using two tone detect.</li>
-  <li>Optional Gemini AI integration: When enabled, AI can auto set channel filters, review logs, monitor application performance, monitor channel audio quality, and notify the user if the audio is not understandable.</li>
-  <li>Configurable Error Notifications: Option to configure system notifications via Telegram or Email when application or tuner errors occur.</li>
-  <li>Inactivity Monitoring: Monitor channels for no activity. User-configurable to send alerts via Telegram or Email if a channel remains silent for a set duration.</li>
-  <li>Tuner Self-Healing: Application includes advanced logic to automatically attempt self-healing on tuners that encounter an error.</li>
-  <li>Automated Tuner Reset (Windows 10+): When running on Windows 10 or higher, the application executes PowerShell scripts to attempt to hard-reset SDR tuners directly within the Windows OS if they become locked or fail.</li>
-  <li>Ability to set allocated memory directly via the user preferences Ux/GUI.</li>
 </ul>
+
+<h3>Streaming and Audio Reliability</h3>
+<ul>
+  <li>Automated audio recording, streaming, and metadata tagging</li>
+  <li>SDR tuner width auto-calculation to reduce manual configuration</li>
+  <li>New stream type for IamResponding (local UDP) using Two Tone Detect</li>
+  <li>Tuner self-healing logic that automatically attempts to recover from hardware errors</li>
+  <li>Automated tuner reset on Windows 10 and higher using PowerShell scripts for hard-reset of locked or failed SDR devices</li>
+</ul>
+
+<h3>Monitoring and Alerts</h3>
+<ul>
+  <li>Two Tone Detect functionality for paging and dispatch monitoring</li>
+  <li>Inactivity monitoring: alerts via Telegram or Email when a channel remains silent for a configurable duration</li>
+  <li>Configurable error notifications via Telegram or Email for application or tuner faults</li>
+</ul>
+
+<h3>Optional AI Integration</h3>
+<ul>
+  <li>When enabled, Gemini AI can automatically set channel filters, review logs, monitor application performance, assess audio quality, and notify you if a channel becomes unintelligible.</li>
+</ul>
+
+<h3>OS and Java Integration</h3>
+<ul>
+  <li>Deep OS integration via modern Java and JNA provides native backdrop effects, theme syncing with the system appearance, and DPI-aware rendering on Windows.</li>
+</ul>
+
+<h2>Core SDRTrunk Features</h2>
+<ul>
+  <li>Comprehensive digital and analog trunking support (P25 Phase 1 & 2, DMR, LTR, etc.)</li>
+  <li>Multi-channel tracking from a wideband capture</li>
+  <li>Automated control channel following and voice traffic decoding</li>
+  <li>Manage talkgroups and route audio to various streaming platforms</li>
+</ul>
+
+<h2>Documentation</h2>
+<p>For more detailed information, setup guides, and tutorials, please visit the <a href="https://sam-64221fcd.mintlify.app/">SDRTrunk Kennebec Documentation</a>.</p>
 
 <h2>Screenshots</h2>
 
