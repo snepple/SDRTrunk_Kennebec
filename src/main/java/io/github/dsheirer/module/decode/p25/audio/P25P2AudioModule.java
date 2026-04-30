@@ -87,6 +87,9 @@ public class P25P2AudioModule extends AmbeAudioModule implements IdentifierUpdat
         {
             mGraphicEQ.setBandGains(bandGains);
         }
+
+        mLog.info("P25P2AudioModule graphic EQ configured: enabled={} gains={}",
+            enabled, bandGains != null ? java.util.Arrays.toString(bandGains) : "null");
     }
 
     @Override
