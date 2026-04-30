@@ -77,7 +77,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Editor for aliases
  */
-public class AliasConfigurationEditor extends SplitPane implements IAliasListRefreshListener
+public class AliasConfigurationEditor extends VBox implements IAliasListRefreshListener
 {
     private static final Logger mLog = LoggerFactory.getLogger(AliasConfigurationEditor.class);
 
@@ -93,7 +93,7 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
     private Button mRenameAliasButton;
     private Button mCloneAliasButton;
     private MenuButton mMoveToAliasButton;
-    private VBox mButtonBox;
+    private HBox mButtonBox;
     private HBox mSearchAndListSelectionBox;
     private TextField mSearchField;
     private ComboBox<String> mAliasListNameComboBox;
@@ -108,25 +108,32 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
      * @param playlistManager for playlist operations
      * @param userPreferences for user preferences
      */
+    private SplitPane mSplitPane;
+
     public AliasConfigurationEditor(PlaylistManager playlistManager, UserPreferences userPreferences)
     {
         mPlaylistManager = playlistManager;
         mPlaylistManager.addAliasListRefreshListener(this);
         mUserPreferences = userPreferences;
 
+        // Top Toolbar
+        getChildren().add(getSearchAndListSelectionBox());
+
+        // Split Pane Content
+        mSplitPane = new SplitPane();
+        mSplitPane.setOrientation(Orientation.HORIZONTAL);
+        mSplitPane.setDividerPositions(0.4); // 40% list, 60% detail
+        VBox.setVgrow(mSplitPane, Priority.ALWAYS);
+
+        // Left Pane (List + Actions)
         VBox leftBox = new VBox();
         VBox.setVgrow(getAliasTableView(), Priority.ALWAYS);
-        leftBox.getChildren().addAll(getSearchAndListSelectionBox(), getAliasTableView());
-
-        HBox topBox = new HBox();
-
-        HBox.setHgrow(leftBox, Priority.ALWAYS);
-        topBox.getChildren().addAll(leftBox, getButtonBox());
-
-        setOrientation(Orientation.VERTICAL);
+        leftBox.getChildren().addAll(getAliasTableView(), getButtonBox());
 
         mCurrentEditor = getAliasItemEditor();
-        getItems().addAll(topBox, getAliasItemEditor());
+        mSplitPane.getItems().addAll(leftBox, mCurrentEditor);
+
+        getChildren().add(mSplitPane);
     }
 
     /**
@@ -170,9 +177,9 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
     {
         if(editor != mCurrentEditor)
         {
-            getItems().remove(mCurrentEditor);
+            mSplitPane.getItems().remove(mCurrentEditor);
             mCurrentEditor = editor;
-            getItems().add(mCurrentEditor);
+            mSplitPane.getItems().add(mCurrentEditor);
         }
     }
 
@@ -253,21 +260,24 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
         {
             mSearchAndListSelectionBox = new HBox();
             mSearchAndListSelectionBox.setAlignment(Pos.CENTER_LEFT);
-            mSearchAndListSelectionBox.setPadding(new Insets(10, 0, 10, 10));
-            mSearchAndListSelectionBox.setSpacing(5);
+            mSearchAndListSelectionBox.setPadding(new Insets(10, 14, 10, 14));
+            mSearchAndListSelectionBox.setSpacing(10);
+            mSearchAndListSelectionBox.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #E5E5EA; -fx-border-width: 0 0 1 0;");
 
 
             Label listLabel = new Label("Alias List");
+            listLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #3A3A3C;");
             listLabel.setMinWidth(Region.USE_PREF_SIZE);
             Label searchLabel = new Label("Search");
+            searchLabel.setStyle("-fx-text-fill: #8E8E93;");
             searchLabel.setMinWidth(Region.USE_PREF_SIZE);
             searchLabel.setAlignment(Pos.CENTER_RIGHT);
 
             HBox searchBox = new HBox();
-            searchBox.setSpacing(5);
+            searchBox.setSpacing(8);
             searchBox.getChildren().addAll(searchLabel, getSearchField());
             HBox.setHgrow(searchBox, Priority.ALWAYS);
-            searchBox.setAlignment(Pos.BASELINE_RIGHT);
+            searchBox.setAlignment(Pos.CENTER_RIGHT);
 
             getAliasListNameComboBox().setMinWidth(Region.USE_PREF_SIZE);
             getNewAliasListButton().setMinWidth(Region.USE_PREF_SIZE);
@@ -568,23 +578,21 @@ public class AliasConfigurationEditor extends SplitPane implements IAliasListRef
         return mPlaceholderLabel;
     }
 
-    private VBox getButtonBox()
+    private HBox getButtonBox()
     {
         if(mButtonBox == null)
         {
-            mButtonBox = new VBox();
-            mButtonBox.setMinWidth(Region.USE_PREF_SIZE);
-            mButtonBox.setPadding(new Insets(10, 10, 10, 10));
-            mButtonBox.setSpacing(10);
+            mButtonBox = new HBox();
+            mButtonBox.setAlignment(Pos.CENTER);
+            mButtonBox.setPadding(new Insets(8));
+            mButtonBox.setSpacing(8);
+            mButtonBox.setStyle("-fx-background-color: #F2F2F7; -fx-border-color: #E5E5EA; -fx-border-width: 0 1 0 0;"); // Match SplitPane divider
 
-            Button fillerButton = new Button();
-            fillerButton.setVisible(false);
-            mButtonBox.getChildren().addAll(fillerButton, getNewAliasButton(), getCloneAliasButton(),
-                    getMoveToAliasButton(), getDeleteAliasButton());
-            getNewAliasButton().setMinWidth(Region.USE_PREF_SIZE);
-            getCloneAliasButton().setMinWidth(Region.USE_PREF_SIZE);
-            getMoveToAliasButton().setMinWidth(Region.USE_PREF_SIZE);
-            getDeleteAliasButton().setMinWidth(Region.USE_PREF_SIZE);
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            mButtonBox.getChildren().addAll(getNewAliasButton(), getCloneAliasButton(),
+                    spacer, getMoveToAliasButton(), getDeleteAliasButton());
         }
 
         return mButtonBox;

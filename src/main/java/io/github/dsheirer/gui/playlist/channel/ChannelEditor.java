@@ -82,6 +82,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
     private TunerManager mTunerManager;
     private UserPreferences mUserPreferences;
     private TableView<Channel> mChannelTableView;
+    private SplitPane mSplitPane;
     private Label mPlaceholderLabel;
     private MenuButton mNewButton;
     private Button mDeleteButton;
@@ -121,8 +122,11 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         topToolbar.getChildren().addAll(getSearchAndViewBox(), spacer, getNewButton(), getCloneButton(), getDeleteButton());
 
         setTop(topToolbar);
-        setCenter(getChannelTableView());
-        setBottom(getChannelConfigurationEditor());
+        mSplitPane = new SplitPane();
+        mSplitPane.setOrientation(Orientation.VERTICAL);
+        mSplitPane.getItems().addAll(getChannelTableView(), getChannelConfigurationEditor());
+        mSplitPane.setDividerPositions(0.5);
+        setCenter(mSplitPane);
     }
 
     /**
@@ -308,7 +312,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         if(editor != getChannelConfigurationEditor())
         {
             mChannelConfigurationEditor = editor;
-            setBottom(getChannelConfigurationEditor());
+            mSplitPane.getItems().set(1, getChannelConfigurationEditor());
         }
     }
 

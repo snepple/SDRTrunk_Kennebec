@@ -51,7 +51,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.Region;
@@ -68,7 +67,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Radio Reference editor for trunked radio systems
  */
-public class SystemEditor extends SplitPane
+public class SystemEditor extends VBox
 {
     private static final Logger mLog = LoggerFactory.getLogger(SystemEditor.class);
 
@@ -101,11 +100,8 @@ public class SystemEditor extends SplitPane
         mLevel = level;
         mSystemCountProperty.bind(Bindings.size(getSystemComboBox().getItems()));
 
-        setPadding(new Insets(0)); // SplitPane shouldn't have padding, internal containers will
-
-        VBox leftPane = new VBox();
-        leftPane.setPadding(new Insets(20, 10, 10, 10));
-        leftPane.setSpacing(10);
+        setPadding(new Insets(20, 10, 10, 10));
+        setSpacing(10);
 
         HBox systemBox = new HBox();
         HBox.setHgrow(getSystemComboBox(), Priority.ALWAYS);
@@ -115,16 +111,7 @@ public class SystemEditor extends SplitPane
         systemBox.getChildren().addAll(new Label("System:"), getSystemComboBox());
 
         VBox.setVgrow(getTabPane(), Priority.ALWAYS);
-        leftPane.getChildren().addAll(systemBox, getTabPane());
-
-        // Right Pane will be the Inspector. For now, we will add a placeholder.
-        // We will restructure SystemSiteSelectionEditor later to extract the config pane.
-        VBox rightPane = new VBox();
-        rightPane.setPadding(new Insets(20, 10, 10, 10));
-        rightPane.getChildren().add(new Label("Inspector placeholder"));
-
-        getItems().addAll(leftPane, rightPane);
-        setDividerPositions(0.7);
+        getChildren().addAll(systemBox, getTabPane());
     }
 
     /**

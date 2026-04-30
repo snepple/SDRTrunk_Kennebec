@@ -152,7 +152,7 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
             {
                 JPopupMenu popup = new JPopupMenu();
                 JMenuItem outputMenu = new JMenuItem("Audio Playback Device ...");
-                Icon icon = IconFontSwing.buildIcon(FontAwesome.COG, 14);
+                Icon icon = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.COG, 14, null);
                 outputMenu.setIcon(icon);
                 outputMenu.addActionListener(e -> MyEventBus.getGlobalEventBus()
                         .post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.AUDIO_OUTPUT)));
@@ -164,7 +164,7 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
                     popup.add(new JPopupMenu.Separator());
                     JMenuItem volume = new JMenuItem("Audio Volume");
                     volume.setEnabled(false);
-                    Icon volumeIcon = IconFontSwing.buildIcon(FontAwesome.VOLUME_UP, 14);
+                    Icon volumeIcon = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.VOLUME_UP, 14, null);
                     volume.setIcon(volumeIcon);
                     popup.add(volume);
                     popup.add(new VolumeSlider(mAudioPlaybackManager.getAudioOutput().getGainControl()));
@@ -306,8 +306,8 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
             Color fg = UIManager.getColor("Label.foreground");
             if (fg == null) fg = Color.BLACK;
 
-            Icon muted = IconFontSwing.buildIcon(FontAwesome.VOLUME_OFF, 20, fg);
-            Icon unmuted = IconFontSwing.buildIcon(FontAwesome.VOLUME_UP, 20, fg);
+            Icon muted = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.VOLUME_OFF, 20, fg);
+            Icon unmuted = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.VOLUME_UP, 20, fg);
 
             setIcon(mMuted ? muted : unmuted);
         }

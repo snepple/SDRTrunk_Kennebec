@@ -83,6 +83,12 @@ import javafx.util.Duration;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.control.ToggleSwitch;
 
+import jiconfont.javafx.IconNode;
+import jiconfont.icons.font_awesome.FontAwesome;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Pos;
+import javafx.scene.paint.Color;
+
 /**
  * Narrow-Band FM channel configuration editor
  */
@@ -626,6 +632,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         VBox section = new VBox(5);
         Label title = new Label("7. Output Gain (Applied Last)");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
+        HBox titleBox = new HBox(5);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+        titleBox.getChildren().addAll(title, createHelpIcon("Adjusts the final audio volume level after all filters have been applied. Use this to compensate for volume lost due to filtering or to boost quiet signals."));
 
         GridPane controlsPane = new GridPane();
         controlsPane.setHgap(10);
@@ -674,7 +683,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         GridPane.setConstraints(mInputGainField, 2, 0);
         controlsPane.getChildren().add(mInputGainField);
 
-        section.getChildren().addAll(title, controlsPane);
+        section.getChildren().addAll(titleBox, controlsPane);
         return section;
     }
 
@@ -683,6 +692,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         VBox section = new VBox(5);
         Label title = new Label("1. Low-Pass Filter");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
+        HBox titleBox = new HBox(5);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+        titleBox.getChildren().addAll(title, createHelpIcon("Removes high frequencies above the cutoff. Use this to eliminate harsh high-pitched static and hiss from weak analog FM signals."));
 
         mLowPassEnabledSwitch = new ToggleSwitch("Enable Low-Pass Filter");
         mLowPassEnabledSwitch.setTooltip(new Tooltip("Remove high-frequency hiss/noise"));
@@ -723,7 +735,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         GridPane.setConstraints(mLowPassCutoffField, 2, 0);
         controlsPane.getChildren().add(mLowPassCutoffField);
 
-        section.getChildren().addAll(title, mLowPassEnabledSwitch, controlsPane);
+        section.getChildren().addAll(titleBox, mLowPassEnabledSwitch, controlsPane);
         return section;
     }
 
@@ -732,6 +744,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         VBox section = new VBox(5);
         Label title = new Label("4. Voice Enhancement");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
+        HBox titleBox = new HBox(5);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+        titleBox.getChildren().addAll(title, createHelpIcon("Boosts frequencies in the 2-4 kHz range (presence peak). Use this to improve speech intelligibility and make voices stand out, especially in noisy environments."));
 
         mVoiceEnhanceEnabledSwitch = new ToggleSwitch("Enable Voice Enhancement");
         mVoiceEnhanceEnabledSwitch.setTooltip(new Tooltip("Boost speech clarity (2-4 kHz presence)"));
@@ -772,7 +787,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         GridPane.setConstraints(mVoiceEnhanceField, 2, 0);
         controlsPane.getChildren().add(mVoiceEnhanceField);
 
-        section.getChildren().addAll(title, mVoiceEnhanceEnabledSwitch, controlsPane);
+        section.getChildren().addAll(titleBox, mVoiceEnhanceEnabledSwitch, controlsPane);
         return section;
     }
 
@@ -781,6 +796,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         VBox section = new VBox(5);
         Label title = new Label("3. Bass Boost");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
+        HBox titleBox = new HBox(5);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+        titleBox.getChildren().addAll(title, createHelpIcon("Boosts low frequencies (low-shelf) below 400 Hz. Use this to add depth and richness to voices that sound thin or \'tinny\'."));
 
         mBassBoostEnabledSwitch = new ToggleSwitch("Enable Bass Boost");
         mBassBoostEnabledSwitch.setTooltip(new Tooltip("Boost low frequencies below 400 Hz for warmth"));
@@ -821,7 +839,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         GridPane.setConstraints(mBassBoostField, 2, 0);
         controlsPane.getChildren().add(mBassBoostField);
 
-        section.getChildren().addAll(title, mBassBoostEnabledSwitch, controlsPane);
+        section.getChildren().addAll(titleBox, mBassBoostEnabledSwitch, controlsPane);
         return section;
     }
 
@@ -830,6 +848,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         VBox section = new VBox(5);
         Label title = new Label("2. Hiss Reduction");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
+        HBox titleBox = new HBox(5);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+        titleBox.getChildren().addAll(title, createHelpIcon("Attenuates high frequencies (high-shelf cut) above the corner frequency. Use this to soften background hiss while preserving voice clarity better than a hard low-pass filter."));
 
         mHissReductionEnabledSwitch = new ToggleSwitch("Enable Hiss Reduction");
         mHissReductionEnabledSwitch.setTooltip(new Tooltip(
@@ -904,7 +925,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         GridPane.setConstraints(mHissReductionCornerField, 2, 1);
         controlsPane.getChildren().add(mHissReductionCornerField);
 
-        section.getChildren().addAll(title, mHissReductionEnabledSwitch, controlsPane);
+        section.getChildren().addAll(titleBox, mHissReductionEnabledSwitch, controlsPane);
         return section;
     }
 
@@ -913,6 +934,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         VBox section = new VBox(5);
         Label title = new Label("5. Squelch / Noise Gate");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
+        HBox titleBox = new HBox(5);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+        titleBox.getChildren().addAll(title, createHelpIcon("Mutes the audio when the signal level drops below the threshold. Use this to silence background static and noise between active voice transmissions."));
 
         mSquelchEnabledSwitch = new ToggleSwitch("Enable Squelch/Noise Gate");
         mSquelchEnabledSwitch.setTooltip(new Tooltip("Silence carrier/static between voice"));
@@ -1015,7 +1039,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         GridPane.setConstraints(mHoldTimeField, 2, 2);
         controlsPane.getChildren().add(mHoldTimeField);
 
-        section.getChildren().addAll(title, mSquelchEnabledSwitch, controlsPane);
+        section.getChildren().addAll(titleBox, mSquelchEnabledSwitch, controlsPane);
         return section;
     }
 
@@ -1719,5 +1743,17 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         getSourceConfigurationEditor().save();
         SourceConfiguration sourceConfiguration = getSourceConfigurationEditor().getSourceConfiguration();
         getItem().setSourceConfiguration(sourceConfiguration);
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }
