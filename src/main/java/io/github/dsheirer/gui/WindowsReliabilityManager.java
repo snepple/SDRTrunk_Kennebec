@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 public class WindowsReliabilityManager {
     private static final Logger mLog = LoggerFactory.getLogger(WindowsReliabilityManager.class);
@@ -44,7 +46,9 @@ public class WindowsReliabilityManager {
                 currentPid, userDir, GRACEFUL_EXIT_FILE
             );
 
-            new ProcessBuilder("powershell.exe", "-WindowStyle", "Hidden", "-Command", command).start();
+            String encodedCmd = Base64.getEncoder().encodeToString(command.getBytes(StandardCharsets.UTF_16LE));
+
+            new ProcessBuilder("powershell.exe", "-WindowStyle", "Hidden", "-EncodedCommand", encodedCmd).start();
             mLog.info("Windows Watchdog started monitoring PID {}", currentPid);
         } catch (Exception e) {
             mLog.error("Failed to start Windows Watchdog", e);
