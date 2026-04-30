@@ -354,6 +354,8 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
                     {
                         updateTitle(tuner.getPreferredName());
                     }
+
+                    UsbMonitorManager.manage(mUserPreferences);
                 }
 
                 if(calibrating && !GraphicsEnvironment.isHeadless())
