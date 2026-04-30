@@ -13,6 +13,17 @@ Traditional hardware scanners monitor one frequency at a time. SDRTrunk captures
 
 You can route the resulting audio to external internet streaming platforms, record it locally, and organize it by talkgroup — all from a single application running on your desktop.
 
+
+## How does trunking radios work?
+
+For those not familiar, trunking systems allow a large number of user groups to share a limited number of radio frequencies by temporarily, dynamically assigning radio frequencies to talkgroups (channels) on-demand. It is understood that most user groups actually use the radio very sporadically and don't need a dedicated frequency.
+
+Most trunking system types (such as SmartNet and P25) set aside one of the radio frequencies as a "control channel" that manages and broadcasts radio frequency assignments. When someone presses the Push to Talk button on their radio, the radio sends a message to the system which then assigns a voice frequency and broadcasts a Channel Grant message about it on the control channel. This lets the radio know what frequency to transmit on and tells other radios set to the same talkgroup to listen.
+
+In order to follow all of the transmissions, SDRTrunk Kennebec constantly listens to and decodes the control channel. When a frequency is granted to a talkgroup, SDRTrunk Kennebec creates a monitoring process which decodes the portion of the radio spectrum for that frequency from the SDR that is already pulling it in.
+
+No message is transmitted on the control channel when a conversation on a talkgroup is over. The monitoring process keeps track of transmissions and if there has been no activity for a specified period, it ends the recording.
+
 ## Supported protocols
 
 SDRTrunk Kennebec supports a range of digital and analog radio protocols used by public safety agencies and commercial operators:
