@@ -1,0 +1,12 @@
+--- gradle.properties
++++ gradle.properties
+@@ -28,8 +28,4 @@
+ # tag name, specifically the dashes inserted before and after the alpha/beta labels.
+ # See: https://github.com/DSheirer/sdrtrunk/issues/1651
+
+-<<<<<<< HEAD
+-projectVersion=K.01.011
+-=======
+-projectVersion=K.00.001
+->>>>>>> origin/master
++projectVersion=K.01.011

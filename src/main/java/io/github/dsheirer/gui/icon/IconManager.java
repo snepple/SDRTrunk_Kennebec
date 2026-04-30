@@ -575,7 +575,10 @@ public class IconManager extends Editor<Icon>
                     {
                         if(item.getFxImage() != null)
                         {
-                            setGraphic(new ImageView(item.getFxImage()));
+                            ImageView iv = new ImageView(item.getFxImage());
+                            iv.setFitHeight(16);
+                            iv.setFitWidth(16);
+                            setGraphic(iv);
                             setText(null);
                         }
                         else

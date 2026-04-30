@@ -80,8 +80,6 @@ public class PlaylistEditor extends BorderPane
     private TunerManager mTunerManager;
     private UserPreferences mUserPreferences;
     private MenuBar mMenuBar;
-    private SplitPane mSplitPane;
-    private ListView<String> mSidebar;
     private ScrollPane mPlaylistsScrollPane;
     private ScrollPane mChannelsScrollPane;
     private ScrollPane mAliasesScrollPane;
@@ -109,7 +107,7 @@ public class PlaylistEditor extends BorderPane
         //Throw a new runnable back onto the FX thread to lazy load the editor content after the editor has been
         //constructed and shown.
         Platform.runLater(() -> {
-            setCenter(getSplitPane());
+            setCenter(getPlaylistsScrollPane());
         });
     }
 
@@ -121,42 +119,51 @@ public class PlaylistEditor extends BorderPane
      */
     public void process(PlaylistEditorRequest request)
     {
-        // Ensure UI initialization
-        getSplitPane();
         switch(request.getTabName())
         {
             case ALIAS:
                 if(request instanceof AliasTabRequest)
                 {
-                    mSidebar.getSelectionModel().select("Aliases");
+                    setCenter(getAliasesScrollPane());
                     getAliasEditor().process((AliasTabRequest)request);
+                } else {
+                    setCenter(getAliasesScrollPane());
                 }
                 break;
 
             case TWO_TONE:
                 if(request instanceof TwoToneTabRequest)
                 {
-                    mSidebar.getSelectionModel().select("Two Tones");
+                    setCenter(getTwoToneScrollPane());
                     getTwoToneEditor().process((TwoToneTabRequest)request);
+                } else {
+                    setCenter(getTwoToneScrollPane());
                 }
                 break;
 
             case CHANNEL:
                 if(request instanceof ChannelTabRequest)
                 {
-                    mSidebar.getSelectionModel().select("Channels");
+                    setCenter(getChannelsScrollPane());
                     getChannelEditor().process((ChannelTabRequest)request);
+                } else {
+                    setCenter(getChannelsScrollPane());
                 }
                 break;
             case STREAM:
                 if(request instanceof StreamTabRequest)
                 {
-                    mSidebar.getSelectionModel().select("Streaming");
+                    setCenter(getStreamingScrollPane());
                     getStreamingEditor().process((StreamTabRequest)request);
+                } else {
+                    setCenter(getStreamingScrollPane());
                 }
                 break;
+            case RADIOREFERENCE:
+                setCenter(getRadioReferenceScrollPane());
+                break;
             case PLAYLIST:
-                mSidebar.getSelectionModel().select("Playlists");
+                setCenter(getPlaylistsScrollPane());
                 break;
             default:
                 mLog.warn("Unrecognized playlist editor request: " + request.getClass());
@@ -226,65 +233,6 @@ public class PlaylistEditor extends BorderPane
         }
 
         return mMenuBar;
-    }
-
-    private SplitPane getSplitPane()
-    {
-        if(mSplitPane == null)
-        {
-            mSplitPane = new SplitPane();
-            mSplitPane.setDividerPositions(0.2);
-
-            VBox sidebarContainer = new VBox();
-            sidebarContainer.setStyle("-fx-background-color: #F2F2F7;");
-
-            Label header = new Label("Library");
-            header.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #8E8E93; -fx-padding: 16 8 8 16;");
-
-            mSidebar = new ListView<>();
-            mSidebar.getItems().addAll("Playlists", "Channels", "Aliases", "Streaming", "Radio Reference", "Two Tones");
-            mSidebar.setStyle("-fx-background-color: transparent; -fx-border-color: transparent; -fx-control-inner-background: transparent;");
-
-            VBox.setVgrow(mSidebar, Priority.ALWAYS);
-            sidebarContainer.getChildren().addAll(header, mSidebar);
-
-            mSplitPane.getItems().addAll(sidebarContainer, getPlaylistsScrollPane());
-
-            mSidebar.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-                if (newVal != null) {
-                    showEditorForSidebarItem(newVal);
-                }
-            });
-            mSidebar.getSelectionModel().select("Playlists");
-        }
-
-        return mSplitPane;
-    }
-
-    private void showEditorForSidebarItem(String item) {
-        if (mSplitPane.getItems().size() > 1) {
-            mSplitPane.getItems().remove(1);
-        }
-        switch (item) {
-            case "Playlists":
-                mSplitPane.getItems().add(getPlaylistsScrollPane());
-                break;
-            case "Channels":
-                mSplitPane.getItems().add(getChannelsScrollPane());
-                break;
-            case "Aliases":
-                mSplitPane.getItems().add(getAliasesScrollPane());
-                break;
-            case "Streaming":
-                mSplitPane.getItems().add(getStreamingScrollPane());
-                break;
-            case "Radio Reference":
-                mSplitPane.getItems().add(getRadioReferenceScrollPane());
-                break;
-            case "Two Tones":
-                mSplitPane.getItems().add(getTwoToneScrollPane());
-                break;
-        }
     }
 
     private ScrollPane getAliasesScrollPane()
