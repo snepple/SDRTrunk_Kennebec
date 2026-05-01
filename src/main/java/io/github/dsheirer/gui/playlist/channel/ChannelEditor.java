@@ -124,7 +124,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         setTop(topToolbar);
         mSplitPane = new SplitPane();
         mSplitPane.setOrientation(Orientation.VERTICAL);
-        mSplitPane.getItems().addAll(getChannelTableView(), getChannelConfigurationEditor());
+        mSplitPane.getItems().add(getChannelTableView());
         mSplitPane.setDividerPositions(0.5);
         setCenter(mSplitPane);
     }
@@ -163,7 +163,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
     private void setChannel(Channel channel)
     {
         //Prompt the user to save if the contents of the current channel editor have been modified
-        if(getChannelConfigurationEditor().modifiedProperty().get())
+        if(getChannelConfigurationEditor() != null && getChannelConfigurationEditor().modifiedProperty().get())
         {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.getButtonTypes().clear();
@@ -192,7 +192,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
 
         if(channel == null)
         {
-            setChannelConfigurationEditor(mUnknownConfigurationEditor);
+            setChannelConfigurationEditor(null);
         }
         else
         {
@@ -205,11 +205,11 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
 
             if(channelDecoderType == null)
             {
-                setChannelConfigurationEditor(mUnknownConfigurationEditor);
+                setChannelConfigurationEditor(null);
             }
             else
             {
-                DecoderType editorDecoderType = getChannelConfigurationEditor().getDecoderType();
+                DecoderType editorDecoderType = getChannelConfigurationEditor() != null ? getChannelConfigurationEditor().getDecoderType() : null;
 
                 if(editorDecoderType == null || editorDecoderType != channelDecoderType)
                 {
@@ -236,7 +236,9 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             }
         }
 
-        getChannelConfigurationEditor().setItem(channel);
+        if (getChannelConfigurationEditor() != null) {
+            getChannelConfigurationEditor().setItem(channel);
+        }
     }
 
     private void createNewChannel(DecoderType decoderType)
@@ -309,22 +311,28 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
      */
     private void setChannelConfigurationEditor(ChannelConfigurationEditor editor)
     {
-        if(editor != getChannelConfigurationEditor())
-        {
+        if(editor != mChannelConfigurationEditor) {
             mChannelConfigurationEditor = editor;
-            mSplitPane.getItems().set(1, getChannelConfigurationEditor());
+
+            if (editor == null) {
+                if (mSplitPane.getItems().size() > 1) {
+                    mSplitPane.getItems().remove(1);
+                }
+            } else {
+                editor.setMaxWidth(Double.MAX_VALUE);
+                editor.setPadding(new Insets(16, 16, 16, 16));
+                if (mSplitPane.getItems().size() > 1) {
+                    mSplitPane.getItems().set(1, editor);
+                } else {
+                    mSplitPane.getItems().add(editor);
+                    mSplitPane.setDividerPositions(0.5);
+                }
+            }
         }
     }
 
     private ChannelConfigurationEditor getChannelConfigurationEditor()
     {
-        if(mChannelConfigurationEditor == null)
-        {
-            mChannelConfigurationEditor = mUnknownConfigurationEditor;
-            mChannelConfigurationEditor.setMaxWidth(Double.MAX_VALUE);
-            mChannelConfigurationEditor.setPadding(new Insets(16, 16, 16, 16));
-        }
-
         return mChannelConfigurationEditor;
     }
 
@@ -539,7 +547,9 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mChannelTableView.setOnMouseClicked(event -> {
                 if(event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2)
                 {
-                    getChannelConfigurationEditor().startChannel();
+                    if(getChannelConfigurationEditor() != null) {
+                        getChannelConfigurationEditor().startChannel();
+                    }
                 }
             });
         }
