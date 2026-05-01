@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class WidgetContainer extends JPanel {
+public class WidgetContainer extends JPanel implements Scrollable, java.awt.event.ComponentListener {
 
     private final NowPlayingPreference mPreference;
     private final List<Widget> mWidgets = new ArrayList<>();
@@ -23,6 +23,7 @@ public class WidgetContainer extends JPanel {
     public WidgetContainer(NowPlayingPreference preference) {
         mPreference = preference;
         setLayout(new MigLayout("wrap 1, insets 0, fillx, hidemode 3, gapy 2", "[grow,fill]"));
+        addComponentListener(this);
     }
 
     public NowPlayingPreference getPreference() {
@@ -204,5 +205,49 @@ public class WidgetContainer extends JPanel {
 
         header.addMouseListener(dragAdapter);
         header.addMouseMotionListener(dragAdapter);
+    }
+
+
+    @Override
+    public Dimension getPreferredScrollableViewportSize() {
+        return super.getPreferredSize();
+    }
+
+    @Override
+    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+        return 16;
+    }
+
+    @Override
+    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+        return visibleRect.height;
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportWidth() {
+        return true;
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportHeight() {
+        return false;
+    }
+
+    @Override
+    public void componentResized(java.awt.event.ComponentEvent e) {
+        revalidate();
+        repaint();
+    }
+
+    @Override
+    public void componentMoved(java.awt.event.ComponentEvent e) {
+    }
+
+    @Override
+    public void componentShown(java.awt.event.ComponentEvent e) {
+    }
+
+    @Override
+    public void componentHidden(java.awt.event.ComponentEvent e) {
     }
 }
