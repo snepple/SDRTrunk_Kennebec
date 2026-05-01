@@ -32,26 +32,26 @@ public enum BroadcastServerType
 
     ICECAST_HTTP("Icecast 2 (v2.4+)", "images/icecast.png"),
     RDIOSCANNER_CALL("Rdio Scanner", "images/rdioscanner.png"),
-    OPENMHZ("OpenMHz", "images/openmhz.png"),
+    OPENMHZ("OpenMHz", "images/openmhz.svg"),
     ICECAST_TCP("Icecast (v2.3)", "images/icecast.png"),
-    SHOUTCAST_V1("Shoutcast v1.x", "images/shoutcast.png"),
-    SHOUTCAST_V2("Shoutcast v2.x", "images/shoutcast.png"),
-    THINLINE_RADIO("ThinLine Radio", "images/thinlineradio.png"),
+    SHOUTCAST_V1("Shoutcast v1.x", "images/shoutcast.svg"),
+    SHOUTCAST_V2("Shoutcast v2.x", "images/shoutcast.svg"),
+    THINLINE_RADIO("ThinLine Radio", "images/thinlineradio.svg"),
 
     /**
      * Zello Work - real-time audio streaming to Zello Work channels
      */
-    ZELLO_WORK("Zello Work", "images/zello.png"),
+    ZELLO_WORK("Zello Work", "images/zello.svg"),
 
     /**
      * Zello Consumer (Friends & Family) - real-time audio streaming
      */
-    ZELLO("Zello Consumer", "images/zello.png"),
+    ZELLO("Zello Consumer", "images/zello.svg"),
 
     /**
      * IAmResponding TwoToneDetect - real-time UDP raw PCM streaming
      */
-    IAMRESPONDING("IAmResponding", "images/iamresponding.png"),
+    IAMRESPONDING("IAmResponding", "images/iamresponding.svg"),
 
     UNKNOWN("Unknown", null);
 
