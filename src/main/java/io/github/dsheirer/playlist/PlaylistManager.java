@@ -116,9 +116,6 @@ public class PlaylistManager implements Listener<ChannelEvent>
 
     }
 
-    public UserPreferences getUserPreferences() {
-        return mUserPreferences;
-    }
 
     private void initRemaining(EventLogManager eventLogManager) {
         mChannelModel = new ChannelModel(mAliasModel);
