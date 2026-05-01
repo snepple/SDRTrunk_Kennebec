@@ -209,7 +209,22 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
 
         CheckBox zelloAlertCheck = new CheckBox("Enable Zello Alert Tone");
         ComboBox<String> alertToneCombo = new ComboBox<>();
-        alertToneCombo.getItems().addAll("alert1.wav", "alert2.wav");
+        alertToneCombo.getItems().addAll(
+            "FireCallChirp1.wav",
+            "Siren1.wav",
+            "Siren2.wav",
+            "Siren3.wav",
+            "Siren4.wav",
+            "Siren5.wav",
+            "Siren6.wav",
+            "ToneEMSCall1.wav",
+            "ToneFireCall1.wav",
+            "alert1.wav",
+            "alert2.wav",
+            "fire_pager.mp3",
+            "medical_pager.mp3",
+            "minitor_v_alert_tone.mp3"
+        );
 
         Button previewBtn = new Button("Preview");
         previewBtn.setOnAction(ev -> {
@@ -218,10 +233,18 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 try {
                     URL resource = TwoToneEditor.class.getResource("/audio/" + selectedFile);
                     if (resource != null) {
-                        AudioInputStream ais = AudioSystem.getAudioInputStream(resource);
-                        Clip clip = AudioSystem.getClip();
-                        clip.open(ais);
-                        clip.start();
+                        if (selectedFile.toLowerCase().endsWith(".mp3")) {
+                            javafx.scene.media.Media media = new javafx.scene.media.Media(resource.toURI().toString());
+                            javafx.scene.media.MediaPlayer mediaPlayer = new javafx.scene.media.MediaPlayer(media);
+                            // Avoid GC issue by attaching it to the node properties
+                            previewBtn.getProperties().put("mediaPlayer", mediaPlayer);
+                            mediaPlayer.play();
+                        } else {
+                            AudioInputStream ais = AudioSystem.getAudioInputStream(resource);
+                            Clip clip = AudioSystem.getClip();
+                            clip.open(ais);
+                            clip.start();
+                        }
                     } else {
                         System.err.println("Could not find audio resource: /audio/" + selectedFile);
                     }

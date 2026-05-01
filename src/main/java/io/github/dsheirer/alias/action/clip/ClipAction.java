@@ -43,6 +43,9 @@ public class ClipAction extends RecurringAction
     @JsonIgnore
     private Clip mClip;
 
+    @JsonIgnore
+    private javafx.scene.media.MediaPlayer mMediaPlayer;
+
     public ClipAction()
     {
         updateValueProperty();
@@ -85,28 +88,41 @@ public class ClipAction extends RecurringAction
         {
             if(mFilePath != null)
             {
-                if(mClip == null)
-                {
-                    mClip = AudioSystem.getClip();
+                if(mFilePath.toLowerCase().endsWith(".mp3")) {
+                    if(mMediaPlayer == null) {
+                        javafx.scene.media.Media media = new javafx.scene.media.Media(new File(mFilePath).toURI().toString());
+                        mMediaPlayer = new javafx.scene.media.MediaPlayer(media);
+                    }
+                    if(mMediaPlayer.getStatus() == javafx.scene.media.MediaPlayer.Status.PLAYING) {
+                        mMediaPlayer.stop();
+                    }
+                    mMediaPlayer.seek(javafx.util.Duration.ZERO);
+                    mMediaPlayer.play();
+                } else {
+                    if(mClip == null)
+                    {
+                        mClip = AudioSystem.getClip();
 
-                    AudioInputStream ais = AudioSystem.getAudioInputStream(new File(mFilePath));
+                        AudioInputStream ais = AudioSystem.getAudioInputStream(new File(mFilePath));
 
-                    mClip.open(ais);
+                        mClip.open(ais);
+                    }
+
+                    if(mClip.isRunning())
+                    {
+                        mClip.stop();
+                    }
+
+                    mClip.setFramePosition(0);
+
+                    mClip.start();
                 }
-
-                if(mClip.isRunning())
-                {
-                    mClip.stop();
-                }
-
-                mClip.setFramePosition(0);
-
-                mClip.start();
             }
         }
         catch(Exception e)
         {
             mClip = null;
+            mMediaPlayer = null;
 
             mLog.error("Error playing sound clip [" + mFilePath + "] - " + e.getMessage());
 
