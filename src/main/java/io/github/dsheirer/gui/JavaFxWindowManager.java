@@ -18,6 +18,7 @@
  */
 
 package io.github.dsheirer.gui;
+import java.util.function.Consumer;
 
 import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.alias.AliasModel;
@@ -92,18 +93,18 @@ public class JavaFxWindowManager extends Application
     private Stage mPlaylistStage;
     private Stage mUserPreferencesStage;
     private Stage mRecordingViewerStage;
-    private io.github.dsheirer.gui.SidebarPanel.SidebarListener mVisibilityListener;
+    private Consumer<String> mViewChangedListener;
     private JFXPanel mStatusPanel;
 
     /**
      * Constructs an instance.  Note: this constructor is used for Swing applications.
      */
-    public JavaFxWindowManager(UserPreferences userPreferences, TunerManager tunerManager, PlaylistManager playlistManager, io.github.dsheirer.gui.SidebarPanel.SidebarListener visibilityListener)
+    public JavaFxWindowManager(UserPreferences userPreferences, TunerManager tunerManager, PlaylistManager playlistManager, Consumer<String> viewChangedListener)
     {
         mUserPreferences = userPreferences;
         mTunerManager = tunerManager;
         mPlaylistManager = playlistManager;
-        mVisibilityListener = visibilityListener;
+        mViewChangedListener = viewChangedListener;
 
         setup();
     }
@@ -120,12 +121,7 @@ public class JavaFxWindowManager extends Application
         mTunerManager.start();
         mPlaylistManager = new PlaylistManager(mUserPreferences, mTunerManager, aliasModel, eventLogManager, new IconModel());
         mPlaylistManager.init();
-        mVisibilityListener = new io.github.dsheirer.gui.SidebarPanel.SidebarListener() {
-            @Override
-            public void onItemSelected(String id) {}
-            @Override
-            public void onActionRequested(String id) {}
-        };
+        mViewChangedListener = id -> {};
         setup();
     }
 
@@ -354,7 +350,7 @@ return panel;
                     case PLAYLIST: id = "playlist_playlists"; break;
                 }
                 final String finalId = id;
-                javax.swing.SwingUtilities.invokeLater(() -> mVisibilityListener.onItemSelected(finalId));
+                javax.swing.SwingUtilities.invokeLater(() -> mViewChangedListener.accept(finalId));
                 getPlaylistEditor().process(request);
             }
             catch(Throwable t)
@@ -402,7 +398,7 @@ return panel;
     public void process(final ViewUserPreferenceEditorRequest request)
     {
         execute(() -> {
-            javax.swing.SwingUtilities.invokeLater(() -> mVisibilityListener.onItemSelected("user_prefs"));
+            javax.swing.SwingUtilities.invokeLater(() -> mViewChangedListener.accept("user_prefs"));
             getUserPreferencesEditor().process(request);
         });
     }
@@ -462,7 +458,7 @@ return panel;
     @Subscribe
     public void process(final ViewRecordingViewerRequest request)
     {
-        javax.swing.SwingUtilities.invokeLater(() -> mVisibilityListener.onItemSelected("msg_viewer"));
+        javax.swing.SwingUtilities.invokeLater(() -> mViewChangedListener.accept("msg_viewer"));
     }
 
     /**
