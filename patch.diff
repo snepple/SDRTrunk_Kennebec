@@ -1,10 +1,15 @@
---- src/main/java/io/github/dsheirer/gui/playlist/streaming/StreamingEditor.java
-+++ src/main/java/io/github/dsheirer/gui/playlist/streaming/StreamingEditor.java
-@@ -75,6 +75,7 @@
-     private MenuButton mNewButton;
-     private Button mDeleteButton;
-     private Button mRefreshButton;
-+    private Button mCloneButton;
-     private TableView<ConfiguredBroadcast> mConfiguredBroadcastTableView;
-     private StreamAliasSelectionEditor mStreamAliasSelectionEditor;
-     private TabPane mTabPane;
+--- src/main/java/io/github/dsheirer/gui/widget/WidgetContainer.java
++++ src/main/java/io/github/dsheirer/gui/widget/WidgetContainer.java
+@@ -22,11 +22,8 @@
+
+     public WidgetContainer(NowPlayingPreference preference) {
+         mPreference = preference;
+-<<<<<<< HEAD
+         setLayout(new MigLayout("wrap 1, insets 0, gap 0 0, fillx, hidemode 3", "[grow,fill]"));
+-=======
+-        setLayout(new MigLayout("wrap 1, insets 0, fillx, hidemode 3, gapy 2", "[grow,fill]"));
+         addComponentListener(this);
+->>>>>>> origin/master
+     }
+
+     public NowPlayingPreference getPreference() {

@@ -70,7 +70,7 @@ public class JTableColumnWidthMonitor
         mTable = table;
         mKey = key;
 
-        mTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+        mTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
         // Wait until the UI is realized to restore column widths, order, and sort state
         EventQueue.invokeLater(this::restoreColumnState);
