@@ -23,6 +23,11 @@ import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.id.AliasID;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.StackPane;
+import javafx.geometry.Orientation;
+import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -44,10 +49,10 @@ public class AliasEditor extends BorderPane
     private AliasViewByIdentifierEditor mAliasViewByIdentifierEditor;
     private AliasViewByRecordingEditor mAliasRecordingEditor;
 
-    private ToggleButton mAliasButton;
-    private ToggleButton mIdentifierButton;
-    private ToggleButton mRecordButton;
     private BooleanProperty mIdentifierTabSelected = new SimpleBooleanProperty(false);
+    private SplitPane mSplitPane;
+    private ListView<String> mSidebarList;
+    private StackPane mContentPane;
 
     /**
      * Constructs an instance
@@ -59,58 +64,57 @@ public class AliasEditor extends BorderPane
         mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
 
+
         setPadding(new Insets(4,0,0,0));
 
-        HBox topToolbar = new HBox(10);
-        topToolbar.setAlignment(Pos.CENTER);
-        topToolbar.setPadding(new Insets(8));
-        topToolbar.setStyle("-fx-background-color: #F2F2F7; -fx-border-color: #E5E5EA; -fx-border-width: 0 0 1 0;");
+        mSplitPane = new SplitPane();
+        mSplitPane.setOrientation(Orientation.HORIZONTAL);
+        mSplitPane.setDividerPositions(0.2);
 
-        Label viewByLabel = new Label("View By:");
-        viewByLabel.setStyle("-fx-text-fill: #8E8E93; -fx-font-weight: bold;");
+        mSidebarList = new ListView<>();
+        mSidebarList.getItems().addAll("Alias", "Identifier", "Record");
+        mSidebarList.setMinWidth(150);
+        mSidebarList.setPrefWidth(200);
 
-        ToggleGroup group = new ToggleGroup();
+        mContentPane = new StackPane();
+        mContentPane.setPadding(new Insets(0, 0, 0, 10));
 
-        mAliasButton = new ToggleButton("Alias");
-        mAliasButton.setToggleGroup(group);
-        mAliasButton.setSelected(true);
-        mAliasButton.setOnAction(e -> showAliasEditor());
+        mSplitPane.getItems().addAll(mSidebarList, mContentPane);
 
-        mIdentifierButton = new ToggleButton("Identifier");
-        mIdentifierButton.setToggleGroup(group);
-        mIdentifierButton.setOnAction(e -> showIdentifierEditor());
+        mSidebarList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                switch (newValue) {
+                    case "Alias":
+                        showAliasEditor();
+                        break;
+                    case "Identifier":
+                        showIdentifierEditor();
+                        break;
+                    case "Record":
+                        showRecordingEditor();
+                        break;
+                }
+            }
+        });
 
-        mRecordButton = new ToggleButton("Record");
-        mRecordButton.setToggleGroup(group);
-        mRecordButton.setOnAction(e -> showRecordingEditor());
+        setCenter(mSplitPane);
 
-        // HIG Segmented Control styling (simplified)
-        String segmentStyle = "-fx-background-radius: 4; -fx-padding: 4 12 4 12;";
-        mAliasButton.setStyle(segmentStyle);
-        mIdentifierButton.setStyle(segmentStyle);
-        mRecordButton.setStyle(segmentStyle);
-
-        HBox segmentedControl = new HBox(mAliasButton, mIdentifierButton, mRecordButton);
-
-        topToolbar.getChildren().addAll(viewByLabel, segmentedControl);
-
-        setTop(topToolbar);
-        showAliasEditor();
+        mSidebarList.getSelectionModel().select("Alias");
     }
 
     private void showAliasEditor() {
         mIdentifierTabSelected.set(false);
-        setCenter(getAliasConfigurationEditor());
+        mContentPane.getChildren().setAll(getAliasConfigurationEditor());
     }
 
     private void showIdentifierEditor() {
         mIdentifierTabSelected.set(true);
-        setCenter(getAliasViewByIdentifierEditor());
+        mContentPane.getChildren().setAll(getAliasViewByIdentifierEditor());
     }
 
     private void showRecordingEditor() {
         mIdentifierTabSelected.set(false);
-        setCenter(getAliasRecordingEditor());
+        mContentPane.getChildren().setAll(getAliasRecordingEditor());
     }
 
     /**
@@ -128,8 +132,7 @@ public class AliasEditor extends BorderPane
 
             if(alias != null)
             {
-                mAliasButton.setSelected(true);
-                showAliasEditor();
+                mSidebarList.getSelectionModel().select("Alias");
                 getAliasConfigurationEditor().show(alias);
             }
         }
@@ -139,8 +142,7 @@ public class AliasEditor extends BorderPane
 
             if(aliasID != null)
             {
-                mIdentifierButton.setSelected(true);
-                showIdentifierEditor();
+                mSidebarList.getSelectionModel().select("Identifier");
                 getAliasViewByIdentifierEditor().show(aliasID);
             }
         }
