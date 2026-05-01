@@ -192,7 +192,14 @@ public class NowPlayingPanel extends JPanel
         mScrollPane = new JScrollPane(mWidgetContainer);
         mScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         mScrollPane.setBorder(null);
-        add(mScrollPane, "grow, wrap");
+        mScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        mScrollPane.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                mWidgetContainer.revalidate();
+            }
+        });
+        add(mScrollPane, "grow, wrap, w 100%");
     }
 
     private void setupWidgets() {
