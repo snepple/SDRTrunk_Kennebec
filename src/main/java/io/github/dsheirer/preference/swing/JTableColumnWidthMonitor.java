@@ -39,6 +39,13 @@ import javax.swing.event.TableColumnModelEvent;
 import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
+import javax.swing.JCheckBoxMenuItem;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -56,6 +63,7 @@ public class JTableColumnWidthMonitor
     private SortListener mSortListener = new SortListener();
     private AtomicBoolean mSaveInProgress = new AtomicBoolean();
     private boolean mRestoring = false;
+    private Map<Object, TableColumn> mHiddenColumns = new HashMap<>();
 
     /**
      * Constructs a column width monitor.
@@ -75,6 +83,9 @@ public class JTableColumnWidthMonitor
         // Wait until the UI is realized to restore column widths, order, and sort state
         EventQueue.invokeLater(this::restoreColumnState);
 
+        // Setup table header right-click menu for column visibility
+        setupHeaderMenu();
+
         // Listen for drag-resizes and column moves
         mTable.getColumnModel().addColumnModelListener(mColumnModelListener);
 
@@ -88,6 +99,123 @@ public class JTableColumnWidthMonitor
     /**
      * Prepares this monitor for disposal by unregistering as a listener to the table column model.
      */
+
+
+    private void setupHeaderMenu()
+    {
+        if(mTable.getTableHeader() != null)
+        {
+            mTable.getTableHeader().addMouseListener(new MouseAdapter()
+            {
+                @Override
+                public void mouseReleased(MouseEvent e)
+                {
+                    if(e.isPopupTrigger())
+                    {
+                        showPopupMenu(e);
+                    }
+                }
+
+                @Override
+                public void mousePressed(MouseEvent e)
+                {
+                    if(e.isPopupTrigger())
+                    {
+                        showPopupMenu(e);
+                    }
+                }
+            });
+        }
+    }
+
+    private void showPopupMenu(MouseEvent e)
+    {
+        JPopupMenu popupMenu = new JPopupMenu();
+
+        for(int i = 0; i < mTable.getModel().getColumnCount(); i++)
+        {
+            String columnName = mTable.getModel().getColumnName(i);
+            Object identifier = columnName;
+
+            boolean isVisible = true;
+            try
+            {
+                mTable.getColumn(identifier);
+            }
+            catch(IllegalArgumentException ex)
+            {
+                isVisible = false;
+            }
+
+            JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(columnName);
+            menuItem.setSelected(isVisible);
+
+            menuItem.addActionListener(actionEvent -> {
+                if(menuItem.isSelected())
+                {
+                    showColumn(identifier);
+                }
+                else
+                {
+                    hideColumn(identifier);
+                }
+                scheduleSave();
+            });
+            popupMenu.add(menuItem);
+        }
+        popupMenu.show(e.getComponent(), e.getX(), e.getY());
+    }
+
+    private void hideColumn(Object identifier)
+    {
+        try
+        {
+            TableColumn column = mTable.getColumn(identifier);
+            mHiddenColumns.put(identifier, column);
+            mTable.removeColumn(column);
+        }
+        catch(IllegalArgumentException e)
+        {
+            // Column already hidden or doesn't exist
+        }
+    }
+
+    private void showColumn(Object identifier)
+    {
+        if(mHiddenColumns.containsKey(identifier))
+        {
+            TableColumn column = mHiddenColumns.remove(identifier);
+            mTable.addColumn(column);
+
+            // Move it to its original position based on model index
+            int modelIndex = column.getModelIndex();
+            int targetViewIndex = mTable.getColumnCount() - 1;
+
+            int properIndex = 0;
+            for(int i = 0; i < mTable.getColumnCount(); i++)
+            {
+                if(mTable.getColumnModel().getColumn(i).getModelIndex() > modelIndex)
+                {
+                    break;
+                }
+                properIndex++;
+            }
+
+            if(properIndex < mTable.getColumnCount())
+            {
+                mTable.getColumnModel().moveColumn(targetViewIndex, properIndex);
+            }
+        }
+    }
+
+    private void scheduleSave()
+    {
+        if(mSaveInProgress.compareAndSet(false, true))
+        {
+            ThreadPool.SCHEDULED.schedule(new ColumnStateSaveTask(), 2, TimeUnit.SECONDS);
+        }
+    }
+
     public void dispose()
     {
         if(mTable != null)
@@ -121,6 +249,17 @@ public class JTableColumnWidthMonitor
 
             // Restore column order first
             restoreColumnOrder(model, columnCount);
+
+            // Restore hidden state first
+            for(int i = 0; i < mTable.getModel().getColumnCount(); i++)
+            {
+                String columnName = mTable.getModel().getColumnName(i);
+                boolean isHidden = mUserPreferences.getSwingPreference().getBoolean(getHiddenKey(columnName), false);
+                if(isHidden)
+                {
+                    hideColumn(columnName);
+                }
+            }
 
             // Then restore column widths
             for(int x = 0; x < columnCount; x++)
@@ -200,6 +339,19 @@ public class JTableColumnWidthMonitor
         }
 
         storeSortState();
+
+        // Save hidden state
+        for(int i = 0; i < mTable.getModel().getColumnCount(); i++)
+        {
+            String columnName = mTable.getModel().getColumnName(i);
+            boolean isHidden = mHiddenColumns.containsKey(columnName);
+            mUserPreferences.getSwingPreference().setBoolean(getHiddenKey(columnName), isHidden);
+        }
+    }
+
+    private String getHiddenKey(String columnName)
+    {
+        return mKey + ".hidden." + columnName;
     }
 
     /**
