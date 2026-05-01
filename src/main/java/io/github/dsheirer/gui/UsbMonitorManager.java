@@ -107,7 +107,7 @@ public class UsbMonitorManager {
         try {
             String uninstallCmd = String.format("Unregister-ScheduledTask -TaskName '%s' -Confirm:$false -ErrorAction SilentlyContinue", taskName);
             String innerEncodedCmd = Base64.getEncoder().encodeToString(uninstallCmd.getBytes(StandardCharsets.UTF_16LE));
-            String outerCmd = String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -EncodedCommand %s' -Wait", innerEncodedCmd);
+            String outerCmd = String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', '%s') -Wait", innerEncodedCmd);
             String outerEncodedCmd = Base64.getEncoder().encodeToString(outerCmd.getBytes(StandardCharsets.UTF_16LE));
             ProcessBuilder pb = new ProcessBuilder(
                     "powershell.exe",
@@ -198,7 +198,7 @@ public class UsbMonitorManager {
             );
 
             String innerEncodedCmd = Base64.getEncoder().encodeToString(psCommand.getBytes(StandardCharsets.UTF_16LE));
-            String outerCmd = String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -EncodedCommand %s' -Wait", innerEncodedCmd);
+            String outerCmd = String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', '%s') -Wait", innerEncodedCmd);
             String outerEncodedCmd = Base64.getEncoder().encodeToString(outerCmd.getBytes(StandardCharsets.UTF_16LE));
             ProcessBuilder pb = new ProcessBuilder(
                     "powershell.exe",
