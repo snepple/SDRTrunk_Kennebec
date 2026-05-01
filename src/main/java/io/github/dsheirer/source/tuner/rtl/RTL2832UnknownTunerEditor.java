@@ -97,7 +97,7 @@ public class RTL2832UnknownTunerEditor extends TunerEditor<RTL2832Tuner, RTL2832
     protected void tunerStatusUpdated()
     {
         setLoading(true);
-        getTunerIdLabel().setText(getDiscoveredTuner().getName() + (hasTuner() ? " ID:" + getTuner().getUniqueID() : ""));
+        getTunerIdLabel().setText(getDiscoveredTuner().getName() + (hasTuner() ? " ID:" + getTuner().getUniqueID() : "") + getUsbInfo());
 
         String status = getDiscoveredTuner().getTunerStatus().toString();
         if(getDiscoveredTuner().hasErrorMessage())

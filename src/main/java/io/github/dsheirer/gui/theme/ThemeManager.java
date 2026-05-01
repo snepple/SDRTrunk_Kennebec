@@ -83,6 +83,14 @@ public class ThemeManager {
                 JDialog.setDefaultLookAndFeelDecorated(true);
             }
 
+
+            if (isWindows()) {
+                UIManager.put("ScrollBar.showButtons", true);
+                UIManager.put("ScrollBar.width", 16);
+                UIManager.put("ScrollBar.thumbArc", 0);
+                UIManager.put("ScrollBar.thumbInsets", new java.awt.Insets(0, 0, 0, 0));
+            }
+
             // Update UI tree if running
             for (java.awt.Window window : java.awt.Window.getWindows()) {
                 SwingUtilities.updateComponentTreeUI(window);

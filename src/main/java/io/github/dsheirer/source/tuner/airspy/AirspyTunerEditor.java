@@ -99,7 +99,7 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
 
         if(hasTuner())
         {
-            getTunerIdLabel().setText(getTuner().getPreferredName());
+            getTunerIdLabel().setText(getTuner().getPreferredName() + getUsbInfo());
         }
         else
         {

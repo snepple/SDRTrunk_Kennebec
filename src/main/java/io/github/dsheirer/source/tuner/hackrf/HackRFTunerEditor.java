@@ -117,7 +117,7 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
         setLoading(true);
         if(hasTuner())
         {
-            getTunerIdLabel().setText(getTuner().getPreferredName());
+            getTunerIdLabel().setText(getTuner().getPreferredName() + getUsbInfo());
         }
         else
         {
