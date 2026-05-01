@@ -239,6 +239,8 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
     private JButton createFloatingButton(jiconfont.icons.font_awesome.FontAwesome icon, String tooltip) {
         JButton btn = new JButton(jiconfont.swing.IconFontSwing.buildIcon(icon, 16, new java.awt.Color(0, 122, 255)));
         btn.setToolTipText(tooltip);
+        btn.getAccessibleContext().setAccessibleName(tooltip);
+        btn.getAccessibleContext().setAccessibleDescription(tooltip);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
