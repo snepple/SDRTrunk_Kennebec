@@ -158,6 +158,7 @@ public class AudioRecordingsPanel extends JPanel {
 
         // Table
         mTableView = new TableView<>();
+        mTableView.setPlaceholder(new Label("No audio recordings found"));
         HBox.setHgrow(mTableView, Priority.ALWAYS);
 
         TableColumn<RecordingItem, String> dateCol = new TableColumn<>("Date");
