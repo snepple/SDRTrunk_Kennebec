@@ -64,10 +64,10 @@ public class AudioRecordingsPanel extends JPanel {
     public AudioRecordingsPanel(UserPreferences userPreferences, io.github.dsheirer.playlist.PlaylistManager playlistManager) {
         mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
-        setLayout(new BorderLayout());
+        setLayout(new net.miginfocom.swing.MigLayout("insets 0, hidemode 3, fill", "[grow,fill]", "[grow,fill]"));
 
         mJfxPanel = new JFXPanel();
-        add(mJfxPanel, BorderLayout.CENTER);
+        add(mJfxPanel);
 
         Platform.runLater(this::initFx);
     }
