@@ -322,7 +322,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                 }
             } else {
                 editor.setMaxWidth(Double.MAX_VALUE);
-                editor.setPadding(new Insets(16, 16, 16, 16));
+                editor.setPadding(new Insets(0, 8, 8, 8));
                 if (mSplitPane.getItems().size() > 1) {
                     mSplitPane.getItems().set(1, editor);
                 } else {
