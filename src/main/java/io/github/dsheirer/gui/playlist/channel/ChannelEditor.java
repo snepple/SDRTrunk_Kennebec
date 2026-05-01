@@ -672,7 +672,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         {
             Channel channel = param.getValue();
 
-            if(channel != null)
+            if(channel != null && channel.getDecodeConfiguration() != null && channel.getDecodeConfiguration().getDecoderType() != null)
             {
                 mProtocol.set(channel.getDecodeConfiguration().getDecoderType().getDisplayString());
             }
@@ -794,9 +794,12 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                 return true;
             }
 
-            if(channel.getDecodeConfiguration().getDecoderType().toString().toLowerCase().contains(mFilterText))
+            if(channel.getDecodeConfiguration() != null && channel.getDecodeConfiguration().getDecoderType() != null)
             {
-                return true;
+                if(channel.getDecodeConfiguration().getDecoderType().toString().toLowerCase().contains(mFilterText))
+                {
+                    return true;
+                }
             }
 
             return false;
