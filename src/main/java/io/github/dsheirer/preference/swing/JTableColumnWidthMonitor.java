@@ -40,7 +40,6 @@ import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.JPopupMenu;
-import javax.swing.SwingUtilities;
 import javax.swing.JCheckBoxMenuItem;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -78,7 +77,7 @@ public class JTableColumnWidthMonitor
         mTable = table;
         mKey = key;
 
-        mTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+        mTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
         // Wait until the UI is realized to restore column widths, order, and sort state
         EventQueue.invokeLater(this::restoreColumnState);

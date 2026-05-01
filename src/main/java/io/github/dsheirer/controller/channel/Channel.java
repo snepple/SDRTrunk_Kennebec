@@ -46,7 +46,8 @@ import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -83,7 +84,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
 
     private BooleanProperty mProcessing = new SimpleBooleanProperty();
     private BooleanProperty mAutoStart = new SimpleBooleanProperty();
-    private IntegerProperty mAutoStartOrder = new SimpleIntegerProperty();
+    private ObjectProperty<Integer> mAutoStartOrder = new SimpleObjectProperty<>();
     private boolean mSelected;
     private List<TunerChannel> mTunerChannels = null;
 
@@ -310,7 +311,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     /**
      * Auto-start order property.  Indicates the order for starting channels that are flagged for auto-start.
      */
-    public IntegerProperty autoStartOrderProperty()
+    public ObjectProperty<Integer> autoStartOrderProperty()
     {
         return mAutoStartOrder;
     }
@@ -518,7 +519,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     @JacksonXmlProperty(isAttribute = true, localName = "order")
     public Integer getAutoStartOrder()
     {
-        return mAutoStartOrder.get();
+        return mAutoStartOrder.getValue();
     }
 
     /**
@@ -534,7 +535,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
         }
         else
         {
-            mAutoStartOrder.setValue(null);
+            mAutoStartOrder.set(null);
         }
     }
 
