@@ -48,6 +48,8 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SeparatorMenuItem;
@@ -121,8 +123,8 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
 
         // Split Pane Content
         mSplitPane = new SplitPane();
-        mSplitPane.setOrientation(Orientation.HORIZONTAL);
-        mSplitPane.setDividerPositions(0.4); // 40% list, 60% detail
+        mSplitPane.setOrientation(Orientation.VERTICAL);
+        mSplitPane.setDividerPositions(0.6); // 60% list, 40% detail
         VBox.setVgrow(mSplitPane, Priority.ALWAYS);
 
         // Left Pane (List + Actions)
@@ -459,37 +461,46 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             nameColumn.setText("Alias");
             nameColumn.setCellValueFactory(new PropertyValueFactory<Alias, String>("name"));
             nameColumn.setPrefWidth(140);
+            nameColumn.setId("alias.name");
 
             TableColumn groupColumn = new TableColumn();
             groupColumn.setText("Group");
             groupColumn.setCellValueFactory(new PropertyValueFactory<>("group"));
             groupColumn.setPrefWidth(140);
+            groupColumn.setId("alias.group");
 
             TableColumn<Alias, Integer> colorColumn = new TableColumn("Color");
             colorColumn.setCellValueFactory(new PropertyValueFactory<>("color"));
             colorColumn.setCellFactory(new ColorizedCell());
+            colorColumn.setId("alias.color");
 
             TableColumn<Alias, String> iconColumn = new TableColumn("Icon");
             iconColumn.setCellValueFactory(new PropertyValueFactory<>("iconName"));
             iconColumn.setCellFactory(new IconTableCellFactory());
+            iconColumn.setId("alias.icon");
 
             TableColumn<Alias, Integer> priorityColumn = new TableColumn("Listen");
             priorityColumn.setCellFactory(new PriorityCellFactory());
             priorityColumn.setCellValueFactory(new PropertyValueFactory<>("priority"));
+            priorityColumn.setId("alias.listen");
 
             TableColumn<Alias, Boolean> recordColumn = new TableColumn("Record");
             recordColumn.setCellValueFactory(new PropertyValueFactory<>("recordable"));
             recordColumn.setCellFactory(new IconCell(FontAwesome.SQUARE, Color.RED));
+            recordColumn.setId("alias.record");
 
             TableColumn<Alias, Boolean> streamColumn = new TableColumn("Stream");
             streamColumn.setCellValueFactory(new PropertyValueFactory<>("streamable"));
             streamColumn.setCellFactory(new IconCell(FontAwesome.VOLUME_UP, Color.DARKBLUE));
+            streamColumn.setId("alias.stream");
 
             TableColumn<Alias, Integer> idsColumn = new TableColumn("IDs");
             idsColumn.setCellValueFactory(new IdentifierCountCell());
+            idsColumn.setId("alias.ids");
 
             TableColumn<Alias, Boolean> errorsColumn = new TableColumn<>("Error");
             errorsColumn.setPrefWidth(120);
+            errorsColumn.setId("alias.errors");
             errorsColumn.setCellValueFactory(new PropertyValueFactory<>("overlap"));
             errorsColumn.setCellFactory(param ->
             {
@@ -528,6 +539,21 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             mAliasTableView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<Alias>)c -> {
                 Platform.runLater(() -> setAliases(mAliasTableView.getSelectionModel().getSelectedItems()));
             });
+
+            ContextMenu contextMenu = new ContextMenu();
+            for (TableColumn<Alias, ?> column : mAliasTableView.getColumns()) {
+                CheckMenuItem checkMenuItem = new CheckMenuItem(column.getText());
+                checkMenuItem.selectedProperty().bindBidirectional(column.visibleProperty());
+                contextMenu.getItems().add(checkMenuItem);
+            }
+
+            for (TableColumn<Alias, ?> column : mAliasTableView.getColumns()) {
+                column.setContextMenu(contextMenu);
+            }
+
+            mAliasTableView.setTableMenuButtonVisible(true);
+
+            new io.github.dsheirer.preference.javafx.FxTableColumnMonitor(mUserPreferences, mAliasTableView, "aliasTable");
         }
 
         return mAliasTableView;

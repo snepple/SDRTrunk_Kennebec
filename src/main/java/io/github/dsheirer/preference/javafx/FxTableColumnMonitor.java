@@ -73,6 +73,7 @@ public class FxTableColumnMonitor
             scheduleSave();
         }
     };
+    private final ChangeListener<Boolean> mVisibleListener = (obs, oldVal, newVal) -> scheduleSave();
     private ListChangeListener<TableColumn<?, ?>> mSortOrderListener = change -> {
         if(!mRestoring)
         {
@@ -124,7 +125,7 @@ public class FxTableColumnMonitor
             for(TableColumn<?, ?> column : mTableView.getColumns())
             {
                 column.widthProperty().removeListener(mWidthListener);
-                column.visibleProperty().removeListener(mVisibilityListener);
+                column.visibleProperty().removeListener(mVisibleListener);
             }
             mTableView.getColumns().removeListener(mColumnOrderListener);
             mTableView.getSortOrder().removeListener(mSortOrderListener);
@@ -148,7 +149,7 @@ public class FxTableColumnMonitor
                 continue;
             }
             column.widthProperty().addListener(mWidthListener);
-            column.visibleProperty().addListener(mVisibilityListener);
+            column.visibleProperty().addListener(mVisibleListener);
         }
         mTableView.getColumns().addListener(mColumnOrderListener);
         mTableView.getSortOrder().addListener(mSortOrderListener);
@@ -190,6 +191,10 @@ public class FxTableColumnMonitor
                 {
                     entry.getValue().setPrefWidth(width);
                 }
+
+                // Restore visibility
+                boolean visible = mUserPreferences.getSwingPreference().getBoolean(mKey + "." + entry.getKey() + KEY_VISIBLE, true);
+                entry.getValue().setVisible(visible);
             }
 
             // Restore column order by id
@@ -285,7 +290,7 @@ public class FxTableColumnMonitor
                     continue;
                 }
                 mUserPreferences.getSwingPreference().setInt(mKey + "." + column.getId() + KEY_WIDTH, (int) column.getWidth());
-                setStringPref(mKey + "." + column.getId() + KEY_VISIBLE, String.valueOf(column.isVisible()));
+                mUserPreferences.getSwingPreference().setBoolean(mKey + "." + column.getId() + KEY_VISIBLE, column.isVisible());
                 setStringPref(mKey + KEY_ORDER + "." + i, column.getId());
             }
 
