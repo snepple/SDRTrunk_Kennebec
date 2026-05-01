@@ -53,6 +53,7 @@ public class FxTableColumnMonitor
     private static final Logger mLog = LoggerFactory.getLogger(FxTableColumnMonitor.class);
 
     private static final String KEY_WIDTH = ".width";
+    private static final String KEY_VISIBLE = ".visible";
     private static final String KEY_ORDER = ".order";
     private static final String KEY_SORT_COUNT = ".sort.count";
     private static final String KEY_SORT_COLUMN = ".sort.column.";
@@ -65,6 +66,7 @@ public class FxTableColumnMonitor
     private boolean mRestoring = false;
 
     private ChangeListener<Number> mWidthListener = (obs, oldVal, newVal) -> scheduleSave();
+    private ChangeListener<Boolean> mVisibilityListener = (obs, oldVal, newVal) -> scheduleSave();
     private ListChangeListener<TableColumn<?, ?>> mColumnOrderListener = change -> {
         if(!mRestoring)
         {
@@ -122,6 +124,7 @@ public class FxTableColumnMonitor
             for(TableColumn<?, ?> column : mTableView.getColumns())
             {
                 column.widthProperty().removeListener(mWidthListener);
+                column.visibleProperty().removeListener(mVisibilityListener);
             }
             mTableView.getColumns().removeListener(mColumnOrderListener);
             mTableView.getSortOrder().removeListener(mSortOrderListener);
@@ -145,6 +148,7 @@ public class FxTableColumnMonitor
                 continue;
             }
             column.widthProperty().addListener(mWidthListener);
+            column.visibleProperty().addListener(mVisibilityListener);
         }
         mTableView.getColumns().addListener(mColumnOrderListener);
         mTableView.getSortOrder().addListener(mSortOrderListener);
@@ -161,6 +165,20 @@ public class FxTableColumnMonitor
                 if(column.getId() != null && !column.getId().isEmpty())
                 {
                     columnsById.put(column.getId(), column);
+                }
+            }
+
+                        // Restore visibility
+            for(Map.Entry<String, TableColumn<?, ?>> entry : columnsById.entrySet())
+            {
+                String visibleStr = getStringPref(mKey + "." + entry.getKey() + KEY_VISIBLE);
+                if (visibleStr != null)
+                {
+                    entry.getValue().setVisible(Boolean.parseBoolean(visibleStr));
+                }
+                else
+                {
+                    entry.getValue().setVisible(true); // Default to visible
                 }
             }
 
@@ -267,6 +285,7 @@ public class FxTableColumnMonitor
                     continue;
                 }
                 mUserPreferences.getSwingPreference().setInt(mKey + "." + column.getId() + KEY_WIDTH, (int) column.getWidth());
+                setStringPref(mKey + "." + column.getId() + KEY_VISIBLE, String.valueOf(column.isVisible()));
                 setStringPref(mKey + KEY_ORDER + "." + i, column.getId());
             }
 
