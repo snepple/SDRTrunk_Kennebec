@@ -146,8 +146,8 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
 
         if(hasTuner())
         {
-            getTunerIdLabel().setText("Airspy " + getTuner().getController().getBoardId() + " SER# " +
-                    getTuner().getController().getSerialNumber());
+            getTunerIdLabel().setText("Airspy " + getTuner().getController().getBoardId() + " SER# " + getTuner().getController().getSerialNumber() + getUsbInfo()); //
+
 
             //Permanently disable the sample rates combo and force 912kHz usage - during dev testing, attempts to use
             //the other sample rates produced inconsistent results.
@@ -167,7 +167,7 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
         }
         else
         {
-            getTunerIdLabel().setText("Airspy HF+");
+            getTunerIdLabel().setText("Airspy HF+" + getUsbInfo());
             getAgcToggleButton().setEnabled(false);
             getAgcToggleButton().setSelected(false);
             getLnaToggleButton().setEnabled(false);
