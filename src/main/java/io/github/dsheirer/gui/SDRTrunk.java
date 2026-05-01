@@ -285,7 +285,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 
         if(!headless)
         {
-            mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this);
+            mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this::onViewChanged);
 
             // Add Sidebar
             mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
@@ -796,13 +796,8 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         new SDRTrunk();
     }
 
-    @Override
-    public void onItemSelected(String id) {
-        if (id.equals("exit")) {
-            processShutdown();
-            System.exit(0);
-            return;
-        }
+    public void onViewChanged(String id) {
+        if (id == null) return;
 
         if (mSidebarPanel != null) {
             mSidebarPanel.setActive(id);
@@ -814,32 +809,6 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
             mSpectralPanel.stop();
             mControllerPanel.setResourcePanelVisible(false);
             mControllerPanel.showView("playlist_editor");
-
-            if (id.equals("playlist_playlists")) {
-                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.ViewPlaylistRequest());
-            } else if (id.equals("playlist_channels")) {
-                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.channel.ChannelTabRequest() {
-                    @Override
-                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.CHANNEL; }
-                });
-            } else if (id.equals("playlist_aliases")) {
-                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.alias.AliasTabRequest() {
-                    @Override
-                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.ALIAS; }
-                });
-            } else if (id.equals("playlist_streaming")) {
-                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.streaming.StreamTabRequest() {
-                    @Override
-                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.STREAM; }
-                });
-            } else if (id.equals("playlist_radioreference")) {
-                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.radioreference.ViewRadioReferenceRequest());
-            } else if (id.equals("playlist_twotones")) {
-                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.twotone.TwoToneTabRequest() {
-                    @Override
-                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.TWO_TONE; }
-                });
-            }
             mMainContentPanel.revalidate();
             mMainContentPanel.repaint();
             return;
@@ -876,6 +845,45 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 
         mMainContentPanel.revalidate();
         mMainContentPanel.repaint();
+    }
+
+    @Override
+    public void onItemSelected(String id) {
+        if (id.equals("exit")) {
+            processShutdown();
+            System.exit(0);
+            return;
+        }
+
+        onViewChanged(id);
+
+        if (id.startsWith("playlist_")) {
+            if (id.equals("playlist_playlists")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.ViewPlaylistRequest());
+            } else if (id.equals("playlist_channels")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.channel.ChannelTabRequest() {
+                    @Override
+                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.CHANNEL; }
+                });
+            } else if (id.equals("playlist_aliases")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.alias.AliasTabRequest() {
+                    @Override
+                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.ALIAS; }
+                });
+            } else if (id.equals("playlist_streaming")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.streaming.StreamTabRequest() {
+                    @Override
+                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.STREAM; }
+                });
+            } else if (id.equals("playlist_radioreference")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.radioreference.ViewRadioReferenceRequest());
+            } else if (id.equals("playlist_twotones")) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.twotone.TwoToneTabRequest() {
+                    @Override
+                    public io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName getTabName() { return io.github.dsheirer.gui.playlist.PlaylistEditorRequest.TabName.TWO_TONE; }
+                });
+            }
+        }
     }
 
     @Override
