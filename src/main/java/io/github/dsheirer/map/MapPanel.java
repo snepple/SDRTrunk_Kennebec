@@ -112,10 +112,11 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
         JPanel sidebar = new JPanel(new MigLayout("insets 0, gap 0", "[grow,fill]", "[][grow,fill][][grow,fill][]"));
         sidebar.setBackground(new java.awt.Color(242, 242, 247)); // Apple grouped background
 
-        JLabel header1 = new JLabel(" Plotted Tracks");
+        JLabel header1 = new JLabel("Plotted Tracks");
         header1.setFont(header1.getFont().deriveFont(java.awt.Font.BOLD, 11f));
         header1.setForeground(new java.awt.Color(142, 142, 147));
-        sidebar.add(header1, "wrap, pad 10 5 5 5");
+        header1.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 10, 5, 5));
+        sidebar.add(header1, "wrap");
 
         JTable tracksTable = getPlottedTracksTable();
         tracksTable.setBorder(javax.swing.BorderFactory.createEmptyBorder());
@@ -133,6 +134,7 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
         JLabel header2 = new JLabel("Track History");
         header2.setFont(header2.getFont().deriveFont(java.awt.Font.BOLD, 11f));
         header2.setForeground(new java.awt.Color(142, 142, 147));
+        header2.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
         detailPanel.add(header2, "wrap");
 
         JTable historyTable = getTrackHistoryTable();
