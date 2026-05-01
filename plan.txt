@@ -1,0 +1,10 @@
+1. We need to add a "Clone" button to the `StreamingEditor` UI.
+2. In `src/main/java/io/github/dsheirer/gui/playlist/streaming/StreamingEditor.java`, we will add `private Button mCloneButton;`.
+3. We will create a `getCloneButton()` method that initializes this button, sets the text to "Clone", styles it with `flat-button`, and adds an `setOnAction` listener.
+4. The listener will get the selected `ConfiguredBroadcast` from `getConfiguredBroadcastTableView()`. If one is selected, it will get the underlying `BroadcastConfiguration`.
+5. It will call `copyOf()` on the configuration to create a clone.
+6. The cloned configuration will be added to the model using `mPlaylistManager.getBroadcastModel().addBroadcastConfiguration(clonedConfig);`.
+7. The table will update, and we will select the newly created clone: `getConfiguredBroadcastTableView().getSelectionModel().select(newConfiguredBroadcast);`.
+8. The `Clone` button will be disabled if nothing is selected, similar to the `Delete` button. So in the `setEditor` or selection listener, we'll add: `getCloneButton().setDisable(configuredBroadcast == null);`.
+9. The `Clone` button will be added to the `toolbar` `HBox` alongside `New`, `Delete`, and `Refresh` buttons.
+10. Finally we will run pre commit instructions before submitting.

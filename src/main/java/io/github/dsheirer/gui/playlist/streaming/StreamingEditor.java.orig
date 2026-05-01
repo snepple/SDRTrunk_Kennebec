@@ -128,10 +128,9 @@ public class StreamingEditor extends SplitPane
 
         getNewButton().getStyleClass().add("flat-button");
         getDeleteButton().getStyleClass().add("flat-button");
-        getCloneButton().getStyleClass().add("flat-button");
         getRefreshButton().getStyleClass().add("flat-button");
 
-        toolbar.getChildren().addAll(getNewButton(), getDeleteButton(), getCloneButton(), getRefreshButton());
+        toolbar.getChildren().addAll(getNewButton(), getDeleteButton(), getRefreshButton());
 
         VBox tableAndLabelBox = new VBox();
         VBox.setVgrow(getConfiguredBroadcastTableView(), Priority.ALWAYS);
@@ -204,7 +203,6 @@ public class StreamingEditor extends SplitPane
         }
 
         getDeleteButton().setDisable(configuredBroadcast == null);
-        getCloneButton().setDisable(configuredBroadcast == null);
 
         if(configuredBroadcast == null)
         {
