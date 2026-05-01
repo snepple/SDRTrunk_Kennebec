@@ -35,6 +35,8 @@ import java.awt.Color;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JPanel;
+import java.awt.Cursor;
+import java.awt.Insets;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JToolBar;
@@ -42,6 +44,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JCheckBoxMenuItem;
 import io.github.dsheirer.gui.VisibilityListener;
+import io.github.dsheirer.sample.Listener;
+import io.github.dsheirer.module.ProcessingChain;
+import java.awt.EventQueue;
 
 import javax.swing.event.ChangeListener;
 import jiconfont.icons.font_awesome.FontAwesome;
@@ -51,7 +56,7 @@ import javax.swing.JLabel;
 /**
  * Swing panel for Now Playing channels table and channel details tab set.
  */
-public class NowPlayingPanel extends JPanel
+public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
 {
     private final ChannelMetadataPanel mChannelMetadataPanel;
     private final ChannelDetailPanel mChannelDetailPanel;
@@ -68,6 +73,7 @@ public class NowPlayingPanel extends JPanel
     private WidgetContainer mWidgetContainer;
     private JScrollPane mScrollPane;
     private NowPlayingPreference mNowPlayingPreference;
+    private JButton mManageWidgetsBtn;
 
     /**
      * GUI panel that combines the currently decoding channels metadata table and viewers for channel details,
@@ -78,7 +84,7 @@ public class NowPlayingPanel extends JPanel
     {
         mVisibilityListener = visibilityListener;
         mChannelDetailPanel = new ChannelDetailPanel(playlistManager.getChannelProcessingManager());
-        mDecodeEventPanel = new DecodeEventPanel(iconModel, userPreferences, playlistManager.getAliasModel());
+        mDecodeEventPanel = new DecodeEventPanel(iconModel, userPreferences, playlistManager.getAliasModel(), playlistManager.getChannelProcessingManager());
         mMessageActivityPanel = new MessageActivityPanel(userPreferences);
         mChannelMetadataPanel = new ChannelMetadataPanel(playlistManager, iconModel, userPreferences, tunerManager);
         mChannelSpectrumSquelchPanel = new ChannelSpectrumPanel(playlistManager, settingsManager);
@@ -90,6 +96,33 @@ public class NowPlayingPanel extends JPanel
     /**
      * Dispose method to clean up listeners
      */
+        @Override
+    public void receive(ProcessingChain processingChain) {
+        EventQueue.invokeLater(() -> {
+            JideTabbedPane pane = getTabbedPane();
+
+            if (processingChain == null) {
+                // Remove all tabs except Events
+                if (pane.indexOfComponent(mChannelDetailPanel) >= 0) {
+                    pane.remove(mChannelDetailPanel);
+                }
+                if (pane.indexOfComponent(mMessageActivityPanel) >= 0) {
+                    pane.remove(mMessageActivityPanel);
+                }
+                if (pane.indexOfComponent(mChannelSpectrumSquelchPanel) >= 0) {
+                    pane.remove(mChannelSpectrumSquelchPanel);
+                }
+            } else {
+                // Restore all tabs in correct order: Details, Events, Messages, Channel
+                pane.removeAll();
+                pane.addTab("Details", mChannelDetailPanel);
+                pane.addTab("Events", mDecodeEventPanel);
+                pane.addTab("Messages", mMessageActivityPanel);
+                pane.addTab("Channel", mChannelSpectrumSquelchPanel);
+            }
+        });
+    }
+
     public void dispose()
     {
         if(mTabbedPane != null && mTabbedPaneChangeListener != null)
@@ -164,29 +197,31 @@ public class NowPlayingPanel extends JPanel
         return mTabbedPane;
     }
 
+    public JButton getManageWidgetsButton() {
+        if (mManageWidgetsBtn == null) {
+            mManageWidgetsBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.COG, 14, Color.BLACK));
+            mManageWidgetsBtn.setToolTipText("Manage Widgets");
+            mManageWidgetsBtn.getAccessibleContext().setAccessibleName("Manage Widgets");
+            mManageWidgetsBtn.getAccessibleContext().setAccessibleDescription("Opens a menu to manage visible widgets");
+            mManageWidgetsBtn.addActionListener(e -> showManageWidgetsPopup(mManageWidgetsBtn));
+            mManageWidgetsBtn.setFocusPainted(false);
+            mManageWidgetsBtn.setContentAreaFilled(false);
+            mManageWidgetsBtn.setBorderPainted(false);
+            mManageWidgetsBtn.setMargin(new Insets(0, 4, 0, 4));
+            mManageWidgetsBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        }
+        return mManageWidgetsBtn;
+    }
+
     private void init()
     {
-        setLayout( new MigLayout( "insets 0 0 0 0", "[grow,fill]", "[][grow,fill][]") );
-
-        JToolBar toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-
-        JButton manageWidgetsBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.COG, 14, Color.BLACK));
-        manageWidgetsBtn.setToolTipText("Manage Widgets");
-        manageWidgetsBtn.getAccessibleContext().setAccessibleName("Manage Widgets");
-        manageWidgetsBtn.getAccessibleContext().setAccessibleDescription("Opens a menu to manage visible widgets");
-        manageWidgetsBtn.addActionListener(e -> {
-            showManageWidgetsPopup(manageWidgetsBtn);
-        });
-
-        toolBar.add(Box.createHorizontalGlue());
-        toolBar.add(manageWidgetsBtn);
-        add(toolBar, "wrap");
+        setLayout( new MigLayout( "insets 0 0 0 0", "[grow,fill]", "[grow,fill][]") );
 
         mChannelMetadataPanel.addProcessingChainSelectionListener(mChannelDetailPanel);
         mChannelMetadataPanel.addProcessingChainSelectionListener(mDecodeEventPanel);
         mChannelMetadataPanel.addProcessingChainSelectionListener(mMessageActivityPanel);
         mChannelMetadataPanel.addProcessingChainSelectionListener(mChannelSpectrumSquelchPanel);
+        mChannelMetadataPanel.addProcessingChainSelectionListener(this);
 
         mWidgetContainer = new WidgetContainer(mNowPlayingPreference);
         mScrollPane = new JScrollPane(mWidgetContainer);
