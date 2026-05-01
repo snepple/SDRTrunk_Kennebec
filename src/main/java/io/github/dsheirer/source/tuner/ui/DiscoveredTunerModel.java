@@ -52,12 +52,12 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
 
     //Model columns
     public static final int COLUMN_TUNER_STATUS = 0;
-    public static final int COLUMN_TUNER_CLASS = 1;
+    public static final int COLUMN_TUNER_ID = 1;
     public static final int COLUMN_TUNER_TYPE = 2;
     public static final int COLUMN_FREQUENCY = 3;
     public static final int COLUMN_CHANNEL_COUNT = 4;
     private static final String MHZ = " MHz";
-    private static final String[] COLUMN_HEADERS = {"Status","Class", "Type", "Frequency", "Channels"};
+    private static final String[] COLUMN_HEADERS = {"Status","Name", "Type", "Frequency", "Channels"};
 
     private List<DiscoveredTuner> mDiscoveredTuners = new CopyOnWriteArrayList<>();
     private List<Listener<TunerEvent>> mTunerEventListeners = new ArrayList<>();
@@ -491,8 +491,8 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
             {
                 case COLUMN_TUNER_STATUS:
                     return discoveredTuner.getTunerStatus();
-                case COLUMN_TUNER_CLASS:
-                    return discoveredTuner.getTunerClass().toString();
+                case COLUMN_TUNER_ID:
+                    return discoveredTuner.getName();
                 case COLUMN_TUNER_TYPE:
                     if(discoveredTuner.hasTuner())
                     {

@@ -19,6 +19,13 @@
 
 package io.github.dsheirer.source.tuner.rtl;
 
+import javax.swing.ProgressMonitor;
+import javax.swing.SwingUtilities;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import javax.swing.JOptionPane;
+
+
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
@@ -90,7 +97,7 @@ public class RTL2832UnknownTunerEditor extends TunerEditor<RTL2832Tuner, RTL2832
     protected void tunerStatusUpdated()
     {
         setLoading(true);
-        getTunerIdLabel().setText(getDiscoveredTuner().getId() + (hasTuner() ? " ID:" + getTuner().getUniqueID() : ""));
+        getTunerIdLabel().setText(getDiscoveredTuner().getName() + (hasTuner() ? " ID:" + getTuner().getUniqueID() : ""));
 
         String status = getDiscoveredTuner().getTunerStatus().toString();
         if(getDiscoveredTuner().hasErrorMessage())
@@ -107,4 +114,46 @@ public class RTL2832UnknownTunerEditor extends TunerEditor<RTL2832Tuner, RTL2832
     {
         getFrequencyPanel().updateControls();
     }
+
+    private javax.swing.JButton getChangeSerialButton() {
+        javax.swing.JButton btn = new javax.swing.JButton("Change Serial Number");
+        btn.addActionListener(e -> {
+            if (!hasTuner()) return;
+            String newSerial = JOptionPane.showInputDialog(this,
+                    "Enter new Serial Number (Alphanumeric only, max 16 chars):\n\nWARNING: Writing to hardware memory is inherently risky.\nDo not disconnect the device during the write process.",
+                    "Change RTL-SDR Serial Number", JOptionPane.WARNING_MESSAGE);
+
+            if (newSerial != null) {
+                newSerial = newSerial.trim();
+                if (!newSerial.matches("[A-Za-z0-9]*") || newSerial.length() > 16) {
+                    JOptionPane.showMessageDialog(this, "Invalid serial number. Must be alphanumeric and max 16 characters.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                final String serialToSet = newSerial;
+                ProgressMonitor progressMonitor = new ProgressMonitor(this, "Writing EEPROM...", "", 0, 100);
+                progressMonitor.setMillisToDecideToPopup(0);
+                progressMonitor.setMillisToPopup(0);
+                progressMonitor.setProgress(10);
+
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                executor.submit(() -> {
+                    try {
+                        ((io.github.dsheirer.source.tuner.rtl.RTL2832TunerController)getTuner().getTunerController()).setSerialNumber(serialToSet);
+                        SwingUtilities.invokeLater(() -> {
+                            progressMonitor.setProgress(100);
+                            JOptionPane.showMessageDialog(this, "Serial number updated successfully.\nPlease disconnect and reconnect the tuner.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        });
+                    } catch (Exception ex) {
+                        SwingUtilities.invokeLater(() -> {
+                            progressMonitor.close();
+                            JOptionPane.showMessageDialog(this, "Failed to update serial number: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        });
+                    }
+                });
+            }
+        });
+        return btn;
+    }
+
 }

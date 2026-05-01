@@ -138,7 +138,7 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
     {
         setLoading(true);
 
-        getTunerIdLabel().setText(getDiscoveredTuner().getId());
+        getTunerIdLabel().setText(getDiscoveredTuner().getName());
 
         String status = getDiscoveredTuner().getTunerStatus().toString();
         if(getDiscoveredTuner().hasErrorMessage())

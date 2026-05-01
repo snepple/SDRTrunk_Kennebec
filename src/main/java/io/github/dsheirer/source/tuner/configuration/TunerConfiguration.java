@@ -66,6 +66,7 @@ public abstract class TunerConfiguration
     private double mFrequencyCorrection = 0.0d;
     private boolean mAutoPPMCorrection = true;
     private boolean mAutoOptimizeSampleRate = false;
+    private String mFriendlyName;
 
     /**
      * Default constructor to support Jackson
@@ -202,5 +203,22 @@ public abstract class TunerConfiguration
     public void setMaximumFrequency(long maximumFrequency)
     {
         mMaximumFrequency = maximumFrequency;
+    }
+
+    /**
+     * User-defined friendly name for this tuner.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "friendly_name")
+    public String getFriendlyName()
+    {
+        return mFriendlyName;
+    }
+
+    /**
+     * Sets the friendly name for this tuner.
+     */
+    public void setFriendlyName(String friendlyName)
+    {
+        mFriendlyName = friendlyName;
     }
 }

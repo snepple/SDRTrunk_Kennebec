@@ -54,6 +54,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JToggleButton;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
@@ -97,6 +100,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     private FrequencyTextField mMaximumFrequencyTextField;
     private JButton mResetFrequenciesButton;
     private boolean mLoading = false;
+    private JTextField mFriendlyNameTextField;
 
     /**
      * Constructs an instance
@@ -295,6 +299,43 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         }
 
         return mTunerIdLabel;
+    }
+
+
+    protected JTextField getFriendlyNameTextField()
+    {
+        if(mFriendlyNameTextField == null)
+        {
+            mFriendlyNameTextField = new JTextField();
+            mFriendlyNameTextField.setToolTipText("Enter a friendly name for this tuner");
+
+            if(getConfiguration() != null && getConfiguration().getFriendlyName() != null)
+            {
+                mFriendlyNameTextField.setText(getConfiguration().getFriendlyName());
+            }
+
+            mFriendlyNameTextField.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) { updateName(); }
+                @Override
+                public void removeUpdate(DocumentEvent e) { updateName(); }
+                @Override
+                public void changedUpdate(DocumentEvent e) { updateName(); }
+
+                private void updateName() {
+                    if(!mLoading && getConfiguration() != null) {
+                        getConfiguration().setFriendlyName(mFriendlyNameTextField.getText());
+                        mTunerManager.getTunerConfigurationManager().saveConfigurations();
+                        // Trigger UI update
+                        if (getDiscoveredTuner() != null) {
+                            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.source.tuner.configuration.TunerConfigurationEvent(getConfiguration(), io.github.dsheirer.source.tuner.configuration.TunerConfigurationEvent.Event.CHANGE));
+                        }
+                    }
+                }
+            });
+        }
+
+        return mFriendlyNameTextField;
     }
 
     protected FrequencyPanel getFrequencyPanel()
@@ -920,6 +961,12 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             add(minMaxPanel, "span");
 
             add(getTunerLockedStatusLabel(), "span");
+
+            JPanel friendlyNamePanel = new JPanel();
+            friendlyNamePanel.setLayout(new MigLayout("insets 0", "[][grow,fill]", ""));
+            friendlyNamePanel.add(new JLabel("Friendly Name:"));
+            friendlyNamePanel.add(getFriendlyNameTextField());
+            add(friendlyNamePanel, "span");
         }
 
         /**

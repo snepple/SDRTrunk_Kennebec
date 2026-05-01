@@ -179,6 +179,19 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
     public abstract String getId();
 
     /**
+     * @return the friendly name of this tuner, if configured, or the default id.
+     */
+    public String getName()
+    {
+        if(hasTunerConfiguration() && getTunerConfiguration().getFriendlyName() != null && !getTunerConfiguration().getFriendlyName().trim().isEmpty())
+        {
+            return getTunerConfiguration().getFriendlyName().trim();
+        }
+
+        return getId();
+    }
+
+    /**
      * Access a started and initialized.
      *
      * Use the isAvailable() method to check if this tuner is available prior to invoking this method to avoid a
