@@ -106,13 +106,15 @@ public class UsbMonitorManager {
         String taskName = "SDRTrunk_UsbMonitor_" + userName;
         try {
             String uninstallCmd = String.format("Unregister-ScheduledTask -TaskName '%s' -Confirm:$false -ErrorAction SilentlyContinue", taskName);
-            String encodedCmd = Base64.getEncoder().encodeToString(uninstallCmd.getBytes(StandardCharsets.UTF_16LE));
+            String innerEncodedCmd = Base64.getEncoder().encodeToString(uninstallCmd.getBytes(StandardCharsets.UTF_16LE));
+            String outerCmd = String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', '%s' -Wait", innerEncodedCmd);
+            String outerEncodedCmd = Base64.getEncoder().encodeToString(outerCmd.getBytes(StandardCharsets.UTF_16LE));
             ProcessBuilder pb = new ProcessBuilder(
                     "powershell.exe",
                     "-NoProfile",
                     "-ExecutionPolicy", "Bypass",
-                    "-Command",
-                    String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -EncodedCommand %s' -Wait", encodedCmd)
+                    "-EncodedCommand",
+                    outerEncodedCmd
             );
             Process process = pb.start();
             process.waitFor();
@@ -163,13 +165,14 @@ public class UsbMonitorManager {
 
     private static boolean checkScheduledTask(String taskName, String scriptPath) {
         try {
+            String cmd = String.format("$task = Get-ScheduledTask -TaskName '%s' -ErrorAction SilentlyContinue; if ($task -and $task.Actions[0].Arguments -match [regex]::Escape('%s')) { exit 0 } else { exit 1 }", taskName, scriptPath);
+            String encodedCmd = Base64.getEncoder().encodeToString(cmd.getBytes(StandardCharsets.UTF_16LE));
             ProcessBuilder pb = new ProcessBuilder(
                     "powershell.exe",
                     "-NoProfile",
                     "-ExecutionPolicy", "Bypass",
-                    "-Command",
-                    String.format("$task = Get-ScheduledTask -TaskName '%s' -ErrorAction SilentlyContinue; if ($task -and $task.Actions[0].Arguments -match [regex]::Escape('%s')) { exit 0 } else { exit 1 }",
-                            taskName, scriptPath)
+                    "-EncodedCommand",
+                    encodedCmd
             );
             Process process = pb.start();
             int exitCode = process.waitFor();
@@ -191,13 +194,15 @@ public class UsbMonitorManager {
                     taskName, scriptPath, taskName
             );
 
-            String encodedCmd = Base64.getEncoder().encodeToString(psCommand.getBytes(StandardCharsets.UTF_16LE));
+            String innerEncodedCmd = Base64.getEncoder().encodeToString(psCommand.getBytes(StandardCharsets.UTF_16LE));
+            String outerCmd = String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', '%s' -Wait", innerEncodedCmd);
+            String outerEncodedCmd = Base64.getEncoder().encodeToString(outerCmd.getBytes(StandardCharsets.UTF_16LE));
             ProcessBuilder pb = new ProcessBuilder(
                     "powershell.exe",
                     "-NoProfile",
                     "-ExecutionPolicy", "Bypass",
-                    "-Command",
-                    String.format("Start-Process powershell.exe -WindowStyle Hidden -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -EncodedCommand %s' -Wait", encodedCmd)
+                    "-EncodedCommand",
+                    outerEncodedCmd
             );
 
             Process process = pb.start();
@@ -215,13 +220,15 @@ public class UsbMonitorManager {
     private static void startScheduledTask(String taskName) {
         try {
             mLog.info("Starting USB Monitor scheduled task: {}", taskName);
+            String cmd = String.format("Start-ScheduledTask -TaskName '%s'", taskName);
+            String encodedCmd = Base64.getEncoder().encodeToString(cmd.getBytes(StandardCharsets.UTF_16LE));
             ProcessBuilder pb = new ProcessBuilder(
                     "powershell.exe",
                     "-NoProfile",
                     "-ExecutionPolicy", "Bypass",
                     "-WindowStyle", "Hidden",
-                    "-Command",
-                    String.format("Start-ScheduledTask -TaskName '%s'", taskName)
+                    "-EncodedCommand",
+                    encodedCmd
             );
             Process process = pb.start();
             process.waitFor();
