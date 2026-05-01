@@ -23,6 +23,7 @@ import io.github.dsheirer.gui.playlist.streaming.ViewStreamRequest;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import io.github.dsheirer.icon.Icon;
+import io.github.dsheirer.audio.broadcast.BroadcastEvent;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.swing.JTableColumnWidthMonitor;
@@ -35,6 +36,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JPopupMenu;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 
@@ -86,9 +89,26 @@ public class BroadcastStatusPanel extends JPanel
         mTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1) {
-                    int viewRowIndex = mTable.rowAtPoint(e.getPoint());
-                    if (viewRowIndex >= 0) {
+                int viewRowIndex = mTable.rowAtPoint(e.getPoint());
+                if (viewRowIndex >= 0) {
+                    if (e.getButton() == MouseEvent.BUTTON3) {
+                        mTable.setRowSelectionInterval(viewRowIndex, viewRowIndex);
+                        int modelRowIndex = mTable.convertRowIndexToModel(viewRowIndex);
+                        if (modelRowIndex >= 0) {
+                            String streamName = (String) mBroadcastModel.getValueAt(modelRowIndex, BroadcastModel.COLUMN_STREAM_NAME);
+                            BroadcastConfiguration config = mBroadcastModel.getBroadcastConfiguration(streamName);
+                            if (config != null) {
+                                JPopupMenu popup = new JPopupMenu();
+                                JCheckBoxMenuItem enableItem = new JCheckBoxMenuItem("Enable", config.isEnabled());
+                                enableItem.addActionListener(evt -> {
+                                    config.setEnabled(enableItem.isSelected());
+                                    mBroadcastModel.process(new BroadcastEvent(config, BroadcastEvent.Event.CONFIGURATION_CHANGE));
+                                });
+                                popup.add(enableItem);
+                                popup.show(e.getComponent(), e.getX(), e.getY());
+                            }
+                        }
+                    } else if (e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1) {
                         int modelRowIndex = mTable.convertRowIndexToModel(viewRowIndex);
                         if (modelRowIndex >= 0) {
                             String streamName = (String) mBroadcastModel.getValueAt(modelRowIndex, BroadcastModel.COLUMN_STREAM_NAME);
