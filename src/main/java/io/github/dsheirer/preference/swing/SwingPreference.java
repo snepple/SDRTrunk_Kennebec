@@ -54,6 +54,16 @@ public class SwingPreference
      * @param defaultValue to return if the value has not yet been persisted
      * @return value or default value
      */
+    public boolean getBoolean(String key, boolean defaultValue)
+    {
+        return mPreferences.getBoolean(key, defaultValue);
+    }
+
+    public void setBoolean(String key, boolean value)
+    {
+        mPreferences.putBoolean(key, value);
+    }
+
     public int getInt(String key, int defaultValue)
     {
         return mPreferences.getInt(key, defaultValue);
