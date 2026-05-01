@@ -28,6 +28,13 @@ import org.slf4j.LoggerFactory;
 import java.awt.EventQueue;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.JPopupMenu;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.SwingUtilities;
 import javax.swing.JTable;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
@@ -56,6 +63,7 @@ public class JTableColumnWidthMonitor
     private SortListener mSortListener = new SortListener();
     private AtomicBoolean mSaveInProgress = new AtomicBoolean();
     private boolean mRestoring = false;
+    private Map<Integer, TableColumn> mAllColumns = new HashMap<>();
 
     /**
      * Constructs a column width monitor.
@@ -69,6 +77,23 @@ public class JTableColumnWidthMonitor
         mUserPreferences = userPreferences;
         mTable = table;
         mKey = key;
+
+        for(int x = 0; x < mTable.getColumnModel().getColumnCount(); x++)
+        {
+            TableColumn col = mTable.getColumnModel().getColumn(x);
+            mAllColumns.put(col.getModelIndex(), col);
+        }
+
+        if (mTable.getTableHeader() != null) {
+            mTable.getTableHeader().addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                        showColumnVisibilityMenu(e);
+                    }
+                }
+            });
+        }
 
         mTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
@@ -88,6 +113,70 @@ public class JTableColumnWidthMonitor
     /**
      * Prepares this monitor for disposal by unregistering as a listener to the table column model.
      */
+
+    private void showColumnVisibilityMenu(MouseEvent e) {
+        JPopupMenu menu = new JPopupMenu();
+
+        List<Integer> orderedModelIndices = new ArrayList<>();
+        for (int i = 0; i < mTable.getColumnModel().getColumnCount(); i++) {
+            orderedModelIndices.add(mTable.getColumnModel().getColumn(i).getModelIndex());
+        }
+        for (Integer modelIndex : mAllColumns.keySet()) {
+            if (!orderedModelIndices.contains(modelIndex)) {
+                orderedModelIndices.add(modelIndex);
+            }
+        }
+
+        for (Integer modelIndex : orderedModelIndices) {
+            TableColumn column = mAllColumns.get(modelIndex);
+            String columnName = mTable.getModel().getColumnName(modelIndex);
+            JCheckBoxMenuItem item = new JCheckBoxMenuItem(columnName);
+            item.setSelected(isColumnVisible(modelIndex));
+            item.addActionListener(evt -> {
+                setColumnVisible(modelIndex, item.isSelected());
+            });
+            menu.add(item);
+        }
+
+        menu.show(mTable.getTableHeader(), e.getX(), e.getY());
+    }
+
+    private boolean isColumnVisible(int modelIndex) {
+        for (int i = 0; i < mTable.getColumnModel().getColumnCount(); i++) {
+            if (mTable.getColumnModel().getColumn(i).getModelIndex() == modelIndex) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void setColumnVisible(int modelIndex, boolean visible) {
+        boolean currentlyVisible = isColumnVisible(modelIndex);
+        if (visible && !currentlyVisible) {
+            TableColumn column = mAllColumns.get(modelIndex);
+            mTable.getColumnModel().addColumn(column);
+
+            // Move it to right before the last invisible columns to maintain relative order if possible,
+            // but just adding to the end and saving is easiest.
+            if (mSaveInProgress.compareAndSet(false, true)) {
+                ThreadPool.SCHEDULED.schedule(new ColumnStateSaveTask(), 2, java.util.concurrent.TimeUnit.SECONDS);
+            }
+        } else if (!visible && currentlyVisible) {
+            if (mTable.getColumnModel().getColumnCount() > 1) {
+                for (int i = 0; i < mTable.getColumnModel().getColumnCount(); i++) {
+                    TableColumn col = mTable.getColumnModel().getColumn(i);
+                    if (col.getModelIndex() == modelIndex) {
+                        mTable.getColumnModel().removeColumn(col);
+                        if (mSaveInProgress.compareAndSet(false, true)) {
+                            ThreadPool.SCHEDULED.schedule(new ColumnStateSaveTask(), 2, java.util.concurrent.TimeUnit.SECONDS);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     public void dispose()
     {
         if(mTable != null)
@@ -130,6 +219,20 @@ public class JTableColumnWidthMonitor
                 if(width != Integer.MAX_VALUE)
                 {
                     model.getColumn(x).setPreferredWidth(width);
+                }
+            }
+
+            // Restore visibility (remove columns marked as hidden)
+            for (Map.Entry<Integer, TableColumn> entry : mAllColumns.entrySet()) {
+                int modelIndex = entry.getKey();
+                boolean visible = mUserPreferences.getSwingPreference().getBoolean(getVisibleKey(modelIndex), true);
+                if (!visible) {
+                    for (int i = 0; i < model.getColumnCount(); i++) {
+                        if (model.getColumn(i).getModelIndex() == modelIndex) {
+                            model.removeColumn(model.getColumn(i));
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -192,11 +295,25 @@ public class JTableColumnWidthMonitor
     {
         TableColumnModel model = mTable.getColumnModel();
 
+        int viewIndex = 0;
         for(int x = 0; x < model.getColumnCount(); x++)
         {
             TableColumn column = model.getColumn(x);
-            mUserPreferences.getSwingPreference().setInt(getWidthKey(x), column.getWidth());
-            mUserPreferences.getSwingPreference().setInt(getOrderKey(x), column.getModelIndex());
+            mUserPreferences.getSwingPreference().setInt(getWidthKey(viewIndex), column.getWidth());
+            mUserPreferences.getSwingPreference().setInt(getOrderKey(viewIndex), column.getModelIndex());
+            mUserPreferences.getSwingPreference().setBoolean(getVisibleKey(column.getModelIndex()), true);
+            viewIndex++;
+        }
+
+        for (Map.Entry<Integer, TableColumn> entry : mAllColumns.entrySet()) {
+            int modelIndex = entry.getKey();
+            if (!isColumnVisible(modelIndex)) {
+                TableColumn column = entry.getValue();
+                mUserPreferences.getSwingPreference().setInt(getWidthKey(viewIndex), column.getPreferredWidth());
+                mUserPreferences.getSwingPreference().setInt(getOrderKey(viewIndex), modelIndex);
+                mUserPreferences.getSwingPreference().setBoolean(getVisibleKey(modelIndex), false);
+                viewIndex++;
+            }
         }
 
         storeSortState();
@@ -213,6 +330,11 @@ public class JTableColumnWidthMonitor
     /**
      * Constructs a preference key for column order (model index at a view position)
      */
+    private String getVisibleKey(int modelIndex)
+    {
+        return mKey + ".visible." + modelIndex;
+    }
+
     private String getOrderKey(int viewPosition)
     {
         return mKey + ".order." + viewPosition;
