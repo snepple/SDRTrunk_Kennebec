@@ -1,0 +1,10 @@
+--- src/main/java/io/github/dsheirer/gui/playlist/streaming/StreamingEditor.java
++++ src/main/java/io/github/dsheirer/gui/playlist/streaming/StreamingEditor.java
+@@ -449,6 +449,7 @@
+         {
+             mConfiguredBroadcastTableView = new TableView<>();
+             mConfiguredBroadcastTableView.getStyleClass().add("preferences-table");
++            mConfiguredBroadcastTableView.setTableMenuButtonVisible(true);
+             mConfiguredBroadcastTableView.setPlaceholder(new Label("Click the New button to create a new " +
+                 "audio streaming configuration"));
+             mConfiguredBroadcastTableView.setItems(mPlaylistManager.getBroadcastModel().getConfiguredBroadcasts());

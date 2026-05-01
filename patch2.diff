@@ -1,0 +1,17 @@
+--- src/main/java/io/github/dsheirer/playlist/PlaylistManager.java
++++ src/main/java/io/github/dsheirer/playlist/PlaylistManager.java
+@@ -414,6 +414,14 @@
+         return mPlaylistSettings;
+     }
+
++    /**
++     * User preferences
++     */
++    public UserPreferences getUserPreferences()
++    {
++        return mUserPreferences;
++    }
++
+     /**
+      * Add channel listener
+      */

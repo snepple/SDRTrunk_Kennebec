@@ -1,0 +1,51 @@
+--- src/main/java/io/github/dsheirer/gui/playlist/streaming/StreamingEditor.java
++++ src/main/java/io/github/dsheirer/gui/playlist/streaming/StreamingEditor.java
+@@ -64,6 +64,7 @@
+ import jiconfont.javafx.IconNode;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
++import io.github.dsheirer.preference.javafx.FxTableColumnMonitor;
+
+ /**
+  * Editor for broadcast audio stream configurations
+@@ -457,6 +458,7 @@
+             mConfiguredBroadcastTableView.setPlaceholder(new Label("Click the New button to create a new " +
+                 "audio streaming configuration"));
+             mConfiguredBroadcastTableView.setItems(mPlaylistManager.getBroadcastModel().getConfiguredBroadcasts());
++            mConfiguredBroadcastTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+             TableColumn<ConfiguredBroadcast,Boolean> enabledColumn = new TableColumn("Enabled");
++            enabledColumn.setId("enabled");
+             enabledColumn.setCellValueFactory(new PropertyValueFactory<>("enabled"));
+             enabledColumn.setCellFactory(param -> {
+                 TableCell<ConfiguredBroadcast,Boolean> tableCell = new TableCell<>()
+@@ -484,10 +486,12 @@
+             });
+
+             TableColumn nameColumn = new TableColumn("Name");
++            nameColumn.setId("name");
+             nameColumn.setPrefWidth(300);
+             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+
+             TableColumn typeColumn = new TableColumn();
++            typeColumn.setId("format");
+             typeColumn.setPrefWidth(125);
+             typeColumn.setText("Format");
+             typeColumn.setCellValueFactory(new PropertyValueFactory<>("broadcastServerType"));
+@@ -522,12 +526,16 @@
+
+
+             TableColumn stateColumn = new TableColumn("Stream Status");
++            stateColumn.setId("status");
+             stateColumn.setCellValueFactory(new PropertyValueFactory<>("broadcastState"));
+
+             TableColumn errorColumn = new TableColumn("Last Error");
++            errorColumn.setId("error");
+             errorColumn.setPrefWidth(300);
+             errorColumn.setCellValueFactory(new PropertyValueFactory<>("lastErrorDetail"));
+
+             mConfiguredBroadcastTableView.getColumns().addAll(enabledColumn, nameColumn, typeColumn, stateColumn, errorColumn);
++
++            new FxTableColumnMonitor(mPlaylistManager.getUserPreferences(), mConfiguredBroadcastTableView, "streamingEditorTable");
+
+             mConfiguredBroadcastTableView.getSelectionModel().selectedItemProperty()
