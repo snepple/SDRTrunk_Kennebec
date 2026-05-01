@@ -219,6 +219,7 @@ public class AudioRecordingsPanel extends JPanel {
 
         // Table
         mTableView = new TableView<>();
+        mTableView.setPlaceholder(new Label("No audio recordings found"));
         HBox.setHgrow(mTableView, Priority.ALWAYS);
         mTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
