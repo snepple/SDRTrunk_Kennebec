@@ -59,6 +59,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
@@ -629,6 +630,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mNewButton = new MenuButton("New");
             mNewButton.setAlignment(Pos.CENTER);
             mNewButton.setMaxWidth(Double.MAX_VALUE);
+            mNewButton.setTooltip(new Tooltip("Create a new channel"));
 
             MenuItem decodersItem = new MenuItem("Decoder");
             decodersItem.setDisable(true);
@@ -657,6 +659,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mDeleteButton = new Button("Delete");
             mDeleteButton.setDisable(true);
             mDeleteButton.setMaxWidth(Double.MAX_VALUE);
+            mDeleteButton.setTooltip(new Tooltip("Delete the currently selected channel"));
             mDeleteButton.setOnAction(event -> {
                 Channel selected = getChannelTableView().getSelectionModel().getSelectedItem();
 
@@ -700,6 +703,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mCloneButton = new Button("Clone");
             mCloneButton.setDisable(true);
             mCloneButton.setMaxWidth(Double.MAX_VALUE);
+            mCloneButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected channel"));
             mCloneButton.setOnAction(event -> {
                 Channel selected = getChannelTableView().getSelectionModel().getSelectedItem();
                 Channel copy = selected.copyOf();
