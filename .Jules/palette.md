@@ -9,3 +9,6 @@ Action: Upgrade the Mute button to use vector icons via `IconFontSwing.buildIcon
 ## 2024-05-18 - AudioPanel Mute Button Icons Refinement
 Learning: Using static variables for icons created via `IconFontSwing` breaks dark mode and dynamic theming, because `IconFontSwing.buildIcon` without an explicit color defaults to black, which is hardcoded at class-load time.
 Action: To support FlatLaf dynamic themes, update icons dynamically using `UIManager.getColor("Label.foreground")` when creating vector icons for UI components.
+## 2026-05-02 - Delete Map Tracks Confirmation
+**Learning:** Implementing bulk or irreversible delete actions (e.g., Delete All, Delete Selected) in the UI always requires user approval via a confirmation dialogue window (e.g., JOptionPane.showConfirmDialog in Swing) before execution to prevent accidental data loss.
+**Action:** Add confirmation dialogs before bulk delete actions.

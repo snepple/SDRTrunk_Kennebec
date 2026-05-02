@@ -43,6 +43,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
@@ -441,11 +442,16 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
         {
             mDeleteAllTracksButton = new JButton("Delete All");
             mDeleteAllTracksButton.addActionListener(e -> {
-                mMapService.getPlottableEntityModel().deleteAllTracks();
-                mMapPainter.clearAllEntities();
-                //Clear followed entity
-                follow(null);
-                getMapViewer().repaint();
+                int confirmation = JOptionPane.showConfirmDialog(MapPanel.this,
+                        "Are you sure you want to delete all tracks?",
+                        "Delete All Tracks", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (confirmation == JOptionPane.YES_OPTION) {
+                    mMapService.getPlottableEntityModel().deleteAllTracks();
+                    mMapPainter.clearAllEntities();
+                    //Clear followed entity
+                    follow(null);
+                    getMapViewer().repaint();
+                }
             });
         }
 
@@ -460,27 +466,40 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
             mDeleteTrackButton.setEnabled(false);
             mDeleteTrackButton.addActionListener(e -> {
 
-                List<PlottableEntityHistory> toDelete = new ArrayList<>();
                 int[] selectedIndices = getPlottedTracksTable().getSelectionModel().getSelectedIndices();
+                if (selectedIndices.length == 0) {
+                    return;
+                }
 
-                for(int selectedIndex : selectedIndices)
-                {
-                    int modelIndex = getPlottedTracksTable().convertRowIndexToModel(selectedIndex);
-                    PlottableEntityHistory entity = mMapService.getPlottableEntityModel().get(modelIndex);
-                    if(entity != null)
+                String message = selectedIndices.length == 1
+                        ? "Are you sure you want to delete the selected track?"
+                        : "Are you sure you want to delete the " + selectedIndices.length + " selected tracks?";
+
+                int confirmation = JOptionPane.showConfirmDialog(MapPanel.this,
+                        message, "Delete Tracks", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+                if (confirmation == JOptionPane.YES_OPTION) {
+                    List<PlottableEntityHistory> toDelete = new ArrayList<>();
+
+                    for(int selectedIndex : selectedIndices)
                     {
-                        toDelete.add(entity);
-
-                        //Clear followed entity if it's being deleted
-                        if(entity.equals(mFollowedTrack))
+                        int modelIndex = getPlottedTracksTable().convertRowIndexToModel(selectedIndex);
+                        PlottableEntityHistory entity = mMapService.getPlottableEntityModel().get(modelIndex);
+                        if(entity != null)
                         {
-                            follow(null);
+                            toDelete.add(entity);
+
+                            //Clear followed entity if it's being deleted
+                            if(entity.equals(mFollowedTrack))
+                            {
+                                follow(null);
+                            }
                         }
                     }
+                    mMapService.getPlottableEntityModel().delete(toDelete);
+                    mMapPainter.clearEntities(toDelete);
+                    getMapViewer().repaint();
                 }
-                mMapService.getPlottableEntityModel().delete(toDelete);
-                mMapPainter.clearEntities(toDelete);
-                getMapViewer().repaint();
             });
         }
 
