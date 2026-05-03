@@ -1247,6 +1247,37 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     }
 
     @Override
+    protected Integer getConfiguredTalkgroup()
+    {
+        String tgText = getTalkgroupField().getText();
+        if(tgText != null && !tgText.trim().isEmpty())
+        {
+            try
+            {
+                IntegerFormat format = mUserPreferences.getTalkgroupFormatPreference().getTalkgroupFormat(Protocol.NBFM);
+                int tg;
+                if(format == IntegerFormat.HEXADECIMAL)
+                {
+                    tg = Integer.parseInt(tgText.trim(), 16);
+                }
+                else
+                {
+                    tg = Integer.parseInt(tgText.trim());
+                }
+                if(tg >= 1 && tg <= 65535)
+                {
+                    return tg;
+                }
+            }
+            catch(NumberFormatException e)
+            {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Override
     protected void saveDecoderConfiguration()
     {
         DecodeConfigNBFM config;

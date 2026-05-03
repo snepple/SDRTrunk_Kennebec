@@ -30,6 +30,8 @@ import io.github.dsheirer.gui.preference.ViewUserPreferenceEditorRequest;
 import io.github.dsheirer.module.decode.DecoderType;
 import io.github.dsheirer.module.decode.config.AuxDecodeConfiguration;
 import io.github.dsheirer.module.decode.config.DecodeConfiguration;
+import io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25;
+import io.github.dsheirer.module.decode.analog.DecodeConfigAnalog;
 import io.github.dsheirer.module.log.config.EventLogConfiguration;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
@@ -86,6 +88,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     private final static Logger mLog = LoggerFactory.getLogger(ChannelConfigurationEditor.class);
 
     private PlaylistManager mPlaylistManager;
+    private Label mChannelNameLabel;
     protected TunerManager mTunerManager;
     protected UserPreferences mUserPreferences;
     protected EditorModificationListener mEditorModificationListener = new EditorModificationListener();
@@ -135,6 +138,11 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         Label headerLabel = new Label("Channel Configuration");
         headerLabel.getStyleClass().add("preferences-section-header");
 
+        mChannelNameLabel = new Label("");
+        mChannelNameLabel.getStyleClass().add("preferences-section-header");
+        // Add padding to the left so it has some spacing if we just bind text
+        mChannelNameLabel.setPadding(new Insets(0, 0, 0, 5));
+
         HBox actionBox = new HBox(10);
         actionBox.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
         actionBox.getChildren().addAll(getPlayButton(), getResetButton(), getSaveButton());
@@ -142,7 +150,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox headerBox = new HBox(headerLabel, spacer, actionBox);
+        HBox headerBox = new HBox(headerLabel, mChannelNameLabel, spacer, actionBox);
         headerBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         VBox.setVgrow(getSplitPane(), Priority.ALWAYS);
@@ -189,6 +197,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         if(getItem() != null)
         {
             getItem().processingProperty().removeListener(mChannelProcessingMonitor);
+            mChannelNameLabel.textProperty().unbind();
         }
 
         super.setItem(channel);
@@ -211,6 +220,8 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
         if(channel != null)
         {
+            mChannelNameLabel.textProperty().bind(javafx.beans.binding.Bindings.concat(" - ", channel.nameProperty()));
+
             getSystemField().setText(channel.getSystem());
             getSiteField().setText(channel.getSite());
             getNameField().setText(channel.getName());
@@ -267,6 +278,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         }
         else
         {
+            mChannelNameLabel.setText("");
             getSystemField().setText(null);
             getSiteField().setText(null);
             getNameField().setText(null);
@@ -527,6 +539,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSplitPane.getItems().addAll(getSidebarList(), getContentPane());
             mSplitPane.setDividerPositions(0.2);
             mSplitPane.setMaxWidth(Double.MAX_VALUE);
+            mSplitPane.getStyleClass().add("invisible-divider");
         }
         return mSplitPane;
     }
@@ -756,6 +769,16 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
 
 
+    /**
+     * Gets the configured talkgroup value from the editor UI before saving.
+     * Override in subclasses that support talkgroup assignment.
+     * @return configured talkgroup, or null if not applicable or empty
+     */
+    protected Integer getConfiguredTalkgroup()
+    {
+        return null;
+    }
+
     private Button getSaveButton()
     {
         if(mSaveButton == null)
@@ -765,6 +788,34 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSaveButton.setMaxWidth(Double.MAX_VALUE);
             mSaveButton.disableProperty().bind(modifiedProperty().not());
             mSaveButton.setOnAction(event -> {
+                Integer newTalkgroup = getConfiguredTalkgroup();
+                if(newTalkgroup != null && newTalkgroup > 0)
+                {
+                    Channel conflictChannel = null;
+                    for(Channel c : mPlaylistManager.getChannelModel().channelList())
+                    {
+                        if(c == getItem()) continue; // Skip current channel
+                        io.github.dsheirer.module.decode.config.DecodeConfiguration dc = c.getDecodeConfiguration();
+                        if(dc instanceof DecodeConfigP25)
+                        {
+                            if(newTalkgroup.equals(((DecodeConfigP25) dc).getTalkgroup())) conflictChannel = c;
+                        }
+                        else if(dc instanceof DecodeConfigAnalog)
+                        {
+                            if(newTalkgroup.equals(((DecodeConfigAnalog) dc).getTalkgroup())) conflictChannel = c;
+                        }
+                        if(conflictChannel != null) break;
+                    }
+                    if(conflictChannel != null)
+                    {
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "Talkgroup " + newTalkgroup + " is already assigned to channel '" + conflictChannel.getName() + "'.\nPlease choose a different talkgroup to assign.", ButtonType.OK);
+                        alert.setTitle("Talkgroup Conflict");
+                        alert.setHeaderText("Cannot Save Channel Configuration");
+                        alert.initOwner((getPlayButton()).getScene().getWindow());
+                        alert.showAndWait();
+                        return;
+                    }
+                }
                 if(mFilterProcessor != null)
                 {
                     mFilterProcessor.clearFilter();
