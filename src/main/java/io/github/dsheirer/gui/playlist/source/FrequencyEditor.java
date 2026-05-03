@@ -40,6 +40,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tooltip;
+import javafx.geometry.VPos;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
@@ -98,14 +100,16 @@ public class FrequencyEditor extends SourceConfigurationEditor<SourceConfigurati
 
     private void init()
     {
-        HBox hBox = new HBox();
-        hBox.setPadding(new Insets(10,10,10,10));
-        hBox.setSpacing(10);
-        hBox.setAlignment(Pos.CENTER_LEFT);
+        GridPane gridPane = new GridPane();
+        gridPane.setPadding(new Insets(10, 10, 10, 10));
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
 
         Label label = new Label(mAllowMultipleFrequencies ? "Frequencies" : "Frequency");
-        label.setAlignment(Pos.CENTER_LEFT);
-        hBox.getChildren().addAll(label, getFrequencyBoxContainer());
+        GridPane.setValignment(label, VPos.TOP);
+        label.setPadding(new Insets(4, 0, 0, 0));
+        gridPane.add(label, 0, 0);
+        gridPane.add(getFrequencyBoxContainer(), 1, 0);
 
         Label preferredTunerLabel = new Label("Preferred Tuner");
         HBox tunerBox = new HBox();
@@ -113,30 +117,22 @@ public class FrequencyEditor extends SourceConfigurationEditor<SourceConfigurati
         tunerBox.setSpacing(10);
         tunerBox.getChildren().addAll(preferredTunerLabel, getPreferredTunerComboBox());
 
-        VBox vbox = new VBox();
-        vbox.setSpacing(10);
-        vbox.setPadding(new Insets(0,0,0,20));
+        gridPane.add(tunerBox, 1, 1);
 
         if(mAllowMultipleFrequencies)
         {
             Label frequencyRotationLabel = new Label("Frequency Rotation Delay (ms)");
-            HBox frequencyBox = new HBox();
-            frequencyBox.setAlignment(Pos.CENTER_LEFT);
-            frequencyBox.setSpacing(10);
-            frequencyBox.getChildren().addAll(frequencyRotationLabel, getFrequencyRotationDelaySpinner());
+            HBox rotationBox = new HBox();
+            rotationBox.setAlignment(Pos.CENTER_LEFT);
+            rotationBox.setSpacing(10);
+            rotationBox.getChildren().addAll(frequencyRotationLabel, getFrequencyRotationDelaySpinner());
             getFrequencyRotationDelaySpinner().disableProperty().bind(Bindings.greaterThan(2, Bindings.size(mFrequencyBoxes)));
 
-            vbox.getChildren().addAll(tunerBox, frequencyBox);
+            gridPane.add(rotationBox, 1, 2);
         }
-        else
-        {
-            vbox.getChildren().addAll(tunerBox);
-        }
-
-        hBox.getChildren().add(vbox);
 
         setAlignment(Pos.TOP_LEFT);
-        getChildren().add(hBox);
+        getChildren().add(gridPane);
     }
 
     /**
