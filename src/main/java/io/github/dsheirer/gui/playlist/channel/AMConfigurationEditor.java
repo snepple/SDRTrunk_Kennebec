@@ -439,6 +439,37 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
     }
 
     @Override
+    protected Integer getConfiguredTalkgroup()
+    {
+        String tgText = getTalkgroupField().getText();
+        if(tgText != null && !tgText.trim().isEmpty())
+        {
+            try
+            {
+                IntegerFormat format = mUserPreferences.getTalkgroupFormatPreference().getTalkgroupFormat(Protocol.AM);
+                int tg;
+                if(format == IntegerFormat.HEXADECIMAL)
+                {
+                    tg = Integer.parseInt(tgText.trim(), 16);
+                }
+                else
+                {
+                    tg = Integer.parseInt(tgText.trim());
+                }
+                if(tg >= 1 && tg <= 65535)
+                {
+                    return tg;
+                }
+            }
+            catch(NumberFormatException e)
+            {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Override
     protected void saveDecoderConfiguration()
     {
         DecodeConfigAM config;
@@ -461,6 +492,8 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
 
         config.setBandwidth(bandwidth);
 
+        int originalTalkgroup = config.getTalkgroup();
+
         Integer talkgroup = mTalkgroupTextFormatter.getValue();
 
         if(talkgroup == null)
@@ -469,6 +502,11 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
         }
 
         config.setTalkgroup(talkgroup);
+
+        if(originalTalkgroup > 0 && originalTalkgroup != config.getTalkgroup())
+        {
+            getPlaylistManager().getAliasModel().updateTalkgroup(originalTalkgroup, config.getTalkgroup(), io.github.dsheirer.protocol.Protocol.AM);
+        }
         config.setSquelchThreshold(mSquelchTextFormatter.getValue());
         config.setSquelchAutoTrack(getSquelchAutoTrackSwitch().isSelected());
         getItem().setDecodeConfiguration(config);

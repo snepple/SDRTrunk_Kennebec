@@ -586,6 +586,28 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     }
 
     @Override
+    protected Integer getConfiguredTalkgroup()
+    {
+        String tgText = getTalkgroupTextField().getText();
+        if(tgText != null && !tgText.trim().isEmpty())
+        {
+            try
+            {
+                int tg = Integer.parseInt(tgText.trim());
+                if(tg >= 1 && tg <= 65535)
+                {
+                    return tg;
+                }
+            }
+            catch(NumberFormatException e)
+            {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Override
     protected void saveDecoderConfiguration()
     {
         DecodeConfigP25Phase1 config;
@@ -604,6 +626,8 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         config.setTrafficChannelPoolSize(getTrafficChannelPoolSizeSpinner().getValue());
         config.setModulation(getC4FMToggleButton().isSelected() ? Modulation.C4FM : Modulation.CQPSK);
         config.setNacFilterEnabled(getNacFilterButton().isSelected());
+
+        int originalTalkgroup = config.getTalkgroup();
 
         //Parse talkgroup text field
         String tgText = getTalkgroupTextField().getText();
@@ -629,6 +653,11 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         else
         {
             config.setTalkgroup(0);
+        }
+
+        if(originalTalkgroup > 0 && originalTalkgroup != config.getTalkgroup())
+        {
+            getPlaylistManager().getAliasModel().updateTalkgroup(originalTalkgroup, config.getTalkgroup(), io.github.dsheirer.protocol.Protocol.APCO25);
         }
 
         //Parse NAC text field

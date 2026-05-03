@@ -35,24 +35,23 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.Tab;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 
 /**
  * Primary alias editor with tabbed panes for view-by alias editing support
  */
-public class AliasEditor extends BorderPane
+public class AliasEditor extends TabPane
 {
     private PlaylistManager mPlaylistManager;
     private UserPreferences mUserPreferences;
     private AliasConfigurationEditor mAliasConfigurationEditor;
     private AliasViewByIdentifierEditor mAliasViewByIdentifierEditor;
-    private AliasViewByRecordingEditor mAliasRecordingEditor;
-
-    private BooleanProperty mIdentifierTabSelected = new SimpleBooleanProperty(false);
-    private SplitPane mSplitPane;
-    private ListView<String> mSidebarList;
-    private StackPane mContentPane;
+    private Tab mAliasConfigurationTab;
+    private Tab mAliasIdentifierTab;
+    private Tab mAliasRecordingTab;
 
     /**
      * Constructs an instance
@@ -64,57 +63,11 @@ public class AliasEditor extends BorderPane
         mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
 
-
         setPadding(new Insets(4,0,0,0));
-
-        mSplitPane = new SplitPane();
-        mSplitPane.setOrientation(Orientation.HORIZONTAL);
-        mSplitPane.setDividerPositions(0.2);
-
-        mSidebarList = new ListView<>();
-        mSidebarList.getItems().addAll("Alias", "Identifier", "Record");
-        mSidebarList.setMinWidth(150);
-        mSidebarList.setPrefWidth(200);
-
-        mContentPane = new StackPane();
-        mContentPane.setPadding(new Insets(0, 0, 0, 10));
-
-        mSplitPane.getItems().addAll(mSidebarList, mContentPane);
-
-        mSidebarList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                switch (newValue) {
-                    case "Alias":
-                        showAliasEditor();
-                        break;
-                    case "Identifier":
-                        showIdentifierEditor();
-                        break;
-                    case "Record":
-                        showRecordingEditor();
-                        break;
-                }
-            }
-        });
-
-        setCenter(mSplitPane);
-
-        mSidebarList.getSelectionModel().select("Alias");
-    }
-
-    private void showAliasEditor() {
-        mIdentifierTabSelected.set(false);
-        mContentPane.getChildren().setAll(getAliasConfigurationEditor());
-    }
-
-    private void showIdentifierEditor() {
-        mIdentifierTabSelected.set(true);
-        mContentPane.getChildren().setAll(getAliasViewByIdentifierEditor());
-    }
-
-    private void showRecordingEditor() {
-        mIdentifierTabSelected.set(false);
-        mContentPane.getChildren().setAll(getAliasRecordingEditor());
+        setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        Tab viewByTab = new Tab("View By:");
+        viewByTab.setDisable(true);
+        getTabs().addAll(viewByTab, getAliasConfigurationTab(), getAliasIdentifierTab(), getAliasRecordingTab());
     }
 
     /**
@@ -132,7 +85,7 @@ public class AliasEditor extends BorderPane
 
             if(alias != null)
             {
-                mSidebarList.getSelectionModel().select("Alias");
+                getSelectionModel().select(getAliasConfigurationTab());
                 getAliasConfigurationEditor().show(alias);
             }
         }
@@ -142,10 +95,21 @@ public class AliasEditor extends BorderPane
 
             if(aliasID != null)
             {
-                mSidebarList.getSelectionModel().select("Identifier");
+                getSelectionModel().select(getAliasIdentifierTab());
                 getAliasViewByIdentifierEditor().show(aliasID);
             }
         }
+    }
+
+    private Tab getAliasConfigurationTab()
+    {
+        if(mAliasConfigurationTab == null)
+        {
+            mAliasConfigurationTab = new Tab("Alias");
+            mAliasConfigurationTab.setContent(getAliasConfigurationEditor());
+        }
+
+        return mAliasConfigurationTab;
     }
 
     private AliasConfigurationEditor getAliasConfigurationEditor()
@@ -158,23 +122,35 @@ public class AliasEditor extends BorderPane
         return mAliasConfigurationEditor;
     }
 
+    private Tab getAliasIdentifierTab()
+    {
+        if(mAliasIdentifierTab == null)
+        {
+            mAliasIdentifierTab = new Tab("Identifier");
+            mAliasIdentifierTab.setContent(getAliasViewByIdentifierEditor());
+        }
+
+        return mAliasIdentifierTab;
+    }
+
     private AliasViewByIdentifierEditor getAliasViewByIdentifierEditor()
     {
         if(mAliasViewByIdentifierEditor == null)
         {
-            mAliasViewByIdentifierEditor = new AliasViewByIdentifierEditor(mPlaylistManager, mIdentifierTabSelected);
+            mAliasViewByIdentifierEditor = new AliasViewByIdentifierEditor(mPlaylistManager, getAliasIdentifierTab().selectedProperty());
         }
 
         return mAliasViewByIdentifierEditor;
     }
 
-    private AliasViewByRecordingEditor getAliasRecordingEditor()
+    private Tab getAliasRecordingTab()
     {
-        if(mAliasRecordingEditor == null)
+        if(mAliasRecordingTab == null)
         {
-            mAliasRecordingEditor = new AliasViewByRecordingEditor(mPlaylistManager);
+            mAliasRecordingTab = new Tab("Record");
+            mAliasRecordingTab.setContent(new AliasViewByRecordingEditor(mPlaylistManager));
         }
 
-        return mAliasRecordingEditor;
+        return mAliasRecordingTab;
     }
 }

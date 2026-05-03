@@ -1,3 +1,4 @@
+## 2026-05-03 - Prevent Duplicate Talkgroup Configurations\n**Learning:** When users assign talkgroups to channels, they might accidentally create conflicts by assigning the same talkgroup to multiple channels, leading to undefined decoding behavior.\n**Action:** Implemented a pre-save validation hook `getConfiguredTalkgroup()` in the base `ChannelConfigurationEditor` and a conflict check against existing channels within the `save` action handler. This enforces unique talkgroup assignments across the application and improves user experience by explicitly informing them of the conflict before saving.
 ## 2024-05-18 - First Insights
 Learning: SDR Trunk utilizes Java Swing and MigLayout heavily for its interface. It integrates `jiconfont.swing.IconFontSwing` with `FontAwesome` for its icons. The application's UI is migrating to FlatLaf for a modernized look.
 Action: Utilize `IconFontSwing` to upgrade legacy icons. Use `MigLayout` features for generous spacing. Take advantage of `FlatLaf` features if appropriate. Pay attention to keyboard accessibility on `JToggleButton` and other interactive elements.
@@ -17,7 +18,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-02 - Delete Map Tracks Confirmation
 **Learning:** Implementing bulk or irreversible delete actions (e.g., Delete All, Delete Selected) in the UI always requires user approval via a confirmation dialogue window (e.g., JOptionPane.showConfirmDialog in Swing) before execution to prevent accidental data loss.
 **Action:** Add confirmation dialogs before bulk delete actions.
-
-## 2026-05-02 - NBFM Talkgroup Input ComboBox
-**Learning:** When transitioning a `TextField` to an editable `ComboBox` in JavaFX to provide autocomplete/dropdown suggestions, a `StringConverter` must be supplied (via `setConverter()`) to ensure the text correctly parses back to the underlying type (e.g., Integer). Additionally, the existing `TextFormatter` should be applied to the inner editor (`comboBox.getEditor().setTextFormatter(...)`) to preserve input validation constraints.
-**Action:** When adding dropdown suggestions to a validated input field, use a `ComboBox` with `setEditable(true)`, apply a `ListCell` factory for rich display text, and explicitly provide both a `StringConverter` and a `TextFormatter` to its inner `TextField`.
+## 2024-05-14 - Empty State Placeholder Text
+**Learning:** When a `TableView` is empty, displaying a generic "No [items] Configured" message is a missed UX opportunity. Users benefit from knowing exactly *how* to populate the table.
+**Action:** Always provide an actionable empty state message. Update JavaFX `TableView` placeholders with instructions like `mTableView.setPlaceholder(new Label("Click the New button to create a new [Item]"));` to guide the user towards the next logical action.

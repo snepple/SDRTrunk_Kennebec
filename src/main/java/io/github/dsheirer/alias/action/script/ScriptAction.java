@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class ScriptAction extends RecurringAction
@@ -79,11 +80,25 @@ public class ScriptAction extends RecurringAction
     {
         if(mScript != null)
         {
-            if (!Files.isRegularFile(Paths.get(mScript))) {
+            Path scriptPath = Paths.get(mScript);
+
+            // 🛡️ Sentinel: Normalize path to prevent path traversal
+            Path normalizedPath = scriptPath.normalize();
+            if (normalizedPath.toString().contains("..")) {
+                throw new IllegalArgumentException("Invalid script path: Path traversal detected.");
+            }
+
+            // 🛡️ Sentinel: Validate that the file is an existing regular file
+            if (!Files.isRegularFile(normalizedPath)) {
                 throw new IllegalArgumentException("Invalid script path: must be an existing regular file.");
             }
 
-            ProcessBuilder pb = new ProcessBuilder(mScript);
+            // 🛡️ Sentinel: Validate that the file is executable
+            if (!Files.isExecutable(normalizedPath)) {
+                throw new IllegalArgumentException("Invalid script path: file is not executable.");
+            }
+
+            ProcessBuilder pb = new ProcessBuilder(normalizedPath.toString());
 
             pb.redirectErrorStream(true);
 
