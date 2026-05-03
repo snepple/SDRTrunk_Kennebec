@@ -586,6 +586,28 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     }
 
     @Override
+    protected Integer getConfiguredTalkgroup()
+    {
+        String tgText = getTalkgroupTextField().getText();
+        if(tgText != null && !tgText.trim().isEmpty())
+        {
+            try
+            {
+                int tg = Integer.parseInt(tgText.trim());
+                if(tg >= 1 && tg <= 65535)
+                {
+                    return tg;
+                }
+            }
+            catch(NumberFormatException e)
+            {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Override
     protected void saveDecoderConfiguration()
     {
         DecodeConfigP25Phase1 config;
