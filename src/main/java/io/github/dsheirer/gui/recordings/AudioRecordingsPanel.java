@@ -67,7 +67,7 @@ public class AudioRecordingsPanel extends JPanel {
         setLayout(new net.miginfocom.swing.MigLayout("insets 0, hidemode 3, fill", "[grow,fill]", "[grow,fill]"));
 
         mJfxPanel = new JFXPanel();
-        add(mJfxPanel);
+        add(mJfxPanel, "grow, fill");
 
         Platform.runLater(this::initFx);
     }
