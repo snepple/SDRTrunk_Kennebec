@@ -21,6 +21,8 @@ package io.github.dsheirer.alias;
 import io.github.dsheirer.alias.id.AliasID;
 import io.github.dsheirer.alias.id.AliasIDType;
 import io.github.dsheirer.alias.id.broadcast.BroadcastChannel;
+import io.github.dsheirer.alias.id.talkgroup.Talkgroup;
+import io.github.dsheirer.protocol.Protocol;
 import io.github.dsheirer.identifier.IdentifierCollection;
 import io.github.dsheirer.identifier.configuration.AliasListConfigurationIdentifier;
 import java.util.ArrayList;
@@ -405,6 +407,30 @@ public class AliasModel
                         {
                             alias.addAliasID(new BroadcastChannel(updatedStreamName));
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Updates all Talkgroup alias IDs across all aliases that match the original talkgroup ID and protocol
+     * @param originalTalkgroup original talkgroup ID
+     * @param updatedTalkgroup new talkgroup ID
+     * @param protocol protocol of the talkgroup
+     */
+    public void updateTalkgroup(int originalTalkgroup, int updatedTalkgroup, Protocol protocol)
+    {
+        for(Alias alias : mAliases)
+        {
+            for(AliasID aliasID : alias.getAliasIdentifiers())
+            {
+                if(aliasID instanceof Talkgroup)
+                {
+                    Talkgroup talkgroup = (Talkgroup)aliasID;
+                    if(talkgroup.getProtocol() == protocol && talkgroup.getValue() == originalTalkgroup)
+                    {
+                        talkgroup.setValue(updatedTalkgroup);
                     }
                 }
             }

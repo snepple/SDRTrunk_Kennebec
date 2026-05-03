@@ -1300,6 +1300,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
         config.setBandwidth(bandwidth);
 
+        int originalTalkgroup = config.getTalkgroup();
+
         Integer talkgroup = mTalkgroupTextFormatter.getValue();
 
         if(talkgroup == null)
@@ -1308,6 +1310,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         }
 
         config.setTalkgroup(talkgroup);
+
+        if(originalTalkgroup > 0 && originalTalkgroup != config.getTalkgroup())
+        {
+            getPlaylistManager().getAliasModel().updateTalkgroup(originalTalkgroup, config.getTalkgroup(), io.github.dsheirer.protocol.Protocol.NBFM);
+        }
         config.setAudioFilter(getAudioFilterEnable().isSelected());
 
         // Save tone filter settings
