@@ -23,6 +23,7 @@ import io.github.dsheirer.identifier.Identifier;
 import io.github.dsheirer.identifier.IdentifierClass;
 import io.github.dsheirer.identifier.Role;
 import io.github.dsheirer.identifier.integer.IntegerIdentifier;
+import io.github.dsheirer.module.decode.p25.P25Utils;
 import io.github.dsheirer.protocol.Protocol;
 
 public class APCO25Wacn extends IntegerIdentifier
@@ -50,6 +51,6 @@ public class APCO25Wacn extends IntegerIdentifier
     @Override
     public String toString()
     {
-        return getValue() + "/x" + String.format("%05X", getValue());
+        return getValue() + "/x" + P25Utils.formatHex(getValue(), 5);
     }
 }

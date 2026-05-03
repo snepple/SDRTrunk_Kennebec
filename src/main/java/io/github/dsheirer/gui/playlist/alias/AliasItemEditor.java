@@ -100,6 +100,8 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
@@ -142,11 +144,11 @@ public class AliasItemEditor extends Editor<Alias>
     private ColorPicker mColorPicker;
     private ComboBox<Icon> mIconNodeComboBox;
     private SuggestionProvider<String> mGroupSuggestionProvider;
-    private VBox mTitledPanesBox;
-    private VBox mIdentifierPane;
+    private TabPane mTabPane;
+    private HBox mIdentifierPane;
     private VBox mStreamPane;
     private Label mStreamLabel;
-    private VBox mActionPane;
+    private HBox mActionPane;
     private ListView<String> mAvailableStreamsView;
     private ListView<BroadcastChannel> mSelectedStreamsView;
     private ListView<AliasID> mIdentifiersList;
@@ -192,7 +194,7 @@ public class AliasItemEditor extends Editor<Alias>
         setMaxWidth(Double.MAX_VALUE);
 
         VBox vbox = new VBox();
-        vbox.getChildren().addAll(getTextFieldPane(), getTitledPanesBox());
+        vbox.getChildren().addAll(getTextFieldPane(), getTabPane());
 
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
@@ -513,19 +515,31 @@ public class AliasItemEditor extends Editor<Alias>
         return mStreamAsTalkgroupField;
     }
 
-    private VBox getTitledPanesBox()
+    private TabPane getTabPane()
     {
-        if(mTitledPanesBox == null)
+        if(mTabPane == null)
         {
-            mTitledPanesBox = new VBox();
-            mTitledPanesBox.setMaxWidth(Double.MAX_VALUE);
-            mTitledPanesBox.getChildren().addAll(getIdentifierPane(), getStreamPane(), getActionPane());
+            mTabPane = new TabPane();
+
+            Tab identifierTab = new Tab("Identifiers");
+            identifierTab.setContent(getIdentifierPane());
+            identifierTab.setClosable(false);
+
+            Tab streamTab = new Tab("Streaming");
+            streamTab.setContent(getStreamPane());
+            streamTab.setClosable(false);
+
+            Tab actionTab = new Tab("Actions");
+            actionTab.setContent(getActionPane());
+            actionTab.setClosable(false);
+
+            mTabPane.getTabs().addAll(identifierTab, streamTab, actionTab);
         }
 
-        return mTitledPanesBox;
+        return mTabPane;
     }
 
-    private VBox getIdentifierPane()
+    private HBox getIdentifierPane()
     {
         if(mIdentifierPane == null)
         {
@@ -537,14 +551,11 @@ public class AliasItemEditor extends Editor<Alias>
             buttonsBox.getChildren().addAll(getAddIdentifierButton(), getDeleteIdentifierButton(),
                 getShowOverlapButton());
 
-            HBox identifiersAndButtonsBox = new HBox();
-            identifiersAndButtonsBox.setSpacing(10);
+            mIdentifierPane = new HBox();
+            mIdentifierPane.setPadding(new javafx.geometry.Insets(10, 0, 0, 0));
+            mIdentifierPane.setSpacing(10);
             HBox.setHgrow(getIdentifierEditorBox(), Priority.ALWAYS);
-            identifiersAndButtonsBox.getChildren().addAll(getIdentifierEditorBox(), buttonsBox);
-
-            Label identifierLabel = new Label("Identifiers");
-            identifierLabel.setStyle("-fx-font-weight: bold;");
-            mIdentifierPane = new VBox(5, identifierLabel, identifiersAndButtonsBox);
+            mIdentifierPane.getChildren().addAll(getIdentifierEditorBox(), buttonsBox);
         }
 
         return mIdentifierPane;
@@ -702,7 +713,7 @@ public class AliasItemEditor extends Editor<Alias>
 
             if(editor == null)
             {
-                editor = IdentifierEditorFactory.getEditor(aliasID.getType(), mUserPreferences);
+                editor = IdentifierEditorFactory.getEditor(aliasID.getType(), mUserPreferences, mPlaylistManager);
                 mIdentifierEditorMap.put(aliasID.getType(), editor);
             }
         }
@@ -912,8 +923,9 @@ public class AliasItemEditor extends Editor<Alias>
             HBox.setHgrow(selectedBox, Priority.ALWAYS);
             hbox.getChildren().addAll(availableBox, buttonBox, selectedBox);
 
-            VBox vbox = new VBox();
-            vbox.setSpacing(10);
+            mStreamPane = new VBox();
+            mStreamPane.setPadding(new javafx.geometry.Insets(10, 0, 0, 0));
+            mStreamPane.setSpacing(10);
             VBox.setVgrow(hbox, Priority.ALWAYS);
             Label label = new Label("Stream this Alias as Talkgroup:");
             label.setMinWidth(Region.USE_PREF_SIZE);
@@ -921,11 +933,7 @@ public class AliasItemEditor extends Editor<Alias>
             streamAsHBox.setAlignment(Pos.CENTER_LEFT);
             streamAsHBox.setSpacing(10);
             streamAsHBox.getChildren().addAll(label, getStreamAsTalkgroupField());
-            vbox.getChildren().addAll(hbox, streamAsHBox);
-
-            mStreamLabel = new Label("Streaming");
-            mStreamLabel.setStyle("-fx-font-weight: bold;");
-            mStreamPane = new VBox(5, mStreamLabel, vbox);
+            mStreamPane.getChildren().addAll(hbox, streamAsHBox);
         }
 
         return mStreamPane;
@@ -992,6 +1000,36 @@ public class AliasItemEditor extends Editor<Alias>
             mAvailableStreamsView = new ListView<>();
             mAvailableStreamsView.setDisable(true);
             mAvailableStreamsView.setPrefHeight(75);
+            mAvailableStreamsView.setCellFactory(param -> new ListCell<>() {
+                private javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
+                {
+                    imageView.setFitWidth(16);
+                    imageView.setFitHeight(16);
+                }
+                @Override
+                protected void updateItem(String streamName, boolean empty) {
+                    super.updateItem(streamName, empty);
+                    if (empty || streamName == null) {
+                        setText(null);
+                        setGraphic(null);
+                    } else {
+                        setText(streamName);
+                        io.github.dsheirer.audio.broadcast.BroadcastConfiguration config = mPlaylistManager.getBroadcastModel().getBroadcastConfiguration(streamName);
+                        if (config != null && config.getBroadcastServerType().getIconPath() != null) {
+                            io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon("empty", config.getBroadcastServerType().getIconPath());
+                            javafx.scene.image.Image fxImage = icon.getFxImage();
+                            if (fxImage != null) {
+                                imageView.setImage(fxImage);
+                                setGraphic(imageView);
+                            } else {
+                                setGraphic(null);
+                            }
+                        } else {
+                            setGraphic(null);
+                        }
+                    }
+                }
+            });
         }
 
         return mAvailableStreamsView;
@@ -1004,6 +1042,37 @@ public class AliasItemEditor extends Editor<Alias>
             mSelectedStreamsView = new ListView<>();
             mSelectedStreamsView.setDisable(true);
             mSelectedStreamsView.setPrefHeight(75);
+            mSelectedStreamsView.setCellFactory(param -> new ListCell<>() {
+                private javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
+                {
+                    imageView.setFitWidth(16);
+                    imageView.setFitHeight(16);
+                }
+                @Override
+                protected void updateItem(BroadcastChannel broadcastChannel, boolean empty) {
+                    super.updateItem(broadcastChannel, empty);
+                    if (empty || broadcastChannel == null) {
+                        setText(null);
+                        setGraphic(null);
+                    } else {
+                        String streamName = broadcastChannel.getChannelName();
+                        setText(streamName);
+                        io.github.dsheirer.audio.broadcast.BroadcastConfiguration config = mPlaylistManager.getBroadcastModel().getBroadcastConfiguration(streamName);
+                        if (config != null && config.getBroadcastServerType().getIconPath() != null) {
+                            io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon("empty", config.getBroadcastServerType().getIconPath());
+                            javafx.scene.image.Image fxImage = icon.getFxImage();
+                            if (fxImage != null) {
+                                imageView.setImage(fxImage);
+                                setGraphic(imageView);
+                            } else {
+                                setGraphic(null);
+                            }
+                        } else {
+                            setGraphic(null);
+                        }
+                    }
+                }
+            });
             mSelectedStreamsView.getItems().addListener((ListChangeListener<BroadcastChannel>)c -> {
                 String title = "Streaming";
 
@@ -1012,7 +1081,7 @@ public class AliasItemEditor extends Editor<Alias>
                     title += " (" + getSelectedStreamsView().getItems().size() + ")";
                 }
 
-                if(mStreamLabel != null) { mStreamLabel.setText(title); }
+
             });
         }
 
@@ -1070,7 +1139,7 @@ public class AliasItemEditor extends Editor<Alias>
         return mRemoveStreamButton;
     }
 
-    private VBox getActionPane()
+    private HBox getActionPane()
     {
         if(mActionPane == null)
         {
@@ -1080,14 +1149,11 @@ public class AliasItemEditor extends Editor<Alias>
             getDeleteActionButton().setMinWidth(Region.USE_PREF_SIZE);
             buttonsBox.getChildren().addAll(getAddActionButton(), getDeleteActionButton());
 
-            HBox hbox = new HBox();
-            hbox.setSpacing(10);
+            mActionPane = new HBox();
+            mActionPane.setPadding(new javafx.geometry.Insets(10, 0, 0, 0));
+            mActionPane.setSpacing(10);
             HBox.setHgrow(getActionEditorBox(), Priority.ALWAYS);
-            hbox.getChildren().addAll(getActionEditorBox(), buttonsBox);
-
-            Label actionLabel = new Label("Actions");
-            actionLabel.setStyle("-fx-font-weight: bold;");
-            mActionPane = new VBox(5, actionLabel, hbox);
+            mActionPane.getChildren().addAll(getActionEditorBox(), buttonsBox);
         }
 
         return mActionPane;
