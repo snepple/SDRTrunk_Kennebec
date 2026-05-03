@@ -129,7 +129,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
         VBox inspectorCard = new VBox(15);
         inspectorCard.getStyleClass().add("preferences-card");
-        inspectorCard.setPadding(new Insets(15));
+        inspectorCard.setPadding(new Insets(8));
         inspectorCard.setMaxWidth(Double.MAX_VALUE);
 
         Label headerLabel = new Label("Channel Configuration");
