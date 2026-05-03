@@ -702,7 +702,7 @@ public class AliasItemEditor extends Editor<Alias>
 
             if(editor == null)
             {
-                editor = IdentifierEditorFactory.getEditor(aliasID.getType(), mUserPreferences);
+                editor = IdentifierEditorFactory.getEditor(aliasID.getType(), mUserPreferences, mPlaylistManager);
                 mIdentifierEditorMap.put(aliasID.getType(), editor);
             }
         }
