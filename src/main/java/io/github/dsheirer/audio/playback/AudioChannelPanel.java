@@ -23,6 +23,11 @@ import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.AliasList;
 import io.github.dsheirer.alias.AliasModel;
+import io.github.dsheirer.audio.broadcast.BroadcastModel;
+
+import io.github.dsheirer.alias.id.broadcast.BroadcastChannel;
+import io.github.dsheirer.audio.broadcast.AbstractAudioBroadcaster;
+
 import io.github.dsheirer.audio.AudioEvent;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.icon.IconModel;
@@ -55,6 +60,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
+import io.github.dsheirer.dsp.tone.TwoToneDetectedEvent;
+import javax.swing.Timer;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 /**
  * UI to wrap an audio channel and provide display of metadata and playback state information.
  */
@@ -74,6 +84,7 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
     private final IconModel mIconModel;
     private final SettingsManager mSettingsManager;
     private final UserPreferences mUserPreferences;
+    private final BroadcastModel mBroadcastModel;
     private final TalkgroupFormatPreference mTalkgroupFormatPreference;
     private Identifier mIdentifier;
     private List<Alias> mAliases = Collections.EMPTY_LIST;
@@ -87,7 +98,14 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
     private final JLabel mMutedLabel = new JLabel("M");
     private JLabel mChannelName = new JLabel(" ");
     private final JLabel mIconLabel = new JLabel(" ");
+
     private final JLabel mIdentifierLabel = new JLabel("-----");
+
+    private final JLabel mTwoToneAlertLabel = new JLabel("");
+    private final JPanel mStreamIconsPanel = new JPanel(new MigLayout("insets 0, gap 2", "", ""));
+
+    private Timer mTwoToneClearTimer;
+
 
     /**
      * Constructs an instance
@@ -98,13 +116,14 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
      * @param userPreferences for lookup of tone and other preferences
      */
     public AudioChannelPanel(AudioChannel audioChannel, AliasModel aliasModel, IconModel iconModel,
-                             SettingsManager settingsManager, UserPreferences userPreferences)
+                             SettingsManager settingsManager, UserPreferences userPreferences, BroadcastModel broadcastModel)
     {
         mIconModel = iconModel;
         mSettingsManager = settingsManager;
         mSettingsManager.getSettingsModel().addListener(this);
         mAliasModel = aliasModel;
         mUserPreferences = userPreferences;
+        mBroadcastModel = broadcastModel;
         mTalkgroupFormatPreference = mUserPreferences.getTalkgroupFormatPreference();
         mAudioChannel = audioChannel;
 
@@ -135,10 +154,43 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         }
     }
 
+
+    @Subscribe
+    public void onTwoToneDetected(TwoToneDetectedEvent event) {
+        if (mAudioChannel != null && event.getChannel() != null && event.getChannel().equals(mAudioChannel.getChannelName())) {
+            EventQueue.invokeLater(() -> {
+                mTwoToneAlertLabel.setText(event.getMessage());
+                mTwoToneAlertLabel.setVisible(true);
+                mIdentifierLabel.setVisible(false);
+                mIconLabel.setVisible(false);
+
+                if (mTwoToneClearTimer != null && mTwoToneClearTimer.isRunning()) {
+                    mTwoToneClearTimer.restart();
+                } else {
+                    mTwoToneClearTimer = new Timer(10000, new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            mTwoToneAlertLabel.setVisible(false);
+                            mIdentifierLabel.setVisible(true);
+                            mIconLabel.setVisible(true);
+                        }
+                    });
+                    mTwoToneClearTimer.setRepeats(false);
+                    mTwoToneClearTimer.start();
+                }
+            });
+        }
+    }
+
     public void dispose()
     {
         //Deregister from receiving preference update notifications
         MyEventBus.getGlobalEventBus().unregister(this);
+
+        if(mTwoToneClearTimer != null) {
+            mTwoToneClearTimer.stop();
+        }
+
 
         if(mAudioChannel != null)
         {
@@ -170,9 +222,20 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         mIconLabel.setForeground(mValueColor);
         add(mIconLabel);
 
+
         mIdentifierLabel.setFont(mFont.deriveFont(Font.BOLD));
         mIdentifierLabel.setForeground(mValueColor);
         add(mIdentifierLabel, "wmin 10lp");
+
+        mStreamIconsPanel.setOpaque(false);
+        add(mStreamIconsPanel, "wmin 10lp, hidemode 3");
+
+
+        mTwoToneAlertLabel.setFont(mFont.deriveFont(Font.BOLD));
+        mTwoToneAlertLabel.setForeground(Color.RED);
+        mTwoToneAlertLabel.setVisible(false);
+        add(mTwoToneAlertLabel, "hidemode 3");
+
     }
 
     @Override
@@ -320,6 +383,26 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
             EventQueue.invokeLater(() -> {
                 mIdentifierLabel.setText(identifierText);
                 mIconLabel.setIcon(icon);
+
+                mStreamIconsPanel.removeAll();
+                if (mAliases != null) {
+                    java.util.Set<String> activeStreams = new java.util.HashSet<>();
+                    for (Alias alias : mAliases) {
+                        for (BroadcastChannel bc : alias.getBroadcastChannels()) {
+                            AbstractAudioBroadcaster<?> broadcaster = mBroadcastModel.getBroadcaster(bc.getChannelName());
+                            if (broadcaster != null && broadcaster.getBroadcastConfiguration().isEnabled()) {
+                                if (!activeStreams.contains(bc.getChannelName())) {
+                                    activeStreams.add(bc.getChannelName());
+                                    JLabel streamLabel = new JLabel(mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath(), 14));
+                                    streamLabel.setToolTipText(broadcaster.getBroadcastConfiguration().getName());
+                                    mStreamIconsPanel.add(streamLabel);
+                                }
+                            }
+                        }
+                    }
+                }
+                mStreamIconsPanel.revalidate();
+                mStreamIconsPanel.repaint();
             });
         }
         finally
