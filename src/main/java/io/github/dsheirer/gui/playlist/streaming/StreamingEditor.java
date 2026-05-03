@@ -349,6 +349,7 @@ public class StreamingEditor extends SplitPane
         {
             mNewButton = new MenuButton("New");
             mNewButton.setMaxWidth(Double.MAX_VALUE);
+            mNewButton.setTooltip(new Tooltip("Create a new stream configuration"));
             mNewButton.setOnShowing(event -> {
                 mNewButton.getItems().clear();
 
@@ -396,6 +397,7 @@ public class StreamingEditor extends SplitPane
         {
             mDeleteButton = new Button("Delete");
             mDeleteButton.setMaxWidth(Double.MAX_VALUE);
+            mDeleteButton.setTooltip(new Tooltip("Delete the currently selected stream configuration"));
             mDeleteButton.setOnAction(event -> {
                 BroadcastConfiguration config = getConfiguredBroadcastTableView().getSelectionModel()
                     .getSelectedItem().getBroadcastConfiguration();
@@ -427,6 +429,7 @@ public class StreamingEditor extends SplitPane
         {
             mCloneButton = new Button("Clone");
             mCloneButton.setMaxWidth(Double.MAX_VALUE);
+            mCloneButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected stream configuration"));
             mCloneButton.setOnAction(event -> {
                 ConfiguredBroadcast configuredBroadcast = getConfiguredBroadcastTableView().getSelectionModel()
                     .getSelectedItem();
