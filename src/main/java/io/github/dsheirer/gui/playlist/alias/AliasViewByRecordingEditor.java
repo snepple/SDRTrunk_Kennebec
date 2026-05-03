@@ -29,6 +29,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
@@ -308,6 +309,7 @@ public class AliasViewByRecordingEditor extends VBox
             mAddButton.setMaxWidth(Double.MAX_VALUE);
             mAddButton.setGraphic(new IconNode(FontAwesome.ANGLE_RIGHT));
             mAddButton.setAlignment(Pos.CENTER);
+            mAddButton.setTooltip(new Tooltip("Add selected aliases to record list"));
             mAddButton.setOnAction(event -> {
                 Alias selectedAlias = getNoRecordAliasTableView().getSelectionModel().getSelectedItem();
 
@@ -331,6 +333,7 @@ public class AliasViewByRecordingEditor extends VBox
             mAddAllButton.setMaxWidth(Double.MAX_VALUE);
             mAddAllButton.setGraphic(new IconNode(FontAwesome.ANGLE_DOUBLE_RIGHT));
             mAddAllButton.setAlignment(Pos.CENTER);
+            mAddAllButton.setTooltip(new Tooltip("Add all aliases to record list"));
             mAddAllButton.setOnAction(event -> {
                 List<Alias> selectedAliases =
                     new ArrayList(getNoRecordAliasTableView().getSelectionModel().getSelectedItems());
@@ -359,6 +362,7 @@ public class AliasViewByRecordingEditor extends VBox
             mRemoveButton.setMaxWidth(Double.MAX_VALUE);
             mRemoveButton.setGraphic(new IconNode(FontAwesome.ANGLE_LEFT));
             mRemoveButton.setAlignment(Pos.CENTER);
+            mRemoveButton.setTooltip(new Tooltip("Remove selected aliases from record list"));
             mRemoveButton.setOnAction(event -> {
                 Alias selectedAlias = getRecordAliasTableView().getSelectionModel().getSelectedItem();
 
@@ -382,6 +386,7 @@ public class AliasViewByRecordingEditor extends VBox
             mRemoveAllButton.setMaxWidth(Double.MAX_VALUE);
             mRemoveAllButton.setGraphic(new IconNode(FontAwesome.ANGLE_DOUBLE_LEFT));
             mRemoveAllButton.setAlignment(Pos.CENTER);
+            mRemoveAllButton.setTooltip(new Tooltip("Remove all aliases from record list"));
             mRemoveAllButton.setOnAction(event -> {
                 List<Alias> selectedAliases =
                     new ArrayList(getRecordAliasTableView().getSelectionModel().getSelectedItems());
