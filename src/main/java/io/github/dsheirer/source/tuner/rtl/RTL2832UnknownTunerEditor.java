@@ -18,7 +18,6 @@
  */
 
 package io.github.dsheirer.source.tuner.rtl;
-
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingUtilities;
 import java.util.concurrent.ExecutorService;
