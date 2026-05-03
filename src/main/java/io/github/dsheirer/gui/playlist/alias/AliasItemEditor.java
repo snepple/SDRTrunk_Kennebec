@@ -702,7 +702,7 @@ public class AliasItemEditor extends Editor<Alias>
 
             if(editor == null)
             {
-                editor = IdentifierEditorFactory.getEditor(aliasID.getType(), mUserPreferences);
+                editor = IdentifierEditorFactory.getEditor(aliasID.getType(), mUserPreferences, mPlaylistManager);
                 mIdentifierEditorMap.put(aliasID.getType(), editor);
             }
         }
@@ -992,6 +992,36 @@ public class AliasItemEditor extends Editor<Alias>
             mAvailableStreamsView = new ListView<>();
             mAvailableStreamsView.setDisable(true);
             mAvailableStreamsView.setPrefHeight(75);
+            mAvailableStreamsView.setCellFactory(param -> new ListCell<>() {
+                private javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
+                {
+                    imageView.setFitWidth(16);
+                    imageView.setFitHeight(16);
+                }
+                @Override
+                protected void updateItem(String streamName, boolean empty) {
+                    super.updateItem(streamName, empty);
+                    if (empty || streamName == null) {
+                        setText(null);
+                        setGraphic(null);
+                    } else {
+                        setText(streamName);
+                        io.github.dsheirer.audio.broadcast.BroadcastConfiguration config = mPlaylistManager.getBroadcastModel().getBroadcastConfiguration(streamName);
+                        if (config != null && config.getBroadcastServerType().getIconPath() != null) {
+                            io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon("empty", config.getBroadcastServerType().getIconPath());
+                            javafx.scene.image.Image fxImage = icon.getFxImage();
+                            if (fxImage != null) {
+                                imageView.setImage(fxImage);
+                                setGraphic(imageView);
+                            } else {
+                                setGraphic(null);
+                            }
+                        } else {
+                            setGraphic(null);
+                        }
+                    }
+                }
+            });
         }
 
         return mAvailableStreamsView;
@@ -1004,6 +1034,37 @@ public class AliasItemEditor extends Editor<Alias>
             mSelectedStreamsView = new ListView<>();
             mSelectedStreamsView.setDisable(true);
             mSelectedStreamsView.setPrefHeight(75);
+            mSelectedStreamsView.setCellFactory(param -> new ListCell<>() {
+                private javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
+                {
+                    imageView.setFitWidth(16);
+                    imageView.setFitHeight(16);
+                }
+                @Override
+                protected void updateItem(BroadcastChannel broadcastChannel, boolean empty) {
+                    super.updateItem(broadcastChannel, empty);
+                    if (empty || broadcastChannel == null) {
+                        setText(null);
+                        setGraphic(null);
+                    } else {
+                        String streamName = broadcastChannel.getChannelName();
+                        setText(streamName);
+                        io.github.dsheirer.audio.broadcast.BroadcastConfiguration config = mPlaylistManager.getBroadcastModel().getBroadcastConfiguration(streamName);
+                        if (config != null && config.getBroadcastServerType().getIconPath() != null) {
+                            io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon("empty", config.getBroadcastServerType().getIconPath());
+                            javafx.scene.image.Image fxImage = icon.getFxImage();
+                            if (fxImage != null) {
+                                imageView.setImage(fxImage);
+                                setGraphic(imageView);
+                            } else {
+                                setGraphic(null);
+                            }
+                        } else {
+                            setGraphic(null);
+                        }
+                    }
+                }
+            });
             mSelectedStreamsView.getItems().addListener((ListChangeListener<BroadcastChannel>)c -> {
                 String title = "Streaming";
 

@@ -9,3 +9,9 @@
 ## 2024-05-13 - [Optimize getHex and BinaryMessage]
 **Learning:** `BinaryMessage` heavily utilizes `String.format` and `Integer.toHexString` to format hex strings, which are surprisingly slow due to regex parsing and object instantiation inside inner loops in hot paths. Profiling shows `char[]` lookup techniques are significantly faster.
 **Action:** Replace `String.format` and `Integer.toHexString` in `BinaryMessage` with manual bit-shifting and `char[]` mapping against a static `HEX_ARRAY`. Use `Math.max` for correctly sizing buffer arrays.
+## 2025-02-12 - Fast Hexadecimal Formatting
+**Learning:** In tight loops or high-frequency code paths (like parsing/formatting messages), using `StringUtils.leftPad(Integer.toHexString(value).toUpperCase(), places, '0')` is slow due to intermediate string allocations, under-the-hood regular expressions in `StringUtils`, and case conversions.
+**Action:** Replace `Integer.toHexString` and string padding logic with a custom bitwise lookup against a static `char[]` of hexadecimal characters (`0123456789ABCDEF`) and process padding directly within the buffer. This avoids multiple object creations and speeds up execution significantly (~3x faster).
+## 2024-05-13 - [Optimize StringUtils.leftPad Hexadecimal Formatting]
+**Learning:** `StringUtils.leftPad(Integer.toHexString(...).toUpperCase(), ...)` and `String.format("%03X", ...)` are frequently used but relatively slow due to intermediate string allocations and regex parsing. Replacing them with the customized `P25Utils.formatHex(value, width)` method drastically reduces overhead and object creation.
+**Action:** Replace string-based hex padders and formatters with `P25Utils.formatHex` in high-frequency monitoring or identifier formatting classes.

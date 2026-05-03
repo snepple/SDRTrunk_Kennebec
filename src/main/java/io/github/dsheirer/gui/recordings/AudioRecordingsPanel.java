@@ -64,10 +64,10 @@ public class AudioRecordingsPanel extends JPanel {
     public AudioRecordingsPanel(UserPreferences userPreferences, io.github.dsheirer.playlist.PlaylistManager playlistManager) {
         mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
-        setLayout(new BorderLayout());
+        setLayout(new net.miginfocom.swing.MigLayout("insets 0, hidemode 3, fill", "[grow,fill]", "[grow,fill]"));
 
         mJfxPanel = new JFXPanel();
-        add(mJfxPanel, BorderLayout.CENTER);
+        add(mJfxPanel, "grow, fill");
 
         Platform.runLater(this::initFx);
     }
@@ -97,6 +97,7 @@ public class AudioRecordingsPanel extends JPanel {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));
 
+        mTableView = new TableView<>();
         mRecordings = FXCollections.observableArrayList();
         mFilteredRecordings = new FilteredList<>(mRecordings, p -> true);
 
@@ -218,7 +219,6 @@ public class AudioRecordingsPanel extends JPanel {
         root.setTop(filterBox);
 
         // Table
-        mTableView = new TableView<>();
         mTableView.setPlaceholder(new Label("No audio recordings found"));
         HBox.setHgrow(mTableView, Priority.ALWAYS);
         mTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);

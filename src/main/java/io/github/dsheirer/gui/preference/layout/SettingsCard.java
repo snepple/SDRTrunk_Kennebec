@@ -11,14 +11,24 @@ import javafx.scene.layout.VBox;
  */
 public class SettingsCard extends VBox {
 
+    private boolean mUpdatingSeparators = false;
+
     public SettingsCard() {
         getStyleClass().add("hig-settings-card");
 
         // Listen for changes to children to automatically insert/manage separators
         getChildren().addListener((ListChangeListener<Node>) c -> {
+            if (mUpdatingSeparators) {
+                return;
+            }
             while (c.next()) {
                 if (c.wasAdded() || c.wasRemoved()) {
-                    updateSeparators();
+                    mUpdatingSeparators = true;
+                    try {
+                        updateSeparators();
+                    } finally {
+                        mUpdatingSeparators = false;
+                    }
                 }
             }
         });

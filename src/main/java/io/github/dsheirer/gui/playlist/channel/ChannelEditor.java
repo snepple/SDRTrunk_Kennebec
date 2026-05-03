@@ -59,6 +59,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
@@ -322,7 +323,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                 }
             } else {
                 editor.setMaxWidth(Double.MAX_VALUE);
-                editor.setPadding(new Insets(16, 16, 16, 16));
+                editor.setPadding(new Insets(0, 8, 8, 8));
                 if (mSplitPane.getItems().size() > 1) {
                     mSplitPane.getItems().set(1, editor);
                 } else {
@@ -629,10 +630,16 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mNewButton = new MenuButton("New");
             mNewButton.setAlignment(Pos.CENTER);
             mNewButton.setMaxWidth(Double.MAX_VALUE);
+            mNewButton.setTooltip(new Tooltip("Create a new channel"));
+
+            MenuItem rrItem = new MenuItem("Import from Radio Reference");
+            rrItem.setOnAction(event -> {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.radioreference.ViewRadioReferenceRequest());
+            });
 
             MenuItem decodersItem = new MenuItem("Decoder");
             decodersItem.setDisable(true);
-            mNewButton.getItems().addAll(decodersItem, new SeparatorMenuItem());
+            mNewButton.getItems().addAll(rrItem, new SeparatorMenuItem(), decodersItem, new SeparatorMenuItem());
 
             for(DecoderType decoderType: DecoderType.PRIMARY_DECODERS)
             {
@@ -657,6 +664,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mDeleteButton = new Button("Delete");
             mDeleteButton.setDisable(true);
             mDeleteButton.setMaxWidth(Double.MAX_VALUE);
+            mDeleteButton.setTooltip(new Tooltip("Delete the currently selected channel"));
             mDeleteButton.setOnAction(event -> {
                 Channel selected = getChannelTableView().getSelectionModel().getSelectedItem();
 
@@ -700,6 +708,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mCloneButton = new Button("Clone");
             mCloneButton.setDisable(true);
             mCloneButton.setMaxWidth(Double.MAX_VALUE);
+            mCloneButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected channel"));
             mCloneButton.setOnAction(event -> {
                 Channel selected = getChannelTableView().getSelectionModel().getSelectedItem();
                 Channel copy = selected.copyOf();

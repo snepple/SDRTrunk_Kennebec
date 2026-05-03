@@ -50,6 +50,9 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.TableRow;
+import io.github.dsheirer.audio.broadcast.BroadcastEvent;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -79,6 +82,9 @@ public class StreamingEditor extends SplitPane
     private Button mCloneButton;
     private Button mRefreshButton;
     private TabPane mTabPane;
+    private VBox mConfigAreaBox;
+    private Label mHeaderLabel;
+    private javafx.scene.image.ImageView mHeaderIcon;
     private Tab mConfigurationTab;
     private Tab mAliasTab;
     private Label mRadioReferenceLoginLabel;
@@ -145,7 +151,7 @@ public class StreamingEditor extends SplitPane
 
         setOrientation(Orientation.VERTICAL);
 
-        getItems().addAll(masterBox, getTabPane());
+        getItems().addAll(masterBox);
     }
 
     private void setEditor(AbstractBroadcastEditor<?> editor)
@@ -252,6 +258,20 @@ public class StreamingEditor extends SplitPane
 
         getCurrentEditor().setItem(broadcastConfiguration);
         getStreamAliasSelectionEditor().setBroadcastConfiguration(broadcastConfiguration);
+
+        if(configuredBroadcast == null)
+        {
+            getItems().remove(getConfigAreaBox());
+        }
+        else
+        {
+            updateConfigHeader(configuredBroadcast);
+            if(!getItems().contains(getConfigAreaBox()))
+            {
+                getItems().add(getConfigAreaBox());
+                setDividerPositions(0.5);
+            }
+        }
     }
 
     /**
@@ -307,6 +327,47 @@ public class StreamingEditor extends SplitPane
         return mCurrentEditor;
     }
 
+    private VBox getConfigAreaBox()
+    {
+        if(mConfigAreaBox == null)
+        {
+            mConfigAreaBox = new VBox();
+
+            mHeaderLabel = new Label();
+            mHeaderLabel.setStyle("-fx-font-size: 1.5em; -fx-font-weight: bold;");
+
+            mHeaderIcon = new javafx.scene.image.ImageView();
+            mHeaderIcon.setFitWidth(24);
+            mHeaderIcon.setFitHeight(24);
+
+            HBox headerBox = new HBox(10, mHeaderIcon, mHeaderLabel);
+            headerBox.setAlignment(Pos.CENTER_LEFT);
+            headerBox.setPadding(new Insets(10, 10, 0, 10));
+
+            VBox.setVgrow(getTabPane(), Priority.ALWAYS);
+            mConfigAreaBox.getChildren().addAll(headerBox, getTabPane());
+        }
+        return mConfigAreaBox;
+    }
+
+    private void updateConfigHeader(ConfiguredBroadcast configuredBroadcast)
+    {
+        if(configuredBroadcast != null)
+        {
+            mHeaderLabel.setText(configuredBroadcast.getBroadcastConfiguration().getName());
+            BroadcastServerType type = configuredBroadcast.getBroadcastServerType();
+            if(type != null && type.getIconPath() != null)
+            {
+                io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon("empty", type.getIconPath());
+                mHeaderIcon.setImage(icon.getFxImage());
+            }
+            else
+            {
+                mHeaderIcon.setImage(null);
+            }
+        }
+    }
+
     private TabPane getTabPane()
     {
         if(mTabPane == null)
@@ -349,6 +410,7 @@ public class StreamingEditor extends SplitPane
         {
             mNewButton = new MenuButton("New");
             mNewButton.setMaxWidth(Double.MAX_VALUE);
+            mNewButton.setTooltip(new Tooltip("Create a new stream configuration"));
             mNewButton.setOnShowing(event -> {
                 mNewButton.getItems().clear();
 
@@ -396,6 +458,7 @@ public class StreamingEditor extends SplitPane
         {
             mDeleteButton = new Button("Delete");
             mDeleteButton.setMaxWidth(Double.MAX_VALUE);
+            mDeleteButton.setTooltip(new Tooltip("Delete the currently selected stream configuration"));
             mDeleteButton.setOnAction(event -> {
                 BroadcastConfiguration config = getConfiguredBroadcastTableView().getSelectionModel()
                     .getSelectedItem().getBroadcastConfiguration();
@@ -427,6 +490,7 @@ public class StreamingEditor extends SplitPane
         {
             mCloneButton = new Button("Clone");
             mCloneButton.setMaxWidth(Double.MAX_VALUE);
+            mCloneButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected stream configuration"));
             mCloneButton.setOnAction(event -> {
                 ConfiguredBroadcast configuredBroadcast = getConfiguredBroadcastTableView().getSelectionModel()
                     .getSelectedItem();
@@ -534,6 +598,55 @@ public class StreamingEditor extends SplitPane
 
             mConfiguredBroadcastTableView.getColumns().addAll(enabledColumn, nameColumn, typeColumn, stateColumn, errorColumn);
             new FxTableColumnMonitor(mPlaylistManager.getUserPreferences(), mConfiguredBroadcastTableView, "streamingEditorTable");
+
+            mConfiguredBroadcastTableView.setRowFactory(tableView -> {
+                TableRow<ConfiguredBroadcast> row = new TableRow<>();
+                ContextMenu contextMenu = new ContextMenu();
+                MenuItem enableMenuItem = new MenuItem();
+                MenuItem reconnectMenuItem = new MenuItem("Reconnect");
+
+                enableMenuItem.setOnAction(event -> {
+                    ConfiguredBroadcast item = row.getItem();
+                    if (item != null && item.getBroadcastConfiguration() != null) {
+                        boolean currentState = item.getBroadcastConfiguration().isEnabled();
+                        item.getBroadcastConfiguration().setEnabled(!currentState);
+                        mPlaylistManager.getBroadcastModel().process(
+                            new BroadcastEvent(item.getBroadcastConfiguration(), BroadcastEvent.Event.CONFIGURATION_CHANGE));
+                    }
+                });
+
+                reconnectMenuItem.setOnAction(event -> {
+                    ConfiguredBroadcast item = row.getItem();
+                    if (item != null && item.getBroadcastConfiguration() != null) {
+                        if (item.getBroadcastConfiguration().isEnabled()) {
+                            mPlaylistManager.getBroadcastModel().process(
+                                new BroadcastEvent(item.getBroadcastConfiguration(), BroadcastEvent.Event.CONFIGURATION_CHANGE));
+                        }
+                    }
+                });
+
+                row.itemProperty().addListener((observable, oldValue, newValue) -> {
+                    if (newValue == null || newValue.getBroadcastConfiguration() == null) {
+                        row.contextMenuProperty().unbind();
+                        row.setContextMenu(null);
+                    } else {
+                        row.contextMenuProperty().bind(
+                            javafx.beans.binding.Bindings.when(row.emptyProperty())
+                                .then((ContextMenu) null)
+                                .otherwise(contextMenu)
+                        );
+                        enableMenuItem.textProperty().bind(
+                            javafx.beans.binding.Bindings.when(newValue.enabledProperty())
+                                .then("Disable Stream")
+                                .otherwise("Enable Stream")
+                        );
+                        reconnectMenuItem.disableProperty().bind(newValue.enabledProperty().not());
+                    }
+                });
+
+                contextMenu.getItems().addAll(enableMenuItem, reconnectMenuItem);
+                return row;
+            });
 
             mConfiguredBroadcastTableView.getSelectionModel().selectedItemProperty()
                     .addListener((observable, oldValue, newValue) -> setBroadcastConfiguration(newValue));

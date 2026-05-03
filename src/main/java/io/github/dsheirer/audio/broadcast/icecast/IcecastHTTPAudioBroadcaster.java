@@ -55,6 +55,7 @@ public class IcecastHTTPAudioBroadcaster extends IcecastAudioBroadcaster
     private static final long CONNECTION_ATTEMPT_TIMEOUT_MILLISECONDS = 5000; // 5 seconds
     private static final long RECONNECT_INTERVAL_MILLISECONDS = 30000; //30 seconds
     private static final String HTTP_1_0_OK_HEX_DUMP = "48 54 54 50 2F 31 2E 30 20 32 30 30 20 4F 4B";
+    private static final Pattern HTTP_RESPONSE_PATTERN = Pattern.compile("HTTP/1.0 (\\d{3})");
 
     private NioSocketConnector mSocketConnector;
     private IoSession mStreamingSession = null;
@@ -500,8 +501,7 @@ public class IcecastHTTPAudioBroadcaster extends IcecastAudioBroadcaster
 
             mMessage = new String(bytes);
 
-            Pattern pattern = Pattern.compile("HTTP/1.0 (\\d{3})");
-            Matcher m = pattern.matcher(mMessage);
+            Matcher m = HTTP_RESPONSE_PATTERN.matcher(mMessage);
 
             if(m.find())
             {
@@ -545,9 +545,7 @@ public class IcecastHTTPAudioBroadcaster extends IcecastAudioBroadcaster
     {
         String text = "HTTP/1.0 403 Forbidden";
 
-        Pattern pattern = Pattern.compile("HTTP/1.0 (\\d{3})");
-
-        Matcher m = pattern.matcher(text);
+        Matcher m = HTTP_RESPONSE_PATTERN.matcher(text);
 
         if(m.find())
         {
