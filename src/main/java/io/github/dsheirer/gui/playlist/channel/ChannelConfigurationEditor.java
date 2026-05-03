@@ -30,6 +30,8 @@ import io.github.dsheirer.gui.preference.ViewUserPreferenceEditorRequest;
 import io.github.dsheirer.module.decode.DecoderType;
 import io.github.dsheirer.module.decode.config.AuxDecodeConfiguration;
 import io.github.dsheirer.module.decode.config.DecodeConfiguration;
+import io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25;
+import io.github.dsheirer.module.decode.analog.DecodeConfigAnalog;
 import io.github.dsheirer.module.log.config.EventLogConfiguration;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
@@ -784,13 +786,13 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                     {
                         if(c == getItem()) continue; // Skip current channel
                         io.github.dsheirer.module.decode.config.DecodeConfiguration dc = c.getDecodeConfiguration();
-                        if(dc instanceof io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25)
+                        if(dc instanceof DecodeConfigP25)
                         {
-                            if(newTalkgroup.equals(((io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25) dc).getTalkgroup())) conflictChannel = c;
+                            if(newTalkgroup.equals(((DecodeConfigP25) dc).getTalkgroup())) conflictChannel = c;
                         }
-                        else if(dc instanceof io.github.dsheirer.module.decode.analog.DecodeConfigAnalog)
+                        else if(dc instanceof DecodeConfigAnalog)
                         {
-                            if(newTalkgroup.equals(((io.github.dsheirer.module.decode.analog.DecodeConfigAnalog) dc).getTalkgroup())) conflictChannel = c;
+                            if(newTalkgroup.equals(((DecodeConfigAnalog) dc).getTalkgroup())) conflictChannel = c;
                         }
                         if(conflictChannel != null) break;
                     }
