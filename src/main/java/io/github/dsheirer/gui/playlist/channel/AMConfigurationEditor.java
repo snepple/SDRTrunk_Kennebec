@@ -461,6 +461,8 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
 
         config.setBandwidth(bandwidth);
 
+        int originalTalkgroup = config.getTalkgroup();
+
         Integer talkgroup = mTalkgroupTextFormatter.getValue();
 
         if(talkgroup == null)
@@ -469,6 +471,11 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
         }
 
         config.setTalkgroup(talkgroup);
+
+        if(originalTalkgroup > 0 && originalTalkgroup != config.getTalkgroup())
+        {
+            getPlaylistManager().getAliasModel().updateTalkgroup(originalTalkgroup, config.getTalkgroup(), io.github.dsheirer.protocol.Protocol.AM);
+        }
         config.setSquelchThreshold(mSquelchTextFormatter.getValue());
         config.setSquelchAutoTrack(getSquelchAutoTrackSwitch().isSelected());
         getItem().setDecodeConfiguration(config);
