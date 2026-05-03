@@ -45,7 +45,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import org.apache.commons.lang3.StringUtils;
+import io.github.dsheirer.module.decode.p25.P25Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,9 +97,9 @@ public class P25P2NetworkConfigurationMonitor
     {
         if(identifier.getValue() instanceof Integer)
         {
-            String hex = StringUtils.leftPad(Integer.toHexString((Integer)identifier.getValue()), width, '0');
+            String hex = P25Utils.formatHex((Integer)identifier.getValue(), width);
 
-            return hex.toUpperCase() + "[" + identifier.getValue() + "]";
+            return hex + "[" + identifier.getValue() + "]";
         }
         else
         {
