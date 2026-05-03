@@ -82,6 +82,12 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
         return mDiscoveredTuners.stream().filter(discoveredTuner -> discoveredTuner.hasTuner()).toList();
     }
 
+    public List<DiscoveredTuner> getDiscoveredTuners()
+    {
+        return java.util.Collections.unmodifiableList(mDiscoveredTuners);
+    }
+
+
     /**
      * Find the discovered tuner that matches the instantiated tuner
      * @param tuner to match

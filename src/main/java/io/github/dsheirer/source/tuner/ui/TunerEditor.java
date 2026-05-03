@@ -661,8 +661,20 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                         getDiscoveredTuner().setEnabled(false);
                         break;
                     case BUTTON_STATUS_ENABLE:
-                        mLog.info("Enabling " + getDiscoveredTuner().getTunerClass() + " tuner");
-                        getDiscoveredTuner().setEnabled(true);
+                        if (getDiscoveredTuner() instanceof io.github.dsheirer.source.tuner.manager.DiscoveredUSBTuner usbTuner) {
+                            if (BandwidthMonitor.willExceedThreshold(mTunerManager.getDiscoveredTunerModel().getDiscoveredTuners(), usbTuner)) {
+                                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.source.tuner.ui.USBAlertEvent("USB bus overload detected. Enabling this tuner will push the USB bus beyond the 30 MB/s soft ceiling. Please reduce the sample rate of specific tuners on this overloaded bus or move one or more tuners to a different physical USB port on your computer."));
+                            } else {
+                                mLog.info("Enabling " + getDiscoveredTuner().getTunerClass() + " tuner");
+                                getDiscoveredTuner().setEnabled(true);
+                            }
+                        } else {
+                            if (getDiscoveredTuner() instanceof io.github.dsheirer.source.tuner.sdrplay.DiscoveredRspTuner) {
+                                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.source.tuner.ui.USBAlertEvent("Note: USB bus monitoring is not available for SDRplay devices."));
+                            }
+                            mLog.info("Enabling " + getDiscoveredTuner().getTunerClass() + " tuner");
+                            getDiscoveredTuner().setEnabled(true);
+                        }
                         break;
                     default:
                         mLog.info("None matched");

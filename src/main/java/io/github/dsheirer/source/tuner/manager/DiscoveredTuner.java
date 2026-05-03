@@ -288,6 +288,13 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
 
             mRecoveryAttempts.set(0);
             mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(new RecoveryRunnable(), 180, 180, TimeUnit.SECONDS);
+
+            if (this instanceof DiscoveredUSBTuner usbTuner) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.source.tuner.ui.USBAlertEvent(
+                    "USB bus overload detected. Buffer overruns or dropped samples occurred on this bus. " +
+                    "Please reduce the sample rate of specific tuners on this overloaded bus or move one or more tuners to a different physical USB port on your computer."
+                ));
+            }
             return;
         }
 

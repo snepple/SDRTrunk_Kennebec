@@ -28,6 +28,7 @@ import io.github.dsheirer.identifier.IdentifierClass;
 import io.github.dsheirer.identifier.Form;
 import io.github.dsheirer.identifier.Role;
 import io.github.dsheirer.audio.broadcast.mqtt.MqttService;
+import io.github.dsheirer.eventbus.MyEventBus;
 
 /**
  * Detects A/B two-tone sequences in a background thread to prevent audio playback stuttering.
@@ -308,6 +309,9 @@ public class TwoToneDetector
 
             MqttService.getInstance().publish(config.getMqttTopic(), payload);
         }
+
+        MyEventBus.getGlobalEventBus().post(new TwoToneDetectedEvent(channel, text));
+
         for(ZelloBroadcaster broadcaster : mZelloBroadcasters)
         {
             BroadcastConfiguration bc = broadcaster.getBroadcastConfiguration();

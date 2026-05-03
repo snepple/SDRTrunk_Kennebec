@@ -1261,6 +1261,37 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     }
 
     @Override
+    protected Integer getConfiguredTalkgroup()
+    {
+        String tgText = getTalkgroupField().getText();
+        if(tgText != null && !tgText.trim().isEmpty())
+        {
+            try
+            {
+                IntegerFormat format = mUserPreferences.getTalkgroupFormatPreference().getTalkgroupFormat(Protocol.NBFM);
+                int tg;
+                if(format == IntegerFormat.HEXADECIMAL)
+                {
+                    tg = Integer.parseInt(tgText.trim(), 16);
+                }
+                else
+                {
+                    tg = Integer.parseInt(tgText.trim());
+                }
+                if(tg >= 1 && tg <= 65535)
+                {
+                    return tg;
+                }
+            }
+            catch(NumberFormatException e)
+            {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Override
     protected void saveDecoderConfiguration()
     {
         DecodeConfigNBFM config;
@@ -1283,6 +1314,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
         config.setBandwidth(bandwidth);
 
+        int originalTalkgroup = config.getTalkgroup();
+
         Integer talkgroup = mTalkgroupTextFormatter.getValue();
 
         if(talkgroup == null)
@@ -1291,6 +1324,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         }
 
         config.setTalkgroup(talkgroup);
+
+        if(originalTalkgroup > 0 && originalTalkgroup != config.getTalkgroup())
+        {
+            getPlaylistManager().getAliasModel().updateTalkgroup(originalTalkgroup, config.getTalkgroup(), io.github.dsheirer.protocol.Protocol.NBFM);
+        }
         config.setAudioFilter(getAudioFilterEnable().isSelected());
 
         // Save tone filter settings

@@ -19,6 +19,7 @@
 package io.github.dsheirer.audio.playback;
 
 import io.github.dsheirer.alias.AliasModel;
+import io.github.dsheirer.audio.broadcast.BroadcastModel;
 import io.github.dsheirer.audio.AudioEvent;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.preference.PreferenceEditorType;
@@ -57,6 +58,7 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
     private final SettingsManager mSettingsManager;
     private final UserPreferences mUserPreferences;
     private AudioChannelsPanel mAudioChannelsPanel;
+    private final BroadcastModel mBroadcastModel;
     private JButton mMuteButton;
 
     /**
@@ -68,13 +70,14 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
      * @param aliasModel for alias lookup
      */
     public AudioPanel(IconModel iconModel, UserPreferences userPreferences, SettingsManager settingsManager,
-                      AudioPlaybackManager audioPlaybackManager, AliasModel aliasModel)
+                      AudioPlaybackManager audioPlaybackManager, AliasModel aliasModel, BroadcastModel broadcastModel)
     {
         mIconModel = iconModel;
         mSettingsManager = settingsManager;
         mAudioPlaybackManager = audioPlaybackManager;
         mAliasModel = aliasModel;
         mUserPreferences = userPreferences;
+        mBroadcastModel = broadcastModel;
         mAudioPlaybackManager.addAudioEventListener(this);
         init();
     }
@@ -90,7 +93,7 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
         mMuteButton = new MuteButton();
         mMuteButton.setBackground(getBackground());
         add(mMuteButton, "cell 0 0");
-        mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel);
+        mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel, mBroadcastModel);
         add(mAudioChannelsPanel, "cell 1 0, growx");
         addMouseListener(new MouseSelectionListener());
     }
@@ -109,7 +112,7 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
                 EventQueue.invokeLater(() -> {
                     remove(mAudioChannelsPanel);
                     mAudioChannelsPanel.dispose();
-                    mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel);
+                    mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel, mBroadcastModel);
                     add(mAudioChannelsPanel, "cell 1 0, growx");
                     mAudioChannelsPanel.repaint();
                     revalidate();

@@ -1,3 +1,0 @@
-sed -i 's/getTunerIdLabel().setText("Airspy " + getTuner().getController().getBoardId() + " SER# " +/getTunerIdLabel().setText("Airspy " + getTuner().getController().getBoardId() + " SER# " + getTuner().getController().getSerialNumber() + getUsbInfo()); \/\//g' ./src/main/java/io/github/dsheirer/source/tuner/airspy/hf/AirspyHfTunerEditor.java
-sed -i 's/getTuner().getController().getSerialNumber());//g' ./src/main/java/io/github/dsheirer/source/tuner/airspy/hf/AirspyHfTunerEditor.java
-sed -i 's/getTunerIdLabel().setText("Airspy HF+");/getTunerIdLabel().setText("Airspy HF+" + getUsbInfo());/g' ./src/main/java/io/github/dsheirer/source/tuner/airspy/hf/AirspyHfTunerEditor.java
