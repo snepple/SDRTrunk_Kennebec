@@ -15,7 +15,3 @@
 ## 2024-05-13 - [Optimize StringUtils.leftPad Hexadecimal Formatting]
 **Learning:** `StringUtils.leftPad(Integer.toHexString(...).toUpperCase(), ...)` and `String.format("%03X", ...)` are frequently used but relatively slow due to intermediate string allocations and regex parsing. Replacing them with the customized `P25Utils.formatHex(value, width)` method drastically reduces overhead and object creation.
 **Action:** Replace string-based hex padders and formatters with `P25Utils.formatHex` in high-frequency monitoring or identifier formatting classes.
-
-## 2025-05-03 - Added TwoTone UI Support
-**Learning:** When trying to pass data (like UI visibility or messages) directly between independent modules such as the audio playback manager, Two Tone detectors, and streaming manager, it's safer and less invasive to use `MyEventBus` rather than tightly coupling the components.
-**Action:** Keep extending the EventBus to broadcast events for internal decoupled triggers.

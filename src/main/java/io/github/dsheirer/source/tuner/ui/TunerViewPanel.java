@@ -98,6 +98,8 @@ public class TunerViewPanel extends JPanel
 
     private void init()
     {
+        io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().register(this);
+
         setLayout(new MigLayout("insets 0 0 0 0", "[fill,grow]", "[][fill,grow]"));
 
         JToolBar toolBar = new JToolBar();
