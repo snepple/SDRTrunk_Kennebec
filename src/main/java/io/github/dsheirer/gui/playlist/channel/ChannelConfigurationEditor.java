@@ -86,6 +86,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     private final static Logger mLog = LoggerFactory.getLogger(ChannelConfigurationEditor.class);
 
     private PlaylistManager mPlaylistManager;
+    private Label mChannelNameLabel;
     protected TunerManager mTunerManager;
     protected UserPreferences mUserPreferences;
     protected EditorModificationListener mEditorModificationListener = new EditorModificationListener();
@@ -135,6 +136,11 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         Label headerLabel = new Label("Channel Configuration");
         headerLabel.getStyleClass().add("preferences-section-header");
 
+        mChannelNameLabel = new Label("");
+        mChannelNameLabel.getStyleClass().add("preferences-section-header");
+        // Add padding to the left so it has some spacing if we just bind text
+        mChannelNameLabel.setPadding(new Insets(0, 0, 0, 5));
+
         HBox actionBox = new HBox(10);
         actionBox.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
         actionBox.getChildren().addAll(getPlayButton(), getResetButton(), getSaveButton());
@@ -142,7 +148,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox headerBox = new HBox(headerLabel, spacer, actionBox);
+        HBox headerBox = new HBox(headerLabel, mChannelNameLabel, spacer, actionBox);
         headerBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         VBox.setVgrow(getSplitPane(), Priority.ALWAYS);
@@ -189,6 +195,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         if(getItem() != null)
         {
             getItem().processingProperty().removeListener(mChannelProcessingMonitor);
+            mChannelNameLabel.textProperty().unbind();
         }
 
         super.setItem(channel);
@@ -211,6 +218,8 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
         if(channel != null)
         {
+            mChannelNameLabel.textProperty().bind(javafx.beans.binding.Bindings.concat(" - ", channel.nameProperty()));
+
             getSystemField().setText(channel.getSystem());
             getSiteField().setText(channel.getSite());
             getNameField().setText(channel.getName());
@@ -267,6 +276,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         }
         else
         {
+            mChannelNameLabel.setText("");
             getSystemField().setText(null);
             getSiteField().setText(null);
             getNameField().setText(null);

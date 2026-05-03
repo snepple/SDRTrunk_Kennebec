@@ -224,6 +224,7 @@ public class TonesEditor extends IdentifierEditor<TonesID>
             mMoveUpButton.setGraphic(iconNode);
             mMoveUpButton.setMaxWidth(Double.MAX_VALUE);
             mMoveUpButton.setDisable(true);
+            mMoveUpButton.setTooltip(new Tooltip("Move selected tone up"));
             mMoveUpButton.setOnAction(event -> {
                 Tone selected = getToneListView().getSelectionModel().getSelectedItem();
 
@@ -251,6 +252,7 @@ public class TonesEditor extends IdentifierEditor<TonesID>
             mMoveDownButton.setGraphic(iconNode);
             mMoveDownButton.setMaxWidth(Double.MAX_VALUE);
             mMoveDownButton.setDisable(true);
+            mMoveDownButton.setTooltip(new Tooltip("Move selected tone down"));
             mMoveDownButton.setOnAction(event -> {
                 Tone selected = getToneListView().getSelectionModel().getSelectedItem();
 
