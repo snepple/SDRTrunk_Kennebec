@@ -74,7 +74,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         }
 
         mTableView = new TableView<>(mObservableConfigs);
-        mTableView.setPlaceholder(new Label("No Two Tone Detectors Configured"));
+        mTableView.setPlaceholder(new Label("Click the New button to create a new Two Tone Detector"));
 
         TableColumn<TwoToneConfiguration, String> aliasCol = new TableColumn<>("Name");
         aliasCol.setCellValueFactory(new PropertyValueFactory<>("alias"));
