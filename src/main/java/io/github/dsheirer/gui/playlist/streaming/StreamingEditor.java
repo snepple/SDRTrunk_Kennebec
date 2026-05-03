@@ -63,6 +63,7 @@ import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.github.dsheirer.preference.javafx.FxTableColumnMonitor;
 
 /**
  * Editor for broadcast audio stream configurations
@@ -348,6 +349,7 @@ public class StreamingEditor extends SplitPane
         {
             mNewButton = new MenuButton("New");
             mNewButton.setMaxWidth(Double.MAX_VALUE);
+            mNewButton.setTooltip(new Tooltip("Create a new stream configuration"));
             mNewButton.setOnShowing(event -> {
                 mNewButton.getItems().clear();
 
@@ -395,6 +397,7 @@ public class StreamingEditor extends SplitPane
         {
             mDeleteButton = new Button("Delete");
             mDeleteButton.setMaxWidth(Double.MAX_VALUE);
+            mDeleteButton.setTooltip(new Tooltip("Delete the currently selected stream configuration"));
             mDeleteButton.setOnAction(event -> {
                 BroadcastConfiguration config = getConfiguredBroadcastTableView().getSelectionModel()
                     .getSelectedItem().getBroadcastConfiguration();
@@ -426,6 +429,7 @@ public class StreamingEditor extends SplitPane
         {
             mCloneButton = new Button("Clone");
             mCloneButton.setMaxWidth(Double.MAX_VALUE);
+            mCloneButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected stream configuration"));
             mCloneButton.setOnAction(event -> {
                 ConfiguredBroadcast configuredBroadcast = getConfiguredBroadcastTableView().getSelectionModel()
                     .getSelectedItem();
@@ -449,11 +453,14 @@ public class StreamingEditor extends SplitPane
         {
             mConfiguredBroadcastTableView = new TableView<>();
             mConfiguredBroadcastTableView.getStyleClass().add("preferences-table");
+            mConfiguredBroadcastTableView.setTableMenuButtonVisible(true);
             mConfiguredBroadcastTableView.setPlaceholder(new Label("Click the New button to create a new " +
                 "audio streaming configuration"));
             mConfiguredBroadcastTableView.setItems(mPlaylistManager.getBroadcastModel().getConfiguredBroadcasts());
+            mConfiguredBroadcastTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
             TableColumn<ConfiguredBroadcast,Boolean> enabledColumn = new TableColumn("Enabled");
+            enabledColumn.setId("enabled");
             enabledColumn.setCellValueFactory(new PropertyValueFactory<>("enabled"));
             enabledColumn.setCellFactory(param -> {
                 TableCell<ConfiguredBroadcast,Boolean> tableCell = new TableCell<>()
@@ -481,10 +488,12 @@ public class StreamingEditor extends SplitPane
             });
 
             TableColumn nameColumn = new TableColumn("Name");
+            nameColumn.setId("name");
             nameColumn.setPrefWidth(300);
             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
 
             TableColumn typeColumn = new TableColumn();
+            typeColumn.setId("format");
             typeColumn.setPrefWidth(125);
             typeColumn.setText("Format");
             typeColumn.setCellValueFactory(new PropertyValueFactory<>("broadcastServerType"));
@@ -518,13 +527,16 @@ public class StreamingEditor extends SplitPane
 
 
             TableColumn stateColumn = new TableColumn("Stream Status");
+            stateColumn.setId("status");
             stateColumn.setCellValueFactory(new PropertyValueFactory<>("broadcastState"));
 
             TableColumn errorColumn = new TableColumn("Last Error");
+            errorColumn.setId("error");
             errorColumn.setPrefWidth(300);
             errorColumn.setCellValueFactory(new PropertyValueFactory<>("lastErrorDetail"));
 
             mConfiguredBroadcastTableView.getColumns().addAll(enabledColumn, nameColumn, typeColumn, stateColumn, errorColumn);
+            new FxTableColumnMonitor(mPlaylistManager.getUserPreferences(), mConfiguredBroadcastTableView, "streamingEditorTable");
 
             mConfiguredBroadcastTableView.getSelectionModel().selectedItemProperty()
                     .addListener((observable, oldValue, newValue) -> setBroadcastConfiguration(newValue));

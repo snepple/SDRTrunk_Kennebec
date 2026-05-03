@@ -48,6 +48,8 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SeparatorMenuItem;
@@ -58,6 +60,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -121,8 +124,8 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
 
         // Split Pane Content
         mSplitPane = new SplitPane();
-        mSplitPane.setOrientation(Orientation.HORIZONTAL);
-        mSplitPane.setDividerPositions(0.4); // 40% list, 60% detail
+        mSplitPane.setOrientation(Orientation.VERTICAL);
+        mSplitPane.setDividerPositions(0.6); // 60% list, 40% detail
         VBox.setVgrow(mSplitPane, Priority.ALWAYS);
 
         // Left Pane (List + Actions)
@@ -359,6 +362,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mNewAliasListButton == null)
         {
             mNewAliasListButton = new Button("New Alias List");
+            mNewAliasListButton.setTooltip(new Tooltip("Create a new alias list"));
             mNewAliasListButton.setOnAction(event ->
             {
                 TextInputDialog dialog = new TextInputDialog();
@@ -389,6 +393,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
 
         if (mRenameAliasButton == null) {
             mRenameAliasButton = new Button("Rename");
+            mRenameAliasButton.setTooltip(new Tooltip("Rename the current alias list"));
             mRenameAliasButton.setOnAction(event -> {
                 String aliasListName = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
 
@@ -421,6 +426,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
 
         if (mDeleteAliasListButton == null) {
             mDeleteAliasListButton = new Button("Delete");
+            mDeleteAliasListButton.setTooltip(new Tooltip("Delete the current alias list"));
             mDeleteAliasListButton.setOnAction(event -> {
                 String aliasListName = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
                 if (aliasListName.equals(AliasModel.NO_ALIAS_LIST)) {
@@ -459,37 +465,46 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             nameColumn.setText("Alias");
             nameColumn.setCellValueFactory(new PropertyValueFactory<Alias, String>("name"));
             nameColumn.setPrefWidth(140);
+            nameColumn.setId("alias.name");
 
             TableColumn groupColumn = new TableColumn();
             groupColumn.setText("Group");
             groupColumn.setCellValueFactory(new PropertyValueFactory<>("group"));
             groupColumn.setPrefWidth(140);
+            groupColumn.setId("alias.group");
 
             TableColumn<Alias, Integer> colorColumn = new TableColumn("Color");
             colorColumn.setCellValueFactory(new PropertyValueFactory<>("color"));
             colorColumn.setCellFactory(new ColorizedCell());
+            colorColumn.setId("alias.color");
 
             TableColumn<Alias, String> iconColumn = new TableColumn("Icon");
             iconColumn.setCellValueFactory(new PropertyValueFactory<>("iconName"));
             iconColumn.setCellFactory(new IconTableCellFactory());
+            iconColumn.setId("alias.icon");
 
             TableColumn<Alias, Integer> priorityColumn = new TableColumn("Listen");
             priorityColumn.setCellFactory(new PriorityCellFactory());
             priorityColumn.setCellValueFactory(new PropertyValueFactory<>("priority"));
+            priorityColumn.setId("alias.listen");
 
             TableColumn<Alias, Boolean> recordColumn = new TableColumn("Record");
             recordColumn.setCellValueFactory(new PropertyValueFactory<>("recordable"));
             recordColumn.setCellFactory(new IconCell(FontAwesome.SQUARE, Color.RED));
+            recordColumn.setId("alias.record");
 
             TableColumn<Alias, Boolean> streamColumn = new TableColumn("Stream");
             streamColumn.setCellValueFactory(new PropertyValueFactory<>("streamable"));
             streamColumn.setCellFactory(new IconCell(FontAwesome.VOLUME_UP, Color.DARKBLUE));
+            streamColumn.setId("alias.stream");
 
             TableColumn<Alias, Integer> idsColumn = new TableColumn("IDs");
             idsColumn.setCellValueFactory(new IdentifierCountCell());
+            idsColumn.setId("alias.ids");
 
             TableColumn<Alias, Boolean> errorsColumn = new TableColumn<>("Error");
             errorsColumn.setPrefWidth(120);
+            errorsColumn.setId("alias.errors");
             errorsColumn.setCellValueFactory(new PropertyValueFactory<>("overlap"));
             errorsColumn.setCellFactory(param ->
             {
@@ -528,6 +543,21 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             mAliasTableView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<Alias>)c -> {
                 Platform.runLater(() -> setAliases(mAliasTableView.getSelectionModel().getSelectedItems()));
             });
+
+            ContextMenu contextMenu = new ContextMenu();
+            for (TableColumn<Alias, ?> column : mAliasTableView.getColumns()) {
+                CheckMenuItem checkMenuItem = new CheckMenuItem(column.getText());
+                checkMenuItem.selectedProperty().bindBidirectional(column.visibleProperty());
+                contextMenu.getItems().add(checkMenuItem);
+            }
+
+            for (TableColumn<Alias, ?> column : mAliasTableView.getColumns()) {
+                column.setContextMenu(contextMenu);
+            }
+
+            mAliasTableView.setTableMenuButtonVisible(true);
+
+            new io.github.dsheirer.preference.javafx.FxTableColumnMonitor(mUserPreferences, mAliasTableView, "aliasTable");
         }
 
         return mAliasTableView;
@@ -606,6 +636,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             mNewAliasButton.setDisable(true);
             mNewAliasButton.setAlignment(Pos.CENTER);
             mNewAliasButton.setMaxWidth(Double.MAX_VALUE);
+            mNewAliasButton.setTooltip(new Tooltip("Create a new alias"));
             mNewAliasButton.setOnAction(event ->
             {
                 Alias alias = new Alias("New Alias");
@@ -632,6 +663,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             mDeleteAliasButton = new Button("Delete");
             mDeleteAliasButton.setDisable(true);
             mDeleteAliasButton.setMaxWidth(Double.MAX_VALUE);
+            mDeleteAliasButton.setTooltip(new Tooltip("Delete the currently selected aliases"));
             mDeleteAliasButton.setOnAction(event ->
             {
                 int count = getAliasTableView().getSelectionModel().getSelectedItems().size();
@@ -663,6 +695,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             mCloneAliasButton = new Button("Clone");
             mCloneAliasButton.setDisable(true);
             mCloneAliasButton.setMaxWidth(Double.MAX_VALUE);
+            mCloneAliasButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected alias"));
             mCloneAliasButton.setOnAction(event ->
             {
                 Alias original = getAliasTableView().getSelectionModel().getSelectedItem();
@@ -683,6 +716,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         {
             mMoveToAliasButton = new MenuButton("Move To");
             mMoveToAliasButton.setDisable(true);
+            mMoveToAliasButton.setTooltip(new Tooltip("Move the currently selected aliases to another list"));
             mMoveToAliasButton.setOnShowing(event ->
             {
                 mMoveToAliasButton.getItems().clear();

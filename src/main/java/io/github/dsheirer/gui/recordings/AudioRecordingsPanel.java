@@ -9,6 +9,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.embed.swing.JFXPanel;
+import javafx.scene.control.SelectionMode;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -33,6 +34,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AudioRecordingsPanel extends JPanel {
     private final static Logger mLog = LoggerFactory.getLogger(AudioRecordingsPanel.class);
@@ -61,10 +64,10 @@ public class AudioRecordingsPanel extends JPanel {
     public AudioRecordingsPanel(UserPreferences userPreferences, io.github.dsheirer.playlist.PlaylistManager playlistManager) {
         mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
-        setLayout(new BorderLayout());
+        setLayout(new net.miginfocom.swing.MigLayout("insets 0, hidemode 3, fill", "[grow,fill]", "[grow,fill]"));
 
         mJfxPanel = new JFXPanel();
-        add(mJfxPanel, BorderLayout.CENTER);
+        add(mJfxPanel);
 
         Platform.runLater(this::initFx);
     }
@@ -146,19 +149,79 @@ public class AudioRecordingsPanel extends JPanel {
         mStopButton.setDisable(true);
         mStopButton.setOnAction(e -> stopPlayback());
 
+        Button deleteSelectedButton = new Button("Delete Selected");
+        deleteSelectedButton.setOnAction(e -> {
+            List<RecordingItem> selectedItems = new ArrayList<>(mTableView.getSelectionModel().getSelectedItems());
+            if (selectedItems.isEmpty()) return;
+
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Delete Confirmation");
+            alert.setHeaderText("Delete Selected Recordings");
+            alert.setContentText("Are you sure you want to delete " + selectedItems.size() + " selected recording(s)?\nThis action cannot be undone.");
+
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    for (RecordingItem item : selectedItems) {
+                        try {
+                            Files.deleteIfExists(item.getFile());
+                            mRecordings.remove(item);
+                        } catch (IOException ex) {
+                            mLog.error("Failed to delete recording: " + item.getFile(), ex);
+                        }
+                    }
+                }
+            });
+        });
+
+        deleteSelectedButton.disableProperty().bind(
+            javafx.beans.binding.Bindings.isEmpty(mTableView.getSelectionModel().getSelectedItems())
+        );
+
+        Button deleteAllButton = new Button("Delete All");
+        deleteAllButton.setOnAction(e -> {
+            List<RecordingItem> itemsToDelete = new ArrayList<>(mFilteredRecordings);
+            if (itemsToDelete.isEmpty()) return;
+
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Delete Confirmation");
+            alert.setHeaderText("Delete ALL Recordings");
+            alert.setContentText("Are you sure you want to delete all " + itemsToDelete.size() + " recording(s) currently displayed?\nThis action cannot be undone.");
+
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    for (RecordingItem item : itemsToDelete) {
+                        try {
+                            Files.deleteIfExists(item.getFile());
+                            mRecordings.remove(item);
+                        } catch (IOException ex) {
+                            mLog.error("Failed to delete recording: " + item.getFile(), ex);
+                        }
+                    }
+                }
+            });
+        });
+
+        deleteAllButton.disableProperty().bind(
+            javafx.beans.binding.Bindings.isEmpty(mFilteredRecordings)
+        );
+
+
+
         filterBox.getChildren().addAll(
             new Label("Filters:"),
             mStartDatePicker, new Label("-"), mEndDatePicker,
             new Label(" Time:"), mStartHourSpinner, new Label(":"), mStartMinuteSpinner, new Label("-"), mEndHourSpinner, new Label(":"), mEndMinuteSpinner,
             mAliasComboBox, mChannelComboBox,
-            refreshButton, mStopButton
+            refreshButton, mStopButton, deleteSelectedButton, deleteAllButton
         );
 
         root.setTop(filterBox);
 
         // Table
         mTableView = new TableView<>();
+        mTableView.setPlaceholder(new Label("No audio recordings found"));
         HBox.setHgrow(mTableView, Priority.ALWAYS);
+        mTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         TableColumn<RecordingItem, String> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(data -> data.getValue().dateProperty());

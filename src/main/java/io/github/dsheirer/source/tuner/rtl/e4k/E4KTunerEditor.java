@@ -147,7 +147,7 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
 
         if(hasTuner())
         {
-            getTunerIdLabel().setText(getTuner().getPreferredName());
+            getTunerIdLabel().setText(getTuner().getPreferredName() + getUsbInfo());
         }
         else
         {

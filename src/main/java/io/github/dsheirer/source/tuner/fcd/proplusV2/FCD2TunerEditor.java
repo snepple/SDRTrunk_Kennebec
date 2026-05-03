@@ -88,7 +88,7 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
 
         if(hasTuner())
         {
-            getTunerIdLabel().setText(getTuner().getPreferredName());
+            getTunerIdLabel().setText(getTuner().getPreferredName() + getUsbInfo());
         }
         else
         {

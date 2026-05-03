@@ -287,6 +287,18 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Label for displaying the tuner ID
      */
+    /**
+     * Helper to retrieve the USB Bus and Port, if available
+     */
+    protected String getUsbInfo()
+    {
+        if(getDiscoveredTuner() instanceof io.github.dsheirer.source.tuner.manager.DiscoveredUSBTuner usbTuner)
+        {
+            return " (USB Bus: " + usbTuner.getBus() + " Port: " + usbTuner.getPortAddress() + ")";
+        }
+        return "";
+    }
+
     protected JLabel getTunerIdLabel()
     {
         if(mTunerIdLabel == null)

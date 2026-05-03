@@ -76,7 +76,7 @@ public class RecordingTunerEditor extends TunerEditor<RecordingTuner,RecordingTu
 
         if(hasTuner())
         {
-            getTunerIdLabel().setText(getTuner().getPreferredName());
+            getTunerIdLabel().setText(getTuner().getPreferredName() + getUsbInfo());
         }
         else
         {
