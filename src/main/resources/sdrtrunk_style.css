@@ -201,6 +201,11 @@
     -fx-padding: 0 10 0 10;
 }
 
+.invisible-divider *.split-pane-divider {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+
 .hig-sidebar-list:focused {
     -fx-background-color: transparent;
 }
