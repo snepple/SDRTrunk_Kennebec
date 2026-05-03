@@ -19,6 +19,7 @@
 package io.github.dsheirer.audio.playback;
 
 import io.github.dsheirer.alias.AliasModel;
+import io.github.dsheirer.audio.broadcast.BroadcastModel;
 import io.github.dsheirer.audio.IAudioController;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.preference.UserPreferences;
@@ -45,7 +46,7 @@ public class AudioChannelsPanel extends JPanel
      * @param aliasModel for accessing aliases
      */
     public AudioChannelsPanel(IconModel iconModel, UserPreferences userPreferences, SettingsManager settingsManager,
-                              IAudioController controller, AliasModel aliasModel)
+                              IAudioController controller, AliasModel aliasModel, BroadcastModel broadcastModel)
     {
         setLayout(new MigLayout("insets 0 5 0 5, gapx 5",
             "[][sizegroup abc,grow,fill][][sizegroup abc,grow,fill]", "[grow,fill]"));
@@ -56,7 +57,7 @@ public class AudioChannelsPanel extends JPanel
 
         for(int x = 0; x < controller.getAudioChannels().size(); x++)
         {
-            add(new AudioChannelPanel(controller.getAudioChannels().get(x), aliasModel, iconModel, settingsManager, userPreferences));
+            add(new AudioChannelPanel(controller.getAudioChannels().get(x), aliasModel, iconModel, settingsManager, userPreferences, broadcastModel));
 
             if(x < controller.getAudioChannels().size() - 1)
             {
@@ -69,7 +70,7 @@ public class AudioChannelsPanel extends JPanel
         if(controller.getAudioChannels().size() == 1)
         {
             addSeparator();
-            add(new AudioChannelPanel(null, aliasModel, iconModel, settingsManager, userPreferences), "growx");
+            add(new AudioChannelPanel(null, aliasModel, iconModel, settingsManager, userPreferences, broadcastModel), "growx");
         }
     }
 
