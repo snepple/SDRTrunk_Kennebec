@@ -21,6 +21,7 @@ package io.github.dsheirer.gui.playlist.alias.identifier;
 
 import io.github.dsheirer.alias.id.talkgroup.Talkgroup;
 import io.github.dsheirer.gui.control.HexFormatter;
+import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.gui.control.IntegerFormatter;
 import io.github.dsheirer.gui.control.LtrFormatter;
 import io.github.dsheirer.gui.control.PrefixIdentFormatter;
@@ -32,11 +33,15 @@ import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
+import io.github.dsheirer.controller.channel.Channel;
+import io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,10 +52,11 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
 {
     private static final Logger mLog = LoggerFactory.getLogger(TalkgroupEditor.class);
 
+    private PlaylistManager mPlaylistManager;
     private UserPreferences mUserPreferences;
     private Label mProtocolLabel;
     private Label mFormatLabel;
-    private TextField mTalkgroupField;
+    private ComboBox<Integer> mTalkgroupField;
     private TextFormatter<Integer> mIntegerTextFormatter;
     private List<TalkgroupDetail> mTalkgroupDetails = new ArrayList<>();
     private TalkgroupValueChangeListener mTalkgroupValueChangeListener = new TalkgroupValueChangeListener();
@@ -59,9 +65,10 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
      * Constructs an instance
      * @param userPreferences for determining user preferred talkgroup formats
      */
-    public TalkgroupEditor(UserPreferences userPreferences)
+    public TalkgroupEditor(UserPreferences userPreferences, PlaylistManager playlistManager)
     {
         mUserPreferences = userPreferences;
+        mPlaylistManager = playlistManager;
 
         loadTalkgroupDetails();
 
@@ -103,7 +110,7 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
         }
         else
         {
-            getTalkgroupField().setText(null);
+            getTalkgroupField().getEditor().setText(null);
         }
 
         modifiedProperty().set(false);
@@ -126,10 +133,27 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
             {
                 mIntegerTextFormatter = talkgroupDetail.getTextFormatter();
                 Integer value = getItem() != null ? getItem().getValue() : null;
-                mTalkgroupField.setTextFormatter(mIntegerTextFormatter);
+                mTalkgroupField.getEditor().setTextFormatter(mIntegerTextFormatter);
+                mTalkgroupField.setConverter(mIntegerTextFormatter.getValueConverter());
                 mTalkgroupField.setTooltip(new Tooltip(talkgroupDetail.getTooltip()));
                 mIntegerTextFormatter.setValue(value);
                 mIntegerTextFormatter.valueProperty().addListener(mTalkgroupValueChangeListener);
+
+                if (getItem().getProtocol() == Protocol.NBFM) {
+                    mTalkgroupField.getItems().clear();
+                    List<Integer> talkgroups = new ArrayList<>();
+                    for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
+                        if (channel.getDecodeConfiguration() instanceof DecodeConfigNBFM) {
+                            DecodeConfigNBFM nbfmConfig = (DecodeConfigNBFM) channel.getDecodeConfiguration();
+                            if (!talkgroups.contains(nbfmConfig.getTalkgroup())) {
+                                talkgroups.add(nbfmConfig.getTalkgroup());
+                            }
+                        }
+                    }
+                    mTalkgroupField.getItems().addAll(talkgroups);
+                } else {
+                    mTalkgroupField.getItems().clear();
+                }
             }
             else
             {
@@ -178,12 +202,35 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
         return mProtocolLabel;
     }
 
-    private TextField getTalkgroupField()
+    private ComboBox<Integer> getTalkgroupField()
     {
         if(mTalkgroupField == null)
         {
-            mTalkgroupField = new TextField();
-            mTalkgroupField.setTextFormatter(mIntegerTextFormatter);
+            mTalkgroupField = new ComboBox<>();
+            mTalkgroupField.setEditable(true);
+            if(mIntegerTextFormatter != null) {
+                mTalkgroupField.getEditor().setTextFormatter(mIntegerTextFormatter);
+                mTalkgroupField.setConverter(mIntegerTextFormatter.getValueConverter());
+            }
+
+            mTalkgroupField.setCellFactory(lv -> new ListCell<Integer>() {
+                @Override
+                protected void updateItem(Integer item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        String label = item.toString();
+                        for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
+                            if (channel.getDecodeConfiguration() instanceof DecodeConfigNBFM nbfmConfig && nbfmConfig.getTalkgroup() == item) {
+                                label = String.format("%d (%s, %s, %s)", item, channel.getSystem() != null ? channel.getSystem() : "", channel.getSite() != null ? channel.getSite() : "", channel.getName() != null ? channel.getName() : "");
+                                break;
+                            }
+                        }
+                        setText(label);
+                    }
+                }
+            });
         }
 
         return mTalkgroupField;

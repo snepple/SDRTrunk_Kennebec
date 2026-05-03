@@ -17,9 +17,7 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-02 - Delete Map Tracks Confirmation
 **Learning:** Implementing bulk or irreversible delete actions (e.g., Delete All, Delete Selected) in the UI always requires user approval via a confirmation dialogue window (e.g., JOptionPane.showConfirmDialog in Swing) before execution to prevent accidental data loss.
 **Action:** Add confirmation dialogs before bulk delete actions.
-## 2026-05-03 - Adding Tooltips to Icon-Only Buttons for Better Accessibility
-**Learning:** JavaFX accessibility and interaction cues can be heavily improved by explicitly setting  objects on  controls. Specifically for icon-only buttons, which visually provide no text content, screen reader users and visual users alike benefit greatly from descriptive tooltips.
-**Action:** When creating icon-only buttons (using  icons or SVG nodes), proactively instantiate and assign a  (e.g. ).
-## 2026-05-03 - Adding Tooltips to Icon-Only Buttons for Better Accessibility
-**Learning:** JavaFX accessibility and interaction cues can be heavily improved by explicitly setting Tooltip objects on Button controls. Specifically for icon-only buttons, which visually provide no text content, screen reader users and visual users alike benefit greatly from descriptive tooltips.
-**Action:** When creating icon-only buttons, proactively instantiate and assign a Tooltip.
+
+## 2026-05-02 - NBFM Talkgroup Input ComboBox
+**Learning:** When transitioning a `TextField` to an editable `ComboBox` in JavaFX to provide autocomplete/dropdown suggestions, a `StringConverter` must be supplied (via `setConverter()`) to ensure the text correctly parses back to the underlying type (e.g., Integer). Additionally, the existing `TextFormatter` should be applied to the inner editor (`comboBox.getEditor().setTextFormatter(...)`) to preserve input validation constraints.
+**Action:** When adding dropdown suggestions to a validated input field, use a `ComboBox` with `setEditable(true)`, apply a `ListCell` factory for rich display text, and explicitly provide both a `StringConverter` and a `TextFormatter` to its inner `TextField`.
