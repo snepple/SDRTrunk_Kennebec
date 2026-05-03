@@ -17,3 +17,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-02 - Delete Map Tracks Confirmation
 **Learning:** Implementing bulk or irreversible delete actions (e.g., Delete All, Delete Selected) in the UI always requires user approval via a confirmation dialogue window (e.g., JOptionPane.showConfirmDialog in Swing) before execution to prevent accidental data loss.
 **Action:** Add confirmation dialogs before bulk delete actions.
+## 2024-05-14 - Empty State Placeholder Text
+**Learning:** When a `TableView` is empty, displaying a generic "No [items] Configured" message is a missed UX opportunity. Users benefit from knowing exactly *how* to populate the table.
+**Action:** Always provide an actionable empty state message. Update JavaFX `TableView` placeholders with instructions like `mTableView.setPlaceholder(new Label("Click the New button to create a new [Item]"));` to guide the user towards the next logical action.
