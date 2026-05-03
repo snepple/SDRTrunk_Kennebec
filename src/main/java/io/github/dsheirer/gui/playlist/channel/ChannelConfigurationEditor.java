@@ -527,6 +527,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSplitPane.getItems().addAll(getSidebarList(), getContentPane());
             mSplitPane.setDividerPositions(0.2);
             mSplitPane.setMaxWidth(Double.MAX_VALUE);
+            mSplitPane.getStyleClass().add("invisible-divider");
         }
         return mSplitPane;
     }
