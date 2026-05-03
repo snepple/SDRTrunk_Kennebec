@@ -632,9 +632,14 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mNewButton.setMaxWidth(Double.MAX_VALUE);
             mNewButton.setTooltip(new Tooltip("Create a new channel"));
 
+            MenuItem rrItem = new MenuItem("Import from Radio Reference");
+            rrItem.setOnAction(event -> {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.radioreference.ViewRadioReferenceRequest());
+            });
+
             MenuItem decodersItem = new MenuItem("Decoder");
             decodersItem.setDisable(true);
-            mNewButton.getItems().addAll(decodersItem, new SeparatorMenuItem());
+            mNewButton.getItems().addAll(rrItem, new SeparatorMenuItem(), decodersItem, new SeparatorMenuItem());
 
             for(DecoderType decoderType: DecoderType.PRIMARY_DECODERS)
             {
