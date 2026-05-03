@@ -757,6 +757,16 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
 
 
+    /**
+     * Gets the configured talkgroup value from the editor UI before saving.
+     * Override in subclasses that support talkgroup assignment.
+     * @return configured talkgroup, or null if not applicable or empty
+     */
+    protected Integer getConfiguredTalkgroup()
+    {
+        return null;
+    }
+
     private Button getSaveButton()
     {
         if(mSaveButton == null)
@@ -766,6 +776,34 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSaveButton.setMaxWidth(Double.MAX_VALUE);
             mSaveButton.disableProperty().bind(modifiedProperty().not());
             mSaveButton.setOnAction(event -> {
+                Integer newTalkgroup = getConfiguredTalkgroup();
+                if(newTalkgroup != null && newTalkgroup > 0)
+                {
+                    Channel conflictChannel = null;
+                    for(Channel c : mPlaylistManager.getChannelModel().channelList())
+                    {
+                        if(c == getItem()) continue; // Skip current channel
+                        io.github.dsheirer.module.decode.config.DecodeConfiguration dc = c.getDecodeConfiguration();
+                        if(dc instanceof io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25)
+                        {
+                            if(newTalkgroup.equals(((io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25) dc).getTalkgroup())) conflictChannel = c;
+                        }
+                        else if(dc instanceof io.github.dsheirer.module.decode.analog.DecodeConfigAnalog)
+                        {
+                            if(newTalkgroup.equals(((io.github.dsheirer.module.decode.analog.DecodeConfigAnalog) dc).getTalkgroup())) conflictChannel = c;
+                        }
+                        if(conflictChannel != null) break;
+                    }
+                    if(conflictChannel != null)
+                    {
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "Talkgroup " + newTalkgroup + " is already assigned to channel '" + conflictChannel.getName() + "'.\nPlease choose a different talkgroup to assign.", ButtonType.OK);
+                        alert.setTitle("Talkgroup Conflict");
+                        alert.setHeaderText("Cannot Save Channel Configuration");
+                        alert.initOwner((getPlayButton()).getScene().getWindow());
+                        alert.showAndWait();
+                        return;
+                    }
+                }
                 if(mFilterProcessor != null)
                 {
                     mFilterProcessor.clearFilter();
