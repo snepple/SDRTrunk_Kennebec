@@ -41,15 +41,15 @@ public class IdentifierEditorFactory
             case DCS:
                 return new DcsEditor();
             case NAC:
-                return new NacEditor();
+                return new NacEditor(playlistManager);
             case ESN:
                 return new EsnEditor();
             case LOJACK:
                 return new LojackEditor();
             case P25_FULLY_QUALIFIED_RADIO_ID:
-                return new P25FullyQualifiedRadioIdEditor(userPreferences);
+                return new P25FullyQualifiedRadioIdEditor(userPreferences, playlistManager);
             case P25_FULLY_QUALIFIED_TALKGROUP:
-                return new P25FullyQualifiedTalkgroupEditor(userPreferences);
+                return new P25FullyQualifiedTalkgroupEditor(userPreferences, playlistManager);
             case RADIO_ID:
                 return new RadioIdEditor(userPreferences);
             case RADIO_ID_RANGE:

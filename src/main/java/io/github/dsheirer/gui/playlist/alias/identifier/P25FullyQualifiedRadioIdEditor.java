@@ -23,17 +23,26 @@ import io.github.dsheirer.alias.id.radio.P25FullyQualifiedRadio;
 import io.github.dsheirer.gui.control.HexFormatter;
 import io.github.dsheirer.gui.control.IntegerFormatter;
 import io.github.dsheirer.preference.UserPreferences;
+import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.identifier.IntegerFormat;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.github.dsheirer.controller.channel.Channel;
+import io.github.dsheirer.module.decode.p25.phase2.DecodeConfigP25Phase2;
+import io.github.dsheirer.module.decode.p25.phase2.enumeration.ScrambleParameters;
+import javafx.collections.FXCollections;
+import java.util.HashSet;
+import java.util.Set;
+import javafx.util.StringConverter;
 
 /**
  * Editor for P25 fully qualified radio alias identifiers
@@ -43,9 +52,10 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
     private static final Logger mLog = LoggerFactory.getLogger(P25FullyQualifiedRadioIdEditor.class);
 
     private UserPreferences mUserPreferences;
+    private PlaylistManager mPlaylistManager;
     private Label mProtocolLabel;
-    private TextField mWacnField;
-    private TextField mSystemField;
+    private ComboBox<IdentifierValue> mWacnField;
+    private ComboBox<IdentifierValue> mSystemField;
     private TextField mRadioField;
     private TextFormatter<Integer> mWacnTextFormatter;
     private TextFormatter<Integer> mSystemTextFormatter;
@@ -57,10 +67,12 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
     /**
      * Constructs an instance
      * @param userPreferences for determining user preferred talkgroup formats
+     * @param playlistManager for access to channel configurations
      */
-    public P25FullyQualifiedRadioIdEditor(UserPreferences userPreferences)
+    public P25FullyQualifiedRadioIdEditor(UserPreferences userPreferences, PlaylistManager playlistManager)
     {
         mUserPreferences = userPreferences;
+        mPlaylistManager = playlistManager;
 
         GridPane gridPane = new GridPane();
         gridPane.setHgap(5);
@@ -115,8 +127,10 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
         }
         else
         {
-            getWacnField().setText(null);
-            getSystemField().setText(null);
+            getWacnField().setValue(null);
+            getWacnField().getEditor().setText("");
+            getSystemField().setValue(null);
+            getSystemField().getEditor().setText("");
             getRadioField().setText(null);
         }
 
@@ -138,7 +152,7 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
             mRadioTextFormatter.valueProperty().removeListener(mRadioValueChangeListener);
         }
 
-        IntegerFormat format = mUserPreferences.getTalkgroupFormatPreference().getTalkgroupFormat(getItem().getProtocol());
+        IntegerFormat format = mUserPreferences.getTalkgroupFormatPreference().getTalkgroupFormat(P25FullyQualifiedRadioIdEditor.this.getItem().getProtocol());
 
         if(format == IntegerFormat.DECIMAL && (mRadioTextFormatter == null || !(mRadioTextFormatter instanceof IntegerFormatter)))
         {
@@ -161,17 +175,42 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
             mRadioField.setTooltip(new Tooltip("Format: 0 - FFFFFF"));
         }
 
-        mWacnField.setTextFormatter(mWacnTextFormatter);
-        mSystemField.setTextFormatter(mSystemTextFormatter);
+
+
         mRadioField.setTextFormatter(mRadioTextFormatter);
 
-        mWacnTextFormatter.setValue(getItem() != null ? getItem().getWacn() : null);
-        mSystemTextFormatter.setValue(getItem() != null ? getItem().getSystem() : null);
+        if(getItem() != null) {
+            mWacnTextFormatter.setValue(getItem().getWacn());
+            mWacnField.setValue(new IdentifierValue(getItem().getWacn(), ""));
+        } else {
+            mWacnTextFormatter.setValue(null);
+            mWacnField.setValue(null);
+        }
+        if(getItem() != null) {
+            mSystemTextFormatter.setValue(getItem().getSystem());
+            mSystemField.setValue(new IdentifierValue(getItem().getSystem(), ""));
+        } else {
+            mSystemTextFormatter.setValue(null);
+            mSystemField.setValue(null);
+        }
         mRadioTextFormatter.setValue(getItem() != null ? getItem().getValue() : null);
 
+        mWacnField.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if(getItem() != null && newValue != null && newValue.getValue() != null) {
+                getItem().setWacn(newValue.getValue());
+                modifiedProperty().set(true);
+            }
+        });
         mWacnTextFormatter.valueProperty().addListener(mWacnValueChangeListener);
+        mSystemField.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if(getItem() != null && newValue != null && newValue.getValue() != null) {
+                getItem().setSystem(newValue.getValue());
+                modifiedProperty().set(true);
+            }
+        });
         mSystemTextFormatter.valueProperty().addListener(mSystemValueChangeListener);
         mRadioTextFormatter.valueProperty().addListener(mRadioValueChangeListener);
+        populateDropdowns();
     }
 
     @Override
@@ -196,23 +235,91 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
         return mProtocolLabel;
     }
 
-    private TextField getWacnField()
+    private ComboBox<IdentifierValue> getWacnField()
     {
         if(mWacnField == null)
         {
-            mWacnField = new TextField();
-            mWacnField.setTextFormatter(mWacnTextFormatter);
+            mWacnField = new ComboBox<>();
+            mWacnField.setEditable(true);
+            mWacnField.getEditor().setTextFormatter(mWacnTextFormatter);
+            mWacnField.setCellFactory(new javafx.util.Callback<javafx.scene.control.ListView<IdentifierValue>, javafx.scene.control.ListCell<IdentifierValue>>() {
+                @Override
+                public javafx.scene.control.ListCell<IdentifierValue> call(javafx.scene.control.ListView<IdentifierValue> param) {
+                    return new javafx.scene.control.ListCell<IdentifierValue>() {
+                        @Override
+                        protected void updateItem(IdentifierValue item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (item == null || empty) {
+                                setText(null);
+                            } else {
+                                String valStr = Integer.toHexString(item.getValue()).toUpperCase();
+                                if (item.getLabel() != null && !item.getLabel().isEmpty()) {
+                                    setText(valStr + " - " + item.getLabel());
+                                } else {
+                                    setText(valStr);
+                                }
+                            }
+                        }
+                    };
+                }
+            });
+            mWacnField.setConverter(new StringConverter<IdentifierValue>() {
+                @Override
+                public String toString(IdentifierValue object) {
+                    if (object == null || object.getValue() == null) return "";
+                    return Integer.toHexString(object.getValue()).toUpperCase();
+                }
+                @Override
+                public IdentifierValue fromString(String string) {
+                    if (string == null || string.isEmpty()) return null;
+                    return new IdentifierValue(mWacnTextFormatter.getValueConverter().fromString(string), "");
+                }
+            });
         }
 
         return mWacnField;
     }
 
-    private TextField getSystemField()
+    private ComboBox<IdentifierValue> getSystemField()
     {
         if(mSystemField == null)
         {
-            mSystemField = new TextField();
-            mSystemField.setTextFormatter(mSystemTextFormatter);
+            mSystemField = new ComboBox<>();
+            mSystemField.setEditable(true);
+            mSystemField.getEditor().setTextFormatter(mSystemTextFormatter);
+            mSystemField.setCellFactory(new javafx.util.Callback<javafx.scene.control.ListView<IdentifierValue>, javafx.scene.control.ListCell<IdentifierValue>>() {
+                @Override
+                public javafx.scene.control.ListCell<IdentifierValue> call(javafx.scene.control.ListView<IdentifierValue> param) {
+                    return new javafx.scene.control.ListCell<IdentifierValue>() {
+                        @Override
+                        protected void updateItem(IdentifierValue item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (item == null || empty) {
+                                setText(null);
+                            } else {
+                                String valStr = Integer.toHexString(item.getValue()).toUpperCase();
+                                if (item.getLabel() != null && !item.getLabel().isEmpty()) {
+                                    setText(valStr + " - " + item.getLabel());
+                                } else {
+                                    setText(valStr);
+                                }
+                            }
+                        }
+                    };
+                }
+            });
+            mSystemField.setConverter(new StringConverter<IdentifierValue>() {
+                @Override
+                public String toString(IdentifierValue object) {
+                    if (object == null || object.getValue() == null) return "";
+                    return Integer.toHexString(object.getValue()).toUpperCase();
+                }
+                @Override
+                public IdentifierValue fromString(String string) {
+                    if (string == null || string.isEmpty()) return null;
+                    return new IdentifierValue(mSystemTextFormatter.getValueConverter().fromString(string), "");
+                }
+            });
         }
 
         return mSystemField;
@@ -264,6 +371,29 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
             {
                 getItem().setValue(newValue != null ? newValue : 0);
                 modifiedProperty().set(true);
+            }
+        }
+    }
+
+    private void populateDropdowns()
+    {
+        Set<Integer> wacns = new HashSet<>();
+        Set<Integer> systems = new HashSet<>();
+        mWacnField.getItems().clear();
+        mSystemField.getItems().clear();
+        if (mPlaylistManager == null || mPlaylistManager.getChannelModel() == null) return;
+        for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
+            if (channel.getDecodeConfiguration() instanceof DecodeConfigP25Phase2) {
+                DecodeConfigP25Phase2 p25 = (DecodeConfigP25Phase2) channel.getDecodeConfiguration();
+                ScrambleParameters sp = p25.getScrambleParameters();
+                if (sp != null) {
+                    if (wacns.add(sp.getWACN())) {
+                        mWacnField.getItems().add(new IdentifierValue(sp.getWACN(), channel.getName()));
+                    }
+                    if (systems.add(sp.getSystem())) {
+                        mSystemField.getItems().add(new IdentifierValue(sp.getSystem(), channel.getName()));
+                    }
+                }
             }
         }
     }
