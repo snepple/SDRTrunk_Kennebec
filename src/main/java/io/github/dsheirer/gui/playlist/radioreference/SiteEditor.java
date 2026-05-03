@@ -495,6 +495,8 @@ public class SiteEditor extends GridPane
         Channel channel = new Channel();
         channel.setName(getNameTextField().getText());
         channel.setSite(getSiteTextField().getText());
+        channel.setState(String.valueOf(mCurrentSite.getCountyInfo().getStateId()));
+        channel.setCounty(String.valueOf(mCurrentSite.getCountyInfo().getCountyId()));
         channel.setSystem(getSystemTextField().getText());
         channel.setAliasListName(getAliasListNameComboBox().getSelectionModel().getSelectedItem());
         return channel;

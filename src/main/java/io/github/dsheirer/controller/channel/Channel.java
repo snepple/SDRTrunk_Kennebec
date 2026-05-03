@@ -79,6 +79,8 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     private StringProperty mAliasListName = new SimpleStringProperty();
     private StringProperty mSystem = new SimpleStringProperty();
     private StringProperty mSite = new SimpleStringProperty();
+    private StringProperty mState = new SimpleStringProperty();
+    private StringProperty mCounty = new SimpleStringProperty();
     private StringProperty mName = new SimpleStringProperty();
     private ObservableList<Long> mFrequencyList;
 
@@ -133,6 +135,8 @@ public class Channel extends Configuration implements Listener<SourceEvent>
         Channel channel = new Channel(mName.get());
         channel.setSystem(mSystem.get());
         channel.setSite(mSite.get());
+        channel.setState(mState.get());
+        channel.setCounty(mCounty.get());
         channel.setAliasListName(mAliasListName.get());
         channel.setAutoStart(mAutoStart.get());
         channel.setAutoStartOrder(mAutoStartOrder.get());
@@ -429,6 +433,44 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     public boolean hasSite()
     {
         return mSite != null && mSite.get() != null;
+    }
+
+    /**
+     * Returns the state for this channel.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "state")
+    public String getState()
+    {
+        return mState.get();
+    }
+
+    public void setState(String state)
+    {
+        mState.set(state);
+    }
+
+    public boolean hasState()
+    {
+        return mState != null && mState.get() != null;
+    }
+
+    /**
+     * Returns the county for this channel.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "county")
+    public String getCounty()
+    {
+        return mCounty.get();
+    }
+
+    public void setCounty(String county)
+    {
+        mCounty.set(county);
+    }
+
+    public boolean hasCounty()
+    {
+        return mCounty != null && mCounty.get() != null;
     }
 
     /**
