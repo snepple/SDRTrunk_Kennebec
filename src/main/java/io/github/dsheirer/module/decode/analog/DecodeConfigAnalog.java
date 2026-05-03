@@ -84,13 +84,13 @@ public abstract class DecodeConfigAnalog extends DecodeConfiguration
 
     /**
      * Sets the talkgroup identifier to attach to any demodulated audio streams
-     * @param talkgroup (1-65,535)
+     * @param talkgroup (1-" + Integer.MAX_VALUE)
      */
     public void setTalkgroup(int talkgroup)
     {
-        if(talkgroup < 1 || talkgroup > 65535)
+        if(talkgroup < 1 || talkgroup > Integer.MAX_VALUE)
         {
-            throw new IllegalArgumentException("Valid talkgroup range is 1 - 65,535");
+            throw new IllegalArgumentException("Valid talkgroup range is 1 - " + Integer.MAX_VALUE);
         }
 
         mTalkgroup = talkgroup;
