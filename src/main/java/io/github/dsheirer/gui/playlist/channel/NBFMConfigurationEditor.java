@@ -133,8 +133,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private TextField mSquelchReductionField;
     private Slider mHoldTimeSlider;
     private TextField mHoldTimeField;
-    private javafx.scene.control.Button mAnalyzeButton;
-    private Label mAnalyzeStatusLabel;
     private javafx.scene.control.Button mAIOptimizeButton;
     private Label mAIOptimizeStatusLabel;
 
@@ -905,27 +903,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mSquelchThresholdSlider.setDisable(!val);
                 mSquelchReductionSlider.setDisable(!val);
                 mHoldTimeSlider.setDisable(!val);
-                mAnalyzeButton.setDisable(!val);
             }
         });
-
-        // Analyze section (helps user find optimal threshold)
-        GridPane analyzePane = new GridPane();
-        analyzePane.setHgap(10);
-        analyzePane.setVgap(5);
-        analyzePane.setPadding(new Insets(5,0,10,0));
-
-        mAnalyzeButton = new javafx.scene.control.Button("Analyze Audio & Suggest Settings");
-        mAnalyzeButton.setTooltip(new Tooltip("Listen to audio for 5-10 seconds and suggest optimal threshold\nMake sure transmissions are active!"));
-        mAnalyzeButton.setStyle("-fx-font-weight: bold;");
-        mAnalyzeButton.setOnAction(e -> handleAnalyzeClick());
-        GridPane.setConstraints(mAnalyzeButton, 0, 0);
-        analyzePane.getChildren().add(mAnalyzeButton);
-
-        mAnalyzeStatusLabel = new Label("Click 'Analyze' while transmissions are active");
-        mAnalyzeStatusLabel.setStyle("-fx-text-fill: #666;");
-        GridPane.setConstraints(mAnalyzeStatusLabel, 1, 0);
-        analyzePane.getChildren().add(mAnalyzeStatusLabel);
 
         GridPane controlsPane = new GridPane();
         controlsPane.setHgap(10);
@@ -1009,7 +988,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         GridPane.setConstraints(mHoldTimeField, 2, 2);
         controlsPane.getChildren().add(mHoldTimeField);
 
-        section.getChildren().addAll(titleBox, mSquelchEnabledSwitch, analyzePane, controlsPane);
+        section.getChildren().addAll(titleBox, mSquelchEnabledSwitch, controlsPane);
         return section;
     }
 
@@ -1514,60 +1493,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         config.setNoiseGateThreshold((float)mSquelchThresholdSlider.getValue());  // Already percentage
         config.setNoiseGateReduction((float)mSquelchReductionSlider.getValue() / 100.0f);
         config.setNoiseGateHoldTime((int)mHoldTimeSlider.getValue());
-    }
-
-    private void handleAnalyzeClick()
-    {
-        if (mAnalyzeButton.getText().equals("Analyze Audio & Suggest Settings")) {
-            // Start analysis
-            mAnalyzeButton.setText("Stop Analysis");
-            mAnalyzeStatusLabel.setText("Analyzing... listening to audio (10 seconds)");
-            mAnalyzeStatusLabel.setStyle("-fx-text-fill: #0066cc; -fx-font-weight: bold;");
-
-            // TODO: Get decoder's audio filter and start analyzing
-            // NBFMAudioFilters filter = getDecoderAudioFilter();
-            // filter.startAnalyzing();
-
-            // TODO: After 10 seconds (or when stopped), get results
-            // javafx.application.Platform.runLater(() -> {
-            //     float[] results = filter.stopAnalyzing();
-            //     if (results != null) {
-            //         float carrierMax = results[0];
-            //         float voiceMin = results[1];
-            //         float recommended = results[2];
-            //
-            //         mSquelchThresholdSlider.setValue(recommended);
-            //         mAnalyzeStatusLabel.setText(String.format(
-            //             "✅ Suggested: %.1f%% (Carrier: %.1f%%, Voice: %.1f%%)",
-            //             recommended, carrierMax, voiceMin));
-            //         mAnalyzeStatusLabel.setStyle("-fx-text-fill: #009900; -fx-font-weight: bold;");
-            //         modifiedProperty().set(true);
-            //     } else {
-            //         mAnalyzeStatusLabel.setText("⚠️ Not enough audio - try again with active transmissions");
-            //         mAnalyzeStatusLabel.setStyle("-fx-text-fill: #cc6600;");
-            //     }
-            //     mAnalyzeButton.setText("Analyze Audio & Suggest Settings");
-            // }, 10000);  // 10 second delay
-
-            // For now, just show a message after short delay
-            new javafx.animation.Timeline(new javafx.animation.KeyFrame(
-                javafx.util.Duration.millis(1000),
-                ae -> {
-                    mAnalyzeStatusLabel.setText("⚠️ Analysis requires decoder connection (not yet wired)");
-                    mAnalyzeStatusLabel.setStyle("-fx-text-fill: #cc6600;");
-                    mAnalyzeButton.setText("Analyze Audio & Suggest Settings");
-                }
-            )).play();
-
-        } else {
-            // Stop analysis
-            mAnalyzeButton.setText("Analyze Audio & Suggest Settings");
-            mAnalyzeStatusLabel.setText("Analysis stopped");
-            mAnalyzeStatusLabel.setStyle("-fx-text-fill: #666;");
-
-            // TODO: Stop analyzing
-            // filter.stopAnalyzing();
-        }
     }
 
     private void handleAIOptimizeClick() {
