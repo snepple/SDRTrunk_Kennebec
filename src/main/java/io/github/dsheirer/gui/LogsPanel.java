@@ -13,12 +13,18 @@ import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.web.WebView;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
+
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import org.slf4j.Logger;
@@ -135,42 +141,82 @@ public class LogsPanel extends BorderPane {
         analyzeBtn.setDisable(true);
         analyzeBtn.setText("Analyzing...");
 
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("AI Log Analysis");
+        alert.setHeaderText("Analyzing log with Gemini AI...");
+
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator.setPrefSize(50, 50);
+        VBox vbox = new VBox(progressIndicator);
+        vbox.setAlignment(Pos.CENTER);
+        vbox.setPrefSize(600, 400);
+        alert.getDialogPane().setContent(vbox);
+
+        // Disable the OK button while analyzing
+        Button okButton = (Button) alert.getDialogPane().lookupButton(ButtonType.OK);
+        okButton.setDisable(true);
+
+        // Prevent closing the alert while analysis is ongoing
+        alert.setOnCloseRequest(event -> {
+            if (okButton.isDisabled()) {
+                event.consume();
+            }
+        });
+
+        alert.show();
+
         Thread worker = new Thread(() -> {
-            String contentStr;
+            String logContent;
             try {
                 List<String> lines = Files.readAllLines(logFile.getFile().toPath());
                 int maxLines = 500;
                 if (lines.size() > maxLines) {
                     lines = lines.subList(lines.size() - maxLines, lines.size());
                 }
-                contentStr = String.join("\n", lines);
+                logContent = String.join("\n", lines);
             } catch (IOException e) {
-                showError("Error reading log file: " + e.getMessage());
-                resetAnalyzeButton(analyzeBtn);
+                Platform.runLater(() -> {
+                    alert.close();
+                    showError("Error reading log file: " + e.getMessage());
+                    resetAnalyzeButton(analyzeBtn);
+                });
                 return;
             }
 
             try {
                 AILogAnalyzer analyzer = new AILogAnalyzer(mUserPreferences);
-                String result = analyzer.analyze(contentStr);
+                String result = analyzer.analyze(logContent);
 
                 Platform.runLater(() -> {
-                    TextArea textArea = new TextArea(result);
-                    textArea.setEditable(false);
-                    textArea.setWrapText(true);
-                    textArea.setPrefSize(600, 400);
+                    try {
+                        Parser parser = Parser.builder().build();
+                        Node document = parser.parse(result);
+                        HtmlRenderer renderer = HtmlRenderer.builder().build();
+                        String htmlResult = renderer.render(document);
 
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("AI Log Analysis");
-                    alert.setHeaderText(null);
-                    alert.getDialogPane().setContent(textArea);
-                    alert.showAndWait();
+                        WebView webView = new WebView();
+                        webView.getEngine().loadContent("<html><body style='font-family: sans-serif;'>" + htmlResult + "</body></html>");
+                        webView.setPrefSize(600, 400);
 
-                    resetAnalyzeButton(analyzeBtn);
+                        if (!alert.isShowing()) {
+                            alert.show(); // Show again if closed
+                        }
+                        alert.setHeaderText(null);
+                        alert.getDialogPane().setContent(webView);
+                        alert.getDialogPane().lookupButton(ButtonType.OK).setDisable(false);
+                    } catch (Exception ex) {
+                        alert.close();
+                        showError("Error formatting AI response:\n" + ex.getMessage());
+                    } finally {
+                        resetAnalyzeButton(analyzeBtn);
+                    }
                 });
             } catch (Exception ex) {
-                showError("Error analyzing log:\n" + ex.getMessage());
-                resetAnalyzeButton(analyzeBtn);
+                Platform.runLater(() -> {
+                    alert.close();
+                    showError("Error analyzing log:\n" + ex.getMessage());
+                    resetAnalyzeButton(analyzeBtn);
+                });
             }
         });
         worker.setDaemon(true);
