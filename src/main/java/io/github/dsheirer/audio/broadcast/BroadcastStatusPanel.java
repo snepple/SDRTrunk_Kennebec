@@ -104,6 +104,7 @@ public class BroadcastStatusPanel extends JPanel
                 if (e.getButton() == MouseEvent.BUTTON3) {
                     JPopupMenu popup = new JPopupMenu();
                     JCheckBoxMenuItem hideDisabledItem = new JCheckBoxMenuItem("Hide Disabled Streams");
+                    hideDisabledItem.setSelected(mRowSorter.getRowFilter() != null);
 
                     hideDisabledItem.addActionListener(evt -> {
                         if (hideDisabledItem.isSelected()) {
