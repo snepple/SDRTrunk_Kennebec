@@ -168,7 +168,7 @@ public class GeographicSchemaGenerator extends Dialog<String> {
                 if (confirmButton != null) confirmButton.setDisable(false);
             }
         } else {
-            mPreviewField.setText("Invalid Selection");
+            mPreviewField.setText("");
             if (getDialogPane().getButtonTypes().size() > 0) {
                 javafx.scene.Node confirmButton = getDialogPane().lookupButton(getDialogPane().getButtonTypes().get(0));
                 if (confirmButton != null) confirmButton.setDisable(true);
