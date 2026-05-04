@@ -76,12 +76,12 @@ public class SDRPlayLibraryHelper
                 }
                 catch(Throwable t2)
                 {
-                    mLog.info("SDRPlay API native library not found at " + libraryPath);
+                    mLog.debug("SDRPlay API native library not found at " + libraryPath);
                 }
             }
             else
             {
-                mLog.info("SDRPlay API native library not found at: " + libraryPath);
+                mLog.debug("SDRPlay API native library not found at: " + libraryPath);
             }
         }
 
@@ -115,7 +115,7 @@ public class SDRPlayLibraryHelper
             }
         }
 
-        mLog.error("Unrecognized operating system.  Cannot identify sdrplay api library path");
+        mLog.debug("Unrecognized operating system.  Cannot identify sdrplay api library path");
         return "";
     }
 }

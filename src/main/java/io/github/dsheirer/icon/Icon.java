@@ -188,7 +188,7 @@ public class Icon implements Comparable<Icon>
                 if(!getPath().startsWith("images"))
                 {
                     // For absolute or external paths
-                    java.io.File file = new java.io.File(getPath());
+java.io.File file = new java.io.File(getPath());
                     if (file.exists() && getPath().toLowerCase().endsWith(".svg")) {
                         mImageIcon = new FlatSVGIcon(file);
                     } else {
@@ -208,7 +208,7 @@ public class Icon implements Comparable<Icon>
                         resourcePath = "/" + resourcePath;
                     }
                     
-                    URL exactURL = Icon.class.getResource(resourcePath);
+URL exactURL = Icon.class.getResource(resourcePath);
                     if (exactURL != null) {
                         if (resourcePath.toLowerCase().endsWith(".svg")) {
                             mImageIcon = new FlatSVGIcon(exactURL);
@@ -265,7 +265,7 @@ public class Icon implements Comparable<Icon>
                     // Fetch the scaled icon at 2x resolution to look crisp on high-DPI displays
                     int renderHeight = ICON_HEIGHT_JAVAFX * 2;
                     ImageIcon icon = io.github.dsheirer.icon.IconModel.getScaledIcon(getIcon(), renderHeight);
-                    if (icon != null) {
+if (icon != null && icon.getIconWidth() > 0 && icon.getIconHeight() > 0) {
                         if (icon instanceof FlatSVGIcon) {
                             BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
                             Graphics2D cg = bImg.createGraphics();

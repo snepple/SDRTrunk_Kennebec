@@ -251,7 +251,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         //when the library was not installed into a normal/default location, particularly on windows OS systems.
         if(SDRPlayLibraryHelper.LOADED)
         {
-            mLog.info("SDRPlay API native library preemptively loaded");
+            mLog.debug("SDRPlay API native library preemptively loaded");
         }
 
         mResourceMonitor = new ResourceMonitor(mUserPreferences);

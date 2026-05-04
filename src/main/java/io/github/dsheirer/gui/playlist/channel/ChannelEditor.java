@@ -434,6 +434,8 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             playingColumn.setCellFactory(param -> {
                 TableCell<Channel,Boolean> tableCell = new TableCell<>()
                 {
+                    private IconNode iconNode;
+
                     @Override
                     protected void updateItem(Boolean item, boolean empty)
                     {
@@ -446,8 +448,10 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                         }
                         else
                         {
-                            IconNode iconNode = new IconNode(FontAwesome.CHECK);
-                            iconNode.setFill(Color.GREEN);
+                            if (iconNode == null) {
+                                iconNode = new IconNode(FontAwesome.CHECK);
+                                iconNode.setFill(Color.GREEN);
+                            }
                             setGraphic(iconNode);
                         }
                     }
@@ -463,6 +467,8 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             autoStartColumn.setCellFactory(param -> {
                 TableCell<Channel,Boolean> tableCell = new TableCell<>()
                 {
+                    private IconNode iconNode;
+
                     @Override
                     protected void updateItem(Boolean item, boolean empty)
                     {
@@ -475,8 +481,10 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                         }
                         else
                         {
-                            IconNode iconNode = new IconNode(FontAwesome.CHECK);
-                            iconNode.setFill(Color.GREEN);
+                            if (iconNode == null) {
+                                iconNode = new IconNode(FontAwesome.CHECK);
+                                iconNode.setFill(Color.GREEN);
+                            }
                             setGraphic(iconNode);
                         }
                     }
@@ -509,6 +517,8 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             protocolColumn.setId("channelTable.protocol");
             protocolColumn.setCellValueFactory(new ProtocolCellValueFactory());
             protocolColumn.setCellFactory(param -> new TableCell<Channel, String>() {
+                private javafx.scene.image.ImageView imageView;
+
                 @Override
                 protected void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -521,7 +531,11 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                         if (channel != null && channel.getDecodeConfiguration() != null && channel.getDecodeConfiguration().getDecoderType() != null && channel.getDecodeConfiguration().getDecoderType().getIconName() != null) {
                             io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(channel.getDecodeConfiguration().getDecoderType().getIconName());
                             if (icon != null && icon.getFxImage() != null) {
-                                setGraphic(new javafx.scene.image.ImageView(icon.getFxImage()));
+                                if (imageView == null) {
+                                    imageView = new javafx.scene.image.ImageView();
+                                }
+                                imageView.setImage(icon.getFxImage());
+                                setGraphic(imageView);
                             } else {
                                 setGraphic(null);
                             }
