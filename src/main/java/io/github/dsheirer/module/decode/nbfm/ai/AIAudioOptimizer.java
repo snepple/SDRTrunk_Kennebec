@@ -11,6 +11,14 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
+
+
 public class AIAudioOptimizer {
     private static final Logger mLog = LoggerFactory.getLogger(AIAudioOptimizer.class);
     private final UserPreferences mUserPreferences;
@@ -24,7 +32,7 @@ public class AIAudioOptimizer {
                 .build();
     }
 
-    public AIAnalysisResult analyze(DecodeConfigNBFM config, List<List<float[]>> audioEvents) throws Exception {
+    public AIAnalysisResult analyze(DecodeConfigNBFM config, List<Path> audioFiles) throws Exception {
         String apiKey = mUserPreferences.getAIPreference().getGeminiApiKey();
         if (apiKey == null || apiKey.isEmpty()) {
             throw new Exception("Gemini API Key is missing. Cannot optimize audio.");
@@ -33,21 +41,48 @@ public class AIAudioOptimizer {
         mLog.info("Analyzing audio with Gemini...");
 
         try {
-            // First try gemini-1.5-pro, if it fails due to billing/access, we could theoretically fall back to flash
             String model = mUserPreferences.getAIPreference().getGeminiModel();
-            // The user preference has 'models/' prefix like 'models/gemini-1.5-flash'. We need to handle that or use the model as is.
-            // In URL it usually goes "https://generativelanguage.googleapis.com/v1beta/" + model + ":generateContent"
             String url = "https://generativelanguage.googleapis.com/v1beta/" + model + ":generateContent?key=" + apiKey;
 
             String promptText = "Analyze this NBFM radio audio. Return JSON with recommended settings. " +
                 "Adjust hissReductionEnabled (boolean), hissReductionDb (float), hissReductionCorner (double), lowPassEnabled (boolean), lowPassCutoff (float), deemphasisEnabled (boolean), bassBoostEnabled (boolean), bassBoostDb (float), agcEnabled (boolean), agcTargetLevel (float), noiseGateEnabled (boolean), noiseGateThreshold (float), noiseGateReduction (float), and agcMaxGain (float) based on SNR and voice clarity. " +
                 "Provide a brief plain-English explanation for the adjustments in an 'explanation' field. Also provide 'issuesFound' and 'improvements' fields.";
 
-            String jsonPayload = "{" +
-                "\"contents\": [{" +
-                "\"parts\":[{\"text\": \"" + promptText + "\"}]" + // We're mocking the audio inlineData attachment here
-                "}]" +
-            "}";
+            Gson gson = new Gson();
+            JsonObject payload = new JsonObject();
+            JsonArray contents = new JsonArray();
+            JsonObject contentObj = new JsonObject();
+            JsonArray parts = new JsonArray();
+
+            // Add system instruction as part
+            JsonObject textPart = new JsonObject();
+            textPart.addProperty("text", promptText);
+            parts.add(textPart);
+
+            // Add audio files
+            for (Path path : audioFiles) {
+                byte[] fileBytes = Files.readAllBytes(path);
+                String base64Data = Base64.getEncoder().encodeToString(fileBytes);
+                String mimeType = path.toString().toLowerCase().endsWith(".mp3") ? "audio/mp3" : "audio/wav";
+
+                JsonObject inlineDataObj = new JsonObject();
+                JsonObject inlineData = new JsonObject();
+                inlineData.addProperty("mimeType", mimeType);
+                inlineData.addProperty("data", base64Data);
+                inlineDataObj.add("inlineData", inlineData);
+                parts.add(inlineDataObj);
+            }
+
+            contentObj.add("parts", parts);
+            contents.add(contentObj);
+            payload.add("contents", contents);
+
+            // Force JSON response
+            JsonObject generationConfig = new JsonObject();
+            generationConfig.addProperty("responseMimeType", "application/json");
+            payload.add("generationConfig", generationConfig);
+
+            String jsonPayload = gson.toJson(payload);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -55,27 +90,24 @@ public class AIAudioOptimizer {
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
 
-            // Mocking the API response
-            AIAnalysisResult result = new AIAnalysisResult();
-            result.setIssuesFound("High frequency hiss detected. Low signal-to-noise ratio during pauses.");
-            result.setImprovements("We can reduce the hiss by turning on hiss reduction, apply a low pass filter, and enable the noise gate to eliminate noise during pauses.");
-            result.setExplanation("Suppressed high-frequency hiss for better voice clarity and enabled noise gating.");
+            HttpResponse<String> response = mHttpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            result.setHissReductionEnabled(true);
-            result.setHissReductionDb(15.0f);
-            result.setHissReductionCorner(2500.0);
-            result.setLowPassEnabled(true);
-            result.setLowPassCutoff(3500.0);
-            result.setDeemphasisEnabled(true);
-            result.setBassBoostEnabled(true);
-            result.setBassBoostDb(3.0f);
-            result.setAgcEnabled(true);
-            result.setAgcTargetLevel(-12.0f);
-            result.setNoiseGateEnabled(true);
-            result.setNoiseGateThreshold(10.0f);
-            result.setNoiseGateReduction(0.9f);
-            result.setAgcMaxGain(12.0f);
+            if (response.statusCode() != 200) {
+                throw new Exception("Gemini API error: " + response.statusCode() + " " + response.body());
+            }
 
+            JsonObject responseJson = gson.fromJson(response.body(), JsonObject.class);
+            JsonArray candidates = responseJson.getAsJsonArray("candidates");
+            if (candidates == null || candidates.size() == 0) {
+                throw new Exception("No candidates returned from Gemini");
+            }
+            JsonObject firstCandidate = candidates.get(0).getAsJsonObject();
+            JsonObject content = firstCandidate.getAsJsonObject("content");
+            JsonArray responseParts = content.getAsJsonArray("parts");
+            String resultText = responseParts.get(0).getAsJsonObject().get("text").getAsString();
+
+            // Parse the result JSON into AIAnalysisResult
+            AIAnalysisResult result = gson.fromJson(resultText, AIAnalysisResult.class);
             return result;
 
         } catch (Exception e) {

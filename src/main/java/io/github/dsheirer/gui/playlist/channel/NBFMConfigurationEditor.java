@@ -18,6 +18,9 @@
  */
 
 package io.github.dsheirer.gui.playlist.channel;
+import io.github.dsheirer.record.AudioRecordingManager;
+import java.nio.file.Path;
+import io.github.dsheirer.controller.channel.Channel;
 
 import io.github.dsheirer.gui.control.HexFormatter;
 import io.github.dsheirer.gui.control.IntegerFormatter;
@@ -1577,9 +1580,19 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
         new Thread(() -> {
             try {
+                Path basePath = mUserPreferences.getDirectoryPreference().getDirectoryRecording();
+                List<Path> recent = AudioRecordingManager.getRecentRecordings(getItem(), 5, basePath);
+                if (recent.size() < 5) {
+                    javafx.application.Platform.runLater(() -> {
+                        mAIOptimizeStatusLabel.setText("Needs at least 5 audio recordings saved for this channel to optimize.");
+                        mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
+                    });
+                    return;
+                }
+
                 AIAudioOptimizer optimizer = new AIAudioOptimizer(mUserPreferences);
                 DecodeConfigNBFM config = (DecodeConfigNBFM) getItem().getDecodeConfiguration();
-                AIAnalysisResult result = optimizer.analyze(config, java.util.Collections.emptyList());
+                AIAnalysisResult result = optimizer.analyze(config, recent);
 
                 javafx.application.Platform.runLater(() -> {
                     mLowPassEnabledSwitch.setSelected(result.isLowPassEnabled());
@@ -1606,6 +1619,40 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 });
             }
         }).start();
+    }
+
+    @Override
+    public void setItem(Channel channel) {
+        super.setItem(channel);
+        if (mAIOptimizeButton != null && mAIOptimizeStatusLabel != null) {
+            if (channel == null) {
+                mAIOptimizeButton.setDisable(true);
+                mAIOptimizeStatusLabel.setText("No channel selected");
+                return;
+            }
+
+            mAIOptimizeButton.setDisable(true);
+            mAIOptimizeStatusLabel.setText("Checking for recordings...");
+
+            Path basePath = mUserPreferences.getDirectoryPreference().getDirectoryRecording();
+            new Thread(() -> {
+                List<Path> recent = AudioRecordingManager.getRecentRecordings(channel, 5, basePath);
+                javafx.application.Platform.runLater(() -> {
+                    // Prevent updates if the selected channel has changed while we were loading
+                    if (getItem() != channel) return;
+
+                    if (recent.size() < 5) {
+                        mAIOptimizeButton.setDisable(true);
+                        mAIOptimizeStatusLabel.setText("Needs at least 5 audio recordings saved for this channel to optimize. Found: " + recent.size());
+                        mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
+                    } else {
+                        mAIOptimizeButton.setDisable(false);
+                        mAIOptimizeStatusLabel.setText("Click to run Gemini AI analysis on this channel's audio");
+                        mAIOptimizeStatusLabel.setStyle("");
+                    }
+                });
+            }).start();
+        }
     }
 
     @Override
