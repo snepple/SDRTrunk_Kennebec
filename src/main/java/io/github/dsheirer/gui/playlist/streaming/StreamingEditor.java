@@ -113,6 +113,11 @@ public class StreamingEditor extends SplitPane
                 getTabPane().getSelectionModel().select(getConfigurationTab());
             }
         }
+        else
+        {
+            // Generic stream tab request, select default tab
+            getTabPane().getSelectionModel().select(getConfigurationTab());
+        }
     }
 
     /**
