@@ -413,6 +413,8 @@ public class FrequencyEditor extends VBox
             Channel channel = new Channel();
             channel.setSystem(system);
             channel.setSite(site);
+            channel.setState(String.valueOf(mUserPreferences.getRadioReferencePreference().getPreferredStateId()));
+            channel.setCounty(String.valueOf(mUserPreferences.getRadioReferencePreference().getPreferredCountyId()));
             channel.setName(name);
             SourceConfigTuner sourceConfigTuner = new SourceConfigTuner();
             sourceConfigTuner.setFrequency(frequency);

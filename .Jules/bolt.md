@@ -1,0 +1,3 @@
+## 2026-05-03 - NBFM Geographic Talkgroup Generator Architecture Bounds
+**Learning:** Refactoring core properties like `Talkgroup` IDs from `int` to `long` in an established application like SDRTrunk involves an extreme risk of cascading regressions across parsing protocols (P25, LTR, AM, NBFM, etc.), playlist loading rules, memory persistence structures (JAXB / XML), and UI components.
+**Action:** When a user requests IDs larger than 32-bit `MAX_VALUE`, rather than undertaking a massive breaking architecture change to `long`, it is safer to handle numeric manipulation in String form (for the UI) and let the integer gracefully fallback natively, or advise the user to accept constraints unless a full-scale refactor is mandated.

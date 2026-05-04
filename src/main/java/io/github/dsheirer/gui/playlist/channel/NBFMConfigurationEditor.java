@@ -140,8 +140,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private AuxDecoderConfigurationEditor mAuxDecoderConfigurationEditor;
     private EventLogConfigurationEditor mEventLogConfigurationEditor;
     private final TalkgroupValueChangeListener mTalkgroupValueChangeListener = new TalkgroupValueChangeListener();
-    private final IntegerFormatter mDecimalFormatter = new IntegerFormatter(1, 65535);
-    private final HexFormatter mHexFormatter = new HexFormatter(1, 65535);
+    private final IntegerFormatter mDecimalFormatter = new IntegerFormatter(1, Integer.MAX_VALUE);
+    private final HexFormatter mHexFormatter = new HexFormatter(1, Integer.MAX_VALUE);
 
     /**
      * Constructs an instance
@@ -211,8 +211,22 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(talkgroupLabel, 0, 1);
             gridPane.getChildren().add(talkgroupLabel);
 
-            GridPane.setConstraints(getTalkgroupField(), 1, 1);
-            gridPane.getChildren().add(getTalkgroupField());
+            HBox talkgroupBox = new HBox(5);
+            talkgroupBox.setAlignment(Pos.CENTER_LEFT);
+            talkgroupBox.getChildren().add(getTalkgroupField());
+
+            javafx.scene.control.Button generateIdButton = new javafx.scene.control.Button("Generate ID");
+            generateIdButton.getStyleClass().add("flat-button");
+            generateIdButton.setOnAction(event -> {
+                GeographicSchemaGenerator generator = new GeographicSchemaGenerator(getItem(), mUserPreferences, getPlaylistManager());
+                generator.showAndWait().ifPresent(id -> {
+                    mTalkgroupTextFormatter.setValue(Integer.parseInt(id));
+                });
+            });
+            talkgroupBox.getChildren().add(generateIdButton);
+
+            GridPane.setConstraints(talkgroupBox, 1, 1);
+            gridPane.getChildren().add(talkgroupBox);
 
             GridPane.setConstraints(getAudioFilterEnable(), 2, 1);
             gridPane.getChildren().add(getAudioFilterEnable());
@@ -1106,7 +1120,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         if(format == IntegerFormat.DECIMAL)
         {
             mTalkgroupTextFormatter = mDecimalFormatter;
-            getTalkgroupField().setTooltip(new Tooltip("1 - 65,535"));
+            getTalkgroupField().setTooltip(new Tooltip("1 - 2,147,483,647"));
         }
         else
         {
