@@ -50,8 +50,9 @@ public class GeographicSchemaGenerator extends Dialog<String> {
         mCountyCombo = new ComboBox<>();
         mCountyCombo.setPrefWidth(200);
         mCountyCombo.setDisable(true);
-        mStateCombo.setOnAction(e -> {
-            State s = mStateCombo.getValue();
+        mStateCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
+            State s = newValue;
+
             mCountyCombo.getItems().clear();
             if (s == null) {
                 mCountyCombo.setDisable(true);
@@ -99,8 +100,9 @@ public class GeographicSchemaGenerator extends Dialog<String> {
 
         getDialogPane().setContent(grid);
 
-        mCountyCombo.setOnAction(e -> {
-            CountyData.County c = mCountyCombo.getValue();
+        mCountyCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
+            CountyData.County c = newValue;
+
             if (c == null) {
                 mAgencyCombo.getSelectionModel().clearSelection();
                 mAgencyCombo.setDisable(true);
@@ -109,7 +111,7 @@ public class GeographicSchemaGenerator extends Dialog<String> {
             }
             updatePreview();
         });
-        mAgencyCombo.setOnAction(e -> updatePreview());
+        mAgencyCombo.valueProperty().addListener((observable, oldValue, newValue) -> updatePreview());
 
         setResultConverter(dialogButton -> {
             if (dialogButton == confirmButtonType) {
