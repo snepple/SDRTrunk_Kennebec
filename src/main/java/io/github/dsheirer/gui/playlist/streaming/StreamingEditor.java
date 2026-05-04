@@ -274,8 +274,9 @@ public class StreamingEditor extends SplitPane
             if(!getItems().contains(getConfigAreaBox()))
             {
                 getItems().add(getConfigAreaBox());
-                setDividerPositions(0.5);
             }
+
+            setDividerPositions(0.5);
         }
     }
 
