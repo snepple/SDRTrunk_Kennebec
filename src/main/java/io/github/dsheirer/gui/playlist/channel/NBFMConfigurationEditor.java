@@ -1592,6 +1592,10 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                     mSquelchEnabledSwitch.setSelected(result.isNoiseGateEnabled());
                     mSquelchThresholdSlider.setValue(result.getNoiseGateThreshold());
                     mSquelchReductionSlider.setValue(result.getNoiseGateReduction() * 100.0);
+                    mSquelchTailEnabledSwitch.setSelected(result.isSquelchTailRemovalEnabled());
+                    mTailRemovalSpinner.getValueFactory().setValue(result.getSquelchTailRemovalMs());
+                    mHeadRemovalSpinner.getValueFactory().setValue(result.getSquelchHeadRemovalMs());
+                    mHoldTimeSlider.setValue(result.getNoiseGateHoldTime());
 
                     mAIOptimizeStatusLabel.setText(result.getExplanation());
                     mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #009900;");
