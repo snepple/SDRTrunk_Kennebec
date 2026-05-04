@@ -100,40 +100,40 @@ public class AudioSegmentRecorder
     {
         if(audioSegment.hasAudio())
         {
-            OutputStream outputStream = new FileOutputStream(path.toFile());
-
-            //Write ID3 metadata
-            Map<AudioMetadata,String> metadataMap = AudioMetadataUtils.getMetadataMap(identifierCollection,
-                audioSegment.getAliasList());
-
-            byte[] id3Bytes = AudioMetadataUtils.getMP3ID3(metadataMap);
-            outputStream.write(id3Bytes);
-
-            //Convert audio to MP3 and write to file
-            InputAudioFormat inputAudioFormat = userPreferences.getMP3Preference().getAudioSampleRate();
-            MP3Setting mp3Setting = userPreferences.getMP3Preference().getMP3Setting();
-
-            boolean normalizeAudio = userPreferences.getMP3Preference().isNormalizeAudioBeforeEncode();
-
-            MP3AudioConverter converter = new MP3AudioConverter(inputAudioFormat, mp3Setting, normalizeAudio);
-            List<byte[]> mp3Frames = converter.convert(audioSegment.getAudioBuffers());
-            for(byte[] mp3Frame: mp3Frames)
+            try (OutputStream outputStream = new FileOutputStream(path.toFile()))
             {
-                outputStream.write(mp3Frame);
-            }
+                //Write ID3 metadata
+                Map<AudioMetadata,String> metadataMap = AudioMetadataUtils.getMetadataMap(identifierCollection,
+                    audioSegment.getAliasList());
 
-            List<byte[]> lastFrames = converter.flush();
+                byte[] id3Bytes = AudioMetadataUtils.getMP3ID3(metadataMap);
+                outputStream.write(id3Bytes);
 
-            if(!lastFrames.isEmpty())
-            {
-                for(byte[] lastFrame: lastFrames)
+                //Convert audio to MP3 and write to file
+                InputAudioFormat inputAudioFormat = userPreferences.getMP3Preference().getAudioSampleRate();
+                MP3Setting mp3Setting = userPreferences.getMP3Preference().getMP3Setting();
+
+                boolean normalizeAudio = userPreferences.getMP3Preference().isNormalizeAudioBeforeEncode();
+
+                MP3AudioConverter converter = new MP3AudioConverter(inputAudioFormat, mp3Setting, normalizeAudio);
+                List<byte[]> mp3Frames = converter.convert(audioSegment.getAudioBuffers());
+                for(byte[] mp3Frame: mp3Frames)
                 {
-                    outputStream.write(lastFrame);
+                    outputStream.write(mp3Frame);
                 }
-            }
 
-            outputStream.flush();
-            outputStream.close();
+                List<byte[]> lastFrames = converter.flush();
+
+                if(!lastFrames.isEmpty())
+                {
+                    for(byte[] lastFrame: lastFrames)
+                    {
+                        outputStream.write(lastFrame);
+                    }
+                }
+
+                outputStream.flush();
+            }
         }
     }
 
@@ -148,21 +148,21 @@ public class AudioSegmentRecorder
     {
         if(audioSegment.hasAudio())
         {
-            WaveWriter writer = new WaveWriter(AudioFormats.PCM_SIGNED_8000_HZ_16_BIT_MONO, path);
-
-            for(float[] audioBuffer: audioSegment.getAudioBuffers())
+            try (WaveWriter writer = new WaveWriter(AudioFormats.PCM_SIGNED_8000_HZ_16_BIT_MONO, path))
             {
-                writer.writeData(ConversionUtils.convertToSigned16BitSamples(audioBuffer));
+                for(float[] audioBuffer: audioSegment.getAudioBuffers())
+                {
+                    writer.writeData(ConversionUtils.convertToSigned16BitSamples(audioBuffer));
+                }
+
+                Map<AudioMetadata,String> metadataMap = AudioMetadataUtils.getMetadataMap(identifierCollection,
+                    audioSegment.getAliasList());
+
+                ByteBuffer listChunk = AudioMetadataUtils.getLISTChunk(metadataMap);
+                byte[] id3Bytes = AudioMetadataUtils.getMP3ID3(metadataMap);
+                ByteBuffer id3Chunk = AudioMetadataUtils.getID3Chunk(id3Bytes);
+                writer.writeMetadata(listChunk, id3Chunk);
             }
-
-            Map<AudioMetadata,String> metadataMap = AudioMetadataUtils.getMetadataMap(identifierCollection,
-                audioSegment.getAliasList());
-
-            ByteBuffer listChunk = AudioMetadataUtils.getLISTChunk(metadataMap);
-            byte[] id3Bytes = AudioMetadataUtils.getMP3ID3(metadataMap);
-            ByteBuffer id3Chunk = AudioMetadataUtils.getID3Chunk(id3Bytes);
-            writer.writeMetadata(listChunk, id3Chunk);
-            writer.close();
         }
     }
 }
