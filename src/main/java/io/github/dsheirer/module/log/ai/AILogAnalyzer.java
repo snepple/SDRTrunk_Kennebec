@@ -27,8 +27,8 @@ public class AILogAnalyzer {
         mLog.info("Analyzing log content with Gemini...");
 
         try {
-            String model = "gemini-1.5-pro";
-            String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+            String model = mUserPreferences.getAIPreference().getGeminiModel();
+            String url = "https://generativelanguage.googleapis.com/v1beta/" + model + ":generateContent?key=" + apiKey;
 
             // Simple json string escape to prevent malformed json payloads when log file contains quotes or new lines.
             String escapedLogContent = logContent.replace("\\", "\\\\")
