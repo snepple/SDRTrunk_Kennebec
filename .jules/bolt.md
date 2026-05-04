@@ -15,3 +15,7 @@
 ## 2024-05-13 - [Optimize StringUtils.leftPad Hexadecimal Formatting]
 **Learning:** `StringUtils.leftPad(Integer.toHexString(...).toUpperCase(), ...)` and `String.format("%03X", ...)` are frequently used but relatively slow due to intermediate string allocations and regex parsing. Replacing them with the customized `P25Utils.formatHex(value, width)` method drastically reduces overhead and object creation.
 **Action:** Replace string-based hex padders and formatters with `P25Utils.formatHex` in high-frequency monitoring or identifier formatting classes.
+
+## 2026-05-03 - [Do not pollute Standard User Icons with System Icons]
+**Learning:** Adding system/decoder specific icons (like "AM.svg") into user-facing settings like `IconModel.mStandardIcons` pollutes the end-user icon dropdown.
+**Action:** When adding new internal, system-only icons that must be rendered via `IconModel`, add them to a distinct `mSystemIcons` map that can be used as a fallback in `IconModel.getIcon(...)`, thereby preventing them from leaking into the user-facing settings UI.
