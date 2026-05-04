@@ -50,6 +50,7 @@ public class UnknownConfigurationEditor extends ChannelConfigurationEditor
         super(playlistManager, tunerManager, userPreferences, filterProcessor);
         // Could not find name for getDecoderPane()
         addConfigurationPane("Decoder", getDecoderPane());
+        setupAlertsPane();
     }
 
     private javafx.scene.Node getDecoderPane(){

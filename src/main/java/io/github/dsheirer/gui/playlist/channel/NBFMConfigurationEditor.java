@@ -104,7 +104,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private ComboBox<DCSCode> mDcsCodeCombo;
 
     // Squelch Tail Removal UI
-    private javafx.scene.Node mSquelchTailPane;
+
     private ToggleSwitch mSquelchTailEnabledSwitch;
     private Spinner<Integer> mTailRemovalSpinner;
     private Spinner<Integer> mHeadRemovalSpinner;
@@ -136,8 +136,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private TextField mSquelchReductionField;
     private Slider mHoldTimeSlider;
     private TextField mHoldTimeField;
-    private javafx.scene.control.Button mAnalyzeButton;
-    private Label mAnalyzeStatusLabel;
     private javafx.scene.control.Button mAIOptimizeButton;
     private Label mAIOptimizeStatusLabel;
 
@@ -166,8 +164,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         addConfigurationPane("Decoder", getDecoderPane());
         // Could not find name for getToneFilterPane()
         addConfigurationPane("Tone Filter", getToneFilterPane());
-        // Could not find name for getSquelchTailPane()
-        addConfigurationPane("Squelch Tail", getSquelchTailPane());
         // Could not find name for getAudioFiltersPane()
         addConfigurationPane("Audio Filters", getAudioFiltersPane());
         // Could not find name for getAuxDecoderPane()
@@ -176,6 +172,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         addConfigurationPane("Logging", getEventLogPane());
         // Could not find name for getRecordPane()
         addConfigurationPane("Recording", getRecordPane());
+        setupAlertsPane();
     }
 
     @Override
@@ -329,81 +326,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         mDcsCodeCombo.setManaged(!isCTCSS);
     }
 
-    // === Squelch Tail Removal pane ===
-    private javafx.scene.Node getSquelchTailPane(){
-        if(mSquelchTailPane == null)
-        {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10, 10, 10, 10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
-
-            Label enableLabel = new Label("Enable");
-            GridPane.setHalignment(enableLabel, HPos.RIGHT);
-            GridPane.setConstraints(enableLabel, 0, 0);
-            gridPane.getChildren().add(enableLabel);
-
-            mSquelchTailEnabledSwitch = new ToggleSwitch();
-            mSquelchTailEnabledSwitch.selectedProperty()
-                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
-            GridPane.setConstraints(mSquelchTailEnabledSwitch, 1, 0);
-            gridPane.getChildren().add(mSquelchTailEnabledSwitch);
-
-            Label tailLabel = new Label("Tail Trim (ms)");
-            GridPane.setHalignment(tailLabel, HPos.RIGHT);
-            GridPane.setConstraints(tailLabel, 0, 1);
-            gridPane.getChildren().add(tailLabel);
-
-            mTailRemovalSpinner = new Spinner<>(0, 300, 100, 10);
-            mTailRemovalSpinner.setEditable(true);
-            mTailRemovalSpinner.setPrefWidth(100);
-            mTailRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from end of transmission (removes noise burst)"));
-            mTailRemovalSpinner.getValueFactory().valueProperty()
-                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
-            GridPane.setConstraints(mTailRemovalSpinner, 1, 1);
-            gridPane.getChildren().add(mTailRemovalSpinner);
-
-            Label headLabel = new Label("Head Trim (ms)");
-            GridPane.setHalignment(headLabel, HPos.RIGHT);
-            GridPane.setConstraints(headLabel, 2, 1);
-            gridPane.getChildren().add(headLabel);
-
-            mHeadRemovalSpinner = new Spinner<>(0, 150, 0, 10);
-            mHeadRemovalSpinner.setEditable(true);
-            mHeadRemovalSpinner.setPrefWidth(100);
-            mHeadRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from start of transmission (removes tone ramp-up)"));
-            mHeadRemovalSpinner.getValueFactory().valueProperty()
-                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
-            GridPane.setConstraints(mHeadRemovalSpinner, 3, 1);
-            gridPane.getChildren().add(mHeadRemovalSpinner);
-
-            Label hangtimeLabel = new Label("Hangtime (ms)");
-            hangtimeLabel.setTooltip(new Tooltip("Delay before closing audio segment after transmission ends.\n" +
-                    "Prevents cutting off the end of audio in ThinLine/Zello streams.\n" +
-                    "0 = immediate close (default), 100-300 = recommended for streaming"));
-            GridPane.setHalignment(hangtimeLabel, HPos.RIGHT);
-            GridPane.setConstraints(hangtimeLabel, 4, 1);
-            gridPane.getChildren().add(hangtimeLabel);
-
-            mAudioHangtimeSpinner = new Spinner<>(0, 2000, 0, 50);
-            mAudioHangtimeSpinner.setEditable(true);
-            mAudioHangtimeSpinner.setPrefWidth(100);
-            mAudioHangtimeSpinner.setTooltip(new Tooltip("Delay before closing audio segment (ms).\n" +
-                    "Prevents audio cutoff at end of transmissions.\n" +
-                    "0 = instant close, 100-300 = recommended for streaming"));
-            mAudioHangtimeSpinner.getValueFactory().valueProperty()
-                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
-            GridPane.setConstraints(mAudioHangtimeSpinner, 5, 1);
-            gridPane.getChildren().add(mAudioHangtimeSpinner);
-
-            javafx.scene.control.ScrollPane mSquelchTailPaneSp = new javafx.scene.control.ScrollPane(gridPane);
-            mSquelchTailPaneSp.setFitToWidth(true);
-            mSquelchTailPaneSp.setFitToHeight(true);
-            mSquelchTailPane = mSquelchTailPaneSp;
-        }
-        return mSquelchTailPane;
-    }
-
     // === Audio Filters pane ===
     private javafx.scene.Node getAudioFiltersPane(){
         if(mAudioFiltersPane == null)
@@ -417,12 +339,24 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 GridPane aiPane = new GridPane();
                 aiPane.setHgap(10);
                 aiPane.setVgap(5);
+
+                javafx.scene.layout.ColumnConstraints col1 = new javafx.scene.layout.ColumnConstraints();
+                col1.setHgrow(javafx.scene.layout.Priority.NEVER);
+                col1.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+
+                javafx.scene.layout.ColumnConstraints col2 = new javafx.scene.layout.ColumnConstraints();
+                col2.setHgrow(javafx.scene.layout.Priority.ALWAYS);
+                aiPane.getColumnConstraints().addAll(col1, col2);
+                aiPane.setMaxWidth(Double.MAX_VALUE);
+
                 mAIOptimizeButton = new javafx.scene.control.Button("AI Optimize Audio Filters");
                 mAIOptimizeButton.setStyle("-fx-font-weight: bold;");
                 mAIOptimizeButton.setOnAction(e -> handleAIOptimizeClick());
+                mAIOptimizeButton.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
                 GridPane.setConstraints(mAIOptimizeButton, 0, 0);
                 aiPane.getChildren().add(mAIOptimizeButton);
                 mAIOptimizeStatusLabel = new Label("Click to run Gemini AI analysis on this channel's audio");
+                mAIOptimizeStatusLabel.setWrapText(true);
                 GridPane.setConstraints(mAIOptimizeStatusLabel, 1, 0);
                 aiPane.getChildren().add(mAIOptimizeStatusLabel);
                 contentBox.getChildren().addAll(aiPane, new Separator());
@@ -432,16 +366,20 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             contentBox.getChildren().add(createLowPassSection());
             contentBox.getChildren().add(new Separator());
 
-            // 3. Hiss Reduction (high-shelf cut)
+            // 2. Hiss Reduction (high-shelf cut)
             contentBox.getChildren().add(createHissReductionSection());
             contentBox.getChildren().add(new Separator());
 
-            // 4. Bass Boost
+            // 3. Bass Boost
             contentBox.getChildren().add(createBassBoostSection());
             contentBox.getChildren().add(new Separator());
 
-            // 5. Voice Enhancement
+            // 4. Voice Enhancement
             contentBox.getChildren().add(createVoiceEnhanceSection());
+            contentBox.getChildren().add(new Separator());
+
+            // 5. Squelch Tail
+            contentBox.getChildren().add(createSquelchTailSection());
             contentBox.getChildren().add(new Separator());
 
             // 6. Intelligent Squelch
@@ -703,7 +641,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createVoiceEnhanceSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("5. Voice Enhancement");
+        Label title = new Label("4. Voice Enhancement");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -755,7 +693,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createBassBoostSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("4. Bass Boost");
+        Label title = new Label("3. Bass Boost");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -807,7 +745,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createHissReductionSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("3. Hiss Reduction");
+        Label title = new Label("2. Hiss Reduction");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -890,6 +828,67 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         return section;
     }
 
+    private VBox createSquelchTailSection()
+    {
+        VBox section = new VBox(5);
+        Label title = new Label("5. Squelch Tail Removal");
+        title.setFont(Font.font(null, FontWeight.BOLD, 12));
+        HBox titleBox = new HBox(5);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+        titleBox.getChildren().addAll(title, createHelpIcon("Trims the beginning or end of transmissions to remove noise bursts or tone ramp-ups. Hangtime adds a delay before closing audio."));
+
+        mSquelchTailEnabledSwitch = new ToggleSwitch("Enable Squelch Tail Removal");
+        mSquelchTailEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
+            if(!mLoadingConfiguration)
+            {
+                modifiedProperty().set(true);
+            }
+        });
+
+        GridPane controlsPane = new GridPane();
+        controlsPane.setHgap(10);
+        controlsPane.setVgap(5);
+
+        Label headLabel = new Label("Head Trim (ms):");
+        GridPane.setConstraints(headLabel, 0, 0);
+        controlsPane.getChildren().add(headLabel);
+
+        mHeadRemovalSpinner = new Spinner<>(0, 150, 0, 10);
+        mHeadRemovalSpinner.setEditable(true);
+        mHeadRemovalSpinner.setPrefWidth(100);
+        mHeadRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from start of transmission (removes tone ramp-up)"));
+        mHeadRemovalSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+        GridPane.setConstraints(mHeadRemovalSpinner, 1, 0);
+        controlsPane.getChildren().add(mHeadRemovalSpinner);
+
+        Label tailLabel = new Label("Tail Trim (ms):");
+        GridPane.setConstraints(tailLabel, 2, 0);
+        controlsPane.getChildren().add(tailLabel);
+
+        mTailRemovalSpinner = new Spinner<>(0, 300, 100, 10);
+        mTailRemovalSpinner.setEditable(true);
+        mTailRemovalSpinner.setPrefWidth(100);
+        mTailRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from end of transmission (removes noise burst)"));
+        mTailRemovalSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+        GridPane.setConstraints(mTailRemovalSpinner, 3, 0);
+        controlsPane.getChildren().add(mTailRemovalSpinner);
+
+        Label hangtimeLabel = new Label("Hangtime (ms):");
+        GridPane.setConstraints(hangtimeLabel, 0, 1);
+        controlsPane.getChildren().add(hangtimeLabel);
+
+        mAudioHangtimeSpinner = new Spinner<>(0, 1000, 0, 50);
+        mAudioHangtimeSpinner.setEditable(true);
+        mAudioHangtimeSpinner.setPrefWidth(100);
+        mAudioHangtimeSpinner.setTooltip(new Tooltip("Delay before closing audio segment after transmission ends.\nPrevents cutting off the end of audio in ThinLine/Zello streams.\n0 = immediate close (default), 100-300 = recommended for streaming"));
+        mAudioHangtimeSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+        GridPane.setConstraints(mAudioHangtimeSpinner, 1, 1);
+        controlsPane.getChildren().add(mAudioHangtimeSpinner);
+
+        section.getChildren().addAll(titleBox, mSquelchTailEnabledSwitch, controlsPane);
+        return section;
+    }
+
     private VBox createSquelchSection()
     {
         VBox section = new VBox(5);
@@ -908,27 +907,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mSquelchThresholdSlider.setDisable(!val);
                 mSquelchReductionSlider.setDisable(!val);
                 mHoldTimeSlider.setDisable(!val);
-                mAnalyzeButton.setDisable(!val);
             }
         });
-
-        // Analyze section (helps user find optimal threshold)
-        GridPane analyzePane = new GridPane();
-        analyzePane.setHgap(10);
-        analyzePane.setVgap(5);
-        analyzePane.setPadding(new Insets(5,0,10,0));
-
-        mAnalyzeButton = new javafx.scene.control.Button("Analyze Audio & Suggest Settings");
-        mAnalyzeButton.setTooltip(new Tooltip("Listen to audio for 5-10 seconds and suggest optimal threshold\nMake sure transmissions are active!"));
-        mAnalyzeButton.setStyle("-fx-font-weight: bold;");
-        mAnalyzeButton.setOnAction(e -> handleAnalyzeClick());
-        GridPane.setConstraints(mAnalyzeButton, 0, 0);
-        analyzePane.getChildren().add(mAnalyzeButton);
-
-        mAnalyzeStatusLabel = new Label("Click 'Analyze' while transmissions are active");
-        mAnalyzeStatusLabel.setStyle("-fx-text-fill: #666;");
-        GridPane.setConstraints(mAnalyzeStatusLabel, 1, 0);
-        analyzePane.getChildren().add(mAnalyzeStatusLabel);
 
         GridPane controlsPane = new GridPane();
         controlsPane.setHgap(10);
@@ -1012,7 +992,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         GridPane.setConstraints(mHoldTimeField, 2, 2);
         controlsPane.getChildren().add(mHoldTimeField);
 
-        section.getChildren().addAll(titleBox, mSquelchEnabledSwitch, analyzePane, controlsPane);
+        section.getChildren().addAll(titleBox, mSquelchEnabledSwitch, controlsPane);
         return section;
     }
 
@@ -1519,60 +1499,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         config.setNoiseGateHoldTime((int)mHoldTimeSlider.getValue());
     }
 
-    private void handleAnalyzeClick()
-    {
-        if (mAnalyzeButton.getText().equals("Analyze Audio & Suggest Settings")) {
-            // Start analysis
-            mAnalyzeButton.setText("Stop Analysis");
-            mAnalyzeStatusLabel.setText("Analyzing... listening to audio (10 seconds)");
-            mAnalyzeStatusLabel.setStyle("-fx-text-fill: #0066cc; -fx-font-weight: bold;");
-
-            // TODO: Get decoder's audio filter and start analyzing
-            // NBFMAudioFilters filter = getDecoderAudioFilter();
-            // filter.startAnalyzing();
-
-            // TODO: After 10 seconds (or when stopped), get results
-            // javafx.application.Platform.runLater(() -> {
-            //     float[] results = filter.stopAnalyzing();
-            //     if (results != null) {
-            //         float carrierMax = results[0];
-            //         float voiceMin = results[1];
-            //         float recommended = results[2];
-            //
-            //         mSquelchThresholdSlider.setValue(recommended);
-            //         mAnalyzeStatusLabel.setText(String.format(
-            //             "✅ Suggested: %.1f%% (Carrier: %.1f%%, Voice: %.1f%%)",
-            //             recommended, carrierMax, voiceMin));
-            //         mAnalyzeStatusLabel.setStyle("-fx-text-fill: #009900; -fx-font-weight: bold;");
-            //         modifiedProperty().set(true);
-            //     } else {
-            //         mAnalyzeStatusLabel.setText("⚠️ Not enough audio - try again with active transmissions");
-            //         mAnalyzeStatusLabel.setStyle("-fx-text-fill: #cc6600;");
-            //     }
-            //     mAnalyzeButton.setText("Analyze Audio & Suggest Settings");
-            // }, 10000);  // 10 second delay
-
-            // For now, just show a message after short delay
-            new javafx.animation.Timeline(new javafx.animation.KeyFrame(
-                javafx.util.Duration.millis(1000),
-                ae -> {
-                    mAnalyzeStatusLabel.setText("⚠️ Analysis requires decoder connection (not yet wired)");
-                    mAnalyzeStatusLabel.setStyle("-fx-text-fill: #cc6600;");
-                    mAnalyzeButton.setText("Analyze Audio & Suggest Settings");
-                }
-            )).play();
-
-        } else {
-            // Stop analysis
-            mAnalyzeButton.setText("Analyze Audio & Suggest Settings");
-            mAnalyzeStatusLabel.setText("Analysis stopped");
-            mAnalyzeStatusLabel.setStyle("-fx-text-fill: #666;");
-
-            // TODO: Stop analyzing
-            // filter.stopAnalyzing();
-        }
-    }
-
     private void handleAIOptimizeClick() {
         mAIOptimizeButton.setDisable(true);
         mAIOptimizeStatusLabel.setText("Analyzing...");
@@ -1605,6 +1531,10 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                     mSquelchEnabledSwitch.setSelected(result.isNoiseGateEnabled());
                     mSquelchThresholdSlider.setValue(result.getNoiseGateThreshold());
                     mSquelchReductionSlider.setValue(result.getNoiseGateReduction() * 100.0);
+                    mSquelchTailEnabledSwitch.setSelected(result.isSquelchTailRemovalEnabled());
+                    mTailRemovalSpinner.getValueFactory().setValue(result.getSquelchTailRemovalMs());
+                    mHeadRemovalSpinner.getValueFactory().setValue(result.getSquelchHeadRemovalMs());
+                    mHoldTimeSlider.setValue(result.getNoiseGateHoldTime());
 
                     mAIOptimizeStatusLabel.setText(result.getExplanation());
                     mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #009900;");

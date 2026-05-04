@@ -62,6 +62,14 @@ import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableRow;
+
+import javafx.scene.control.cell.ComboBoxTableCell;
+import javafx.scene.control.ColorPicker;
+
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -464,6 +472,14 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             TableColumn nameColumn = new TableColumn();
             nameColumn.setText("Alias");
             nameColumn.setCellValueFactory(new PropertyValueFactory<Alias, String>("name"));
+            nameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+            nameColumn.setOnEditCommit(new javafx.event.EventHandler<TableColumn.CellEditEvent<Alias, String>>() {
+                @Override
+                public void handle(TableColumn.CellEditEvent<Alias, String> event) {
+                    Alias alias = event.getRowValue();
+                    alias.setName(event.getNewValue());
+                }
+            });
             nameColumn.setPrefWidth(140);
             nameColumn.setId("alias.name");
 
@@ -476,16 +492,28 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             TableColumn<Alias, Integer> colorColumn = new TableColumn("Color");
             colorColumn.setCellValueFactory(new PropertyValueFactory<>("color"));
             colorColumn.setCellFactory(new ColorizedCell());
+            colorColumn.setOnEditCommit(event -> {
+                Alias alias = event.getRowValue();
+                alias.setColor(event.getNewValue());
+            });
             colorColumn.setId("alias.color");
 
             TableColumn<Alias, String> iconColumn = new TableColumn("Icon");
             iconColumn.setCellValueFactory(new PropertyValueFactory<>("iconName"));
             iconColumn.setCellFactory(new IconTableCellFactory());
+            iconColumn.setOnEditCommit(event -> {
+                Alias alias = event.getRowValue();
+                alias.setIconName(event.getNewValue());
+            });
             iconColumn.setId("alias.icon");
 
             TableColumn<Alias, Integer> priorityColumn = new TableColumn("Listen");
             priorityColumn.setCellFactory(new PriorityCellFactory());
             priorityColumn.setCellValueFactory(new PropertyValueFactory<>("priority"));
+            priorityColumn.setOnEditCommit(event -> {
+                Alias alias = event.getRowValue();
+                alias.setCallPriority(event.getNewValue());
+            });
             priorityColumn.setId("alias.listen");
 
             TableColumn<Alias, Boolean> recordColumn = new TableColumn("Record");
@@ -538,6 +566,42 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                     recordColumn, streamColumn, idsColumn, errorsColumn);
 
             mAliasTableView.setPlaceholder(getPlaceholderLabel());
+            mAliasTableView.setRowFactory(tableView -> {
+                TableRow<Alias> row = new TableRow<>();
+                ContextMenu contextMenu = new ContextMenu();
+
+                MenuItem toggleRecordItem = new MenuItem("Toggle Record");
+                toggleRecordItem.setOnAction(event -> {
+                    Alias alias = row.getItem();
+                    if (alias != null) {
+                        alias.setRecordable(!alias.isRecordable());
+                    }
+                });
+
+                MenuItem toggleListenItem = new MenuItem("Toggle Listen");
+                toggleListenItem.setOnAction(event -> {
+                    Alias alias = row.getItem();
+                    if (alias != null) {
+                        if (alias.getPlaybackPriority() == io.github.dsheirer.alias.id.priority.Priority.DO_NOT_MONITOR) {
+                            alias.setCallPriority(io.github.dsheirer.alias.id.priority.Priority.DEFAULT_PRIORITY);
+                        } else {
+                            alias.setCallPriority(io.github.dsheirer.alias.id.priority.Priority.DO_NOT_MONITOR);
+                        }
+                    }
+                });
+
+                contextMenu.getItems().addAll(toggleRecordItem, toggleListenItem);
+
+                // Only display context menu for non-empty rows
+                row.contextMenuProperty().bind(
+                        javafx.beans.binding.Bindings.when(row.emptyProperty())
+                        .then((ContextMenu) null)
+                        .otherwise(contextMenu));
+
+                return row;
+            });
+
+            mAliasTableView.setEditable(true);
             mAliasTableView.setItems(getAliasSortedList());
             mAliasTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
             mAliasTableView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<Alias>)c -> {
@@ -768,41 +832,76 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         @Override
         public TableCell<Alias, Integer> call(TableColumn<Alias, Integer> param)
         {
-            final Rectangle rectangle = new Rectangle(20, 20);
-            rectangle.setArcHeight(10);
-            rectangle.setArcWidth(10);
-
-            TableCell<Alias, Integer> tableCell = new TableCell<>()
+            return new TableCell<Alias, Integer>()
             {
+                private final Rectangle rectangle = new Rectangle(20, 20);
+                private ColorPicker colorPicker;
+
+                {
+                    rectangle.setArcHeight(10);
+                    rectangle.setArcWidth(10);
+                    setAlignment(Pos.CENTER);
+                }
+
+                @Override
+                public void startEdit()
+                {
+                    if (!isEmpty())
+                    {
+                        super.startEdit();
+                        if (colorPicker == null)
+                        {
+                            createColorPicker();
+                        }
+                        Alias alias = getTableRow().getItem();
+                        if (alias != null) {
+                            colorPicker.setValue(ColorUtil.fromInteger(alias.getColor()));
+                        }
+                        setGraphic(colorPicker);
+                        colorPicker.requestFocus();
+                        colorPicker.show();
+                    }
+                }
+
+                @Override
+                public void cancelEdit()
+                {
+                    super.cancelEdit();
+                    updateItem(getItem(), false);
+                }
+
                 @Override
                 protected void updateItem(Integer item, boolean empty)
                 {
                     super.updateItem(item, empty);
 
-                    if(!empty && getTableRow() != null)
+                    if(empty || getTableRow() == null || getTableRow().getItem() == null)
                     {
-                        Alias alias = getTableRow().getItem();
-
-                        if(alias != null)
-                        {
-                            rectangle.setVisible(true);
-                            rectangle.setFill(ColorUtil.fromInteger(alias.getColor()));
-                        }
-                        else
-                        {
-                            rectangle.setVisible(false);
-                        }
+                        setGraphic(null);
+                    }
+                    else if (isEditing())
+                    {
+                        setGraphic(colorPicker);
                     }
                     else
                     {
-                        rectangle.setVisible(false);
+                        Alias alias = getTableRow().getItem();
+                        rectangle.setVisible(true);
+                        rectangle.setFill(ColorUtil.fromInteger(alias.getColor()));
+                        setGraphic(rectangle);
                     }
                 }
-            };
-            tableCell.setAlignment(Pos.CENTER);
-            tableCell.setGraphic(rectangle);
 
-            return tableCell;
+                private void createColorPicker()
+                {
+                    colorPicker = new ColorPicker();
+                    colorPicker.setOnAction(event -> {
+                        if (isEditing()) {
+                            commitEdit(ColorUtil.toInteger(colorPicker.getValue()));
+                        }
+                    });
+                }
+            };
         }
     }
 

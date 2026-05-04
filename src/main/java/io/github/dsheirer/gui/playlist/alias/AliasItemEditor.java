@@ -68,6 +68,7 @@ import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.identifier.IntegerFormat;
 import io.github.dsheirer.protocol.Protocol;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -102,6 +103,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.SplitPane;
 
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
@@ -110,6 +112,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
@@ -135,6 +138,11 @@ public class AliasItemEditor extends Editor<Alias>
     private TextField mGroupField;
     private TextField mNameField;
     private GridPane mTextFieldPane;
+    private Label mAliasNameLabel;
+    private SplitPane mSplitPane;
+    private ListView<String> mSidebarList;
+    private StackPane mContentPane;
+    private java.util.Map<String, javafx.scene.Node> mConfigurationPanes = new java.util.LinkedHashMap<>();
     private Button mSaveButton;
     private Button mResetButton;
     private VBox mButtonBox;
@@ -193,23 +201,55 @@ public class AliasItemEditor extends Editor<Alias>
 
         setMaxWidth(Double.MAX_VALUE);
 
-        VBox vbox = new VBox();
-        vbox.getChildren().addAll(getTextFieldPane(), getTabPane());
+        VBox inspectorCard = new VBox(15);
+        inspectorCard.setPadding(new Insets(8));
+        inspectorCard.setMaxWidth(Double.MAX_VALUE);
 
-        ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(true);
-        scrollPane.setContent(vbox);
-        scrollPane.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
+        Label headerLabel = new Label("Alias Configuration :");
+        headerLabel.getStyleClass().add("preferences-section-header");
 
-        HBox hbox = new HBox();
-        hbox.setMaxWidth(Double.MAX_VALUE);
-        hbox.setSpacing(10);
-        HBox.setHgrow(scrollPane, Priority.ALWAYS);
-        HBox.setHgrow(getButtonBox(), Priority.NEVER);
-        hbox.getChildren().addAll(scrollPane, getButtonBox());
+        mAliasNameLabel = new Label("");
+        mAliasNameLabel.getStyleClass().add("preferences-section-header");
+        mAliasNameLabel.setPadding(new Insets(0, 0, 0, 5));
 
-        getChildren().add(hbox);
+        HBox actionBox = new HBox(10);
+        actionBox.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+        actionBox.getChildren().addAll(getResetButton(), getSaveButton());
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox headerBox = new HBox(headerLabel, mAliasNameLabel, spacer, actionBox);
+        headerBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        VBox.setVgrow(getSplitPane(), Priority.ALWAYS);
+        inspectorCard.getChildren().addAll(headerBox, getSplitPane());
+
+        javafx.scene.control.ScrollPane generalScroll = new javafx.scene.control.ScrollPane(getTextFieldPane());
+        generalScroll.setFitToWidth(true);
+        generalScroll.setFitToHeight(true);
+        generalScroll.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
+        addConfigurationPane("General", generalScroll);
+
+        javafx.scene.control.ScrollPane identifiersScroll = new javafx.scene.control.ScrollPane(getIdentifierPane());
+        identifiersScroll.setFitToWidth(true);
+        identifiersScroll.setFitToHeight(true);
+        identifiersScroll.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
+        addConfigurationPane("Identifiers", identifiersScroll);
+
+        javafx.scene.control.ScrollPane streamingScroll = new javafx.scene.control.ScrollPane(getStreamPane());
+        streamingScroll.setFitToWidth(true);
+        streamingScroll.setFitToHeight(true);
+        streamingScroll.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
+        addConfigurationPane("Streaming", streamingScroll);
+
+        javafx.scene.control.ScrollPane actionsScroll = new javafx.scene.control.ScrollPane(getActionPane());
+        actionsScroll.setFitToWidth(true);
+        actionsScroll.setFitToHeight(true);
+        actionsScroll.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
+        addConfigurationPane("Actions", actionsScroll);
+
+        getChildren().add(inspectorCard);
     }
 
 
@@ -281,7 +321,33 @@ public class AliasItemEditor extends Editor<Alias>
     @Override
     public void setItem(Alias alias)
     {
+        if(getItem() != null)
+        {
+            mAliasNameLabel.textProperty().unbind();
+            mAliasNameLabel.graphicProperty().unbind();
+        }
+
         super.setItem(alias);
+
+        if(alias != null)
+        {
+            mAliasNameLabel.textProperty().bind(Bindings.createStringBinding(() -> {
+                return alias.getName() != null ? " " + alias.getName() : "";
+            }, alias.nameProperty()));
+
+            mAliasNameLabel.graphicProperty().bind(Bindings.createObjectBinding(() -> {
+                if (alias.getIconName() != null) {
+                    Icon icon = mPlaylistManager.getIconModel().getIcon(alias.getIconName());
+                    if (icon != null && icon.getFxImage() != null) {
+                        ImageView iv = new ImageView(icon.getFxImage());
+                        iv.setFitHeight(24);
+                        iv.setFitWidth(24);
+                        return iv;
+                    }
+                }
+                return null;
+            }, alias.iconNameProperty()));
+        }
 
         mSuppressModification = true;
 
@@ -515,28 +581,53 @@ public class AliasItemEditor extends Editor<Alias>
         return mStreamAsTalkgroupField;
     }
 
-    private TabPane getTabPane()
+    protected SplitPane getSplitPane()
     {
-        if(mTabPane == null)
+        if(mSplitPane == null)
         {
-            mTabPane = new TabPane();
-
-            Tab identifierTab = new Tab("Identifiers");
-            identifierTab.setContent(getIdentifierPane());
-            identifierTab.setClosable(false);
-
-            Tab streamTab = new Tab("Streaming");
-            streamTab.setContent(getStreamPane());
-            streamTab.setClosable(false);
-
-            Tab actionTab = new Tab("Actions");
-            actionTab.setContent(getActionPane());
-            actionTab.setClosable(false);
-
-            mTabPane.getTabs().addAll(identifierTab, streamTab, actionTab);
+            mSplitPane = new SplitPane();
+            mSplitPane.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
+            mSplitPane.getItems().addAll(getSidebarList(), getContentPane());
+            mSplitPane.setDividerPositions(0.2);
+            mSplitPane.setMaxWidth(Double.MAX_VALUE);
+            mSplitPane.getStyleClass().add("invisible-divider");
         }
+        return mSplitPane;
+    }
 
-        return mTabPane;
+    protected ListView<String> getSidebarList()
+    {
+        if(mSidebarList == null)
+        {
+            mSidebarList = new ListView<>();
+            mSidebarList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue != null && mConfigurationPanes.containsKey(newValue)) {
+                    getContentPane().getChildren().setAll(mConfigurationPanes.get(newValue));
+                }
+            });
+            mSidebarList.setMinWidth(150);
+            mSidebarList.setPrefWidth(200);
+        }
+        return mSidebarList;
+    }
+
+    protected StackPane getContentPane()
+    {
+        if(mContentPane == null)
+        {
+            mContentPane = new StackPane();
+            mContentPane.setPadding(new Insets(0, 0, 0, 10)); // Add some padding between list and content
+        }
+        return mContentPane;
+    }
+
+    protected void addConfigurationPane(String name, javafx.scene.Node content)
+    {
+        mConfigurationPanes.put(name, content);
+        getSidebarList().getItems().add(name);
+        if (getSidebarList().getSelectionModel().getSelectedItem() == null) {
+            getSidebarList().getSelectionModel().select(name);
+        }
     }
 
     private HBox getIdentifierPane()
@@ -1176,73 +1267,92 @@ public class AliasItemEditor extends Editor<Alias>
         if(mTextFieldPane == null)
         {
             mTextFieldPane = new GridPane();
-            mTextFieldPane.setPadding(new Insets(10, 10, 10,10));
+            mTextFieldPane.setPadding(new Insets(10, 10, 10, 10));
             mTextFieldPane.setVgap(10);
             mTextFieldPane.setHgap(10);
 
             int row = 0;
 
+            // Alias Name
             Label nameLabel = new Label("Alias");
             nameLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(nameLabel, HPos.RIGHT);
             GridPane.setConstraints(nameLabel, 0, row);
             mTextFieldPane.getChildren().add(nameLabel);
+
             GridPane.setConstraints(getNameField(), 1, row);
             GridPane.setHgrow(getNameField(), Priority.ALWAYS);
             mTextFieldPane.getChildren().add(getNameField());
 
-            Label monitorAudioLabel = new Label("Listen");
-            monitorAudioLabel.setMinWidth(Region.USE_PREF_SIZE);
-            GridPane.setHalignment(monitorAudioLabel, HPos.RIGHT);
-            GridPane.setConstraints(monitorAudioLabel, 2, row);
-            mTextFieldPane.getChildren().add(monitorAudioLabel);
-            getMonitorAudioToggleSwitch().setMinWidth(Region.USE_PREF_SIZE);
-            GridPane.setConstraints(getMonitorAudioToggleSwitch(), 3, row);
-            mTextFieldPane.getChildren().add(getMonitorAudioToggleSwitch());
-
-            Label monitorPriorityLabel = new Label("Priority");
-            monitorPriorityLabel.setMinWidth(Region.USE_PREF_SIZE);
-            GridPane.setHalignment(monitorPriorityLabel, HPos.RIGHT);
-            GridPane.setConstraints(monitorPriorityLabel, 4, row);
-            mTextFieldPane.getChildren().add(monitorPriorityLabel);
-            getMonitorPriorityComboBox().setMinWidth(Region.USE_PREF_SIZE);
-            GridPane.setConstraints(getMonitorPriorityComboBox(), 5, row);
-            mTextFieldPane.getChildren().add(getMonitorPriorityComboBox());
-
-            Label colorLabel = new Label("Color");
-            colorLabel.setMinWidth(Region.USE_PREF_SIZE);
-            GridPane.setHalignment(colorLabel, HPos.RIGHT);
-            GridPane.setConstraints(colorLabel, 6, row);
-            mTextFieldPane.getChildren().add(colorLabel);
-            getColorPicker().setMinWidth(Region.USE_PREF_SIZE);
-            GridPane.setConstraints(getColorPicker(), 7, row);
-            mTextFieldPane.getChildren().add(getColorPicker());
-
+            // Group
             Label groupLabel = new Label("Group");
             groupLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(groupLabel, HPos.RIGHT);
             GridPane.setConstraints(groupLabel, 0, ++row);
             mTextFieldPane.getChildren().add(groupLabel);
+
             GridPane.setConstraints(getGroupField(), 1, row);
             GridPane.setHgrow(getGroupField(), Priority.ALWAYS);
             mTextFieldPane.getChildren().add(getGroupField());
 
+            // Listen Toggle
+            Label monitorAudioLabel = new Label("Listen");
+            monitorAudioLabel.setMinWidth(Region.USE_PREF_SIZE);
+            GridPane.setHalignment(monitorAudioLabel, HPos.RIGHT);
+            GridPane.setConstraints(monitorAudioLabel, 0, ++row);
+            mTextFieldPane.getChildren().add(monitorAudioLabel);
+
+            getMonitorAudioToggleSwitch().setMinWidth(Region.USE_PREF_SIZE);
+            GridPane.setConstraints(getMonitorAudioToggleSwitch(), 1, row);
+            GridPane.setHalignment(getMonitorAudioToggleSwitch(), HPos.LEFT);
+            mTextFieldPane.getChildren().add(getMonitorAudioToggleSwitch());
+
+            // Record Toggle
             Label recordAudioLabel = new Label("Record");
             recordAudioLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(recordAudioLabel, HPos.RIGHT);
-            GridPane.setConstraints(recordAudioLabel, 2, row);
+            GridPane.setConstraints(recordAudioLabel, 0, ++row);
             mTextFieldPane.getChildren().add(recordAudioLabel);
+
             getRecordAudioToggleSwitch().setMinWidth(Region.USE_PREF_SIZE);
-            GridPane.setConstraints(getRecordAudioToggleSwitch(), 3, row);
+            GridPane.setConstraints(getRecordAudioToggleSwitch(), 1, row);
+            GridPane.setHalignment(getRecordAudioToggleSwitch(), HPos.LEFT);
             mTextFieldPane.getChildren().add(getRecordAudioToggleSwitch());
 
+            // Priority
+            Label monitorPriorityLabel = new Label("Priority");
+            monitorPriorityLabel.setMinWidth(Region.USE_PREF_SIZE);
+            GridPane.setHalignment(monitorPriorityLabel, HPos.RIGHT);
+            GridPane.setConstraints(monitorPriorityLabel, 0, ++row);
+            mTextFieldPane.getChildren().add(monitorPriorityLabel);
+
+            getMonitorPriorityComboBox().setMinWidth(Region.USE_PREF_SIZE);
+            GridPane.setConstraints(getMonitorPriorityComboBox(), 1, row);
+            GridPane.setHalignment(getMonitorPriorityComboBox(), HPos.LEFT);
+            mTextFieldPane.getChildren().add(getMonitorPriorityComboBox());
+
+            // Color
+            Label colorLabel = new Label("Color");
+            colorLabel.setMinWidth(Region.USE_PREF_SIZE);
+            GridPane.setHalignment(colorLabel, HPos.RIGHT);
+            GridPane.setConstraints(colorLabel, 0, ++row);
+            mTextFieldPane.getChildren().add(colorLabel);
+
+            getColorPicker().setMinWidth(Region.USE_PREF_SIZE);
+            GridPane.setConstraints(getColorPicker(), 1, row);
+            GridPane.setHalignment(getColorPicker(), HPos.LEFT);
+            mTextFieldPane.getChildren().add(getColorPicker());
+
+            // Icon
             Label iconLabel = new Label("Icon");
             iconLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setHalignment(iconLabel, HPos.RIGHT);
-            GridPane.setConstraints(iconLabel, 4, row);
+            GridPane.setConstraints(iconLabel, 0, ++row);
             mTextFieldPane.getChildren().add(iconLabel);
+
             getIconNodeComboBox().setMinWidth(Region.USE_PREF_SIZE);
-            GridPane.setConstraints(getIconNodeComboBox(), 5, row, 3, 1);
+            GridPane.setConstraints(getIconNodeComboBox(), 1, row);
+            GridPane.setHalignment(getIconNodeComboBox(), HPos.LEFT);
             mTextFieldPane.getChildren().add(getIconNodeComboBox());
         }
 
@@ -1396,28 +1506,14 @@ public class AliasItemEditor extends Editor<Alias>
         return mNameField;
     }
 
-    private VBox getButtonBox()
-    {
-        if(mButtonBox == null)
-        {
-            mButtonBox = new VBox();
-            mButtonBox.setMinWidth(Region.USE_PREF_SIZE);
-            mButtonBox.setSpacing(10);
-            mButtonBox.setPadding(new Insets(10, 10, 10, 0));
-            mButtonBox.getChildren().addAll(getSaveButton(), getResetButton());
-            getSaveButton().setMinWidth(Region.USE_PREF_SIZE);
-            getResetButton().setMinWidth(Region.USE_PREF_SIZE);
-        }
 
-        return mButtonBox;
-    }
 
     private Button getSaveButton()
     {
         if(mSaveButton == null)
         {
-            mSaveButton = new Button(" Save ");
-            mSaveButton.setTextAlignment(TextAlignment.CENTER);
+            mSaveButton = new Button("     Save     ");
+            mSaveButton.getStyleClass().add("flat-button");
             mSaveButton.setMaxWidth(Double.MAX_VALUE);
             mSaveButton.disableProperty().bind(modifiedProperty().not());
             mSaveButton.setOnAction(event -> save());
@@ -1432,7 +1528,7 @@ public class AliasItemEditor extends Editor<Alias>
         if(mResetButton == null)
         {
             mResetButton = new Button("Reset");
-            mResetButton.setTextAlignment(TextAlignment.CENTER);
+            mResetButton.getStyleClass().add("flat-button");
             mResetButton.setMaxWidth(Double.MAX_VALUE);
             mResetButton.disableProperty().bind(modifiedProperty().not());
             mResetButton.setOnAction(event -> {
