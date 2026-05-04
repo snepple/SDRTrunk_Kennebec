@@ -1030,6 +1030,68 @@ public class RTL2832TunerController extends USBTunerController implements ISampl
      * Label 3: serial
      * Label 4,5 ... (user defined)
      */
+        /**
+     * Updates the serial number string in the tuner's 256-byte EEPROM.
+     * Rebuilds the descriptor label section while keeping vendor and product labels.
+     */
+    public void setSerialNumber(String newSerial) throws IllegalArgumentException, LibUsbException
+    {
+        if(newSerial == null) {
+            newSerial = "";
+        }
+
+        byte[] eeprom = readEEPROM((short) 0, 256);
+        Descriptor desc = new Descriptor(eeprom);
+
+        // Ensure serial presence indicator is set
+        eeprom[6] = (byte) 0xA5;
+
+        // Collect existing labels
+        ArrayList<String> labels = desc.mLabels;
+        String vendor = labels.size() > 0 ? labels.get(0) : "Generic";
+        String product = labels.size() > 1 ? labels.get(1) : "RTL2832U";
+
+        // Keep user defined labels if they exist
+        ArrayList<String> newLabels = new ArrayList<>();
+        newLabels.add(vendor);
+        newLabels.add(product);
+        newLabels.add(newSerial);
+        for (int i = 3; i < labels.size(); i++) {
+            newLabels.add(labels.get(i));
+        }
+
+        // Reconstruct the EEPROM labels starting at 0x09
+        int offset = 0x09;
+        for (String label : newLabels) {
+            byte[] strBytes = label.getBytes(java.nio.charset.StandardCharsets.UTF_16LE);
+            int len = strBytes.length + 2; // length byte + 0x03 byte + string bytes
+            if (offset + len > 256) {
+                mLog.warn("EEPROM size exceeded, truncating labels.");
+                break;
+            }
+            eeprom[offset++] = (byte) len;
+            eeprom[offset++] = (byte) 0x03;
+            for (byte b : strBytes) {
+                eeprom[offset++] = b;
+            }
+        }
+
+        // Zero out the rest of the EEPROM
+        while (offset < 256) {
+            eeprom[offset++] = 0x00;
+        }
+
+        // Write to device
+        for (int i = 0x06; i < 256; i++) {
+            writeEEPROMByte((byte) i, eeprom[i]);
+            try {
+                Thread.sleep(5);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
     public byte[] readEEPROM(short offset, int length) throws IllegalArgumentException
     {
         if(offset + length > 256)
@@ -1316,7 +1378,7 @@ public class RTL2832TunerController extends USBTunerController implements ISampl
     public class Descriptor
     {
         private byte[] mData;
-        private ArrayList<String> mLabels = new ArrayList<String>();
+        public ArrayList<String> mLabels = new ArrayList<String>();
 
         public Descriptor(byte[] data)
         {
