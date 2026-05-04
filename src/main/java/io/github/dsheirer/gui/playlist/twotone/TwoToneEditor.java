@@ -291,7 +291,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         mqttGrid.add(new Label("MQTT Payload:"), 0, 2);
         mqttGrid.add(payloadArea, 1, 2);
 
-
+        SplitPane centerSplitPane = new SplitPane();
+        VBox rightPane = new VBox(10);
+        rightPane.setPadding(new Insets(10));
         mTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if(mAliasEditor != null) mAliasEditor.setTwoToneConfiguration(newVal);
 
@@ -341,6 +343,10 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.valueProperty().bindBidirectional(newVal.zelloAlertFileProperty());
                 templateField.textProperty().bindBidirectional(newVal.templateProperty());
                 textMessageCheck.selectedProperty().bindBidirectional(newVal.enableZelloTextMessageProperty());
+                if (!centerSplitPane.getItems().contains(rightPane)) {
+                    centerSplitPane.getItems().add(rightPane);
+                    centerSplitPane.setDividerPositions(0.4);
+                }
             } else {
                 aliasField.clear();
                 toneAField.getEditor().clear();
@@ -356,6 +362,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.getSelectionModel().clearSelection();
                 templateField.clear();
                 textMessageCheck.setSelected(false);
+                if (centerSplitPane.getItems().contains(rightPane)) {
+                    centerSplitPane.getItems().remove(rightPane);
+                }
             }
             updatePreview.run();
         });
@@ -385,9 +394,8 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         HBox.setHgrow(mTableView, Priority.ALWAYS);
         VBox.setVgrow(mTableView, Priority.ALWAYS);
 
-        MenuButton newBtn = new MenuButton("New");
-        MenuItem newDetectorItem = new MenuItem("Detector");
-        newDetectorItem.setOnAction(e -> {
+        Button newBtn = new Button("New Detector");
+        newBtn.setOnAction(e -> {
             TwoToneConfiguration conf = new TwoToneConfiguration();
             conf.setAlias("New Detector");
             mObservableConfigs.add(conf);
@@ -395,7 +403,6 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             mTableView.getSelectionModel().select(conf);
             mTableView.scrollTo(conf);
         });
-        newBtn.getItems().add(newDetectorItem);
 
         Button delBtn = new Button("Delete");
         delBtn.setOnAction(e -> {
@@ -437,8 +444,6 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         leftPane.getChildren().addAll(new Label("Two Tone Paging Detectors"), mTableView);
 
         // Right Pane (Detail): Configuration Tabs -> TitledPanes
-        VBox rightPane = new VBox(10);
-        rightPane.setPadding(new Insets(10));
 
         mAliasEditor = new TwoToneAliasSelectionEditor(mPlaylistManager);
 
@@ -484,9 +489,11 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         rightPane.getChildren().add(tabPane);
 
         // Add to SplitPane
-        SplitPane centerSplitPane = new SplitPane();
-        centerSplitPane.getItems().addAll(leftPane, rightPane);
-        centerSplitPane.setDividerPositions(0.4);
+        centerSplitPane.getItems().add(leftPane);
+        if (mTableView.getSelectionModel().getSelectedItem() != null) {
+            centerSplitPane.getItems().add(rightPane);
+            centerSplitPane.setDividerPositions(0.4);
+        }
         setCenter(centerSplitPane);
     }
     private void syncToPlaylist() {
