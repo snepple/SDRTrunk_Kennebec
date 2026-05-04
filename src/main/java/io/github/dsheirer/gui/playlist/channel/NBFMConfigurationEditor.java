@@ -145,8 +145,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private AuxDecoderConfigurationEditor mAuxDecoderConfigurationEditor;
     private EventLogConfigurationEditor mEventLogConfigurationEditor;
     private final TalkgroupValueChangeListener mTalkgroupValueChangeListener = new TalkgroupValueChangeListener();
-    private final IntegerFormatter mDecimalFormatter = new IntegerFormatter(1, Integer.MAX_VALUE);
-    private final HexFormatter mHexFormatter = new HexFormatter(1, Integer.MAX_VALUE);
+    private final IntegerFormatter mDecimalFormatter = new IntegerFormatter(1, -1);
+    private final HexFormatter mHexFormatter = new HexFormatter(1, -1);
 
     /**
      * Constructs an instance
@@ -1137,12 +1137,12 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         if(format == IntegerFormat.DECIMAL)
         {
             mTalkgroupTextFormatter = mDecimalFormatter;
-            getTalkgroupField().setTooltip(new Tooltip("1 - 2,147,483,647"));
+            getTalkgroupField().setTooltip(new Tooltip("1 - 4,294,967,295"));
         }
         else
         {
-            mTalkgroupTextFormatter = mDecimalFormatter;
-            getTalkgroupField().setTooltip(new Tooltip("1 - FFFF"));
+            mTalkgroupTextFormatter = mHexFormatter;
+            getTalkgroupField().setTooltip(new Tooltip("1 - FFFFFFFF"));
         }
 
         mTalkgroupTextFormatter.setValue(value);
@@ -1289,13 +1289,13 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 int tg;
                 if(format == IntegerFormat.HEXADECIMAL)
                 {
-                    tg = Integer.parseInt(tgText.trim(), 16);
+                    tg = Integer.parseUnsignedInt(tgText.trim(), 16);
                 }
                 else
                 {
-                    tg = Integer.parseInt(tgText.trim());
+                    tg = Integer.parseUnsignedInt(tgText.trim());
                 }
-                if(tg >= 1 && tg <= 65535)
+                if(io.github.dsheirer.alias.id.talkgroup.TalkgroupFormat.NBFM.isValid(tg))
                 {
                     return tg;
                 }

@@ -35,17 +35,17 @@ public abstract class AbstractIntegerFormatter
 
     public static String toHex(int value)
     {
-        return Integer.toHexString(value).toUpperCase();
+        return Integer.toUnsignedString(value, 16).toUpperCase();
     }
 
     public static String toHex(int value, int width)
     {
-        return String.format("%0" + width + "X", value);
+        return String.format("%0" + width + "X", value & 0xFFFFFFFFL);
     }
 
     public static String toDecimal(int value, int width)
     {
-        return String.format("%0" + width + "d", value);
+        return String.format("%0" + width + "d", value & 0xFFFFFFFFL);
     }
 
     /**
@@ -55,7 +55,7 @@ public abstract class AbstractIntegerFormatter
      */
     public String format(int value)
     {
-        return String.valueOf(value);
+        return Integer.toUnsignedString(value);
     }
 
     public abstract String format(int value, IntegerFormat integerFormat);
@@ -69,7 +69,7 @@ public abstract class AbstractIntegerFormatter
     {
         try
         {
-            return Integer.parseInt(formattedValue.trim());
+            return Integer.parseUnsignedInt(formattedValue.trim());
         }
         catch(Exception e)
         {
