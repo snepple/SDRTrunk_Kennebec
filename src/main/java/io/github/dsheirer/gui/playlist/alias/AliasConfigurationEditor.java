@@ -47,6 +47,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.CheckMenuItem;
@@ -478,6 +480,9 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                 public void handle(TableColumn.CellEditEvent<Alias, String> event) {
                     Alias alias = event.getRowValue();
                     alias.setName(event.getNewValue());
+                    if (mAliasTableView.getSelectionModel().getSelectedItem() == alias) {
+                        getAliasItemEditor().setItem(alias);
+                    }
                 }
             });
             nameColumn.setPrefWidth(140);
@@ -486,6 +491,17 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             TableColumn groupColumn = new TableColumn();
             groupColumn.setText("Group");
             groupColumn.setCellValueFactory(new PropertyValueFactory<>("group"));
+            groupColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+            groupColumn.setOnEditCommit(new javafx.event.EventHandler<TableColumn.CellEditEvent<Alias, String>>() {
+                @Override
+                public void handle(TableColumn.CellEditEvent<Alias, String> event) {
+                    Alias alias = event.getRowValue();
+                    alias.setGroup(event.getNewValue());
+                    if (mAliasTableView.getSelectionModel().getSelectedItem() == alias) {
+                        getAliasItemEditor().setItem(alias);
+                    }
+                }
+            });
             groupColumn.setPrefWidth(140);
             groupColumn.setId("alias.group");
 
@@ -504,6 +520,9 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             iconColumn.setOnEditCommit(event -> {
                 Alias alias = event.getRowValue();
                 alias.setIconName(event.getNewValue());
+                if (mAliasTableView.getSelectionModel().getSelectedItem() == alias) {
+                    getAliasItemEditor().setItem(alias);
+                }
             });
             iconColumn.setId("alias.icon");
 
@@ -513,8 +532,23 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             priorityColumn.setOnEditCommit(event -> {
                 Alias alias = event.getRowValue();
                 alias.setCallPriority(event.getNewValue());
+                if (mAliasTableView.getSelectionModel().getSelectedItem() == alias) {
+                    getAliasItemEditor().setItem(alias);
+                }
             });
             priorityColumn.setId("alias.listen");
+
+            TableColumn<Alias, Integer> configuredPriorityColumn = new TableColumn("Priority");
+            configuredPriorityColumn.setCellFactory(new PriorityCellFactory());
+            configuredPriorityColumn.setCellValueFactory(new PropertyValueFactory<>("priority"));
+            configuredPriorityColumn.setOnEditCommit(event -> {
+                Alias alias = event.getRowValue();
+                alias.setCallPriority(event.getNewValue());
+                if (mAliasTableView.getSelectionModel().getSelectedItem() == alias) {
+                    getAliasItemEditor().setItem(alias);
+                }
+            });
+            configuredPriorityColumn.setId("alias.priority");
 
             TableColumn<Alias, Boolean> recordColumn = new TableColumn("Record");
             recordColumn.setCellValueFactory(new PropertyValueFactory<>("recordable"));
@@ -563,7 +597,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
 
 
             mAliasTableView.getColumns().addAll(nameColumn, groupColumn, colorColumn, iconColumn, priorityColumn,
-                    recordColumn, streamColumn, idsColumn, errorsColumn);
+                    configuredPriorityColumn, recordColumn, streamColumn, idsColumn, errorsColumn);
 
             mAliasTableView.setPlaceholder(getPlaceholderLabel());
             mAliasTableView.setRowFactory(tableView -> {
@@ -591,6 +625,14 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                 });
 
                 contextMenu.getItems().addAll(toggleRecordItem, toggleListenItem);
+
+                contextMenu.setOnShowing(event -> {
+                    Alias alias = row.getItem();
+                    if (alias != null) {
+                        toggleRecordItem.setText(alias.isRecordable() ? "Disable Record" : "Enable Record");
+                        toggleListenItem.setText(alias.getPlaybackPriority() != io.github.dsheirer.alias.id.priority.Priority.DO_NOT_MONITOR ? "Disable Listen" : "Enable Listen");
+                    }
+                });
 
                 // Only display context menu for non-empty rows
                 row.contextMenuProperty().bind(
@@ -1001,44 +1043,128 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         @Override
         public TableCell<Alias, Integer> call(TableColumn<Alias, Integer> param)
         {
-            TableCell tableCell = new TableCell<Alias, Integer>()
+            return new TableCell<Alias, Integer>()
             {
+                private ComboBox<Integer> comboBox;
+
+                {
+                    setAlignment(Pos.CENTER);
+                }
+
+                @Override
+                public void startEdit()
+                {
+                    if (!isEmpty())
+                    {
+                        super.startEdit();
+                        if (comboBox == null)
+                        {
+                            createComboBox();
+                        }
+                        comboBox.getSelectionModel().select(getItem());
+                        setGraphic(comboBox);
+                        setText(null);
+                        comboBox.requestFocus();
+                        comboBox.show();
+                    }
+                }
+
+                @Override
+                public void cancelEdit()
+                {
+                    super.cancelEdit();
+                    updateItem(getItem(), false);
+                }
+
+                private void createComboBox()
+                {
+                    comboBox = new ComboBox<>();
+                    comboBox.getItems().add(io.github.dsheirer.alias.id.priority.Priority.DO_NOT_MONITOR);
+                    comboBox.getItems().add(io.github.dsheirer.alias.id.priority.Priority.DEFAULT_PRIORITY);
+                    for(int x = io.github.dsheirer.alias.id.priority.Priority.MIN_PRIORITY; x < io.github.dsheirer.alias.id.priority.Priority.MAX_PRIORITY; x++)
+                    {
+                        comboBox.getItems().add(x);
+                    }
+
+                    Callback<ListView<Integer>, ListCell<Integer>> cellFactory = new Callback<>() {
+                        @Override
+                        public ListCell<Integer> call(ListView<Integer> param) {
+                            return new ListCell<>() {
+                                @Override
+                                protected void updateItem(Integer item, boolean empty) {
+                                    super.updateItem(item, empty);
+                                    if (empty || item == null) {
+                                        setText(null);
+                                    } else if (item == io.github.dsheirer.alias.id.priority.Priority.DO_NOT_MONITOR) {
+                                        setText("Mute");
+                                    } else if (item == io.github.dsheirer.alias.id.priority.Priority.DEFAULT_PRIORITY) {
+                                        setText("Default");
+                                    } else {
+                                        setText(item.toString());
+                                    }
+                                }
+                            };
+                        }
+                    };
+                    comboBox.setCellFactory(cellFactory);
+                    comboBox.setButtonCell(cellFactory.call(null));
+
+                    comboBox.setOnAction(event -> {
+                        if (isEditing()) {
+                            commitEdit(comboBox.getSelectionModel().getSelectedItem());
+                        }
+                    });
+                }
+
                 @Override
                 protected void updateItem(Integer item, boolean empty)
                 {
-                    if(empty)
+                    super.updateItem(item, empty);
+
+                    if(empty || getTableRow() == null || getTableRow().getItem() == null)
                     {
                         setText(null);
                         setGraphic(null);
                     }
-                    else if(item == io.github.dsheirer.alias.id.priority.Priority.DO_NOT_MONITOR)
+                    else if (isEditing())
                     {
-                        setText("Mute");
-                        final IconNode iconNode = new IconNode(FontAwesome.VOLUME_OFF);
-                        iconNode.setIconSize(20);
-                        iconNode.setFill(Color.RED);
-                        setGraphic(iconNode);
-                    }
-                    else if(item == io.github.dsheirer.alias.id.priority.Priority.DEFAULT_PRIORITY)
-                    {
-                        setText("Default");
-                        final IconNode iconNode = new IconNode(FontAwesome.VOLUME_UP);
-                        iconNode.setIconSize(20);
-                        iconNode.setFill(Color.GREEN);
-                        setGraphic(iconNode);
+                        setGraphic(comboBox);
+                        setText(null);
                     }
                     else
                     {
-                        setText(item.toString());
-                        final IconNode iconNode = new IconNode(FontAwesome.VOLUME_UP);
-                        iconNode.setIconSize(20);
-                        iconNode.setFill(Color.GREEN);
-                        setGraphic(iconNode);
+                        if(item == null) {
+                            setText(null);
+                            setGraphic(null);
+                            return;
+                        }
+                        if(item == io.github.dsheirer.alias.id.priority.Priority.DO_NOT_MONITOR)
+                        {
+                            setText("Mute");
+                            final IconNode iconNode = new IconNode(FontAwesome.VOLUME_OFF);
+                            iconNode.setIconSize(20);
+                            iconNode.setFill(Color.RED);
+                            setGraphic(iconNode);
+                        }
+                        else if(item == io.github.dsheirer.alias.id.priority.Priority.DEFAULT_PRIORITY)
+                        {
+                            setText("Default");
+                            final IconNode iconNode = new IconNode(FontAwesome.VOLUME_UP);
+                            iconNode.setIconSize(20);
+                            iconNode.setFill(Color.GREEN);
+                            setGraphic(iconNode);
+                        }
+                        else
+                        {
+                            setText(item.toString());
+                            final IconNode iconNode = new IconNode(FontAwesome.VOLUME_UP);
+                            iconNode.setIconSize(20);
+                            iconNode.setFill(Color.GREEN);
+                            setGraphic(iconNode);
+                        }
                     }
                 }
             };
-
-            return tableCell;
         }
     }
 
@@ -1047,46 +1173,118 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         @Override
         public TableCell<Alias, String> call(TableColumn<Alias, String> param)
         {
-            TableCell<Alias, String> tableCell = new TableCell<>()
+            return new TableCell<Alias, String>()
             {
+                private ComboBox<io.github.dsheirer.icon.Icon> comboBox;
+                private ImageView imageView;
+
+                {
+                    setAlignment(Pos.CENTER);
+                    imageView = new ImageView();
+                    imageView.setFitHeight(16);
+                    imageView.setFitWidth(16);
+                }
+
+                @Override
+                public void startEdit()
+                {
+                    if (!isEmpty())
+                    {
+                        super.startEdit();
+                        if (comboBox == null)
+                        {
+                            createComboBox();
+                        }
+                        Alias alias = getTableRow().getItem();
+                        if (alias != null) {
+                            io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(alias.getIconName());
+                            comboBox.getSelectionModel().select(icon);
+                        }
+                        setGraphic(comboBox);
+                        comboBox.requestFocus();
+                        comboBox.show();
+                    }
+                }
+
+                @Override
+                public void cancelEdit()
+                {
+                    super.cancelEdit();
+                    updateItem(getItem(), false);
+                }
+
+                private void createComboBox()
+                {
+                    comboBox = new ComboBox<>();
+                    comboBox.setItems(new javafx.collections.transformation.SortedList<>(mPlaylistManager.getIconModel().iconsProperty(), com.google.common.collect.Ordering.natural()));
+                    Callback<ListView<io.github.dsheirer.icon.Icon>, ListCell<io.github.dsheirer.icon.Icon>> cellFactory = new Callback<>() {
+                        @Override
+                        public ListCell<io.github.dsheirer.icon.Icon> call(ListView<io.github.dsheirer.icon.Icon> param) {
+                            return new ListCell<>() {
+                                private ImageView iv = new ImageView();
+                                {
+                                    iv.setFitWidth(16);
+                                    iv.setFitHeight(16);
+                                }
+                                @Override
+                                protected void updateItem(io.github.dsheirer.icon.Icon item, boolean empty) {
+                                    super.updateItem(item, empty);
+                                    if (empty || item == null) {
+                                        setText(null);
+                                        setGraphic(null);
+                                    } else {
+                                        setText(item.getName());
+                                        iv.setImage(item.getFxImage());
+                                        setGraphic(iv);
+                                    }
+                                }
+                            };
+                        }
+                    };
+                    comboBox.setCellFactory(cellFactory);
+                    comboBox.setButtonCell(cellFactory.call(null));
+
+                    comboBox.setOnAction(event -> {
+                        if (isEditing()) {
+                            io.github.dsheirer.icon.Icon selected = comboBox.getValue();
+                            commitEdit(selected != null ? selected.getName() : null);
+                        }
+                    });
+                }
+
                 @Override
                 protected void updateItem(String item, boolean empty)
                 {
                     super.updateItem(item, empty);
-                    setAlignment(Pos.CENTER);
 
-                    if(empty)
+                    if(empty || getTableRow() == null || getTableRow().getItem() == null)
                     {
                         setGraphic(null);
                     }
+                    else if (isEditing())
+                    {
+                        setGraphic(comboBox);
+                    }
                     else
                     {
-                        if(getTableRow() != null)
+                        Alias alias = getTableRow().getItem();
+                        if(alias != null)
                         {
-                            Alias alias = getTableRow().getItem();
+                            io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(alias.getIconName());
 
-                            if(alias != null)
+                            if(icon != null && icon.getFxImage() != null)
                             {
-                                Icon icon = mPlaylistManager.getIconModel().getIcon(alias.getIconName());
-
-                                if(icon != null && icon.getFxImage() != null)
-                                {
-                                    ImageView iv = new ImageView(icon.getFxImage());
-                                    iv.setFitHeight(16);
-                                    iv.setFitWidth(16);
-                                    setGraphic(iv);
-                                }
-                                else
-                                {
-                                    setGraphic(null);
-                                }
+                                imageView.setImage(icon.getFxImage());
+                                setGraphic(imageView);
+                            }
+                            else
+                            {
+                                setGraphic(null);
                             }
                         }
                     }
                 }
             };
-
-            return tableCell;
         }
     }
 
