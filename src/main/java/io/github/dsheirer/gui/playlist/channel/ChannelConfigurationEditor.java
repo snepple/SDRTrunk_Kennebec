@@ -22,6 +22,7 @@ package io.github.dsheirer.gui.playlist.channel;
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.controller.channel.Channel;
 import io.github.dsheirer.controller.channel.ChannelException;
+import io.github.dsheirer.controller.channel.ChannelAlertConfiguration;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.control.MaxLengthUnaryOperator;
 import io.github.dsheirer.gui.playlist.Editor;
@@ -99,6 +100,13 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     private ComboBox<String> mAliasListComboBox;
     private Button mNewAliasListButton;
     private GridPane mTextFieldPane;
+    private VBox mAlertsPane;
+    private ToggleSwitch mInactivityAlertEnabledSwitch;
+    private Spinner<Integer> mInactivityDurationSpinner;
+    private ToggleSwitch mAiAudioMonitoringEnabledSwitch;
+    private Spinner<Integer> mAiAudioMonitoringCheckIntervalSpinner;
+    private ToggleSwitch mAiAudioMonitoringWaitNewAudioSwitch;
+    private Spinner<Integer> mAiAudioMonitoringAlertThresholdSpinner;
     private Button mSaveButton;
     private Button mResetButton;
     private VBox mButtonBox;
@@ -154,6 +162,12 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
         VBox.setVgrow(getSplitPane(), Priority.ALWAYS);
         inspectorCard.getChildren().addAll(headerBox, getSplitPane());
+
+        // Setup Alerts Pane
+        javafx.scene.control.ScrollPane alertsScroll = new javafx.scene.control.ScrollPane(getAlertsPane());
+        alertsScroll.setFitToWidth(true);
+        alertsScroll.setFitToHeight(true);
+        addConfigurationPane("Alerts", alertsScroll);
 
         // Setup General Pane
         javafx.scene.control.ScrollPane generalScroll = new javafx.scene.control.ScrollPane(getTextFieldPane());
@@ -293,6 +307,12 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                 recordConfiguration = new RecordConfiguration();
             }
             setRecordConfiguration(recordConfiguration);
+            ChannelAlertConfiguration alertConfiguration = channel.getAlertConfiguration();
+            if(alertConfiguration == null) {
+                alertConfiguration = new ChannelAlertConfiguration();
+                channel.setAlertConfiguration(alertConfiguration);
+            }
+            setAlertConfiguration(alertConfiguration);
         }
         else
         {
@@ -310,6 +330,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             setEventLogConfiguration(null);
             setRecordConfiguration(null);
             setSourceConfiguration(null);
+            setAlertConfiguration(null);
         }
 
         modifiedProperty().setValue(false);
@@ -345,9 +366,163 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             saveEventLogConfiguration();
             saveRecordConfiguration();
             saveSourceConfiguration();
+            saveAlertConfiguration();
 
             modifiedProperty().set(false);
         }
+    }
+
+
+    protected void setAlertConfiguration(ChannelAlertConfiguration config) {
+        if(config != null) {
+            getInactivityAlertEnabledSwitch().setDisable(false);
+            getInactivityAlertEnabledSwitch().setSelected(config.isInactivityAlertEnabled());
+
+            getInactivityDurationSpinner().setDisable(!config.isInactivityAlertEnabled());
+            getInactivityDurationSpinner().getValueFactory().setValue(config.getInactivityDurationThresholdMinutes());
+
+            getAiAudioMonitoringEnabledSwitch().setDisable(false);
+            getAiAudioMonitoringEnabledSwitch().setSelected(config.isAiAudioMonitoringEnabled());
+
+            getAiAudioMonitoringCheckIntervalSpinner().setDisable(!config.isAiAudioMonitoringEnabled());
+            getAiAudioMonitoringCheckIntervalSpinner().getValueFactory().setValue(config.getAiAudioMonitoringCheckInterval());
+
+            getAiAudioMonitoringWaitNewAudioSwitch().setDisable(!config.isAiAudioMonitoringEnabled());
+            getAiAudioMonitoringWaitNewAudioSwitch().setSelected(config.isAiAudioMonitoringWaitNewAudio());
+
+            getAiAudioMonitoringAlertThresholdSpinner().setDisable(!config.isAiAudioMonitoringEnabled());
+            getAiAudioMonitoringAlertThresholdSpinner().getValueFactory().setValue(config.getAiAudioMonitoringAlertThreshold());
+        } else {
+            getInactivityAlertEnabledSwitch().setDisable(true);
+            getInactivityAlertEnabledSwitch().setSelected(false);
+            getInactivityDurationSpinner().setDisable(true);
+
+            getAiAudioMonitoringEnabledSwitch().setDisable(true);
+            getAiAudioMonitoringEnabledSwitch().setSelected(false);
+            getAiAudioMonitoringCheckIntervalSpinner().setDisable(true);
+            getAiAudioMonitoringWaitNewAudioSwitch().setDisable(true);
+            getAiAudioMonitoringWaitNewAudioSwitch().setSelected(false);
+            getAiAudioMonitoringAlertThresholdSpinner().setDisable(true);
+        }
+    }
+
+    protected void saveAlertConfiguration() {
+        if(getItem() != null) {
+            ChannelAlertConfiguration config = getItem().getAlertConfiguration();
+            if(config == null) {
+                config = new ChannelAlertConfiguration();
+                getItem().setAlertConfiguration(config);
+            }
+            config.setInactivityAlertEnabled(getInactivityAlertEnabledSwitch().isSelected());
+            config.setInactivityDurationThresholdMinutes(getInactivityDurationSpinner().getValue());
+            config.setAiAudioMonitoringEnabled(getAiAudioMonitoringEnabledSwitch().isSelected());
+            config.setAiAudioMonitoringCheckInterval(getAiAudioMonitoringCheckIntervalSpinner().getValue());
+            config.setAiAudioMonitoringWaitNewAudio(getAiAudioMonitoringWaitNewAudioSwitch().isSelected());
+            config.setAiAudioMonitoringAlertThreshold(getAiAudioMonitoringAlertThresholdSpinner().getValue());
+        }
+    }
+
+    private ToggleSwitch getInactivityAlertEnabledSwitch() {
+        if(mInactivityAlertEnabledSwitch == null) {
+            mInactivityAlertEnabledSwitch = new ToggleSwitch("Enable Alert");
+            mInactivityAlertEnabledSwitch.selectedProperty().addListener((obs, old, newValue) -> {
+                modifiedProperty().set(true);
+                getInactivityDurationSpinner().setDisable(!newValue);
+            });
+        }
+        return mInactivityAlertEnabledSwitch;
+    }
+
+    private Spinner<Integer> getInactivityDurationSpinner() {
+        if(mInactivityDurationSpinner == null) {
+            mInactivityDurationSpinner = new Spinner<>();
+            mInactivityDurationSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1440, 10));
+            mInactivityDurationSpinner.setEditable(true);
+            mInactivityDurationSpinner.valueProperty().addListener((obs, old, newValue) -> modifiedProperty().set(true));
+        }
+        return mInactivityDurationSpinner;
+    }
+
+    private ToggleSwitch getAiAudioMonitoringEnabledSwitch() {
+        if(mAiAudioMonitoringEnabledSwitch == null) {
+            mAiAudioMonitoringEnabledSwitch = new ToggleSwitch("Enable Monitoring");
+            mAiAudioMonitoringEnabledSwitch.selectedProperty().addListener((obs, old, newValue) -> {
+                modifiedProperty().set(true);
+                getAiAudioMonitoringCheckIntervalSpinner().setDisable(!newValue);
+                getAiAudioMonitoringWaitNewAudioSwitch().setDisable(!newValue);
+                getAiAudioMonitoringAlertThresholdSpinner().setDisable(!newValue);
+            });
+        }
+        return mAiAudioMonitoringEnabledSwitch;
+    }
+
+    private Spinner<Integer> getAiAudioMonitoringCheckIntervalSpinner() {
+        if(mAiAudioMonitoringCheckIntervalSpinner == null) {
+            mAiAudioMonitoringCheckIntervalSpinner = new Spinner<>();
+            mAiAudioMonitoringCheckIntervalSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1440, 5));
+            mAiAudioMonitoringCheckIntervalSpinner.setEditable(true);
+            mAiAudioMonitoringCheckIntervalSpinner.valueProperty().addListener((obs, old, newValue) -> modifiedProperty().set(true));
+        }
+        return mAiAudioMonitoringCheckIntervalSpinner;
+    }
+
+    private ToggleSwitch getAiAudioMonitoringWaitNewAudioSwitch() {
+        if(mAiAudioMonitoringWaitNewAudioSwitch == null) {
+            mAiAudioMonitoringWaitNewAudioSwitch = new ToggleSwitch("Wait for New Audio on Failure");
+            mAiAudioMonitoringWaitNewAudioSwitch.selectedProperty().addListener((obs, old, newValue) -> modifiedProperty().set(true));
+        }
+        return mAiAudioMonitoringWaitNewAudioSwitch;
+    }
+
+    private Spinner<Integer> getAiAudioMonitoringAlertThresholdSpinner() {
+        if(mAiAudioMonitoringAlertThresholdSpinner == null) {
+            mAiAudioMonitoringAlertThresholdSpinner = new Spinner<>();
+            mAiAudioMonitoringAlertThresholdSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 3));
+            mAiAudioMonitoringAlertThresholdSpinner.setEditable(true);
+            mAiAudioMonitoringAlertThresholdSpinner.valueProperty().addListener((obs, old, newValue) -> modifiedProperty().set(true));
+        }
+        return mAiAudioMonitoringAlertThresholdSpinner;
+    }
+
+    private VBox getAlertsPane() {
+        if(mAlertsPane == null) {
+            mAlertsPane = new VBox(20);
+            mAlertsPane.setPadding(new Insets(10));
+
+            // Inactivity Alerts Section
+            VBox inactivitySection = new VBox(10);
+            Label inactivityHeader = new Label("Channel Inactivity Alerts");
+            inactivityHeader.setStyle("-fx-font-weight: bold;");
+
+            GridPane inactivityGrid = new GridPane();
+            inactivityGrid.setHgap(10);
+            inactivityGrid.setVgap(10);
+            inactivityGrid.add(getInactivityAlertEnabledSwitch(), 0, 0, 2, 1);
+            inactivityGrid.add(new Label("Duration Threshold (minutes):"), 0, 1);
+            inactivityGrid.add(getInactivityDurationSpinner(), 1, 1);
+
+            inactivitySection.getChildren().addAll(inactivityHeader, inactivityGrid);
+
+            // AI Audio Monitoring Section
+            VBox aiSection = new VBox(10);
+            Label aiHeader = new Label("AI Audio Monitoring");
+            aiHeader.setStyle("-fx-font-weight: bold;");
+
+            GridPane aiGrid = new GridPane();
+            aiGrid.setHgap(10);
+            aiGrid.setVgap(10);
+            aiGrid.add(getAiAudioMonitoringEnabledSwitch(), 0, 0, 2, 1);
+            aiGrid.add(new Label("Check Interval (minutes):"), 0, 1);
+            aiGrid.add(getAiAudioMonitoringCheckIntervalSpinner(), 1, 1);
+            aiGrid.add(getAiAudioMonitoringWaitNewAudioSwitch(), 0, 2, 2, 1);
+            aiGrid.add(new Label("Alert Threshold (failures):"), 0, 3);
+            aiGrid.add(getAiAudioMonitoringAlertThresholdSpinner(), 1, 3);
+
+            aiSection.getChildren().addAll(aiHeader, aiGrid);
+
+            mAlertsPane.getChildren().addAll(inactivitySection, aiSection);
+        }
+        return mAlertsPane;
     }
 
     protected abstract void setAuxDecoderConfiguration(AuxDecodeConfiguration config);
