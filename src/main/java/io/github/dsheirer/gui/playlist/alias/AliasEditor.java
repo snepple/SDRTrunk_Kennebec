@@ -99,6 +99,11 @@ public class AliasEditor extends TabPane
                 getAliasViewByIdentifierEditor().show(aliasID);
             }
         }
+        else
+        {
+            // Generic alias tab request (e.g. from sidebar), select default tab
+            getSelectionModel().select(getAliasConfigurationTab());
+        }
     }
 
     private Tab getAliasConfigurationTab()
