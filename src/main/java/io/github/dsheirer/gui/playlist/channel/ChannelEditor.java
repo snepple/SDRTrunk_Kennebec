@@ -615,7 +615,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
     {
         if(mPlaceholderLabel == null)
         {
-            mPlaceholderLabel = new Label("No Channel Configurations Available");
+            mPlaceholderLabel = new Label("Click the New button to create a new Channel Configuration");
         }
 
         return mPlaceholderLabel;

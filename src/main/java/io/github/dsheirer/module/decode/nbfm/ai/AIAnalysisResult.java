@@ -20,6 +20,11 @@ public class AIAnalysisResult {
     private float noiseGateReduction;
     private float agcMaxGain;
 
+    private boolean squelchTailRemovalEnabled;
+    private int squelchTailRemovalMs;
+    private int squelchHeadRemovalMs;
+    private int noiseGateHoldTime;
+
     public String getIssuesFound() { return issuesFound; }
     public void setIssuesFound(String issuesFound) { this.issuesFound = issuesFound; }
 
@@ -70,4 +75,16 @@ public class AIAnalysisResult {
 
     public float getAgcMaxGain() { return agcMaxGain; }
     public void setAgcMaxGain(float agcMaxGain) { this.agcMaxGain = agcMaxGain; }
+
+    public boolean isSquelchTailRemovalEnabled() { return squelchTailRemovalEnabled; }
+    public void setSquelchTailRemovalEnabled(boolean squelchTailRemovalEnabled) { this.squelchTailRemovalEnabled = squelchTailRemovalEnabled; }
+
+    public int getSquelchTailRemovalMs() { return squelchTailRemovalMs; }
+    public void setSquelchTailRemovalMs(int squelchTailRemovalMs) { this.squelchTailRemovalMs = squelchTailRemovalMs; }
+
+    public int getSquelchHeadRemovalMs() { return squelchHeadRemovalMs; }
+    public void setSquelchHeadRemovalMs(int squelchHeadRemovalMs) { this.squelchHeadRemovalMs = squelchHeadRemovalMs; }
+
+    public int getNoiseGateHoldTime() { return noiseGateHoldTime; }
+    public void setNoiseGateHoldTime(int noiseGateHoldTime) { this.noiseGateHoldTime = noiseGateHoldTime; }
 }

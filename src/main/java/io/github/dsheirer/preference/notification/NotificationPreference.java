@@ -4,11 +4,13 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import io.github.dsheirer.preference.Preference;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.preference.PreferenceType;
+import java.util.List;
+import java.util.ArrayList;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 
 public class NotificationPreference extends Preference {
     private boolean mTelegramEnabled = false;
     private String mTelegramBotToken = "";
-    private String mTelegramChatId = "";
 
     private boolean mEmailEnabled = false;
     private String mSmtpHost = "";
@@ -16,7 +18,8 @@ public class NotificationPreference extends Preference {
     private String mSmtpUsername = "";
     private String mSmtpPassword = "";
     private String mSmtpFromAddress = "";
-    private String mSmtpToAddress = "";
+
+    private List<NotificationRecipient> mRecipients = new ArrayList<>();
 
     public NotificationPreference(Listener<PreferenceType> listener) {
         super(listener);
@@ -40,14 +43,7 @@ public class NotificationPreference extends Preference {
         mTelegramBotToken = telegramBotToken;
     }
 
-    @JacksonXmlProperty(isAttribute = true, localName = "telegramChatId")
-    public String getTelegramChatId() {
-        return mTelegramChatId;
-    }
 
-    public void setTelegramChatId(String telegramChatId) {
-        mTelegramChatId = telegramChatId;
-    }
 
     @JacksonXmlProperty(isAttribute = true, localName = "emailEnabled")
     public boolean isEmailEnabled() {
@@ -103,13 +99,19 @@ public class NotificationPreference extends Preference {
         mSmtpFromAddress = smtpFromAddress;
     }
 
-    @JacksonXmlProperty(isAttribute = true, localName = "smtpToAddress")
-    public String getSmtpToAddress() {
-        return mSmtpToAddress;
+
+
+
+    @JacksonXmlElementWrapper(localName = "recipients")
+    @JacksonXmlProperty(localName = "recipient")
+    public List<NotificationRecipient> getRecipients() {
+        return mRecipients;
     }
 
-    public void setSmtpToAddress(String smtpToAddress) {
-        mSmtpToAddress = smtpToAddress;
+    public void setRecipients(List<NotificationRecipient> recipients) {
+        if(recipients != null) {
+            mRecipients = recipients;
+        }
     }
 
     @Override

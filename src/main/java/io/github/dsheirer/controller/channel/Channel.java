@@ -30,6 +30,8 @@ import io.github.dsheirer.module.log.EventLogType;
 import io.github.dsheirer.module.log.config.EventLogConfiguration;
 import io.github.dsheirer.record.RecorderType;
 import io.github.dsheirer.record.config.RecordConfiguration;
+import io.github.dsheirer.controller.channel.ChannelAlertConfiguration;
+import io.github.dsheirer.controller.channel.ChannelAlertConfiguration;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.source.SourceEvent;
 import io.github.dsheirer.source.config.SourceConfigFactory;
@@ -75,6 +77,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     private SourceConfiguration mSourceConfiguration = SourceConfigFactory.getDefaultSourceConfiguration();
     private EventLogConfiguration mEventLogConfiguration = new EventLogConfiguration();
     private RecordConfiguration mRecordConfiguration = new RecordConfiguration();
+    private ChannelAlertConfiguration mChannelAlertConfiguration = new ChannelAlertConfiguration();
 
     private StringProperty mAliasListName = new SimpleStringProperty();
     private StringProperty mSystem = new SimpleStringProperty();
@@ -166,6 +169,17 @@ public class Channel extends Configuration implements Listener<SourceEvent>
         }
 
         channel.setEventLogConfiguration(logCopy);
+
+        ChannelAlertConfiguration alertCopy = new ChannelAlertConfiguration();
+        if(mChannelAlertConfiguration != null) {
+            alertCopy.setInactivityAlertEnabled(mChannelAlertConfiguration.isInactivityAlertEnabled());
+            alertCopy.setInactivityDurationThresholdMinutes(mChannelAlertConfiguration.getInactivityDurationThresholdMinutes());
+            alertCopy.setAiAudioMonitoringEnabled(mChannelAlertConfiguration.isAiAudioMonitoringEnabled());
+            alertCopy.setAiAudioMonitoringCheckInterval(mChannelAlertConfiguration.getAiAudioMonitoringCheckInterval());
+            alertCopy.setAiAudioMonitoringWaitNewAudio(mChannelAlertConfiguration.isAiAudioMonitoringWaitNewAudio());
+            alertCopy.setAiAudioMonitoringAlertThreshold(mChannelAlertConfiguration.getAiAudioMonitoringAlertThreshold());
+        }
+        channel.setAlertConfiguration(alertCopy);
 
         RecordConfiguration recordCopy = new RecordConfiguration();
 
@@ -724,6 +738,19 @@ public class Channel extends Configuration implements Listener<SourceEvent>
         if(config != null)
         {
             mRecordConfiguration = config;
+        }
+    }
+
+    @JacksonXmlProperty(localName = "alert_configuration")
+    public ChannelAlertConfiguration getAlertConfiguration()
+    {
+        return mChannelAlertConfiguration;
+    }
+
+    public void setAlertConfiguration(ChannelAlertConfiguration alertConfiguration)
+    {
+        if(alertConfiguration != null) {
+            mChannelAlertConfiguration = alertConfiguration;
         }
     }
 
