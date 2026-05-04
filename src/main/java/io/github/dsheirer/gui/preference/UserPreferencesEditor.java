@@ -176,6 +176,7 @@ public class UserPreferencesEditor extends BorderPane
                 "Application",
                 PreferenceEditorType.APPLICATION,
                 PreferenceEditorType.DIAGNOSTICS,
+                PreferenceEditorType.NOTIFICATIONS,
                 PreferenceEditorType.MQTT,
                 "Audio",
                 PreferenceEditorType.AUDIO_CALL_MANAGEMENT,

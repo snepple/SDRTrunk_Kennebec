@@ -41,6 +41,7 @@ import io.github.dsheirer.preference.source.TunerPreference;
 import io.github.dsheirer.preference.swing.SwingPreference;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.preference.mqtt.MqttPreference;
+import io.github.dsheirer.preference.notification.NotificationPreference;
 
 /**
  * User Preferences.  A collection of preferences that can be accessed by preference type.
@@ -73,6 +74,7 @@ public class UserPreferences implements Listener<PreferenceType>
     private PlaylistPreference mPlaylistPreference;
     private RadioReferencePreference mRadioReferencePreference;
     private RecordPreference mRecordPreference;
+    private NotificationPreference mNotificationPreference;
     private MqttPreference mMqttPreference;
     private TalkgroupFormatPreference mTalkgroupFormatPreference;
     private TunerPreference mTunerPreference;
@@ -197,6 +199,10 @@ public class UserPreferences implements Listener<PreferenceType>
     /**
      * Recording preferences
      */
+    public NotificationPreference getNotificationPreference() {
+        return mNotificationPreference;
+    }
+
     public MqttPreference getMqttPreference() {
         return mMqttPreference;
     }
@@ -267,6 +273,7 @@ public class UserPreferences implements Listener<PreferenceType>
         mPlaylistPreference = new PlaylistPreference(this::receive, mDirectoryPreference);
         mRadioReferencePreference = new RadioReferencePreference(this::receive);
         mRecordPreference = new RecordPreference(this::receive);
+        mNotificationPreference = new NotificationPreference(this::receive);
         mMqttPreference = new MqttPreference(this::receive);
         mTalkgroupFormatPreference = new TalkgroupFormatPreference(this::receive);
         mTunerPreference = new TunerPreference(this::receive);

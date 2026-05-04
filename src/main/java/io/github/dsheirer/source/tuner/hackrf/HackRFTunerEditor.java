@@ -121,7 +121,7 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
         }
         else
         {
-            getTunerIdLabel().setText(getDiscoveredTuner().getId());
+            getTunerIdLabel().setText(getDiscoveredTuner().getName());
         }
 
         String status = getDiscoveredTuner().getTunerStatus().toString();

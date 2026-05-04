@@ -25,6 +25,7 @@ package io.github.dsheirer.preference;
 public enum PreferenceType
 {
     APPLICATION,
+    NOTIFICATIONS,
     CALIBRATION,
     DECODE_EVENT,
     DIAGNOSTICS,
