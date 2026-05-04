@@ -205,7 +205,7 @@ public class Icon implements Comparable<Icon>
                     URL svgURL = Icon.class.getResource(svgResourcePath);
                     if (svgURL != null) {
                         // FlatSVGIcon takes a path relative to the root or a class. We can use the resource path
-                        mImageIcon = new FlatSVGIcon(svgResourcePath.startsWith("/") ? svgResourcePath.substring(1) : svgResourcePath);
+                        mImageIcon = new FlatSVGIcon(svgURL);
                     } else {
                         URL imageURL = Icon.class.getResource(resourcePath);
                         if(imageURL != null)
