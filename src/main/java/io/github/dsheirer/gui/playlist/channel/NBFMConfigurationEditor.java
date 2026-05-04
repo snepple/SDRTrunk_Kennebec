@@ -228,8 +228,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(talkgroupBox, 1, 1);
             gridPane.getChildren().add(talkgroupBox);
 
-            GridPane.setConstraints(getAudioFilterEnable(), 2, 1);
-            gridPane.getChildren().add(getAudioFilterEnable());
 
             javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mDecoderPaneSp.setFitToWidth(true);
@@ -405,27 +403,31 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             VBox contentBox = new VBox(10);
             contentBox.setPadding(new Insets(10,10,10,10));
 
-            // 1. Low-pass filter
+            // 1. High-Pass Filter
+            contentBox.getChildren().add(createHighPassSection());
+            contentBox.getChildren().add(new Separator());
+
+            // 2. Low-pass filter
             contentBox.getChildren().add(createLowPassSection());
             contentBox.getChildren().add(new Separator());
 
-            // 2. Hiss Reduction (high-shelf cut)
+            // 3. Hiss Reduction (high-shelf cut)
             contentBox.getChildren().add(createHissReductionSection());
             contentBox.getChildren().add(new Separator());
 
-            // 3. Bass Boost
+            // 4. Bass Boost
             contentBox.getChildren().add(createBassBoostSection());
             contentBox.getChildren().add(new Separator());
 
-            // 4. Voice Enhancement
+            // 5. Voice Enhancement
             contentBox.getChildren().add(createVoiceEnhanceSection());
             contentBox.getChildren().add(new Separator());
 
-            // 5. Intelligent Squelch
+            // 6. Intelligent Squelch
             contentBox.getChildren().add(createSquelchSection());
             contentBox.getChildren().add(new Separator());
 
-            // 6. Output Gain (applied last)
+            // 7. Output Gain (applied last)
             contentBox.getChildren().add(createInputGainSection());
 
             javafx.scene.control.ScrollPane mAudioFiltersPaneSp = new javafx.scene.control.ScrollPane(contentBox);
@@ -554,7 +556,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createInputGainSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("6. Output Gain (Applied Last)");
+        Label title = new Label("7. Output Gain (Applied Last)");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -611,10 +613,24 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         return section;
     }
 
+
+    private VBox createHighPassSection()
+    {
+        VBox section = new VBox(5);
+        Label title = new Label("1. High-Pass Filter");
+        title.setFont(Font.font(null, FontWeight.BOLD, 12));
+        HBox titleBox = new HBox(5);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+        titleBox.getChildren().addAll(title, createHelpIcon("Removes DC offset and sub-audible signalling."));
+
+        section.getChildren().addAll(titleBox, getAudioFilterEnable());
+        return section;
+    }
+
     private VBox createLowPassSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("1. Low-Pass Filter");
+        Label title = new Label("2. Low-Pass Filter");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -666,7 +682,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createVoiceEnhanceSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("4. Voice Enhancement");
+        Label title = new Label("5. Voice Enhancement");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -718,7 +734,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createBassBoostSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("3. Bass Boost");
+        Label title = new Label("4. Bass Boost");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -770,7 +786,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createHissReductionSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("2. Hiss Reduction");
+        Label title = new Label("3. Hiss Reduction");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -856,7 +872,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createSquelchSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("5. Squelch / Noise Gate");
+        Label title = new Label("6. Squelch / Noise Gate");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -1029,7 +1045,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     {
         if(mAudioFilterEnable == null)
         {
-            mAudioFilterEnable = new ToggleSwitch("High-Pass Audio Filter");
+            mAudioFilterEnable = new ToggleSwitch("Enable High-Pass Filter");
             mAudioFilterEnable.setTooltip(new Tooltip("High-pass filter to remove DC offset and sub-audible signalling"));
             mAudioFilterEnable.selectedProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
