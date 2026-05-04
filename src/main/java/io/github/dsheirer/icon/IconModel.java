@@ -118,15 +118,15 @@ public class IconModel
         mIcons.addListener((ListChangeListener<Icon>)c -> scheduleSave());
 
         // Initialize system icons
-        mSystemIcons.put("AM", new Icon("AM", "images/AM.svg"));
-        mSystemIcons.put("DMR", new Icon("DMR", "images/DMR.svg"));
-        mSystemIcons.put("LTR", new Icon("LTR", "images/LTR.svg"));
-        mSystemIcons.put("LTR-Net", new Icon("LTR-Net", "images/ltr-net.svg"));
+        mSystemIcons.put("AM", new Icon("AM", "images/AM.png"));
+        mSystemIcons.put("DMR", new Icon("DMR", "images/DMR.png"));
+        mSystemIcons.put("LTR", new Icon("LTR", "images/LTR.png"));
+        mSystemIcons.put("LTR-Net", new Icon("LTR-Net", "images/ltr-net.png"));
         mSystemIcons.put("MPT1327", new Icon("MPT1327", "images/mpt1327.svg"));
-        mSystemIcons.put("NBFM", new Icon("NBFM", "images/NBFM.svg"));
-        mSystemIcons.put("Passport", new Icon("Passport", "images/Passport.svg"));
-        mSystemIcons.put("P25 Phase 1", new Icon("P25 Phase 1", "images/P25-Phase1.svg"));
-        mSystemIcons.put("P25 Phase 2", new Icon("P25 Phase 2", "images/P25-Phase2.svg"));
+        mSystemIcons.put("NBFM", new Icon("NBFM", "images/NBFM.png"));
+        mSystemIcons.put("Passport", new Icon("Passport", "images/Passport.png"));
+        mSystemIcons.put("P25 Phase 1", new Icon("P25 Phase 1", "images/P25-Phase1.png"));
+        mSystemIcons.put("P25 Phase 2", new Icon("P25 Phase 2", "images/P25-Phase2.png"));
     }
 
     /**

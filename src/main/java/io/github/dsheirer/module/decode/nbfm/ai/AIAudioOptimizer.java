@@ -115,6 +115,15 @@ public class AIAudioOptimizer {
             HttpResponse<String> response = mHttpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
+                if (response.statusCode() == 429 || response.body().contains("RESOURCE_EXHAUSTED")) {
+                    String fallbackModel = getFallbackModel(model);
+                    if (fallbackModel != null) {
+                        mUserPreferences.getAIPreference().setGeminiModel(fallbackModel);
+                        throw new Exception("Gemini API quota exhausted for " + model + ". The system has automatically downgraded to " + fallbackModel + " for the next request. Please retry.");
+                    } else {
+                        throw new Exception("Gemini API quota exhausted for " + model + " and no further fallback models are available. Please check your API quotas.");
+                    }
+                }
                 throw new Exception("Gemini API error: " + response.statusCode() + " " + response.body());
             }
 
@@ -136,5 +145,15 @@ public class AIAudioOptimizer {
             mLog.error("Error calling Gemini API: " + e.getMessage(), e);
             throw new Exception("Error calling Gemini API: " + e.getMessage(), e);
         }
+    }
+
+    private String getFallbackModel(String currentModel) {
+        if (currentModel == null) return null;
+        if (currentModel.contains("-pro")) {
+            return currentModel.replace("-pro", "-thinking");
+        } else if (currentModel.contains("-thinking")) {
+            return currentModel.replace("-thinking", "-flash");
+        }
+        return null;
     }
 }

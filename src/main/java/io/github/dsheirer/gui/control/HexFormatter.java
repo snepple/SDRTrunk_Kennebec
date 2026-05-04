@@ -62,14 +62,14 @@ public class HexFormatter extends TextFormatter<Integer>
 
         private boolean isValid(Integer value)
         {
-            return value != null && mMinimum <= value && value <= mMaximum;
+            return value != null && Integer.compareUnsigned(mMinimum, value) <= 0 && Integer.compareUnsigned(value, mMaximum) <= 0;
         }
 
         @Override
         public Change apply(Change change)
         {
             //Only validate if the user added text to the control.  Otherwise, allow it to go through
-            if(change.getText() != null)
+            if(change.getText() != null && !change.getText().isEmpty())
             {
                 String updatedText = change.getControlNewText();
 
@@ -86,7 +86,7 @@ public class HexFormatter extends TextFormatter<Integer>
                 else
                 {
                     //Force all hex letters to uppercase
-                    if(change.getText().matches("[a-f].*"))
+                    if(change.getText().matches(".*[a-f].*"))
                     {
                         change.setText(change.getText().toUpperCase());
                     }
@@ -111,7 +111,7 @@ public class HexFormatter extends TextFormatter<Integer>
                 return "";
             }
 
-            return (Integer.toHexString(value.intValue()).toUpperCase());
+            return (Integer.toUnsignedString(value, 16).toUpperCase());
         }
 
         @Override
@@ -133,7 +133,11 @@ public class HexFormatter extends TextFormatter<Integer>
                 return null;
             }
 
-            return Integer.valueOf(value, 16);
+            try {
+                return Integer.parseUnsignedInt(value, 16);
+            } catch (NumberFormatException e) {
+                return null;
+            }
         }
     }
 }
