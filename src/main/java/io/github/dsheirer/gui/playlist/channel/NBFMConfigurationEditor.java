@@ -74,6 +74,8 @@ import jiconfont.icons.font_awesome.FontAwesome;
 import javafx.scene.layout.HBox;
 import javafx.geometry.Pos;
 import javafx.scene.paint.Color;
+import io.github.dsheirer.module.decode.nbfm.ai.AIAudioOptimizer;
+import io.github.dsheirer.module.decode.nbfm.ai.AIAnalysisResult;
 
 /**
  * Narrow-Band FM channel configuration editor
@@ -133,6 +135,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private TextField mHoldTimeField;
     private javafx.scene.control.Button mAnalyzeButton;
     private Label mAnalyzeStatusLabel;
+    private javafx.scene.control.Button mAIOptimizeButton;
+    private Label mAIOptimizeStatusLabel;
 
     private boolean mLoadingConfiguration = false;
 
@@ -404,11 +408,24 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             VBox contentBox = new VBox(10);
             contentBox.setPadding(new Insets(10,10,10,10));
 
-            // 1. High-Pass Filter
-            contentBox.getChildren().add(createHighPassSection());
-            contentBox.getChildren().add(new Separator());
+            // Add AI Optimization if enabled
+            if (mUserPreferences.getAIPreference().isAIEnabled() &&
+                !mUserPreferences.getAIPreference().getGeminiApiKey().trim().isEmpty()) {
+                GridPane aiPane = new GridPane();
+                aiPane.setHgap(10);
+                aiPane.setVgap(5);
+                mAIOptimizeButton = new javafx.scene.control.Button("AI Optimize Audio Filters");
+                mAIOptimizeButton.setStyle("-fx-font-weight: bold;");
+                mAIOptimizeButton.setOnAction(e -> handleAIOptimizeClick());
+                GridPane.setConstraints(mAIOptimizeButton, 0, 0);
+                aiPane.getChildren().add(mAIOptimizeButton);
+                mAIOptimizeStatusLabel = new Label("Click to run Gemini AI analysis on this channel's audio");
+                GridPane.setConstraints(mAIOptimizeStatusLabel, 1, 0);
+                aiPane.getChildren().add(mAIOptimizeStatusLabel);
+                contentBox.getChildren().addAll(aiPane, new Separator());
+            }
 
-            // 2. Low-pass filter
+            // 1. Low-pass filter
             contentBox.getChildren().add(createLowPassSection());
             contentBox.getChildren().add(new Separator());
 
@@ -1551,6 +1568,44 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             // TODO: Stop analyzing
             // filter.stopAnalyzing();
         }
+    }
+
+    private void handleAIOptimizeClick() {
+        mAIOptimizeButton.setDisable(true);
+        mAIOptimizeStatusLabel.setText("Analyzing...");
+        mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #0066cc;");
+
+        new Thread(() -> {
+            try {
+                AIAudioOptimizer optimizer = new AIAudioOptimizer(mUserPreferences);
+                DecodeConfigNBFM config = (DecodeConfigNBFM) getItem().getDecodeConfiguration();
+                AIAnalysisResult result = optimizer.analyze(config, java.util.Collections.emptyList());
+
+                javafx.application.Platform.runLater(() -> {
+                    mLowPassEnabledSwitch.setSelected(result.isLowPassEnabled());
+                    mLowPassCutoffSlider.setValue(result.getLowPassCutoff());
+                    mHissReductionEnabledSwitch.setSelected(result.isHissReductionEnabled());
+                    mHissReductionDbSlider.setValue(result.getHissReductionDb());
+                    mHissReductionCornerSlider.setValue(result.getHissReductionCorner());
+                    mBassBoostEnabledSwitch.setSelected(result.isBassBoostEnabled());
+                    mBassBoostSlider.setValue(result.getBassBoostDb());
+                    mSquelchEnabledSwitch.setSelected(result.isNoiseGateEnabled());
+                    mSquelchThresholdSlider.setValue(result.getNoiseGateThreshold());
+                    mSquelchReductionSlider.setValue(result.getNoiseGateReduction() * 100.0);
+
+                    mAIOptimizeStatusLabel.setText(result.getExplanation());
+                    mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #009900;");
+                    mAIOptimizeButton.setDisable(false);
+                    modifiedProperty().set(true);
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> {
+                    mAIOptimizeStatusLabel.setText("Analysis failed: " + e.getMessage());
+                    mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
+                    mAIOptimizeButton.setDisable(false);
+                });
+            }
+        }).start();
     }
 
     @Override
