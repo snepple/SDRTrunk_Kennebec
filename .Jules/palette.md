@@ -31,3 +31,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2024-05-18 - Alias Configuration UX Overhaul
 **Learning:** When modernizing a JavaFX editor from a horizontal TabPane to a vertical Master-Detail SplitPane style with a side menu (ListView), properly converting layout nodes and dynamically updating a StackPane content area is essential for mimicking standard application preferences UI.
 **Action:** Ensure consistent use of layout containers, remove bottom button panels when shifting actions to the header, and always remember to bind the header elements (like titles and icons) directly to the selected item's properties for instantaneous updates.
+## 2024-05-04 - Sidebar List Sorting Fix
+**Learning:** In JavaFX application editors that use a Sidebar list (ListView) with a content pane (StackPane) map, the order of panes displayed in the list depends heavily on when the `addConfigurationPane` method is called. Constructor order constraints often force items to the top unexpectedly if parent classes add them before subclasses add theirs.
+**Action:** To force items to the bottom of the list (e.g. Alerts), extract their addition into a method (`setupAlertsPane()`) and have the subclasses call this method explicitly at the end of their respective constructors.

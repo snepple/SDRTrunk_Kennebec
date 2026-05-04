@@ -80,6 +80,7 @@ public class PassportConfigurationEditor extends ChannelConfigurationEditor
         addConfigurationPane("Logging", getEventLogPane());
         // Could not find name for getRecordPane()
         addConfigurationPane("Recording", getRecordPane());
+        setupAlertsPane();
     }
 
     @Override

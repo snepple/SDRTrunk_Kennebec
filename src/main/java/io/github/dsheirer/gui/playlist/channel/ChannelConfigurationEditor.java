@@ -163,11 +163,6 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         VBox.setVgrow(getSplitPane(), Priority.ALWAYS);
         inspectorCard.getChildren().addAll(headerBox, getSplitPane());
 
-        // Setup Alerts Pane
-        javafx.scene.control.ScrollPane alertsScroll = new javafx.scene.control.ScrollPane(getAlertsPane());
-        alertsScroll.setFitToWidth(true);
-        alertsScroll.setFitToHeight(true);
-        addConfigurationPane("Alerts", alertsScroll);
 
         // Setup General Pane
         javafx.scene.control.ScrollPane generalScroll = new javafx.scene.control.ScrollPane(getTextFieldPane());
@@ -176,6 +171,19 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         addConfigurationPane("General", generalScroll);
 
         getChildren().add(inspectorCard);
+    }
+
+    /**
+     * Setup the Alerts pane. Called by subclasses after their specific panes are added
+     * so that the Alerts pane appears at the bottom of the list.
+     */
+    protected void setupAlertsPane()
+    {
+        // Setup Alerts Pane
+        javafx.scene.control.ScrollPane alertsScroll = new javafx.scene.control.ScrollPane(getAlertsPane());
+        alertsScroll.setFitToWidth(true);
+        alertsScroll.setFitToHeight(true);
+        addConfigurationPane("Alerts", alertsScroll);
     }
 
     /**
