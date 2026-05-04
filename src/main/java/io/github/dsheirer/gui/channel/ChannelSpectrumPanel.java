@@ -236,14 +236,10 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         mInspectorPanel.add(mSignalPowerView, "AM");
         mInspectorPanel.add(mSymbolPanel, "FEEDBACK");
 
-        // Ensure inspector has a fixed minimum/preferred width for the sidebar
-        mInspectorPanel.setMinimumSize(new java.awt.Dimension(250, 0));
-        mInspectorPanel.setPreferredSize(new java.awt.Dimension(280, 0));
-
         // Use MigLayout for the main panel
-        setLayout(new MigLayout("insets 0, gap 0", "[grow,fill][pref!]", "[grow,fill]"));
+        setLayout(new MigLayout("insets 0, gap 0", "[50%,fill][50%,fill]", "[grow,fill]"));
         add(fftPanel, "grow");
-        add(mInspectorPanel, "dock east");
+        add(mInspectorPanel, "grow");
 
         mSampleStreamTapModule.setListener(mComplexDftProcessor);
         DFTResultsConverter DFTResultsConverter = new ComplexDecibelConverter();
