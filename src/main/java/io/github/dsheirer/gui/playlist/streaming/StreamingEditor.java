@@ -270,6 +270,7 @@ public class StreamingEditor extends SplitPane
         }
         else
         {
+            getConfigAreaBox();
             updateConfigHeader(configuredBroadcast);
             if(!getItems().contains(getConfigAreaBox()))
             {
