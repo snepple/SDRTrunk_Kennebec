@@ -254,8 +254,14 @@ public class IconModel
         {
             if (original instanceof FlatSVGIcon) {
                 FlatSVGIcon svgIcon = (FlatSVGIcon) original;
+                if (!svgIcon.hasFound() || svgIcon.getIconHeight() <= 0 || svgIcon.getIconWidth() <= 0) {
+                    return null;
+                }
                 float scale = (float) height / svgIcon.getIconHeight();
                 return svgIcon.derive(Math.round(svgIcon.getIconWidth() * scale), height);
+            }
+            if (original.getIconHeight() <= 0 || original.getIconWidth() <= 0) {
+                return null;
             }
             double scale = (double) original.getIconHeight() / (double) height;
             int scaledWidth = (int) ((double) original.getIconWidth() / scale);
