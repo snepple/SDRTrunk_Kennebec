@@ -32,6 +32,7 @@ public class SidebarPanel extends JPanel {
 
     private List<SidebarItem> mItems = new ArrayList<>();
     private JButton mToggleBtn;
+    private JLabel mLogoLabel;
 
     public interface SidebarListener {
         void onItemSelected(String id);
@@ -44,16 +45,20 @@ public class SidebarPanel extends JPanel {
         setPreferredSize(new Dimension(250, 0));
         setLayout(new MigLayout("insets 10 5 10 5, gapy 5, wrap 1, fillx", "[grow, fill]", "[]"));
 
-        mToggleBtn = new JButton(new io.github.dsheirer.icon.MyFontIcon(FontAwesome.BARS, 20, TEXT_COLOR));
+        java.awt.Image iconImg = new javax.swing.ImageIcon(SidebarPanel.class.getResource("/images/sidebar_icon.png")).getImage();
+        mToggleBtn = new JButton(new javax.swing.ImageIcon(iconImg.getScaledInstance(22, 20, java.awt.Image.SCALE_SMOOTH)));
         mToggleBtn.setContentAreaFilled(false);
         mToggleBtn.setBorderPainted(false);
         mToggleBtn.setFocusPainted(false);
-        mToggleBtn.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 10, 4, 10));
+        mToggleBtn.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 6, 4, 6));
         mToggleBtn.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         mToggleBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         mToggleBtn.setToolTipText("Collapse Sidebar");
         mToggleBtn.getAccessibleContext().setAccessibleName("Toggle Sidebar");
         mToggleBtn.getAccessibleContext().setAccessibleDescription("Collapses or expands the main navigation sidebar");
+
+        java.awt.Image logoImg = new javax.swing.ImageIcon(SidebarPanel.class.getResource("/images/sdrtrunk_logo.png")).getImage();
+        mLogoLabel = new JLabel(new javax.swing.ImageIcon(logoImg.getScaledInstance(150, 50, java.awt.Image.SCALE_SMOOTH)));
 
         mToggleBtn.addActionListener(e -> {
             mCollapsed = !mCollapsed;
@@ -104,7 +109,15 @@ public class SidebarPanel extends JPanel {
     private void render() {
         removeAll();
 
-        add(mToggleBtn, "align left");
+        JPanel headerPanel = new JPanel(new MigLayout("insets 0, fillx, hidemode 3", mCollapsed ? "[]" : "[grow][]", "[]"));
+        headerPanel.setOpaque(false);
+        if (!mCollapsed) {
+            headerPanel.add(mLogoLabel, "align left");
+            headerPanel.add(mToggleBtn, "align right");
+        } else {
+            headerPanel.add(mToggleBtn, "align left");
+        }
+        add(headerPanel, "growx");
 
         for (SidebarItem item : mItems) {
             add(item.getView(), "growx");
