@@ -92,7 +92,7 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
         }
         else
         {
-            getTunerIdLabel().setText(getDiscoveredTuner().getId());
+            getTunerIdLabel().setText(getDiscoveredTuner().getName());
         }
 
         String status = getDiscoveredTuner().getTunerStatus().toString();

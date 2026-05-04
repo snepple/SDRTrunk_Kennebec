@@ -104,7 +104,7 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
         }
         else
         {
-            getTunerIdLabel().setText(getDiscoveredTuner().getId());
+            getTunerIdLabel().setText(getDiscoveredTuner().getName());
         }
 
         String status = getDiscoveredTuner().getTunerStatus().toString();
