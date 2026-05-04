@@ -190,7 +190,12 @@ public class Icon implements Comparable<Icon>
                 {
                     // For absolute or external paths
                     try {
-                        mImageIcon = new FlatSVGIcon(new java.io.File(svgPath));
+                        FlatSVGIcon svgIcon = new FlatSVGIcon(new java.io.File(svgPath));
+                        if (svgIcon.hasFound()) {
+                            mImageIcon = svgIcon;
+                        } else {
+                            mImageIcon = new ImageIcon(getPath());
+                        }
                     } catch (Exception e) {
                         mImageIcon = new ImageIcon(getPath());
                     }
@@ -205,8 +210,16 @@ public class Icon implements Comparable<Icon>
                     
                     URL svgURL = Icon.class.getResource(svgResourcePath);
                     if (svgURL != null) {
-                        // FlatSVGIcon takes a path relative to the root or a class. We can use the resource path
-                        mImageIcon = new FlatSVGIcon(svgURL);
+                        FlatSVGIcon svgIcon = new FlatSVGIcon(svgURL);
+                        if (svgIcon.hasFound()) {
+                            mImageIcon = svgIcon;
+                        } else {
+                            URL imageURL = Icon.class.getResource(resourcePath);
+                            if(imageURL != null)
+                            {
+                                mImageIcon = new ImageIcon(imageURL);
+                            }
+                        }
                     } else {
                         URL imageURL = Icon.class.getResource(resourcePath);
                         if(imageURL != null)
@@ -248,7 +261,7 @@ public class Icon implements Comparable<Icon>
                     // Fetch the scaled icon at 2x resolution to look crisp on high-DPI displays
                     int renderHeight = ICON_HEIGHT_JAVAFX * 2;
                     ImageIcon icon = io.github.dsheirer.icon.IconModel.getScaledIcon(getIcon(), renderHeight);
-                    if (icon != null) {
+                    if (icon != null && icon.getIconWidth() > 0 && icon.getIconHeight() > 0) {
                         BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
                         Graphics2D cg = bImg.createGraphics();
                         cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
