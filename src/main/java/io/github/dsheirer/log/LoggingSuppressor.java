@@ -46,6 +46,35 @@ public class LoggingSuppressor
      * @param maxCount of the logged instance.
      * @param message to log.
      */
+    /**
+     * Logs the debug message.
+     * @param key for suppression.
+     * @param maxCount of the logged instance.
+     * @param message to log.
+     */
+    public void debug(String key, int maxCount, String message)
+    {
+        if(canLog(key, maxCount))
+        {
+            mLogger.debug(message + getTag(key, maxCount));
+        }
+    }
+
+    /**
+     * Logs the debug message.
+     * @param key for suppression.
+     * @param maxCount of the logged instance.
+     * @param message to log.
+     * @param t stack trace to include.
+     */
+    public void debug(String key, int maxCount, String message, Throwable t)
+    {
+        if(canLog(key, maxCount))
+        {
+            mLogger.debug(message + getTag(key, maxCount), t);
+        }
+    }
+
     public void info(String key, int maxCount, String message)
     {
         if(canLog(key, maxCount))
