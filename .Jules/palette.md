@@ -24,3 +24,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2024-05-14 - Empty State Placeholder Text
 **Learning:** When a `TableView` is empty, displaying a generic "No [items] Configured" message is a missed UX opportunity. Users benefit from knowing exactly *how* to populate the table.
 **Action:** Always provide an actionable empty state message. Update JavaFX `TableView` placeholders with instructions like `mTableView.setPlaceholder(new Label("Click the New button to create a new [Item]"));` to guide the user towards the next logical action.
+## 2024-05-19 - Table Inline Editing and Context Menus
+**Learning:** Adding double-click-to-edit to JavaFX TableViews using standard `TextFieldTableCell` greatly improves quick-data-entry UX. Creating custom TableCells (like for ColorPicker and ComboBox for Icons) takes more work but keeps the UI clean. Right-click context menus on table headers (Swing) provide an intuitive location for list filtering options without cluttering the UI.
+**Action:** Use these patterns for data-heavy tables where users frequently update properties. Use header context menus for column-specific actions like filtering or sorting configuration.

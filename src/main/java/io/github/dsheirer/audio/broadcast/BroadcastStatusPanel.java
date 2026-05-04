@@ -40,6 +40,13 @@ import javax.swing.JPopupMenu;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableRowSorter;
+import javax.swing.RowFilter;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.JPopupMenu;
+import javax.swing.JCheckBoxMenuItem;
+
 
 /**
  * Table of broadcast streams and statuses.
@@ -73,11 +80,16 @@ public class BroadcastStatusPanel extends JPanel
         return mTable;
     }
 
+    private TableRowSorter<BroadcastModel> mRowSorter;
+
     private void init()
     {
         setLayout(new MigLayout("insets 0 0 0 0 ", "[grow,fill]", "[grow,fill]"));
 
         mTable = new JTable(mBroadcastModel);
+
+        mRowSorter = new TableRowSorter<>(mBroadcastModel);
+        mTable.setRowSorter(mRowSorter);
 
         DefaultTableCellRenderer renderer = (DefaultTableCellRenderer)mTable.getDefaultRenderer(String.class);
         renderer.setHorizontalAlignment(SwingConstants.CENTER);
@@ -85,6 +97,34 @@ public class BroadcastStatusPanel extends JPanel
         mTable.getColumnModel().getColumn(BroadcastModel.COLUMN_BROADCASTER_STATUS).setCellRenderer(new StatusCellRenderer());
         mTable.getColumnModel().getColumn(BroadcastModel.COLUMN_BROADCAST_SERVER_TYPE).setCellRenderer(new ServerTypeRenderer());
         mColumnWidthMonitor = new JTableColumnWidthMonitor(mUserPreferences, mTable, mPreferenceKey);
+
+        mTable.getTableHeader().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON3) {
+                    JPopupMenu popup = new JPopupMenu();
+                    JCheckBoxMenuItem hideDisabledItem = new JCheckBoxMenuItem("Hide Disabled Streams");
+
+                    hideDisabledItem.addActionListener(evt -> {
+                        if (hideDisabledItem.isSelected()) {
+                            mRowSorter.setRowFilter(new RowFilter<BroadcastModel, Integer>() {
+                                @Override
+                                public boolean include(Entry<? extends BroadcastModel, ? extends Integer> entry) {
+                                    BroadcastModel model = entry.getModel();
+                                    BroadcastState state = (BroadcastState) model.getValueAt(entry.getIdentifier(), BroadcastModel.COLUMN_BROADCASTER_STATUS);
+                                    return state != BroadcastState.DISABLED;
+                                }
+                            });
+                        } else {
+                            mRowSorter.setRowFilter(null);
+                        }
+                    });
+
+                    popup.add(hideDisabledItem);
+                    popup.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+        });
 
         mTable.addMouseListener(new MouseAdapter() {
             @Override
