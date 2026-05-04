@@ -51,7 +51,7 @@ public class AnalogTalkgroupFormatter extends AbstractIntegerFormatter
             {
                 case DECIMAL:
                 case FORMATTED:
-                    return identifier.getValue().toString();
+                    return Integer.toUnsignedString(identifier.getValue());
                 case HEXADECIMAL:
                     return toHex(identifier.getValue());
                 default:

@@ -21,12 +21,13 @@ package io.github.dsheirer.gui.control;
 
 import java.util.function.UnaryOperator;
 import javafx.scene.control.TextFormatter;
-import javafx.util.converter.IntegerStringConverter;
+import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Text formatter for integer values that constrains values to specified minimum and maximum valid values.
+ * Uses unsigned logic for values up to 4294967295.
  */
 public class IntegerFormatter extends TextFormatter<Integer>
 {
@@ -35,15 +36,37 @@ public class IntegerFormatter extends TextFormatter<Integer>
     /**
      * Constructs an instance
      * @param minimum allowed value
-     * @param maximum allowed value
+     * @param maximum allowed value (can be negative for unsigned representation like 0xFFFFFFFF)
      */
     public IntegerFormatter(int minimum, int maximum)
     {
-        super(new IntegerStringConverter(), null, new IntegerFilter(minimum, maximum));
+        super(new UnsignedIntegerStringConverter(), null, new IntegerFilter(minimum, maximum));
+    }
+
+    public static class UnsignedIntegerStringConverter extends StringConverter<Integer> {
+        @Override
+        public String toString(Integer value) {
+            if (value == null) {
+                return "";
+            }
+            return Integer.toUnsignedString(value);
+        }
+
+        @Override
+        public Integer fromString(String value) {
+            if (value == null || value.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return Integer.parseUnsignedInt(value.trim());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
     }
 
     /**
-     * Formatted text change filter that only allows hexadecimal characters where the converted decimal value
+     * Formatted text change filter that only allows characters where the converted decimal value
      * is also constrained within minimum and maximum valid values.
      */
     public static class IntegerFilter implements UnaryOperator<Change>
@@ -70,8 +93,8 @@ public class IntegerFormatter extends TextFormatter<Integer>
 
             try
             {
-                int parsed = Integer.parseInt(value);
-                return mMinimum <= parsed && parsed <= mMaximum;
+                int parsed = Integer.parseUnsignedInt(value);
+                return Integer.compareUnsigned(mMinimum, parsed) <= 0 && Integer.compareUnsigned(parsed, mMaximum) <= 0;
             }
             catch(Exception e)
             {
