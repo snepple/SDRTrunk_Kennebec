@@ -219,7 +219,26 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
         if(channel != null)
         {
-            mChannelNameLabel.textProperty().bind(javafx.beans.binding.Bindings.concat(" - ", channel.nameProperty()));
+                        mChannelNameLabel.textProperty().bind(javafx.beans.binding.Bindings.createStringBinding(() -> {
+                StringBuilder sb = new StringBuilder(" - ");
+                if (channel.getSystem() != null && !channel.getSystem().isEmpty()) {
+                    sb.append(channel.getSystem()).append(" - ");
+                }
+                if (channel.getSite() != null && !channel.getSite().isEmpty()) {
+                    sb.append(channel.getSite()).append(" - ");
+                }
+                if (channel.getName() != null && !channel.getName().isEmpty()) {
+                    sb.append(channel.getName());
+                } else {
+                    if (sb.length() > 3) {
+                        sb.setLength(sb.length() - 3); // Remove trailing " - "
+                    }
+                }
+                if (sb.length() == 3) {
+                    return ""; // Just " - "
+                }
+                return sb.toString();
+            }, channel.systemProperty(), channel.siteProperty(), channel.nameProperty()));
 
             getSystemField().setText(channel.getSystem());
             getSiteField().setText(channel.getSite());
