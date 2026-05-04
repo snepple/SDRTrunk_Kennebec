@@ -1,3 +1,4 @@
 ## 2026-05-03 - Add streaming icon to alias editor
 **Learning:** To render custom icons in JavaFX ListView cells efficiently, reuse an `ImageView` instance initialized in the `ListCell` constructor and update its `Image` in the `updateItem` method, handling both populated and empty/null states.
 **Action:** When adding icons to list items in JavaFX, use a custom `CellFactory` with a reused `ImageView` per cell instead of instantiating new UI components on every render.
+## 2025-02-23 - Relocated UI Component with sequential labels\n**Learning:** When moving UI configuration components across JavaFX tabs (e.g. from Decoder to Audio Filters panes in NBFMConfigurationEditor.java), remember to account for and update sequentially numbered headers or section titles to maintain UX consistency.\n**Action:** Use sed to correctly replace and update all subsequent numbered labels when inserting a new UI component section into an existing list.
