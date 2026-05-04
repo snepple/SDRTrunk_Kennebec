@@ -58,7 +58,6 @@ public class LogsPanel extends BorderPane {
     private TextField mTwoToneSearchField;
 
     private TabPane mTabbedPane;
-    private Button mAnalyzeBtn;
 
     public LogsPanel(UserPreferences userPreferences) {
         mUserPreferences = userPreferences;
@@ -113,21 +112,10 @@ public class LogsPanel extends BorderPane {
         Button refreshBtn = new Button("Refresh");
         refreshBtn.setOnAction(e -> loadLogs());
 
-        mAnalyzeBtn = new Button("Analyze Error");
-        mAnalyzeBtn.setOnAction(e -> analyzeSelectedLog());
-        // HIG primary action styling
-        mAnalyzeBtn.getStyleClass().add("kennebec-primary-button");
-
-        updateAnalyzeButtonState();
-        mAppTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> updateAnalyzeButtonState());
-        mEventTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> updateAnalyzeButtonState());
-        mTwoToneTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> updateAnalyzeButtonState());
-        mTabbedPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> updateAnalyzeButtonState());
-
         HBox btnPanel = new HBox(10);
         btnPanel.setPadding(new Insets(10));
         btnPanel.setAlignment(Pos.CENTER_RIGHT);
-        btnPanel.getChildren().addAll(refreshBtn, mAnalyzeBtn);
+        btnPanel.getChildren().addAll(refreshBtn);
 
         Label instructionsLabel = new Label("Double-click a log file to open it in your text editor");
         instructionsLabel.setPadding(new Insets(10));
@@ -139,67 +127,32 @@ public class LogsPanel extends BorderPane {
         setCenter(mTabbedPane);
         setBottom(btnPanel);
     }
-
-    private void updateAnalyzeButtonState() {
-        boolean aiEnabled = mUserPreferences.getAIPreference().isAIEnabled() && mUserPreferences.getAIPreference().isAILogAnalysisEnabled();
-        boolean hasApiKey = !mUserPreferences.getAIPreference().getGeminiApiKey().trim().isEmpty();
-        boolean hasSelection = getSelectedLogFile() != null;
-
-        mAnalyzeBtn.setDisable(!(aiEnabled && hasApiKey && hasSelection));
-
-        if (!aiEnabled) {
-            mAnalyzeBtn.setTooltip(new Tooltip("Enable AI and Log Analysis in User Preferences."));
-        } else if (!hasApiKey) {
-            mAnalyzeBtn.setTooltip(new Tooltip("Gemini API Key is missing in User Preferences."));
-        } else if (!hasSelection) {
-            mAnalyzeBtn.setTooltip(new Tooltip("Select a log file to analyze."));
-        } else {
-            mAnalyzeBtn.setTooltip(new Tooltip("Analyze selected log file using AI."));
-        }
-    }
-
-    private LogFile getSelectedLogFile() {
-        Tab selectedTab = mTabbedPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            String tabText = selectedTab.getText();
-            if ("Application Logs".equals(tabText)) {
-                return mAppTable.getSelectionModel().getSelectedItem();
-            } else if ("Channel Event Logs".equals(tabText)) {
-                return mEventTable.getSelectionModel().getSelectedItem();
-            } else if ("Two-Tone Logs".equals(tabText)) {
-                return mTwoToneTable.getSelectionModel().getSelectedItem();
-            }
-        }
-        return null;
-    }
-
-    private void analyzeSelectedLog() {
-        LogFile logFile = getSelectedLogFile();
+    private void analyzeLog(LogFile logFile, Button analyzeBtn) {
         if (logFile == null || !logFile.getFile().exists()) {
             return;
         }
 
-        mAnalyzeBtn.setDisable(true);
-        mAnalyzeBtn.setText("Analyzing...");
+        analyzeBtn.setDisable(true);
+        analyzeBtn.setText("Analyzing...");
 
         Thread worker = new Thread(() -> {
-            String content;
+            String contentStr;
             try {
                 List<String> lines = Files.readAllLines(logFile.getFile().toPath());
                 int maxLines = 500;
                 if (lines.size() > maxLines) {
                     lines = lines.subList(lines.size() - maxLines, lines.size());
                 }
-                content = String.join("\n", lines);
+                contentStr = String.join("\n", lines);
             } catch (IOException e) {
                 showError("Error reading log file: " + e.getMessage());
-                resetAnalyzeButton();
+                resetAnalyzeButton(analyzeBtn);
                 return;
             }
 
             try {
                 AILogAnalyzer analyzer = new AILogAnalyzer(mUserPreferences);
-                String result = analyzer.analyze(content);
+                String result = analyzer.analyze(contentStr);
 
                 Platform.runLater(() -> {
                     TextArea textArea = new TextArea(result);
@@ -213,23 +166,25 @@ public class LogsPanel extends BorderPane {
                     alert.getDialogPane().setContent(textArea);
                     alert.showAndWait();
 
-                    resetAnalyzeButton();
+                    resetAnalyzeButton(analyzeBtn);
                 });
             } catch (Exception ex) {
                 showError("Error analyzing log:\n" + ex.getMessage());
-                resetAnalyzeButton();
+                resetAnalyzeButton(analyzeBtn);
             }
         });
         worker.setDaemon(true);
         worker.start();
     }
-
-    private void resetAnalyzeButton() {
+    private void resetAnalyzeButton(Button analyzeBtn) {
         Platform.runLater(() -> {
-            mAnalyzeBtn.setText("Analyze Error");
-            updateAnalyzeButtonState();
+            analyzeBtn.setText("AI Review");
+            boolean aiEnabled = mUserPreferences.getAIPreference().isAIEnabled() && mUserPreferences.getAIPreference().isAILogAnalysisEnabled();
+            boolean hasApiKey = !mUserPreferences.getAIPreference().getGeminiApiKey().trim().isEmpty();
+            analyzeBtn.setDisable(!(aiEnabled && hasApiKey));
         });
     }
+
 
     private void showError(String message) {
         Platform.runLater(() -> {
@@ -271,7 +226,46 @@ public class LogsPanel extends BorderPane {
         TableColumn<LogFile, String> nameCol = new TableColumn<>("Name");
         nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
 
-        table.getColumns().addAll(dateCol, nameCol);
+
+        TableColumn<LogFile, Void> actionCol = new TableColumn<>("Action");
+        actionCol.setPrefWidth(120);
+        actionCol.setMaxWidth(150);
+        actionCol.setMinWidth(100);
+        actionCol.setCellFactory(param -> new TableCell<>() {
+            private final Button analyzeBtn = new Button("AI Review");
+
+            {
+                analyzeBtn.getStyleClass().add("kennebec-primary-button");
+                analyzeBtn.setOnAction(event -> {
+                    LogFile logFile = getTableView().getItems().get(getIndex());
+                    analyzeLog(logFile, analyzeBtn);
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    boolean aiEnabled = mUserPreferences.getAIPreference().isAIEnabled() && mUserPreferences.getAIPreference().isAILogAnalysisEnabled();
+                    boolean hasApiKey = !mUserPreferences.getAIPreference().getGeminiApiKey().trim().isEmpty();
+
+                    analyzeBtn.setDisable(!(aiEnabled && hasApiKey));
+                    if (!aiEnabled) {
+                        analyzeBtn.setTooltip(new Tooltip("Enable AI and Log Analysis in User Preferences."));
+                    } else if (!hasApiKey) {
+                        analyzeBtn.setTooltip(new Tooltip("Gemini API Key is missing in User Preferences."));
+                    } else {
+                        analyzeBtn.setTooltip(new Tooltip("Analyze log file using AI."));
+                    }
+
+                    setGraphic(analyzeBtn);
+                }
+            }
+        });
+
+        table.getColumns().addAll(dateCol, nameCol, actionCol);
 
         table.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
