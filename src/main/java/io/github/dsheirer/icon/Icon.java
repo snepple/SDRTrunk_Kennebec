@@ -185,14 +185,20 @@ public class Icon implements Comparable<Icon>
         {
             try
             {
-                String svgPath = getPath().replaceAll("\\.png$", ".svg");
                 if(!getPath().startsWith("images"))
                 {
                     // For absolute or external paths
-                    try {
-                        mImageIcon = new FlatSVGIcon(new java.io.File(svgPath));
-                    } catch (Exception e) {
-                        mImageIcon = new ImageIcon(getPath());
+                    java.io.File file = new java.io.File(getPath());
+                    if (file.exists() && getPath().toLowerCase().endsWith(".svg")) {
+                        mImageIcon = new FlatSVGIcon(file);
+                    } else {
+                        String svgPath = getPath().replaceAll("\\.png$", ".svg");
+                        java.io.File svgFile = new java.io.File(svgPath);
+                        if (svgFile.exists()) {
+                            mImageIcon = new FlatSVGIcon(svgFile);
+                        } else {
+                            mImageIcon = new ImageIcon(getPath());
+                        }
                     }
                 }
                 else
@@ -201,17 +207,28 @@ public class Icon implements Comparable<Icon>
                     if (!resourcePath.startsWith("/")) {
                         resourcePath = "/" + resourcePath;
                     }
-                    String svgResourcePath = resourcePath.replaceAll("\\.png$", ".svg");
                     
-                    URL svgURL = Icon.class.getResource(svgResourcePath);
-                    if (svgURL != null) {
-                        // FlatSVGIcon takes a path relative to the root or a class. We can use the resource path
-                        mImageIcon = new FlatSVGIcon(svgURL);
+                    URL exactURL = Icon.class.getResource(resourcePath);
+                    if (exactURL != null) {
+                        if (resourcePath.toLowerCase().endsWith(".svg")) {
+                            mImageIcon = new FlatSVGIcon(exactURL);
+                        } else {
+                            mImageIcon = new ImageIcon(exactURL);
+                        }
                     } else {
-                        URL imageURL = Icon.class.getResource(resourcePath);
-                        if(imageURL != null)
-                        {
-                            mImageIcon = new ImageIcon(imageURL);
+                        // Fallback
+                        String svgResourcePath = resourcePath.replaceAll("\\.png$", ".svg");
+                        URL svgURL = Icon.class.getResource(svgResourcePath);
+                        if (svgURL != null) {
+                            mImageIcon = new FlatSVGIcon(svgURL);
+                        } else {
+                            String pngResourcePath = resourcePath.replaceAll("\\.svg$", ".png");
+                            URL pngURL = Icon.class.getResource(pngResourcePath);
+                            if (pngURL != null) {
+                                mImageIcon = new ImageIcon(pngURL);
+                            } else {
+                                mImageIcon = new ImageIcon(getPath());
+                            }
                         }
                     }
                 }
@@ -249,14 +266,29 @@ public class Icon implements Comparable<Icon>
                     int renderHeight = ICON_HEIGHT_JAVAFX * 2;
                     ImageIcon icon = io.github.dsheirer.icon.IconModel.getScaledIcon(getIcon(), renderHeight);
                     if (icon != null) {
-                        BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-                        Graphics2D cg = bImg.createGraphics();
-                        cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                        cg.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-                        cg.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
-                        icon.paintIcon(null, cg, 0, 0);
-                        cg.dispose();
-                        mFxImage = SwingFXUtils.toFXImage(bImg, null);
+                        if (icon instanceof FlatSVGIcon) {
+                            BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+                            Graphics2D cg = bImg.createGraphics();
+                            cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                            cg.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                            cg.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
+                            icon.paintIcon(null, cg, 0, 0);
+                            cg.dispose();
+                            mFxImage = SwingFXUtils.toFXImage(bImg, null);
+                        } else {
+                            if (getIcon() != null && getIcon().getDescription() != null && getIcon().getDescription().startsWith("file:")) {
+                                mFxImage = new javafx.scene.image.Image(getIcon().getDescription(), renderHeight, renderHeight, true, true);
+                            } else {
+                                BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+                                Graphics2D cg = bImg.createGraphics();
+                                cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                                cg.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                                cg.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
+                                icon.paintIcon(null, cg, 0, 0);
+                                cg.dispose();
+                                mFxImage = SwingFXUtils.toFXImage(bImg, null);
+                            }
+                        }
                     }
                 } catch (Exception e) {
                     mLog.error("Error converting icon to FX image [" + getName() + "]", e);
