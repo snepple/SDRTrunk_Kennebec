@@ -369,7 +369,7 @@ public class TunerManager implements IDiscoveredTunerStatusListener
         }
         catch(SDRPlayException se)
         {
-            mLog.error("Couldn't load SDRPlay API");
+            mLog.debug("Couldn't load SDRPlay API");
             mSDRplay = null;
         }
 

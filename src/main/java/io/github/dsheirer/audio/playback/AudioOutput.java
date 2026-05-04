@@ -114,7 +114,7 @@ public class AudioOutput implements LineListener
                         }
                         catch(IllegalArgumentException iae2)
                         {
-                            LOGGING_SUPPRESSOR.error("no gain control", 2, "Couldn't obtain " +
+                            LOGGING_SUPPRESSOR.debug("no gain control", 2, "Couldn't obtain " +
                                     "MASTER GAIN or VOLUME control for stereo line [" + mixer.getMixerInfo().getName() + "]");
                         }
                     }
