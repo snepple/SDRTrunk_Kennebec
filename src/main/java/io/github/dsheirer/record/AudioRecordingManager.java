@@ -37,6 +37,13 @@ import io.github.dsheirer.util.TimeStamp;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Comparator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.nio.file.Files;
+import java.util.Collections;
+import io.github.dsheirer.controller.channel.Channel;
+
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -169,6 +176,50 @@ public class AudioRecordingManager implements Listener<AudioSegment>
      * Base path to recordings folder
      * @return
      */
+
+    /**
+     * Gets the most recent recordings for a specific channel
+     * @param channel
+     * @param limit
+     * @return List of Paths to the recent recordings
+     */
+    public static List<Path> getRecentRecordings(Channel channel, int limit, Path basePath)
+    {
+        if(channel == null || channel.getName() == null)
+            return Collections.emptyList();
+
+        Path dir = basePath;
+        if(dir == null || !Files.exists(dir))
+            return Collections.emptyList();
+
+        String channelNameCleaned = io.github.dsheirer.util.StringUtils.replaceIllegalCharacters(channel.getName());
+
+        try (Stream<Path> stream = Files.list(dir))
+        {
+            return stream
+                .filter(Files::isRegularFile)
+                .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".wav") || p.getFileName().toString().toLowerCase().endsWith(".mp3"))
+                .filter(p -> {
+                    String name = p.getFileName().toString();
+                    return name.contains("_" + channelNameCleaned + "_");
+                })
+                .sorted((p1, p2) -> {
+                    try {
+                        return Files.getLastModifiedTime(p2).compareTo(Files.getLastModifiedTime(p1));
+                    } catch (IOException e) {
+                        return 0;
+                    }
+                })
+                .limit(limit)
+                .collect(Collectors.toList());
+        }
+        catch(IOException e)
+        {
+            // mLog.error("Error fetching recent recordings", e);
+            return Collections.emptyList();
+        }
+    }
+
     public Path getRecordingBasePath()
     {
         return mUserPreferences.getDirectoryPreference().getDirectoryRecording();
