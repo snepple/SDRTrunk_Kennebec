@@ -101,7 +101,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private ComboBox<DCSCode> mDcsCodeCombo;
 
     // Squelch Tail Removal UI
-    private javafx.scene.Node mSquelchTailPane;
+
     private ToggleSwitch mSquelchTailEnabledSwitch;
     private Spinner<Integer> mTailRemovalSpinner;
     private Spinner<Integer> mHeadRemovalSpinner;
@@ -163,8 +163,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         addConfigurationPane("Decoder", getDecoderPane());
         // Could not find name for getToneFilterPane()
         addConfigurationPane("Tone Filter", getToneFilterPane());
-        // Could not find name for getSquelchTailPane()
-        addConfigurationPane("Squelch Tail", getSquelchTailPane());
         // Could not find name for getAudioFiltersPane()
         addConfigurationPane("Audio Filters", getAudioFiltersPane());
         // Could not find name for getAuxDecoderPane()
@@ -326,81 +324,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         mDcsCodeCombo.setManaged(!isCTCSS);
     }
 
-    // === Squelch Tail Removal pane ===
-    private javafx.scene.Node getSquelchTailPane(){
-        if(mSquelchTailPane == null)
-        {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10, 10, 10, 10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
-
-            Label enableLabel = new Label("Enable");
-            GridPane.setHalignment(enableLabel, HPos.RIGHT);
-            GridPane.setConstraints(enableLabel, 0, 0);
-            gridPane.getChildren().add(enableLabel);
-
-            mSquelchTailEnabledSwitch = new ToggleSwitch();
-            mSquelchTailEnabledSwitch.selectedProperty()
-                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
-            GridPane.setConstraints(mSquelchTailEnabledSwitch, 1, 0);
-            gridPane.getChildren().add(mSquelchTailEnabledSwitch);
-
-            Label tailLabel = new Label("Tail Trim (ms)");
-            GridPane.setHalignment(tailLabel, HPos.RIGHT);
-            GridPane.setConstraints(tailLabel, 0, 1);
-            gridPane.getChildren().add(tailLabel);
-
-            mTailRemovalSpinner = new Spinner<>(0, 300, 100, 10);
-            mTailRemovalSpinner.setEditable(true);
-            mTailRemovalSpinner.setPrefWidth(100);
-            mTailRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from end of transmission (removes noise burst)"));
-            mTailRemovalSpinner.getValueFactory().valueProperty()
-                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
-            GridPane.setConstraints(mTailRemovalSpinner, 1, 1);
-            gridPane.getChildren().add(mTailRemovalSpinner);
-
-            Label headLabel = new Label("Head Trim (ms)");
-            GridPane.setHalignment(headLabel, HPos.RIGHT);
-            GridPane.setConstraints(headLabel, 2, 1);
-            gridPane.getChildren().add(headLabel);
-
-            mHeadRemovalSpinner = new Spinner<>(0, 150, 0, 10);
-            mHeadRemovalSpinner.setEditable(true);
-            mHeadRemovalSpinner.setPrefWidth(100);
-            mHeadRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from start of transmission (removes tone ramp-up)"));
-            mHeadRemovalSpinner.getValueFactory().valueProperty()
-                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
-            GridPane.setConstraints(mHeadRemovalSpinner, 3, 1);
-            gridPane.getChildren().add(mHeadRemovalSpinner);
-
-            Label hangtimeLabel = new Label("Hangtime (ms)");
-            hangtimeLabel.setTooltip(new Tooltip("Delay before closing audio segment after transmission ends.\n" +
-                    "Prevents cutting off the end of audio in ThinLine/Zello streams.\n" +
-                    "0 = immediate close (default), 100-300 = recommended for streaming"));
-            GridPane.setHalignment(hangtimeLabel, HPos.RIGHT);
-            GridPane.setConstraints(hangtimeLabel, 4, 1);
-            gridPane.getChildren().add(hangtimeLabel);
-
-            mAudioHangtimeSpinner = new Spinner<>(0, 2000, 0, 50);
-            mAudioHangtimeSpinner.setEditable(true);
-            mAudioHangtimeSpinner.setPrefWidth(100);
-            mAudioHangtimeSpinner.setTooltip(new Tooltip("Delay before closing audio segment (ms).\n" +
-                    "Prevents audio cutoff at end of transmissions.\n" +
-                    "0 = instant close, 100-300 = recommended for streaming"));
-            mAudioHangtimeSpinner.getValueFactory().valueProperty()
-                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
-            GridPane.setConstraints(mAudioHangtimeSpinner, 5, 1);
-            gridPane.getChildren().add(mAudioHangtimeSpinner);
-
-            javafx.scene.control.ScrollPane mSquelchTailPaneSp = new javafx.scene.control.ScrollPane(gridPane);
-            mSquelchTailPaneSp.setFitToWidth(true);
-            mSquelchTailPaneSp.setFitToHeight(true);
-            mSquelchTailPane = mSquelchTailPaneSp;
-        }
-        return mSquelchTailPane;
-    }
-
     // === Audio Filters pane ===
     private javafx.scene.Node getAudioFiltersPane(){
         if(mAudioFiltersPane == null)
@@ -429,16 +352,20 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             contentBox.getChildren().add(createLowPassSection());
             contentBox.getChildren().add(new Separator());
 
-            // 3. Hiss Reduction (high-shelf cut)
+            // 2. Hiss Reduction (high-shelf cut)
             contentBox.getChildren().add(createHissReductionSection());
             contentBox.getChildren().add(new Separator());
 
-            // 4. Bass Boost
+            // 3. Bass Boost
             contentBox.getChildren().add(createBassBoostSection());
             contentBox.getChildren().add(new Separator());
 
-            // 5. Voice Enhancement
+            // 4. Voice Enhancement
             contentBox.getChildren().add(createVoiceEnhanceSection());
+            contentBox.getChildren().add(new Separator());
+
+            // 5. Squelch Tail
+            contentBox.getChildren().add(createSquelchTailSection());
             contentBox.getChildren().add(new Separator());
 
             // 6. Intelligent Squelch
@@ -700,7 +627,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createVoiceEnhanceSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("5. Voice Enhancement");
+        Label title = new Label("4. Voice Enhancement");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -752,7 +679,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createBassBoostSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("4. Bass Boost");
+        Label title = new Label("3. Bass Boost");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -804,7 +731,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createHissReductionSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("3. Hiss Reduction");
+        Label title = new Label("2. Hiss Reduction");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -884,6 +811,67 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         controlsPane.getChildren().add(mHissReductionCornerField);
 
         section.getChildren().addAll(titleBox, mHissReductionEnabledSwitch, controlsPane);
+        return section;
+    }
+
+    private VBox createSquelchTailSection()
+    {
+        VBox section = new VBox(5);
+        Label title = new Label("5. Squelch Tail Removal");
+        title.setFont(Font.font(null, FontWeight.BOLD, 12));
+        HBox titleBox = new HBox(5);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+        titleBox.getChildren().addAll(title, createHelpIcon("Trims the beginning or end of transmissions to remove noise bursts or tone ramp-ups. Hangtime adds a delay before closing audio."));
+
+        mSquelchTailEnabledSwitch = new ToggleSwitch("Enable Squelch Tail Removal");
+        mSquelchTailEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
+            if(!mLoadingConfiguration)
+            {
+                modifiedProperty().set(true);
+            }
+        });
+
+        GridPane controlsPane = new GridPane();
+        controlsPane.setHgap(10);
+        controlsPane.setVgap(5);
+
+        Label headLabel = new Label("Head Trim (ms):");
+        GridPane.setConstraints(headLabel, 0, 0);
+        controlsPane.getChildren().add(headLabel);
+
+        mHeadRemovalSpinner = new Spinner<>(0, 150, 0, 10);
+        mHeadRemovalSpinner.setEditable(true);
+        mHeadRemovalSpinner.setPrefWidth(100);
+        mHeadRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from start of transmission (removes tone ramp-up)"));
+        mHeadRemovalSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+        GridPane.setConstraints(mHeadRemovalSpinner, 1, 0);
+        controlsPane.getChildren().add(mHeadRemovalSpinner);
+
+        Label tailLabel = new Label("Tail Trim (ms):");
+        GridPane.setConstraints(tailLabel, 2, 0);
+        controlsPane.getChildren().add(tailLabel);
+
+        mTailRemovalSpinner = new Spinner<>(0, 300, 100, 10);
+        mTailRemovalSpinner.setEditable(true);
+        mTailRemovalSpinner.setPrefWidth(100);
+        mTailRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from end of transmission (removes noise burst)"));
+        mTailRemovalSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+        GridPane.setConstraints(mTailRemovalSpinner, 3, 0);
+        controlsPane.getChildren().add(mTailRemovalSpinner);
+
+        Label hangtimeLabel = new Label("Hangtime (ms):");
+        GridPane.setConstraints(hangtimeLabel, 0, 1);
+        controlsPane.getChildren().add(hangtimeLabel);
+
+        mAudioHangtimeSpinner = new Spinner<>(0, 1000, 0, 50);
+        mAudioHangtimeSpinner.setEditable(true);
+        mAudioHangtimeSpinner.setPrefWidth(100);
+        mAudioHangtimeSpinner.setTooltip(new Tooltip("Delay before closing audio segment after transmission ends.\nPrevents cutting off the end of audio in ThinLine/Zello streams.\n0 = immediate close (default), 100-300 = recommended for streaming"));
+        mAudioHangtimeSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+        GridPane.setConstraints(mAudioHangtimeSpinner, 1, 1);
+        controlsPane.getChildren().add(mAudioHangtimeSpinner);
+
+        section.getChildren().addAll(titleBox, mSquelchTailEnabledSwitch, controlsPane);
         return section;
     }
 
