@@ -46,7 +46,7 @@ public class SidebarPanel extends JPanel {
         setLayout(new MigLayout("insets 10 5 10 5, gapy 5, wrap 1, fillx", "[grow, fill]", "[]"));
 
         java.awt.Image iconImg = new javax.swing.ImageIcon(SidebarPanel.class.getResource("/images/sidebar_icon.png")).getImage();
-        mToggleBtn = new JButton(new javax.swing.ImageIcon(iconImg.getScaledInstance(22, 20, java.awt.Image.SCALE_SMOOTH)));
+        mToggleBtn = new JButton(new ScaledIcon(iconImg, 22, 20));
         mToggleBtn.setContentAreaFilled(false);
         mToggleBtn.setBorderPainted(false);
         mToggleBtn.setFocusPainted(false);
@@ -58,7 +58,7 @@ public class SidebarPanel extends JPanel {
         mToggleBtn.getAccessibleContext().setAccessibleDescription("Collapses or expands the main navigation sidebar");
 
         java.awt.Image logoImg = new javax.swing.ImageIcon(SidebarPanel.class.getResource("/images/sdrtrunk_logo.png")).getImage();
-        mLogoLabel = new JLabel(new javax.swing.ImageIcon(logoImg.getScaledInstance(150, 50, java.awt.Image.SCALE_SMOOTH)));
+        mLogoLabel = new JLabel(new ScaledIcon(logoImg, 150, 50));
 
         mToggleBtn.addActionListener(e -> {
             mCollapsed = !mCollapsed;
@@ -352,6 +352,39 @@ public class SidebarPanel extends JPanel {
                 mView.revalidate();
                 mView.repaint();
             }
+        }
+    }
+
+
+    private static class ScaledIcon implements javax.swing.Icon {
+        private final java.awt.Image image;
+        private final int width;
+        private final int height;
+
+        public ScaledIcon(java.awt.Image image, int width, int height) {
+            this.image = image;
+            this.width = width;
+            this.height = height;
+        }
+
+        @Override
+        public void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {
+            java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.drawImage(image, x, y, width, height, null);
+            g2.dispose();
+        }
+
+        @Override
+        public int getIconWidth() {
+            return width;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return height;
         }
     }
 }

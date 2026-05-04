@@ -34,3 +34,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2024-05-04 - Sidebar List Sorting Fix
 **Learning:** In JavaFX application editors that use a Sidebar list (ListView) with a content pane (StackPane) map, the order of panes displayed in the list depends heavily on when the `addConfigurationPane` method is called. Constructor order constraints often force items to the top unexpectedly if parent classes add them before subclasses add theirs.
 **Action:** To force items to the bottom of the list (e.g. Alerts), extract their addition into a method (`setupAlertsPane()`) and have the subclasses call this method explicitly at the end of their respective constructors.
+## 2026-05-04 - HiDPI Icons in Swing
+**UX/a11y insight:** When using ImageIcon with java.awt.Image.getScaledInstance in Swing, the images are rasterized at the standard 1x resolution, resulting in pixelated/blurry icons on HiDPI displays.
+**Action:** Instead of getScaledInstance, create a custom javax.swing.Icon implementation that stores the original java.awt.Image. In the paintIcon method, create a Graphics2D context and use KEY_INTERPOLATION, VALUE_INTERPOLATION_BILINEAR, and KEY_ANTIALIASING hints before calling g2.drawImage. This ensures smooth scaling during HiDPI display painting.
