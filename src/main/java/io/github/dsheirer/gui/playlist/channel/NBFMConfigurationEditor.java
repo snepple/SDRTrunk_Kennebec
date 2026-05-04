@@ -335,12 +335,24 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 GridPane aiPane = new GridPane();
                 aiPane.setHgap(10);
                 aiPane.setVgap(5);
+
+                javafx.scene.layout.ColumnConstraints col1 = new javafx.scene.layout.ColumnConstraints();
+                col1.setHgrow(javafx.scene.layout.Priority.NEVER);
+                col1.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+
+                javafx.scene.layout.ColumnConstraints col2 = new javafx.scene.layout.ColumnConstraints();
+                col2.setHgrow(javafx.scene.layout.Priority.ALWAYS);
+                aiPane.getColumnConstraints().addAll(col1, col2);
+                aiPane.setMaxWidth(Double.MAX_VALUE);
+
                 mAIOptimizeButton = new javafx.scene.control.Button("AI Optimize Audio Filters");
                 mAIOptimizeButton.setStyle("-fx-font-weight: bold;");
                 mAIOptimizeButton.setOnAction(e -> handleAIOptimizeClick());
+                mAIOptimizeButton.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
                 GridPane.setConstraints(mAIOptimizeButton, 0, 0);
                 aiPane.getChildren().add(mAIOptimizeButton);
                 mAIOptimizeStatusLabel = new Label("Click to run Gemini AI analysis on this channel's audio");
+                mAIOptimizeStatusLabel.setWrapText(true);
                 GridPane.setConstraints(mAIOptimizeStatusLabel, 1, 0);
                 aiPane.getChildren().add(mAIOptimizeStatusLabel);
                 contentBox.getChildren().addAll(aiPane, new Separator());
