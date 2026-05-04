@@ -225,7 +225,7 @@ public class SystemTalkgroupSelectionEditor extends GridPane
     {
         if(mPlaceholderLabel == null)
         {
-            mPlaceholderLabel = new Label("No Talkgroups Available");
+            mPlaceholderLabel = new Label("Select a system, or there are no talkgroups available for currently selected system");
         }
 
         return mPlaceholderLabel;
