@@ -32,6 +32,7 @@ import io.github.dsheirer.gui.preference.tuner.TunerPreferenceEditor;
 import io.github.dsheirer.preference.UserPreferences;
 import javafx.scene.Node;
 import io.github.dsheirer.gui.preference.mqtt.MqttPreferenceEditor;
+import io.github.dsheirer.gui.preference.notification.NotificationPreferenceEditor;
 
 /**
  * Creates an editor for the specified preference editor type
@@ -68,6 +69,8 @@ public class PreferenceEditorFactory
                 return new VectorCalibrationPreferenceEditor(userPreferences);
             case ICON_MANAGER:
                 return new io.github.dsheirer.gui.icon.IconManager(iconModel);
+            case NOTIFICATIONS:
+                return new NotificationPreferenceEditor(userPreferences);
             case MQTT:
                 return new MqttPreferenceEditor(userPreferences);
             case AI:
