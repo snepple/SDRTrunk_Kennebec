@@ -116,6 +116,7 @@ public class HelpViewer extends JPanel {
         guidesNode.add(new DefaultMutableTreeNode("Rtl Sdr"));
         guidesNode.add(new DefaultMutableTreeNode("Supported Tuners"));
         guidesNode.add(new DefaultMutableTreeNode("System Requirements"));
+        guidesNode.add(new DefaultMutableTreeNode("Thinline Radio"));
         guidesNode.add(new DefaultMutableTreeNode("Tuner Self Healing"));
         guidesNode.add(new DefaultMutableTreeNode("Two Tone Detect"));
         guidesNode.add(new DefaultMutableTreeNode("User Preferences"));
