@@ -131,7 +131,6 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         setMaxWidth(Double.MAX_VALUE);
 
         VBox inspectorCard = new VBox(15);
-        inspectorCard.getStyleClass().add("preferences-card");
         inspectorCard.setPadding(new Insets(8));
         inspectorCard.setMaxWidth(Double.MAX_VALUE);
 
