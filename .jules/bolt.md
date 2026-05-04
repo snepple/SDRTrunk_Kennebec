@@ -1,21 +1,3 @@
-## 2024-05-13 - [Optimize formatOctetAsHex]
-**Learning:** `String.format("%02X", value)` is heavily used in `AbstractMessage.formatOctetAsHex` but parsing format strings is slow. A custom char array lookup is nearly ~50x faster.
-**Action:** Replace `String.format("%02X", value)` in `AbstractMessage.formatOctetAsHex` with a fast char array lookup implementation.
-
-## 2024-05-13 - [Optimize getIntAsHex]
-**Learning:** `getIntAsHex` creates strings via `Integer.toHexString`, pads them via string concatenation inside a `while` loop, and calls `.toUpperCase()`. This is slow due to creating multiple string objects and parsing strings. Using a custom char array padding technique like in `formatOctetAsHex` but supporting variable padding lengths improves speed by ~4x.
-**Action:** Replace `Integer.toHexString(value).toUpperCase()` and manual padding in `getIntAsHex` with a fast char array lookup and initialization implementation.
-
-## 2024-05-13 - [Optimize getHex and BinaryMessage]
-**Learning:** `BinaryMessage` heavily utilizes `String.format` and `Integer.toHexString` to format hex strings, which are surprisingly slow due to regex parsing and object instantiation inside inner loops in hot paths. Profiling shows `char[]` lookup techniques are significantly faster.
-**Action:** Replace `String.format` and `Integer.toHexString` in `BinaryMessage` with manual bit-shifting and `char[]` mapping against a static `HEX_ARRAY`. Use `Math.max` for correctly sizing buffer arrays.
-## 2025-02-12 - Fast Hexadecimal Formatting
-**Learning:** In tight loops or high-frequency code paths (like parsing/formatting messages), using `StringUtils.leftPad(Integer.toHexString(value).toUpperCase(), places, '0')` is slow due to intermediate string allocations, under-the-hood regular expressions in `StringUtils`, and case conversions.
-**Action:** Replace `Integer.toHexString` and string padding logic with a custom bitwise lookup against a static `char[]` of hexadecimal characters (`0123456789ABCDEF`) and process padding directly within the buffer. This avoids multiple object creations and speeds up execution significantly (~3x faster).
-## 2024-05-13 - [Optimize StringUtils.leftPad Hexadecimal Formatting]
-**Learning:** `StringUtils.leftPad(Integer.toHexString(...).toUpperCase(), ...)` and `String.format("%03X", ...)` are frequently used but relatively slow due to intermediate string allocations and regex parsing. Replacing them with the customized `P25Utils.formatHex(value, width)` method drastically reduces overhead and object creation.
-**Action:** Replace string-based hex padders and formatters with `P25Utils.formatHex` in high-frequency monitoring or identifier formatting classes.
-
-## 2026-05-03 - [Do not pollute Standard User Icons with System Icons]
-**Learning:** Adding system/decoder specific icons (like "AM.svg") into user-facing settings like `IconModel.mStandardIcons` pollutes the end-user icon dropdown.
-**Action:** When adding new internal, system-only icons that must be rendered via `IconModel`, add them to a distinct `mSystemIcons` map that can be used as a fallback in `IconModel.getIcon(...)`, thereby preventing them from leaking into the user-facing settings UI.
+## 2025-05-04 - Unsigned Integer Parsing
+ **Learning:** When reading or displaying Talkgroup IDs that can exceed `Integer.MAX_VALUE` (e.g. 10-digit IDs generated for geographic schemas), standard `Integer.parseInt(id)` throws `NumberFormatException`, causing the UI or logic to silently fail or act unexpectedly.
+ **Action:** For values that conceptually fit in a 32-bit unsigned space (up to ~4 billion), use `Integer.parseUnsignedInt()` when parsing from string, and `Integer.toUnsignedString()` when formatting back to string. Note that internally Java stores it as a signed int, so math/comparisons on such IDs need care (or `Integer.compareUnsigned`), but passing it around as a raw identifier is fine.

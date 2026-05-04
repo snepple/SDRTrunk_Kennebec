@@ -220,7 +220,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             generateIdButton.setOnAction(event -> {
                 GeographicSchemaGenerator generator = new GeographicSchemaGenerator(getItem(), mUserPreferences, getPlaylistManager());
                 generator.showAndWait().ifPresent(id -> {
-                    mTalkgroupTextFormatter.setValue(Integer.parseInt(id));
+                    // Parse as unsigned int since 10-digit IDs can exceed Integer.MAX_VALUE
+                    mTalkgroupTextFormatter.setValue(Integer.parseUnsignedInt(id));
                 });
             });
             talkgroupBox.getChildren().add(generateIdButton);

@@ -8,6 +8,7 @@ import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.protocol.Protocol;
 import javafx.geometry.Insets;
+import javafx.scene.Cursor;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 
@@ -44,27 +45,37 @@ public class GeographicSchemaGenerator extends Dialog<String> {
             mStateCombo.getItems().add(new State(entry.getKey(), entry.getValue()));
         }
         mStateCombo.setPrefWidth(200);
+        mStateCombo.getSelectionModel().clearSelection();
 
         mCountyCombo = new ComboBox<>();
         mCountyCombo.setPrefWidth(200);
+        mCountyCombo.setDisable(true);
         mStateCombo.setOnAction(e -> {
             State s = mStateCombo.getValue();
             mCountyCombo.getItems().clear();
-            if (s != null && s.fips.equals("00")) {
-                mCountyCombo.getItems().add(new CountyData.County("000", "Nationwide"));
-            } else if (s != null) {
-                Map<String, java.util.List<CountyData.County>> counties = CountyData.getCounties();
-                if (counties.containsKey(s.fips)) {
-                    mCountyCombo.getItems().addAll(counties.get(s.fips));
+            if (s == null) {
+                mCountyCombo.setDisable(true);
+            } else {
+                mCountyCombo.setDisable(false);
+                if (s.fips.equals("00")) {
+                    mCountyCombo.getItems().add(new CountyData.County("000", "Nationwide"));
                 } else {
-                    mCountyCombo.getItems().add(new CountyData.County("000", "Statewide"));
+                    if (mCountyCombo.getScene() != null) mCountyCombo.getScene().setCursor(Cursor.WAIT);
+                    Map<String, java.util.List<CountyData.County>> counties = CountyData.getCounties();
+                    if (counties.containsKey(s.fips)) {
+                        mCountyCombo.getItems().addAll(counties.get(s.fips));
+                    } else {
+                        mCountyCombo.getItems().add(new CountyData.County("000", "Statewide"));
+                    }
+                    if (mCountyCombo.getScene() != null) mCountyCombo.getScene().setCursor(Cursor.DEFAULT);
                 }
             }
-            mCountyCombo.getSelectionModel().selectFirst();
+            mCountyCombo.getSelectionModel().clearSelection();
             updatePreview();
         });
 
         mAgencyCombo = new ComboBox<>();
+        mAgencyCombo.setDisable(true);
         mAgencyCombo.getItems().addAll(
                 new AgencyType(1, "County Trunked Systems"),
                 new AgencyType(2, "State Trunked Systems"),
@@ -72,7 +83,7 @@ public class GeographicSchemaGenerator extends Dialog<String> {
                 new AgencyType(4, "State Agencies"),
                 new AgencyType(5, "National Agencies")
         );
-        mAgencyCombo.getSelectionModel().selectFirst();
+        mAgencyCombo.getSelectionModel().clearSelection();
 
         mPreviewField = new TextField();
         mPreviewField.setEditable(false);
@@ -88,7 +99,16 @@ public class GeographicSchemaGenerator extends Dialog<String> {
 
         getDialogPane().setContent(grid);
 
-        mCountyCombo.setOnAction(e -> updatePreview());
+        mCountyCombo.setOnAction(e -> {
+            CountyData.County c = mCountyCombo.getValue();
+            if (c == null) {
+                mAgencyCombo.getSelectionModel().clearSelection();
+                mAgencyCombo.setDisable(true);
+            } else {
+                mAgencyCombo.setDisable(false);
+            }
+            updatePreview();
+        });
         mAgencyCombo.setOnAction(e -> updatePreview());
 
         setResultConverter(dialogButton -> {
@@ -103,21 +123,22 @@ public class GeographicSchemaGenerator extends Dialog<String> {
     }
 
     private void autoFill() {
+        boolean hasState = false;
         if (mChannel.hasState()) {
             selectState(mChannel.getState());
+            hasState = true;
         } else if (mUserPreferences.getRadioReferencePreference().getPreferredStateId() > 0) {
             String preferredState = String.format("%02d", mUserPreferences.getRadioReferencePreference().getPreferredStateId());
             selectState(preferredState);
-        } else {
-            selectState("00");
+            hasState = true;
         }
 
-        if (mChannel.hasCounty()) {
-            selectCounty(String.format("%03d", Integer.parseInt(mChannel.getCounty())));
-        } else if (mUserPreferences.getRadioReferencePreference().getPreferredCountyId() > 0) {
-            selectCounty(String.format("%03d", mUserPreferences.getRadioReferencePreference().getPreferredCountyId()));
-        } else {
-            selectCounty("000");
+        if (hasState) {
+            if (mChannel.hasCounty()) {
+                selectCounty(String.format("%03d", Integer.parseInt(mChannel.getCounty())));
+            } else if (mUserPreferences.getRadioReferencePreference().getPreferredCountyId() > 0) {
+                selectCounty(String.format("%03d", mUserPreferences.getRadioReferencePreference().getPreferredCountyId()));
+            }
         }
     }
     private void selectCounty(String countyCode) {
@@ -127,7 +148,6 @@ public class GeographicSchemaGenerator extends Dialog<String> {
                 return;
             }
         }
-        mCountyCombo.getSelectionModel().selectFirst();
     }
 
     private void selectState(String stateFips) {
@@ -137,15 +157,22 @@ public class GeographicSchemaGenerator extends Dialog<String> {
                 return;
             }
         }
-        mStateCombo.getSelectionModel().selectFirst();
     }
 
     private void updatePreview() {
         String id = generateId();
         if (id != null) {
             mPreviewField.setText(id);
+            if (getDialogPane().getButtonTypes().size() > 0) {
+                javafx.scene.Node confirmButton = getDialogPane().lookupButton(getDialogPane().getButtonTypes().get(0));
+                if (confirmButton != null) confirmButton.setDisable(false);
+            }
         } else {
             mPreviewField.setText("Invalid Selection");
+            if (getDialogPane().getButtonTypes().size() > 0) {
+                javafx.scene.Node confirmButton = getDialogPane().lookupButton(getDialogPane().getButtonTypes().get(0));
+                if (confirmButton != null) confirmButton.setDisable(true);
+            }
         }
     }
 
@@ -165,7 +192,7 @@ public class GeographicSchemaGenerator extends Dialog<String> {
         for (Alias alias : mPlaylistManager.getAliasModel().getAliases()) {
             for (AliasID id : alias.getAliasIdentifiers()) {
                 if (id instanceof Talkgroup && ((Talkgroup) id).getProtocol() == Protocol.NBFM) {
-                    String tgValue = String.valueOf(((Talkgroup) id).getValue());
+                    String tgValue = Integer.toUnsignedString(((Talkgroup) id).getValue());
                     if (tgValue.startsWith(prefix) && tgValue.length() == 10) {
                         try {
                             int seq = Integer.parseInt(tgValue.substring(6));
