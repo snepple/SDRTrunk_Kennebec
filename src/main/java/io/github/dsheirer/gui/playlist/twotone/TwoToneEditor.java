@@ -77,12 +77,16 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         mTableView.setPlaceholder(new Label("Click the New button to create a new Two Tone Detector"));
 
         TableColumn<TwoToneConfiguration, String> aliasCol = new TableColumn<>("Name");
+        aliasCol.setId("alias");
         aliasCol.setCellValueFactory(new PropertyValueFactory<>("alias"));
         TableColumn<TwoToneConfiguration, Double> toneACol = new TableColumn<>("Tone A");
+        toneACol.setId("toneA");
         toneACol.setCellValueFactory(new PropertyValueFactory<>("toneA"));
         TableColumn<TwoToneConfiguration, Double> toneBCol = new TableColumn<>("Tone B");
+        toneBCol.setId("toneB");
         toneBCol.setCellValueFactory(new PropertyValueFactory<>("toneB"));
         TableColumn<TwoToneConfiguration, Boolean> mqttCol = new TableColumn<>("MQTT Enabled");
+        mqttCol.setId("mqtt");
         mqttCol.setCellValueFactory(new PropertyValueFactory<>("enableMqttPublish"));
 
         mTableView.getColumns().addAll(aliasCol, toneACol, toneBCol, mqttCol);

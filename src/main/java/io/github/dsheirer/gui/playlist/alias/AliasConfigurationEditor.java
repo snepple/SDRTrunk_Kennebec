@@ -1012,6 +1012,10 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                 {
                     return true;
                 }
+                else if(mSearchText == null || mSearchText.isEmpty())
+                {
+                    return true;
+                }
                 else if(alias.getName().toLowerCase().contains(mSearchText))
                 {
                     return true;
