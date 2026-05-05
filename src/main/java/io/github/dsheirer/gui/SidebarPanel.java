@@ -58,7 +58,27 @@ public class SidebarPanel extends JPanel {
         mToggleBtn.getAccessibleContext().setAccessibleDescription("Collapses or expands the main navigation sidebar");
 
         java.awt.Image logoImg = new javax.swing.ImageIcon(SidebarPanel.class.getResource("/images/sdrtrunk_logo.png")).getImage();
-        mLogoLabel = new JLabel(new javax.swing.ImageIcon(logoImg.getScaledInstance(150, 50, java.awt.Image.SCALE_SMOOTH)));
+        mLogoLabel = new JLabel(new javax.swing.Icon() {
+            @Override
+            public void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.drawImage(logoImg, x, y, getIconWidth(), getIconHeight(), null);
+                g2.dispose();
+            }
+
+            @Override
+            public int getIconWidth() {
+                return 150;
+            }
+
+            @Override
+            public int getIconHeight() {
+                return 50;
+            }
+        });
 
         mToggleBtn.addActionListener(e -> {
             mCollapsed = !mCollapsed;
