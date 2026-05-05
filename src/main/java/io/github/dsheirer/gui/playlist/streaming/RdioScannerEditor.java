@@ -138,13 +138,6 @@ public class RdioScannerEditor extends AbstractBroadcastEditor<RdioScannerConfig
             GridPane.setConstraints(getFormatField(), 1, row);
             mEditorPane.getChildren().add(getFormatField());
 
-            Label enabledLabel = new Label("Enabled");
-            GridPane.setHalignment(enabledLabel, HPos.RIGHT);
-            GridPane.setConstraints(enabledLabel, 2, row);
-            mEditorPane.getChildren().add(enabledLabel);
-
-            GridPane.setConstraints(getEnabledSwitch(), 3, row);
-            mEditorPane.getChildren().add(getEnabledSwitch());
 
             Label systemLabel = new Label("Name");
             GridPane.setHalignment(systemLabel, HPos.RIGHT);

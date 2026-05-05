@@ -29,6 +29,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -72,16 +73,23 @@ public abstract class AbstractBroadcastEditor<T extends BroadcastConfiguration> 
         getResetButton().getStyleClass().add("flat-button");
         getReconnectButton().getStyleClass().add("flat-button");
 
-        buttonBox.getChildren().addAll(getSaveButton(), getResetButton(), getReconnectButton());
+        Label enabledLabel = new Label("Enabled");
+        buttonBox.getChildren().addAll(enabledLabel, getEnabledSwitch(), getSaveButton(), getResetButton(), getReconnectButton());
 
         VBox editorBox = new VBox();
-        editorBox.getChildren().addAll(getEditorPane(), buttonBox);
+        editorBox.getChildren().addAll(buttonBox, getEditorPane());
         getChildren().addAll(editorBox);
 
         //Refresh the reconnect button whenever edits are made or the enabled toggle flips
         modifiedProperty().addListener((obs, oldVal, newVal) -> updateReconnectButtonState());
         getEnabledSwitch().selectedProperty()
             .addListener((obs, oldVal, newVal) -> updateReconnectButtonState());
+
+        modifiedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                save();
+            }
+        });
     }
 
     protected PlaylistManager getPlaylistManager()

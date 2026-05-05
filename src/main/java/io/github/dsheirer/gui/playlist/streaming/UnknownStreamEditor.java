@@ -80,13 +80,7 @@ public class UnknownStreamEditor extends AbstractStreamEditor<BroadcastConfigura
             GridPane.setConstraints(getFormatField(), 1, 0);
             mEditorPane.getChildren().add(getFormatField());
 
-            Label enabledLabel = new Label("Enabled");
-            GridPane.setHalignment(enabledLabel, HPos.RIGHT);
-            GridPane.setConstraints(enabledLabel, 2, 0);
-            mEditorPane.getChildren().add(enabledLabel);
 
-            GridPane.setConstraints(getEnabledSwitch(), 3, 0);
-            mEditorPane.getChildren().add(getEnabledSwitch());
 
             Label systemLabel = new Label("Name");
             GridPane.setHalignment(systemLabel, HPos.RIGHT);

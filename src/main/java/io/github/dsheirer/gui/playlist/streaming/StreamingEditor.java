@@ -56,6 +56,7 @@ import io.github.dsheirer.audio.broadcast.BroadcastEvent;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
@@ -526,6 +527,7 @@ public class StreamingEditor extends SplitPane
                 "audio streaming configuration"));
             mConfiguredBroadcastTableView.setItems(mPlaylistManager.getBroadcastModel().getConfiguredBroadcasts());
             mConfiguredBroadcastTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+            mConfiguredBroadcastTableView.setEditable(true);
 
             TableColumn<ConfiguredBroadcast,Boolean> enabledColumn = new TableColumn("Enabled");
             enabledColumn.setId("enabled");
@@ -555,10 +557,44 @@ public class StreamingEditor extends SplitPane
                 return tableCell;
             });
 
-            TableColumn nameColumn = new TableColumn("Name");
+            TableColumn<ConfiguredBroadcast, String> nameColumn = new TableColumn<>("Name");
             nameColumn.setId("name");
             nameColumn.setPrefWidth(300);
             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+            nameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+            nameColumn.setOnEditCommit(event -> {
+                ConfiguredBroadcast broadcast = event.getRowValue();
+                String oldName = event.getOldValue();
+                String newName = event.getNewValue();
+
+                if (broadcast != null && broadcast.getBroadcastConfiguration() != null && newName != null && !newName.isEmpty() && !newName.equals(oldName)) {
+                    broadcast.getBroadcastConfiguration().setName(newName);
+
+                    if (oldName != null && !oldName.isEmpty() && mPlaylistManager.getAliasModel().hasAliasesWithBroadcastChannel(oldName)) {
+                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                        alert.getButtonTypes().clear();
+                        alert.getButtonTypes().addAll(ButtonType.NO, ButtonType.YES);
+                        alert.setTitle("Update Aliases");
+                        alert.setHeaderText("Rename requires updating aliases for this stream");
+                        alert.setContentText("Do you want to update aliases to new stream name?");
+
+                        alert.showAndWait().ifPresent(buttonType -> {
+                            if (buttonType == ButtonType.YES) {
+                                mPlaylistManager.getAliasModel().updateBroadcastChannel(oldName, newName);
+                            }
+                        });
+                    }
+
+                    mPlaylistManager.getBroadcastModel().process(new BroadcastEvent(broadcast.getBroadcastConfiguration(), BroadcastEvent.Event.CONFIGURATION_CHANGE));
+
+                    if (mConfiguredBroadcastTableView.getSelectionModel().getSelectedItem() == broadcast) {
+                        setBroadcastConfiguration(broadcast);
+                    }
+                } else if (broadcast != null && broadcast.getBroadcastConfiguration() != null && (newName == null || newName.isEmpty())) {
+                    broadcast.getBroadcastConfiguration().setName(oldName);
+                    mConfiguredBroadcastTableView.refresh();
+                }
+            });
 
             TableColumn typeColumn = new TableColumn();
             typeColumn.setId("format");
