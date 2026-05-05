@@ -535,6 +535,8 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                                     imageView = new javafx.scene.image.ImageView();
                                 }
                                 imageView.setImage(icon.getFxImage());
+                                imageView.setFitWidth(16);
+                                imageView.setFitHeight(16);
                                 setGraphic(imageView);
                             } else {
                                 setGraphic(null);
@@ -752,7 +754,10 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             if (decoderType.getIconName() != null) {
                 io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(decoderType.getIconName());
                 if (icon != null && icon.getFxImage() != null) {
-                    setGraphic(new javafx.scene.image.ImageView(icon.getFxImage()));
+                    javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(icon.getFxImage());
+                    iv.setFitWidth(16);
+                    iv.setFitHeight(16);
+                    setGraphic(iv);
                 }
             }
             setOnAction(event -> createNewChannel(mDecoderType));
@@ -770,14 +775,20 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             if (DecoderType.P25_PHASE2.getIconName() != null) {
                 io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(DecoderType.P25_PHASE2.getIconName());
                 if (icon != null && icon.getFxImage() != null) {
-                    setGraphic(new javafx.scene.image.ImageView(icon.getFxImage()));
+                    javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(icon.getFxImage());
+                    iv.setFitWidth(16);
+                    iv.setFitHeight(16);
+                    setGraphic(iv);
                 }
             }
             MenuItem trunkedP1 = new MenuItem("Trunked System - FDMA Phase 1 Control Channel");
             if (DecoderType.P25_PHASE1.getIconName() != null) {
                 io.github.dsheirer.icon.Icon iconP1 = mPlaylistManager.getIconModel().getIcon(DecoderType.P25_PHASE1.getIconName());
                 if (iconP1 != null && iconP1.getFxImage() != null) {
-                    trunkedP1.setGraphic(new javafx.scene.image.ImageView(iconP1.getFxImage()));
+                    javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(iconP1.getFxImage());
+                    iv.setFitWidth(16);
+                    iv.setFitHeight(16);
+                    trunkedP1.setGraphic(iv);
                 }
             }
             trunkedP1.setOnAction(event -> createNewChannel(DecoderType.P25_PHASE1));
@@ -785,7 +796,10 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             if (DecoderType.P25_PHASE2.getIconName() != null) {
                 io.github.dsheirer.icon.Icon iconP2 = mPlaylistManager.getIconModel().getIcon(DecoderType.P25_PHASE2.getIconName());
                 if (iconP2 != null && iconP2.getFxImage() != null) {
-                    trunkedP2.setGraphic(new javafx.scene.image.ImageView(iconP2.getFxImage()));
+                    javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(iconP2.getFxImage());
+                    iv.setFitWidth(16);
+                    iv.setFitHeight(16);
+                    trunkedP2.setGraphic(iv);
                 }
             }
             trunkedP2.setOnAction(event -> createNewChannel(DecoderType.P25_PHASE2));
@@ -793,7 +807,10 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             if (DecoderType.P25_PHASE2.getIconName() != null) {
                 io.github.dsheirer.icon.Icon iconP2C = mPlaylistManager.getIconModel().getIcon(DecoderType.P25_PHASE2.getIconName());
                 if (iconP2C != null && iconP2C.getFxImage() != null) {
-                    channel.setGraphic(new javafx.scene.image.ImageView(iconP2C.getFxImage()));
+                    javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(iconP2C.getFxImage());
+                    iv.setFitWidth(16);
+                    iv.setFitHeight(16);
+                    channel.setGraphic(iv);
                 }
             }
             channel.setOnAction(event -> createNewChannel(DecoderType.P25_PHASE2));
