@@ -61,13 +61,13 @@ public class SignalPowerView extends JPanel
     {
         mPlaylistManager = playlistManager;
 
-        setLayout(new MigLayout("", "[][][][grow,fill]", "[grow,fill]"));
+        setLayout(new MigLayout("ins 16, gap 8 8", "[][][][grow,fill]", "[grow,fill]"));
         mPowerMeter.setPeakVisible(true);
         mPowerMeter.setSquelchThresholdVisible(true);
         add(mPowerMeter);
 
         JPanel valuePanel = new JPanel();
-        valuePanel.setLayout(new MigLayout("", "[right][left][][]", ""));
+        valuePanel.setLayout(new MigLayout("ins 16, gap 8 12", "[right][left][][]", ""));
 
         mPeakLabel = new JLabel("0");
         mPeakLabel.setToolTipText("Current peak power level in decibels.");
@@ -90,6 +90,7 @@ public class SignalPowerView extends JPanel
         IconFontSwing.register(FontAwesome.getIconFont());
         Icon iconUp = IconFontSwing.buildIcon(FontAwesome.ANGLE_UP, 12);
         mSquelchUpButton = new JButton(iconUp);
+        mSquelchUpButton.putClientProperty("JButton.buttonType", "roundRect");
         mSquelchUpButton.setToolTipText("Increases the squelch threshold value");
         mSquelchUpButton.getAccessibleContext().setAccessibleName("Increase Squelch");
         mSquelchUpButton.getAccessibleContext().setAccessibleDescription("Increases the squelch threshold value");
@@ -99,6 +100,7 @@ public class SignalPowerView extends JPanel
 
         Icon iconDown = IconFontSwing.buildIcon(FontAwesome.ANGLE_DOWN, 12);
         mSquelchDownButton = new JButton(iconDown);
+        mSquelchDownButton.putClientProperty("JButton.buttonType", "roundRect");
         mSquelchDownButton.setToolTipText("Decreases the squelch threshold value.");
         mSquelchDownButton.getAccessibleContext().setAccessibleName("Decrease Squelch");
         mSquelchDownButton.getAccessibleContext().setAccessibleDescription("Decreases the squelch threshold value");
