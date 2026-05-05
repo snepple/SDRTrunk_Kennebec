@@ -469,7 +469,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     private Spinner<Integer> getAiAudioMonitoringCheckIntervalSpinner() {
         if(mAiAudioMonitoringCheckIntervalSpinner == null) {
             mAiAudioMonitoringCheckIntervalSpinner = new Spinner<>();
-            mAiAudioMonitoringCheckIntervalSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1440, 5));
+            mAiAudioMonitoringCheckIntervalSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, Integer.MAX_VALUE, 1));
             mAiAudioMonitoringCheckIntervalSpinner.setEditable(true);
             mAiAudioMonitoringCheckIntervalSpinner.valueProperty().addListener((obs, old, newValue) -> modifiedProperty().set(true));
         }
@@ -522,7 +522,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             aiGrid.setHgap(10);
             aiGrid.setVgap(10);
             aiGrid.add(getAiAudioMonitoringEnabledSwitch(), 0, 0, 2, 1);
-            aiGrid.add(new Label("Check Interval (minutes):"), 0, 1);
+            aiGrid.add(new Label("Check Interval (hours):"), 0, 1);
             aiGrid.add(getAiAudioMonitoringCheckIntervalSpinner(), 1, 1);
             aiGrid.add(getAiAudioMonitoringWaitNewAudioSwitch(), 0, 2, 2, 1);
             aiGrid.add(new Label("Alert Threshold (failures):"), 0, 3);

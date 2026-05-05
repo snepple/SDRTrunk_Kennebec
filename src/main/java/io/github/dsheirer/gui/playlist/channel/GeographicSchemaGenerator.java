@@ -115,6 +115,14 @@ public class GeographicSchemaGenerator extends Dialog<String> {
 
         setResultConverter(dialogButton -> {
             if (dialogButton == confirmButtonType) {
+                State state = mStateCombo.getValue();
+                CountyData.County countyObj = mCountyCombo.getValue();
+                AgencyType agency = mAgencyCombo.getValue();
+                if (state != null && countyObj != null && agency != null) {
+                    mChannel.setState(state.fips);
+                    mChannel.setCounty(countyObj.code);
+                    mChannel.setAgency(String.valueOf(agency.code));
+                }
                 return generateId();
             }
             return null;
@@ -138,6 +146,9 @@ public class GeographicSchemaGenerator extends Dialog<String> {
         if (hasState) {
             if (mChannel.hasCounty()) {
                 selectCounty(String.format("%03d", Integer.parseInt(mChannel.getCounty())));
+                if (mChannel.hasAgency()) {
+                    selectAgency(mChannel.getAgency());
+                }
             } else if (mUserPreferences.getRadioReferencePreference().getPreferredCountyId() > 0) {
                 selectCounty(String.format("%03d", mUserPreferences.getRadioReferencePreference().getPreferredCountyId()));
             }
@@ -150,6 +161,18 @@ public class GeographicSchemaGenerator extends Dialog<String> {
                 return;
             }
         }
+    }
+
+    private void selectAgency(String agencyCode) {
+        try {
+            int code = Integer.parseInt(agencyCode);
+            for (AgencyType a : mAgencyCombo.getItems()) {
+                if (a.code == code) {
+                    mAgencyCombo.getSelectionModel().select(a);
+                    return;
+                }
+            }
+        } catch (NumberFormatException ignored) {}
     }
 
     private void selectState(String stateFips) {

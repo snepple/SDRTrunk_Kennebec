@@ -41,10 +41,15 @@ import java.util.ArrayList;
 import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import io.github.dsheirer.gui.control.IntegerTextField;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
+import javafx.scene.paint.Color;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
@@ -76,7 +81,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     private ToggleSwitch mIgnoreUnaliasedTalkgroupsButton;
     private ToggleSwitch mNacFilterButton;
     private javafx.scene.control.TextField mNacTextField;
-    private javafx.scene.control.TextField mTalkgroupTextField;
+    private IntegerTextField mTalkgroupTextField;
     private Spinner<Integer> mTrafficChannelPoolSizeSpinner;
     private SegmentedButton mModulationSegmentedButton;
     private ToggleButton mC4FMToggleButton;
@@ -144,7 +149,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getModulationSegmentedButton(), 1, 0);
             gridPane.getChildren().addAll(getModulationSegmentedButton());
 
-            Label poolSizeLabel = new Label("Max Traffic Channels");
+            Label poolSizeLabel = new Label("Max Traffic Channels", createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."));
             GridPane.setHalignment(poolSizeLabel, HPos.RIGHT);
             GridPane.setConstraints(poolSizeLabel, 2, 0);
             gridPane.getChildren().add(poolSizeLabel);
@@ -168,7 +173,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getNacFilterButton(), 0, 2);
             gridPane.getChildren().add(getNacFilterButton());
 
-            Label nacLabel = new Label("NAC Filter (hex):");
+            Label nacLabel = new Label("NAC Filter (hex):", createHelpIcon("A unique code identifying a specific radio system. This is usually provided by RadioReference and tells the software which network to follow."));
             javafx.scene.layout.HBox nacBox = new javafx.scene.layout.HBox(5, nacLabel, getNacTextField());
             nacBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             GridPane.setConstraints(nacBox, 1, 2);
@@ -459,11 +464,11 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         return mNacTextField;
     }
 
-    private javafx.scene.control.TextField getTalkgroupTextField()
+    private IntegerTextField getTalkgroupTextField()
     {
         if(mTalkgroupTextField == null)
         {
-            mTalkgroupTextField = new javafx.scene.control.TextField();
+            mTalkgroupTextField = new IntegerTextField();
             mTalkgroupTextField.setDisable(true);
             mTalkgroupTextField.setPrefWidth(80);
             mTalkgroupTextField.setPromptText("e.g. 1001");
@@ -589,21 +594,10 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     @Override
     protected Integer getConfiguredTalkgroup()
     {
-        String tgText = getTalkgroupTextField().getText();
-        if(tgText != null && !tgText.trim().isEmpty())
+        Integer tg = getTalkgroupTextField().get();
+        if(tg != null && tg >= 1 && tg <= 65535)
         {
-            try
-            {
-                int tg = Integer.parseInt(tgText.trim());
-                if(tg >= 1 && tg <= 65535)
-                {
-                    return tg;
-                }
-            }
-            catch(NumberFormatException e)
-            {
-                return null;
-            }
+            return tg;
         }
         return null;
     }
@@ -631,25 +625,10 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         int originalTalkgroup = config.getTalkgroup();
 
         //Parse talkgroup text field
-        String tgText = getTalkgroupTextField().getText();
-        if(tgText != null && !tgText.trim().isEmpty())
+        Integer tg = getTalkgroupTextField().get();
+        if(tg != null && tg >= 1 && tg <= 65535)
         {
-            try
-            {
-                int tg = Integer.parseInt(tgText.trim());
-                if(tg >= 1 && tg <= 65535)
-                {
-                    config.setTalkgroup(tg);
-                }
-                else
-                {
-                    config.setTalkgroup(0);
-                }
-            }
-            catch(NumberFormatException e)
-            {
-                config.setTalkgroup(0);
-            }
+            config.setTalkgroup(tg);
         }
         else
         {
@@ -765,5 +744,17 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         getSourceConfigurationEditor().save();
         SourceConfiguration sourceConfiguration = getSourceConfigurationEditor().getSourceConfiguration();
         getItem().setSourceConfiguration(sourceConfiguration);
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }

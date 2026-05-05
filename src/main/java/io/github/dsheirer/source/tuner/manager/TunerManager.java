@@ -61,6 +61,8 @@ import org.usb4java.DeviceList;
 import org.usb4java.HotplugCallback;
 import org.usb4java.HotplugCallbackHandle;
 import org.usb4java.LibUsb;
+import io.github.dsheirer.health.SystemHealthAlertEvent;
+import io.github.dsheirer.eventbus.MyEventBus;
 
 /**
  * Tuner manager provides access to tuners using USB, recording, sound-card and system-daemon accessible devices. This
@@ -760,9 +762,15 @@ public class TunerManager implements IDiscoveredTunerStatusListener
                     case LibUsb.HOTPLUG_EVENT_DEVICE_LEFT:
                         DiscoveredTuner removed = removeUsbTuner(bus, portAddress);
 
-                        if(removed != null)
+if(removed != null)
                         {
                             mLog.info("Tuner Unplugged: " + removed.getId());
+                            MyEventBus.getGlobalEventBus().post(new SystemHealthAlertEvent(
+                                SystemHealthAlertEvent.AlertType.HARDWARE,
+                                "Hardware and Tuner Failure",
+                                "USB Tuner disconnected: " + removed.getName() + " (" + removed.getId() + "). " +
+                                "Ensure device is securely connected and not overheating."
+                            ));
                         }
                         break;
                 }
