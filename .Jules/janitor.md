@@ -1,3 +1,3 @@
-## 2024-05-19 - Table Inline Editing and Context Menus
-**Learning:** Adding inline editing capabilities to JavaFX `TableView` elements significantly enhances user experience, especially when dealing with data-intensive tasks. To effectively update complex table properties, it's beneficial to utilize custom `TableCell` implementations equipped with UI components like `ComboBox` or `ColorPicker`. Additionally, integrating context menus directly onto `JTable` headers for features such as data filtering provides a clean and intuitive approach, avoiding the clutter of extra on-screen buttons.
-**Action:** When designing data-rich tables, prioritize implementing inline editing to streamline workflows. Incorporate header context menus to house supplementary actions like sorting or filtering, ensuring a more organized and user-friendly interface.
+## 2024-05-05 - Windows High-DPI Taskbar Icons
+**Finding:** Passing a single image to `setIconImage()` in Java Swing on Windows historically leads to blurry icons on high-DPI displays.
+**Action:** Use `mMainGui.setIconImages(List<Image>)` passing the single high-res image wrapped in a list to bypass the aggressive downscaling, and additionally use `java.awt.Taskbar.getTaskbar().setIconImage()` to properly set the modern high-DPI Windows Taskbar icon.
