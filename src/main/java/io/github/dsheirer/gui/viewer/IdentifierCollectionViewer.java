@@ -25,6 +25,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Label;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -98,6 +99,7 @@ public class IdentifierCollectionViewer extends VBox
             });
 
             mIdentifierTableView.getColumns().addAll(classColumn, formColumn, roleColumn, valueColumn, textColumn);
+            mIdentifierTableView.setPlaceholder(new Label("No identifiers available"));
         }
 
         return mIdentifierTableView;

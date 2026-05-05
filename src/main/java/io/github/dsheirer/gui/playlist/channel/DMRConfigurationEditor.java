@@ -312,7 +312,7 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             lsnColumn.setPrefWidth(225);
             lsnColumn.setCellValueFactory(new PropertyValueFactory<>("description"));
             mTimeslotFrequencyTable.getColumns().addAll(lsnColumn);
-
+            mTimeslotFrequencyTable.setPlaceholder(new Label("Click the New button to add a timeslot frequency"));
 
             mTimeslotFrequencyTable.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> setTimeslot(newValue));

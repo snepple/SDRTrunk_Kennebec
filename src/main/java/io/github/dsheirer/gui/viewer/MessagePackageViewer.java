@@ -175,6 +175,7 @@ public class MessagePackageViewer extends VBox
             frequencyColumn.setCellValueFactory(new PropertyValueFactory<>("frequency"));
 
             mDecoderStateEventTableView.getColumns().addAll(timeslotColumn, stateColumn, eventColumn, frequencyColumn);
+            mDecoderStateEventTableView.setPlaceholder(new Label("No decoder state events available"));
         }
 
         return mDecoderStateEventTableView;
@@ -224,6 +225,7 @@ public class MessagePackageViewer extends VBox
 
             mDecodeEventTableView.getColumns().addAll(startTimeColumn, durationColumn, typeColumn, channelDescriptorColumn,
                     frequencyColumn, hashcodeColumn, detailsColumn);
+            mDecodeEventTableView.setPlaceholder(new Label("No decode events available"));
 
             mDecodeEventTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) ->
             {
