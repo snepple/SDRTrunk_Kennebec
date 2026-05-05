@@ -84,6 +84,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     private StringProperty mSite = new SimpleStringProperty();
     private StringProperty mState = new SimpleStringProperty();
     private StringProperty mCounty = new SimpleStringProperty();
+    private StringProperty mAgency = new SimpleStringProperty();
     private StringProperty mName = new SimpleStringProperty();
     private ObservableList<Long> mFrequencyList;
 
@@ -140,6 +141,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
         channel.setSite(mSite.get());
         channel.setState(mState.get());
         channel.setCounty(mCounty.get());
+        channel.setAgency(mAgency.get());
         channel.setAliasListName(mAliasListName.get());
         channel.setAutoStart(mAutoStart.get());
         channel.setAutoStartOrder(mAutoStartOrder.get());
@@ -301,6 +303,14 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     public StringProperty siteProperty()
     {
         return mSite;
+    }
+
+    /**
+     * Channel agency property
+     */
+    public StringProperty agencyProperty()
+    {
+        return mAgency;
     }
 
     /**
@@ -485,6 +495,25 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     public boolean hasCounty()
     {
         return mCounty != null && mCounty.get() != null;
+    }
+
+    /**
+     * Returns the agency for this channel.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "agency")
+    public String getAgency()
+    {
+        return mAgency.get();
+    }
+
+    public void setAgency(String agency)
+    {
+        mAgency.set(agency);
+    }
+
+    public boolean hasAgency()
+    {
+        return mAgency != null && mAgency.get() != null;
     }
 
     /**
@@ -878,6 +907,6 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     {
         return (Channel c) -> new Observable[] {c.processingProperty(), c.activeTunerNameProperty(), c.nameProperty(), c.aliasListNameProperty(),
             c.autoStartOrderProperty(), c.autoStartProperty(), c.siteProperty(), c.systemProperty(),
-            c.getFrequencyList()};
+            c.getFrequencyList(), c.mState, c.mCounty, c.mAgency};
     }
 }
