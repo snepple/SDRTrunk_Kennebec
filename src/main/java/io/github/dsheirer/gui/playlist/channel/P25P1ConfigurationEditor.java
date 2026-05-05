@@ -46,6 +46,10 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
+import javafx.scene.paint.Color;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
@@ -145,7 +149,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getModulationSegmentedButton(), 1, 0);
             gridPane.getChildren().addAll(getModulationSegmentedButton());
 
-            Label poolSizeLabel = new Label("Max Traffic Channels");
+            Label poolSizeLabel = new Label("Max Traffic Channels", createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."));
             GridPane.setHalignment(poolSizeLabel, HPos.RIGHT);
             GridPane.setConstraints(poolSizeLabel, 2, 0);
             gridPane.getChildren().add(poolSizeLabel);
@@ -169,7 +173,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getNacFilterButton(), 0, 2);
             gridPane.getChildren().add(getNacFilterButton());
 
-            Label nacLabel = new Label("NAC Filter (hex):");
+            Label nacLabel = new Label("NAC Filter (hex):", createHelpIcon("A unique code identifying a specific radio system. This is usually provided by RadioReference and tells the software which network to follow."));
             javafx.scene.layout.HBox nacBox = new javafx.scene.layout.HBox(5, nacLabel, getNacTextField());
             nacBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             GridPane.setConstraints(nacBox, 1, 2);
@@ -740,5 +744,17 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         getSourceConfigurationEditor().save();
         SourceConfiguration sourceConfiguration = getSourceConfigurationEditor().getSourceConfiguration();
         getItem().setSourceConfiguration(sourceConfiguration);
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }
