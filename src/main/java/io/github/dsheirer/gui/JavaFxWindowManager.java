@@ -47,6 +47,8 @@ import io.github.dsheirer.monitor.StatusBox;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
+import io.github.dsheirer.health.SystemHealthMonitor;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
@@ -83,6 +85,8 @@ public class JavaFxWindowManager extends Application
     private PlaylistEditor mPlaylistEditor;
     private PlaylistManager mPlaylistManager;
     private TunerManager mTunerManager;
+    private SystemHealthMonitor mSystemHealthMonitor;
+
     private UserPreferences mUserPreferences;
     private UserPreferencesEditor mUserPreferencesEditor;
     private MessageRecordingViewer mMessageRecordingViewer;
@@ -119,6 +123,8 @@ public class JavaFxWindowManager extends Application
         EventLogManager eventLogManager = new EventLogManager(aliasModel, mUserPreferences);
         mTunerManager = new TunerManager(mUserPreferences);
         mTunerManager.start();
+        mSystemHealthMonitor = new SystemHealthMonitor(mUserPreferences);
+        io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().register(mSystemHealthMonitor);
         mPlaylistManager = new PlaylistManager(mUserPreferences, mTunerManager, aliasModel, eventLogManager, new IconModel());
         mPlaylistManager.init();
         mViewChangedListener = id -> {};

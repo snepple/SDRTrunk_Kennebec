@@ -18,6 +18,11 @@ public class NotificationPreference extends Preference {
     private String mSmtpUsername = "";
     private String mSmtpPassword = "";
     private String mSmtpFromAddress = "";
+    private boolean mHardwareAlertEnabled = false;
+    private boolean mSignalAlertEnabled = false;
+    private boolean mSystemAlertEnabled = false;
+    private boolean mIntegrationAlertEnabled = false;
+
 
     private List<NotificationRecipient> mRecipients = new ArrayList<>();
 
@@ -98,6 +103,43 @@ public class NotificationPreference extends Preference {
     public void setSmtpFromAddress(String smtpFromAddress) {
         mSmtpFromAddress = smtpFromAddress;
     }
+    @JacksonXmlProperty(isAttribute = true, localName = "hardwareAlertEnabled")
+    public boolean isHardwareAlertEnabled() {
+        return mHardwareAlertEnabled;
+    }
+
+    public void setHardwareAlertEnabled(boolean hardwareAlertEnabled) {
+        mHardwareAlertEnabled = hardwareAlertEnabled;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "signalAlertEnabled")
+    public boolean isSignalAlertEnabled() {
+        return mSignalAlertEnabled;
+    }
+
+    public void setSignalAlertEnabled(boolean signalAlertEnabled) {
+        mSignalAlertEnabled = signalAlertEnabled;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "systemAlertEnabled")
+    public boolean isSystemAlertEnabled() {
+        return mSystemAlertEnabled;
+    }
+
+    public void setSystemAlertEnabled(boolean systemAlertEnabled) {
+        mSystemAlertEnabled = systemAlertEnabled;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "integrationAlertEnabled")
+    public boolean isIntegrationAlertEnabled() {
+        return mIntegrationAlertEnabled;
+    }
+
+    public void setIntegrationAlertEnabled(boolean integrationAlertEnabled) {
+        mIntegrationAlertEnabled = integrationAlertEnabled;
+    }
+
+
 
 
 

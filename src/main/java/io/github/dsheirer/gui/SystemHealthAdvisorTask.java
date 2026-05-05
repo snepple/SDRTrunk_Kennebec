@@ -5,6 +5,8 @@ import javafx.scene.control.Label;
 import java.lang.management.ManagementFactory;
 import com.sun.management.OperatingSystemMXBean;
 import java.util.TimerTask;
+import io.github.dsheirer.health.SystemHealthAlertEvent;
+import io.github.dsheirer.eventbus.MyEventBus;
 
 public class SystemHealthAdvisorTask extends TimerTask {
     private final Label performanceLabel;
@@ -42,6 +44,16 @@ public class SystemHealthAdvisorTask extends TimerTask {
                 + "Memory Usage: " + memoryStatus + "\n\n"
                 + "Optimization Suggestions:\n"
                 + suggestions;
+
+
+        if (warning) {
+            SystemHealthAlertEvent event = new SystemHealthAlertEvent(
+                SystemHealthAlertEvent.AlertType.SYSTEM,
+                "Application and System Error",
+                suggestions
+            );
+            MyEventBus.getGlobalEventBus().post(event);
+        }
 
         final boolean isWarning = warning;
 
