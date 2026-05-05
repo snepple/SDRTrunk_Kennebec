@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import io.github.dsheirer.gui.control.IntegerTextField;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
@@ -76,7 +77,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     private ToggleSwitch mIgnoreUnaliasedTalkgroupsButton;
     private ToggleSwitch mNacFilterButton;
     private javafx.scene.control.TextField mNacTextField;
-    private javafx.scene.control.TextField mTalkgroupTextField;
+    private IntegerTextField mTalkgroupTextField;
     private Spinner<Integer> mTrafficChannelPoolSizeSpinner;
     private SegmentedButton mModulationSegmentedButton;
     private ToggleButton mC4FMToggleButton;
@@ -459,11 +460,11 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         return mNacTextField;
     }
 
-    private javafx.scene.control.TextField getTalkgroupTextField()
+    private IntegerTextField getTalkgroupTextField()
     {
         if(mTalkgroupTextField == null)
         {
-            mTalkgroupTextField = new javafx.scene.control.TextField();
+            mTalkgroupTextField = new IntegerTextField();
             mTalkgroupTextField.setDisable(true);
             mTalkgroupTextField.setPrefWidth(80);
             mTalkgroupTextField.setPromptText("e.g. 1001");
@@ -589,21 +590,10 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     @Override
     protected Integer getConfiguredTalkgroup()
     {
-        String tgText = getTalkgroupTextField().getText();
-        if(tgText != null && !tgText.trim().isEmpty())
+        Integer tg = getTalkgroupTextField().get();
+        if(tg != null && tg >= 1 && tg <= 65535)
         {
-            try
-            {
-                int tg = Integer.parseInt(tgText.trim());
-                if(tg >= 1 && tg <= 65535)
-                {
-                    return tg;
-                }
-            }
-            catch(NumberFormatException e)
-            {
-                return null;
-            }
+            return tg;
         }
         return null;
     }
@@ -631,25 +621,10 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         int originalTalkgroup = config.getTalkgroup();
 
         //Parse talkgroup text field
-        String tgText = getTalkgroupTextField().getText();
-        if(tgText != null && !tgText.trim().isEmpty())
+        Integer tg = getTalkgroupTextField().get();
+        if(tg != null && tg >= 1 && tg <= 65535)
         {
-            try
-            {
-                int tg = Integer.parseInt(tgText.trim());
-                if(tg >= 1 && tg <= 65535)
-                {
-                    config.setTalkgroup(tg);
-                }
-                else
-                {
-                    config.setTalkgroup(0);
-                }
-            }
-            catch(NumberFormatException e)
-            {
-                config.setTalkgroup(0);
-            }
+            config.setTalkgroup(tg);
         }
         else
         {
