@@ -535,9 +535,12 @@ public class StreamingEditor extends SplitPane
             enabledColumn.setCellFactory(param -> {
                 TableCell<ConfiguredBroadcast,Boolean> tableCell = new TableCell<>()
                 {
+                    private IconNode iconNode;
+
                     @Override
                     protected void updateItem(Boolean item, boolean empty)
                     {
+                        super.updateItem(item, empty);
                         setAlignment(Pos.CENTER);
                         setText(null);
 
@@ -547,8 +550,10 @@ public class StreamingEditor extends SplitPane
                         }
                         else
                         {
-                            IconNode iconNode = new IconNode(FontAwesome.CHECK);
-                            iconNode.setFill(Color.GREEN);
+                            if (iconNode == null) {
+                                iconNode = new IconNode(FontAwesome.CHECK);
+                                iconNode.setFill(Color.GREEN);
+                            }
                             setGraphic(iconNode);
                         }
                     }
