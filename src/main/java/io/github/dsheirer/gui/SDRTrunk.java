@@ -454,6 +454,18 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         mTitle = SystemProperties.getInstance().getApplicationName();
         mMainGui.setTitle(mTitle);
 
+        try {
+            java.awt.Image appIcon = javax.imageio.ImageIO.read(SDRTrunk.class.getResource("/images/SDRTrunk_Application_Icon.png"));
+
+            mMainGui.setIconImages(java.util.Collections.singletonList(appIcon));
+
+            if (java.awt.Taskbar.isTaskbarSupported() && java.awt.Taskbar.getTaskbar().isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
+                java.awt.Taskbar.getTaskbar().setIconImage(appIcon);
+            }
+        } catch (Exception e) {
+            mLog.error("Error setting application icon", e);
+        }
+
         mMainGui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mMainGui.addWindowListener(new ShutdownMonitor());
         mMainGui.addComponentListener(new java.awt.event.ComponentAdapter() {
