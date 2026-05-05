@@ -34,6 +34,9 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2024-05-04 - Sidebar List Sorting Fix
 **Learning:** In JavaFX application editors that use a Sidebar list (ListView) with a content pane (StackPane) map, the order of panes displayed in the list depends heavily on when the `addConfigurationPane` method is called. Constructor order constraints often force items to the top unexpectedly if parent classes add them before subclasses add theirs.
 **Action:** To force items to the bottom of the list (e.g. Alerts), extract their addition into a method (`setupAlertsPane()`) and have the subclasses call this method explicitly at the end of their respective constructors.
+## 2024-05-18 - Explaining Technical Jargon
+**Learning:** When presenting complex technical configuration parameters (like WACN, System ID, NAC) to the user, providing immediate contextual help via tooltips reduces cognitive load. Users should not have to leave the configuration tab to search documentation to understand what these fields mean or when they are required.
+**Action:** Consistently apply `Tooltip` components to labels for domain-specific acronyms and required inputs in JavaFX configuration panels.
 ## 2026-05-05 - TableView Empty State Placeholders
 **Learning:** When a `TableView` is empty, displaying a completely blank area is a missed UX opportunity and can confuse users. Providing an actionable empty state message or a clear indication that no data is present improves clarity.
 **Action:** Always provide an actionable empty state message. Update JavaFX `TableView` placeholders using `table.setPlaceholder(new Label("Actionable guidance"));` to guide the user towards the next logical action or explain the empty state.
