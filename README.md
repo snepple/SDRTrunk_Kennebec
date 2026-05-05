@@ -1,4 +1,4 @@
-### Latest Compiled Release: [Download pr-K.00.020](https://github.com/snepple/sdrtrunk_Sam/releases/tag/pr-K.00.020)
+### Latest Compiled Release: [Download pr-K.00.023](https://github.com/snepple/sdrtrunk_Sam/releases/tag/pr-K.00.023)
 
 <h1>sdrtrunk - Kennebec Version</h1>
 
