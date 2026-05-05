@@ -49,6 +49,7 @@ import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.properties.SystemProperties;
 import io.github.dsheirer.record.AudioRecordingManager;
+import io.github.dsheirer.controller.channel.ChannelAlertMonitor;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.settings.SettingsManager;
 import io.github.dsheirer.source.tuner.Tuner;
@@ -197,6 +198,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
     private String mCurrentViewId = "now_playing";
 
     private AudioRecordingManager mAudioRecordingManager;
+    private ChannelAlertMonitor mChannelAlertMonitor;
     private AudioStreamingManager mAudioStreamingManager;
     private BroadcastStatusPanel mBroadcastStatusPanel;
     private ControllerPanel mControllerPanel;
@@ -302,7 +304,9 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         AudioPlaybackManager audioPlaybackManager = new AudioPlaybackManager(mUserPreferences);
 
         mAudioRecordingManager = new AudioRecordingManager(mUserPreferences);
+        mChannelAlertMonitor = new ChannelAlertMonitor(mPlaylistManager.getChannelModel(), mPlaylistManager.getChannelProcessingManager(), mUserPreferences);
         mAudioRecordingManager.start();
+        mChannelAlertMonitor.start();
 
         mAudioStreamingManager = new AudioStreamingManager(mPlaylistManager.getBroadcastModel(), BroadcastFormat.MP3,
             mUserPreferences);
@@ -313,6 +317,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(duplicateCallDetector);
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(audioPlaybackManager);
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(mAudioRecordingManager);
+        mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(mChannelAlertMonitor);
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(mAudioStreamingManager);
 
         MapService mapService = new MapService(aliasModel, mIconModel);
@@ -568,6 +573,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         mLog.info("Stopping channels ...");
         mPlaylistManager.getChannelProcessingManager().shutdown();
         mAudioRecordingManager.stop();
+        if(mChannelAlertMonitor != null) mChannelAlertMonitor.stop();
         mResourceMonitor.stop();
 
         mLog.info("Stopping spectral display ...");
