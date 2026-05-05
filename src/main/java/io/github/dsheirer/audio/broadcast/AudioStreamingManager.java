@@ -48,6 +48,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.github.dsheirer.health.SystemHealthAlertEvent;
+import io.github.dsheirer.eventbus.MyEventBus;
 
 /**
  * Audio streaming manager monitors audio segments through completion and creates temporary streaming recordings on
@@ -319,10 +321,15 @@ public class AudioStreamingManager implements Listener<AudioSegment>
                 try
                 {
                     rtb.stopRealTimeStream();
-                }
+}
                 catch(Exception e)
                 {
                     mLog.error("Error stopping real-time stream", e);
+                    MyEventBus.getGlobalEventBus().post(new SystemHealthAlertEvent(
+                        SystemHealthAlertEvent.AlertType.INTEGRATION,
+                        "Integration and Network Failure",
+                        "Streaming disconnect: " + e.getMessage()
+                    ));
                 }
             }
         }
@@ -355,10 +362,15 @@ public class AudioStreamingManager implements Listener<AudioSegment>
             AudioRecording audioRecording = new AudioRecording(path, broadcastChannels, identifierCollection,
                     audioSegment.getStartTimestamp(), length);
             mAudioRecordingListener.receive(audioRecording);
-        }
-        catch(IOException ioe)
+}
+        catch(Exception ioe)
         {
             mLog.error("Error recording temporary stream MP3");
+            MyEventBus.getGlobalEventBus().post(new SystemHealthAlertEvent(
+                SystemHealthAlertEvent.AlertType.INTEGRATION,
+                "Integration and Network Failure",
+                "Error recording temporary stream MP3: " + ioe.getMessage()
+            ));
         }
     }
 

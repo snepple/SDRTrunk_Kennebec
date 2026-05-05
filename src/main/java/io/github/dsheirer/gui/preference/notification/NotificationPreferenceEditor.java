@@ -98,6 +98,52 @@ public class NotificationPreferenceEditor extends VBox {
 
         emailSection.getChildren().addAll(emailHeader, emailEnable, emailGrid);
 
+
+        // System Health Alerts Section
+        VBox healthSection = new VBox(10);
+        Label healthHeader = new Label("System Health Alerts");
+        healthHeader.setStyle("-fx-font-weight: bold;");
+
+        // Hardware
+        CheckBox hardwareEnable = new CheckBox("Hardware and Tuner Failures");
+        hardwareEnable.setSelected(preference.isHardwareAlertEnabled());
+        hardwareEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setHardwareAlertEnabled(newValue));
+        Label hardwareDesc = new Label("Notifies you if a USB tuner disconnects, overheats, or experiences frequent buffer overruns/underruns that halt RF processing, and auto-recovery fails.");
+        hardwareDesc.setWrapText(true);
+        hardwareDesc.setStyle("-fx-font-size: 0.9em; -fx-text-fill: gray;");
+
+        // Signal
+        CheckBox signalEnable = new CheckBox("Signal and Decoding Issues");
+        signalEnable.setSelected(preference.isSignalAlertEnabled());
+        signalEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setSignalAlertEnabled(newValue));
+        Label signalDesc = new Label("Notifies you if a site loses its control channel lock or experiences sustained synchronization loss, preventing voice traffic from being decoded despite internal retries.");
+        signalDesc.setWrapText(true);
+        signalDesc.setStyle("-fx-font-size: 0.9em; -fx-text-fill: gray;");
+
+        // System
+        CheckBox systemEnable = new CheckBox("Application and System Errors");
+        systemEnable.setSelected(preference.isSystemAlertEnabled());
+        systemEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setSystemAlertEnabled(newValue));
+        Label systemDesc = new Label("Notifies you of critical application crashes, out-of-memory exceptions, or low disk space warnings that threaten to freeze the software or corrupt recordings.");
+        systemDesc.setWrapText(true);
+        systemDesc.setStyle("-fx-font-size: 0.9em; -fx-text-fill: gray;");
+
+        // Integration
+        CheckBox integrationEnable = new CheckBox("Integration and Network Failures");
+        integrationEnable.setSelected(preference.isIntegrationAlertEnabled());
+        integrationEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setIntegrationAlertEnabled(newValue));
+        Label integrationDesc = new Label("Notifies you of streaming disconnects or repeated API authentication failures for external databases and AI modules after automated reconnection attempts fail.");
+        integrationDesc.setWrapText(true);
+        integrationDesc.setStyle("-fx-font-size: 0.9em; -fx-text-fill: gray;");
+
+        healthSection.getChildren().addAll(
+            healthHeader,
+            hardwareEnable, hardwareDesc,
+            signalEnable, signalDesc,
+            systemEnable, systemDesc,
+            integrationEnable, integrationDesc
+        );
+
         // Recipients Section
         VBox recipientsSection = new VBox(10);
         Label recipientsHeader = new Label("Notification Recipients & Routing");
@@ -182,7 +228,7 @@ public class NotificationPreferenceEditor extends VBox {
         HBox buttonBox = new HBox(10, addBtn, removeBtn);
         recipientsSection.getChildren().addAll(recipientsHeader, mTableView, buttonBox);
 
-        getChildren().addAll(telegramSection, emailSection, recipientsSection);
+        getChildren().addAll(telegramSection, emailSection, healthSection, recipientsSection);
     }
 
     private void saveRecipients(NotificationPreference preference) {
