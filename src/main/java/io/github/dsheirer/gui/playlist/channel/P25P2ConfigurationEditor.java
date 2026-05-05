@@ -146,6 +146,7 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.getChildren().add(ignoreUnaliasedLabel);
 
             Label wacnLabel = new Label("WACN");
+            wacnLabel.setTooltip(new Tooltip("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."));
             GridPane.setHalignment(wacnLabel, HPos.RIGHT);
             GridPane.setConstraints(wacnLabel, 0, ++row);
             gridPane.getChildren().add(wacnLabel);
@@ -154,6 +155,7 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.getChildren().add(getWacnTextField());
 
             Label systemLabel = new Label("System");
+            systemLabel.setTooltip(new Tooltip("System Identifier. Combined with the WACN, uniquely identifies a P25 system."));
             GridPane.setHalignment(systemLabel, HPos.RIGHT);
             GridPane.setConstraints(systemLabel, 2, row);
             gridPane.getChildren().add(systemLabel);
@@ -162,6 +164,7 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.getChildren().add(getSystemTextField());
 
             Label nacLabel = new Label("NAC");
+            nacLabel.setTooltip(new Tooltip("Network Access Code (NAC). A unique code identifying a specific radio system to follow."));
             GridPane.setHalignment(nacLabel, HPos.RIGHT);
             GridPane.setConstraints(nacLabel, 4, row);
             gridPane.getChildren().add(nacLabel);
