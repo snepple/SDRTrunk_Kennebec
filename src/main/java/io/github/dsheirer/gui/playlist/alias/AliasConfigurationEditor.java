@@ -572,9 +572,12 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             {
                 TableCell<Alias, Boolean> tableCell = new TableCell<>()
                 {
+                    private IconNode iconNode;
+
                     @Override
                     protected void updateItem(Boolean item, boolean empty)
                     {
+                        super.updateItem(item, empty);
                         setAlignment(Pos.CENTER);
                         setText(null);
 
@@ -584,8 +587,10 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                         }
                         else
                         {
-                            IconNode iconNode = new IconNode(FontAwesome.EXCLAMATION_CIRCLE);
-                            iconNode.setFill(Color.RED);
+                            if (iconNode == null) {
+                                iconNode = new IconNode(FontAwesome.EXCLAMATION_CIRCLE);
+                                iconNode.setFill(Color.RED);
+                            }
                             setGraphic(iconNode);
                             setText("Identifier Overlap");
                         }
@@ -1116,6 +1121,8 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                     });
                 }
 
+                private IconNode iconNode;
+
                 @Override
                 protected void updateItem(Integer item, boolean empty)
                 {
@@ -1138,27 +1145,30 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                             setGraphic(null);
                             return;
                         }
+
+                        if (iconNode == null) {
+                            iconNode = new IconNode(FontAwesome.VOLUME_UP);
+                            iconNode.setIconSize(20);
+                        }
+
                         if(item == io.github.dsheirer.alias.id.priority.Priority.DO_NOT_MONITOR)
                         {
                             setText("Mute");
-                            final IconNode iconNode = new IconNode(FontAwesome.VOLUME_OFF);
-                            iconNode.setIconSize(20);
+                            iconNode.setIconCode(FontAwesome.VOLUME_OFF);
                             iconNode.setFill(Color.RED);
                             setGraphic(iconNode);
                         }
                         else if(item == io.github.dsheirer.alias.id.priority.Priority.DEFAULT_PRIORITY)
                         {
                             setText("Default");
-                            final IconNode iconNode = new IconNode(FontAwesome.VOLUME_UP);
-                            iconNode.setIconSize(20);
+                            iconNode.setIconCode(FontAwesome.VOLUME_UP);
                             iconNode.setFill(Color.GREEN);
                             setGraphic(iconNode);
                         }
                         else
                         {
                             setText(item.toString());
-                            final IconNode iconNode = new IconNode(FontAwesome.VOLUME_UP);
-                            iconNode.setIconSize(20);
+                            iconNode.setIconCode(FontAwesome.VOLUME_UP);
                             iconNode.setFill(Color.GREEN);
                             setGraphic(iconNode);
                         }
