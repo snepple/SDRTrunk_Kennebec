@@ -49,6 +49,7 @@ plugins {
     id 'idea'
     id 'org.beryx.runtime' version '2.0.1'
     id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'edu.sc.seis.launch4j' version '3.0.5'
 }
 
 repositories {
@@ -202,16 +203,16 @@ test {
 }
 
 tasks.named('distZip') {
-    dependsOn compileWindowsWrapper
+    dependsOn createExe
     into("${project.name}-${project.version}") {
-        from("${layout.buildDirectory.get().asFile}/sdrtrunk.exe")
+        from("${buildDir}/launch4j/SDRTrunk.exe")
     }
 }
 
 tasks.named('distTar') {
-    dependsOn compileWindowsWrapper
+    dependsOn createExe
     into("${project.name}-${project.version}") {
-        from("${layout.buildDirectory.get().asFile}/sdrtrunk.exe")
+        from("${buildDir}/launch4j/SDRTrunk.exe")
     }
 }
 
@@ -469,32 +470,6 @@ tasks.register('archiveVersion', Copy) {
     }
 }
 
-// Compile the wrapper executable for Windows
-task compileWindowsWrapper {
-    doLast {
-        layout.buildDirectory.get().asFile.mkdirs()
-        file('wrapper.c').text = '''
-#include <windows.h>
-#include <stdio.h>
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    char exePath[MAX_PATH];
-    GetModuleFileName(NULL, exePath, MAX_PATH);
-
-    char *lastBackslash = strrchr(exePath, '\');
-    if (lastBackslash != NULL) {
-        *lastBackslash = ' ';
-    }
-
-    char batPath[MAX_PATH];
-    snprintf(batPath, MAX_PATH, "%s\bin\sdr-trunk.bat", exePath);
-
-    ShellExecute(NULL, "open", batPath, lpCmdLine, exePath, SW_HIDE);
-    return 0;
-}
-'''
-    }
-}
 
 /**
  * MDC1200 replay test: feeds a mono PCM WAV of FM-demodulated audio through the MDC1200 decoder.
@@ -543,7 +518,7 @@ tasks.register('runPipelineReplay', JavaExec) {
     if(os.isWindows()) {
         jvmArgs = jvmArgsWindows
     } else {
-        commandLine 'x86_64-w64-mingw32-gcc', '-o', "${project.buildDir}/sdrtrunk.exe", 'wrapper.c', '-mwindows'
+
     }
     doFirst {
         file('wrapper.c').text = '''
@@ -568,13 +543,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 '''
         def compiler = System.properties.getProperty("os.name").toLowerCase().contains("win") ? 'gcc' : 'x86_64-w64-mingw32-gcc'
         try {
-            def process = new ProcessBuilder(compiler, '-o', "${layout.buildDirectory.get().asFile}/sdrtrunk.exe", 'wrapper.c', '-mwindows').start()
+            def process = new ProcessBuilder(compiler, '-o', "${buildDir}/launch4j/SDRTrunk.exe", 'wrapper.c', '-mwindows').start()
             process.waitFor()
             if (process.exitValue() != 0) {
                 println "Warning: compiler returned non-zero exit code: ${process.exitValue()}"
             }
         } catch (Exception e) {
-            println "Warning: compiler failed to build sdrtrunk.exe: ${e.message}"
+            println "Warning: compiler failed to build SDRTrunk.exe: ${e.message}"
         }
     }
 }
@@ -588,13 +563,13 @@ afterEvaluate {
             t.finalizedBy('archiveVersion')
 
             if (name == 'runtimeZipWindows' || (name == 'runtimeZipCurrent' && System.properties.getProperty("os.name").toLowerCase().contains("win"))) {
-                t.dependsOn compileWindowsWrapper
+                t.dependsOn createExe
                 // The RuntimeZipTask relies on the 'jre' task (or similar) to build the image.
                 // We must copy our exe before the zip is built.
                 t.doFirst {
                     def imageDir = t.extension.imageDir.get().asFile
                     copy {
-                        from "${layout.buildDirectory.get().asFile}/sdrtrunk.exe"
+                        from "${buildDir}/launch4j/SDRTrunk.exe"
                         into imageDir
                     }
                 }
@@ -616,4 +591,18 @@ startScripts {
         }
         windowsScriptFile.text = windowsScriptFile.text.replaceAll('set CLASSPATH=.*', 'set CLASSPATH=%APP_HOME%\\\\lib\\\\*')
     }
+}
+
+launch4j {
+    mainClassName = 'io.github.dsheirer.gui.SDRTrunk'
+    outfile = 'SDRTrunk.exe'
+    headerType = 'gui'
+    icon = "${projectDir}/src/main/resources/images/SDRTrunk.ico"
+    jarTask = project.tasks.jar
+}
+
+tasks.register('copyExeToDist', Copy) {
+    dependsOn createExe
+    from "${buildDir}/launch4j/SDRTrunk.exe"
+    into "src/main/dist/"
 }
