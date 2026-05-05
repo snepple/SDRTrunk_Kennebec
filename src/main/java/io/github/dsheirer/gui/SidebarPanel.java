@@ -32,7 +32,7 @@ public class SidebarPanel extends JPanel {
 
     private List<SidebarItem> mItems = new ArrayList<>();
     private JButton mToggleBtn;
-    private JLabel mLogoLabel;
+
 
     public interface SidebarListener {
         void onItemSelected(String id);
@@ -45,8 +45,7 @@ public class SidebarPanel extends JPanel {
         setPreferredSize(new Dimension(250, 0));
         setLayout(new MigLayout("insets 10 5 10 5, gapy 5, wrap 1, fillx", "[grow, fill]", "[]"));
 
-        java.awt.Image iconImg = new javax.swing.ImageIcon(SidebarPanel.class.getResource("/images/sidebar_icon.png")).getImage();
-        mToggleBtn = new JButton(new javax.swing.ImageIcon(iconImg.getScaledInstance(22, 20, java.awt.Image.SCALE_SMOOTH)));
+        mToggleBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.BARS, 18, TEXT_COLOR));
         mToggleBtn.setContentAreaFilled(false);
         mToggleBtn.setBorderPainted(false);
         mToggleBtn.setFocusPainted(false);
@@ -56,29 +55,6 @@ public class SidebarPanel extends JPanel {
         mToggleBtn.setToolTipText("Collapse Sidebar");
         mToggleBtn.getAccessibleContext().setAccessibleName("Toggle Sidebar");
         mToggleBtn.getAccessibleContext().setAccessibleDescription("Collapses or expands the main navigation sidebar");
-
-        java.awt.Image logoImg = new javax.swing.ImageIcon(SidebarPanel.class.getResource("/images/sdrtrunk_logo.png")).getImage();
-        mLogoLabel = new JLabel(new javax.swing.Icon() {
-            @Override
-            public void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {
-                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
-                g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                g2.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
-                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.drawImage(logoImg, x, y, getIconWidth(), getIconHeight(), null);
-                g2.dispose();
-            }
-
-            @Override
-            public int getIconWidth() {
-                return 150;
-            }
-
-            @Override
-            public int getIconHeight() {
-                return 50;
-            }
-        });
 
         mToggleBtn.addActionListener(e -> {
             mCollapsed = !mCollapsed;
@@ -129,14 +105,9 @@ public class SidebarPanel extends JPanel {
     private void render() {
         removeAll();
 
-        JPanel headerPanel = new JPanel(new MigLayout("insets 0, fillx, hidemode 3", mCollapsed ? "[]" : "[grow][]", "[]"));
+        JPanel headerPanel = new JPanel(new MigLayout("insets 0, fillx, hidemode 3", "[]", "[]"));
         headerPanel.setOpaque(false);
-        if (!mCollapsed) {
-            headerPanel.add(mLogoLabel, "align left");
-            headerPanel.add(mToggleBtn, "align right");
-        } else {
-            headerPanel.add(mToggleBtn, "align left");
-        }
+        headerPanel.add(mToggleBtn, "align left");
         add(headerPanel, "growx");
 
         for (SidebarItem item : mItems) {
