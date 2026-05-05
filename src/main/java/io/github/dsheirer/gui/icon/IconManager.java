@@ -218,6 +218,7 @@ public class IconManager extends Editor<Icon>
             });
             mIconTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
             nameColumn.setMaxWidth( 1f * Integer.MAX_VALUE * 100 ); // Let it grow
+            mIconTableView.setPlaceholder(new Label("Click the New button to add a custom icon"));
         }
 
         return mIconTableView;

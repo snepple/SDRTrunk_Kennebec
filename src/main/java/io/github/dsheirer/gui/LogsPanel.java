@@ -325,6 +325,8 @@ public class LogsPanel extends BorderPane {
         // Set row height for HIG Clarity principle
         table.setFixedCellSize(30);
 
+        table.setPlaceholder(new Label("No logs found"));
+
         return table;
     }
 
