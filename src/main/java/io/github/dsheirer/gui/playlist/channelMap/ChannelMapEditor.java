@@ -616,6 +616,7 @@ public class ChannelMapEditor extends SplitPane
                 stepColumn.setCellValueFactory(new PropertyValueFactory<ChannelRange,Integer>("stepSize"));
 
                 mChannelRangeTableView.getColumns().addAll(firstColumn, lastColumn, baseColumn, stepColumn);
+                mChannelRangeTableView.setPlaceholder(new Label("Click the New button to create a new Channel Range"));
 
                 mChannelRangeTableView.getSelectionModel().selectedItemProperty()
                     .addListener((observable, oldValue, selected) -> {

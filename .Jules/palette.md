@@ -37,3 +37,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2024-05-18 - Explaining Technical Jargon
 **Learning:** When presenting complex technical configuration parameters (like WACN, System ID, NAC) to the user, providing immediate contextual help via tooltips reduces cognitive load. Users should not have to leave the configuration tab to search documentation to understand what these fields mean or when they are required.
 **Action:** Consistently apply `Tooltip` components to labels for domain-specific acronyms and required inputs in JavaFX configuration panels.
+## 2026-05-05 - TableView Empty State Placeholders
+**Learning:** When a `TableView` is empty, displaying a completely blank area is a missed UX opportunity and can confuse users. Providing an actionable empty state message or a clear indication that no data is present improves clarity.
+**Action:** Always provide an actionable empty state message. Update JavaFX `TableView` placeholders using `table.setPlaceholder(new Label("Actionable guidance"));` to guide the user towards the next logical action or explain the empty state.
