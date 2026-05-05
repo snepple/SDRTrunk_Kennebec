@@ -156,13 +156,6 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             GridPane.setConstraints(getFormatField(), 1, row);
             mEditorPane.getChildren().add(getFormatField());
 
-            Label enabledLabel = new Label("Enabled");
-            GridPane.setHalignment(enabledLabel, HPos.RIGHT);
-            GridPane.setConstraints(enabledLabel, 2, row);
-            mEditorPane.getChildren().add(enabledLabel);
-
-            GridPane.setConstraints(getEnabledSwitch(), 3, row);
-            mEditorPane.getChildren().add(getEnabledSwitch());
 
             // Row 1: Name (display name for this stream config)
             Label nameLabel = new Label("Name");

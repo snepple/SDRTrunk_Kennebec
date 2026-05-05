@@ -121,13 +121,7 @@ public abstract class IcecastStreamEditor extends AbstractStreamEditor<IcecastCo
             GridPane.setConstraints(getFormatField(), 1, 0);
             connectionCard.getChildren().add(getFormatField());
 
-            Label enabledLabel = new Label("Enabled");
-            GridPane.setHalignment(enabledLabel, HPos.RIGHT);
-            GridPane.setConstraints(enabledLabel, 2, 0);
-            connectionCard.getChildren().add(enabledLabel);
 
-            GridPane.setConstraints(getEnabledSwitch(), 3, 0);
-            connectionCard.getChildren().add(getEnabledSwitch());
 
             Label systemLabel = new Label("Name");
             GridPane.setHalignment(systemLabel, HPos.RIGHT);
