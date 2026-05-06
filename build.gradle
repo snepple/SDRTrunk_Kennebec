@@ -606,3 +606,24 @@ tasks.register('copyExeToDist', Copy) {
     from "${buildDir}/launch4j/SDRTrunk.exe"
     into "src/main/dist/"
 }
+
+tasks.register('compileJni', Exec) {
+    def osName = System.properties.getProperty("os.name").toLowerCase()
+    def javaHome = org.gradle.internal.jvm.Jvm.current().getJavaHome().toString()
+    def srcFile = "src/main/cpp/library.cpp"
+    def outDir = "${buildDir}/jni"
+
+    doFirst {
+        mkdir outDir
+    }
+
+    if (osName.contains("win")) {
+        commandLine 'g++', '-shared', '-o', "${outDir}/library.dll", "-I${javaHome}/include", "-I${javaHome}/include/win32", srcFile
+    } else if (osName.contains("mac")) {
+        commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary.dylib", "-I${javaHome}/include", "-I${javaHome}/include/darwin", srcFile
+    } else {
+        commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary.so", "-I${javaHome}/include", "-I${javaHome}/include/linux", srcFile
+    }
+}
+
+jar.dependsOn compileJni
