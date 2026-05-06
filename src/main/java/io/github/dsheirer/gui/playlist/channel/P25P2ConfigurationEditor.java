@@ -46,6 +46,9 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tab;
 import javafx.scene.control.Tooltip;
+import javafx.scene.paint.Color;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.ToggleSwitch;
@@ -145,8 +148,7 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(ignoreUnaliasedLabel, 5, row);
             gridPane.getChildren().add(ignoreUnaliasedLabel);
 
-            Label wacnLabel = new Label("WACN");
-            wacnLabel.setTooltip(new Tooltip("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."));
+            Label wacnLabel = new Label("WACN", createHelpIcon("A unique code identifying a large regional radio system. This is usually provided by RadioReference and tells the software which network to follow."));
             GridPane.setHalignment(wacnLabel, HPos.RIGHT);
             GridPane.setConstraints(wacnLabel, 0, ++row);
             gridPane.getChildren().add(wacnLabel);
@@ -480,5 +482,17 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
         getSourceConfigurationEditor().save();
         SourceConfiguration sourceConfiguration = getSourceConfigurationEditor().getSourceConfiguration();
         getItem().setSourceConfiguration(sourceConfiguration);
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }
