@@ -614,14 +614,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             new io.github.dsheirer.preference.javafx.FxTableColumnMonitor(mUserPreferences, mChannelTableView, "channelTable");
             mChannelTableView.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> setChannel(newValue));
-            mChannelTableView.setOnMouseClicked(event -> {
-                if(event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2)
-                {
-                    if(getChannelConfigurationEditor() != null) {
-                        getChannelConfigurationEditor().startChannel();
-                    }
-                }
-            });
+
         }
 
         return mChannelTableView;
