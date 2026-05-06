@@ -11,7 +11,6 @@ import io.github.dsheirer.settings.ColorSetting.ColorSettingName;
 import io.github.dsheirer.settings.Setting;
 import io.github.dsheirer.settings.SettingChangeListener;
 import io.github.dsheirer.settings.SettingsManager;
-import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
@@ -55,10 +54,6 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
 
     private SmoothingFilter mSmoothingFilter = new NoSmoothingFilter();
 
-    private AnimationTimer mAnimationTimer;
-    private volatile boolean mNeedsRedraw = false;
-    private final Object mBinsLock = new Object();
-
     public SpectrumPanel(SettingsManager settingsManager) {
         mSettingsManager = settingsManager;
         mSettingsManager.getSettingsModel().addListener(this);
@@ -75,31 +70,17 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
             mCanvas.widthProperty().bind(root.widthProperty());
             mCanvas.heightProperty().bind(root.heightProperty());
 
-            mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
-            mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
+            mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> drawSpectrum());
+            mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> drawSpectrum());
 
             Scene scene = new Scene(root);
             setScene(scene);
-
-            mAnimationTimer = new AnimationTimer() {
-                @Override
-                public void handle(long now) {
-                    if (mNeedsRedraw) {
-                        mNeedsRedraw = false;
-                        drawSpectrum();
-                    }
-                }
-            };
-            mAnimationTimer.start();
         });
     }
 
     public void dispose() {
         if (mSettingsManager != null) {
             mSettingsManager.getSettingsModel().removeListener(this);
-        }
-        if (mAnimationTimer != null) {
-            mAnimationTimer.stop();
         }
     }
 
@@ -108,23 +89,22 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
             currentFFTBins = new float[currentFFTBins.length];
         }
 
-        synchronized (mBinsLock) {
-            if (mDisplayFFTBins == null || mDisplayFFTBins.length != currentFFTBins.length) {
-                mDisplayFFTBins = new float[currentFFTBins.length];
-            }
-
-            float[] smoothedBins = mSmoothingFilter.filter(currentFFTBins);
-
-            if (mAveraging > 1) {
-                float gain = 1.0f / (float) mAveraging;
-                for (int x = 0; x < mDisplayFFTBins.length; x++) {
-                    mDisplayFFTBins[x] += (smoothedBins[x] - mDisplayFFTBins[x]) * gain;
-                }
-            } else {
-                System.arraycopy(smoothedBins, 0, mDisplayFFTBins, 0, smoothedBins.length);
-            }
-            mNeedsRedraw = true;
+        if (mDisplayFFTBins == null || mDisplayFFTBins.length != currentFFTBins.length) {
+            mDisplayFFTBins = currentFFTBins;
         }
+
+        float[] smoothedBins = mSmoothingFilter.filter(currentFFTBins);
+
+        if (mAveraging > 1) {
+            float gain = 1.0f / (float) mAveraging;
+            for (int x = 0; x < mDisplayFFTBins.length; x++) {
+                mDisplayFFTBins[x] += (smoothedBins[x] - mDisplayFFTBins[x]) * gain;
+            }
+        } else {
+            mDisplayFFTBins = smoothedBins;
+        }
+
+        Platform.runLater(this::drawSpectrum);
     }
 
     private void drawSpectrum() {
@@ -183,23 +163,19 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
     public void setZoom(int zoom) {
         Validate.isTrue(0 <= zoom && zoom <= 6, "Unrecognized Zoom Level: " + zoom);
         mZoom = zoom;
-        mNeedsRedraw = true;
     }
 
     public void setZoomWindowOffset(int offset) {
         mZoomWindowOffset = offset;
-        mNeedsRedraw = true;
     }
 
     public void setSampleSize(double sampleSize) {
         Validate.isTrue(2.0 <= sampleSize && sampleSize <= 64.0);
         mDBScale = (float) (20.0 * FastMath.log10(FastMath.pow(2.0, sampleSize - 1)));
-        mNeedsRedraw = true;
     }
 
     public void setAveraging(int size) {
         mAveraging = size;
-        mNeedsRedraw = true;
     }
 
     public int getAveraging() {
@@ -207,12 +183,10 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
     }
 
     public void clearSpectrum() {
-        synchronized (mBinsLock) {
-            if (mDisplayFFTBins != null) {
-                Arrays.fill(mDisplayFFTBins, 0.0f);
-            }
-            mNeedsRedraw = true;
+        if (mDisplayFFTBins != null) {
+            Arrays.fill(mDisplayFFTBins, 0.0f);
         }
+        Platform.runLater(this::drawSpectrum);
     }
 
     private void getColors() {
@@ -250,7 +224,7 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
                 default:
                     break;
             }
-            mNeedsRedraw = true;
+            Platform.runLater(this::drawSpectrum);
         }
     }
 
@@ -259,23 +233,21 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
     }
 
     private float[] getBins() {
-        synchronized (mBinsLock) {
-            if (mZoom == 0 || mDisplayFFTBins == null) {
-                return mDisplayFFTBins != null ? Arrays.copyOf(mDisplayFFTBins, mDisplayFFTBins.length) : null;
-            } else {
-                int length = mDisplayFFTBins.length / getZoomMultiplier();
-                int offset = mZoomWindowOffset;
+        if (mZoom == 0 || mDisplayFFTBins == null) {
+            return mDisplayFFTBins;
+        } else {
+            int length = mDisplayFFTBins.length / getZoomMultiplier();
+            int offset = mZoomWindowOffset;
 
-                if ((offset + length) >= mDisplayFFTBins.length) {
-                    offset = mDisplayFFTBins.length - length;
-                }
-
-                if (offset < 0) {
-                    offset = 0;
-                }
-
-                return Arrays.copyOfRange(mDisplayFFTBins, offset, offset + length);
+            if ((offset + length) >= mDisplayFFTBins.length) {
+                offset = mDisplayFFTBins.length - length;
             }
+
+            if (offset < 0) {
+                offset = 0;
+            }
+
+            return Arrays.copyOfRange(mDisplayFFTBins, offset, offset + length);
         }
     }
 

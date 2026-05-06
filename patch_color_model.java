@@ -54,7 +54,7 @@ public class WaterfallColorModel
 	{
 		int bitDepth = 8;
 		int indexSize = 256;
-		
+
 		byte[] red = new byte[ indexSize ];
 		byte[] green = new byte[ indexSize ];
 		byte[] blue = new byte[ indexSize ];
@@ -97,7 +97,7 @@ public class WaterfallColorModel
 		r = 255;
 		g = 255;
 		b = 0;
-		
+
 		for( int x = 60; x < 188; x++ ) //Yellow
 		{
 			red[ x ] = (byte)r;
@@ -116,7 +116,7 @@ public class WaterfallColorModel
 
 			blue[ x ] = (byte)0;
 		}
-		
+
 		return new IndexColorModel( bitDepth, indexSize, red, green, blue );
 	}
 }
