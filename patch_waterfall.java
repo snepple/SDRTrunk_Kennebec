@@ -5,7 +5,6 @@ import io.github.dsheirer.settings.ColorSetting.ColorSettingName;
 import io.github.dsheirer.settings.Setting;
 import io.github.dsheirer.settings.SettingChangeListener;
 import io.github.dsheirer.settings.SettingsManager;
-import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
@@ -16,6 +15,8 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,11 +53,6 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
     private int mDFTZoomWindowOffset = 0;
 
     private SettingsManager mSettingsManager;
-    private AnimationTimer mAnimationTimer;
-    private volatile boolean mNeedsRedraw = false;
-
-    // Lock for synchronizing pixel array manipulation from DSP vs UI drawing
-    private final Object mPixelsLock = new Object();
 
     public WaterfallPanel(SettingsManager settingsManager) {
         super();
@@ -76,24 +72,13 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
             mCanvas.widthProperty().bind(root.widthProperty());
             mCanvas.heightProperty().bind(root.heightProperty());
 
-            mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
-            mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
+            mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> draw());
+            mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> draw());
 
             Scene scene = new Scene(root);
             setScene(scene);
 
             reset();
-
-            mAnimationTimer = new AnimationTimer() {
-                @Override
-                public void handle(long now) {
-                    if (mNeedsRedraw) {
-                        mNeedsRedraw = false;
-                        draw();
-                    }
-                }
-            };
-            mAnimationTimer.start();
         });
     }
 
@@ -102,30 +87,23 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
             mSettingsManager.getSettingsModel().removeListener(this);
         }
         mSettingsManager = null;
-        if (mAnimationTimer != null) {
-            mAnimationTimer.stop();
-        }
     }
 
     private void reset() {
         if (mDFTSize <= 0 || mImageHeight <= 0) return;
 
-        synchronized (mPixelsLock) {
-            mPixels = new int[mDFTSize * mImageHeight];
-            mWaterfallImage = new WritableImage(mDFTSize, mImageHeight);
-            mPixelWriter = mWaterfallImage.getPixelWriter();
-            mNeedsRedraw = true;
-        }
+        mPixels = new int[mDFTSize * mImageHeight];
+        mWaterfallImage = new WritableImage(mDFTSize, mImageHeight);
+        mPixelWriter = mWaterfallImage.getPixelWriter();
+        draw();
     }
 
     public void setPaused(boolean paused) {
-        synchronized (mPixelsLock) {
-            if (paused) {
-                mPausedPixels = mPixels.clone();
-            }
-            mPaused = paused;
-            mNeedsRedraw = true;
+        if (paused) {
+            mPausedPixels = mPixels.clone();
         }
+        mPaused = paused;
+        Platform.runLater(this::draw);
     }
 
     public boolean isPaused() {
@@ -138,7 +116,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
 
     public void setZoom(int zoom) {
         mZoom = zoom;
-        mNeedsRedraw = true;
+        Platform.runLater(this::draw);
     }
 
     private int getZoomMultiplier() {
@@ -147,7 +125,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
 
     public void setZoomWindowOffset(int offset) {
         mDFTZoomWindowOffset = offset;
-        mNeedsRedraw = true;
+        Platform.runLater(this::draw);
     }
 
     private Color getColor(ColorSettingName name) {
@@ -162,7 +140,6 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
             if (colorSetting.getColorSettingName() == ColorSettingName.SPECTRUM_CURSOR) {
                 java.awt.Color awtColor = colorSetting.getColor();
                 mColorSpectrumCursor = Color.rgb(awtColor.getRed(), awtColor.getGreen(), awtColor.getBlue(), awtColor.getAlpha() / 255.0);
-                mNeedsRedraw = true;
             }
         }
     }
@@ -172,7 +149,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
 
     public void setCursorLocation(Point point) {
         mCursorLocation = point;
-        mNeedsRedraw = true;
+        Platform.runLater(this::draw);
     }
 
     public void setCursorFrequency(long frequency) {
@@ -181,7 +158,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
 
     public void setCursorVisible(boolean visible) {
         mCursorVisible = visible;
-        mNeedsRedraw = true;
+        Platform.runLater(this::draw);
     }
 
     private double getPixelOffset(int multiplier) {
@@ -208,17 +185,6 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
         int multiplier = getZoomMultiplier();
         double binPixelWidth = getBinPixelWidth(multiplier);
         int offset = (int) (getPixelOffset(multiplier) - binPixelWidth);
-
-        synchronized (mPixelsLock) {
-            if (mPixelWriter != null && mPixels != null) {
-                int[] pixelsToDraw = mPaused ? mPausedPixels : mPixels;
-                try {
-                    mPixelWriter.setPixels(0, 0, mDFTSize, mImageHeight, PixelFormat.getIntArgbInstance(), pixelsToDraw, 0, mDFTSize);
-                } catch (Exception e) {
-                    mLog.error("Error drawing pixels - " + e.getLocalizedMessage());
-                }
-            }
-        }
 
         // Draw the image
         mGraphicsContext.drawImage(mWaterfallImage, offset, 0, (width * multiplier) + binPixelWidth, height);
@@ -287,28 +253,39 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
             newPixels[x] = mColorMap[colorIndex];
         }
 
-        synchronized (mPixelsLock) {
-            if (mDFTSize != newPixels.length) {
-                mDFTSize = newPixels.length;
-                Platform.runLater(this::reset);
-                return; // Wait for the reset on next cycle
-            }
+        Platform.runLater(() -> {
+            if (mPixelWriter != null) {
+                if (mDFTSize != newPixels.length) {
+                    mDFTSize = newPixels.length;
+                    reset();
+                }
 
-            if (mPixels != null) {
                 System.arraycopy(mPixels, 0, mPixels, mDFTSize, mPixels.length - mDFTSize);
                 System.arraycopy(newPixels, 0, mPixels, 0, newPixels.length);
-                mNeedsRedraw = true;
+
+                int[] pixelsToDraw = mPaused ? mPausedPixels : mPixels;
+
+                mPixelWriter.setPixels(0, 0, mDFTSize, mImageHeight, PixelFormat.getIntArgbInstance(), pixelsToDraw, 0, mDFTSize);
+                draw();
             }
-        }
+        });
     }
 
     public void clearWaterfall() {
-        mDisabled = true;
-        synchronized (mPixelsLock) {
-            if (mPixels != null) {
-                Arrays.fill(mPixels, 0);
-            }
-            mNeedsRedraw = true;
+        if (mPixels != null) {
+            Arrays.fill(mPixels, 0);
         }
+        mDisabled = true;
+
+        Platform.runLater(() -> {
+            if (mPixelWriter != null && mPixels != null) {
+                try {
+                    mPixelWriter.setPixels(0, 0, mDFTSize, mImageHeight, PixelFormat.getIntArgbInstance(), mPixels, 0, mDFTSize);
+                    draw();
+                } catch (Exception e) {
+                    mLog.error("Temporary error updating cleared waterfall panel - " + e.getLocalizedMessage());
+                }
+            }
+        });
     }
 }
