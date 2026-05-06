@@ -1,4 +1,4 @@
-package io.github.dsheirer.preference.notification;
+content = """package io.github.dsheirer.preference.notification;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
@@ -93,3 +93,7 @@ public class NotificationRecipient {
         mIntegrationAlertEnabled = integrationAlertEnabled;
     }
 }
+"""
+
+with open('src/main/java/io/github/dsheirer/preference/notification/NotificationRecipient.java', 'w') as f:
+    f.write(content)
