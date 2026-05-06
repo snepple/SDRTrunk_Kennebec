@@ -1,4 +1,4 @@
-package io.github.dsheirer.gui.preference.notification;
+content = """package io.github.dsheirer.gui.preference.notification;
 
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.notification.NotificationPreference;
@@ -294,3 +294,7 @@ public class NotificationPreferenceEditor extends VBox {
         preference.setEmailEnabled(preference.isEmailEnabled());
     }
 }
+"""
+
+with open('src/main/java/io/github/dsheirer/gui/preference/notification/NotificationPreferenceEditor.java', 'w') as f:
+    f.write(content)
