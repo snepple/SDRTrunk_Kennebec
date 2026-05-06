@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
@@ -55,7 +56,9 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableCell;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -579,6 +582,46 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
 
             mChannelTableView.getColumns().addAll(systemColumn, siteColumn, nameColumn, frequencyColumn, protocolColumn,
                 playingColumn, autoStartColumn, tunerColumn, talkgroupColumn);
+
+            mChannelTableView.setRowFactory(tv -> {
+                TableRow<Channel> row = new TableRow<>();
+                ContextMenu contextMenu = new ContextMenu();
+
+                MenuItem playItem = new MenuItem("Play");
+                playItem.setOnAction(event -> {
+                    Channel channel = row.getItem();
+                    if (channel != null) {
+                        try {
+                            mPlaylistManager.getChannelProcessingManager().start(channel);
+                        } catch (Exception e) {
+                            mLog.error("Couldn't start channel [" + channel.getName() + "]", e);
+                        }
+                    }
+                });
+
+                MenuItem stopItem = new MenuItem("Stop");
+                stopItem.setOnAction(event -> {
+                    Channel channel = row.getItem();
+                    if (channel != null) {
+                        try {
+                            mPlaylistManager.getChannelProcessingManager().stop(channel);
+                        } catch (Exception e) {
+                            mLog.error("Couldn't stop channel [" + channel.getName() + "]", e);
+                        }
+                    }
+                });
+
+                contextMenu.getItems().addAll(playItem, stopItem);
+
+                row.contextMenuProperty().bind(
+                    Bindings.when(row.emptyProperty())
+                    .then((ContextMenu) null)
+                    .otherwise(contextMenu)
+                );
+
+                return row;
+            });
+
             mChannelTableView.setPlaceholder(getPlaceholderLabel());
 
             // Add column visibility context menu to column headers
