@@ -34,6 +34,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import javafx.application.Platform;
+import io.github.dsheirer.util.ThreadPool;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -395,19 +396,29 @@ public class PlaylistManagerEditor extends BorderPane
                             }
                         }
 
-                        try
-                        {
-                            Files.copy(selected.toFile(), copyFile);
-                            getPlaylistListView().getItems().add(copyFile.toPath());
-                            savePlaylistsPreference();
-                        }
-                        catch(IOException ioe)
-                        {
-                            mLog.error("Error creating copy of playlist [" + selected.toString() + "] as [" + copyFile.toString() + "]", ioe);
-                            Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to create copy of playlist", ButtonType.OK);
-                            alert.initOwner(((Node)getCloneButton()).getScene().getWindow());
-                            alert.show();
-                        }
+                        final File copyFileFinal = copyFile;
+                        getCloneButton().setDisable(true);
+                        ThreadPool.CACHED.submit(() -> {
+                            try
+                            {
+                                Files.copy(selected.toFile(), copyFileFinal);
+                                Platform.runLater(() -> {
+                                    getPlaylistListView().getItems().add(copyFileFinal.toPath());
+                                    savePlaylistsPreference();
+                                    getCloneButton().setDisable(false);
+                                });
+                            }
+                            catch(IOException ioe)
+                            {
+                                mLog.error("Error creating copy of playlist [" + selected.toString() + "] as [" + copyFileFinal.toString() + "]", ioe);
+                                Platform.runLater(() -> {
+                                    Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to create copy of playlist", ButtonType.OK);
+                                    alert.initOwner(((Node)getCloneButton()).getScene().getWindow());
+                                    alert.show();
+                                    getCloneButton().setDisable(false);
+                                });
+                            }
+                        });
                     }
                 }
             });
@@ -472,14 +483,32 @@ public class PlaylistManagerEditor extends BorderPane
                             }
                         }
 
-                        mPlaylistManager.createEmptyPlaylist(toCreate);
-                        getPlaylistListView().getItems().add(toCreate);
-                        savePlaylistsPreference();
+                        final Path finalToCreate = toCreate;
+                        getNewButton().setDisable(true);
+                        ThreadPool.CACHED.submit(() -> {
+                            try
+                            {
+                                mPlaylistManager.createEmptyPlaylist(finalToCreate);
+                                Platform.runLater(() -> {
+                                    getPlaylistListView().getItems().add(finalToCreate);
+                                    savePlaylistsPreference();
+                                    getNewButton().setDisable(false);
+                                });
+                            }
+                            catch(IOException ioe)
+                            {
+                                mLog.error("Error creating new playlist file [" + newFile.toString() + "]");
+                                Platform.runLater(() -> {
+                                    new Alert(Alert.AlertType.ERROR, "Unable to create new playlist", ButtonType.OK).show();
+                                    getNewButton().setDisable(false);
+                                });
+                            }
+                        });
                     }
-                    catch(IOException ioe)
+                    catch(Exception ex)
                     {
-                        mLog.error("Error creating new playlist file [" + newFile.toString() + "]");
-                        new Alert(Alert.AlertType.ERROR, "Unable to create new playlist", ButtonType.OK).show();
+                        mLog.error("Error preparing new playlist file", ex);
+                        getNewButton().setDisable(false);
                     }
                 }
             });
@@ -513,9 +542,15 @@ public class PlaylistManagerEditor extends BorderPane
 
                     if(optional.get() == ButtonType.YES)
                     {
-                        getPlaylistListView().getItems().remove(selected);
-                        savePlaylistsPreference();
-                        selected.toFile().delete();
+                        getDeleteButton().setDisable(true);
+                        ThreadPool.CACHED.submit(() -> {
+                            selected.toFile().delete();
+                            Platform.runLater(() -> {
+                                getPlaylistListView().getItems().remove(selected);
+                                savePlaylistsPreference();
+                                getDeleteButton().setDisable(false);
+                            });
+                        });
                     }
                 }
             });

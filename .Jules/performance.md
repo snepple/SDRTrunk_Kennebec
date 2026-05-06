@@ -1,0 +1,3 @@
+## 2026-05-05 - File I/O Blocking in PlaylistManagerEditor
+**Learning:** Playlist creation, cloning, and deletion operations directly triggered `java.nio.file.Files.copy` and `File.delete` methods inside JavaFX `setOnAction` event handlers, freezing the UI thread for potentially large disk operations.
+**Action:** Always wrap `Files.*` and `File.delete` calls inside JavaFX UI listeners with `ThreadPool.CACHED.submit(() -> { ... })` and return visual results (or error dialogs) using `Platform.runLater()`. Added defensive button disabling (`setDisable(true)`) during the asynchronous operation to prevent redundant concurrent clicks.
