@@ -149,6 +149,7 @@ def os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.curre
 tasks.withType(JavaCompile) {
     options.compilerArgs.add("--enable-preview") //Project Panama Vector API is still in incubator
     options.compilerArgs.add("--add-modules=jdk.incubator.vector")
+    options.compilerArgs += ["-h", file("${buildDir}/generated/jni")]
 }
 
 /**
@@ -613,21 +614,35 @@ tasks.register('copyExeToDist', Copy) {
 }
 
 tasks.register('compileJni', Exec) {
+    dependsOn compileJava
     def osName = System.properties.getProperty("os.name").toLowerCase()
+    def arch = System.properties.getProperty("os.arch")
     def javaHome = org.gradle.internal.jvm.Jvm.current().getJavaHome().toString()
     def srcFile = "src/main/cpp/library.cpp"
-    def outDir = "${buildDir}/jni"
+    def outDir = "${projectDir}/src/main/resources/native"
 
     doFirst {
         mkdir outDir
     }
 
     if (osName.contains("win")) {
-        commandLine 'g++', '-shared', '-o', "${outDir}/library.dll", "-I${javaHome}/include", "-I${javaHome}/include/win32", srcFile
+        if (arch.contains("aarch64")) {
+            commandLine 'g++', '-shared', '-o', "${outDir}/library-windows-aarch64.dll", "-I${javaHome}/include", "-I${javaHome}/include/win32", "-I${buildDir}/generated/jni", srcFile
+        } else {
+            commandLine 'g++', '-shared', '-o', "${outDir}/library-windows-x64.dll", "-I${javaHome}/include", "-I${javaHome}/include/win32", "-I${buildDir}/generated/jni", srcFile
+        }
     } else if (osName.contains("mac")) {
-        commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary.dylib", "-I${javaHome}/include", "-I${javaHome}/include/darwin", srcFile
+        if (arch.contains("aarch64")) {
+            commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary-macos-aarch64.dylib", "-I${javaHome}/include", "-I${javaHome}/include/darwin", "-I${buildDir}/generated/jni", srcFile
+        } else {
+            commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary-macos-x64.dylib", "-I${javaHome}/include", "-I${javaHome}/include/darwin", "-I${buildDir}/generated/jni", srcFile
+        }
     } else {
-        commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary.so", "-I${javaHome}/include", "-I${javaHome}/include/linux", srcFile, "-lvolk"
+        if (arch.contains("aarch64")) {
+            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-aarch64.so", "-I${javaHome}/include", "-I${javaHome}/include/linux", "-I${buildDir}/generated/jni", srcFile, "-lvolk"
+        } else {
+            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-x64.so", "-I${javaHome}/include", "-I${javaHome}/include/linux", "-I${buildDir}/generated/jni", srcFile, "-lvolk"
+        }
     }
 }
 
