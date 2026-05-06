@@ -429,6 +429,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         if(mChannelTableView == null)
         {
             mChannelTableView = new TableView<>();
+            mChannelTableView.setEditable(true);
 
             TableColumn<Channel,Boolean> playingColumn = new TableColumn("Playing");
             playingColumn.setId("channelTable.playing");
@@ -467,57 +468,28 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             autoStartColumn.setId("channelTable.autoStart");
             autoStartColumn.setCellValueFactory(new PropertyValueFactory<>("autoStart"));
             autoStartColumn.setPrefWidth(95);
-            autoStartColumn.setCellFactory(param -> {
-                TableCell<Channel,Boolean> tableCell = new TableCell<>()
-                {
-                    private IconNode iconNode;
+            autoStartColumn.setCellFactory(javafx.scene.control.cell.CheckBoxTableCell.forTableColumn(autoStartColumn));
 
-                    @Override
-                    protected void updateItem(Boolean item, boolean empty)
-                    {
-                        setAlignment(Pos.CENTER);
-                        setText(null);
-
-                        if(empty || item == null)
-                        {
-                            setGraphic(null);
-                        }
-                        else if (!item)
-                        {
-                            if (iconNode == null || iconNode.getIconCode() != FontAwesome.TIMES) {
-                                iconNode = new IconNode(FontAwesome.TIMES);
-                                iconNode.setFill(Color.RED);
-                            }
-                            setGraphic(iconNode);
-                        }
-                        else
-                        {
-                            if (iconNode == null || iconNode.getIconCode() != FontAwesome.CHECK) {
-                                iconNode = new IconNode(FontAwesome.CHECK);
-                                iconNode.setFill(Color.GREEN);
-                            }
-                            setGraphic(iconNode);
-                        }
-                    }
-                };
-
-                return tableCell;
-            });
-
-            TableColumn systemColumn = new TableColumn("System");
+            TableColumn<Channel, String> systemColumn = new TableColumn<>("System");
             systemColumn.setId("channelTable.system");
             systemColumn.setCellValueFactory(new PropertyValueFactory<>("system"));
             systemColumn.setPrefWidth(175);
+            systemColumn.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn());
+            systemColumn.setOnEditCommit(event -> event.getRowValue().setSystem(event.getNewValue()));
 
-            TableColumn siteColumn = new TableColumn("Site");
+            TableColumn<Channel, String> siteColumn = new TableColumn<>("Site");
             siteColumn.setId("channelTable.site");
             siteColumn.setCellValueFactory(new PropertyValueFactory<>("site"));
             siteColumn.setPrefWidth(175);
+            siteColumn.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn());
+            siteColumn.setOnEditCommit(event -> event.getRowValue().setSite(event.getNewValue()));
 
-            TableColumn nameColumn = new TableColumn("Name");
+            TableColumn<Channel, String> nameColumn = new TableColumn<>("Name");
             nameColumn.setId("channelTable.name");
             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
             nameColumn.setPrefWidth(200);
+            nameColumn.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn());
+            nameColumn.setOnEditCommit(event -> event.getRowValue().setName(event.getNewValue()));
 
             TableColumn frequencyColumn = new TableColumn("Frequency");
             frequencyColumn.setId("channelTable.frequency");
