@@ -28,6 +28,8 @@ import io.github.dsheirer.dsp.filter.fir.real.VectorRealFIRFilter256Bit;
 import io.github.dsheirer.dsp.filter.fir.real.VectorRealFIRFilter512Bit;
 import io.github.dsheirer.dsp.filter.fir.real.VectorRealFIRFilter64Bit;
 import io.github.dsheirer.dsp.filter.fir.real.VectorRealFIRFilterDefaultBit;
+import io.github.dsheirer.dsp.filter.fir.real.NativeRealFIRFilter;
+import io.github.dsheirer.dsp.filter.fir.real.NativeLibraryLoader;
 import io.github.dsheirer.dsp.filter.fir.remez.RemezFIRFilterDesigner;
 import io.github.dsheirer.dsp.filter.fir.remez.RemezFIRFilterDesignerWithLagrange;
 import io.github.dsheirer.dsp.filter.halfband.RealHalfBandDecimationFilter;
@@ -1078,6 +1080,11 @@ public class FilterFactory
      */
     public static IRealFilter getRealFilter(float[] coefficients)
     {
+        if (NativeLibraryLoader.isLoaded())
+        {
+            return new NativeRealFIRFilter(coefficients);
+        }
+
         Implementation implementation = CalibrationManager.getInstance().getImplementation(CalibrationType.FILTER_FIR);
 
         switch(implementation)
