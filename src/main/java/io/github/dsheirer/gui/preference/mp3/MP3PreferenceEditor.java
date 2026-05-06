@@ -21,17 +21,17 @@ package io.github.dsheirer.gui.preference.mp3;
 
 import io.github.dsheirer.audio.convert.InputAudioFormat;
 import io.github.dsheirer.audio.convert.MP3Setting;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.mp3.MP3Preference;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,11 +39,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Preference settings for MP3
  */
-public class MP3PreferenceEditor extends HBox
+public class MP3PreferenceEditor extends VBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(MP3PreferenceEditor.class);
     private MP3Preference mMP3Preference;
-    private GridPane mEditorPane;
     private ComboBox<MP3Setting> mMP3SettingComboBox;
     private ComboBox<InputAudioFormat> mAudioSampleRateComboBox;
     private CheckBox mNormalizeAudioCheckBox;
@@ -55,41 +54,25 @@ public class MP3PreferenceEditor extends HBox
     public MP3PreferenceEditor(UserPreferences userPreferences)
     {
         mMP3Preference = userPreferences.getMP3Preference();
-        HBox.setHgrow(getEditorPane(), Priority.ALWAYS);
-        getChildren().add(getEditorPane());
-    }
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
 
-    private GridPane getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            mEditorPane = new GridPane();
-            mEditorPane.setPadding(new Insets(10, 10, 10, 10));
-            mEditorPane.setHgap(10);
-            mEditorPane.setVgap(10);
+        Label headerLabel = new Label("MP3 Encoder Preferences");
+        headerLabel.getStyleClass().add("hig-section-header");
+        getChildren().add(headerLabel);
 
-            int row = 0;
-            Label topLabel = new Label("MP3 Encoder Preferences");
-            mEditorPane.add(topLabel, 0, row++, 2, 1);
+        SettingsCard mainCard = new SettingsCard();
 
+        mainCard.getChildren().add(new SettingsRow("Normalize Audio Before Encoding", getNormalizeAudioCheckBox()));
+        mainCard.getChildren().add(new SettingsRow("(LAME) Encoder Setting", getMP3SettingComboBox()));
+        mainCard.getChildren().add(new SettingsRow("Input Audio Sample Rate", getAudioSampleRateComboBox()));
 
-            mEditorPane.add(getNormalizeAudioCheckBox(), 1, row++);
+        getChildren().add(mainCard);
 
-            Label label = new Label("(LAME) Encoder Setting:");
-            GridPane.setHalignment(label, HPos.RIGHT);
-            mEditorPane.add(label, 0, row);
-            mEditorPane.add(getMP3SettingComboBox(), 1, row++);
-
-            Label sampleRateLabel = new Label("Input Audio Sample Rate:");
-            GridPane.setHalignment(sampleRateLabel, HPos.RIGHT);
-            mEditorPane.add(sampleRateLabel, 0, row);
-            mEditorPane.add(getAudioSampleRateComboBox(), 1, row++);
-
-            Label notice = new Label("Note: sdrtrunk default 8 kHz audio rate is resampled to input sample rate before MP3 encoding");
-            mEditorPane.add(notice, 0, row++, 2, 1);
-        }
-
-        return mEditorPane;
+        Label notice = new Label("Note: sdrtrunk default 8 kHz audio rate is resampled to input sample rate before MP3 encoding");
+        notice.getStyleClass().add("kennebec-secondary-text");
+        notice.setPadding(new Insets(0, 10, 0, 10));
+        getChildren().add(notice);
     }
 
     private ComboBox<MP3Setting> getMP3SettingComboBox()
@@ -104,6 +87,7 @@ public class MP3PreferenceEditor extends HBox
                         mMP3Preference.setMP3Setting(newValue);
                         updateAudioSampleRateComboBox();
                     });
+            mMP3SettingComboBox.setTooltip(new Tooltip("Adjusts the MP3 encoding quality and compression level."));
         }
 
         return mMP3SettingComboBox;
@@ -155,6 +139,7 @@ public class MP3PreferenceEditor extends HBox
                             mMP3Preference.setAudioSampleRate(newValue);
                         }
                     });
+            mAudioSampleRateComboBox.setTooltip(new Tooltip("Selects the sampling rate used for generating the MP3 file."));
         }
 
         return mAudioSampleRateComboBox;
@@ -164,10 +149,11 @@ public class MP3PreferenceEditor extends HBox
     {
         if(mNormalizeAudioCheckBox == null)
         {
-            mNormalizeAudioCheckBox = new CheckBox("Normalize Audio Before Encoding");
+            mNormalizeAudioCheckBox = new CheckBox("");
             mNormalizeAudioCheckBox.setSelected(mMP3Preference.isNormalizeAudioBeforeEncode());
             mNormalizeAudioCheckBox.onActionProperty().set(event ->
                     mMP3Preference.setNormalizeAudioBeforeEncode(getNormalizeAudioCheckBox().isSelected()));
+            mNormalizeAudioCheckBox.setTooltip(new Tooltip("Evens out the volume levels before encoding the audio."));
         }
 
         return mNormalizeAudioCheckBox;
