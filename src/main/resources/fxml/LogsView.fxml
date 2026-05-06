@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<fx:root type="BorderPane" xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="io.github.dsheirer.gui.LogsViewController"
+            styleClass="kennebec-grouped-bg">
+
+    <top>
+        <Label text="Double-click a log file to open it in your text editor"
+               alignment="CENTER" maxWidth="Infinity" styleClass="kennebec-secondary-text">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+        </Label>
+    </top>
+
+    <center>
+        <TabPane fx:id="mTabbedPane" tabClosingPolicy="UNAVAILABLE">
+
+            <Tab text="Live Console">
+                <VBox spacing="10">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Button text="Benchmark 10k Logs" onAction="#testLogs" styleClass="kennebec-primary-button"/>
+                    </HBox>
+                    <ListView fx:id="logListView" VBox.vgrow="ALWAYS" />
+                </VBox>
+            </Tab>
+
+            <Tab text="Application Logs">
+                <VBox spacing="10">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Filter by Date or Name:" />
+                        <TextField fx:id="mAppSearchField" promptText="Search..." styleClass="kennebec-search-field" HBox.hgrow="ALWAYS" />
+                    </HBox>
+                    <TableView fx:id="mAppTable" VBox.vgrow="ALWAYS" />
+                </VBox>
+            </Tab>
+
+            <Tab text="Channel Event Logs">
+                <VBox spacing="10">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Filter by Date or Name:" />
+                        <TextField fx:id="mEventSearchField" promptText="Search..." styleClass="kennebec-search-field" HBox.hgrow="ALWAYS" />
+                    </HBox>
+                    <TableView fx:id="mEventTable" VBox.vgrow="ALWAYS" />
+                </VBox>
+            </Tab>
+
+            <Tab text="Two-Tone Logs">
+                <VBox spacing="10">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Filter by Date or Name:" />
+                        <TextField fx:id="mTwoToneSearchField" promptText="Search..." styleClass="kennebec-search-field" HBox.hgrow="ALWAYS" />
+                    </HBox>
+                    <TableView fx:id="mTwoToneTable" VBox.vgrow="ALWAYS" />
+                </VBox>
+            </Tab>
+
+        </TabPane>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER_RIGHT" spacing="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            <Button text="Refresh" onAction="#loadLogs" />
+        </HBox>
+    </bottom>
+</fx:root>
