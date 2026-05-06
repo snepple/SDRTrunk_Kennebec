@@ -154,7 +154,11 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
         HBox actionBox = new HBox(10);
         actionBox.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
-        actionBox.getChildren().addAll(getPlayButton(), getResetButton(), getSaveButton());
+
+        Label autoStartOrderLabel = new Label("Order:");
+        autoStartOrderLabel.setPadding(new Insets(0, 0, 0, 10)); // Add some space before
+
+        actionBox.getChildren().addAll(getAutoStartSwitch(), autoStartOrderLabel, getAutoStartOrderSpinner(), getPlayButton(), getResetButton(), getSaveButton());
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -700,7 +704,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     {
         if(mAutoStartSwitch == null)
         {
-            mAutoStartSwitch = new ToggleSwitch();
+            mAutoStartSwitch = new ToggleSwitch("Auto-Start");
             mAutoStartSwitch.setDisable(true);
             mAutoStartSwitch.setDisable(true);
             mAutoStartSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
@@ -824,14 +828,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             GridPane.setHgrow(getSystemField(), Priority.ALWAYS);
             mTextFieldPane.getChildren().add(getSystemField());
 
-            Label autoStartLabel = new Label("Auto-Start");
-            GridPane.setHalignment(autoStartLabel, HPos.RIGHT);
-            GridPane.setConstraints(autoStartLabel, 2, row);
-            mTextFieldPane.getChildren().add(autoStartLabel);
-
-            GridPane.setConstraints(getAutoStartSwitch(), 3, row);
-            GridPane.setHalignment(getAutoStartSwitch(), HPos.LEFT);
-            mTextFieldPane.getChildren().add(getAutoStartSwitch());
+            // Auto-start removed from here and moved to actionBox
 
 
 
@@ -844,14 +841,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             GridPane.setHgrow(getSiteField(), Priority.ALWAYS);
             mTextFieldPane.getChildren().add(getSiteField());
 
-            Label autoStartOrderLabel = new Label("Start Order");
-            GridPane.setHalignment(autoStartOrderLabel, HPos.RIGHT);
-            GridPane.setConstraints(autoStartOrderLabel, 2, row);
-            mTextFieldPane.getChildren().add(autoStartOrderLabel);
-
-            GridPane.setConstraints(getAutoStartOrderSpinner(), 3, row);
-            GridPane.setHalignment(getAutoStartOrderSpinner(), HPos.LEFT);
-            mTextFieldPane.getChildren().add(getAutoStartOrderSpinner());
+            // Auto-start order removed from here and moved to actionBox
 
             Label nameLabel = new Label("Name");
             GridPane.setHalignment(nameLabel, HPos.RIGHT);
