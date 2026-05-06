@@ -1,0 +1,3 @@
+## 2024-05-18 - ThreadingBridge Log Batching
+**Learning:** Naively piping high-frequency log events through `Platform.runLater` locks the JavaFX Application Thread, even if the events are correctly formatted. This crashes performance benchmarks like the 10,000 log blast.
+**Action:** When streaming high-throughput text data to a JavaFX `ListView`, intercept logs via a concurrent queue on a background thread and use an `AnimationTimer` to poll and batch-process the queue at 60fps on the UI thread, ensuring the `ListView` data size is safely capped (e.g., 10k max limit) to avoid OOM or stalling the UI.
