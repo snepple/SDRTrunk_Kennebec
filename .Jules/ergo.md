@@ -1,3 +1,1 @@
-## 2026-05-05 - Enforcing Numeric Input with IntegerTextField
-**Learning:** SDRTrunk contains many instances where a generic JavaFX `TextField` is used to collect purely numeric configuration data (like Talkgroup IDs), requiring manual string parsing and try-catch blocks to handle formatting errors on save.
-**Action:** Use the existing `io.github.dsheirer.gui.control.IntegerTextField` class for these inputs. It automatically filters out non-numeric characters and provides a safe `.get()` method, preventing formatting errors before they occur and simplifying backend processing.
+## 2024-05-06 - P25P2 Configuration UX Enhancement **Learning:** P25 Phase 2 configuration currently lacks help tooltips with FontAwesome icons like Phase 1, and the toggle buttons don't have descriptions attached to help icons. **Action:** We'll add the `createHelpIcon` method and help icons to P25 Phase 2 configuration.
