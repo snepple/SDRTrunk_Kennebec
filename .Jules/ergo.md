@@ -1,1 +1,2 @@
 ## 2024-05-06 - P25P2 Configuration UX Enhancement **Learning:** P25 Phase 2 configuration currently lacks help tooltips with FontAwesome icons like Phase 1, and the toggle buttons don't have descriptions attached to help icons. **Action:** We'll add the `createHelpIcon` method and help icons to P25 Phase 2 configuration.
+## 2024-05-18 - Notification Test Actions **Learning:** Added inline test buttons for Telegram and SMTP. **Action:** Next time consider moving network calls to background tasks as implemented.

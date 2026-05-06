@@ -83,6 +83,8 @@ test {
 }
 
 dependencies {
+    implementation 'com.sun.mail:javax.mail:1.6.2'
+
     implementation 'com.formdev:flatlaf:3.4'
     implementation 'com.formdev:flatlaf-extras:3.4'
     implementation 'net.java.dev.jna:jna:5.14.0'
