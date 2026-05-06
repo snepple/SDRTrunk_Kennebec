@@ -1,3 +1,6 @@
-## 2025-05-04 - Unsigned Integer Parsing
- **Learning:** When reading or displaying Talkgroup IDs that can exceed `Integer.MAX_VALUE` (e.g. 10-digit IDs generated for geographic schemas), standard `Integer.parseInt(id)` throws `NumberFormatException`, causing the UI or logic to silently fail or act unexpectedly.
- **Action:** For values that conceptually fit in a 32-bit unsigned space (up to ~4 billion), use `Integer.parseUnsignedInt()` when parsing from string, and `Integer.toUnsignedString()` when formatting back to string. Note that internally Java stores it as a signed int, so math/comparisons on such IDs need care (or `Integer.compareUnsigned`), but passing it around as a raw identifier is fine.
+## 2024-05-18 - String Replace Performance
+**Learning:** Calling `String.replace()` inside a loop over an array of multiple search strings allocates intermediate strings for every call, resulting in significant memory churn and CPU overhead (O(N*M) where N is string length and M is number of replacements) even if no replacements are made.
+**Action:** When performing multi-character sanitization, use a single-pass implementation using a `StringBuilder` or regex pattern matching. With `StringBuilder`, only allocate it if an actual change needs to be made.
+## 2024-05-18 - String Replace Performance
+**Learning:** Calling `String.replace()` inside a loop over an array of multiple search strings allocates intermediate strings for every call, resulting in significant memory churn and CPU overhead (O(N*M) where N is string length and M is number of replacements) even if no replacements are made.
+**Action:** When performing multi-character sanitization, use a single-pass implementation using a `StringBuilder` or regex pattern matching. With `StringBuilder`, only allocate it if an actual change needs to be made.
