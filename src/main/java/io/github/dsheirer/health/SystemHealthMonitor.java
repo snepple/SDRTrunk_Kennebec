@@ -65,19 +65,25 @@ public class SystemHealthMonitor {
         }
 
         boolean enabled = false;
-        switch (type) {
-            case HARDWARE:
-                enabled = pref.isHardwareAlertEnabled();
-                break;
-            case SIGNAL:
-                enabled = pref.isSignalAlertEnabled();
-                break;
-            case SYSTEM:
-                enabled = pref.isSystemAlertEnabled();
-                break;
-            case INTEGRATION:
-                enabled = pref.isIntegrationAlertEnabled();
-                break;
+
+        if (pref.getRecipients() != null) {
+            for (NotificationRecipient recipient : pref.getRecipients()) {
+                switch (type) {
+                    case HARDWARE:
+                        if (recipient.isHardwareAlertEnabled()) enabled = true;
+                        break;
+                    case SIGNAL:
+                        if (recipient.isSignalAlertEnabled()) enabled = true;
+                        break;
+                    case SYSTEM:
+                        if (recipient.isSystemAlertEnabled()) enabled = true;
+                        break;
+                    case INTEGRATION:
+                        if (recipient.isIntegrationAlertEnabled()) enabled = true;
+                        break;
+                }
+                if (enabled) break; // If at least one recipient wants it, we enable the alert popup
+            }
         }
 
         if (!enabled) {

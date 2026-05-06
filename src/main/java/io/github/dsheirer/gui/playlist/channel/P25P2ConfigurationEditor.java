@@ -51,6 +51,9 @@ import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 import org.controlsfx.control.ToggleSwitch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,7 +127,7 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
 
             int row = 0;
 
-            Label poolSizeLabel = new Label("Max Traffic Channels");
+            Label poolSizeLabel = new Label("Max Traffic Channels", createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."));
             GridPane.setHalignment(poolSizeLabel, HPos.RIGHT);
             GridPane.setConstraints(poolSizeLabel, 0, row);
             gridPane.getChildren().add(poolSizeLabel);
@@ -135,7 +138,7 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getIgnoreDataCallsButton(), 2, row);
             gridPane.getChildren().add(getIgnoreDataCallsButton());
 
-            Label directionLabel = new Label("Ignore Data Calls");
+            Label directionLabel = new Label("Ignore Data Calls", createHelpIcon("Skips processing data packets, focusing only on voice traffic."));
             GridPane.setHalignment(directionLabel, HPos.LEFT);
             GridPane.setConstraints(directionLabel, 3, row);
             gridPane.getChildren().add(directionLabel);
@@ -143,7 +146,7 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getIgnoreUnaliasedTalkgroupsButton(), 4, row);
             gridPane.getChildren().add(getIgnoreUnaliasedTalkgroupsButton());
 
-            Label ignoreUnaliasedLabel = new Label("Ignore Unaliased TGs");
+            Label ignoreUnaliasedLabel = new Label("Ignore Unaliased TGs", createHelpIcon("Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list."));
             GridPane.setHalignment(ignoreUnaliasedLabel, HPos.LEFT);
             GridPane.setConstraints(ignoreUnaliasedLabel, 5, row);
             gridPane.getChildren().add(ignoreUnaliasedLabel);
@@ -156,8 +159,7 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getWacnTextField(), 1, row);
             gridPane.getChildren().add(getWacnTextField());
 
-            Label systemLabel = new Label("System");
-            systemLabel.setTooltip(new Tooltip("System Identifier. Combined with the WACN, uniquely identifies a P25 system."));
+            Label systemLabel = new Label("System", createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system."));
             GridPane.setHalignment(systemLabel, HPos.RIGHT);
             GridPane.setConstraints(systemLabel, 2, row);
             gridPane.getChildren().add(systemLabel);
@@ -165,8 +167,7 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getSystemTextField(), 3, row);
             gridPane.getChildren().add(getSystemTextField());
 
-            Label nacLabel = new Label("NAC");
-            nacLabel.setTooltip(new Tooltip("Network Access Code (NAC). A unique code identifying a specific radio system to follow."));
+            Label nacLabel = new Label("NAC", createHelpIcon("Network Access Code (NAC). A unique code identifying a specific radio system to follow."));
             GridPane.setHalignment(nacLabel, HPos.RIGHT);
             GridPane.setConstraints(nacLabel, 4, row);
             gridPane.getChildren().add(nacLabel);

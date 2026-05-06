@@ -121,6 +121,7 @@ public class HelpViewer extends JPanel {
         guidesNode.add(new DefaultMutableTreeNode("Tuner Self Healing"));
         guidesNode.add(new DefaultMutableTreeNode("Two Tone Detect"));
         guidesNode.add(new DefaultMutableTreeNode("User Preferences"));
+        guidesNode.add(new DefaultMutableTreeNode("Virtual Audio Cable"));
         guidesNode.add(new DefaultMutableTreeNode("Zello"));
         root.add(guidesNode);
     }
