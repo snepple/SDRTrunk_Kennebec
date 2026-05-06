@@ -40,3 +40,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-05 - TableView Empty State Placeholders
 **Learning:** When a `TableView` is empty, displaying a completely blank area is a missed UX opportunity and can confuse users. Providing an actionable empty state message or a clear indication that no data is present improves clarity.
 **Action:** Always provide an actionable empty state message. Update JavaFX `TableView` placeholders using `table.setPlaceholder(new Label("Actionable guidance"));` to guide the user towards the next logical action or explain the empty state.
+## 2026-05-19 - HIG Modernization of MP3 Preferences
+**Learning:** Legacy UI preferences often use `GridPane` and manual padding which doesn't align with the Apple Human Interface Guidelines (HIG). Upgrading to custom HIG-compliant `SettingsCard` and `SettingsRow` requires changing the root container from `HBox` or `GridPane` to `VBox` to properly stack cards. Furthermore, replacing plain labels with Tooltips on CheckBoxes and ComboBoxes improves accessibility and layout cleanliness.
+**Action:** When updating preferences UI, check if `SettingsCard` and `SettingsRow` can replace `GridPane`s. Remember to add contextual `Tooltip`s to explain technical settings, and use `kennebec-secondary-text` for informational notices.
