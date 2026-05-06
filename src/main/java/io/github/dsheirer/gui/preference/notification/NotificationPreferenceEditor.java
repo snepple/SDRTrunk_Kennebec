@@ -1,5 +1,21 @@
 package io.github.dsheirer.gui.preference.notification;
 
+import java.util.Properties;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import io.github.dsheirer.util.ThreadPool;
+import javafx.application.Platform;
+import java.util.Optional;
+
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.notification.NotificationPreference;
 import io.github.dsheirer.preference.notification.NotificationRecipient;
@@ -56,7 +72,51 @@ public class NotificationPreferenceEditor extends VBox {
         telegramGrid.add(new Label("Bot Token:"), 0, 0);
         telegramGrid.add(botTokenField, 1, 0);
 
-        telegramSection.getChildren().addAll(telegramHeader, telegramEnable, telegramGrid);
+        Button telegramTestBtn = new Button("Send Test");
+        telegramTestBtn.setOnAction(e -> {
+            TextInputDialog dialog = new TextInputDialog();
+            dialog.setTitle("Test Telegram");
+            dialog.setHeaderText("Send a test message to Telegram");
+            dialog.setContentText("Enter Chat ID:");
+            Optional<String> result = dialog.showAndWait();
+            result.ifPresent(chatId -> {
+                String token = botTokenField.getText();
+                if (token == null || token.isEmpty()) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Bot token is not configured.");
+                    alert.showAndWait();
+                    return;
+                }
+
+                ThreadPool.CACHED.submit(() -> {
+                    try {
+                        String message = "SDRTrunk Telegram Test Message.";
+                        String urlString = "https://api.telegram.org/bot" + token + "/sendMessage?chat_id=" + chatId + "&text=" + java.net.URLEncoder.encode(message, "UTF-8");
+                        HttpClient client = HttpClient.newHttpClient();
+                        HttpRequest request = HttpRequest.newBuilder()
+                                .uri(URI.create(urlString))
+                                .GET()
+                                .build();
+
+                        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                        Platform.runLater(() -> {
+                            if (response.statusCode() == 200) {
+                                new Alert(Alert.AlertType.INFORMATION, "Test message sent successfully.").showAndWait();
+                            } else {
+                                new Alert(Alert.AlertType.ERROR, "Failed to send message: " + response.body()).showAndWait();
+                            }
+                        });
+                    } catch (Exception ex) {
+                        Platform.runLater(() -> {
+                            new Alert(Alert.AlertType.ERROR, "Error sending message: " + ex.getMessage()).showAndWait();
+                        });
+                    }
+                });
+            });
+        });
+
+
+        telegramSection.getChildren().addAll(telegramHeader, telegramEnable, telegramGrid, telegramTestBtn);
 
         // Email Section
         VBox emailSection = new VBox(10);
@@ -104,7 +164,74 @@ public class NotificationPreferenceEditor extends VBox {
         emailGrid.add(new Label("From Address:"), 0, 4);
         emailGrid.add(smtpFromAddressField, 1, 4);
 
-        emailSection.getChildren().addAll(emailHeader, emailEnable, emailGrid);
+        Label emailInstruction = new Label("For Gmail: Host: smtp.gmail.com, Port: 465 or 587.\nUse an App Password instead of your regular account password.");
+        emailInstruction.setStyle("-fx-font-size: 0.9em; -fx-text-fill: gray;");
+
+
+        Button emailTestBtn = new Button("Send Test");
+        emailTestBtn.setOnAction(e -> {
+            TextInputDialog dialog = new TextInputDialog();
+            dialog.setTitle("Test Email");
+            dialog.setHeaderText("Send a test email");
+            dialog.setContentText("Enter destination email address:");
+            Optional<String> result = dialog.showAndWait();
+            result.ifPresent(toAddress -> {
+                String host = smtpHostField.getText();
+                String port = smtpPortField.getText();
+                String username = smtpUsernameField.getText();
+                String password = smtpPasswordField.getText();
+                String fromAddress = smtpFromAddressField.getText();
+
+                if (host == null || host.isEmpty() || port == null || port.isEmpty() || username == null || username.isEmpty() || password == null || password.isEmpty() || fromAddress == null || fromAddress.isEmpty()) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Please configure all SMTP settings before testing.");
+                    alert.showAndWait();
+                    return;
+                }
+
+                ThreadPool.CACHED.submit(() -> {
+                    Properties props = new Properties();
+                    props.put("mail.smtp.auth", "true");
+
+                    if ("465".equals(port)) {
+                        props.put("mail.smtp.ssl.enable", "true");
+                        props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+                        props.put("mail.smtp.socketFactory.port", port);
+                        props.put("mail.smtp.port", port);
+                    } else {
+                        props.put("mail.smtp.starttls.enable", "true");
+                        props.put("mail.smtp.port", port);
+                    }
+                    props.put("mail.smtp.host", host);
+
+                    Session session = Session.getInstance(props, new javax.mail.Authenticator() {
+                        protected PasswordAuthentication getPasswordAuthentication() {
+                            return new PasswordAuthentication(username, password);
+                        }
+                    });
+
+                    try {
+                        Message message = new MimeMessage(session);
+                        message.setFrom(new InternetAddress(fromAddress));
+                        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toAddress));
+                        message.setSubject("SDRTrunk Test Email");
+                        message.setText("This is a test email from SDRTrunk.");
+
+                        Transport.send(message);
+
+                        Platform.runLater(() -> {
+                            new Alert(Alert.AlertType.INFORMATION, "Test email sent successfully.").showAndWait();
+                        });
+                    } catch (MessagingException ex) {
+                        Platform.runLater(() -> {
+                            new Alert(Alert.AlertType.ERROR, "Failed to send email: " + ex.getMessage()).showAndWait();
+                        });
+                    }
+                });
+            });
+        });
+
+
+        emailSection.getChildren().addAll(emailHeader, emailEnable, emailGrid, emailInstruction, emailTestBtn);
 
         HBox globalSettingsBox = new HBox(20, telegramSection, emailSection);
         HBox.setHgrow(telegramSection, Priority.ALWAYS);
