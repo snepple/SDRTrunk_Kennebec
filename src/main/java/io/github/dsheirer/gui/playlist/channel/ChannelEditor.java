@@ -478,13 +478,21 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                         setAlignment(Pos.CENTER);
                         setText(null);
 
-                        if(empty || item == null || !item)
+                        if(empty || item == null)
                         {
                             setGraphic(null);
                         }
+                        else if (!item)
+                        {
+                            if (iconNode == null || iconNode.getIconCode() != FontAwesome.TIMES) {
+                                iconNode = new IconNode(FontAwesome.TIMES);
+                                iconNode.setFill(Color.RED);
+                            }
+                            setGraphic(iconNode);
+                        }
                         else
                         {
-                            if (iconNode == null) {
+                            if (iconNode == null || iconNode.getIconCode() != FontAwesome.CHECK) {
                                 iconNode = new IconNode(FontAwesome.CHECK);
                                 iconNode.setFill(Color.GREEN);
                             }
