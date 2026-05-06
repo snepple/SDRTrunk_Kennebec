@@ -33,3 +33,4 @@ gradle-app.setting
 
 # Cache of project
 .gradletasknamecache
+/src/main/resources/native/
