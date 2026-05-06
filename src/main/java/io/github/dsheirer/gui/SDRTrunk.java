@@ -331,11 +331,11 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
             mControllerPanel = new ControllerPanel(mPlaylistManager, audioPlaybackManager, mIconModel, mapService,
                     mSettingsManager, mTunerManager, mUserPreferences, mNowPlayingDetailsVisible, this);
 
-            mControllerPanel.addView("playlist_editor", mJavaFxWindowManager.getPlaylistEditorPanel());
-            mControllerPanel.addView("user_prefs", mJavaFxWindowManager.getUserPreferencesEditorPanel());
-            mControllerPanel.addView("msg_viewer", mJavaFxWindowManager.getRecordingViewerPanel());
+            mControllerPanel.addView("playlist_editor", mJavaFxWindowManager.getView(ViewIdentifier.PLAYLIST_EDITOR));
+            mControllerPanel.addView("user_prefs", mJavaFxWindowManager.getView(ViewIdentifier.USER_PREFERENCES_EDITOR));
+            mControllerPanel.addView("msg_viewer", mJavaFxWindowManager.getView(ViewIdentifier.RECORDING_VIEWER));
 
-            mControllerPanel.addView("logs", mJavaFxWindowManager.getLogsPanel());
+            mControllerPanel.addView("logs", mJavaFxWindowManager.getView(ViewIdentifier.LOGS));
 
 
         }
