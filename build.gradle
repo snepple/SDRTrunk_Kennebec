@@ -50,6 +50,7 @@ plugins {
     id 'org.beryx.runtime' version '2.0.1'
     id 'org.openjfx.javafxplugin' version '0.1.0'
     id 'edu.sc.seis.launch4j' version '3.0.5'
+    id 'me.champeau.jmh' version '0.7.2'
 }
 
 repositories {
@@ -199,6 +200,7 @@ test {
     }
     else {
         jvmArgs = jvmArgsLinux
+        systemProperty "java.library.path", file("${buildDir}/jni").absolutePath
     }
 }
 
@@ -483,6 +485,7 @@ tasks.register('runMdcReplay', JavaExec) {
         jvmArgs = jvmArgsWindows
     } else {
         jvmArgs = jvmArgsLinux
+        systemProperty "java.library.path", file("${buildDir}/jni").absolutePath
     }
     if(project.hasProperty('syncThreshold')) {
         systemProperty 'mdc.sync.threshold', project.property('syncThreshold')
@@ -622,8 +625,17 @@ tasks.register('compileJni', Exec) {
     } else if (osName.contains("mac")) {
         commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary.dylib", "-I${javaHome}/include", "-I${javaHome}/include/darwin", srcFile
     } else {
-        commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary.so", "-I${javaHome}/include", "-I${javaHome}/include/linux", srcFile
+        commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary.so", "-I${javaHome}/include", "-I${javaHome}/include/linux", srcFile, "-lvolk"
     }
 }
 
 jar.dependsOn compileJni
+
+jmh {
+    fork = 1
+    warmupIterations = 1
+    iterations = 3
+    benchmarkMode = ['avgt']
+    timeUnit = 'ms'
+    jvmArgs = ["-Djava.library.path=${buildDir}/jni"]
+}
