@@ -1,0 +1,3 @@
+## 2024-05-18 - Reactive Table Migration
+**Learning:** When migrating legacy Swing `AbstractTableModel`/`AbstractListModel` to JavaFX `TableView`, avoid infinite update loops by ensuring `ObservableList` `ListChangeListener` logic explicitly checks if state genuinely changed before issuing an update event or triggering a recursive validation (e.g. `if (range.isOverlapping() != shouldBeOverlapping) range.setOverlapping(shouldBeOverlapping)`).
+**Action:** Use intermediate tracking variables (e.g., `Set<ChannelRange> overlappingRanges`) to calculate state passively before applying mutations, preventing UI thread pegged situations via infinite update events.

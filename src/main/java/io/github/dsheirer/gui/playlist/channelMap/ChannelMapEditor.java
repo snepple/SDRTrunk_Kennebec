@@ -44,7 +44,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
-import javafx.scene.control.cell.PropertyValueFactory;
+
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -601,19 +601,19 @@ public class ChannelMapEditor extends SplitPane
                 mChannelRangeTableView = new TableView<>();
 
                 TableColumn<ChannelRange,Integer> firstColumn = new TableColumn("First");
-                firstColumn.setCellValueFactory(new PropertyValueFactory<ChannelRange,Integer>("firstChannel"));
+                firstColumn.setCellValueFactory(cellData -> cellData.getValue().firstChannelProperty().asObject());
                 firstColumn.setCellFactory(param -> new ColorTableCell());
 
                 TableColumn<ChannelRange,Integer> lastColumn = new TableColumn("Last");
-                lastColumn.setCellValueFactory(new PropertyValueFactory<ChannelRange,Integer>("lastChannel"));
+                lastColumn.setCellValueFactory(cellData -> cellData.getValue().lastChannelProperty().asObject());
                 lastColumn.setCellFactory(param -> new ColorTableCell());
 
                 TableColumn<ChannelRange,Integer> baseColumn = new TableColumn("Base");
-                baseColumn.setCellValueFactory(new PropertyValueFactory<ChannelRange,Integer>("baseFrequency"));
+                baseColumn.setCellValueFactory(cellData -> cellData.getValue().baseFrequencyProperty().asObject());
                 baseColumn.setPrefWidth(95);
 
                 TableColumn<ChannelRange,Integer> stepColumn = new TableColumn("Step");
-                stepColumn.setCellValueFactory(new PropertyValueFactory<ChannelRange,Integer>("stepSize"));
+                stepColumn.setCellValueFactory(cellData -> cellData.getValue().stepSizeProperty().asObject());
 
                 mChannelRangeTableView.getColumns().addAll(firstColumn, lastColumn, baseColumn, stepColumn);
                 mChannelRangeTableView.setPlaceholder(new Label("Click the New button to create a new Channel Range"));

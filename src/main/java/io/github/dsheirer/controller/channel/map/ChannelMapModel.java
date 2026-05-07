@@ -29,21 +29,52 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javafx.animation.AnimationTimer;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-import javax.swing.AbstractListModel;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class ChannelMapModel extends AbstractListModel<ChannelMap>
+public class ChannelMapModel
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(ChannelMapModel.class);
 
     private ObservableList<ChannelMap> mChannelMaps = FXCollections.observableArrayList(ChannelMap.extractor());
     private Broadcaster<ChannelMapEvent> mEventBroadcaster = new Broadcaster<>();
+    private ConcurrentLinkedQueue<ChannelMap> mPendingAdds = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<ChannelMap> mPendingRemoves = new ConcurrentLinkedQueue<>();
+    private AnimationTimer mBatchUpdater;
 
     public ChannelMapModel()
     {
+        mBatchUpdater = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (!mPendingAdds.isEmpty() || !mPendingRemoves.isEmpty()) {
+                    List<ChannelMap> adds = new ArrayList<>();
+                    List<ChannelMap> removes = new ArrayList<>();
+
+                    ChannelMap cm;
+                    while ((cm = mPendingAdds.poll()) != null) adds.add(cm);
+                    while ((cm = mPendingRemoves.poll()) != null) removes.add(cm);
+
+                    if (!removes.isEmpty()) mChannelMaps.removeAll(removes);
+                    if (!adds.isEmpty()) {
+                        // Filter out duplicates before adding to the model
+                        List<ChannelMap> uniqueAdds = new ArrayList<>();
+                        for(ChannelMap add : adds) {
+                            if(!mChannelMaps.contains(add) && !uniqueAdds.contains(add)) {
+                                uniqueAdds.add(add);
+                            }
+                        }
+                        if(!uniqueAdds.isEmpty()) mChannelMaps.addAll(uniqueAdds);
+                    }
+                }
+            }
+        };
+        javafx.application.Platform.runLater(() -> mBatchUpdater.start());
     }
 
     /**
@@ -115,7 +146,6 @@ public class ChannelMapModel extends AbstractListModel<ChannelMap>
 
             if(index >= 0)
             {
-                fireContentsChanged(this, index, index);
             }
         }
 
@@ -138,16 +168,8 @@ public class ChannelMapModel extends AbstractListModel<ChannelMap>
      */
     public void addChannelMap(ChannelMap channelMap)
     {
-        if(!mChannelMaps.contains(channelMap))
-        {
-            mChannelMaps.add(channelMap);
-
-            int index = mChannelMaps.indexOf(channelMap);
-
-            fireIntervalAdded(this, index, index);
-
-            broadcast(new ChannelMapEvent(channelMap, Event.ADD));
-        }
+        mPendingAdds.add(channelMap);
+        broadcast(new ChannelMapEvent(channelMap, Event.ADD));
     }
 
     /**
@@ -155,38 +177,7 @@ public class ChannelMapModel extends AbstractListModel<ChannelMap>
      */
     public void removeChannelMap(ChannelMap channelMap)
     {
-        if(mChannelMaps.contains(channelMap))
-        {
-            int index = mChannelMaps.indexOf(channelMap);
-
-            mChannelMaps.remove(channelMap);
-
-            fireIntervalRemoved(this, index, index);
-
-            broadcast(new ChannelMapEvent(channelMap, Event.DELETE));
-        }
-    }
-
-    /**
-     * Size/Number of channel maps in this model
-     */
-    @Override
-    public int getSize()
-    {
-        return mChannelMaps.size();
-    }
-
-    /**
-     * Returns the channel map at the specified index
-     */
-    @Override
-    public ChannelMap getElementAt(int index)
-    {
-        if(index <= mChannelMaps.size())
-        {
-            return mChannelMaps.get(index);
-        }
-
-        return null;
+        mPendingRemoves.add(channelMap);
+        broadcast(new ChannelMapEvent(channelMap, Event.DELETE));
     }
 }
