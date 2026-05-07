@@ -10,3 +10,6 @@
 ## 2024-05-04 - Topic Selection Updated
 **Topic:** How to route audio with Virtual Audio Cable
 **Reason:** Virtual Audio Cable (VAC) Routing is a specialized feature mentioned in the "What's New" section of the help content but lacks a dedicated guide under the "Guides & Documentation" section. I will create a guide for it and update `HelpViewer.java`.
+## 2024-05-04 - Topic Selection Updated
+**Topic:** How to stream to OpenMHz
+**Reason:** OpenMHz streaming is a built-in feature but lacks a dedicated guide under the "Guides & Documentation" section. I will create a guide for it and update `HelpViewer.java`.

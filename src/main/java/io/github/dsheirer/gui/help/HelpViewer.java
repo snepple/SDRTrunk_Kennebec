@@ -108,6 +108,7 @@ public class HelpViewer extends JPanel {
         guidesNode.add(new DefaultMutableTreeNode("Introduction"));
         guidesNode.add(new DefaultMutableTreeNode("Mqtt"));
         guidesNode.add(new DefaultMutableTreeNode("Notifications"));
+        guidesNode.add(new DefaultMutableTreeNode("Openmhz"));
         guidesNode.add(new DefaultMutableTreeNode("Other Platforms"));
         guidesNode.add(new DefaultMutableTreeNode("Overview"));
         guidesNode.add(new DefaultMutableTreeNode("P25"));
