@@ -1,3 +1,3 @@
-## 2026-05-05 - File I/O Blocking in PlaylistManagerEditor
-**Learning:** Playlist creation, cloning, and deletion operations directly triggered `java.nio.file.Files.copy` and `File.delete` methods inside JavaFX `setOnAction` event handlers, freezing the UI thread for potentially large disk operations.
-**Action:** Always wrap `Files.*` and `File.delete` calls inside JavaFX UI listeners with `ThreadPool.CACHED.submit(() -> { ... })` and return visual results (or error dialogs) using `Platform.runLater()`. Added defensive button disabling (`setDisable(true)`) during the asynchronous operation to prevent redundant concurrent clicks.
+## 2026-05-07 - The Canvas Performer: Refactoring WaterfallPanel to direct Memory Writing
+**Learning:** Rendering complex visualizations using individual JavaFX shapes or redundant Canvas clears creates object overhead and blocks the EDT or JavaFX Application Thread.
+**Action:** Use a ConcurrentLinkedQueue to stream calculated pixel rows directly to a JavaFX PixelWriter and split the WritableImage drawing into top/bottom segments.

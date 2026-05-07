@@ -36,8 +36,8 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
     private WritableImage mWaterfallImage;
     private PixelWriter mPixelWriter;
     private int[] mColorMap;
-    private int[] mPixels;
-    private int[] mPausedPixels;
+    private int mHeadY = 0;
+    private java.util.concurrent.ConcurrentLinkedQueue<int[]> mRowQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
     private int mDFTSize = 4096;
     private int mImageHeight = 700;
@@ -55,8 +55,6 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
     private AnimationTimer mAnimationTimer;
     private volatile boolean mNeedsRedraw = false;
 
-    // Lock for synchronizing pixel array manipulation from DSP vs UI drawing
-    private final Object mPixelsLock = new Object();
 
     public WaterfallPanel(SettingsManager settingsManager) {
         super();
@@ -108,24 +106,19 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
     }
 
     private void reset() {
-        if (mDFTSize <= 0 || mImageHeight <= 0) return;
+        if (mDFTSize <= 0) return;
+        mImageHeight = Math.max((int) mCanvas.getHeight(), 100);
 
-        synchronized (mPixelsLock) {
-            mPixels = new int[mDFTSize * mImageHeight];
-            mWaterfallImage = new WritableImage(mDFTSize, mImageHeight);
-            mPixelWriter = mWaterfallImage.getPixelWriter();
-            mNeedsRedraw = true;
-        }
+        mRowQueue.clear();
+        mWaterfallImage = new WritableImage(mDFTSize, mImageHeight);
+        mPixelWriter = mWaterfallImage.getPixelWriter();
+        mHeadY = 0;
+        mNeedsRedraw = true;
     }
 
     public void setPaused(boolean paused) {
-        synchronized (mPixelsLock) {
-            if (paused) {
-                mPausedPixels = mPixels.clone();
-            }
-            mPaused = paused;
-            mNeedsRedraw = true;
-        }
+        mPaused = paused;
+        mNeedsRedraw = true;
     }
 
     public boolean isPaused() {
@@ -203,25 +196,44 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
         double width = mCanvas.getWidth();
         double height = mCanvas.getHeight();
 
+        if (height != mImageHeight && height > 0) {
+            reset();
+            return;
+        }
+
         mGraphicsContext.clearRect(0, 0, width, height);
+
+        if (!mPaused && mPixelWriter != null) {
+            int[] row;
+            while ((row = mRowQueue.poll()) != null) {
+                if (row.length == mDFTSize) {
+                    mHeadY--;
+                    if (mHeadY < 0) {
+                        mHeadY = mImageHeight - 1;
+                    }
+                    mPixelWriter.setPixels(0, mHeadY, mDFTSize, 1, PixelFormat.getIntArgbInstance(), row, 0, mDFTSize);
+                }
+            }
+        }
 
         int multiplier = getZoomMultiplier();
         double binPixelWidth = getBinPixelWidth(multiplier);
         int offset = (int) (getPixelOffset(multiplier) - binPixelWidth);
 
-        synchronized (mPixelsLock) {
-            if (mPixelWriter != null && mPixels != null) {
-                int[] pixelsToDraw = mPaused ? mPausedPixels : mPixels;
-                try {
-                    mPixelWriter.setPixels(0, 0, mDFTSize, mImageHeight, PixelFormat.getIntArgbInstance(), pixelsToDraw, 0, mDFTSize);
-                } catch (Exception e) {
-                    mLog.error("Error drawing pixels - " + e.getLocalizedMessage());
-                }
-            }
-        }
+        // Draw the image in two parts to handle the wrap-around
+        double scaledWidth = (width * multiplier) + binPixelWidth;
+        double bottomHeight = mImageHeight - mHeadY;
 
-        // Draw the image
-        mGraphicsContext.drawImage(mWaterfallImage, offset, 0, (width * multiplier) + binPixelWidth, height);
+        if (bottomHeight > 0) {
+            mGraphicsContext.drawImage(mWaterfallImage,
+                0, mHeadY, mDFTSize, bottomHeight,
+                offset, 0, scaledWidth, bottomHeight);
+        }
+        if (mHeadY > 0) {
+            mGraphicsContext.drawImage(mWaterfallImage,
+                0, 0, mDFTSize, mHeadY,
+                offset, bottomHeight, scaledWidth, mHeadY);
+        }
 
         mGraphicsContext.setStroke(mColorSpectrumCursor);
         mGraphicsContext.setFill(mColorSpectrumCursor);
@@ -263,6 +275,14 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
     public void receive(float[] update) {
         mDisabled = false;
 
+        if (mDFTSize != update.length) {
+            mDFTSize = update.length;
+            Platform.runLater(this::reset);
+            return;
+        }
+
+        if (mPaused) return;
+
         int[] newPixels = new int[update.length];
 
         double sum = 0.0d;
@@ -287,28 +307,16 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
             newPixels[x] = mColorMap[colorIndex];
         }
 
-        synchronized (mPixelsLock) {
-            if (mDFTSize != newPixels.length) {
-                mDFTSize = newPixels.length;
-                Platform.runLater(this::reset);
-                return; // Wait for the reset on next cycle
-            }
-
-            if (mPixels != null) {
-                System.arraycopy(mPixels, 0, mPixels, mDFTSize, mPixels.length - mDFTSize);
-                System.arraycopy(newPixels, 0, mPixels, 0, newPixels.length);
-                mNeedsRedraw = true;
-            }
-        }
+        mRowQueue.offer(newPixels);
+        mNeedsRedraw = true;
     }
 
     public void clearWaterfall() {
         mDisabled = true;
-        synchronized (mPixelsLock) {
-            if (mPixels != null) {
-                Arrays.fill(mPixels, 0);
-            }
-            mNeedsRedraw = true;
+        mRowQueue.clear();
+        if (mGraphicsContext != null) {
+            Platform.runLater(() -> mGraphicsContext.clearRect(0, 0, mCanvas.getWidth(), mCanvas.getHeight()));
         }
+        mNeedsRedraw = true;
     }
 }
