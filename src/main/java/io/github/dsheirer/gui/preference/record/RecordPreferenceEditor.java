@@ -26,7 +26,10 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Pos;
@@ -39,46 +42,26 @@ import org.slf4j.LoggerFactory;
 /**
  * Preference settings for recording
  */
-public class RecordPreferenceEditor extends HBox
+public class RecordPreferenceEditor extends VBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(RecordPreferenceEditor.class);
     private RecordPreference mRecordPreference;
-    private VBox mEditorPane;
     private ComboBox<RecordFormat> mRecordFormatComboBox;
 
     public RecordPreferenceEditor(UserPreferences userPreferences)
     {
         mRecordPreference = userPreferences.getRecordPreference();
-        HBox.setHgrow(getEditorPane(), Priority.ALWAYS);
-        getChildren().add(getEditorPane());
-    }
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
 
-    private VBox getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            mEditorPane = new VBox();
-            mEditorPane.getStyleClass().add("hig-form-group");
+        Label headerLabel = new Label("Recording Preferences");
+        headerLabel.getStyleClass().add("hig-section-header");
+        getChildren().add(headerLabel);
 
-            HBox row = new HBox();
-            row.getStyleClass().add("hig-form-row");
-            row.setAlignment(Pos.CENTER_LEFT);
+        SettingsCard mainCard = new SettingsCard();
+        mainCard.getChildren().add(new SettingsRow("Audio Recording Format", getRecordFormatComboBox()));
 
-            Label label = new Label("Audio Recording Format:");
-            label.getStyleClass().add("hig-form-label");
-
-            HBox spacer = new HBox();
-            HBox.setHgrow(spacer, Priority.ALWAYS);
-
-            row.getChildren().addAll(label, spacer, getRecordFormatComboBox());
-
-            mEditorPane.getChildren().add(row);
-
-            // Apply padding to match typical macOS form group usage
-            HBox.setMargin(mEditorPane, new Insets(20, 20, 20, 20));
-        }
-
-        return mEditorPane;
+        getChildren().add(mainCard);
     }
 
     private ComboBox<RecordFormat> getRecordFormatComboBox()
@@ -96,6 +79,7 @@ public class RecordPreferenceEditor extends HBox
                     mRecordPreference.setAudioRecordFormat(newValue);
                 }
             });
+            mRecordFormatComboBox.setTooltip(new Tooltip("Selects the audio format for channel recordings."));
         }
 
         return mRecordFormatComboBox;
