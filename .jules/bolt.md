@@ -3,3 +3,6 @@
 ## 2024-05-15 - Avoid Intermediate Array Allocations
 **Learning:** In utility classes like `ByteUtil`, creating intermediate arrays (like a `byte[]` from an `int[]`) just to reuse an existing formatting method causes unnecessary memory allocation and garbage collection overhead.
 **Action:** When creating overloaded utility methods, implement the core logic directly on the target data type to avoid intermediate object creation, rather than chaining to another method if it requires a type conversion buffer.
+## 2026-05-07 - The Canvas Performer: Refactoring WaterfallPanel to direct Memory Writing
+**Learning:** Rendering complex visualizations using individual JavaFX shapes or redundant Canvas clears creates object overhead and blocks the EDT or JavaFX Application Thread.
+**Action:** Use a ConcurrentLinkedQueue to stream calculated pixel rows directly to a JavaFX PixelWriter and split the WritableImage drawing into top/bottom segments.
