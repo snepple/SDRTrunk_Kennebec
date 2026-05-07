@@ -625,6 +625,20 @@ tasks.register('compileJni', Exec) {
         mkdir outDir
     }
 
+    def executableName = (osName.contains("mac")) ? "clang++" : "g++"
+
+    // Only run if the executable is available
+    onlyIf {
+        try {
+            def process = new ProcessBuilder(executableName, "--version").start()
+            process.waitFor()
+            return process.exitValue() == 0
+        } catch (Exception e) {
+            println "Warning: ${executableName} not found. Skipping JNI compilation. Native features may be disabled."
+            return false
+        }
+    }
+
     if (osName.contains("win")) {
         if (arch.contains("aarch64")) {
             commandLine 'g++', '-shared', '-o', "${outDir}/library-windows-aarch64.dll", "-I${javaHome}/include", "-I${javaHome}/include/win32", "-I${buildDir}/generated/jni", srcFile
