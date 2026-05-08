@@ -160,7 +160,7 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
             float binSize = (float) width / ((float) (bins.length));
 
             for (int x = 0; x < bins.length; x++) {
-                float h = bins[x] * scalor;
+                float h = -bins[x] * scalor;
                 if (h > insideHeight) h = (float) insideHeight;
                 if (h < 0) h = 0;
 

@@ -92,7 +92,9 @@ public class BroadcastStatusPanel extends JPanel
         mTable.setRowSorter(mRowSorter);
 
         DefaultTableCellRenderer renderer = (DefaultTableCellRenderer)mTable.getDefaultRenderer(String.class);
-        renderer.setHorizontalAlignment(SwingConstants.CENTER);
+        renderer.setHorizontalAlignment(SwingConstants.LEFT);
+        DefaultTableCellRenderer intRenderer = (DefaultTableCellRenderer)mTable.getDefaultRenderer(Integer.class);
+        intRenderer.setHorizontalAlignment(SwingConstants.LEFT);
 
         mTable.getColumnModel().getColumn(BroadcastModel.COLUMN_BROADCASTER_STATUS).setCellRenderer(new StatusCellRenderer());
         mTable.getColumnModel().getColumn(BroadcastModel.COLUMN_BROADCAST_SERVER_TYPE).setCellRenderer(new ServerTypeRenderer());
@@ -174,7 +176,7 @@ public class BroadcastStatusPanel extends JPanel
         public ServerTypeRenderer()
         {
             setOpaque(true);
-            setHorizontalAlignment(SwingConstants.CENTER);
+            setHorizontalAlignment(SwingConstants.LEFT);
         }
 
         @Override
@@ -208,7 +210,7 @@ public class BroadcastStatusPanel extends JPanel
         public StatusCellRenderer()
         {
             setOpaque(true);
-            setHorizontalAlignment(SwingConstants.CENTER);
+            setHorizontalAlignment(SwingConstants.LEFT);
         }
 
         @Override

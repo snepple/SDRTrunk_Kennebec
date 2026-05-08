@@ -474,7 +474,33 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             mTalkgroupTextField.setPromptText("e.g. 1001");
             mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
             mTalkgroupTextField.textProperty()
-                .addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
+                .addListener((observable, oldValue, newValue) -> {
+                    modifiedProperty().set(true);
+                    Integer tg = mTalkgroupTextField.get();
+                    if (tg != null && tg > 0) {
+                        boolean conflict = false;
+                        for (io.github.dsheirer.controller.channel.Channel c : getPlaylistManager().getChannelModel().channelList()) {
+                            if (c == getItem()) continue;
+                            io.github.dsheirer.module.decode.config.DecodeConfiguration dc = c.getDecodeConfiguration();
+                            if (dc instanceof io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25Phase1) {
+                                if (tg.equals(((io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25Phase1) dc).getTalkgroup())) {
+                                    conflict = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (conflict) {
+                            mTalkgroupTextField.setStyle("-fx-border-color: red; -fx-border-width: 2px; -fx-border-radius: 3px;");
+                            mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID already assigned to another channel"));
+                        } else {
+                            mTalkgroupTextField.setStyle("");
+                            mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
+                        }
+                    } else {
+                        mTalkgroupTextField.setStyle("");
+                        mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
+                    }
+                });
         }
 
         return mTalkgroupTextField;
