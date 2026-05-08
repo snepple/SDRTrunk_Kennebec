@@ -114,8 +114,8 @@
     ]
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "SDRTrunk_Application_Icon.svg",
+    "dark": "SDRTrunk_Application_Icon.svg"
   },
   "navbar": {
     "links": [],
