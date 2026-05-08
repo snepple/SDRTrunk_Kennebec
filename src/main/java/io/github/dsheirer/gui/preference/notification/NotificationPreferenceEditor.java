@@ -18,6 +18,8 @@ import java.util.Optional;
 
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.notification.NotificationPreference;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import io.github.dsheirer.preference.notification.NotificationRecipient;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -52,27 +54,26 @@ public class NotificationPreferenceEditor extends VBox {
 
         // Telegram Section
         VBox telegramSection = new VBox(10);
-        telegramSection.setStyle("-fx-border-color: lightgray; -fx-border-radius: 5; -fx-padding: 10; -fx-background-color: white;");
         Label telegramHeader = new Label("Global Telegram Configuration");
-        telegramHeader.setStyle("-fx-font-weight: bold; -fx-font-size: 1.1em;");
+        telegramHeader.getStyleClass().add("hig-section-header");
 
-        CheckBox telegramEnable = new CheckBox("Enable Telegram");
+        SettingsCard telegramCard = new SettingsCard();
+
+        CheckBox telegramEnable = new CheckBox();
         telegramEnable.setSelected(preference.isTelegramEnabled());
         telegramEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setTelegramEnabled(newValue));
 
-        GridPane telegramGrid = new GridPane();
-        telegramGrid.setHgap(10);
-        telegramGrid.setVgap(10);
-
         TextField botTokenField = new TextField(preference.getTelegramBotToken());
         botTokenField.setPrefWidth(300);
+        botTokenField.setTooltip(new Tooltip("The Telegram Bot Token from BotFather."));
         botTokenField.textProperty().addListener((obs, old, newValue) -> preference.setTelegramBotToken(newValue));
         botTokenField.disableProperty().bind(telegramEnable.selectedProperty().not());
 
-        telegramGrid.add(new Label("Bot Token:"), 0, 0);
-        telegramGrid.add(botTokenField, 1, 0);
+        telegramCard.getChildren().add(new SettingsRow("Enable Telegram", telegramEnable));
+        telegramCard.getChildren().add(new SettingsRow("Bot Token", botTokenField));
 
-        Button telegramTestBtn = new Button("Send Test");
+        Button telegramTestBtn = new Button("_Send Test");
+        telegramTestBtn.setMnemonicParsing(true);
         telegramTestBtn.setOnAction(e -> {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Test Telegram");
@@ -116,27 +117,26 @@ public class NotificationPreferenceEditor extends VBox {
         });
 
 
-        telegramSection.getChildren().addAll(telegramHeader, telegramEnable, telegramGrid, telegramTestBtn);
+        telegramSection.getChildren().addAll(telegramHeader, telegramCard, telegramTestBtn);
 
         // Email Section
         VBox emailSection = new VBox(10);
-        emailSection.setStyle("-fx-border-color: lightgray; -fx-border-radius: 5; -fx-padding: 10; -fx-background-color: white;");
         Label emailHeader = new Label("Global Email / SMTP Configuration");
-        emailHeader.setStyle("-fx-font-weight: bold; -fx-font-size: 1.1em;");
+        emailHeader.getStyleClass().add("hig-section-header");
 
-        CheckBox emailEnable = new CheckBox("Enable Email");
+        SettingsCard emailCard = new SettingsCard();
+
+        CheckBox emailEnable = new CheckBox();
         emailEnable.setSelected(preference.isEmailEnabled());
         emailEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setEmailEnabled(newValue));
 
-        GridPane emailGrid = new GridPane();
-        emailGrid.setHgap(10);
-        emailGrid.setVgap(10);
-
         TextField smtpHostField = new TextField(preference.getSmtpHost());
+        smtpHostField.setTooltip(new Tooltip("e.g. smtp.gmail.com"));
         smtpHostField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpHost(newValue));
         smtpHostField.disableProperty().bind(emailEnable.selectedProperty().not());
 
         TextField smtpPortField = new TextField(preference.getSmtpPort());
+        smtpPortField.setTooltip(new Tooltip("e.g. 465 or 587"));
         smtpPortField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpPort(newValue));
         smtpPortField.disableProperty().bind(emailEnable.selectedProperty().not());
 
@@ -153,22 +153,19 @@ public class NotificationPreferenceEditor extends VBox {
         smtpFromAddressField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpFromAddress(newValue));
         smtpFromAddressField.disableProperty().bind(emailEnable.selectedProperty().not());
 
-        emailGrid.add(new Label("SMTP Host:"), 0, 0);
-        emailGrid.add(smtpHostField, 1, 0);
-        emailGrid.add(new Label("SMTP Port:"), 0, 1);
-        emailGrid.add(smtpPortField, 1, 1);
-        emailGrid.add(new Label("Username:"), 0, 2);
-        emailGrid.add(smtpUsernameField, 1, 2);
-        emailGrid.add(new Label("Password:"), 0, 3);
-        emailGrid.add(smtpPasswordField, 1, 3);
-        emailGrid.add(new Label("From Address:"), 0, 4);
-        emailGrid.add(smtpFromAddressField, 1, 4);
+        emailCard.getChildren().add(new SettingsRow("Enable Email", emailEnable));
+        emailCard.getChildren().add(new SettingsRow("SMTP Host", smtpHostField));
+        emailCard.getChildren().add(new SettingsRow("SMTP Port", smtpPortField));
+        emailCard.getChildren().add(new SettingsRow("Username", smtpUsernameField));
+        emailCard.getChildren().add(new SettingsRow("Password", smtpPasswordField));
+        emailCard.getChildren().add(new SettingsRow("From Address", smtpFromAddressField));
 
         Label emailInstruction = new Label("For Gmail: Host: smtp.gmail.com, Port: 465 or 587.\nUse an App Password instead of your regular account password.");
-        emailInstruction.setStyle("-fx-font-size: 0.9em; -fx-text-fill: gray;");
+        emailInstruction.getStyleClass().add("kennebec-secondary-text");
 
 
-        Button emailTestBtn = new Button("Send Test");
+        Button emailTestBtn = new Button("_Send Test");
+        emailTestBtn.setMnemonicParsing(true);
         emailTestBtn.setOnAction(e -> {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Test Email");
@@ -231,7 +228,7 @@ public class NotificationPreferenceEditor extends VBox {
         });
 
 
-        emailSection.getChildren().addAll(emailHeader, emailEnable, emailGrid, emailInstruction, emailTestBtn);
+        emailSection.getChildren().addAll(emailHeader, emailCard, emailInstruction, emailTestBtn);
 
         HBox globalSettingsBox = new HBox(20, telegramSection, emailSection);
         HBox.setHgrow(telegramSection, Priority.ALWAYS);
@@ -317,11 +314,9 @@ public class NotificationPreferenceEditor extends VBox {
         mDetailPane.getChildren().clear();
 
         Label detailHeader = new Label("Recipient Configuration");
-        detailHeader.setStyle("-fx-font-weight: bold; -fx-font-size: 1.1em;");
+        detailHeader.getStyleClass().add("hig-section-header");
 
-        GridPane configGrid = new GridPane();
-        configGrid.setHgap(10);
-        configGrid.setVgap(10);
+        SettingsCard configCard = new SettingsCard();
 
         ComboBox<NotificationRecipient.DeliveryMethod> methodCombo = new ComboBox<>(FXCollections.observableArrayList(NotificationRecipient.DeliveryMethod.values()));
         methodCombo.setValue(recipient.getDeliveryMethod());
@@ -340,16 +335,14 @@ public class NotificationPreferenceEditor extends VBox {
             mRecipientListView.refresh();
         });
 
-        configGrid.add(new Label("Delivery Method:"), 0, 0);
-        configGrid.add(methodCombo, 1, 0);
-        configGrid.add(new Label("Destination:"), 0, 1);
-        configGrid.add(destField, 1, 1);
+        configCard.getChildren().add(new SettingsRow("Delivery Method", methodCombo));
+        configCard.getChildren().add(new SettingsRow("Destination", destField));
 
         Label routingHeader = new Label("Alert Routing");
-        routingHeader.setStyle("-fx-font-weight: bold; -fx-font-size: 1.0em; -fx-padding: 10 0 0 0;");
+        routingHeader.getStyleClass().add("hig-section-header");
 
-        VBox routingBox = new VBox(15);
-        routingBox.getChildren().addAll(
+        SettingsCard routingCard = new SettingsCard();
+        routingCard.getChildren().addAll(
             createToggleRow("Hardware and Tuner Failures",
                 "Notifies if a USB tuner disconnects, overheats, or fails.",
                 recipient.isHardwareAlertEnabled(),
@@ -381,37 +374,32 @@ public class NotificationPreferenceEditor extends VBox {
                 val -> { recipient.setAiAudioMonitoringEnabled(val); saveRecipients(preference); })
         );
 
-        ScrollPane scrollPane = new ScrollPane(routingBox);
+        ScrollPane scrollPane = new ScrollPane(routingCard);
         scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background-color: transparent; -fx-control-inner-background: transparent;");
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-control-inner-background: transparent; -fx-border-color: transparent;");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        mDetailPane.getChildren().addAll(detailHeader, configGrid, routingHeader, scrollPane);
+        mDetailPane.getChildren().addAll(detailHeader, configCard, routingHeader, scrollPane);
     }
 
     private Node createToggleRow(String title, String description, boolean initialState, java.util.function.Consumer<Boolean> onToggle) {
-        VBox box = new VBox(2);
-
-        HBox topRow = new HBox();
-        topRow.setAlignment(Pos.CENTER_LEFT);
-
-        Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-font-weight: bold;");
+        VBox box = new VBox();
+        box.setSpacing(2);
+        box.setPadding(new Insets(10, 15, 10, 15)); // Match standard SettingsRow padding roughly
 
         ToggleSwitch toggle = new ToggleSwitch();
         toggle.setSelected(initialState);
         toggle.selectedProperty().addListener((obs, old, newVal) -> onToggle.accept(newVal));
 
-        HBox spacer = new HBox();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        topRow.getChildren().addAll(titleLabel, spacer, toggle);
+        SettingsRow row = new SettingsRow(title, toggle);
+        // Override padding for the embedded row to 0 since the VBox handles it
+        row.setPadding(Insets.EMPTY);
 
         Label descLabel = new Label(description);
         descLabel.setWrapText(true);
-        descLabel.setStyle("-fx-font-size: 0.9em; -fx-text-fill: gray;");
+        descLabel.getStyleClass().add("kennebec-secondary-text");
 
-        box.getChildren().addAll(topRow, descLabel);
+        box.getChildren().addAll(row, descLabel);
         return box;
     }
 

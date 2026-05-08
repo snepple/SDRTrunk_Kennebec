@@ -31,6 +31,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -89,6 +90,7 @@ public class TalkgroupFormatPreferenceEditor extends VBox
             setMaxWidth(Double.MAX_VALUE);
             getItems().addAll(formats);
             getSelectionModel().select(mTalkgroupFormatPreference.getTalkgroupFormat(mProtocol));
+            setTooltip(new Tooltip("Selects the display format (e.g., Hex, Decimal) for the protocol's talkgroups and radio IDs."));
             setOnAction(event -> {
                 IntegerFormat selected = getSelectionModel().getSelectedItem();
                 mTalkgroupFormatPreference.setTalkgroupFormat(mProtocol, selected);
@@ -110,6 +112,7 @@ public class TalkgroupFormatPreferenceEditor extends VBox
             mTalkgroupFormatPreference = preference;
             mProtocol = protocol;
             setSelected(mTalkgroupFormatPreference.isTalkgroupFixedWidth(mProtocol));
+            setTooltip(new Tooltip("Pads the IDs with leading zeros to maintain a fixed width."));
             setOnAction(event -> mTalkgroupFormatPreference.setTalkgroupFixedWidth(mProtocol, isSelected()));
         }
     }

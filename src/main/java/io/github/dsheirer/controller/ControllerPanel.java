@@ -34,7 +34,6 @@ import io.github.dsheirer.map.MapPanel;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 import javafx.application.Platform;
-import io.github.dsheirer.map.MapPanelFXWrapper;
 import io.github.dsheirer.map.MapService;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
@@ -75,7 +74,6 @@ public class ControllerPanel extends JPanel
     private AudioPanel mAudioPanel;
     private NowPlayingPanel mNowPlayingPanel;
     private MapPanel mMapPanel;
-    private JFXPanel mMapJFXPanel;
     private TunerViewPanel mTunerManagerPanel;
     private AudioRecordingsPanel mAudioRecordingsPanel;
 
@@ -127,13 +125,7 @@ public class ControllerPanel extends JPanel
         mCardPanel = new JPanel(mCardLayout);
         
         mCardPanel.add(mNowPlayingPanel, "now_playing");
-        mMapJFXPanel = new JFXPanel();
-        Platform.runLater(() -> {
-            MapPanelFXWrapper wrapper = new MapPanelFXWrapper(mMapPanel);
-            Scene scene = new Scene(wrapper);
-            mMapJFXPanel.setScene(scene);
-        });
-        mCardPanel.add(mMapJFXPanel, "map");
+        mCardPanel.add(mMapPanel, "map");
         mCardPanel.add(mTunerManagerPanel, "tuners");
         mCardPanel.add(mAudioRecordingsPanel, "audio_recordings");
         mCardPanel.add(new HelpViewer(), "help_viewer");
