@@ -4,3 +4,6 @@
 **Learning:** Using SettingsCard with SettingsRow combined with tooltips and prompt texts reduces cognitive load when configuring advanced features like MQTT.
 **Action:** Apply this pattern to other legacy JavaFX GridPane layouts to align with HIG.
 ## 2024-05-18 - DMR Configuration UX Enhancement **Learning:** DMR configuration lacks tooltips for technical checkboxes and limits, similar to P25P2. **Action:** Next time, ensure all decoder configuration panels apply the progressive disclosure help icon pattern uniformly to technical toggles.
+## 2026-05-08 - Explicit Actions over Hidden Interactions
+**Learning:** Depending purely on double-clicks or hidden interactions creates low discoverability. Explicit buttons (like Open) improve UX.
+**Action:** Always provide explicit action buttons for important row actions in table views, even if double-click shortcuts exist.

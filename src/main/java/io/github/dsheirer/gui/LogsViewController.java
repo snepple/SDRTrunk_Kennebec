@@ -24,6 +24,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.web.WebView;
@@ -194,17 +195,26 @@ public class LogsViewController {
         nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
 
         TableColumn<LogFile, Void> actionCol = new TableColumn<>("Action");
-        actionCol.setPrefWidth(120);
-        actionCol.setMaxWidth(150);
-        actionCol.setMinWidth(100);
+        actionCol.setPrefWidth(200);
+        actionCol.setMaxWidth(250);
+        actionCol.setMinWidth(150);
         actionCol.setCellFactory(param -> new TableCell<>() {
             private final Button analyzeBtn = new Button("AI Review");
+            private final Button openBtn = new Button("Open");
+            private final HBox container = new HBox(5, openBtn, analyzeBtn);
 
             {
                 analyzeBtn.getStyleClass().add("kennebec-primary-button");
                 analyzeBtn.setOnAction(event -> {
                     LogFile logFile = getTableView().getItems().get(getIndex());
                     analyzeLog(logFile, analyzeBtn);
+                });
+
+                openBtn.setOnAction(event -> {
+                    LogFile logFile = getTableView().getItems().get(getIndex());
+                    if (logFile != null && logFile.getFile() != null) {
+                        openLog(logFile.getFile());
+                    }
                 });
             }
 
@@ -225,8 +235,9 @@ public class LogsViewController {
                     } else {
                         analyzeBtn.setTooltip(new Tooltip("Analyze log file using AI."));
                     }
+                    openBtn.setTooltip(new Tooltip("Open log file in default text editor"));
 
-                    setGraphic(analyzeBtn);
+                    setGraphic(container);
                 }
             }
         });
