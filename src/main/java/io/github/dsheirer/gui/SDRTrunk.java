@@ -604,21 +604,25 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         }
 
         mMainContentPanel = new JPanel(new BorderLayout());
-        mMainContentPanel.add(mControllerPanel.getAudioPanel(), BorderLayout.NORTH);
 
         JPanel contentWithSidebar = new JPanel(new BorderLayout());
         contentWithSidebar.add(mSidebarPanel, BorderLayout.WEST);
 
         JPanel rightContentPanel = new JPanel(new BorderLayout());
+
+        JPanel rightTopPanel = new JPanel(new BorderLayout());
+        rightTopPanel.add(mControllerPanel.getAudioPanel(), BorderLayout.NORTH);
+
         mTopContentPanel = new JPanel(new BorderLayout());
         mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
 
-        rightContentPanel.add(mTopContentPanel, BorderLayout.NORTH);
+        rightTopPanel.add(mTopContentPanel, BorderLayout.CENTER);
+
+        rightContentPanel.add(rightTopPanel, BorderLayout.NORTH);
         rightContentPanel.add(mControllerPanel, BorderLayout.CENTER);
 
         contentWithSidebar.add(rightContentPanel, BorderLayout.CENTER);
         mMainContentPanel.add(contentWithSidebar, BorderLayout.CENTER);
-
         mBroadcastStatusVisible = mPreferences.getBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, false);
         mResourceStatusVisible = mPreferences.getBoolean(PREFERENCE_RESOURCE_STATUS_VISIBLE, true);
 
