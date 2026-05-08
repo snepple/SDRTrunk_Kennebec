@@ -1,11 +1,3 @@
-## 2024-05-18 - ThreadingBridge Log Batching
-**Learning:** `ThreadingBridge` was introducing unnecessary abstraction and logging overhead when bridging Swing and JavaFX. We can rely on `Platform.runLater()` and `SwingUtilities.invokeLater()` with `Platform.isFxApplicationThread()` and `SwingUtilities.isEventDispatchThread()` checks for synchronous optimizations.
-**Action:** Always favor native JavaFX concurrency checks and execution mechanisms instead of creating custom abstraction layers. Use Strangler Fig to incrementally wrap old Swing UIs.
-
-## 2024-05-24 - JavaFX Context Menus vs Swing
-**Learning:** `JPopupMenu` and other Swing menus cannot natively host `javafx.scene.control.MenuItem`. A full migration is needed if we intend to modernize the menu items.
-**Action:** Prioritize standalone dialogs and top-level Windows/Frames for JavaFX migration over highly nested context menu items which are coupled with Swing components.
-
-## 2024-05-24 - JFXPanel vs Native Stage
-**Learning:** Top-level Swing components such as `JFrame` dialogs can safely be replaced by JavaFX `Stage`s without the need for `JFXPanel` wrappers.
-**Action:** Always check if a target is a top-level `JFrame` before applying `JFXPanel`. Use `Stage` directly instead.
+## 2025-02-14 - Swing to JavaFX Migration with proper Threading and MVC
+**Learning:** When using `JFXPanel` inside an existing Swing application to transition layout to JavaFX, strictly follow MVC separation. Don't build JavaFX controls directly inside the Swing class. Instead, create a separate `View` class (e.g. `HistoryManagementView`).
+**Action:** Also, carefully manage thread transitions. `Platform.runLater()` must be used to initialize or manipulate JavaFX elements from the Swing side, while `SwingUtilities.invokeLater()` must be used to trigger updates to Swing-based models (or showing legacy Swing dialogs) from JavaFX action event handlers. Never use `Platform.runAndWait()` to avoid deadlocks.

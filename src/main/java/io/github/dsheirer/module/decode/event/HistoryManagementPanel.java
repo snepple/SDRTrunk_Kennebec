@@ -21,17 +21,14 @@ package io.github.dsheirer.module.decode.event;
 
 import io.github.dsheirer.filter.FilterEditor;
 import io.github.dsheirer.filter.FilterSet;
-import java.awt.EventQueue;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.util.function.Consumer;
-import net.miginfocom.swing.MigLayout;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
 
-import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
+import java.awt.BorderLayout;
+import java.util.function.Consumer;
 
 /**
  * History management panel with controls for managing item histories.
@@ -41,11 +38,6 @@ public class HistoryManagementPanel<T> extends JPanel
     private ClearableHistoryModel mModel;
     private FilterSet<T> mFilterSet;
     private FilterEditor<T> mFilterEditor;
-    private JButton mClearButton;
-    private JButton mFilterButton;
-    private JSlider mHistorySlider;
-    private JLabel mHistoryTitleLabel;
-    private JLabel mHistoryValueLabel;
     private String mFilterEditorTitle;
 
     /**
@@ -53,6 +45,12 @@ public class HistoryManagementPanel<T> extends JPanel
      * the user moves the slider, so the caller can persist the new value.
      */
     private Consumer<Integer> mHistorySizeChangedCallback;
+
+    private JFXPanel mJfxPanel;
+    private HistoryManagementView mView;
+
+    // For Swing interoperability when showing the filter editor
+    private JPanel mDummyAnchor;
 
     /**
      * Constructs an instance using the model's current history size as the
@@ -83,20 +81,52 @@ public class HistoryManagementPanel<T> extends JPanel
         mFilterEditorTitle = filterEditorTitle;
         mHistorySizeChangedCallback = historySizeChangedCallback;
 
-        // Apply the persisted size to the model before the slider is built so
-        // getHistorySlider() picks up the right initial value.
         if(initialHistorySize != model.getHistorySize())
         {
             model.setHistorySize(initialHistorySize);
         }
 
-        setLayout(new MigLayout("insets 6 1 5 5", "[]5[]10[]5[]5[][grow]", ""));
-        add(getFilterButton());
-        add(getClearButton());
-        add(getHistoryTitleLabel());
-        add(getHistorySlider());
-        add(getHistoryValueLabel());
+        setLayout(new BorderLayout());
+
+        mDummyAnchor = new JPanel();
+        add(mDummyAnchor, BorderLayout.EAST);
+
+        mJfxPanel = new JFXPanel();
+        add(mJfxPanel, BorderLayout.CENTER);
+
+        Platform.runLater(this::initJavaFX);
+
         setEnabled(false);
+    }
+
+    private void initJavaFX() {
+        mView = new HistoryManagementView(mModel.getHistorySize(), this::handleFilterClick, this::handleClearClick, this::handleHistorySizeChanged);
+
+        Scene scene = new Scene(mView.getRoot());
+
+        java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+        if (cssUrl != null) {
+            scene.getStylesheets().add(cssUrl.toExternalForm());
+        }
+
+        mJfxPanel.setScene(scene);
+    }
+
+    private void handleFilterClick() {
+        SwingUtilities.invokeLater(() -> getFilterEditor().setVisible(true));
+    }
+
+    private void handleClearClick() {
+        SwingUtilities.invokeLater(() -> mModel.clear());
+    }
+
+    private void handleHistorySizeChanged(int size) {
+        SwingUtilities.invokeLater(() -> {
+            mModel.setHistorySize(size);
+            if (mHistorySizeChangedCallback != null) {
+                mHistorySizeChangedCallback.accept(size);
+            }
+        });
     }
 
     /**
@@ -109,7 +139,7 @@ public class HistoryManagementPanel<T> extends JPanel
 
         if(mFilterEditor != null)
         {
-            getFilterEditor().updateFilterSet(filterSet);
+            mFilterEditor.updateFilterSet(filterSet);
         }
     }
 
@@ -121,11 +151,16 @@ public class HistoryManagementPanel<T> extends JPanel
     public void setEnabled(boolean enabled)
     {
         super.setEnabled(enabled);
-        getClearButton().setEnabled(enabled);
-        getFilterButton().setEnabled(enabled);
-        getHistoryValueLabel().setEnabled(enabled);
-        getHistoryTitleLabel().setEnabled(enabled);
-        getHistorySlider().setEnabled(enabled);
+        if (mView != null) {
+            Platform.runLater(() -> mView.setDisable(!enabled));
+        } else {
+            // If view is not yet initialized, enqueue the disable update
+            Platform.runLater(() -> {
+                if (mView != null) {
+                    mView.setDisable(!enabled);
+                }
+            });
+        }
     }
 
     /**
@@ -136,126 +171,9 @@ public class HistoryManagementPanel<T> extends JPanel
     {
         if(mFilterEditor == null)
         {
-            mFilterEditor = new FilterEditor<>(mFilterEditorTitle, getFilterButton(), mFilterSet);
+            mFilterEditor = new FilterEditor<>(mFilterEditorTitle, mDummyAnchor, mFilterSet);
         }
 
         return mFilterEditor;
-    }
-
-    /**
-     * Filter button for accessing the filter editor
-     * @return filter button
-     */
-    private JButton getFilterButton()
-    {
-        if(mFilterButton == null)
-        {
-            mFilterButton = new JButton("Filters");
-            mFilterButton.setToolTipText("Edit filters");
-            mFilterButton.getAccessibleContext().setAccessibleName("Edit Filters");
-            mFilterButton.getAccessibleContext().setAccessibleDescription("Opens the filter editor to configure which events are displayed");
-            mFilterButton.addActionListener(arg0 -> EventQueue.invokeLater(() -> getFilterEditor().setVisible(true)));
-        }
-
-        return mFilterButton;
-    }
-
-    /**
-     * Clear button
-     * @return clear button
-     */
-    private JButton getClearButton()
-    {
-        if(mClearButton == null)
-        {
-            mClearButton = new JButton("Clear");
-            mClearButton.setToolTipText("Clears the history");
-            mClearButton.getAccessibleContext().setAccessibleName("Clear History");
-            mClearButton.getAccessibleContext().setAccessibleDescription("Clears the current history of events or messages");
-            mClearButton.addActionListener(e -> mModel.clear());
-        }
-
-        return mClearButton;
-    }
-
-    /**
-     * History value label.
-     * @return label
-     */
-    private JLabel getHistoryValueLabel()
-    {
-        if(mHistoryValueLabel == null)
-        {
-            mHistoryValueLabel = new JLabel(String.valueOf(mModel.getHistorySize()));
-        }
-
-        return mHistoryValueLabel;
-    }
-
-    /**
-     * History title label
-     * @return label
-     */
-    private JLabel getHistoryTitleLabel()
-    {
-        if(mHistoryTitleLabel == null)
-        {
-            mHistoryTitleLabel = new JLabel("History:");
-        }
-
-        return mHistoryTitleLabel;
-    }
-
-    /**
-     * History value slider control
-     * @return slider
-     */
-    private JSlider getHistorySlider()
-    {
-        if(mHistorySlider == null)
-        {
-            mHistorySlider = new JSlider();
-            mHistorySlider.setToolTipText("Adjust history size.  Double-click to reset to default 200");
-            mHistorySlider.setMinimum(0);
-            mHistorySlider.setMaximum(2000);
-            mHistorySlider.setMinorTickSpacing(25);
-            mHistorySlider.setMajorTickSpacing(500);
-            mHistorySlider.setPaintTicks(false);
-            mHistorySlider.setPaintLabels(false);
-            mHistorySlider.addMouseListener(new MouseListener()
-            {
-                @Override
-                public void mouseClicked(MouseEvent arg0)
-                {
-                    if(SwingUtilities.isLeftMouseButton(arg0) && arg0.getClickCount() == 2)
-                    {
-                        mHistorySlider.setValue(ClearableHistoryModel.DEFAULT_HISTORY_SIZE);
-                    }
-                }
-
-                public void mouseEntered(MouseEvent arg0) {}
-                public void mouseExited(MouseEvent arg0) {}
-                public void mousePressed(MouseEvent arg0) {}
-                public void mouseReleased(MouseEvent arg0) {}
-            });
-
-            // Initialise to whatever size the model currently holds (may have
-            // already been set from persisted prefs in the constructor).
-            mHistorySlider.setValue(mModel.getHistorySize());
-
-            mHistorySlider.addChangeListener(e -> {
-                int size = mHistorySlider.getValue();
-                mModel.setHistorySize(size);
-                getHistoryValueLabel().setText(String.valueOf(size));
-
-                // Persist the new value if a callback was supplied.
-                if(mHistorySizeChangedCallback != null)
-                {
-                    mHistorySizeChangedCallback.accept(size);
-                }
-            });
-        }
-
-        return mHistorySlider;
     }
 }
