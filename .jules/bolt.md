@@ -10,3 +10,6 @@
 ## 2026-05-15 - Single-pass string sanitization vs String.replace()
 **Learning:** When performing multi-character sanitization in SDRTrunk, repeated `String.replace()` calls create significant O(N*M) string and builder allocation overhead and GC pressure. This is especially true for high-frequency operations like file path sanitization during audio recording creation.
 **Action:** Prefer a single-pass `StringBuilder` that only allocates if a change is needed over repeated `String.replace()` calls to prevent unnecessary intermediate array allocations. Use a `switch` statement for O(1) character checking.
+## 2026-05-08 - Formatting 32-bit Unsigned Talkgroups
+**Learning:** Talkgroups, especially in NBFM, can exceed the bounds of a signed 32-bit integer. The talkgroup field accepts up to 4,294,967,295 (unsigned `int` max). If we use `String.valueOf(talkgroup)` directly, it prints as a negative number when it exceeds 2,147,483,647.
+**Action:** Use `Integer.toUnsignedString()` when fetching talkgroup IDs for display instead of `String.valueOf()` to correctly display values larger than `Integer.MAX_VALUE`.

@@ -549,14 +549,14 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                     io.github.dsheirer.module.decode.config.DecodeConfiguration config = channel.getDecodeConfiguration();
                     if (config == null) return "";
                     if (config instanceof io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM) {
-                        return String.valueOf(((io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM)config).getTalkgroup());
+                        return Integer.toUnsignedString(((io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM)config).getTalkgroup());
                     } else if (config instanceof io.github.dsheirer.module.decode.analog.DecodeConfigAnalog) {
-                        return String.valueOf(((io.github.dsheirer.module.decode.analog.DecodeConfigAnalog)config).getTalkgroup());
+                        return Integer.toUnsignedString(((io.github.dsheirer.module.decode.analog.DecodeConfigAnalog)config).getTalkgroup());
                     } else if (config instanceof io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25) {
                         int tg = ((io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25)config).getTalkgroup();
                         if (tg > 0) return String.valueOf(tg);
                     } else if (config instanceof io.github.dsheirer.module.decode.am.DecodeConfigAM) {
-                        return String.valueOf(((io.github.dsheirer.module.decode.am.DecodeConfigAM)config).getTalkgroup());
+                        return Integer.toUnsignedString(((io.github.dsheirer.module.decode.am.DecodeConfigAM)config).getTalkgroup());
                     }
                     return "";
                 }, channel.decodeConfigurationProperty());
