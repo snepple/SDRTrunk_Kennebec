@@ -314,7 +314,15 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 if (java.awt.Taskbar.isTaskbarSupported() && java.awt.Taskbar.getTaskbar().isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
                     java.awt.Taskbar.getTaskbar().setIconImage(appIcon);
                 }
-                primaryStage.getIcons().add(new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png")));
+
+                // Set multiple icon sizes to fix high-DPI blurriness and taskbar issues
+                primaryStage.getIcons().addAll(
+                    new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 16, 16, true, true),
+                    new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 32, 32, true, true),
+                    new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 64, 64, true, true),
+                    new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 128, 128, true, true),
+                    new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"))
+                );
             } catch (Exception e) {
                 mLog.error("Error setting application icon", e);
             }
@@ -551,16 +559,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
          */
         mTitle = SystemProperties.getInstance().getApplicationName();
 
-        try {
-            java.awt.Image appIcon = javax.imageio.ImageIO.read(SDRTrunk.class.getResource("/images/SDRTrunk_Application_Icon.png"));
-
-
-            if (java.awt.Taskbar.isTaskbarSupported() && java.awt.Taskbar.getTaskbar().isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
-                java.awt.Taskbar.getTaskbar().setIconImage(appIcon);
-            }
-        } catch (Exception e) {
-            mLog.error("Error setting application icon", e);
-        }
+        // The main application window is now JavaFX, not JFrame,
+        // so setting the taskbar icon is handled in the JavaFX start() method.
 
 
         Dimension dimension = mUserPreferences.getSwingPreference().getDimension(WINDOW_FRAME_IDENTIFIER);
