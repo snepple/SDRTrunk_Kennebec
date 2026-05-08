@@ -17,3 +17,6 @@
 **Topic:** Radio Reference Import
 **Learning:** The "Radio Reference Import" feature was listed as a new addition but lacked a dedicated Markdown guide.
 **Action:** Created `src/main/resources/docs/radio-reference.md` and integrated it into the navigation tree of `HelpViewer.java`.
+## 2024-05-08 - HelpViewer Organization & Search
+**Topic:** Organize HelpViewer Categories & Full-Text Search
+**Reason:** Organized the help documents into subcategories under "Guides & Documentation" for better navigation, and implemented full-text search to scan document contents, not just titles.
