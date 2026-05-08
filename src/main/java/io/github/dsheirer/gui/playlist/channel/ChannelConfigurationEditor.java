@@ -225,6 +225,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         {
             getItem().processingProperty().removeListener(mChannelProcessingMonitor);
             mChannelNameLabel.textProperty().unbind();
+            getAutoStartSwitch().selectedProperty().unbindBidirectional(getItem().autoStartProperty());
         }
 
         super.setItem(channel);
@@ -287,7 +288,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                 getAliasListComboBox().getSelectionModel().select(null);
             }
 
-            getAutoStartSwitch().selectedProperty().set(channel.isAutoStart());
+            getAutoStartSwitch().selectedProperty().bindBidirectional(channel.autoStartProperty());
             getAutoStartOrderSpinner().setDisable(!channel.isAutoStart());
             Integer order = channel.getAutoStartOrder();
             getAutoStartOrderSpinner().getValueFactory().setValue(order != null ? order : 0);
@@ -362,7 +363,6 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             getItem().setName(" ");
             getItem().setName(getNameField().getText());
             getItem().setAliasListName(getAliasListComboBox().getSelectionModel().getSelectedItem());
-            getItem().setAutoStart(getAutoStartSwitch().isSelected());
 
             Integer order = getAutoStartOrderSpinner().getValue();
 
@@ -707,7 +707,6 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mAutoStartSwitch = new ToggleSwitch("Auto-Start");
             mAutoStartSwitch.setDisable(true);
             mAutoStartSwitch.setDisable(true);
-            mAutoStartSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
 
         return mAutoStartSwitch;
@@ -999,10 +998,16 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                         }
                         if(conflictChannel != null) break;
                     }
+
+
+
                     if(conflictChannel != null)
                     {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "Talkgroup " + newTalkgroup + " is already assigned to channel '" + conflictChannel.getName() + "'.\nPlease choose a different talkgroup to assign.", ButtonType.OK);
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "Talkgroup " + newTalkgroup + " is already assigned to channel '" + conflictChannel.toString() + "'.\nPlease choose a different talkgroup to assign.", ButtonType.OK);
                         alert.setTitle("Talkgroup Conflict");
+
+
+
                         alert.setHeaderText("Cannot Save Channel Configuration");
                         alert.initOwner((getPlayButton()).getScene().getWindow());
                         alert.showAndWait();
