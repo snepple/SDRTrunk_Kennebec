@@ -543,20 +543,22 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             talkgroupColumn.setId("channelTable.talkgroup");
             talkgroupColumn.setCellValueFactory(param -> {
                 Channel channel = param.getValue();
-                if (channel != null && channel.getDecodeConfiguration() != null) {
+                if (channel == null) return new SimpleStringProperty("");
+                return javafx.beans.binding.Bindings.createStringBinding(() -> {
                     io.github.dsheirer.module.decode.config.DecodeConfiguration config = channel.getDecodeConfiguration();
+                    if (config == null) return "";
                     if (config instanceof io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM) {
-                        return new SimpleStringProperty(String.valueOf(((io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM)config).getTalkgroup()));
+                        return String.valueOf(((io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM)config).getTalkgroup());
                     } else if (config instanceof io.github.dsheirer.module.decode.analog.DecodeConfigAnalog) {
-                        return new SimpleStringProperty(String.valueOf(((io.github.dsheirer.module.decode.analog.DecodeConfigAnalog)config).getTalkgroup()));
+                        return String.valueOf(((io.github.dsheirer.module.decode.analog.DecodeConfigAnalog)config).getTalkgroup());
                     } else if (config instanceof io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25) {
                         int tg = ((io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25)config).getTalkgroup();
-                        if (tg > 0) return new SimpleStringProperty(String.valueOf(tg));
+                        if (tg > 0) return String.valueOf(tg);
                     } else if (config instanceof io.github.dsheirer.module.decode.am.DecodeConfigAM) {
-                        return new SimpleStringProperty(String.valueOf(((io.github.dsheirer.module.decode.am.DecodeConfigAM)config).getTalkgroup()));
+                        return String.valueOf(((io.github.dsheirer.module.decode.am.DecodeConfigAM)config).getTalkgroup());
                     }
-                }
-                return new SimpleStringProperty("");
+                    return "";
+                }, channel.decodeConfigurationProperty());
             });
             talkgroupColumn.setPrefWidth(100);
 
