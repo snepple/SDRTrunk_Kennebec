@@ -13,3 +13,7 @@
 ## 2024-05-04 - Topic Selection Updated
 **Topic:** How to stream to OpenMHz
 **Reason:** OpenMHz streaming is a built-in feature but lacks a dedicated guide under the "Guides & Documentation" section. I will create a guide for it and update `HelpViewer.java`.
+## 2024-05-04 - Topic Selection Updated
+**Topic:** Radio Reference Import
+**Learning:** The "Radio Reference Import" feature was listed as a new addition but lacked a dedicated Markdown guide.
+**Action:** Created `src/main/resources/docs/radio-reference.md` and integrated it into the navigation tree of `HelpViewer.java`.
