@@ -30,8 +30,13 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
+
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 
 
 /**
@@ -92,7 +97,7 @@ public class TunerPreferenceEditor extends HBox
     {
         if(mChannelizerLabel == null)
         {
-            mChannelizerLabel = new Label("Channelizer Type");
+            mChannelizerLabel = new Label("Channelizer Type", createHelpIcon("Determines how the SDR hardware processes incoming radio signals across its tuned bandwidth. Polyphase is more efficient for decoding 3 or more channels, while Heterodyne processes each channel on-demand."));
         }
 
         return mChannelizerLabel;
@@ -196,9 +201,21 @@ public class TunerPreferenceEditor extends HBox
     {
         if(mRspDuoModeLabel == null)
         {
-            mRspDuoModeLabel = new Label("SDRPlay RSPduo Selection Mode");
+            mRspDuoModeLabel = new Label("SDRPlay RSPduo Selection Mode", createHelpIcon("Configures the dual-tuner behavior of the SDRPlay RSPduo hardware (e.g., Single Tuner vs. Dual Tuner mode)."));
         }
 
         return mRspDuoModeLabel;
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }
