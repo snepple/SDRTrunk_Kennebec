@@ -1,5 +1,10 @@
 {
   "name": "SDRTrunk Kennebec Documentation",
+  "colors": {
+    "primary": "#0F172A",
+    "light": "#3B82F6"
+  },
+  "favicon": "/favicon.png",
   "navigation": [
     {
       "group": "Getting Started",
