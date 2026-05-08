@@ -324,6 +324,16 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             primaryStage.setScene(scene);
             primaryStage.show();
 
+            // Workaround for SwingNode and intermittent page contents not painting initially
+            javafx.application.Platform.runLater(() -> {
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (mMainContentPanel != null) {
+                        mMainContentPanel.revalidate();
+                        mMainContentPanel.repaint();
+                    }
+                });
+            });
+
             CalibrationManager calibrationManager = CalibrationManager.getInstance(mUserPreferences);
             final boolean calibrating = !calibrationManager.isCalibrated() &&
                 !mUserPreferences.getVectorCalibrationPreference().isHideCalibrationDialog();
