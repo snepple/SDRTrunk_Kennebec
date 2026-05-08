@@ -1137,12 +1137,12 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         if(format == IntegerFormat.DECIMAL)
         {
             mTalkgroupTextFormatter = mDecimalFormatter;
-            getTalkgroupField().setTooltip(new Tooltip("1 - 4,294,967,295"));
+            getTalkgroupField().setTooltip(new Tooltip("Valid range: 1 to 4,294,967,295"));
         }
         else
         {
             mTalkgroupTextFormatter = mHexFormatter;
-            getTalkgroupField().setTooltip(new Tooltip("1 - FFFFFFFF"));
+            getTalkgroupField().setTooltip(new Tooltip("Valid range: 1 to FFFFFFFF"));
         }
 
         mTalkgroupTextFormatter.setValue(value);

@@ -375,12 +375,12 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
         if(format == IntegerFormat.DECIMAL)
         {
             mTalkgroupTextFormatter = mDecimalFormatter;
-            getTalkgroupField().setTooltip(new Tooltip("1 - 65,535"));
+            getTalkgroupField().setTooltip(new Tooltip("Valid range: 1 to 65,535"));
         }
         else
         {
             mTalkgroupTextFormatter = mDecimalFormatter;
-            getTalkgroupField().setTooltip(new Tooltip("1 - FFFF"));
+            getTalkgroupField().setTooltip(new Tooltip("Valid range: 1 to FFFF"));
         }
 
         mTalkgroupTextFormatter.setValue(value);

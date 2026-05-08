@@ -821,6 +821,27 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             {
                 Alias original = getAliasTableView().getSelectionModel().getSelectedItem();
                 Alias copy = AliasFactory.shallowCopyOf(original);
+
+                String baseName = original.getName() + "-Copy";
+                String newName = baseName;
+                int counter = 1;
+                java.util.List<Alias> existingAliases = mPlaylistManager.getAliasModel().getAliases();
+                boolean nameExists = true;
+                while (nameExists) {
+                    nameExists = false;
+                    for (Alias a : existingAliases) {
+                        if (a.getName().equals(newName)) {
+                            nameExists = true;
+                            break;
+                        }
+                    }
+                    if (nameExists) {
+                        newName = baseName + counter;
+                        counter++;
+                    }
+                }
+                copy.setName(newName);
+
                 mPlaylistManager.getAliasModel().addAlias(copy);
                 getAliasTableView().getSelectionModel().clearSelection();
                 getAliasTableView().getSelectionModel().select(copy);

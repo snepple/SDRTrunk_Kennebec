@@ -670,7 +670,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             });
 
             MenuItem decodersItem = new MenuItem("Decoder");
-            decodersItem.setDisable(true);
+            decodersItem.getStyleClass().add("section-header"); // Disable item prevents menu from showing in JavaFX
             mNewButton.getItems().addAll(rrItem, new SeparatorMenuItem(), decodersItem, new SeparatorMenuItem());
 
             for(DecoderType decoderType: DecoderType.PRIMARY_DECODERS)
@@ -744,8 +744,40 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mCloneButton.setOnAction(event -> {
                 Channel selected = getChannelTableView().getSelectionModel().getSelectedItem();
                 Channel copy = selected.copyOf();
+
+                String originalName = selected.getName();
+                String baseName = originalName != null ? originalName : "Channel";
+                if (baseName.matches(".*-Copy(\\d+)?$")) {
+                    baseName = baseName.replaceFirst("-Copy(\\d+)?$", "");
+                }
+                String newName = baseName + "-Copy";
+
+                java.util.List<Channel> existingChannels = mPlaylistManager.getChannelModel().getChannels();
+                int suffix = 1;
+                while(true) {
+                    boolean exists = false;
+                    for(Channel c : existingChannels) {
+                        if(c.getName() != null && c.getName().equals(newName)) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if(!exists) {
+                        break;
+                    }
+                    newName = baseName + "-Copy" + suffix;
+                    suffix++;
+                }
+                copy.setName(newName);
+
                 mPlaylistManager.getChannelModel().addChannel(copy);
                 getChannelTableView().getSelectionModel().select(copy);
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Channel Cloned");
+                alert.setHeaderText("Please Review Cloned Channel Settings");
+                alert.setContentText("Please update values for any fields that will cause conflicts/issues with the cloned channel (e.g., using the same talkgroup ID or frequency).");
+                alert.showAndWait();
             });
         }
 
