@@ -1,0 +1,11 @@
+{
+  "name": "SDRTrunk Kennebec Documentation",
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "introduction"
+      ]
+    }
+  ]
+}
