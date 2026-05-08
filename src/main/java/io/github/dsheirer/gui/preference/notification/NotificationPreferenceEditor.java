@@ -300,7 +300,16 @@ public class NotificationPreferenceEditor extends VBox {
         recipientsSection.getChildren().addAll(recipientsHeader, mSplitPane);
         VBox.setVgrow(recipientsSection, Priority.ALWAYS);
 
-        getChildren().addAll(globalSettingsBox, recipientsSection);
+        VBox contentBox = new VBox(20, globalSettingsBox, recipientsSection);
+        VBox.setVgrow(recipientsSection, Priority.ALWAYS);
+
+        ScrollPane scrollPane = new ScrollPane(contentBox);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-control-inner-background: transparent; -fx-border-color: transparent;");
+
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        getChildren().add(scrollPane);
 
         // Initial state
         if (!mRecipientsList.isEmpty()) {
