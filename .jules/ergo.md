@@ -1,0 +1,1 @@
+## 2025-05-08 - Update Channel Talkgroup property in table **Learning:** Observable object property is needed to update the display **Action:** Use createStringBinding to bind to the newly created property
