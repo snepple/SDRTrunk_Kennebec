@@ -1,4 +1,5 @@
-/*******************************************************************************
+/*
+ * *****************************************************************************
  *     SDR Trunk 
  *     Copyright (C) 2014 Dennis Sheirer
  * 
@@ -14,20 +15,24 @@
  * 
  *     You should have received a copy of the GNU General Public License
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package io.github.dsheirer.module.decode.event;
 
-import net.miginfocom.swing.MigLayout;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.Component;
 
-public class ActivitySummaryFrame extends JFrame
+public class ActivitySummaryFrame
 {
-    private static final long serialVersionUID = 1L;
-
     public ActivitySummaryFrame( String summary )
     {
     	this( summary, null );
@@ -35,40 +40,27 @@ public class ActivitySummaryFrame extends JFrame
     
 	public ActivitySummaryFrame( String summary, Component displayOver )
 	{
-		setTitle( "Activity Summary" );
-		setLocationRelativeTo( displayOver );
-		setSize( 400, 400 );
-    	setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
-    	setLayout( new MigLayout( "", "[grow,fill]", "[grow,fill][]" ) );
+		Platform.runLater(() -> {
+            Stage stage = new Stage();
+            stage.setTitle( "Activity Summary" );
 
-    	JTextArea summaryText = new JTextArea( summary );
-		
-		JScrollPane scroller = new JScrollPane( summaryText );
-		scroller.setViewportView( summaryText );
-		
-		add( scroller, "wrap" );
-		
-		JButton close = new JButton( "Close" );
-		close.setToolTipText("Close the activity summary");
-		close.getAccessibleContext().setAccessibleName("Close Summary");
-		close.getAccessibleContext().setAccessibleDescription("Closes the activity summary dialog");
-		close.addActionListener( new ActionListener() 
-		{
-			@Override
-            public void actionPerformed( ActionEvent e )
-            {
-				dispose();
-            }
-		} );
-		
-		add( close );
+            VBox root = new VBox(10);
+            root.setPadding(new Insets(10));
+            root.setAlignment(Pos.CENTER);
 
-		EventQueue.invokeLater( new Runnable() 
-        {
-            public void run()
-            {
-        		setVisible( true );
-            }
-        } );
+            TextArea summaryText = new TextArea( summary );
+            summaryText.setEditable(false);
+            summaryText.setWrapText(true);
+            VBox.setVgrow(summaryText, Priority.ALWAYS);
+
+            Button close = new Button( "Close" );
+            close.setOnAction( e -> stage.close() );
+
+            root.getChildren().addAll(summaryText, close);
+
+            Scene scene = new Scene(root, 400, 400);
+            stage.setScene(scene);
+            stage.show();
+        });
 	}
 }
