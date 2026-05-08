@@ -378,9 +378,7 @@ public class SpectralDisplayPanel extends JPanel
         splitPane.add(mLayeredPanel);
         splitPane.add(mWaterfallPanel);
 
-        mScrollPane = new JScrollPane(splitPane);
-
-        add(mScrollPane, "grow");
+        add(splitPane, "grow");
 
         /**
          * Setup DFTProcessor to process samples and register the waterfall and
