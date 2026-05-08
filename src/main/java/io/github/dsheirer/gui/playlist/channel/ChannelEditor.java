@@ -670,7 +670,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             });
 
             MenuItem decodersItem = new MenuItem("Decoder");
-            decodersItem.setDisable(true);
+            decodersItem.getStyleClass().add("section-header"); // Disable item prevents menu from showing in JavaFX
             mNewButton.getItems().addAll(rrItem, new SeparatorMenuItem(), decodersItem, new SeparatorMenuItem());
 
             for(DecoderType decoderType: DecoderType.PRIMARY_DECODERS)

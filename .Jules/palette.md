@@ -47,3 +47,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-20 - HIG Modernization of Record Preferences
 **Learning:** Legacy UI preferences often use manual layout padding and `HBox`/`VBox` structures which doesn't align with the Apple Human Interface Guidelines (HIG). Upgrading to custom HIG-compliant `SettingsCard` and `SettingsRow` requires changing the root container to `VBox` to properly stack cards. Furthermore, replacing plain labels with Tooltips on ComboBoxes improves accessibility and layout cleanliness.
 **Action:** When updating preferences UI, check if `SettingsCard` and `SettingsRow` can replace manual `HBox`/`VBox` logic. Remember to add contextual `Tooltip`s to explain technical settings.
+## 2026-05-08 - Adding Tooltips to Preference Editors
+**Learning:** Adding context-specific tooltips to preference UI components (like CheckBoxes and ComboBoxes) significantly improves accessibility and user understanding of what technical settings do.
+**Action:** When updating or creating new JavaFX preferences UI, always include `Tooltip`s to explain technical settings, especially those that alter data formats or display behaviors.
