@@ -5,6 +5,14 @@ sidebarTitle: "Changelog"
 mode: "center"
 ---
 
+<Update label="K.00.042" description="May 15, 2026">
+  Weekly Kennebec release. A focused fix for tuner startup reliability across USB and SDRPlay devices.
+
+  ### Bug fixes
+
+  - **Tuner startup reliability.** Fixed an issue where USB, SDRPlay RSP, and RSP Duo tuners could fail to start because the start check looked at availability instead of whether the tuner was enabled. Enabled tuners now start as expected. See [Supported tuners](/hardware/supported-tuners).
+</Update>
+
 <Update label="K.00.041" description="May 8, 2026">
   Weekly Kennebec release. A major UI modernization push, expanded notifications and AI audio features, in-app help and tooltips throughout, and a large batch of UX fixes for channels, aliases, streaming, and audio recordings.
 
