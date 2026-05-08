@@ -1078,7 +1078,9 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         @Override
         public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
         {
-            modifiedProperty().set(true);
+            if(getItem() != null) {
+                modifiedProperty().set(true);
+            }
         }
     }
 
