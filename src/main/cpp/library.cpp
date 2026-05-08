@@ -1,4 +1,3 @@
-#include "io_github_dsheirer_dsp_filter_fir_real_NativeRealFIRFilter.h"
 #include <jni.h>
 #include <volk/volk.h>
 
