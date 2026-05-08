@@ -21,7 +21,9 @@
 package io.github.dsheirer.eventbus;
 
 import com.google.common.eventbus.EventBus;
-import io.github.dsheirer.util.ThreadingBridge;
+import javafx.application.Platform;
+import javax.swing.SwingUtilities;
+
 
 /**
  * System wide event bus for dispatching/broadcasting system wide events or objects
@@ -36,11 +38,21 @@ public class MyEventBus
         return GLOBAL_EVENT_BUS;
     }
 
+
+
     public static void postToFx(Object event) {
-        ThreadingBridge.runOnFxThread(() -> GLOBAL_EVENT_BUS.post(event));
+        if (Platform.isFxApplicationThread()) {
+            GLOBAL_EVENT_BUS.post(event);
+        } else {
+            Platform.runLater(() -> GLOBAL_EVENT_BUS.post(event));
+        }
     }
 
     public static void postToSwing(Object event) {
-        ThreadingBridge.runOnSwingThread(() -> GLOBAL_EVENT_BUS.post(event));
+        if (SwingUtilities.isEventDispatchThread()) {
+            GLOBAL_EVENT_BUS.post(event);
+        } else {
+            SwingUtilities.invokeLater(() -> GLOBAL_EVENT_BUS.post(event));
+        }
     }
 }

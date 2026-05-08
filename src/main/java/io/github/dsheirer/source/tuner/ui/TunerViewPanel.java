@@ -268,7 +268,7 @@ public class TunerViewPanel extends JPanel
             {
                 AddRecordingTunerDialog dialog = new AddRecordingTunerDialog(mUserPreferences, mDiscoveredTunerModel,
                         mTunerConfigurationManager);
-                dialog.setLocationRelativeTo(TunerViewPanel.this);
+
                 EventQueue.invokeLater(() -> dialog.setVisible(true));
             });
         }

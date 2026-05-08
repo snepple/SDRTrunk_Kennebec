@@ -560,7 +560,7 @@ return panel;
         }
         JFXPanel panel = new JFXPanel();
         mViewMap.put(viewIdentifier, panel);
-        io.github.dsheirer.util.ThreadingBridge.runOnFxThread(() -> {
+        Platform.runLater(() -> {
             Scene scene = null;
             switch(viewIdentifier) {
                 case PLAYLIST_EDITOR:

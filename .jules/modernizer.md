@@ -1,7 +1,11 @@
-## 2025-02-20 - JavaFX Canvas Migration for Spectrum/Waterfall
-**Learning:** For rendering dense high-frequency updates like SDR FFT outputs, Swing's `Graphics2D` immediate mode API overhead is a severe bottleneck. Migrating these components to `JFXPanel` wrappers hosting JavaFX `Canvas` objects enables hardware-accelerated drawing.
-**Action:** Use JavaFX `WritableImage` and `PixelWriter` with `PixelFormat.getIntArgbInstance()` backed by raw integer arrays to provide an efficient memory buffer for `Canvas` rendering of heatmap images. Standardize rendering updates with `Platform.runLater()` directly to avoid thread blocking between the DSP pipeline and UI EDT. Ensure `JFXPanel` lifecycle and cleanup correctly handle the SettingsManager listeners to avoid memory leaks.
+## 2024-05-18 - ThreadingBridge Log Batching
+**Learning:** `ThreadingBridge` was introducing unnecessary abstraction and logging overhead when bridging Swing and JavaFX. We can rely on `Platform.runLater()` and `SwingUtilities.invokeLater()` with `Platform.isFxApplicationThread()` and `SwingUtilities.isEventDispatchThread()` checks for synchronous optimizations.
+**Action:** Always favor native JavaFX concurrency checks and execution mechanisms instead of creating custom abstraction layers. Use Strangler Fig to incrementally wrap old Swing UIs.
 
-## 2025-02-20 - AnimationTimer & Thread Safety for High Frequency JFX Updates
-**Learning:** When piping data from a high-frequency background thread (like an SDR's DSP processing loop) to a JavaFX Canvas, using `Platform.runLater()` for every data frame creates crippling event queue flooding and GC pressure. Data mutation and rendering reading can also overlap and cause tearing or out of bounds exceptions.
-**Action:** Decouple the UI rendering from the DSP thread by leveraging JavaFX's `AnimationTimer` (which aligns to the monitor's 60 FPS refresh rate). Inside the `receive()` block (invoked by the DSP thread), safely update a pre-allocated data buffer inside a `synchronized` block and assert a `mNeedsRedraw` volatile boolean. Inside the `AnimationTimer`'s `handle(long now)` tick on the JavaFX application thread, consume the `needsRedraw` flag and read from the synchronized buffer to paint the `Canvas`. This pattern guarantees bounded UI overhead regardless of DSP data rates.
+## 2024-05-24 - JavaFX Context Menus vs Swing
+**Learning:** `JPopupMenu` and other Swing menus cannot natively host `javafx.scene.control.MenuItem`. A full migration is needed if we intend to modernize the menu items.
+**Action:** Prioritize standalone dialogs and top-level Windows/Frames for JavaFX migration over highly nested context menu items which are coupled with Swing components.
+
+## 2024-05-24 - JFXPanel vs Native Stage
+**Learning:** Top-level Swing components such as `JFrame` dialogs can safely be replaced by JavaFX `Stage`s without the need for `JFXPanel` wrappers.
+**Action:** Always check if a target is a top-level `JFrame` before applying `JFXPanel`. Use `Stage` directly instead.
