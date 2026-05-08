@@ -368,15 +368,9 @@ public class SpectralDisplayPanel extends JPanel
         mWaterfallPanel.addMouseMotionListener(mouser);
         mWaterfallPanel.addMouseWheelListener(mouser);
 
-        /* Attempt to set a 50/50 split preferred size for the split pane */
-        double totalHeight =
-                mLayeredPanel.getPreferredSize().getHeight() + mWaterfallPanel.getPreferredSize().getHeight();
-
-        mLayeredPanel.setPreferredSize(
-                new Dimension((int)mLayeredPanel.getPreferredSize().getWidth(), (int)(totalHeight / 2.0d)));
-
-        mWaterfallPanel.setPreferredSize(
-                new Dimension((int)mWaterfallPanel.getPreferredSize().getWidth(), (int)(totalHeight / 2.0d)));
+        /* Set a default 50/50 split preferred size for the split pane to ensure JFXPanels aren't squished */
+        mLayeredPanel.setPreferredSize(new Dimension(800, 300));
+        mWaterfallPanel.setPreferredSize(new Dimension(800, 300));
 
         //Create the split pane to hold the layered pane and the waterfall
         JideSplitPane splitPane = new JideSplitPane(JSplitPane.VERTICAL_SPLIT);
