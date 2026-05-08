@@ -641,21 +641,21 @@ tasks.register('compileJni', Exec) {
 
     if (osName.contains("win")) {
         if (arch.contains("aarch64")) {
-            commandLine 'g++', '-shared', '-o', "${outDir}/library-windows-aarch64.dll", "-I${javaHome}/include", "-I${javaHome}/include/win32", "-I${buildDir}/generated/jni", srcFile
+            commandLine 'g++', '-shared', '-o', "${outDir}/library-windows-aarch64.dll", "-I", "${javaHome}/include", "-I", "${javaHome}/include/win32", "-I", "${buildDir}/generated/jni", srcFile
         } else {
-            commandLine 'g++', '-shared', '-o', "${outDir}/library-windows-x64.dll", "-I${javaHome}/include", "-I${javaHome}/include/win32", "-I${buildDir}/generated/jni", srcFile
+            commandLine 'g++', '-shared', '-o', "${outDir}/library-windows-x64.dll", "-I", "${javaHome}/include", "-I", "${javaHome}/include/win32", "-I", "${buildDir}/generated/jni", srcFile
         }
     } else if (osName.contains("mac")) {
         if (arch.contains("aarch64")) {
-            commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary-macos-aarch64.dylib", "-I${javaHome}/include", "-I${javaHome}/include/darwin", "-I${buildDir}/generated/jni", srcFile
+            commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary-macos-aarch64.dylib", "-I", "${javaHome}/include", "-I", "${javaHome}/include/darwin", "-I", "${buildDir}/generated/jni", srcFile
         } else {
-            commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary-macos-x64.dylib", "-I${javaHome}/include", "-I${javaHome}/include/darwin", "-I${buildDir}/generated/jni", srcFile
+            commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary-macos-x64.dylib", "-I", "${javaHome}/include", "-I", "${javaHome}/include/darwin", "-I", "${buildDir}/generated/jni", srcFile
         }
     } else {
         if (arch.contains("aarch64")) {
-            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-aarch64.so", "-I${javaHome}/include", "-I${javaHome}/include/linux", "-I${buildDir}/generated/jni", srcFile, "-lvolk"
+            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-aarch64.so", "-I", "${javaHome}/include", "-I", "${javaHome}/include/linux", "-I", "${buildDir}/generated/jni", srcFile, "-lvolk"
         } else {
-            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-x64.so", "-I${javaHome}/include", "-I${javaHome}/include/linux", "-I${buildDir}/generated/jni", srcFile, "-lvolk"
+            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-x64.so", "-I", "${javaHome}/include", "-I", "${javaHome}/include/linux", "-I", "${buildDir}/generated/jni", srcFile, "-lvolk"
         }
     }
 }
