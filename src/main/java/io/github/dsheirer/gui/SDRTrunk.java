@@ -872,6 +872,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
      */
     public static void main(String[] args)
     {
+        System.setProperty("com.github.weisj.jsvg.disableStax", "true");
         System.setProperty("com.ctc.wstx.maxAttributeSize", "10000000");
         System.setProperty("jdk.xml.maxAttributeSize", "10000000");
         System.setProperty("awt.useSystemAAFontSettings", "on");

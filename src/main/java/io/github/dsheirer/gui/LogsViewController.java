@@ -92,8 +92,11 @@ public class LogsViewController {
                 if (!logQueue.isEmpty()) {
                     List<String> batch = new ArrayList<>();
                     String msg;
-                    while ((msg = logQueue.poll()) != null) {
+                    int count = 0;
+                    // Limit to 250 log lines per frame to prevent JavaFX EDT from freezing during log floods
+                    while (count < 250 && (msg = logQueue.poll()) != null) {
                         batch.add(msg);
+                        count++;
                     }
                     if (!batch.isEmpty()) {
                         logData.addAll(batch);
