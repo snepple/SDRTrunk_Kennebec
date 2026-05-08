@@ -999,10 +999,16 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                         }
                         if(conflictChannel != null) break;
                     }
+
+
+
                     if(conflictChannel != null)
                     {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "Talkgroup " + newTalkgroup + " is already assigned to channel '" + conflictChannel.getName() + "'.\nPlease choose a different talkgroup to assign.", ButtonType.OK);
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "Talkgroup " + newTalkgroup + " is already assigned to channel '" + conflictChannel.toString() + "'.\nPlease choose a different talkgroup to assign.", ButtonType.OK);
                         alert.setTitle("Talkgroup Conflict");
+
+
+
                         alert.setHeaderText("Cannot Save Channel Configuration");
                         alert.initOwner((getPlayButton()).getScene().getWindow());
                         alert.showAndWait();
