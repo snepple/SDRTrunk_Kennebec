@@ -443,6 +443,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                     @Override
                     protected void updateItem(Boolean item, boolean empty)
                     {
+                        super.updateItem(item, empty);
                         setAlignment(Pos.CENTER);
                         setText(null);
 
