@@ -7,3 +7,6 @@
 ## 2024-05-18 - Fix Bidirectional State Synchronization
 **Learning:** Legacy UI toggles that rely on `save()` actions for global properties (like `autoStartProperty`) create a disjointed UX when other UI elements (like Table columns) update the property directly.
 **Action:** When a UI element modifies a global model property instantly in one place, all other UI elements controlling the same property should use `bindBidirectional()` to stay in sync automatically.
+## 2026-05-08 - Explicit Actions over Hidden Interactions
+**Learning:** Depending purely on double-clicks or hidden interactions creates low discoverability. Explicit buttons (like Open) improve UX.
+**Action:** Always provide explicit action buttons for important row actions in table views, even if double-click shortcuts exist.

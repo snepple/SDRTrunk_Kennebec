@@ -24,6 +24,7 @@ import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.geometry.Insets;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
 
 import java.util.Date;
@@ -80,6 +81,7 @@ public class DecodeEventViewPreferenceEditor extends VBox
                 DisplayableTimestamp selected = mTimestampFormatChoiceBox.getSelectionModel().getSelectedItem();
                 mDecodeEventPreference.setTimestampFormat(selected.getTimestampFormat());
             });
+            mTimestampFormatChoiceBox.setTooltip(new Tooltip("Changes how event times are displayed in the channel events view."));
         }
 
         return mTimestampFormatChoiceBox;

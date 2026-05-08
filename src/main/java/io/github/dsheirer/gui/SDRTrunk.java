@@ -605,11 +605,16 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         mMainContentPanel = new JPanel(new BorderLayout());
         mMainContentPanel.add(mSidebarPanel, BorderLayout.WEST);
+
+        JPanel rightContentPanel = new JPanel(new BorderLayout());
         mTopContentPanel = new JPanel(new BorderLayout());
         mTopContentPanel.add(mControllerPanel.getAudioPanel(), BorderLayout.NORTH);
         mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
-        mMainContentPanel.add(mTopContentPanel, BorderLayout.NORTH);
-        mMainContentPanel.add(mControllerPanel, BorderLayout.CENTER);
+
+        rightContentPanel.add(mTopContentPanel, BorderLayout.NORTH);
+        rightContentPanel.add(mControllerPanel, BorderLayout.CENTER);
+
+        mMainContentPanel.add(rightContentPanel, BorderLayout.CENTER);
 
         mBroadcastStatusVisible = mPreferences.getBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, false);
         mResourceStatusVisible = mPreferences.getBoolean(PREFERENCE_RESOURCE_STATUS_VISIBLE, true);
