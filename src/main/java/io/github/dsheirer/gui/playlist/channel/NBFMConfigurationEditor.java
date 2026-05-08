@@ -1160,6 +1160,42 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         public void changed(ObservableValue<? extends Integer> observable, Integer oldValue, Integer newValue)
         {
             modifiedProperty().set(true);
+            Integer tg = getConfiguredTalkgroup();
+            if (tg != null && tg > 0) {
+                boolean conflict = false;
+                for (io.github.dsheirer.controller.channel.Channel c : getPlaylistManager().getChannelModel().channelList()) {
+                    if (c == getItem()) continue;
+                    io.github.dsheirer.module.decode.config.DecodeConfiguration dc = c.getDecodeConfiguration();
+                    if (dc instanceof io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM) {
+                        if (tg.equals(((io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM) dc).getTalkgroup())) {
+                            conflict = true;
+                            break;
+                        }
+                    }
+                }
+                if (conflict) {
+                    getTalkgroupField().setStyle("-fx-border-color: red; -fx-border-width: 2px; -fx-border-radius: 3px;");
+                    if (mTalkgroupTextFormatter == mHexFormatter) {
+                        getTalkgroupField().setTooltip(new Tooltip("Talkgroup ID already assigned to another channel (1 - FFFFFFFF)"));
+                    } else {
+                        getTalkgroupField().setTooltip(new Tooltip("Talkgroup ID already assigned to another channel (1 - 4,294,967,295)"));
+                    }
+                } else {
+                    getTalkgroupField().setStyle("");
+                    if (mTalkgroupTextFormatter == mHexFormatter) {
+                        getTalkgroupField().setTooltip(new Tooltip("1 - FFFFFFFF"));
+                    } else {
+                        getTalkgroupField().setTooltip(new Tooltip("1 - 4,294,967,295"));
+                    }
+                }
+            } else {
+                getTalkgroupField().setStyle("");
+                if (mTalkgroupTextFormatter == mHexFormatter) {
+                    getTalkgroupField().setTooltip(new Tooltip("1 - FFFFFFFF"));
+                } else {
+                    getTalkgroupField().setTooltip(new Tooltip("1 - 4,294,967,295"));
+                }
+            }
         }
     }
 
