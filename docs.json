@@ -1,0 +1,132 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "almond",
+  "name": "SDRTrunk Kennebec",
+  "description": "Documentation for SDRTrunk Kennebec — a cross-platform radio scanner with live streaming, AI monitoring, and automated alerting.",
+  "colors": {
+    "primary": "#1E3A5F",
+    "light": "#3B6FA0",
+    "dark": "#0F1E30"
+  },
+  "favicon": "/favicon.ico",
+  "icons": {
+    "library": "lucide"
+  },
+  "styling": {
+    "eyebrows": "breadcrumbs"
+  },
+  "contextual": {
+    "options": ["copy", "view", "assistant", "mcp", "add-mcp"]
+  },
+  "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Home",
+          "icon": "house",
+          "href": "/"
+        },
+        {
+          "anchor": "GitHub",
+          "icon": "github",
+          "href": "https://github.com/snepple/SDRTrunk_Kennebec"
+        },
+        {
+          "anchor": "Releases",
+          "icon": "download",
+          "href": "https://github.com/snepple/SDRTrunk_Kennebec/releases"
+        }
+      ]
+    },
+    "directory": "card",
+    "groups": [
+      {
+        "group": "Get Started",
+        "icon": "rocket",
+        "expanded": true,
+        "pages": [
+          "introduction",
+          "quickstart",
+          "system-requirements"
+        ]
+      },
+      {
+        "group": "Hardware",
+        "icon": "cpu",
+        "expanded": true,
+        "pages": [
+          "hardware/supported-tuners",
+          "hardware/rtl-sdr",
+          "hardware/airspy-hackrf",
+          "hardware/tuner-self-healing"
+        ]
+      },
+      {
+        "group": "Channels & Decoding",
+        "icon": "radio",
+        "expanded": true,
+        "pages": [
+          "decoding/channels-and-decoding",
+          "decoding/p25",
+          "decoding/dmr",
+          "decoding/analog",
+          "decoding/organization-and-playlists",
+          "decoding/aliases-talkgroups"
+        ]
+      },
+      {
+        "group": "Streaming",
+        "icon": "broadcast",
+        "expanded": true,
+        "pages": [
+          "streaming/broadcastify",
+          "streaming/zello",
+          "streaming/rdio-scanner",
+          "streaming/openmhz",
+          "streaming/thinline-radio",
+          "streaming/other-platforms"
+        ]
+      },
+      {
+        "group": "Alerts & AI",
+        "icon": "bell",
+        "expanded": true,
+        "pages": [
+          "alerts/notifications",
+          "alerts/inactivity-monitoring",
+          "alerts/two-tone-detect",
+          "alerts/gemini-ai"
+        ]
+      },
+      {
+        "group": "Configuration",
+        "icon": "settings",
+        "expanded": true,
+        "pages": [
+          "configuration/user-preferences",
+          "configuration/audio-recordings",
+          "configuration/diagnostics",
+          "configuration/radio-reference",
+          "configuration/mqtt",
+          "configuration/virtual-audio-cable"
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [],
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/snepple/SDRTrunk_Kennebec"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/snepple/SDRTrunk_Kennebec"
+    }
+  }
+}
