@@ -110,20 +110,12 @@
           "configuration/mqtt",
           "configuration/virtual-audio-cable"
         ]
-      },
-      {
-        "group": "Resources",
-        "icon": "newspaper",
-        "expanded": true,
-        "pages": [
-          "changelog"
-        ]
       }
     ]
   },
   "logo": {
-    "light": "favicon.png",
-    "dark": "favicon.png"
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
   },
   "navbar": {
     "links": [],
