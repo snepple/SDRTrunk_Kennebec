@@ -455,7 +455,13 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this::onViewChanged);
 
             // Add Sidebar
-            mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
+            try {
+                javax.swing.SwingUtilities.invokeAndWait(() -> {
+                    mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
+                });
+            } catch (Exception e) {
+                mLog.error("Error creating sidebar panel", e);
+            }
         }
 
 
@@ -492,20 +498,25 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         if(!GraphicsEnvironment.isHeadless())
         {
-            mControllerPanel = new ControllerPanel(mPlaylistManager, audioPlaybackManager, mIconModel, mapService,
-                    mSettingsManager, mTunerManager, mUserPreferences, mNowPlayingDetailsVisible, this);
+            try {
+                javax.swing.SwingUtilities.invokeAndWait(() -> {
+                    mControllerPanel = new io.github.dsheirer.controller.ControllerPanel(mPlaylistManager, audioPlaybackManager, mIconModel, mapService,
+                            mSettingsManager, mTunerManager, mUserPreferences, mNowPlayingDetailsVisible, this);
 
-            mControllerPanel.addView("playlist_editor", mJavaFxWindowManager.getView(ViewIdentifier.PLAYLIST_EDITOR));
-            mControllerPanel.addView("user_prefs", mJavaFxWindowManager.getView(ViewIdentifier.USER_PREFERENCES_EDITOR));
-            mControllerPanel.addView("msg_viewer", mJavaFxWindowManager.getView(ViewIdentifier.RECORDING_VIEWER));
+                    mControllerPanel.addView("playlist_editor", mJavaFxWindowManager.getView(ViewIdentifier.PLAYLIST_EDITOR));
+                    mControllerPanel.addView("user_prefs", mJavaFxWindowManager.getView(ViewIdentifier.USER_PREFERENCES_EDITOR));
+                    mControllerPanel.addView("msg_viewer", mJavaFxWindowManager.getView(ViewIdentifier.RECORDING_VIEWER));
 
-            mControllerPanel.addView("logs", mJavaFxWindowManager.getView(ViewIdentifier.LOGS));
+                    mControllerPanel.addView("logs", mJavaFxWindowManager.getView(ViewIdentifier.LOGS));
 
-
+                    mSpectralPanel = new SpectralDisplayPanel(mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
+                });
+            } catch (Exception e) {
+                mLog.error("Error creating controller panel", e);
+            }
         }
 
 
-        mSpectralPanel = new SpectralDisplayPanel(mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
 
         TunerSpectralDisplayManager tunerSpectralDisplayManager = new TunerSpectralDisplayManager(mSpectralPanel,
             mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
