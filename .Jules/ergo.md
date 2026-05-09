@@ -14,3 +14,6 @@
 ## 2026-05-09 - Remove non-functional Bazineta JMBE fork option
 **Learning:** Adding a configuration option to use an alternative library fork must consider the entire dependency chain. In this case, the `jmbe-creator` utility was tightly coupled to the original repository's release assets, rendering the "Use alternative 'bazineta' JMBE fork" checkbox non-functional by design.
 **Action:** When evaluating external tool integration, ensure the configuration options exposed to the user actually have a functional backend path to succeed. Half-implemented configuration flags that lead to inevitable errors should be removed until a complete, tested pipeline is available.
+## 2024-05-24 - Application Preference Tooltips
+**Learning:** Legacy UI toggles for complex system interactions (like Watchdog or background scripts) lack explanatory tooltips, increasing user confusion.
+**Action:** When adding new application-level configuration options, always provide an attached `Tooltip` to clarify their purpose to the user.
