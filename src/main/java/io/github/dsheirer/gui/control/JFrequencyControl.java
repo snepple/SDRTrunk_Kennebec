@@ -73,7 +73,7 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
     {
         setLayout(new MigLayout("insets 0 0 0 0", "[]0[]", ""));
 
-        Font font = new Font(Font.MONOSPACED, Font.BOLD, 24);
+        Font font = new Font(Font.MONOSPACED, Font.BOLD, 18);
 
         for(int x = 9; x >= 0; x--)
         {
@@ -238,6 +238,8 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
             super("0");
 
             mPower = position;
+            setMargin(new java.awt.Insets(0, 0, 0, 0));
+            setHorizontalAlignment(javax.swing.JTextField.CENTER);
             setToolTipText(getTooltip(mPower));
             Listener listener = new Listener();
 
