@@ -75,7 +75,6 @@ public class JmbeLibraryPreferenceEditor extends VBox
     private Button mCreateButton;
     private HBox mButtonsBox;
     private CheckBox mAlertUserWhenMissingCheckBox;
-    private CheckBox mUseBazinetaForkCheckBox;
 
     public JmbeLibraryPreferenceEditor(UserPreferences userPreferences)
     {
@@ -86,7 +85,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
 
         setPadding(new Insets(10,10,10,10));
         setSpacing(10);
-        getChildren().addAll(getEditorPane(), getButtonsBox(), getAlertUserWhenMissingCheckBox(), getUseBazinetaForkCheckBox());
+        getChildren().addAll(getEditorPane(), getButtonsBox(), getAlertUserWhenMissingCheckBox());
     }
 
     public void dispose()
@@ -109,37 +108,6 @@ public class JmbeLibraryPreferenceEditor extends VBox
 
         return mAlertUserWhenMissingCheckBox;
     }
-    private CheckBox getUseBazinetaForkCheckBox()
-    {
-        if(mUseBazinetaForkCheckBox == null)
-        {
-            mUseBazinetaForkCheckBox = new CheckBox("Use alternative 'bazineta' JMBE fork (optimized/cleaned up)");
-            mUseBazinetaForkCheckBox.setSelected(mUserPreferences.getJmbeLibraryPreference().getUseBazinetaFork());
-            mUseBazinetaForkCheckBox.setOnAction(event -> {
-                boolean useFork = mUseBazinetaForkCheckBox.isSelected();
-                mUserPreferences.getJmbeLibraryPreference().setUseBazinetaFork(useFork);
-
-                if (useFork) {
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION, "This fork is maintained for use with sdrtrunk and focuses on practical codec maintenance:\n\n" +
-                            "• Lint and code quality — visibility narrowing, dead code removal, cleanup throughout the AMBE/IMBE codec paths\n" +
-                            "• Removed unused code — debug wave-generation utilities, unused ambeplus package\n" +
-                            "• Reduced allocation pressure — eliminated per-frame array allocations\n" +
-                            "• Tuning - AMBE frames are no longer decoded twice\n" +
-                            "• Bug fixes & Codec correctness fixes\n" +
-                            "• Output calibration — final AMBE output is trimmed slightly before clipping\n" +
-                            "• Voiced synthesis performance — replaced per-sample Math.cos() calls with incremental phasor rotation\n\n" +
-                            "In short, this fork has been radically pruned to just what sdrtrunk requires and tuned to be faster than the original.", ButtonType.OK);
-                    alert.setTitle("Bazineta JMBE Fork Details");
-                    alert.setHeaderText("About the Bazineta JMBE Fork");
-                    alert.initOwner(getCreateButton().getScene().getWindow());
-                    alert.showAndWait();
-                }
-            });
-        }
-
-        return mUseBazinetaForkCheckBox;
-    }
-
 
     private HBox getButtonsBox()
     {
@@ -203,8 +171,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
             try
             {
                 Version current = mUserPreferences.getJmbeLibraryPreference().getCurrentVersion();
-                boolean useFork = mUserPreferences.getJmbeLibraryPreference().getUseBazinetaFork();
-                final Release release = GitHub.getLatestRelease(useFork ? JmbeCreator.GITHUB_BAZINETA_JMBE_RELEASES_URL : JmbeCreator.GITHUB_JMBE_RELEASES_URL);
+                final Release release = GitHub.getLatestRelease(JmbeCreator.GITHUB_JMBE_RELEASES_URL);
 
                 mLog.info("Checking for JMBE Library Updates ...");
                 mLog.info("Current: " + (current != null ? current.toString() : "empty"));
@@ -385,7 +352,6 @@ public class JmbeLibraryPreferenceEditor extends VBox
                 .getPathJmbeLibrary() != null ? CHECK_FOR_UPDATE : CREATE_LIBRARY);
             getAlertUserWhenMissingCheckBox().setSelected(mUserPreferences.getJmbeLibraryPreference()
                 .getAlertIfMissingLibraryRequired());
-            getUseBazinetaForkCheckBox().setSelected(mUserPreferences.getJmbeLibraryPreference().getUseBazinetaFork());
         }
     }
 }

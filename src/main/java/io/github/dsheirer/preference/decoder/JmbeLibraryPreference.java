@@ -46,11 +46,9 @@ public class JmbeLibraryPreference extends Preference
 
     private static final String PREFERENCE_KEY_PATH_JMBE_LIBRARY = "path.jmbe.library.1.0.0";
     private static final String PREFERENCE_KEY_PATH_ALERT_LIBRARY_REQUIRED = "alert.jmbe.required";
-    private static final String PREFERENCE_KEY_USE_BAZINETA_FORK = "use.bazineta.jmbe.fork";
     private final Pattern VERSION_PATTERN = Pattern.compile(".*jmbe-(\\d{1,5}.\\d{1,5}.\\d{1,5}\\w*)\\.jar");
     private Path mPathJmbeLibrary;
     private Boolean mAlertIfMissingLibraryRequired;
-    private Boolean mUseBazinetaFork;
 
     /**
      * Constructs this preference with an update listener
@@ -149,30 +147,6 @@ public class JmbeLibraryPreference extends Preference
         mPreferences.putBoolean(PREFERENCE_KEY_PATH_ALERT_LIBRARY_REQUIRED, mAlertIfMissingLibraryRequired);
         notifyPreferenceUpdated();
     }
-
-    /**
-     * Indicates if the bazineta fork should be used instead of the default dsheirer repository.
-     */
-    public boolean getUseBazinetaFork()
-    {
-        if(mUseBazinetaFork == null)
-        {
-            mUseBazinetaFork = mPreferences.getBoolean(PREFERENCE_KEY_USE_BAZINETA_FORK, false);
-        }
-
-        return mUseBazinetaFork;
-    }
-
-    /**
-     * Sets the value for using the bazineta fork for JMBE library creation/updates.
-     */
-    public void setUseBazinetaFork(boolean useFork)
-    {
-        mUseBazinetaFork = useFork;
-        mPreferences.putBoolean(PREFERENCE_KEY_USE_BAZINETA_FORK, mUseBazinetaFork);
-        notifyPreferenceUpdated();
-    }
-
 
     /**
      * Returns the path stored in preferences and referenced by the key argument if it exists, otherwise returns the

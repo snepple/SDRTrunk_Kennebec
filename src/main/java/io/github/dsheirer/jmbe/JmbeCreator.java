@@ -50,7 +50,6 @@ public class JmbeCreator
 {
     private final static Logger mLog = LoggerFactory.getLogger(JmbeCreator.class);
     public static final String GITHUB_JMBE_RELEASES_URL = "https://api.github.com/repos/dsheirer/jmbe/releases";
-    public static final String GITHUB_BAZINETA_JMBE_RELEASES_URL = "https://api.github.com/repos/bazineta/jmbe/releases";
     public static final String CREATOR_SCRIPT_LINUX = "creator";
     public static final String CREATOR_SCRIPT_WINDOWS = "creator.bat";
 
