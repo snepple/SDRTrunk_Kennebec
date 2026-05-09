@@ -143,6 +143,8 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
             setupWidgets();
         } else {
             mWidgetContainer.ensureComponentInWidget("spectrum");
+            mWidgetContainer.ensureComponentInWidget("streaming");
+            mWidgetContainer.ensureComponentInWidget("resource");
         }
     }
 
