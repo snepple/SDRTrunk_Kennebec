@@ -36,10 +36,41 @@ echo ==========================================
 
 :: Step 1: Env Check
 call :drawProgressBar 5 "Checking environment..."
+where git >nul 2>&1 || (echo [ERROR] Git missing. & pause & exit)
 where gh >nul 2>&1 || (echo [ERROR] GitHub CLI missing. & pause & exit)
+where cmake >nul 2>&1 || (echo [ERROR] CMake missing. & pause & exit)
 where g++ >nul 2>&1 || (echo [ERROR] MinGW/g++ missing. & pause & exit)
 if "!JAVA_HOME!"=="" (echo [ERROR] JAVA_HOME not set. & pause & exit)
 for %%I in ("!JAVA_HOME!") do set "JH=%%~sI"
+
+:: Libvolk Dependency Check
+call :drawProgressBar 10 "Checking libvolk dependency..."
+if not exist "%VOLK_BASE%\volk\volk.h" (
+    echo [INFO] libvolk missing. Cloning v3.3.0 with submodules...
+    git clone --branch v3.3.0 --recursive https://github.com/gnuradio/volk.git volk_src >nul 2>&1
+    if not exist "volk_src" (
+        echo [ERROR] Failed to clone libvolk.
+        pause
+        goto ai_triage
+    )
+
+    echo [INFO] Compiling libvolk...
+    python -m pip install mako >nul 2>&1
+    cd /d "volk_src"
+    if not exist build mkdir build
+    cd build
+    cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX="%VOLK_BASE%\.." .. > cmake_out.log 2>&1
+    cmake --build . --target install >> cmake_out.log 2>&1
+    cd /d "%ROOT_DIR%"
+
+    if not exist "%VOLK_BASE%\volk\volk.h" (
+        echo [ERROR] libvolk compilation or installation failed. Check volk_src\build\cmake_out.log for details.
+        pause
+        goto ai_triage
+    )
+
+    rmdir /s /q volk_src >nul 2>&1
+)
 
 :: Step 2: Cleanup
 call :drawProgressBar 15 "Cleaning workspace..."
@@ -82,7 +113,7 @@ for %%I in ("%VOLK_BASE%\..\lib") do set "V_LIB=%%~sI"
 g++ -shared -fPIC -I"!JH!\include" -I"!JH!\include\win32" -I"!JNI_GEN!" -I"src\main\cpp" -I"!V_INC!" -L"!V_LIB!" src\main\cpp\library.cpp -lvolk -o src\main\resources\native\library.dll 2> cpp_error.log
 if !ERRORLEVEL! NEQ 0 (
     type cpp_error.log >> "%LOG_FILE%"
-    goto ai_triage
+    echo [WARNING] C++ compilation failed. Using Java fallback.
 )
 
 :: Step 6: Final Packaging

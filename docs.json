@@ -58,7 +58,8 @@
           "hardware/supported-tuners",
           "hardware/rtl-sdr",
           "hardware/airspy-hackrf",
-          "hardware/tuner-self-healing"
+          "hardware/tuner-self-healing",
+          "hardware/nedsr-smart-tuner-drivers"
         ]
       },
       {
