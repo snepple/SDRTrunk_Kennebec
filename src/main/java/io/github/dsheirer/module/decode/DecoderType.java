@@ -27,15 +27,15 @@ import java.util.EnumSet;
 public enum DecoderType
 {
     //Primary Decoders
-    AM("AM", "AM", Protocol.UNKNOWN, "AM"),
-    DMR("DMR","DMR", Protocol.DMR, "DMR"),
-    LTR("LTR", "LTR", Protocol.LTR, "LTR"),
-    LTR_NET("LTR-Net", "LTR-Net", Protocol.LTR_NET, "LTR-Net"),
-    MPT1327("MPT1327", "MPT1327", Protocol.MPT1327, "MPT1327"),
-    NBFM("NBFM", "NBFM", Protocol.NBFM, "NBFM"),
-    PASSPORT("Passport", "Passport", Protocol.PASSPORT, "Passport"),
-    P25_PHASE1("P25 Phase 1", "P25-1", Protocol.APCO25, "P25 Phase 1"),
-    P25_PHASE2("P25 Phase 2", "P25-2", Protocol.APCO25_PHASE2, "P25 Phase 2"),
+    AM("AM", "AM", Protocol.UNKNOWN),
+    DMR("DMR","DMR", Protocol.DMR),
+    LTR("LTR", "LTR", Protocol.LTR),
+    LTR_NET("LTR-Net", "LTR-Net", Protocol.LTR_NET),
+    MPT1327("MPT1327", "MPT1327", Protocol.MPT1327),
+    NBFM("NBFM", "NBFM", Protocol.NBFM),
+    PASSPORT("Passport", "Passport", Protocol.PASSPORT),
+    P25_PHASE1("P25 Phase 1", "P25-1", Protocol.APCO25),
+    P25_PHASE2("P25 Phase 2", "P25-2", Protocol.APCO25_PHASE2),
 
     //Auxiliary Decoders
     CTCSS("Continuous Tone-Coded Squelch (CTCSS)", "CTCSS", Protocol.CTCSS),

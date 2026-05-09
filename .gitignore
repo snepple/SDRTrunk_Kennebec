@@ -1,1 +1,13 @@
 .DS_Store
+build/
+
+build/
+.gradle/
+src/main/resources/native/liblibrary-linux-x64.so
+build/
+.gradle/
+*.class
+*.log
+.DS_Store
+.idea/
+*.iml
