@@ -112,6 +112,7 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
                 if (pane.indexOfComponent(mChannelSpectrumSquelchPanel) >= 0) {
                     pane.remove(mChannelSpectrumSquelchPanel);
                 }
+                mChannelSpectrumSquelchPanel.setPanelVisible(false);
             } else {
                 // Restore all tabs in correct order: Details, Events, Messages, Channel
                 pane.removeAll();
@@ -119,6 +120,7 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
                 pane.addTab("Events", mDecodeEventPanel);
                 pane.addTab("Messages", mMessageActivityPanel);
                 pane.addTab("Channel", mChannelSpectrumSquelchPanel);
+                mChannelSpectrumSquelchPanel.setPanelVisible(pane.getSelectedIndex() == pane.indexOfComponent(mChannelSpectrumSquelchPanel));
             }
         });
     }
