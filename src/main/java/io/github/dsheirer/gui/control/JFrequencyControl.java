@@ -73,7 +73,7 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
     {
         setLayout(new MigLayout("insets 0 0 0 0", "[]0[]", ""));
 
-        Font font = new Font(Font.MONOSPACED, Font.BOLD, 30);
+        Font font = new Font(Font.MONOSPACED, Font.BOLD, 24);
 
         for(int x = 9; x >= 0; x--)
         {

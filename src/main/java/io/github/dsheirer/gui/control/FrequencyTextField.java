@@ -54,7 +54,7 @@ public class FrequencyTextField extends JTextField
      */
     public FrequencyTextField(long minimum, long maximum, long current)
     {
-        super(8);
+        super(6);
         mMinimum = minimum / 1E6d;
         mMaximum = maximum / 1E6d;
 
