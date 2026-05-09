@@ -55,6 +55,7 @@ if not exist "%VOLK_BASE%\volk\volk.h" (
     )
 
     echo [INFO] Compiling libvolk...
+    python -m pip install mako >nul 2>&1
     cd /d "volk_src"
     if not exist build mkdir build
     cd build
