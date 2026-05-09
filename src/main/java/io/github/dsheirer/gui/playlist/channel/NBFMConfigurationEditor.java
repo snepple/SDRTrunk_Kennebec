@@ -187,6 +187,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getSourceConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mSourcePane = sp;
 
         }
@@ -237,6 +238,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
+            mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mDecoderPane = mDecoderPaneSp;
 
             //Special handling - the pill button doesn't like to set a selected state if the pane is not expanded,
@@ -325,6 +327,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mToneFilterPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mToneFilterPaneSp.setFitToWidth(true);
             mToneFilterPaneSp.setFitToHeight(true);
+            mToneFilterPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mToneFilterPane = mToneFilterPaneSp;
         }
         return mToneFilterPane;
@@ -405,6 +408,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mAudioFiltersPaneSp = new javafx.scene.control.ScrollPane(contentBox);
             mAudioFiltersPaneSp.setFitToWidth(true);
             mAudioFiltersPaneSp.setFitToHeight(true);
+            mAudioFiltersPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mAudioFiltersPane = mAudioFiltersPaneSp;
         }
         return mAudioFiltersPane;
@@ -416,6 +420,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getEventLogConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mEventLogPane = sp;
 
         }
@@ -429,6 +434,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getAuxDecoderConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mAuxDecoderPane = sp;
 
         }
@@ -455,6 +461,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mRecordPaneSp.setFitToWidth(true);
             mRecordPaneSp.setFitToHeight(true);
+            mRecordPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mRecordPane = mRecordPaneSp;
         }
 
