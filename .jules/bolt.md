@@ -1,3 +1,9 @@
+## 2024-05-18 - String Replace Performance
+**Learning:** Calling `String.replace()` inside a loop over an array of multiple search strings allocates intermediate strings for every call, resulting in significant memory churn and CPU overhead (O(N*M) where N is string length and M is number of replacements) even if no replacements are made.
+**Action:** When performing multi-character sanitization, use a single-pass implementation using a `StringBuilder` or regex pattern matching. With `StringBuilder`, only allocate it if an actual change needs to be made.
+## 2024-05-18 - String Replace Performance
+**Learning:** Calling `String.replace()` inside a loop over an array of multiple search strings allocates intermediate strings for every call, resulting in significant memory churn and CPU overhead (O(N*M) where N is string length and M is number of replacements) even if no replacements are made.
+**Action:** When performing multi-character sanitization, use a single-pass implementation using a `StringBuilder` or regex pattern matching. With `StringBuilder`, only allocate it if an actual change needs to be made.
 ## 2024-05-06 - [VOLK JNI DSP Integration] **Learning:** [Using VOLK for dot product natively provides significant speedup over pure Java (0.054 ms vs 0.288 ms) utilizing JNI with DirectByteBuffers.] **Action:** [When needing fast mathematical processing like DSP, utilize JNI + VOLK ensuring to use DirectByteBuffers to avoid array copying overheads.]
 
 ## 2024-05-15 - Avoid Intermediate Array Allocations

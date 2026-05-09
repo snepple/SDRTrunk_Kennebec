@@ -20,9 +20,6 @@ package io.github.dsheirer.util;
 
 public class StringUtils
 {
-    private static final String[] ILLEGAL_FILENAME_CHARACTERS = {"#", "%", "&", "{", "}", "\\", "<", ">",
-            "*", "?", "/", " ", "$", "!", "'", "\"", ":", "@", "+", "`", "|", "=", ","};
-
     /**
      * Compares string a to b and returns true if a is non-null and non-empty, b is non-null and non-empty, and
      * a is equal to b.
@@ -53,24 +50,30 @@ public class StringUtils
         }
 
         StringBuilder sb = null;
-        for (int i = 0; i < filename.length(); i++) {
+        for (int i = 0; i < filename.length(); i++)
+        {
             char c = filename.charAt(i);
             boolean isIllegal = false;
-            switch (c) {
+            switch(c)
+            {
                 case '#': case '%': case '&': case '{': case '}': case '\\': case '<': case '>':
-                case '*': case '?': case '/': case ' ': case '$': case '!': case '\'': case '"':
+                case '*': case '?': case '/': case ' ': case '$': case '!': case '\'': case '\"':
                 case ':': case '@': case '+': case '`': case '|': case '=': case ',':
                     isIllegal = true;
                     break;
             }
 
-            if (isIllegal) {
-                if (sb == null) {
+            if (isIllegal)
+            {
+                if (sb == null)
+                {
                     sb = new StringBuilder(filename.length());
                     sb.append(filename, 0, i);
                 }
                 sb.append('-');
-            } else if (sb != null) {
+            }
+            else if (sb != null)
+            {
                 sb.append(c);
             }
         }
