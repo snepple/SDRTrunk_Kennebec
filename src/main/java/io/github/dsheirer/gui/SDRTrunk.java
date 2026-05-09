@@ -332,6 +332,10 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             primaryStage.setScene(scene);
             primaryStage.show();
 
+            CalibrationManager calibrationManager = CalibrationManager.getInstance(mUserPreferences);
+            final boolean calibrating = !calibrationManager.isCalibrated() &&
+                !mUserPreferences.getVectorCalibrationPreference().isHideCalibrationDialog();
+
             // Workaround for SwingNode and intermittent page contents not painting initially
             javafx.application.Platform.runLater(() -> {
                 javax.swing.SwingUtilities.invokeLater(() -> {
@@ -339,12 +343,32 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                         mMainContentPanel.revalidate();
                         mMainContentPanel.repaint();
                     }
+
+                    Platform.runLater(() -> {
+                        if(calibrating)
+                        {
+                            CalibrationDialog calibrationDialog = mJavaFxWindowManager.getCalibrationDialog(mUserPreferences);
+                            java.util.Optional<ButtonType> calibrate = calibrationDialog.showAndWait();
+                            if(calibrate.isPresent() && calibrate.get().getText().equals("Calibrate"))
+                            {
+                                //Request focus and execute calibration
+                                MyEventBus.getGlobalEventBus().post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.VECTOR_CALIBRATION));
+                                MyEventBus.getGlobalEventBus().post(new CalibrateRequest());
+                            }
+                            else
+                            {
+                                autoStartChannels();
+                            }
+                        }
+                        else
+                        {
+                            autoStartChannels();
+                        }
+                    });
                 });
             });
 
-            CalibrationManager calibrationManager = CalibrationManager.getInstance(mUserPreferences);
-            final boolean calibrating = !calibrationManager.isCalibrated() &&
-                !mUserPreferences.getVectorCalibrationPreference().isHideCalibrationDialog();
+
 
             try
             {
@@ -357,29 +381,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 }
 
                 UsbMonitorManager.manage(mUserPreferences);
-
-                if(calibrating)
-                {
-                    Platform.runLater(() ->
-                    {
-                        CalibrationDialog calibrationDialog = mJavaFxWindowManager.getCalibrationDialog(mUserPreferences);
-                        java.util.Optional<ButtonType> calibrate = calibrationDialog.showAndWait();
-                        if(calibrate.isPresent() && calibrate.get().getText().equals("Calibrate"))
-                        {
-                            //Request focus and execute calibration
-                            MyEventBus.getGlobalEventBus().post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.VECTOR_CALIBRATION));
-                            MyEventBus.getGlobalEventBus().post(new CalibrateRequest());
-                        }
-                        else
-                        {
-                            autoStartChannels();
-                        }
-                    });
-                }
-                else
-                {
-                    autoStartChannels();
-                }
             }
             catch(Exception e)
             {
