@@ -318,7 +318,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     {
         if(mFriendlyNameTextField == null)
         {
-            mFriendlyNameTextField = new JTextField();
+            mFriendlyNameTextField = new JTextField(20);
             mFriendlyNameTextField.setToolTipText("Enter a friendly name for this tuner");
 
             if(getConfiguration() != null && getConfiguration().getFriendlyName() != null)
