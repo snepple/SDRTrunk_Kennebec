@@ -19,8 +19,6 @@
 
 package io.github.dsheirer.audio.convert;
 
-import io.github.dsheirer.audio.convert.MPEGLayer;
-import io.github.dsheirer.audio.convert.MPEGVersion;
 import org.apache.commons.math3.util.FastMath;
 
 /**
@@ -177,8 +175,6 @@ public class MP3Header
         sb.append(" BR:").append(getBitRate(frame, offset));
         sb.append(" SR:").append(getSampleRate(frame, offset));
 
-        //TODO: add MONO/STEREO
-        
         return sb.toString();
     }
 }

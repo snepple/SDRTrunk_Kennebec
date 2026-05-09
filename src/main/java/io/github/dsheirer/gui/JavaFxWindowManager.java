@@ -26,6 +26,7 @@ import io.github.dsheirer.controller.channel.map.ChannelMap;
 import io.github.dsheirer.controller.channel.map.ChannelRange;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.icon.IconManager;
+import io.github.dsheirer.gui.ViewIdentifier;
 import io.github.dsheirer.gui.icon.ViewIconManagerRequest;
 import io.github.dsheirer.gui.playlist.PlaylistEditor;
 import io.github.dsheirer.gui.playlist.PlaylistEditorRequest;
@@ -138,7 +139,7 @@ public class JavaFxWindowManager extends Application
      */
     public JFXPanel createStatusPanel(ResourceMonitor resourceMonitor)
     {
-                    JFXPanel panel = new JFXPanel();
+        JFXPanel panel = new JFXPanel();
             panel.setPreferredSize(new java.awt.Dimension(0, 30));
 
             //JFXPanel has to be populated on the FX event thread
@@ -550,65 +551,45 @@ return panel;
         launch(args);
     }
 
-    private JFXPanel mPlaylistEditorPanel;
-    private JFXPanel mIconManagerPanel;
-    private JFXPanel mUserPreferencesEditorPanel;
-    private JFXPanel mRecordingViewerPanel;
-    private JFXPanel mLogsPanel;
 
-    public JFXPanel getPlaylistEditorPanel() {
-        if (mPlaylistEditorPanel == null) {
-            mPlaylistEditorPanel = new JFXPanel();
-            execute(() -> {
-                Scene scene = new Scene(getPlaylistEditor(), 1000, 750);
-                mPlaylistEditorPanel.setScene(scene);
-            });
+    private java.util.Map<ViewIdentifier, JFXPanel> mViewMap = new java.util.HashMap<>();
+
+    public JFXPanel getView(ViewIdentifier viewIdentifier) {
+        if (mViewMap.containsKey(viewIdentifier)) {
+            return mViewMap.get(viewIdentifier);
         }
-        return mPlaylistEditorPanel;
+        JFXPanel panel = new JFXPanel();
+        mViewMap.put(viewIdentifier, panel);
+        Platform.runLater(() -> {
+            Scene scene = null;
+            switch(viewIdentifier) {
+                case PLAYLIST_EDITOR:
+                    scene = new Scene(getPlaylistEditor(), 1000, 750);
+                    break;
+                case ICON_MANAGER:
+                    scene = new Scene(getIconManager(), 500, 500);
+                    break;
+                case USER_PREFERENCES_EDITOR:
+                    scene = new Scene(getUserPreferencesEditor(), 900, 500);
+                    break;
+                case LOGS:
+                    scene = new Scene(new LogsPanel(mUserPreferences), 1000, 750);
+                    break;
+                case RECORDING_VIEWER:
+                    scene = new Scene(getRecordingViewer(), 1100, 800);
+                    break;
+            }
+            if (scene != null) {
+                panel.setScene(scene);
+            }
+        });
+        return panel;
     }
 
-    public JFXPanel getIconManagerPanel() {
-        if (mIconManagerPanel == null) {
-            mIconManagerPanel = new JFXPanel();
-            execute(() -> {
-                Scene scene = new Scene(getIconManager(), 500, 500);
-                mIconManagerPanel.setScene(scene);
-            });
-        }
-        return mIconManagerPanel;
-    }
 
-    public JFXPanel getUserPreferencesEditorPanel() {
-        if (mUserPreferencesEditorPanel == null) {
-            mUserPreferencesEditorPanel = new JFXPanel();
-            execute(() -> {
-                Scene scene = new Scene(getUserPreferencesEditor(), 900, 500);
-                mUserPreferencesEditorPanel.setScene(scene);
-            });
-        }
-        return mUserPreferencesEditorPanel;
-    }
 
-    public JFXPanel getLogsPanel() {
-        if (mLogsPanel == null) {
-            mLogsPanel = new JFXPanel();
-            execute(() -> {
-                Scene scene = new Scene(new LogsPanel(mUserPreferences), 1000, 750);
-                mLogsPanel.setScene(scene);
-            });
-        }
-        return mLogsPanel;
-    }
 
-    public JFXPanel getRecordingViewerPanel() {
-        if (mRecordingViewerPanel == null) {
-            mRecordingViewerPanel = new JFXPanel();
-            execute(() -> {
-                Scene scene = new Scene(getRecordingViewer(), 1100, 800);
-                mRecordingViewerPanel.setScene(scene);
-            });
-        }
-        return mRecordingViewerPanel;
-    }
+
+
 
 }

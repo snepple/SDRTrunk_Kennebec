@@ -1,0 +1,7 @@
+feat(build): add automated GitHub release and README update to updater script
+
+Modified `update_sdrtrunk.bat` to parse the `projectVersion` from
+`gradle.properties` upon a successful build. The script now automatically
+uploads the generated distribution zip to GitHub using the `gh` CLI. It
+also updates the main `README.md` with a direct download link matching the
+new version, commits the change, and pushes it to the repository.

@@ -43,6 +43,9 @@ import javafx.collections.FXCollections;
 import java.util.HashSet;
 import java.util.Set;
 import javafx.util.StringConverter;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
+import javafx.scene.paint.Color;
 
 /**
  * Editor for P25 fully qualified radio alias identifiers
@@ -81,7 +84,7 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
         GridPane.setConstraints(getProtocolLabel(), 0, 0);
         gridPane.getChildren().add(getProtocolLabel());
 
-        Label valueLabel = new Label("WACN");
+        Label valueLabel = new Label("WACN", createHelpIcon("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."));
         GridPane.setHalignment(valueLabel, HPos.RIGHT);
         GridPane.setConstraints(valueLabel, 1, 0);
         gridPane.getChildren().add(valueLabel);
@@ -396,5 +399,17 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
                 }
             }
         }
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }

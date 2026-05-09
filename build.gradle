@@ -50,6 +50,7 @@ plugins {
     id 'org.beryx.runtime' version '2.0.1'
     id 'org.openjfx.javafxplugin' version '0.1.0'
     id 'edu.sc.seis.launch4j' version '3.0.5'
+    id 'me.champeau.jmh' version '0.7.2'
 }
 
 repositories {
@@ -83,6 +84,8 @@ test {
 }
 
 dependencies {
+    implementation 'com.sun.mail:javax.mail:1.6.2'
+
     implementation 'com.formdev:flatlaf:3.4'
     implementation 'com.formdev:flatlaf-extras:3.4'
     implementation 'net.java.dev.jna:jna:5.14.0'
@@ -146,6 +149,7 @@ def os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.curre
 tasks.withType(JavaCompile) {
     options.compilerArgs.add("--enable-preview") //Project Panama Vector API is still in incubator
     options.compilerArgs.add("--add-modules=jdk.incubator.vector")
+    options.compilerArgs += ["-h", file("${buildDir}/generated/jni")]
 }
 
 /**
@@ -161,6 +165,9 @@ def jvmArgsWindows =
 
          // '-XX:+UseCompactObjectHeaders',   //JDK25 - use compact object headers
          '-Xmx6g',                         //Set max heap size to 6GB
+         '-Dcom.github.weisj.jsvg.disableStax=true', // Disable StAX parser for SVG due to large attribute size limits
+         '-Dcom.ctc.wstx.maxAttributeSize=10000000', // Increase StAX attribute size limit if not disabled
+         '-Djdk.xml.maxAttributeSize=10000000', // Increase XML attribute size limit
          "-Dsun.java2d.d3d=true",          //Hardware Acceleration Direct3D
          "-Dsun.java2d.opengl=True",       //Hardware Acceleration OpenGL
          "-Dsun.java2d.dpiaware=true",     // Fix fuzzy UI scaling on Windows
@@ -178,7 +185,10 @@ def jvmArgsLinux =
          // '-XX:+UseCompactObjectHeaders',   //JDK25 - use compact object headers
          '--enable-native-access=javafx.graphics', //JDK24 - suppress restricted java.lang.System calls
          '--enable-native-access=ALL-UNNAMED', //SDRPlay API library path
-         '-Xmx6g']                         //Set max heap size to 6GB
+         '-Xmx6g',                         //Set max heap size to 6GB
+         '-Dcom.github.weisj.jsvg.disableStax=true', // Disable StAX parser for SVG due to large attribute size limits
+         '-Dcom.ctc.wstx.maxAttributeSize=10000000', // Increase StAX attribute size limit if not disabled
+         '-Djdk.xml.maxAttributeSize=10000000'] // Increase XML attribute size limit
 
 application {
     mainClass = "io.github.dsheirer.gui.SDRTrunk"
@@ -199,6 +209,7 @@ test {
     }
     else {
         jvmArgs = jvmArgsLinux
+        systemProperty "java.library.path", file("${buildDir}/jni").absolutePath
     }
 }
 
@@ -483,6 +494,7 @@ tasks.register('runMdcReplay', JavaExec) {
         jvmArgs = jvmArgsWindows
     } else {
         jvmArgs = jvmArgsLinux
+        systemProperty "java.library.path", file("${buildDir}/jni").absolutePath
     }
     if(project.hasProperty('syncThreshold')) {
         systemProperty 'mdc.sync.threshold', project.property('syncThreshold')
@@ -605,4 +617,62 @@ tasks.register('copyExeToDist', Copy) {
     dependsOn createExe
     from "${buildDir}/launch4j/SDRTrunk.exe"
     into "src/main/dist/"
+}
+
+tasks.register('compileJni', Exec) {
+    dependsOn compileJava
+    def osName = System.properties.getProperty("os.name").toLowerCase()
+    def arch = System.properties.getProperty("os.arch")
+    def javaHome = org.gradle.internal.jvm.Jvm.current().getJavaHome().toString()
+    def srcFile = "src/main/cpp/library.cpp"
+    def outDir = "${projectDir}/src/main/resources/native"
+
+    doFirst {
+        mkdir outDir
+    }
+
+    def executableName = (osName.contains("mac")) ? "clang++" : "g++"
+
+    // Only run if the executable is available
+    onlyIf {
+        try {
+            def process = new ProcessBuilder(executableName, "--version").start()
+            process.waitFor()
+            return process.exitValue() == 0
+        } catch (Exception e) {
+            println "Warning: ${executableName} not found. Skipping JNI compilation. Native features may be disabled."
+            return false
+        }
+    }
+
+    if (osName.contains("win")) {
+        if (arch.contains("aarch64")) {
+            commandLine 'g++', '-shared', '-o', "${outDir}/library-windows-aarch64.dll", "-I", "${javaHome}/include", "-I", "${javaHome}/include/win32", "-I", "${buildDir}/generated/jni", srcFile
+        } else {
+            commandLine 'g++', '-shared', '-o', "${outDir}/library-windows-x64.dll", "-I", "${javaHome}/include", "-I", "${javaHome}/include/win32", "-I", "${buildDir}/generated/jni", srcFile
+        }
+    } else if (osName.contains("mac")) {
+        if (arch.contains("aarch64")) {
+            commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary-macos-aarch64.dylib", "-I", "${javaHome}/include", "-I", "${javaHome}/include/darwin", "-I", "${buildDir}/generated/jni", srcFile
+        } else {
+            commandLine 'clang++', '-shared', '-o', "${outDir}/liblibrary-macos-x64.dylib", "-I", "${javaHome}/include", "-I", "${javaHome}/include/darwin", "-I", "${buildDir}/generated/jni", srcFile
+        }
+    } else {
+        if (arch.contains("aarch64")) {
+            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-aarch64.so", "-I", "${javaHome}/include", "-I", "${javaHome}/include/linux", "-I", "${buildDir}/generated/jni", srcFile, "-lvolk"
+        } else {
+            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-x64.so", "-I", "${javaHome}/include", "-I", "${javaHome}/include/linux", "-I", "${buildDir}/generated/jni", srcFile, "-lvolk"
+        }
+    }
+}
+
+jar.dependsOn compileJni
+
+jmh {
+    fork = 1
+    warmupIterations = 1
+    iterations = 3
+    benchmarkMode = ['avgt']
+    timeUnit = 'ms'
+    jvmArgs = ["-Djava.library.path=${buildDir}/jni"]
 }

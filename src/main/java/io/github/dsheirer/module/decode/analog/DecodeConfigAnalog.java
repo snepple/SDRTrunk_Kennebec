@@ -88,9 +88,9 @@ public abstract class DecodeConfigAnalog extends DecodeConfiguration
      */
     public void setTalkgroup(int talkgroup)
     {
-        if(talkgroup < 1 || talkgroup > Integer.MAX_VALUE)
+        if(talkgroup == 0)
         {
-            throw new IllegalArgumentException("Valid talkgroup range is 1 - " + Integer.MAX_VALUE);
+            throw new IllegalArgumentException("Valid talkgroup range is 1 - 4294967295");
         }
 
         mTalkgroup = talkgroup;

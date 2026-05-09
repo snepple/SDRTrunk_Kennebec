@@ -1,0 +1,180 @@
+---
+title: "Stream to Icecast, Shoutcast, and IAmResponding"
+description: "Stream live audio to Icecast and Shoutcast servers, send UDP audio to IAmResponding for Two Tone Detect dispatch alerting, or route audio via virtual cable."
+sidebarTitle: "Other Platforms"
+---
+
+Beyond Broadcastify and Zello, SDRTrunk Kennebec supports several additional broadcast destinations. **Icecast** and **Shoutcast** provide live continuous MP3 audio streams compatible with any standard internet radio player. **IAmResponding** integrates with the Two Tone Detect feature for volunteer fire and EMS dispatch alerting over a local UDP connection. For routing audio to desktop applications not covered by any of the above, a virtual audio cable can bridge SDRTrunk Kennebec to any software running on the same computer.
+
+---
+
+## Icecast
+
+SDRTrunk Kennebec supports two Icecast connection modes that match different server versions. Both stream MP3 audio from a mono, 8000 Hz source.
+
+### Icecast 2 (v2.4 and later)
+
+**Icecast 2** uses HTTP PUT-based source authentication, introduced in Icecast 2.4. Choose this type when your server runs Icecast 2.4 or later.
+
+**Required fields**
+
+| Field | Description |
+|---|---|
+| **Name** | A label for this stream configuration |
+| **Host** | Hostname or IP address of the Icecast server |
+| **Port** | TCP port, commonly `8000` |
+| **Mount Point** | Stream path starting with `/`, for example `/radio.mp3` |
+| **Password** | The source password from your Icecast server's `icecast.xml` |
+
+**Optional fields**
+
+| Field | Description |
+|---|---|
+| **Username** | Source username (defaults to `source`) |
+| **Description** | Human-readable stream description sent to the server |
+| **Genre** | Genre tag visible to stream directory listeners |
+| **Public** | Whether to advertise the stream in the Icecast directory |
+| **URL** | A website URL associated with the stream |
+
+<Note>
+  The **Inline** metadata flag is enabled by default. It embeds talkgroup metadata into the MP3 stream at an interval calculated from the bit rate. Leave this enabled unless your player has compatibility issues with inline ICY metadata.
+</Note>
+
+### Icecast TCP (v2.3)
+
+**Icecast TCP** uses the older TCP source handshake protocol compatible with Icecast 2.3.x servers, including the Icecast 2.3.2 variant used internally by Broadcastify. Choose this type when your self-hosted server runs an older Icecast build.
+
+**Required fields**
+
+| Field | Description |
+|---|---|
+| **Name** | A label for this stream configuration |
+| **Host** | Hostname or IP address of the Icecast server |
+| **Port** | TCP port, commonly `8000` |
+| **Mount Point** | Stream path starting with `/` |
+| **Password** | The source password |
+
+The same optional fields available for Icecast 2 (Username, Description, Genre, Public, URL) apply here as well.
+
+### Add an Icecast Stream
+
+<Steps>
+  <Step title="Open the Streaming Editor">
+    Go to **View** > **Streaming**, click **+**, and select either **Icecast 2 (v2.4+)** or **Icecast (v2.3)** depending on your server version.
+  </Step>
+  <Step title="Fill in the server details">
+    Enter the host, port, mount point, and password that match your Icecast server's source password configuration.
+  </Step>
+  <Step title="Enable and save">
+    Check **Enabled**, then click **Save**. SDRTrunk Kennebec connects to the server and begins streaming audio as decoded calls arrive.
+  </Step>
+</Steps>
+
+---
+
+## Shoutcast
+
+SDRTrunk Kennebec supports both Shoutcast v1 and v2 source connections. Both send MP3 audio over a TCP source handshake.
+
+### Shoutcast v1.x
+
+Shoutcast v1 uses simple password-only source authentication. It does not require a username or stream ID.
+
+**Required fields**
+
+| Field | Description |
+|---|---|
+| **Name** | A label for this configuration |
+| **Host** | Hostname or IP address of the Shoutcast server |
+| **Port** | TCP port of the Shoutcast server |
+| **Password** | The source password |
+
+**Optional fields**
+
+| Field | Description |
+|---|---|
+| **Genre** | Genre tag for the stream |
+| **Description** | A description sent to the server |
+| **Public** | Whether the stream should be publicly listed |
+
+### Shoutcast v2.x
+
+Shoutcast v2 introduces stream IDs and optional user ID authentication to support multiple streams on a single server port.
+
+**Required fields**
+
+| Field | Description |
+|---|---|
+| **Name** | A label for this configuration |
+| **Host** | Hostname or IP address of the Shoutcast server |
+| **Port** | TCP port of the Shoutcast server |
+| **Password** | The source password |
+| **Stream ID** | Numeric stream identifier (1 to 2,147,483,647) |
+
+**Optional fields**
+
+| Field | Description |
+|---|---|
+| **User ID** | Optional username for servers that require authenticated source connections |
+| **Genre** | Genre tag |
+| **URL** | Website URL associated with the stream |
+| **Public** | Public directory listing flag |
+
+### Add a Shoutcast Stream
+
+<Steps>
+  <Step title="Open the Streaming Editor">
+    Go to **View** > **Streaming**, click **+**, and select **Shoutcast v1.x** or **Shoutcast v2.x**.
+  </Step>
+  <Step title="Fill in the server details">
+    Enter the host, port, and password. For Shoutcast v2, also enter the stream ID.
+  </Step>
+  <Step title="Enable and save">
+    Check **Enabled**, then click **Save**.
+  </Step>
+</Steps>
+
+---
+
+## IAmResponding
+
+IAmResponding is a first-responder alerting platform with a **Two Tone Detect** feature. SDRTrunk Kennebec streams raw PCM audio to the IAmResponding Two Tone Detect listener over UDP on the local machine, allowing the software to detect two-tone sequential paging tones and trigger dispatch alerts automatically.
+
+<Warning>
+  IAmResponding is a **local, Windows-only** integration. SDRTrunk Kennebec sends audio to a UDP socket on the same computer — it does not transmit audio over a network. The IAmResponding Two Tone Detect client software must be installed and running on the same Windows machine as SDRTrunk Kennebec.
+</Warning>
+
+**Required fields**
+
+| Field | Description |
+|---|---|
+| **Name** | A label for this configuration |
+| **Host** | The UDP destination host — typically `127.0.0.1` for local delivery |
+| **Port** | The UDP port the IAmResponding Two Tone Detect software is listening on |
+
+**Audio format:** Raw 16-bit PCM audio is sent over UDP. No encoding or compression is applied — IAmResponding Two Tone Detect expects raw PCM input.
+
+### Add an IAmResponding Broadcaster
+
+<Steps>
+  <Step title="Confirm IAmResponding is running">
+    Make sure the IAmResponding Two Tone Detect client is installed, configured, and running on the same Windows machine as SDRTrunk Kennebec.
+  </Step>
+  <Step title="Open the Streaming Editor">
+    Go to **View** > **Streaming**, click **+**, and select **IAmResponding**.
+  </Step>
+  <Step title="Enter the connection details">
+    Set **Host** to `127.0.0.1` (or whichever loopback address IAmResponding is bound to) and enter the **Port** IAmResponding Two Tone Detect is listening on.
+  </Step>
+  <Step title="Enable and save">
+    Check **Enabled**, then click **Save**.
+  </Step>
+</Steps>
+
+---
+
+## Virtual Audio Cable
+
+If you want to route decoded audio to a desktop application not covered by any of the broadcast types above — such as a third-party recording tool, a paging tone detector, or a streaming encoder — you can use a virtual audio cable. SDRTrunk Kennebec routes audio to virtual audio devices at the alias level, giving you per-talkgroup routing to any application installed on the same machine.
+
+See the [Virtual Audio Cable](/configuration/virtual-audio-cable) configuration guide for setup instructions and supported VAC software for Windows, macOS, and Linux.

@@ -187,6 +187,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getSourceConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mSourcePane = sp;
 
         }
@@ -237,6 +238,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
+            mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mDecoderPane = mDecoderPaneSp;
 
             //Special handling - the pill button doesn't like to set a selected state if the pane is not expanded,
@@ -263,8 +265,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             gridPane.getChildren().add(enableLabel);
 
             mToneFilterEnabledSwitch = new ToggleSwitch();
-            mToneFilterEnabledSwitch.selectedProperty()
-                    .addListener((obs, ov, nv) -> modifiedProperty().set(true));
+            mToneFilterEnabledSwitch.selectedProperty().addListener((obs, ov, nv) -> {
+                if(!mLoadingConfiguration) {
+                    modifiedProperty().set(true);
+                }
+            });
             GridPane.setConstraints(mToneFilterEnabledSwitch, 1, 0);
             gridPane.getChildren().add(mToneFilterEnabledSwitch);
 
@@ -283,7 +288,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mToneTypeCombo.setValue(ChannelToneFilter.ToneType.CTCSS);
             mToneTypeCombo.valueProperty().addListener((obs, ov, nv) -> {
                 updateToneCodeVisibility();
-                modifiedProperty().set(true);
+                if(!mLoadingConfiguration) {
+                    modifiedProperty().set(true);
+                }
             });
             GridPane.setConstraints(mToneTypeCombo, 1, 1);
             gridPane.getChildren().add(mToneTypeCombo);
@@ -293,7 +300,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mCtcssCodeCombo.getItems().addAll(CTCSSCode.STANDARD_CODES);
             mCtcssCodeCombo.setPromptText("Select PL tone");
             mCtcssCodeCombo.setPrefWidth(200);
-            mCtcssCodeCombo.valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+            mCtcssCodeCombo.valueProperty().addListener((obs, ov, nv) -> {
+                if(!mLoadingConfiguration) {
+                    modifiedProperty().set(true);
+                }
+            });
             GridPane.setConstraints(mCtcssCodeCombo, 2, 1);
             gridPane.getChildren().add(mCtcssCodeCombo);
 
@@ -305,13 +316,18 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mDcsCodeCombo.setPrefWidth(200);
             mDcsCodeCombo.setVisible(false);
             mDcsCodeCombo.setManaged(false);
-            mDcsCodeCombo.valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+            mDcsCodeCombo.valueProperty().addListener((obs, ov, nv) -> {
+                if(!mLoadingConfiguration) {
+                    modifiedProperty().set(true);
+                }
+            });
             GridPane.setConstraints(mDcsCodeCombo, 2, 1);
             gridPane.getChildren().add(mDcsCodeCombo);
 
             javafx.scene.control.ScrollPane mToneFilterPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mToneFilterPaneSp.setFitToWidth(true);
             mToneFilterPaneSp.setFitToHeight(true);
+            mToneFilterPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mToneFilterPane = mToneFilterPaneSp;
         }
         return mToneFilterPane;
@@ -392,6 +408,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mAudioFiltersPaneSp = new javafx.scene.control.ScrollPane(contentBox);
             mAudioFiltersPaneSp.setFitToWidth(true);
             mAudioFiltersPaneSp.setFitToHeight(true);
+            mAudioFiltersPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mAudioFiltersPane = mAudioFiltersPaneSp;
         }
         return mAudioFiltersPane;
@@ -403,6 +420,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getEventLogConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mEventLogPane = sp;
 
         }
@@ -416,6 +434,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getAuxDecoderConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mAuxDecoderPane = sp;
 
         }
@@ -442,6 +461,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mRecordPaneSp.setFitToWidth(true);
             mRecordPaneSp.setFitToHeight(true);
+            mRecordPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mRecordPane = mRecordPaneSp;
         }
 
@@ -857,7 +877,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         mHeadRemovalSpinner.setEditable(true);
         mHeadRemovalSpinner.setPrefWidth(100);
         mHeadRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from start of transmission (removes tone ramp-up)"));
-        mHeadRemovalSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+        mHeadRemovalSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> {
+            if(!mLoadingConfiguration) {
+                modifiedProperty().set(true);
+            }
+        });
         GridPane.setConstraints(mHeadRemovalSpinner, 1, 0);
         controlsPane.getChildren().add(mHeadRemovalSpinner);
 
@@ -869,7 +893,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         mTailRemovalSpinner.setEditable(true);
         mTailRemovalSpinner.setPrefWidth(100);
         mTailRemovalSpinner.setTooltip(new Tooltip("Milliseconds to trim from end of transmission (removes noise burst)"));
-        mTailRemovalSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+        mTailRemovalSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> {
+            if(!mLoadingConfiguration) {
+                modifiedProperty().set(true);
+            }
+        });
         GridPane.setConstraints(mTailRemovalSpinner, 3, 0);
         controlsPane.getChildren().add(mTailRemovalSpinner);
 
@@ -881,7 +909,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         mAudioHangtimeSpinner.setEditable(true);
         mAudioHangtimeSpinner.setPrefWidth(100);
         mAudioHangtimeSpinner.setTooltip(new Tooltip("Delay before closing audio segment after transmission ends.\nPrevents cutting off the end of audio in ThinLine/Zello streams.\n0 = immediate close (default), 100-300 = recommended for streaming"));
-        mAudioHangtimeSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> modifiedProperty().set(true));
+        mAudioHangtimeSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> {
+            if(!mLoadingConfiguration) {
+                modifiedProperty().set(true);
+            }
+        });
         GridPane.setConstraints(mAudioHangtimeSpinner, 1, 1);
         controlsPane.getChildren().add(mAudioHangtimeSpinner);
 
@@ -1048,7 +1080,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         {
             mAudioFilterEnable = new ToggleSwitch("Enable High-Pass Filter");
             mAudioFilterEnable.setTooltip(new Tooltip("High-pass filter to remove DC offset and sub-audible signalling"));
-            mAudioFilterEnable.selectedProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
+            mAudioFilterEnable.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                if(!mLoadingConfiguration) {
+                    modifiedProperty().set(true);
+                }
+            });
         }
 
         return mAudioFilterEnable;
@@ -1069,8 +1105,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mBandwidthButton.getButtons().add(toggleButton);
             }
 
-            mBandwidthButton.getToggleGroup().selectedToggleProperty()
-                .addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
+            mBandwidthButton.getToggleGroup().selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
+                if(!mLoadingConfiguration) {
+                    modifiedProperty().set(true);
+                }
+            });
 
             //Note: there is a weird timing bug with the segmented button where the toggles are not added to
             //the toggle group until well after the control is rendered.  We attempt to setItem() on the
@@ -1137,12 +1176,12 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         if(format == IntegerFormat.DECIMAL)
         {
             mTalkgroupTextFormatter = mDecimalFormatter;
-            getTalkgroupField().setTooltip(new Tooltip("1 - 4,294,967,295"));
+            getTalkgroupField().setTooltip(new Tooltip("Valid range: 1 to 4,294,967,295"));
         }
         else
         {
             mTalkgroupTextFormatter = mHexFormatter;
-            getTalkgroupField().setTooltip(new Tooltip("1 - FFFFFFFF"));
+            getTalkgroupField().setTooltip(new Tooltip("Valid range: 1 to FFFFFFFF"));
         }
 
         mTalkgroupTextFormatter.setValue(value);
@@ -1159,7 +1198,45 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         @Override
         public void changed(ObservableValue<? extends Integer> observable, Integer oldValue, Integer newValue)
         {
-            modifiedProperty().set(true);
+            if(!mLoadingConfiguration) {
+                modifiedProperty().set(true);
+            }
+            Integer tg = getConfiguredTalkgroup();
+            if (tg != null && tg > 0) {
+                boolean conflict = false;
+                for (io.github.dsheirer.controller.channel.Channel c : getPlaylistManager().getChannelModel().channelList()) {
+                    if (c == getItem()) continue;
+                    io.github.dsheirer.module.decode.config.DecodeConfiguration dc = c.getDecodeConfiguration();
+                    if (dc instanceof io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM) {
+                        if (tg.equals(((io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM) dc).getTalkgroup())) {
+                            conflict = true;
+                            break;
+                        }
+                    }
+                }
+                if (conflict) {
+                    getTalkgroupField().setStyle("-fx-border-color: red; -fx-border-width: 2px; -fx-border-radius: 3px;");
+                    if (mTalkgroupTextFormatter == mHexFormatter) {
+                        getTalkgroupField().setTooltip(new Tooltip("Talkgroup ID already assigned to another channel (1 - FFFFFFFF)"));
+                    } else {
+                        getTalkgroupField().setTooltip(new Tooltip("Talkgroup ID already assigned to another channel (1 - 4,294,967,295)"));
+                    }
+                } else {
+                    getTalkgroupField().setStyle("");
+                    if (mTalkgroupTextFormatter == mHexFormatter) {
+                        getTalkgroupField().setTooltip(new Tooltip("1 - FFFFFFFF"));
+                    } else {
+                        getTalkgroupField().setTooltip(new Tooltip("1 - 4,294,967,295"));
+                    }
+                }
+            } else {
+                getTalkgroupField().setStyle("");
+                if (mTalkgroupTextFormatter == mHexFormatter) {
+                    getTalkgroupField().setTooltip(new Tooltip("1 - FFFFFFFF"));
+                } else {
+                    getTalkgroupField().setTooltip(new Tooltip("1 - 4,294,967,295"));
+                }
+            }
         }
     }
 
@@ -1170,8 +1247,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mBasebandRecordSwitch = new ToggleSwitch();
             mBasebandRecordSwitch.setDisable(true);
             mBasebandRecordSwitch.setTextAlignment(TextAlignment.RIGHT);
-            mBasebandRecordSwitch.selectedProperty()
-                .addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
+            mBasebandRecordSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                if(!mLoadingConfiguration) {
+                    modifiedProperty().set(true);
+                }
+            });
         }
 
         return mBasebandRecordSwitch;
@@ -1553,7 +1633,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
     @Override
     public void setItem(Channel channel) {
+        mLoadingConfiguration = true;
         super.setItem(channel);
+        mLoadingConfiguration = false;
         if (mAIOptimizeButton != null && mAIOptimizeStatusLabel != null) {
             if (channel == null) {
                 mAIOptimizeButton.setDisable(true);

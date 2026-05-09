@@ -73,6 +73,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     private static int UNIQUE_ID = 0;
 
     private DecodeConfiguration mDecodeConfiguration = DecoderFactory.getDefaultDecodeConfiguration();
+    private ObjectProperty<DecodeConfiguration> mDecodeConfigurationProperty = new SimpleObjectProperty<>(mDecodeConfiguration);
     private AuxDecodeConfiguration mAuxDecodeConfiguration = new AuxDecodeConfiguration();
     private SourceConfiguration mSourceConfiguration = SourceConfigFactory.getDefaultSourceConfiguration();
     private EventLogConfiguration mEventLogConfiguration = new EventLogConfiguration();
@@ -666,6 +667,11 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     /**
      * Gets the primary decoder configuration used by this channel
      */
+    public ObjectProperty<DecodeConfiguration> decodeConfigurationProperty()
+    {
+        return mDecodeConfigurationProperty;
+    }
+
     @JacksonXmlProperty(isAttribute = false, localName = "decode_configuration")
     public DecodeConfiguration getDecodeConfiguration()
     {
@@ -680,6 +686,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
         if(config != null)
         {
             mDecodeConfiguration = config;
+            mDecodeConfigurationProperty.set(config);
         }
     }
 
@@ -906,6 +913,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     public static Callback<Channel,Observable[]> extractor()
     {
         return (Channel c) -> new Observable[] {c.processingProperty(), c.activeTunerNameProperty(), c.nameProperty(), c.aliasListNameProperty(),
+            c.decodeConfigurationProperty(),
             c.autoStartOrderProperty(), c.autoStartProperty(), c.siteProperty(), c.systemProperty(),
             c.getFrequencyList(), c.mState, c.mCounty, c.mAgency};
     }

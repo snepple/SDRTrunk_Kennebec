@@ -62,7 +62,10 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.util.Callback;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 import org.controlsfx.control.ToggleSwitch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,6 +129,7 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getSourceConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mSourcePane = sp;
 
         }
@@ -143,7 +147,7 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
 
             int row = 0;
 
-            Label poolSizeLabel = new Label("Max Traffic Channels");
+            Label poolSizeLabel = new Label("Max Traffic Channels", createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."));
             GridPane.setHalignment(poolSizeLabel, HPos.RIGHT);
             GridPane.setConstraints(poolSizeLabel, 0, row);
             gridPane.getChildren().add(poolSizeLabel);
@@ -154,7 +158,7 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getIgnoreDataCallsButton(), 2, row);
             gridPane.getChildren().add(getIgnoreDataCallsButton());
 
-            Label ignoreDataLabel = new Label("Ignore Data Calls");
+            Label ignoreDataLabel = new Label("Ignore Data Calls", createHelpIcon("Skips processing data packets, focusing only on voice traffic."));
             GridPane.setHalignment(ignoreDataLabel, HPos.LEFT);
             GridPane.setConstraints(ignoreDataLabel, 3, row);
             gridPane.getChildren().add(ignoreDataLabel);
@@ -162,7 +166,7 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getIgnoreUnaliasedTalkgroupsButton(), 4, row);
             gridPane.getChildren().add(getIgnoreUnaliasedTalkgroupsButton());
 
-            Label ignoreUnaliasedLabel = new Label("Ignore Unaliased TGs");
+            Label ignoreUnaliasedLabel = new Label("Ignore Unaliased TGs", createHelpIcon("Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list."));
             GridPane.setHalignment(ignoreUnaliasedLabel, HPos.LEFT);
             GridPane.setConstraints(ignoreUnaliasedLabel, 5, row);
             gridPane.getChildren().add(ignoreUnaliasedLabel);
@@ -170,7 +174,7 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getIgnoreCRCChecksumsButton(), 6, row);
             gridPane.getChildren().add(getIgnoreCRCChecksumsButton());
 
-            Label ignoreCRCLabel = new Label("Ignore CRC Checksums (RAS)");
+            Label ignoreCRCLabel = new Label("Ignore CRC Checksums (RAS)", createHelpIcon("Skips CRC checks. Useful for decoding voice on systems using Restricted Access to System (RAS)."));
             GridPane.setHalignment(ignoreCRCLabel, HPos.LEFT);
             GridPane.setConstraints(ignoreCRCLabel, 7, row);
             gridPane.getChildren().add(ignoreCRCLabel);
@@ -178,7 +182,7 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getUseCompressedTalkgroupsToggle(), 8, row);
             gridPane.getChildren().add(getUseCompressedTalkgroupsToggle());
 
-            Label useCompressedTalkgroupsLabel = new Label("Use Compressed Talkgroups");
+            Label useCompressedTalkgroupsLabel = new Label("Use Compressed Talkgroups", createHelpIcon("Use compressed talkgroup format. This is only for Hytera Tier-III Trunked Systems."));
             GridPane.setHalignment(useCompressedTalkgroupsLabel, HPos.LEFT);
             GridPane.setConstraints(useCompressedTalkgroupsLabel, 9, row);
             gridPane.getChildren().add(useCompressedTalkgroupsLabel);
@@ -218,6 +222,7 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
+            mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mDecoderPane = mDecoderPaneSp;
         }
 
@@ -230,6 +235,7 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getEventLogConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mEventLogPane = sp;
 
         }
@@ -249,6 +255,7 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(vBox);
             mRecordPaneSp.setFitToWidth(true);
             mRecordPaneSp.setFitToHeight(true);
+            mRecordPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mRecordPane = mRecordPaneSp;
         }
 
@@ -809,6 +816,18 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
 
             return mStringProperty;
         }
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 
 }

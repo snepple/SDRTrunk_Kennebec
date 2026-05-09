@@ -26,17 +26,19 @@ import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.source.config.SourceConfigTuner;
 import io.github.dsheirer.source.config.SourceConfigTunerMultipleFrequency;
 import io.github.dsheirer.source.config.SourceConfiguration;
-import net.miginfocom.swing.MigLayout;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 
-import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.text.DefaultCaret;
-import java.awt.EventQueue;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.BorderLayout;
 import java.text.DecimalFormat;
 import java.util.List;
 
@@ -44,10 +46,10 @@ public class ChannelDetailPanel extends JPanel implements Listener<ProcessingCha
 {
     private static final String EMPTY_DETAILS = "Please select a channel to view details";
 
-    private JLabel mSystemLabel;
-    private JLabel mSiteLabel;
-    private JLabel mNameLabel;
-    private JTextArea mDetailTextPane;
+    private Label mSystemLabel;
+    private Label mSiteLabel;
+    private Label mNameLabel;
+    private TextArea mDetailTextPane;
 
     private ChannelProcessingManager mChannelProcessingManager;
     private ProcessingChain mProcessingChain;
@@ -61,41 +63,54 @@ public class ChannelDetailPanel extends JPanel implements Listener<ProcessingCha
 
     private void init()
     {
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[]0[grow,fill]"));
+        setLayout(new BorderLayout());
 
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new MigLayout("insets 1 1 1 1", "[][grow,fill][][grow,fill][][grow,fill][]", ""));
+        JFXPanel jfxPanel = new JFXPanel();
+        add(jfxPanel, BorderLayout.CENTER);
 
-        buttonPanel.add(new JLabel("System:"));
-        mSystemLabel = new JLabel(" ");
-        buttonPanel.add(mSystemLabel);
+        Platform.runLater(() -> {
+            VBox root = new VBox(0);
 
-        buttonPanel.add(new JLabel("Site:"));
-        mSiteLabel = new JLabel(" ");
-        buttonPanel.add(mSiteLabel);
+            HBox buttonPanel = new HBox(8);
+            buttonPanel.setPadding(new Insets(12));
 
-        buttonPanel.add(new JLabel("Channel Name:"));
-        mNameLabel = new JLabel(" ");
-        buttonPanel.add(mNameLabel);
+            buttonPanel.getChildren().add(new Label("System:"));
+            mSystemLabel = new Label(" ");
+            buttonPanel.getChildren().add(mSystemLabel);
 
-        JButton refreshButton = new JButton("Refresh");
-        refreshButton.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                receive(mProcessingChain);
+            buttonPanel.getChildren().add(new Label("Site:"));
+            mSiteLabel = new Label(" ");
+            buttonPanel.getChildren().add(mSiteLabel);
+
+            buttonPanel.getChildren().add(new Label("Channel Name:"));
+            mNameLabel = new Label(" ");
+            buttonPanel.getChildren().add(mNameLabel);
+
+            // Add spacers to mimic the [grow,fill] MigLayout constraints
+            HBox.setHgrow(mSystemLabel, Priority.ALWAYS);
+            HBox.setHgrow(mSiteLabel, Priority.ALWAYS);
+            HBox.setHgrow(mNameLabel, Priority.ALWAYS);
+
+            Button refreshButton = new Button("Refresh");
+            refreshButton.setOnAction(e -> receive(mProcessingChain));
+            buttonPanel.getChildren().add(refreshButton);
+
+            root.getChildren().add(buttonPanel);
+
+            mDetailTextPane = new TextArea(EMPTY_DETAILS);
+            mDetailTextPane.setEditable(false);
+            VBox.setVgrow(mDetailTextPane, Priority.ALWAYS);
+
+            root.getChildren().add(mDetailTextPane);
+
+            Scene scene = new Scene(root);
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
             }
+
+            jfxPanel.setScene(scene);
         });
-        buttonPanel.add(refreshButton);
-
-        add(buttonPanel, "wrap");
-
-        mDetailTextPane = new JTextArea(EMPTY_DETAILS);
-        DefaultCaret caret = (DefaultCaret)mDetailTextPane.getCaret();
-        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
-
-        add(new JScrollPane(mDetailTextPane), "grow");
     }
 
     private static final DecimalFormat FREQUENCY_FORMAT = new DecimalFormat("#.00000");
@@ -173,16 +188,11 @@ public class ChannelDetailPanel extends JPanel implements Listener<ProcessingCha
             details = EMPTY_DETAILS;
         }
 
-        EventQueue.invokeLater(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                mSystemLabel.setText(system);
-                mSiteLabel.setText(site);
-                mNameLabel.setText(name);
-                mDetailTextPane.setText(details);
-            }
+        Platform.runLater(() -> {
+            mSystemLabel.setText(system);
+            mSiteLabel.setText(site);
+            mNameLabel.setText(name);
+            mDetailTextPane.setText(details);
         });
     }
 }

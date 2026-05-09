@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<fx:root type="javafx.scene.layout.HBox" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" spacing="10" padding="5">
+    <Label text="Audio Output:" minWidth="-Infinity"/>
+    <ComboBox fx:id="mDeviceComboBox" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS"/>
+    <CheckBox fx:id="mRecordableCheckBox" text="Recordable"/>
+    <Label text="Priority:" minWidth="-Infinity"/>
+    <Slider fx:id="mPrioritySlider" min="1" max="99" value="50" showTickLabels="true" showTickMarks="true"/>
+</fx:root>

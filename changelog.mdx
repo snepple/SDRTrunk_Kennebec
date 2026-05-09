@@ -1,0 +1,70 @@
+---
+title: "Changelog"
+description: "What's new in SDRTrunk Kennebec."
+sidebarTitle: "Changelog"
+mode: "center"
+---
+
+<Update label="K.00.042" description="May 15, 2026">
+  Weekly Kennebec release. A focused fix for tuner startup reliability across USB and SDRPlay devices.
+
+  ### Bug fixes
+
+  - **Tuner startup reliability.** Fixed an issue where USB, SDRPlay RSP, and RSP Duo tuners could fail to start because the start check looked at availability instead of whether the tuner was enabled. Enabled tuners now start as expected. See [Supported tuners](/hardware/supported-tuners).
+</Update>
+
+<Update label="K.00.041" description="May 8, 2026">
+  Weekly Kennebec release. A major UI modernization push, expanded notifications and AI audio features, in-app help and tooltips throughout, and a large batch of UX fixes for channels, aliases, streaming, and audio recordings.
+
+  ### New features
+
+  - **Notifications system.** Per-recipient routing for hardware, system, signal, and integration alerts, with Telegram and SMTP delivery. See [Notifications](/alerts/notifications).
+  - **AI Audio Monitoring per channel.** Enable Gemini-powered audio quality monitoring on individual channels and use the new **AI Optimize Audio Filters** button on NBFM channels to auto-tune filter settings. See [Gemini AI](/alerts/gemini-ai).
+  - **System Health notifications.** Get alerted when system performance degrades, with a redesigned Log Analyzer that shows progress and renders Markdown.
+  - **Two Tone detection alerts** and streaming icons now appear directly in the Audio Channel Panel, and streaming service icons are visible in the Alias Editor lists.
+  - **Channel Table quick actions.** Right-click any row for context-menu actions, and edit fields inline without opening the full editor. The same inline editing is available in the Alias Table.
+  - **Import from Radio Reference** is now available directly from the Channel Editor's New dropdown. See [Radio Reference](/configuration/radio-reference).
+  - **Talkgroup ID and Geographic ID generators** for NBFM channels make it easier to build out NBFM configurations.
+  - **In-app Help Viewer.** Browse organized categories with full-text search, plus new in-app guides for ThinLine Radio, OpenMHz, Rdio Scanner, Virtual Audio Cable routing, and Radio Reference imports.
+  - **Tooltips throughout the app.** SDR Tuner settings, P25 Phase 1/Phase 2 fields, DMR technical fields, WACN editor, NBFM Talkgroup ranges, decoder/preference editors, and icon-only buttons now all have hover tooltips for accessibility.
+  - **Discoverable Open Log button** so you can jump to the active log file from the UI.
+  - **Bazineta JMBE fork** option in the JMBE creator for users who prefer that build.
+  - **Multi-platform native JNI** support with a dynamic loader for better cross-platform compatibility.
+
+  ### Updates
+
+  - **JavaFX modernization.** The Spectrum, Waterfall, Broadcast Status, History Management, Help Viewer, Signal Power, Sidebar, Streaming Editor, MQTT, Record, MP3, Notification, and Empty Tuner editors have all been migrated to JavaFX following Apple HIG, with cleaner layouts and consistent behavior.
+  - **Alias Configuration UX** has been redesigned to match Channel Configuration, with Listen and Priority columns now shown separately. See [Aliases & Talkgroups](/decoding/aliases-talkgroups).
+  - **Streaming Editor improvements.** Auto-save, inline name editing, left-aligned status columns, a context menu, and a dynamic configuration area make stream management faster.
+  - **Channel Configuration header** now shows system, site, and name at a glance.
+  - **Audio Filters reorganized.** Squelch Tail and High Pass toggles moved to the Audio Filters tab.
+  - **P25 Identifier fields** are now dropdowns with channel autocomplete. See [P25](/decoding/p25).
+  - **Improved Two Tone Editor** with a clearer empty-state and simpler layout. See [Two Tone Detection](/alerts/two-tone-detect).
+  - **Channel Spectrum panel** now uses a 50/50 split layout for better readability.
+  - **Sidebar toggle** restyled with a custom icon and the SDRTrunk logo when expanded.
+  - **High-DPI scaling** for decoder type icons; icons now use SVG and render crisply on Windows and macOS.
+  - **Smarter AI behavior.** Friendlier error messages when the Gemini quota is exhausted, and the AI Log Analyzer now respects your selected Gemini model.
+  - **Channel Inactivity Monitor** only triggers when the channel is actively processing, reducing false alerts. See [Inactivity Monitoring](/alerts/inactivity-monitoring).
+  - **Auto-sync of Talkgroup ID changes** to Alias lists, plus a confirmation dialog before deleting a map track.
+  - **Empty-state messages** and actionable placeholders across tables guide you when there's nothing to show yet.
+  - **Quieter logs.** SDRPlay API and unused audio hardware warnings have been downgraded to debug-level.
+  - **Performance improvements** to waterfall rendering, live log updates, P25 hex formatting, playlist file I/O, and table cell rendering for a smoother experience on busy systems.
+  - **Updated app branding.** New SDRTrunk logo and multi-resolution Windows taskbar icons for better high-DPI display.
+
+  ### Bug fixes
+
+  - Fixed application crash on startup caused by an invalid layout constraint.
+  - Fixed channel auto-start synchronization and the NBFM Talkgroup ID Generator state persistence.
+  - Fixed unintended save prompts when editing NBFM configurations.
+  - Fixed Talkgroup ID display for unsigned 32-bit values in the Channel Editor and corrected tooltip ranges.
+  - Fixed Map Panel rendering reliability and the Spectrum waterfall drawing and resize behavior.
+  - Fixed Audio Panel and Audio Recordings Panel layout issues, including blank-layout edge cases.
+  - Fixed Notification Preference Editor scrollbar and Frequency Editor layout.
+  - Fixed the **Hide Disabled Streams** toggle to correctly reflect filter state.
+  - Fixed Playlist editor submenu opening the wrong tab.
+  - Fixed Alias and Streaming sidebar menu items not opening the content window.
+  - Fixed icon loading to fall back to PNG when an SVG is missing.
+  - Fixed truncated AI optimization button label and wrapped status text.
+  - Fixed Channel Editor table overlap and County list population in the Geographic Schema Generator.
+  - Fixed Windows native build issues when the install path contained spaces.
+</Update>

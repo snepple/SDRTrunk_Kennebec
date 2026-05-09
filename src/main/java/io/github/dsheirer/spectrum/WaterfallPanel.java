@@ -1,21 +1,3 @@
-/*
- * *****************************************************************************
- * Copyright (C) 2014-2022 Dennis Sheirer
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- * ****************************************************************************
- */
 package io.github.dsheirer.spectrum;
 
 import io.github.dsheirer.settings.ColorSetting;
@@ -23,45 +5,44 @@ import io.github.dsheirer.settings.ColorSetting.ColorSettingName;
 import io.github.dsheirer.settings.Setting;
 import io.github.dsheirer.settings.SettingChangeListener;
 import io.github.dsheirer.settings.SettingsManager;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Point;
-import java.awt.geom.Line2D;
-import java.awt.image.ColorModel;
-import java.awt.image.MemoryImageSource;
-import java.text.DecimalFormat;
-import java.util.Arrays;
+import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JPanel;
+import java.awt.Point;
+import java.text.DecimalFormat;
+import java.util.Arrays;
 
-public class WaterfallPanel extends JPanel implements DFTResultsListener,
-    Pausable,
-    SettingChangeListener
-{
+public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Pausable, SettingChangeListener {
     private static final long serialVersionUID = 1L;
-
-    private final static Logger mLog =
-        LoggerFactory.getLogger(WaterfallPanel.class);
-
+    private final static Logger mLog = LoggerFactory.getLogger(WaterfallPanel.class);
     private static DecimalFormat CURSOR_FORMAT = new DecimalFormat("0.00000");
     private static final String PAUSED = "PAUSED - Right Click to Unpause";
     private static final String DISABLED = "DISABLED - Right Click to Select a Tuner";
 
-    private byte[] mPixels;
-    private byte[] mPausedPixels;
+    private Canvas mCanvas;
+    private GraphicsContext mGraphicsContext;
+    private WritableImage mWaterfallImage;
+    private PixelWriter mPixelWriter;
+    private int[] mColorMap;
+    private int mHeadY = 0;
+    private java.util.concurrent.ConcurrentLinkedQueue<int[]> mRowQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
+
     private int mDFTSize = 4096;
     private int mImageHeight = 700;
-    private MemoryImageSource mMemoryImageSource;
-    private ColorModel mColorModel = WaterfallColorModel.getDefaultColorModel();
-    private Color mColorSpectrumCursor;
-    private Image mWaterfallImage;
 
+    private Color mColorSpectrumCursor;
     private Point mCursorLocation = new Point(0, 0);
     private boolean mCursorVisible = false;
     private long mCursorFrequency = 0;
@@ -71,368 +52,271 @@ public class WaterfallPanel extends JPanel implements DFTResultsListener,
     private int mDFTZoomWindowOffset = 0;
 
     private SettingsManager mSettingsManager;
+    private AnimationTimer mAnimationTimer;
+    private volatile boolean mNeedsRedraw = false;
 
-    /**
-     * Displays a scrolling window of multiple DFT frequency bin outputs over
-     * time.  Maps DFT frequency bin decibel values into a 256 bucket color map
-     * for display.
-     *
-     * @param settingsManager
-     */
-    public WaterfallPanel(SettingsManager settingsManager)
-    {
+
+    public WaterfallPanel(SettingsManager settingsManager) {
         super();
         mSettingsManager = settingsManager;
         mSettingsManager.getSettingsModel().addListener(this);
         mColorSpectrumCursor = getColor(ColorSettingName.SPECTRUM_CURSOR);
-        reset();
+        mColorMap = WaterfallColorModel.getARGBColorMap();
+
+        Platform.runLater(() -> {
+            mCanvas = new Canvas(mDFTSize, mImageHeight);
+            mGraphicsContext = mCanvas.getGraphicsContext2D();
+
+            StackPane root = new StackPane();
+            root.getChildren().add(mCanvas);
+
+            // Bind canvas size to parent size so it resizes
+            mCanvas.widthProperty().bind(root.widthProperty());
+            mCanvas.heightProperty().bind(root.heightProperty());
+
+            mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
+            mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
+
+            Scene scene = new Scene(root);
+            setScene(scene);
+
+            reset();
+
+            mAnimationTimer = new AnimationTimer() {
+                @Override
+                public void handle(long now) {
+                    if (mNeedsRedraw) {
+                        mNeedsRedraw = false;
+                        draw();
+                    }
+                }
+            };
+            mAnimationTimer.start();
+        });
     }
 
-    /**
-     * Prepares this instance for disposal
-     */
-    public void dispose()
-    {
-        if(mSettingsManager != null)
-        {
+    public void dispose() {
+        if (mSettingsManager != null) {
             mSettingsManager.getSettingsModel().removeListener(this);
         }
-
         mSettingsManager = null;
-        mMemoryImageSource = null;
-    }
-
-    /**
-     * Resets the memory image source and byte backing array when the DFT point
-     * size has changed
-     */
-    private void reset()
-    {
-        mPixels = new byte[mDFTSize * mImageHeight];
-
-        mMemoryImageSource = new MemoryImageSource(mDFTSize,
-            mImageHeight,
-            mColorModel,
-            mPixels,
-            0,
-            mDFTSize);
-
-        mMemoryImageSource.setAnimated(true);
-
-        mWaterfallImage = createImage(mMemoryImageSource);
-
-        repaint();
-    }
-
-    /**
-     * Pausable interface - pauses updates to the waterfall
-     */
-    public void setPaused(boolean paused)
-    {
-        if(paused)
-        {
-            mPausedPixels = mPixels.clone();
+        if (mAnimationTimer != null) {
+            mAnimationTimer.stop();
         }
-
-        mPaused = paused;
-
-        repaint();
     }
 
-    /**
-     * Returns current pause state
-     *
-     * @return true if paused, false otherwise
-     */
-    public boolean isPaused()
-    {
+    private void reset() {
+        if (mDFTSize <= 0) return;
+        mImageHeight = Math.max((int) mCanvas.getHeight(), 100);
+
+        mRowQueue.clear();
+        mWaterfallImage = new WritableImage(mDFTSize, mImageHeight);
+        mPixelWriter = mWaterfallImage.getPixelWriter();
+        mHeadY = 0;
+        mNeedsRedraw = true;
+    }
+
+    public void setPaused(boolean paused) {
+        mPaused = paused;
+        mNeedsRedraw = true;
+    }
+
+    public boolean isPaused() {
         return mPaused;
     }
 
-    /**
-     * Indicates if the waterfall is currently disabled.
-     */
-    public boolean isDisabled()
-    {
+    public boolean isDisabled() {
         return mDisabled;
     }
 
-    /**
-     * Sets the current zoom level (2^zoom)
-     *
-     * 0 	No Zoom
-     * 1	2x Zoom
-     * 2	4x Zoom
-     * 3	8x Zoom
-     * 4	16x Zoom
-     * 5	32x Zoom
-     * 6	64x Zoom
-     *
-     * @param zoom level, 0 - 6.
-     */
-    public void setZoom(int zoom)
-    {
+    public void setZoom(int zoom) {
         mZoom = zoom;
+        mNeedsRedraw = true;
     }
 
-    /**
-     * Multiplier for the current zoom level
-     */
-    private int getZoomMultiplier()
-    {
+    private int getZoomMultiplier() {
         return (int) FastMath.pow(2.0, mZoom);
     }
 
-    /**
-     * Sets the zoom window offset from zero
-     *
-     * @param offset in DFT bins
-     */
-    public void setZoomWindowOffset(int offset)
-    {
+    public void setZoomWindowOffset(int offset) {
         mDFTZoomWindowOffset = offset;
+        mNeedsRedraw = true;
     }
 
-    /**
-     * Fetches a named color setting from the settings manager.  If the setting
-     * doesn't exist, creates the setting using the defaultColor
-     */
-    private Color getColor(ColorSettingName name)
-    {
+    private Color getColor(ColorSettingName name) {
         ColorSetting setting = mSettingsManager.getSettingsModel().getColorSetting(name);
-
-        return setting.getColor();
+        java.awt.Color awtColor = setting.getColor();
+        return Color.rgb(awtColor.getRed(), awtColor.getGreen(), awtColor.getBlue(), awtColor.getAlpha() / 255.0);
     }
 
-    /**
-     * Monitors for setting changes.  Colors can be changed by external actions
-     * and will automatically update in this class
-     */
     @Override
-    public void settingChanged(Setting setting)
-    {
-        if(setting instanceof ColorSetting colorSetting)
-        {
-            if(colorSetting.getColorSettingName() == ColorSettingName.SPECTRUM_CURSOR)
-            {
-                mColorSpectrumCursor = colorSetting.getColor();
+    public void settingChanged(Setting setting) {
+        if (setting instanceof ColorSetting colorSetting) {
+            if (colorSetting.getColorSettingName() == ColorSettingName.SPECTRUM_CURSOR) {
+                java.awt.Color awtColor = colorSetting.getColor();
+                mColorSpectrumCursor = Color.rgb(awtColor.getRed(), awtColor.getGreen(), awtColor.getBlue(), awtColor.getAlpha() / 255.0);
+                mNeedsRedraw = true;
             }
         }
     }
 
     @Override
-    public void settingDeleted(Setting setting)
-    { /* Not implemented */ }
+    public void settingDeleted(Setting setting) {}
 
-    /**
-     * Sets the display location of the cursor.  Cursor location monitoring is
-     * handled external to this class.
-     *
-     * @param point
-     */
-    public void setCursorLocation(Point point)
-    {
+    public void setCursorLocation(Point point) {
         mCursorLocation = point;
-        repaint();
+        mNeedsRedraw = true;
     }
 
-    /**
-     * Sets the current cursor display frequency.  Cursor location frequency
-     * monitoring is handled external to this class.
-     *
-     * @param frequency
-     */
-    public void setCursorFrequency(long frequency)
-    {
+    public void setCursorFrequency(long frequency) {
         mCursorFrequency = frequency;
     }
 
-    /**
-     * Toggles the visibility of the cursor
-     *
-     * @param visible
-     */
-    public void setCursorVisible(boolean visible)
-    {
+    public void setCursorVisible(boolean visible) {
         mCursorVisible = visible;
-        repaint();
+        mNeedsRedraw = true;
     }
 
-    /**
-     * Calculates the x-axis pixel offset from zero where to start rendering the
-     * waterfall image
-     *
-     * @param multiplier - current zoom multiplier
-     * @return x-axis pixel offset
-     */
-    private double getPixelOffset(int multiplier)
-    {
+    private double getPixelOffset(int multiplier) {
         double offset = 0;
-
-        if(mZoom != 0)
-        {
+        if (mZoom != 0) {
             double binPixelWidth = getBinPixelWidth(multiplier);
-            offset = -binPixelWidth * (double)(mDFTZoomWindowOffset);
+            offset = -binPixelWidth * (double) (mDFTZoomWindowOffset);
         }
-
         return offset;
     }
 
-    private double getBinPixelWidth(int multiplier)
-    {
-        return ((double)getWidth() * (double)multiplier) / (double)mDFTSize;
+    private double getBinPixelWidth(int multiplier) {
+        return ((double) mCanvas.getWidth() * (double) multiplier) / (double) mDFTSize;
     }
 
-    /**
-     * Renders the screen at each refresh
-     */
-    public void paintComponent(Graphics g)
-    {
-        super.paintComponent(g);
+    private void draw() {
+        if (mGraphicsContext == null || mWaterfallImage == null) return;
+
+        double width = mCanvas.getWidth();
+        double height = mCanvas.getHeight();
+
+        if (height != mImageHeight && height > 0) {
+            reset();
+            return;
+        }
+
+        mGraphicsContext.clearRect(0, 0, width, height);
+
+        if (!mPaused && mPixelWriter != null) {
+            int[] row;
+            while ((row = mRowQueue.poll()) != null) {
+                if (row.length == mDFTSize) {
+                    mHeadY--;
+                    if (mHeadY < 0) {
+                        mHeadY = mImageHeight - 1;
+                    }
+                    mPixelWriter.setPixels(0, mHeadY, mDFTSize, 1, PixelFormat.getIntArgbInstance(), row, 0, mDFTSize);
+                }
+            }
+        }
 
         int multiplier = getZoomMultiplier();
-
         double binPixelWidth = getBinPixelWidth(multiplier);
-        int offset = (int)(getPixelOffset(multiplier) - binPixelWidth);
-        g.drawImage(mWaterfallImage, offset, 0, (getWidth() * multiplier) + (int)binPixelWidth, mImageHeight, this);
-        Graphics2D graphics = (Graphics2D)g;
-        graphics.setColor(mColorSpectrumCursor);
+        int offset = (int) (getPixelOffset(multiplier) - binPixelWidth);
 
-        if(mCursorVisible)
-        {
-            graphics.draw(new Line2D.Float(mCursorLocation.x, 0, mCursorLocation.x, (float)(getSize().getHeight())));
+        // Draw the image in two parts to handle the wrap-around
+        double scaledWidth = (width * multiplier) + binPixelWidth;
+        double bottomHeight = mImageHeight - mHeadY;
+
+        if (bottomHeight > 0) {
+            mGraphicsContext.drawImage(mWaterfallImage,
+                0, mHeadY, mDFTSize, bottomHeight,
+                offset, 0, scaledWidth, bottomHeight);
+        }
+        if (mHeadY > 0) {
+            mGraphicsContext.drawImage(mWaterfallImage,
+                0, 0, mDFTSize, mHeadY,
+                offset, bottomHeight, scaledWidth, mHeadY);
+        }
+
+        mGraphicsContext.setStroke(mColorSpectrumCursor);
+        mGraphicsContext.setFill(mColorSpectrumCursor);
+
+        if (mCursorVisible) {
+            mGraphicsContext.strokeLine(mCursorLocation.x, 0, mCursorLocation.x, height);
             String frequency = CURSOR_FORMAT.format(mCursorFrequency / 1000000.0D);
-            graphics.drawString(frequency, mCursorLocation.x + 5, mCursorLocation.y);
+            mGraphicsContext.fillText(frequency, mCursorLocation.x + 5, mCursorLocation.y);
         }
 
-        if(mDisabled)
-        {
-            graphics.drawString(DISABLED, 20, 20);
-        }
-        else if(mPaused)
-        {
-            graphics.drawString(PAUSED, 20, 20);
+        if (mDisabled) {
+            mGraphicsContext.fillText(DISABLED, 20, 20);
+        } else if (mPaused) {
+            mGraphicsContext.fillText(PAUSED, 20, 20);
         }
 
-        paintZoomIndicator(graphics);
-        graphics.dispose();
+        paintZoomIndicator(mGraphicsContext, width, height);
     }
 
-    /**
-     * When zoom level is greater than zero, paints a small indicator at the
-     * bottom center of the screen showing the location of the zoom window
-     * within the overall DFT results window
-     */
-    private void paintZoomIndicator(Graphics2D graphics)
-    {
-        if(mZoom != 0)
-        {
-            int width = getWidth() / 4;
-            int x = (getWidth() / 2) - (width / 2);
+    private void paintZoomIndicator(GraphicsContext graphics, double width, double height) {
+        if (mZoom != 0) {
+            double indWidth = width / 4;
+            double x = (width / 2) - (indWidth / 2);
 
-            //Draw the outer window
-            graphics.drawRect(x, getHeight() - 12, width, 10);
-            int zoomWidth = width / getZoomMultiplier();
-            int windowOffset = 0;
+            graphics.strokeRect(x, height - 12, indWidth, 10);
+            double zoomWidth = indWidth / getZoomMultiplier();
+            double windowOffset = 0;
 
-            if(mDFTZoomWindowOffset != 0)
-            {
-                windowOffset = (int)(((double)mDFTZoomWindowOffset / (double)mDFTSize) * width);
+            if (mDFTZoomWindowOffset != 0) {
+                windowOffset = ((double) mDFTZoomWindowOffset / (double) mDFTSize) * indWidth;
             }
 
-            //Draw the zoom window
-            graphics.fillRect(x + windowOffset, getHeight() - 12, zoomWidth, 10);
-
-            //Draw the zoom text
-            graphics.drawString("Zoom: " + getZoomMultiplier() + "x", x + width + 3, getHeight() - 2);
+            graphics.fillRect(x + windowOffset, height - 12, zoomWidth, 10);
+            graphics.fillText("Zoom: " + getZoomMultiplier() + "x", x + indWidth + 3, height - 2);
         }
     }
 
-    /**
-     * Implements the DFT results listener interface method.  This is the primary method for receiving new frequency bin results.
-     */
     @Override
-    public void receive(float[] update)
-    {
+    public void receive(float[] update) {
         mDisabled = false;
 
-        byte[] newPixels = new byte[update.length];
+        if (mDFTSize != update.length) {
+            mDFTSize = update.length;
+            Platform.runLater(this::reset);
+            return;
+        }
 
-        /**
-         * Find the average value and scale the display to it
-         */
+        if (mPaused) return;
+
+        int[] newPixels = new int[update.length];
+
         double sum = 0.0d;
-
-        for(int x = 0; x < update.length - 1; x++)
-        {
+        for (int x = 0; x < update.length - 1; x++) {
             sum += update[x];
         }
 
-        float average = (float)(sum / (double)update.length - 1);
+        float average = (float) (sum / (double) (update.length - 1));
         float scale = 256.0f / average;
 
-        for(int x = 0; x < update.length - 1; x++)
-        {
+        for (int x = 0; x < update.length - 1; x++) {
             float value = (average - update[x]) * scale;
+            int colorIndex;
 
-            if(value < 0)
-            {
-                newPixels[x] = 0;
+            if (value < 0) {
+                colorIndex = 0;
+            } else if (value > 255) {
+                colorIndex = 255;
+            } else {
+                colorIndex = (int) value;
             }
-            else if(value > 255)
-            {
-                newPixels[x] = (byte)255;
-            }
-            else
-            {
-                newPixels[x] = (byte)value;
-            }
+            newPixels[x] = mColorMap[colorIndex];
         }
 
-        //Task the swing event thread to add the new pixels to the pixel array and update the display
-        EventQueue.invokeLater(() -> {
-            if(mMemoryImageSource != null)
-            {
-                //If our FFT size changes, reset our pixel map and image source
-                if(mDFTSize != newPixels.length)
-                {
-                    mDFTSize = newPixels.length;
-                    reset();
-                }
-
-                //Move the pixels down a row and add in the new pixels row
-                System.arraycopy(mPixels, 0, mPixels, mDFTSize, mPixels.length - mDFTSize);
-                System.arraycopy(newPixels, 0, mPixels, 0, newPixels.length);
-
-                if(mPaused)
-                {
-                    mMemoryImageSource.newPixels(mPausedPixels, mColorModel, 0, mDFTSize);
-                }
-                else
-                {
-                    mMemoryImageSource.newPixels(mPixels, mColorModel, 0, mDFTSize);
-                }
-            }
-        });
+        mRowQueue.offer(newPixels);
+        mNeedsRedraw = true;
     }
 
-    public void clearWaterfall()
-    {
-        Arrays.fill(mPixels, (byte)0);
+    public void clearWaterfall() {
         mDisabled = true;
-
-        EventQueue.invokeLater(() -> {
-            if(mMemoryImageSource != null)
-            {
-                try
-                {
-                    mMemoryImageSource.newPixels(mPixels, mColorModel, 0, mDFTSize);
-                }
-                catch(Exception e)
-                {
-                    mLog.error("Temporary error updating cleared waterfall panel - " + e.getLocalizedMessage());
-                }
-            }
-        });
+        mRowQueue.clear();
+        if (mGraphicsContext != null) {
+            Platform.runLater(() -> mGraphicsContext.clearRect(0, 0, mCanvas.getWidth(), mCanvas.getHeight()));
+        }
+        mNeedsRedraw = true;
     }
 }
