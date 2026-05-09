@@ -14,3 +14,7 @@
 **Simplified:**
 - Channelizer Type: Determines how the SDR hardware processes incoming radio signals across its tuned bandwidth. Polyphase is more efficient for decoding 3 or more channels, while Heterodyne processes each channel on-demand.
 - SDRPlay RSPduo Selection Mode: Configures the dual-tuner behavior of the SDRPlay RSPduo hardware (e.g., Single Tuner vs. Dual Tuner mode).
+
+## 2026-05-08 - PPM (Parts Per Million)
+**Simplified:**
+- PPM (Parts Per Million): Adjusts your tuner to match the exact frequency. If your hardware gets warm and signals shift, adjust this until the signal is centered.
