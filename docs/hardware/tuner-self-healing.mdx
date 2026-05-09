@@ -1,0 +1,127 @@
+---
+title: "Automatic Tuner Recovery and USB Self-Healing"
+description: "How SDRTrunk Kennebec detects USB failures, retries tuner restarts automatically, and uses a Windows PowerShell scheduled task for hardware-level USB resets."
+sidebarTitle: "Self-Healing"
+---
+
+SDRTrunk Kennebec includes automatic tuner recovery logic that minimizes disruption when a USB tuner encounters a software-level error. Instead of marking the device as permanently failed and waiting for you to intervene, the application stops the tuner, clears the error state, and attempts to restart it without any action on your part. On Windows 10 and Windows 11, a supplementary PowerShell-based USB monitor adds a deeper hardware-level reset capability for tuners that become physically locked in the operating system.
+
+## What triggers self-healing
+
+Self-healing activates for two specific USB error conditions. Any other error type moves the tuner directly to the `Error` status without attempting recovery.
+
+| Error condition | Description |
+|---|---|
+| **Transfer buffer exhaustion** | All USB bulk transfer buffers fail simultaneously, leaving no buffers available for continued streaming. This typically indicates a transient USB communication breakdown. |
+| **Device disconnection** | The application detects that the device is no longer responding on the USB bus — for example, after a USB reset, a cable issue, or a device power fault. |
+
+## Recovery behavior
+
+The recovery schedule differs depending on which error condition triggered self-healing.
+
+### Transfer buffer exhaustion
+
+When all USB transfer buffers are exhausted, the application follows this sequence:
+
+<Steps>
+  <Step title="Tuner stops">
+    The application stops the tuner immediately and sets its status to `Recovering`.
+  </Step>
+  <Step title="Scheduled retry">
+    A recovery task runs every **3 minutes**, for a maximum of **5 attempts**.
+  </Step>
+  <Step title="Restart attempt">
+    Each attempt clears the error state and reinitializes the tuner from scratch, including USB device setup and hardware configuration.
+  </Step>
+  <Step title="Success or permanent failure">
+    If the tuner reaches `Enabled` status, any channels assigned to it resume automatically. If all 5 attempts fail, the tuner is permanently set to `Error` with the message `Permanent USB Error - Transfer Buffers Exhausted`.
+  </Step>
+</Steps>
+
+### Device disconnection
+
+When the USB device stops responding on the bus, the application uses a two-phase retry schedule designed to handle both brief cable interruptions and longer hardware outages:
+
+<Steps>
+  <Step title="Tuner stops">
+    The application stops the tuner, sets its status to `Recovering`, and releases the USB device handle to avoid resource lockups.
+  </Step>
+  <Step title="Rapid retry (first 15 minutes)">
+    The application retries the restart every **5 seconds** during the first 15 minutes after the disconnect is detected.
+  </Step>
+  <Step title="Slow retry (15 to 45 minutes)">
+    If the device has not reconnected after 15 minutes, the retry interval increases to **5 minutes** to reduce resource usage.
+  </Step>
+  <Step title="Success or timeout">
+    A successful reconnect restores the tuner to `Enabled` and channels resume automatically. If the device is still unreachable after **45 minutes**, the tuner is permanently set to `Error` with the message `Permanent USB Error - Device Disconnected`.
+  </Step>
+</Steps>
+
+<Note>
+The disconnect recovery schedule is designed to handle brief USB resets or cable reconnections quickly, while still accommodating longer hardware failures without consuming excessive system resources.
+</Note>
+
+## Windows PowerShell USB monitor
+
+On Windows 10 and Windows 11, SDRTrunk Kennebec starts an additional background process called the **USB Monitor**. This monitor performs hardware-level USB device resets through the Windows operating system, complementing the software-level self-healing described above. It is intended for situations where libusb has lost control of the device and a software restart alone is not enough to bring the tuner back online.
+
+### How the USB monitor works
+
+<Steps>
+  <Step title="Setup on first launch">
+    At startup, SDRTrunk Kennebec prepares the USB monitor script in the `scripts/` subdirectory of the application folder. These files are created automatically — you do not need to do anything.
+  </Step>
+  <Step title="Scheduled task registration">
+    The application checks whether a Windows Scheduled Task named `SDRTrunk_UsbMonitor_<username>` already exists. If it does not, SDRTrunk Kennebec prompts for a **UAC elevation dialog** to create the task with the privileges needed to reset USB devices at the OS level.
+  </Step>
+  <Step title="Task execution">
+    The scheduled task runs silently in the background. The monitor watches for tuner failures and issues OS-level USB device reset commands when needed.
+  </Step>
+</Steps>
+
+<Warning>
+Creating the scheduled task requires administrator (UAC) approval. SDRTrunk Kennebec displays a UAC prompt the first time the task needs to be registered — you only need to approve this once. If you deny the prompt, the software-level self-healing continues to operate normally, but the OS-level USB reset is not available.
+</Warning>
+
+### OS requirement
+
+The USB monitor is **only active on Windows 10 and Windows 11**. On older Windows versions, Linux, and macOS, the USB monitor is skipped automatically. A log message records this when the application starts.
+
+## Interpreting tuner status during recovery
+
+Use the **Tuners** panel and the application log together to track what self-healing is doing.
+
+| Status in Tuners panel | What it means |
+|---|---|
+| `Recovering` | Self-healing is active. The application is retrying the restart according to the schedule above. No action is needed from you yet. |
+| `Error` | All recovery attempts have been exhausted. The tuner will not recover automatically. |
+| `Enabled` | Recovery succeeded. Channels resume automatically. |
+
+## Reading the application log
+
+Look for these log messages to understand exactly what happened:
+
+| Log message | Meaning |
+|---|---|
+| `Tuner Error - Initiating Recovery - <id>` | Self-healing started after a transfer buffer exhaustion error. |
+| `Tuner Error - Device Disconnected - Initiating Recovery - <id>` | Self-healing started after a USB disconnect. |
+| `Attempting tuner recovery for <id> - Attempt N of 5` | A software restart is in progress. |
+| `Successfully recovered tuner <id>` | The tuner came back online and channels resumed automatically. |
+| `Failed to recover tuner <id> after 5 attempts` | The tuner is now permanently in the `Error` state. |
+| `USB Monitor is only supported on Windows 10 or newer` | The current OS does not support the PowerShell USB monitor. |
+| `Successfully created scheduled task '<name>'` | The Windows USB monitor scheduled task was registered. |
+
+The USB monitor also writes its own log file to `sdrtrunk_usb_monitor.log` inside the application log directory.
+
+## When self-healing cannot recover a tuner
+
+If a tuner reaches `Error` status after exhausting all recovery attempts, self-healing will not retry it further. Take the following steps:
+
+1. Check the application log for the specific error message logged at the point of permanent failure.
+2. Physically unplug the tuner, wait a few seconds, and re-plug it. SDRTrunk Kennebec will detect it as a new device on supported platforms.
+3. Restart SDRTrunk Kennebec if re-plugging alone does not bring the tuner back.
+4. On Windows, confirm the USB monitor scheduled task exists by opening **Task Scheduler** and searching for `SDRTrunk_UsbMonitor_<your username>`.
+
+<Note>
+Recovery is not attempted for configuration errors, unknown tuner types, or other startup failures. These conditions move the tuner directly to `Error` status. On macOS Tahoe (OS version 26), a known libusb compatibility issue can also prevent USB tuner detection — see the [RTL-SDR setup guide](/hardware/rtl-sdr) for the Homebrew workaround.
+</Note>
