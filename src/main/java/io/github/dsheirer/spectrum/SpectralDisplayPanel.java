@@ -340,7 +340,7 @@ public class SpectralDisplayPanel extends JPanel
 
     private void init()
     {
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow]", "[grow]"));
+        setLayout(new MigLayout("insets 0 0 0 0, fill", "[grow,fill]", "[grow,fill]"));
 
         /**
          * The layered pane holds the overlapping spectrum and channel panels
@@ -369,8 +369,6 @@ public class SpectralDisplayPanel extends JPanel
         mWaterfallPanel.addMouseWheelListener(mouser);
 
         /* Set a default 50/50 split preferred size for the split pane to ensure JFXPanels aren't squished */
-        mLayeredPanel.setPreferredSize(new Dimension(800, 300));
-        mWaterfallPanel.setPreferredSize(new Dimension(800, 300));
 
         //Create the split pane to hold the layered pane and the waterfall
         JideSplitPane splitPane = new JideSplitPane(JSplitPane.VERTICAL_SPLIT);
