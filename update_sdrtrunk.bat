@@ -127,10 +127,28 @@ call :drawProgressBar 85 "Installing..."
 :: Added -x compileJni here to ensure it doesn't re-trigger and fail
 call gradlew.bat installDist -x test -x javadoc -x compileJni --no-daemon --console=plain >> "%LOG_FILE%" 2>&1 || goto ai_triage
 
-:: Step 8: Success
+:: Step 8: Upload Release and Update README
+call :drawProgressBar 95 "Releasing and Updating README..."
+for /f "tokens=2 delims==" %%A in ('findstr /I "projectVersion" gradle.properties') do set "PROJ_VER=%%A"
+set "DIST_ZIP=%ROOT_DIR%\%FOLDER_NAME%\build\distributions\sdr-trunk-!PROJ_VER!.zip"
+if exist "!DIST_ZIP!" (
+    echo [INFO] Creating GitHub Release !PROJ_VER!...
+    gh release create !PROJ_VER! "!DIST_ZIP!" --repo %GH_REPO% --title "Release !PROJ_VER!" --notes "Automated release of !PROJ_VER!"
+    echo [INFO] Updating README.md...
+    cd /d "%ROOT_DIR%"
+    powershell -Command "(Get-Content README.md) -replace 'Latest Compiled Release: .*', 'Latest Compiled Release: [Download !PROJ_VER!](https://github.com/%GH_REPO%/releases/tag/!PROJ_VER!)' | Set-Content README.md"
+    git add README.md
+    git commit -m "Update README.md with release !PROJ_VER!"
+    git push origin HEAD
+) else (
+    echo [WARNING] !DIST_ZIP! not found. Skipping release.
+)
+
+:: Step 9: Success
 call :drawProgressBar 100 "Build Complete!"
 echo.
 echo [SUCCESS] Sam, Kennebec build is ready.
+cd /d "%ROOT_DIR%\%FOLDER_NAME%"
 for /d %%D in (build\install\*) do (if exist "%%D\bin\sdrtrunk.bat" start "" "%%D\bin\sdrtrunk.bat")
 pause
 exit /b 0

@@ -1,3 +1,7 @@
-Fix update_sdrtrunk.bat libvolk/compilation fallback logic
+feat(build): add automated GitHub release and README update to updater script
 
-Changed the `libvolk` installation and `g++` compilation steps in `update_sdrtrunk.bat` to emit a `[WARNING]` and continue the build process instead of emitting an `[ERROR]` and aborting via `goto ai_triage`. This allows the script to utilize the intended Java fallback implementation if native dependencies or tools are missing on the host system.
+Modified `update_sdrtrunk.bat` to parse the `projectVersion` from
+`gradle.properties` upon a successful build. The script now automatically
+uploads the generated distribution zip to GitHub using the `gh` CLI. It
+also updates the main `README.md` with a direct download link matching the
+new version, commits the change, and pushes it to the repository.
