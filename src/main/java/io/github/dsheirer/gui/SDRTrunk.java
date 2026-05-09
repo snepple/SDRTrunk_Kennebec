@@ -380,7 +380,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                     updateTitle(tuner.getPreferredName());
                 }
 
-                UsbMonitorManager.manage(mUserPreferences);
             }
             catch(Exception e)
             {

@@ -54,6 +54,7 @@ public class ApplicationPreferenceEditor extends HBox
     private Label mMemoryWarningLabel;
     private ToggleSwitch mAutomaticDiagnosticMonitoringToggle;
     private ToggleSwitch mUsbMonitorToggle;
+    private boolean mUpdatingUsbMonitor = false;
 
     /**
      * Constructs an instance
@@ -251,17 +252,23 @@ public class ApplicationPreferenceEditor extends HBox
             mUsbMonitorToggle = new ToggleSwitch();
             mUsbMonitorToggle.setSelected(mApplicationPreference.isUsbMonitorInstalled());
             mUsbMonitorToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                if (mUpdatingUsbMonitor) return;
+
                 if(newValue) {
                     // Trigger installation
                     boolean success = UsbMonitorManager.install(mUserPreferences);
                     if(!success) {
+                        mUpdatingUsbMonitor = true;
                         mUsbMonitorToggle.setSelected(false);
+                        mUpdatingUsbMonitor = false;
                     }
                 } else {
                     // Trigger uninstallation
                     boolean success = UsbMonitorManager.uninstall(mUserPreferences);
                     if(!success) {
+                        mUpdatingUsbMonitor = true;
                         mUsbMonitorToggle.setSelected(true);
+                        mUpdatingUsbMonitor = false;
                     }
                 }
             });
