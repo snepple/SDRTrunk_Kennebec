@@ -105,7 +105,7 @@ public class HelpViewer extends JPanel {
             markdown += "* **Live Diagnostics Panel:** New \"Diagnostics (Logging)\" settings panel to toggle detailed troubleshooting logs on the fly.\n";
             markdown += "* **Hardware & Decoding Fixes:** Various stability fixes for DMR decoding and SDR hardware tuning.\n";
         } else {
-            String fileName = topic.toLowerCase().replace(" ", "-") + ".md";
+            String fileName = topic.toLowerCase().replace(" & ", "-&-").replace(" ", "-") + ".md";
             try (java.io.InputStream is = getClass().getResourceAsStream("/docs/" + fileName)) {
                 if (is != null) {
                     try (java.util.Scanner s = new java.util.Scanner(is, "UTF-8").useDelimiter("\\A")) {
@@ -141,6 +141,7 @@ public class HelpViewer extends JPanel {
         DefaultMutableTreeNode guidesNode = new DefaultMutableTreeNode("Guides & Documentation");
 
         DefaultMutableTreeNode gettingStartedNode = new DefaultMutableTreeNode("Getting Started");
+        gettingStartedNode.add(new DefaultMutableTreeNode("Index"));
         gettingStartedNode.add(new DefaultMutableTreeNode("Introduction"));
         gettingStartedNode.add(new DefaultMutableTreeNode("Overview"));
         gettingStartedNode.add(new DefaultMutableTreeNode("Quickstart"));

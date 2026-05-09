@@ -1,74 +1,78 @@
-# Import systems with RadioReference
+# Import Radio Systems from RadioReference.com
 
-> Configure SDRTrunk Kennebec to connect to the RadioReference API and automatically import radio systems, sites, and talkgroups directly into your playlist.
+RadioReference.com is the largest public database of radio system information in North America, containing frequencies, talkgroup IDs, site coordinates, and system metadata for thousands of public safety and government networks. SDRTrunk Kennebec's RadioReference integration lets you browse this database by location and pull a complete system configuration — channels, sites, and aliases — directly into your active playlist in seconds, without entering anything manually.
 
-The RadioReference API integration saves you from manually entering hundreds of talkgroups and frequencies. By authenticating with a RadioReference.com Premium account, you can browse systems by state and county, and pull down system configurations and aliases in seconds.
-
-## Import Flow
-
-```mermaid
-graph TD
-    A[RadioReference API] -->|Authentication| B{Playlist Editor}
-    B -->|Fetch Systems & Sites| C[System Browser]
-    C -->|Select Components| D[Import Action]
-    D -->|Generate Channels| E[Active Playlist]
-    D -->|Generate Aliases| E
-```
-
-## Quick Start: Importing a System
-
-### 1. Open the Radio Reference panel
-In the Playlist Editor, click **Radio Reference** in the left sidebar.
-
-### 2. Authenticate your account
-Enter your RadioReference.com username and password in the credentials section and click **Login**.
-> **Note:**
-  A RadioReference.com Premium subscription is required to use the API import feature. Free accounts cannot access the API.
-
-### 3. Browse for your system
-Once logged in, use the cascading dropdown menus to locate the system you want to import:
-1. Select your **Country**.
-2. Select your **State/Province**.
-3. Select your **County**.
-4. Select the specific **System** you wish to monitor.
-
-### 4. Select components and import
-Check the boxes next to the sites and talkgroup categories you want to include. Click **Import**. SDRTrunk Kennebec will automatically create the necessary channels and alias lists in your active playlist.
+> **Note**
+>
+  A RadioReference.com **Premium** subscription is required to use the API import feature. Free accounts cannot access the API.
 
 ---
 
-## Radio Reference Editor Interface
+## Quick start: import a system
 
-When you open the Radio Reference tab, the interface is split into functional zones.
+  **1. Open the RadioReference panel**
 
-```text
-+-------------------------------------------------------------+
-| Credentials                  [ Username ] [ Password ] [Login]|
-+-------------------------------------------------------------+
-| Location & System Selection                                   |
-| Country: [ United States v ]   State: [ California v ]        |
-| County:  [ Los Angeles v ]     System: [ LAPD Dispatch v ]    |
-+-------------------------------------------------------------+
-| System Details & Import Options                               |
-|                                                               |
-| [x] Site 1 (North)             [x] Law Enforcement            |
-| [ ] Site 2 (South)             [x] Fire / EMS                 |
-|                                [ ] Public Works               |
-|                                                               |
-|                           [ Import Selected ]                 |
-+-------------------------------------------------------------+
-```
+    In the Playlist Editor, click **Radio Reference** in the left sidebar.
 
-## Advanced Configuration: Post-Import Tweaks
+  **2. Authenticate your account**
 
-After the import completes, the generated components behave exactly like manually created ones. You may want to review and adjust them:
+    Enter your RadioReference.com username and password in the credentials section, then click **Login**.
 
-### Verify Channel Settings
-Navigate to the **Channels** tab in the Playlist Editor. You will see new channels created for the imported system sites.
-* Check the **Decoder** protocol (e.g., P25 Phase 1 or Phase 2) to ensure it matches your expectations.
-* You may want to manually toggle **Auto-Start** on for your primary control channels so they begin decoding automatically when the application launches.
+  **3. Browse for your system**
 
-### Customize Alias Groups
-Navigate to the **Aliases** tab. The import process groups talkgroups based on the categories provided by RadioReference (e.g., "Law Enforcement" or "Fire").
-* You can assign colors to specific aliases to make them stand out in the Now Playing panel.
-* You can add automated actions, such as playing a notification beep or triggering a script, for high-priority talkgroups.
+    Use the cascading dropdown menus to locate the system you want to import:
+    1. Select your **Country**.
+    2. Select your **State/Province**.
+    3. Select your **County**.
+    4. Select the specific **System** you want to monitor.
+
+  **4. Select components and import**
+
+    Check the boxes next to the sites and talkgroup categories you want to include. Click **Import Selected**. SDRTrunk Kennebec automatically creates the necessary channels and alias lists in your active playlist.
+
+
+---
+
+## What gets imported
+
+When you import a system, SDRTrunk Kennebec generates the following in your active playlist:
+
+| Imported item | Description |
+| --- | --- |
+| **Channels** | One channel per selected site, pre-configured with the correct decoder protocol (P25 Phase 1, P25 Phase 2, etc.) and control channel frequency. |
+| **Alias groups** | One alias group per talkgroup category selected during import (e.g., "Law Enforcement", "Fire / EMS"). |
+| **Talkgroup aliases** | Individual aliases for each talkgroup ID in the selected categories, named from the RadioReference database. |
+| **System metadata** | System name and site names are applied to channel names for easy identification. |
+
+Encrypted talkgroups are imported with a **Do Not Monitor** priority by default, so they appear in your alias list but are not decoded. You can change this behavior in **User Preferences → RadioReference**.
+
+---
+
+## Post-import review
+
+After importing, the generated channels and aliases behave exactly like manually created ones. Review them before starting a session.
+
+### Verify channel settings
+
+Navigate to the **Channels** tab in the Playlist Editor. You will see new channels created for each imported site.
+
+- Confirm the **Decoder** protocol matches your system (P25 Phase 1 or Phase 2).
+- Toggle **Auto-Start** on for your primary control channels so they begin decoding automatically when the application launches.
+
+### Customize alias groups
+
+Navigate to the **Aliases** tab. The import process groups talkgroups based on the categories provided by RadioReference.
+
+- Assign colors to specific aliases to make them stand out in the Now Playing panel.
+- Add automated actions — such as a notification beep or a script trigger — for high-priority talkgroups.
+- Enable **Record** on any alias to automatically save audio for that talkgroup. See [Audio Recordings](/configuration/audio-recordings) for details.
+
+---
+
+## Credential storage
+
+Your RadioReference username and password are saved in the application's Java preferences store. The **Store credentials** option (enabled by default) means you only need to log in once. To remove stored credentials, open the RadioReference panel and click the option to clear them.
+
+> **Warning**
+>
+  Credentials are stored in your operating system's user preferences store. Avoid using your RadioReference password on shared or publicly accessible systems.

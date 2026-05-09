@@ -75,8 +75,9 @@
   <li>Manage talkgroups and route audio to various streaming platforms</li>
 </ul>
 
-<h2>Documentation</h2>
-<p>For more detailed information, setup guides, and tutorials, please visit the <a href="https://sam-64221fcd.mintlify.app/">SDRTrunk Kennebec Documentation</a>.</p>
+<h2>📚 Documentation & Guides</h2>
+<p><strong><a href="https://sam-64221fcd.mintlify.app/">Read the official SDRTrunk Kennebec Documentation</a></strong></p>
+<p>For detailed information, setup guides, tutorials, and troubleshooting, please visit our comprehensive documentation portal. The portal covers everything from initial hardware setup to advanced streaming and AI integration.</p>
 
 <h2>Screenshots</h2>
 
