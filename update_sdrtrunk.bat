@@ -36,7 +36,9 @@ echo ==========================================
 
 :: Step 1: Env Check
 call :drawProgressBar 5 "Checking environment..."
+where git >nul 2>&1 || (echo [ERROR] Git missing. & pause & exit)
 where gh >nul 2>&1 || (echo [ERROR] GitHub CLI missing. & pause & exit)
+where cmake >nul 2>&1 || (echo [ERROR] CMake missing. & pause & exit)
 where g++ >nul 2>&1 || (echo [ERROR] MinGW/g++ missing. & pause & exit)
 if "!JAVA_HOME!"=="" (echo [ERROR] JAVA_HOME not set. & pause & exit)
 for %%I in ("!JAVA_HOME!") do set "JH=%%~sI"
@@ -44,33 +46,30 @@ for %%I in ("!JAVA_HOME!") do set "JH=%%~sI"
 :: Libvolk Dependency Check
 call :drawProgressBar 10 "Checking libvolk dependency..."
 if not exist "%VOLK_BASE%\volk\volk.h" (
-    echo [INFO] libvolk missing. Downloading v3.3.0...
-    powershell -Command "Invoke-WebRequest -Uri 'https://api.github.com/repos/gnuradio/volk/zipball/v3.3.0' -OutFile 'volk.zip'" >nul 2>&1
-    if not exist "volk.zip" (
-        echo [WARNING] Failed to download libvolk.
-        goto skip_volk
+    echo [INFO] libvolk missing. Cloning v3.3.0 with submodules...
+    git clone --branch v3.3.0 --recursive https://github.com/gnuradio/volk.git volk_src >nul 2>&1
+    if not exist "volk_src" (
+        echo [ERROR] Failed to clone libvolk.
+        pause
+        goto ai_triage
     )
-    echo [INFO] Extracting libvolk...
-    powershell -Command "Expand-Archive -Path 'volk.zip' -DestinationPath 'volk_src' -Force" >nul 2>&1
 
     echo [INFO] Compiling libvolk...
-    for /d %%D in (volk_src\*) do set "VOLK_DIR=%%D"
-    cd /d "!VOLK_DIR!"
+    cd /d "volk_src"
     if not exist build mkdir build
     cd build
-    cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX="%VOLK_BASE%\.." .. >nul 2>&1
-    cmake --build . --target install >nul 2>&1
+    cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX="%VOLK_BASE%\.." .. > cmake_out.log 2>&1
+    cmake --build . --target install >> cmake_out.log 2>&1
     cd /d "%ROOT_DIR%"
 
-    rmdir /s /q volk_src >nul 2>&1
-    del volk.zip >nul 2>&1
-
     if not exist "%VOLK_BASE%\volk\volk.h" (
-        echo [WARNING] libvolk installation failed.
-        goto skip_volk
+        echo [ERROR] libvolk compilation or installation failed. Check volk_src\build\cmake_out.log for details.
+        pause
+        goto ai_triage
     )
+
+    rmdir /s /q volk_src >nul 2>&1
 )
-:skip_volk
 
 :: Step 2: Cleanup
 call :drawProgressBar 15 "Cleaning workspace..."
