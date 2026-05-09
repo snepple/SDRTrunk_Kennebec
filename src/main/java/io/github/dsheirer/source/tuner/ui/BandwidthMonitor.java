@@ -39,8 +39,29 @@ public class BandwidthMonitor {
         if (tunerToStart.hasTuner()) {
             requestedBandwidth = tunerToStart.getTuner().getMaximumUSBBitsPerSecond() / 8;
         } else {
-            // estimate max
-            requestedBandwidth = 320000000 / 8; // generic
+            // estimate max based on tuner class
+            switch (tunerToStart.getTunerClass()) {
+                case RTL2832:
+                    requestedBandwidth = 38400000 / 8; // 4.8 MB/s
+                    break;
+                case AIRSPY:
+                    requestedBandwidth = 160000000 / 8; // 20 MB/s
+                    break;
+                case HACKRF:
+                    requestedBandwidth = 320000000 / 8; // 40 MB/s
+                    break;
+                case AIRSPY_HF:
+                    requestedBandwidth = 30720000 / 8; // 3.84 MB/s
+                    break;
+                case FUNCUBE_DONGLE_PRO:
+                case FUNCUBE_DONGLE_PRO_PLUS:
+                    requestedBandwidth = 3072000 / 8; // 384 KB/s
+                    break;
+                default:
+                    // Fallback to a generic estimation that doesn't instantly block (e.g., 20 MB/s)
+                    requestedBandwidth = 160000000 / 8;
+                    break;
+            }
         }
 
         return (currentBandwidth + requestedBandwidth) > SOFT_CEILING_THRESHOLD;
