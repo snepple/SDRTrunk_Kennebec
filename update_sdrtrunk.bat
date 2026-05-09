@@ -135,7 +135,7 @@ if exist "!DIST_ZIP!" (
     echo [INFO] Creating GitHub Release !PROJ_VER!...
     gh release create !PROJ_VER! "!DIST_ZIP!" --repo %GH_REPO% --title "Release !PROJ_VER!" --notes "Automated release of !PROJ_VER!"
     echo [INFO] Updating README.md...
-    cd /d "%ROOT_DIR%"
+    cd /d "%ROOT_DIR%\%FOLDER_NAME%"
     powershell -Command "(Get-Content README.md) -replace 'Latest Compiled Release: .*', 'Latest Compiled Release: [Download !PROJ_VER!](https://github.com/%GH_REPO%/releases/tag/!PROJ_VER!)' | Set-Content README.md"
     git add README.md
     git commit -m "Update README.md with release !PROJ_VER!"
