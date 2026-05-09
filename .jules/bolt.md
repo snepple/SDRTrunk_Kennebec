@@ -1,3 +1,15 @@
-## 2025-05-04 - Unsigned Integer Parsing
- **Learning:** When reading or displaying Talkgroup IDs that can exceed `Integer.MAX_VALUE` (e.g. 10-digit IDs generated for geographic schemas), standard `Integer.parseInt(id)` throws `NumberFormatException`, causing the UI or logic to silently fail or act unexpectedly.
- **Action:** For values that conceptually fit in a 32-bit unsigned space (up to ~4 billion), use `Integer.parseUnsignedInt()` when parsing from string, and `Integer.toUnsignedString()` when formatting back to string. Note that internally Java stores it as a signed int, so math/comparisons on such IDs need care (or `Integer.compareUnsigned`), but passing it around as a raw identifier is fine.
+## 2024-05-06 - [VOLK JNI DSP Integration] **Learning:** [Using VOLK for dot product natively provides significant speedup over pure Java (0.054 ms vs 0.288 ms) utilizing JNI with DirectByteBuffers.] **Action:** [When needing fast mathematical processing like DSP, utilize JNI + VOLK ensuring to use DirectByteBuffers to avoid array copying overheads.]
+
+## 2024-05-15 - Avoid Intermediate Array Allocations
+**Learning:** In utility classes like `ByteUtil`, creating intermediate arrays (like a `byte[]` from an `int[]`) just to reuse an existing formatting method causes unnecessary memory allocation and garbage collection overhead.
+**Action:** When creating overloaded utility methods, implement the core logic directly on the target data type to avoid intermediate object creation, rather than chaining to another method if it requires a type conversion buffer.
+## 2026-05-07 - The Canvas Performer: Refactoring WaterfallPanel to direct Memory Writing
+**Learning:** Rendering complex visualizations using individual JavaFX shapes or redundant Canvas clears creates object overhead and blocks the EDT or JavaFX Application Thread.
+**Action:** Use a ConcurrentLinkedQueue to stream calculated pixel rows directly to a JavaFX PixelWriter and split the WritableImage drawing into top/bottom segments.
+
+## 2026-05-15 - Single-pass string sanitization vs String.replace()
+**Learning:** When performing multi-character sanitization in SDRTrunk, repeated `String.replace()` calls create significant O(N*M) string and builder allocation overhead and GC pressure. This is especially true for high-frequency operations like file path sanitization during audio recording creation.
+**Action:** Prefer a single-pass `StringBuilder` that only allocates if a change is needed over repeated `String.replace()` calls to prevent unnecessary intermediate array allocations. Use a `switch` statement for O(1) character checking.
+## 2026-05-08 - Formatting 32-bit Unsigned Talkgroups
+**Learning:** Talkgroups, especially in NBFM, can exceed the bounds of a signed 32-bit integer. The talkgroup field accepts up to 4,294,967,295 (unsigned `int` max). If we use `String.valueOf(talkgroup)` directly, it prints as a negative number when it exceeds 2,147,483,647.
+**Action:** Use `Integer.toUnsignedString()` when fetching talkgroup IDs for display instead of `String.valueOf()` to correctly display values larger than `Integer.MAX_VALUE`.

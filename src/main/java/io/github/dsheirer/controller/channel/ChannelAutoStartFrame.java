@@ -21,41 +21,62 @@ package io.github.dsheirer.controller.channel;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.util.ThreadPool;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+
+
+
+
+
+
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.miginfocom.swing.MigLayout;
+
+
+import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
+
 import org.slf4j.Logger;
+import io.github.dsheirer.sample.Listener;
+import io.github.dsheirer.preference.UserPreferences;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
 
-public class ChannelAutoStartFrame extends JFrame
+
+
+
+
+
+
+public class ChannelAutoStartFrame
 {
     private final static Logger mLog = LoggerFactory.getLogger(ChannelAutoStartFrame.class);
 
     private Listener<ChannelEvent> mChannelEventListener;
     private List<Channel> mChannels;
 
-    private JLabel mCountdownLabel;
-    private JButton mStartButton;
-    private JButton mCancelButton;
-    private JTable mChannelTable;
+
+
+
+
     private AtomicBoolean mChannelsStarted = new AtomicBoolean();
     private int mAutoStartTimeoutSeconds;
-    private ScheduledFuture<?> mTimerFuture;
+
 
     /**
      * Creates and displays a channel auto-start gui for presenting the user with a list of channels that
@@ -65,125 +86,107 @@ public class ChannelAutoStartFrame extends JFrame
      * @param listener to receive channel start/enable request(s)
      * @param channels to auto-start
      */
-    public ChannelAutoStartFrame(Listener<ChannelEvent> listener, List<Channel> channels, UserPreferences userPreferences)
+
+    private Stage mStage;
+    private Label mCountdownLabel;
+    private Button mStartButton;
+    private Button mCancelButton;
+    private TableView<Channel> mChannelTable;
+    private Timeline mCountdownTimeline;
+
+    public ChannelAutoStartFrame(Listener<ChannelEvent> listener, List<Channel> channels, UserPreferences preferences)
     {
         mChannelEventListener = listener;
         mChannels = channels;
-        mAutoStartTimeoutSeconds = userPreferences.getApplicationPreference().getChannelAutoStartTimeout();
 
-        init();
+        Platform.runLater(() -> {
+            mStage = new Stage();
+            mStage.setTitle("Channel Auto-Start Manager");
 
-        EventQueue.invokeLater(() -> {
-            setVisible(true);
-            toFront();
-            startTimer();
-        });
-    }
+            VBox root = new VBox(10);
+            root.setPadding(new Insets(10));
 
-    private void init()
-    {
-        setTitle("Auto-Start Channels");
-        setSize(new Dimension(400, 300));
-        setLocationRelativeTo(null);
-        addWindowListener(new WindowAdapter()
-        {
-            @Override
-            public void windowClosing(WindowEvent event)
-            {
-                mLog.info("Channel auto-start canceled by user - window closed");
-                stopTimer();
-                super.windowClosing(event);
-            }
-        });
+            mCountdownLabel = new Label("Starting channels in ...");
+            root.getChildren().add(mCountdownLabel);
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new MigLayout("", "[grow,fill][grow,fill]",
-            "[][][grow,fill][]"));
-        panel.add(new JLabel("The following channels will be automatically"), "span");
+            mChannelTable = new TableView<>();
+            mChannelTable.setItems(FXCollections.observableArrayList(mChannels));
+            VBox.setVgrow(mChannelTable, Priority.ALWAYS);
 
-        mCountdownLabel = new JLabel(getCountdownText(mAutoStartTimeoutSeconds));
-        panel.add(mCountdownLabel, "span");
+            TableColumn<Channel, String> col = new TableColumn<>("Channel Name");
+            col.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
+            col.setPrefWidth(280);
+            mChannelTable.getColumns().add(col);
 
-        panel.add(new JScrollPane(getChannelTable()), "span");
+            root.getChildren().add(mChannelTable);
 
-        mStartButton = new JButton("Start Now");
-        mStartButton.setToolTipText("Start selected channels immediately");
-        mStartButton.getAccessibleContext().setAccessibleName("Start Channels Now");
-        mStartButton.getAccessibleContext().setAccessibleDescription("Bypasses the countdown timer and immediately starts the listed channels");
-        mStartButton.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                mLog.info("Starting [" + mChannels.size() + "] channels now - user invoked");
+            HBox buttonBox = new HBox(10);
+            buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+            mStartButton = new Button("Start");
+            mStartButton.setOnAction(e -> {
+                if (mCountdownTimeline != null) mCountdownTimeline.stop();
                 startChannels();
-                stopTimer();
-            }
-        });
-        panel.add(mStartButton);
+                mStage.close();
+            });
 
-        mCancelButton = new JButton("Cancel");
-        mCancelButton.setToolTipText("Cancel channel auto-start");
-        mCancelButton.getAccessibleContext().setAccessibleName("Cancel Auto Start");
-        mCancelButton.getAccessibleContext().setAccessibleDescription("Cancels the auto-start timer and prevents the channels from starting");
-        mCancelButton.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                mLog.info("Channel auto-start canceled by user");
-                stopTimer();
-            }
-        });
-        panel.add(mCancelButton);
-        setContentPane(panel);
-    }
+            mCancelButton = new Button("Cancel");
+            mCancelButton.setOnAction(e -> {
+                if (mCountdownTimeline != null) mCountdownTimeline.stop();
+                mStage.close();
+            });
 
-    private String getCountdownText(int value)
-    {
-        return "started in: " + value + " seconds.";
-    }
+            buttonBox.getChildren().addAll(mStartButton, mCancelButton);
+            root.getChildren().add(buttonBox);
 
-    /**
-     * Updates the countdown text label on the swing event thread
-     *
-     * @param value for the countdown
-     */
-    private void updateCountdownText(final int value)
-    {
-        EventQueue.invokeLater(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                mCountdownLabel.setText(getCountdownText(value));
-            }
+            Scene scene = new Scene(root, 400, 300);
+            mStage.setScene(scene);
+
+            mStage.setOnCloseRequest(e -> {
+                mLog.info("Channel auto-start canceled by user - window closed");
+                if (mCountdownTimeline != null) mCountdownTimeline.stop();
+            });
+
+            mStage.show();
+            mStage.toFront();
+
+            mAutoStartTimeoutSeconds = preferences.getApplicationPreference().getChannelAutoStartTimeout();
+
+            mCountdownTimeline = new Timeline(new KeyFrame(Duration.millis(1000), e -> {
+                mAutoStartTimeoutSeconds--;
+                mCountdownLabel.setText("Starting channels in " + mAutoStartTimeoutSeconds + " seconds.");
+
+                if (mAutoStartTimeoutSeconds <= 0) {
+                    mCountdownTimeline.stop();
+                    startChannels();
+                    mStage.close();
+                }
+            }));
+            mCountdownTimeline.setCycleCount(Timeline.INDEFINITE);
+            mCountdownTimeline.play();
         });
     }
 
-    /**
-     * Creates (once) a table of auto-start channels
-     */
-    private JTable getChannelTable()
-    {
-        if(mChannelTable == null)
-        {
-            AutoStartChannelModel model = new AutoStartChannelModel(mChannels);
-            mChannelTable = new JTable(model);
-            mChannelTable.setFillsViewportHeight(true);
+    public void setVisible(boolean visible) {
+        if (mStage != null) {
+            Platform.runLater(() -> {
+                if (visible) {
+                    mStage.show();
+                    mStage.toFront();
+                } else {
+                    mStage.hide();
+                }
+            });
+        } else {
+            Platform.runLater(() -> {
+                if (mStage != null && visible) {
+                    mStage.show();
+                    mStage.toFront();
+                }
+            });
         }
-
-        return mChannelTable;
     }
 
-    /**
-     * Sends an enable (ie start) request for each of the auto start channels.
-     *
-     * This method is thread-safe and will only be executed once.
-     *
-     * Although the redundant channel-start request would be ignored, this once-only will prevent the chance
-     * that both the timer and the user would attempt to start the channels at the same time.
-     */
     private void startChannels()
     {
         if(mChannelsStarted.compareAndSet(false, true))
@@ -194,55 +197,6 @@ public class ChannelAutoStartFrame extends JFrame
                 {
                     mChannelEventListener.receive(new ChannelEvent(channel, ChannelEvent.Event.REQUEST_ENABLE));
                 }
-            }
-        }
-    }
-
-    /**
-     * Starts the countdown timer to fire once a second.
-     */
-    private void startTimer()
-    {
-        if(mTimerFuture == null)
-        {
-            mTimerFuture = ThreadPool.SCHEDULED.scheduleAtFixedRate(new CountdownTimer(), 0, 1, TimeUnit.SECONDS);
-        }
-    }
-
-    /**
-     * Stops the countdown timer and disposes this frame
-     */
-    private void stopTimer()
-    {
-        if(mTimerFuture != null)
-        {
-            mTimerFuture.cancel(true);
-            mTimerFuture = null;
-        }
-
-        EventQueue.invokeLater(() -> dispose());
-    }
-
-    /**
-     * Updates the countdown text and auto-starts the channels once the timer falls below zero.
-     */
-    public class CountdownTimer implements Runnable
-    {
-        private int mCount = mAutoStartTimeoutSeconds;
-
-        @Override
-        public void run()
-        {
-            if(mCount >= 0)
-            {
-                updateCountdownText(mCount);
-                mCount--;
-            }
-            else
-            {
-                mLog.info("Starting [" + mChannels.size() + "] now - timer invoked");
-                startChannels();
-                stopTimer();
             }
         }
     }

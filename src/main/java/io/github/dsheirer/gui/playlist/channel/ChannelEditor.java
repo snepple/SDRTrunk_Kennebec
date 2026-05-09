@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
@@ -55,7 +56,9 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableCell;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -426,6 +429,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         if(mChannelTableView == null)
         {
             mChannelTableView = new TableView<>();
+            mChannelTableView.setEditable(true);
 
             TableColumn<Channel,Boolean> playingColumn = new TableColumn("Playing");
             playingColumn.setId("channelTable.playing");
@@ -439,6 +443,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                     @Override
                     protected void updateItem(Boolean item, boolean empty)
                     {
+                        super.updateItem(item, empty);
                         setAlignment(Pos.CENTER);
                         setText(null);
 
@@ -464,49 +469,28 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             autoStartColumn.setId("channelTable.autoStart");
             autoStartColumn.setCellValueFactory(new PropertyValueFactory<>("autoStart"));
             autoStartColumn.setPrefWidth(95);
-            autoStartColumn.setCellFactory(param -> {
-                TableCell<Channel,Boolean> tableCell = new TableCell<>()
-                {
-                    private IconNode iconNode;
+            autoStartColumn.setCellFactory(javafx.scene.control.cell.CheckBoxTableCell.forTableColumn(autoStartColumn));
 
-                    @Override
-                    protected void updateItem(Boolean item, boolean empty)
-                    {
-                        setAlignment(Pos.CENTER);
-                        setText(null);
-
-                        if(empty || item == null || !item)
-                        {
-                            setGraphic(null);
-                        }
-                        else
-                        {
-                            if (iconNode == null) {
-                                iconNode = new IconNode(FontAwesome.CHECK);
-                                iconNode.setFill(Color.GREEN);
-                            }
-                            setGraphic(iconNode);
-                        }
-                    }
-                };
-
-                return tableCell;
-            });
-
-            TableColumn systemColumn = new TableColumn("System");
+            TableColumn<Channel, String> systemColumn = new TableColumn<>("System");
             systemColumn.setId("channelTable.system");
             systemColumn.setCellValueFactory(new PropertyValueFactory<>("system"));
             systemColumn.setPrefWidth(175);
+            systemColumn.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn());
+            systemColumn.setOnEditCommit(event -> event.getRowValue().setSystem(event.getNewValue()));
 
-            TableColumn siteColumn = new TableColumn("Site");
+            TableColumn<Channel, String> siteColumn = new TableColumn<>("Site");
             siteColumn.setId("channelTable.site");
             siteColumn.setCellValueFactory(new PropertyValueFactory<>("site"));
             siteColumn.setPrefWidth(175);
+            siteColumn.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn());
+            siteColumn.setOnEditCommit(event -> event.getRowValue().setSite(event.getNewValue()));
 
-            TableColumn nameColumn = new TableColumn("Name");
+            TableColumn<Channel, String> nameColumn = new TableColumn<>("Name");
             nameColumn.setId("channelTable.name");
             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
             nameColumn.setPrefWidth(200);
+            nameColumn.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn());
+            nameColumn.setOnEditCommit(event -> event.getRowValue().setName(event.getNewValue()));
 
             TableColumn frequencyColumn = new TableColumn("Frequency");
             frequencyColumn.setId("channelTable.frequency");
@@ -560,25 +544,67 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             talkgroupColumn.setId("channelTable.talkgroup");
             talkgroupColumn.setCellValueFactory(param -> {
                 Channel channel = param.getValue();
-                if (channel != null && channel.getDecodeConfiguration() != null) {
+                if (channel == null) return new SimpleStringProperty("");
+                return javafx.beans.binding.Bindings.createStringBinding(() -> {
                     io.github.dsheirer.module.decode.config.DecodeConfiguration config = channel.getDecodeConfiguration();
+                    if (config == null) return "";
                     if (config instanceof io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM) {
-                        return new SimpleStringProperty(String.valueOf(((io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM)config).getTalkgroup()));
+                        return Integer.toUnsignedString(((io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM)config).getTalkgroup());
                     } else if (config instanceof io.github.dsheirer.module.decode.analog.DecodeConfigAnalog) {
-                        return new SimpleStringProperty(String.valueOf(((io.github.dsheirer.module.decode.analog.DecodeConfigAnalog)config).getTalkgroup()));
+                        return Integer.toUnsignedString(((io.github.dsheirer.module.decode.analog.DecodeConfigAnalog)config).getTalkgroup());
                     } else if (config instanceof io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25) {
                         int tg = ((io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25)config).getTalkgroup();
-                        if (tg > 0) return new SimpleStringProperty(String.valueOf(tg));
+                        if (tg > 0) return String.valueOf(tg);
                     } else if (config instanceof io.github.dsheirer.module.decode.am.DecodeConfigAM) {
-                        return new SimpleStringProperty(String.valueOf(((io.github.dsheirer.module.decode.am.DecodeConfigAM)config).getTalkgroup()));
+                        return Integer.toUnsignedString(((io.github.dsheirer.module.decode.am.DecodeConfigAM)config).getTalkgroup());
                     }
-                }
-                return new SimpleStringProperty("");
+                    return "";
+                }, channel.decodeConfigurationProperty());
             });
             talkgroupColumn.setPrefWidth(100);
 
             mChannelTableView.getColumns().addAll(systemColumn, siteColumn, nameColumn, frequencyColumn, protocolColumn,
                 playingColumn, autoStartColumn, tunerColumn, talkgroupColumn);
+
+            mChannelTableView.setRowFactory(tv -> {
+                TableRow<Channel> row = new TableRow<>();
+                ContextMenu contextMenu = new ContextMenu();
+
+                MenuItem playItem = new MenuItem("Play");
+                playItem.setOnAction(event -> {
+                    Channel channel = row.getItem();
+                    if (channel != null) {
+                        try {
+                            mPlaylistManager.getChannelProcessingManager().start(channel);
+                        } catch (Exception e) {
+                            mLog.error("Couldn't start channel [" + channel.getName() + "]", e);
+                        }
+                    }
+                });
+
+                MenuItem stopItem = new MenuItem("Stop");
+                stopItem.setOnAction(event -> {
+                    Channel channel = row.getItem();
+                    if (channel != null) {
+                        try {
+                            mPlaylistManager.getChannelProcessingManager().stop(channel);
+                        } catch (Exception e) {
+                            mLog.error("Couldn't stop channel [" + channel.getName() + "]", e);
+                        }
+                    }
+                });
+
+                contextMenu.getItems().addAll(playItem, stopItem);
+
+                row.contextMenuProperty().bind(
+                    Bindings.when(row.emptyProperty())
+                    .then((ContextMenu) null)
+                    .otherwise(contextMenu)
+                );
+
+                return row;
+            });
+
             mChannelTableView.setPlaceholder(getPlaceholderLabel());
 
             // Add column visibility context menu to column headers
@@ -614,14 +640,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             new io.github.dsheirer.preference.javafx.FxTableColumnMonitor(mUserPreferences, mChannelTableView, "channelTable");
             mChannelTableView.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> setChannel(newValue));
-            mChannelTableView.setOnMouseClicked(event -> {
-                if(event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2)
-                {
-                    if(getChannelConfigurationEditor() != null) {
-                        getChannelConfigurationEditor().startChannel();
-                    }
-                }
-            });
+
         }
 
         return mChannelTableView;
@@ -654,7 +673,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             });
 
             MenuItem decodersItem = new MenuItem("Decoder");
-            decodersItem.setDisable(true);
+            decodersItem.getStyleClass().add("section-header"); // Disable item prevents menu from showing in JavaFX
             mNewButton.getItems().addAll(rrItem, new SeparatorMenuItem(), decodersItem, new SeparatorMenuItem());
 
             for(DecoderType decoderType: DecoderType.PRIMARY_DECODERS)
@@ -728,8 +747,40 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mCloneButton.setOnAction(event -> {
                 Channel selected = getChannelTableView().getSelectionModel().getSelectedItem();
                 Channel copy = selected.copyOf();
+
+                String originalName = selected.getName();
+                String baseName = originalName != null ? originalName : "Channel";
+                if (baseName.matches(".*-Copy(\\d+)?$")) {
+                    baseName = baseName.replaceFirst("-Copy(\\d+)?$", "");
+                }
+                String newName = baseName + "-Copy";
+
+                java.util.List<Channel> existingChannels = mPlaylistManager.getChannelModel().getChannels();
+                int suffix = 1;
+                while(true) {
+                    boolean exists = false;
+                    for(Channel c : existingChannels) {
+                        if(c.getName() != null && c.getName().equals(newName)) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if(!exists) {
+                        break;
+                    }
+                    newName = baseName + "-Copy" + suffix;
+                    suffix++;
+                }
+                copy.setName(newName);
+
                 mPlaylistManager.getChannelModel().addChannel(copy);
                 getChannelTableView().getSelectionModel().select(copy);
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Channel Cloned");
+                alert.setHeaderText("Please Review Cloned Channel Settings");
+                alert.setContentText("Please update values for any fields that will cause conflicts/issues with the cloned channel (e.g., using the same talkgroup ID or frequency).");
+                alert.showAndWait();
             });
         }
 

@@ -32,7 +32,7 @@ public class SidebarPanel extends JPanel {
 
     private List<SidebarItem> mItems = new ArrayList<>();
     private JButton mToggleBtn;
-
+    private String mActiveId;
 
     public interface SidebarListener {
         void onItemSelected(String id);
@@ -75,6 +75,9 @@ public class SidebarPanel extends JPanel {
 
         initItems();
         render();
+        if (mActiveId != null) {
+            setActive(mActiveId);
+        }
     }
 
     private void initItems() {
@@ -123,6 +126,7 @@ public class SidebarPanel extends JPanel {
     }
 
     public void setActive(String id) {
+        mActiveId = id;
         for (SidebarItem item : mItems) {
             item.setActive(item.getId().equals(id));
             if (item.hasSubItems()) {

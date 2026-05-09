@@ -1,0 +1,100 @@
+{
+  "projectType": "saas",
+  "projectName": "SDRTrunk Kennebec",
+  "projectDescription": "A cross-platform Java desktop application that turns a Software Defined Radio into a multi-channel trunked radio scanner with live streaming, AI monitoring, and automated alerting.",
+  "theme": "almond",
+  "primaryColor": "#1E3A5F",
+  "lightColor": "#3B6FA0",
+  "darkColor": "#0F1E30",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "system-requirements"
+            ]
+          },
+          {
+            "group": "Hardware",
+            "pages": [
+              "hardware/supported-tuners",
+              "hardware/rtl-sdr",
+              "hardware/airspy-hackrf",
+              "hardware/tuner-self-healing"
+            ]
+          },
+          {
+            "group": "Channels & Decoding",
+            "pages": [
+              "decoding/channels-and-decoding",
+              "decoding/p25",
+              "decoding/dmr",
+              "decoding/analog",
+              "decoding/organization-and-playlists",
+              "decoding/aliases-talkgroups"
+            ]
+          },
+          {
+            "group": "Streaming",
+            "pages": [
+              "streaming/broadcastify",
+              "streaming/zello",
+              "streaming/rdio-scanner",
+              "streaming/openmhz",
+              "streaming/thinline-radio",
+              "streaming/other-platforms"
+            ]
+          },
+          {
+            "group": "Alerts & AI",
+            "pages": [
+              "alerts/notifications",
+              "alerts/inactivity-monitoring",
+              "alerts/two-tone-detect",
+              "alerts/gemini-ai"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/user-preferences",
+              "configuration/audio-recordings",
+              "configuration/diagnostics",
+              "configuration/radio-reference",
+              "configuration/mqtt",
+              "configuration/virtual-audio-cable"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Multi-channel trunked radio decoding (P25 Phase 1 & 2, DMR, LTR, Analog FM)",
+    "Live audio streaming to Broadcastify, Zello, Icecast, Rdio Scanner, OpenMHz, and ThinLine Radio",
+    "Two Tone Detect for fire and EMS paging dispatch alerts",
+    "Inactivity monitoring with Telegram and Email notifications",
+    "Optional Gemini AI integration for automated channel tuning, log analysis, and audio quality monitoring",
+    "Tuner self-healing with automatic USB recovery and Windows PowerShell reset",
+    "Embedded in-app help viewer and knowledge base",
+    "Support for RTL-SDR, Airspy, HackRF, and SDRPlay RSP hardware",
+    "IAmResponding local UDP integration for volunteer fire and EMS",
+    "Consolidated user preferences with live diagnostics and per-category logging controls"
+  ],
+  "publicApiSurface": [
+    "Playlist Editor — configure radio systems, channels, and talkgroup aliases",
+    "Streaming Editor — set up Broadcastify, Zello, Icecast, Rdio Scanner, OpenMHz, ThinLine Radio, MQTT, and IAmResponding streams",
+    "Two Tone Editor — configure A/B tone detectors with Zello, MQTT, and IAmResponding actions",
+    "User Preferences — AI settings (Gemini API key, model), notification settings (Telegram, Email/SMTP), diagnostics toggles, recording paths, MQTT broker",
+    "Tuners panel — view and configure connected SDR devices, enable/disable, set gain and PPM correction",
+    "Now Playing view — real-time display of active talkgroups and decoded calls",
+    "Audio Recordings panel — browse, play, and manage locally recorded audio",
+    "Logs panel — view application logs with AI-powered plain-English translation",
+    "RadioReference API integration — import system and talkgroup configurations by county/state"
+  ]
+}

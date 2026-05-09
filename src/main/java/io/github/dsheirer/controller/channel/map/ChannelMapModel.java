@@ -30,11 +30,10 @@ import javafx.collections.ObservableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.AbstractListModel;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ChannelMapModel extends AbstractListModel<ChannelMap>
+public class ChannelMapModel
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(ChannelMapModel.class);
@@ -108,16 +107,7 @@ public class ChannelMapModel extends AbstractListModel<ChannelMap>
      */
     public void broadcast(ChannelMapEvent event)
     {
-        if(event.getEvent() == ChannelMapEvent.Event.CHANGE ||
-            event.getEvent() == ChannelMapEvent.Event.RENAME)
-        {
-            int index = mChannelMaps.indexOf(event.getChannelMap());
 
-            if(index >= 0)
-            {
-                fireContentsChanged(this, index, index);
-            }
-        }
 
         mEventBroadcaster.broadcast(event);
     }
@@ -144,8 +134,6 @@ public class ChannelMapModel extends AbstractListModel<ChannelMap>
 
             int index = mChannelMaps.indexOf(channelMap);
 
-            fireIntervalAdded(this, index, index);
-
             broadcast(new ChannelMapEvent(channelMap, Event.ADD));
         }
     }
@@ -161,32 +149,7 @@ public class ChannelMapModel extends AbstractListModel<ChannelMap>
 
             mChannelMaps.remove(channelMap);
 
-            fireIntervalRemoved(this, index, index);
-
             broadcast(new ChannelMapEvent(channelMap, Event.DELETE));
         }
-    }
-
-    /**
-     * Size/Number of channel maps in this model
-     */
-    @Override
-    public int getSize()
-    {
-        return mChannelMaps.size();
-    }
-
-    /**
-     * Returns the channel map at the specified index
-     */
-    @Override
-    public ChannelMap getElementAt(int index)
-    {
-        if(index <= mChannelMaps.size())
-        {
-            return mChannelMaps.get(index);
-        }
-
-        return null;
     }
 }

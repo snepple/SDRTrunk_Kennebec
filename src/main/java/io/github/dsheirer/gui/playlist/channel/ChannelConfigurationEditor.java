@@ -154,7 +154,11 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
         HBox actionBox = new HBox(10);
         actionBox.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
-        actionBox.getChildren().addAll(getPlayButton(), getResetButton(), getSaveButton());
+
+        Label autoStartOrderLabel = new Label("Order:");
+        autoStartOrderLabel.setPadding(new Insets(0, 0, 0, 10)); // Add some space before
+
+        actionBox.getChildren().addAll(getAutoStartSwitch(), autoStartOrderLabel, getAutoStartOrderSpinner(), getPlayButton(), getResetButton(), getSaveButton());
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -221,6 +225,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         {
             getItem().processingProperty().removeListener(mChannelProcessingMonitor);
             mChannelNameLabel.textProperty().unbind();
+            getAutoStartSwitch().selectedProperty().unbindBidirectional(getItem().autoStartProperty());
         }
 
         super.setItem(channel);
@@ -283,7 +288,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                 getAliasListComboBox().getSelectionModel().select(null);
             }
 
-            getAutoStartSwitch().selectedProperty().set(channel.isAutoStart());
+            getAutoStartSwitch().selectedProperty().bindBidirectional(channel.autoStartProperty());
             getAutoStartOrderSpinner().setDisable(!channel.isAutoStart());
             Integer order = channel.getAutoStartOrder();
             getAutoStartOrderSpinner().getValueFactory().setValue(order != null ? order : 0);
@@ -358,7 +363,6 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             getItem().setName(" ");
             getItem().setName(getNameField().getText());
             getItem().setAliasListName(getAliasListComboBox().getSelectionModel().getSelectedItem());
-            getItem().setAutoStart(getAutoStartSwitch().isSelected());
 
             Integer order = getAutoStartOrderSpinner().getValue();
 
@@ -700,10 +704,9 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     {
         if(mAutoStartSwitch == null)
         {
-            mAutoStartSwitch = new ToggleSwitch();
+            mAutoStartSwitch = new ToggleSwitch("Auto-Start");
             mAutoStartSwitch.setDisable(true);
             mAutoStartSwitch.setDisable(true);
-            mAutoStartSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
 
         return mAutoStartSwitch;
@@ -824,14 +827,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             GridPane.setHgrow(getSystemField(), Priority.ALWAYS);
             mTextFieldPane.getChildren().add(getSystemField());
 
-            Label autoStartLabel = new Label("Auto-Start");
-            GridPane.setHalignment(autoStartLabel, HPos.RIGHT);
-            GridPane.setConstraints(autoStartLabel, 2, row);
-            mTextFieldPane.getChildren().add(autoStartLabel);
-
-            GridPane.setConstraints(getAutoStartSwitch(), 3, row);
-            GridPane.setHalignment(getAutoStartSwitch(), HPos.LEFT);
-            mTextFieldPane.getChildren().add(getAutoStartSwitch());
+            // Auto-start removed from here and moved to actionBox
 
 
 
@@ -844,14 +840,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             GridPane.setHgrow(getSiteField(), Priority.ALWAYS);
             mTextFieldPane.getChildren().add(getSiteField());
 
-            Label autoStartOrderLabel = new Label("Start Order");
-            GridPane.setHalignment(autoStartOrderLabel, HPos.RIGHT);
-            GridPane.setConstraints(autoStartOrderLabel, 2, row);
-            mTextFieldPane.getChildren().add(autoStartOrderLabel);
-
-            GridPane.setConstraints(getAutoStartOrderSpinner(), 3, row);
-            GridPane.setHalignment(getAutoStartOrderSpinner(), HPos.LEFT);
-            mTextFieldPane.getChildren().add(getAutoStartOrderSpinner());
+            // Auto-start order removed from here and moved to actionBox
 
             Label nameLabel = new Label("Name");
             GridPane.setHalignment(nameLabel, HPos.RIGHT);
@@ -1009,10 +998,16 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                         }
                         if(conflictChannel != null) break;
                     }
+
+
+
                     if(conflictChannel != null)
                     {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "Talkgroup " + newTalkgroup + " is already assigned to channel '" + conflictChannel.getName() + "'.\nPlease choose a different talkgroup to assign.", ButtonType.OK);
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "Talkgroup " + newTalkgroup + " is already assigned to channel '" + conflictChannel.toString() + "'.\nPlease choose a different talkgroup to assign.", ButtonType.OK);
                         alert.setTitle("Talkgroup Conflict");
+
+
+
                         alert.setHeaderText("Cannot Save Channel Configuration");
                         alert.initOwner((getPlayButton()).getScene().getWindow());
                         alert.showAndWait();
@@ -1083,7 +1078,9 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         @Override
         public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
         {
-            modifiedProperty().set(true);
+            if(getItem() != null) {
+                modifiedProperty().set(true);
+            }
         }
     }
 

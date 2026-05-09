@@ -19,21 +19,22 @@
 package io.github.dsheirer.gui.editor;
 
 import io.github.dsheirer.alias.Alias;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.geometry.Insets;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
+import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
+import java.io.IOException;
 
 /**
  * Audio Output Device Editor - GUI component for selecting VAC output per alias
@@ -43,67 +44,38 @@ public class AudioOutputDeviceEditor extends HBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(AudioOutputDeviceEditor.class);
 
-    private ComboBox<String> mDeviceComboBox;
+    @FXML private ComboBox<String> mDeviceComboBox;
+    @FXML private CheckBox mRecordableCheckBox;
+    @FXML private Slider mPrioritySlider;
+
     private Alias mAlias;
-    private boolean mUpdating = false;
-    private BooleanProperty mModified = new SimpleBooleanProperty(false);
+    private StringProperty mUiDeviceProperty = new SimpleStringProperty("System Default");
 
     /**
      * Constructor
      */
     public AudioOutputDeviceEditor()
     {
-        setPadding(new Insets(5, 5, 5, 5));
-        setSpacing(10);
-
-        Label label = new Label("Audio Output:");
-        label.setMinWidth(Region.USE_PREF_SIZE);
-
-        mDeviceComboBox = new ComboBox<>();
-        mDeviceComboBox.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(mDeviceComboBox, Priority.ALWAYS);
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/AudioOutputDeviceEditor.fxml"));
+        fxmlLoader.setRoot(this);
+        fxmlLoader.setController(this);
+        try
+        {
+            fxmlLoader.load();
+        }
+        catch (IOException exception)
+        {
+            throw new RuntimeException("Error loading FXML for AudioOutputDeviceEditor", exception);
+        }
 
         // Populate with RAW device names (what gets saved in XML)
         populateDevices();
 
         // Add default/system option at top
         mDeviceComboBox.getItems().add(0, "System Default");
-        mDeviceComboBox.getSelectionModel().select(0);
 
-        // Listen for selection changes
-        mDeviceComboBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>()
-        {
-            @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
-            {
-                if(!mUpdating && mAlias != null)
-                {
-                    if(newValue != null && !newValue.equals("System Default"))
-                    {
-                        mAlias.setAudioOutputDevice(newValue);
-                        mLog.info("Set audio output device for alias [" + mAlias.getName() + "] to: " + newValue);
-                    }
-                    else
-                    {
-                        mAlias.setAudioOutputDevice(null);
-                        mLog.info("Set audio output device for alias [" + mAlias.getName() + "] to system default");
-                    }
-
-                    // IMPORTANT: Trigger modified flag so Save button enables
-                    mModified.set(true);
-                }
-            }
-        });
-
-        getChildren().addAll(label, mDeviceComboBox);
-    }
-
-    /**
-     * Modified property - binds to parent editor's modified property
-     */
-    public BooleanProperty modifiedProperty()
-    {
-        return mModified;
+        // Bind the UI selection to our intermediary property
+        mDeviceComboBox.valueProperty().bindBidirectional(mUiDeviceProperty);
     }
 
     /**
@@ -158,43 +130,44 @@ public class AudioOutputDeviceEditor extends HBox
      */
     public void setAlias(Alias alias)
     {
+        if (mAlias != null)
+        {
+            Bindings.unbindBidirectional(mUiDeviceProperty, mAlias.audioOutputDeviceProperty());
+            mRecordableCheckBox.selectedProperty().unbindBidirectional(mAlias.recordableProperty());
+            mPrioritySlider.valueProperty().unbindBidirectional(mAlias.priorityProperty());
+        }
+
         mAlias = alias;
 
         if(mAlias != null)
         {
-            mUpdating = true;
-
             String deviceName = mAlias.getAudioOutputDevice();
 
-            if(deviceName != null && !deviceName.isEmpty())
+            if(deviceName != null && !deviceName.isEmpty() && !mDeviceComboBox.getItems().contains(deviceName))
             {
-                // Try to find exact match
-                boolean found = false;
-                for(String item : mDeviceComboBox.getItems())
-                {
-                    if(item.equals(deviceName))
-                    {
-                        mDeviceComboBox.getSelectionModel().select(item);
-                        found = true;
-                        break;
-                    }
-                }
-
-                if(!found)
-                {
-                    // Device not found, add it
-                    mDeviceComboBox.getItems().add(deviceName);
-                    mDeviceComboBox.getSelectionModel().select(deviceName);
-                    mLog.warn("Device [" + deviceName + "] not found in available devices, added anyway");
-                }
-            }
-            else
-            {
-                mDeviceComboBox.getSelectionModel().select("System Default");
+                // Device not found, add it
+                mDeviceComboBox.getItems().add(deviceName);
+                mLog.warn("Device [" + deviceName + "] not found in available devices, added anyway");
             }
 
-            mModified.set(false); // Reset modified flag after loading
-            mUpdating = false;
+            // Bind intermediary property bidirectionally to the model property with null conversion
+            Bindings.bindBidirectional(mUiDeviceProperty, mAlias.audioOutputDeviceProperty(), new StringConverter<String>()
+            {
+                @Override
+                public String toString(String aliasValue)
+                {
+                    return (aliasValue == null || aliasValue.isEmpty()) ? "System Default" : aliasValue;
+                }
+
+                @Override
+                public String fromString(String uiValue)
+                {
+                    return "System Default".equals(uiValue) ? null : uiValue;
+                }
+            });
+
+            mRecordableCheckBox.selectedProperty().bindBidirectional(mAlias.recordableProperty());
+            mPrioritySlider.valueProperty().bindBidirectional(mAlias.priorityProperty());
         }
     }
 

@@ -79,61 +79,8 @@ public class HelpViewer extends JPanel {
         add(splitPane, BorderLayout.CENTER);
     }
 
-    private DefaultMutableTreeNode searchNode(DefaultMutableTreeNode node, String query) {
-        if(node.getUserObject().toString().toLowerCase().contains(query)) {
-            return node;
-        }
-        for(int i = 0; i < node.getChildCount(); i++) {
-            DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
-            DefaultMutableTreeNode found = searchNode(child, query);
-            if(found != null) return found;
-        }
-        return null;
-    }
-
-
-    private void createNodes(DefaultMutableTreeNode root) {
-        root.add(new DefaultMutableTreeNode("What's New"));
-
-        DefaultMutableTreeNode guidesNode = new DefaultMutableTreeNode("Guides & Documentation");
-        guidesNode.add(new DefaultMutableTreeNode("Airspy Hackrf"));
-        guidesNode.add(new DefaultMutableTreeNode("Aliases Talkgroups"));
-        guidesNode.add(new DefaultMutableTreeNode("Analog"));
-        guidesNode.add(new DefaultMutableTreeNode("Audio Recordings"));
-        guidesNode.add(new DefaultMutableTreeNode("Broadcastify"));
-        guidesNode.add(new DefaultMutableTreeNode("Diagnostics"));
-        guidesNode.add(new DefaultMutableTreeNode("Dmr"));
-        guidesNode.add(new DefaultMutableTreeNode("Gemini Ai"));
-        guidesNode.add(new DefaultMutableTreeNode("Inactivity Monitoring"));
-        guidesNode.add(new DefaultMutableTreeNode("Introduction"));
-        guidesNode.add(new DefaultMutableTreeNode("Mqtt"));
-        guidesNode.add(new DefaultMutableTreeNode("Notifications"));
-        guidesNode.add(new DefaultMutableTreeNode("Other Platforms"));
-        guidesNode.add(new DefaultMutableTreeNode("Overview"));
-        guidesNode.add(new DefaultMutableTreeNode("P25"));
-        guidesNode.add(new DefaultMutableTreeNode("Playlist Editor"));
-        guidesNode.add(new DefaultMutableTreeNode("Quickstart"));
-        guidesNode.add(new DefaultMutableTreeNode("Rdio Scanner"));
-        guidesNode.add(new DefaultMutableTreeNode("Rtl Sdr"));
-        guidesNode.add(new DefaultMutableTreeNode("Supported Tuners"));
-        guidesNode.add(new DefaultMutableTreeNode("System Requirements"));
-        guidesNode.add(new DefaultMutableTreeNode("Thinline Radio"));
-        guidesNode.add(new DefaultMutableTreeNode("Tuner Self Healing"));
-        guidesNode.add(new DefaultMutableTreeNode("Two Tone Detect"));
-        guidesNode.add(new DefaultMutableTreeNode("User Preferences"));
-        guidesNode.add(new DefaultMutableTreeNode("Virtual Audio Cable"));
-        guidesNode.add(new DefaultMutableTreeNode("Zello"));
-        root.add(guidesNode);
-    }
-
-
-
-
-
-
-    private void updateContent(String topic) {
-        String markdown = "# " + topic + "\n\n";
-
+    private String getMarkdownContent(String topic) {
+        String markdown = "";
         if (topic.equals("What's New")) {
             markdown += "This edition is a specialized Dispatch & Efficiency fork of the original SDRTrunk software. It includes features and enhancements designed specifically for automated dispatch and operator efficiency.\n\n";
             markdown += "### 📡 Streaming & Integrations\n";
@@ -171,6 +118,86 @@ public class HelpViewer extends JPanel {
                 markdown += "Error loading documentation: " + e.getMessage();
             }
         }
+        return markdown;
+    }
+
+    private DefaultMutableTreeNode searchNode(DefaultMutableTreeNode node, String query) {
+        String topic = node.getUserObject().toString();
+        if(topic.toLowerCase().contains(query) || getMarkdownContent(topic).toLowerCase().contains(query)) {
+            return node;
+        }
+        for(int i = 0; i < node.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
+            DefaultMutableTreeNode found = searchNode(child, query);
+            if(found != null) return found;
+        }
+        return null;
+    }
+
+
+    private void createNodes(DefaultMutableTreeNode root) {
+        root.add(new DefaultMutableTreeNode("What's New"));
+
+        DefaultMutableTreeNode guidesNode = new DefaultMutableTreeNode("Guides & Documentation");
+
+        DefaultMutableTreeNode gettingStartedNode = new DefaultMutableTreeNode("Getting Started");
+        gettingStartedNode.add(new DefaultMutableTreeNode("Introduction"));
+        gettingStartedNode.add(new DefaultMutableTreeNode("Overview"));
+        gettingStartedNode.add(new DefaultMutableTreeNode("Quickstart"));
+        guidesNode.add(gettingStartedNode);
+
+        DefaultMutableTreeNode hardwareTunersNode = new DefaultMutableTreeNode("Hardware & Tuners");
+        hardwareTunersNode.add(new DefaultMutableTreeNode("Airspy Hackrf"));
+        hardwareTunersNode.add(new DefaultMutableTreeNode("Rtl Sdr"));
+        hardwareTunersNode.add(new DefaultMutableTreeNode("Supported Tuners"));
+        hardwareTunersNode.add(new DefaultMutableTreeNode("Tuner Self Healing"));
+        guidesNode.add(hardwareTunersNode);
+
+        DefaultMutableTreeNode channelsDecodingNode = new DefaultMutableTreeNode("Channels & Decoding");
+        channelsDecodingNode.add(new DefaultMutableTreeNode("Analog"));
+        channelsDecodingNode.add(new DefaultMutableTreeNode("Dmr"));
+        channelsDecodingNode.add(new DefaultMutableTreeNode("P25"));
+        guidesNode.add(channelsDecodingNode);
+
+        DefaultMutableTreeNode organizationPlaylistsNode = new DefaultMutableTreeNode("Organization & Playlists");
+        organizationPlaylistsNode.add(new DefaultMutableTreeNode("Aliases Talkgroups"));
+        organizationPlaylistsNode.add(new DefaultMutableTreeNode("Playlist Editor"));
+        organizationPlaylistsNode.add(new DefaultMutableTreeNode("Radio Reference"));
+        guidesNode.add(organizationPlaylistsNode);
+
+        DefaultMutableTreeNode integrationsStreamingNode = new DefaultMutableTreeNode("Integrations & Streaming");
+        integrationsStreamingNode.add(new DefaultMutableTreeNode("Broadcastify"));
+        integrationsStreamingNode.add(new DefaultMutableTreeNode("Mqtt"));
+        integrationsStreamingNode.add(new DefaultMutableTreeNode("Openmhz"));
+        integrationsStreamingNode.add(new DefaultMutableTreeNode("Other Platforms"));
+        integrationsStreamingNode.add(new DefaultMutableTreeNode("Rdio Scanner"));
+        integrationsStreamingNode.add(new DefaultMutableTreeNode("Thinline Radio"));
+        integrationsStreamingNode.add(new DefaultMutableTreeNode("Two Tone Detect"));
+        integrationsStreamingNode.add(new DefaultMutableTreeNode("Zello"));
+        guidesNode.add(integrationsStreamingNode);
+
+        DefaultMutableTreeNode advancedSystemNode = new DefaultMutableTreeNode("Advanced & System");
+        advancedSystemNode.add(new DefaultMutableTreeNode("Audio Recordings"));
+        advancedSystemNode.add(new DefaultMutableTreeNode("Diagnostics"));
+        advancedSystemNode.add(new DefaultMutableTreeNode("Gemini Ai"));
+        advancedSystemNode.add(new DefaultMutableTreeNode("Ignore Unwanted Talkgroups"));
+        advancedSystemNode.add(new DefaultMutableTreeNode("Inactivity Monitoring"));
+        advancedSystemNode.add(new DefaultMutableTreeNode("Notifications"));
+        advancedSystemNode.add(new DefaultMutableTreeNode("System Requirements"));
+        advancedSystemNode.add(new DefaultMutableTreeNode("User Preferences"));
+        advancedSystemNode.add(new DefaultMutableTreeNode("Virtual Audio Cable"));
+        guidesNode.add(advancedSystemNode);
+
+        root.add(guidesNode);
+    }
+
+
+
+
+
+
+    private void updateContent(String topic) {
+        String markdown = "# " + topic + "\n\n" + getMarkdownContent(topic);
 
         Parser parser = Parser.builder().build();
         Node document = parser.parse(markdown);

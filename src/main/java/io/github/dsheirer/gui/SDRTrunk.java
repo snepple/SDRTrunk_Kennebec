@@ -91,6 +91,13 @@ import java.awt.BorderLayout;
 import javax.swing.JPanel;
 import java.util.Optional;
 import java.util.prefs.Preferences;
+
+import javafx.application.Application;
+import javafx.stage.Stage;
+import javafx.scene.Scene;
+import javafx.scene.layout.BorderPane;
+import javafx.embed.swing.SwingNode;
+
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.control.ButtonType;
@@ -116,7 +123,7 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.VisibilityListener, io.github.dsheirer.gui.SidebarPanel.SidebarListener
+public class SDRTrunk extends Application implements Listener<TunerEvent>, io.github.dsheirer.gui.VisibilityListener, io.github.dsheirer.gui.SidebarPanel.SidebarListener
 {
     @Override
     public void onToggleSpectrum() {
@@ -207,7 +214,6 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
     private PlaylistManager mPlaylistManager;
     private SettingsManager mSettingsManager;
     private SpectralDisplayPanel mSpectralPanel;
-    private JFrame mMainGui;
     private JPanel mMainContentPanel;
     private JPanel mTopContentPanel;
     private JavaFxWindowManager mJavaFxWindowManager;
@@ -223,7 +229,167 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 
     private String mTitle;
 
-    public SDRTrunk()
+    private Stage mPrimaryStage;
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        mPrimaryStage = primaryStage;
+        boolean headless = GraphicsEnvironment.isHeadless();
+
+        if(headless)
+        {
+            mLog.info("starting main application headless");
+            autoStartChannels();
+        }
+        else
+        {
+            mLog.info("starting main application gui");
+
+            //Initialize the GUI
+            initGUI();
+
+            BorderPane root = new BorderPane();
+            Scene scene = new Scene(root);
+            try {
+                scene.getStylesheets().add(SDRTrunk.class.getResource("/sdrtrunk_style.css").toExternalForm());
+            } catch (Exception e) {
+                mLog.error("Could not load stylesheet", e);
+            }
+
+            SwingNode swingNode = new SwingNode();
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                swingNode.setContent(mMainContentPanel);
+            });
+            root.setCenter(swingNode);
+
+
+            Dimension dimension = mUserPreferences.getSwingPreference().getDimension(WINDOW_FRAME_IDENTIFIER);
+            if(dimension != null)
+            {
+                primaryStage.setWidth(dimension.getWidth());
+                primaryStage.setHeight(dimension.getHeight());
+                if(mUserPreferences.getSwingPreference().getMaximized(WINDOW_FRAME_IDENTIFIER, false))
+                {
+                    primaryStage.setMaximized(true);
+                }
+            }
+            else
+            {
+                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                primaryStage.setWidth(screenSize.width * 0.6);
+                primaryStage.setHeight(screenSize.height * 0.6);
+            }
+
+            Point location = mUserPreferences.getSwingPreference().getLocation(WINDOW_FRAME_IDENTIFIER);
+            if(location != null)
+            {
+                primaryStage.setX(location.getX());
+                primaryStage.setY(location.getY());
+            }
+
+
+            primaryStage.xProperty().addListener((obs, oldVal, newVal) -> {
+                if (!primaryStage.isMaximized()) {
+                    mNormalBounds = new Rectangle((int)primaryStage.getX(), (int)primaryStage.getY(), (int)primaryStage.getWidth(), (int)primaryStage.getHeight());
+                }
+            });
+            primaryStage.yProperty().addListener((obs, oldVal, newVal) -> {
+                if (!primaryStage.isMaximized()) {
+                    mNormalBounds = new Rectangle((int)primaryStage.getX(), (int)primaryStage.getY(), (int)primaryStage.getWidth(), (int)primaryStage.getHeight());
+                }
+            });
+            primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> {
+                if (!primaryStage.isMaximized()) {
+                    mNormalBounds = new Rectangle((int)primaryStage.getX(), (int)primaryStage.getY(), (int)primaryStage.getWidth(), (int)primaryStage.getHeight());
+                }
+            });
+            primaryStage.heightProperty().addListener((obs, oldVal, newVal) -> {
+                if (!primaryStage.isMaximized()) {
+                    mNormalBounds = new Rectangle((int)primaryStage.getX(), (int)primaryStage.getY(), (int)primaryStage.getWidth(), (int)primaryStage.getHeight());
+                }
+            });
+
+            try {
+                java.awt.Image appIcon = javax.imageio.ImageIO.read(SDRTrunk.class.getResource("/images/SDRTrunk_Application_Icon.png"));
+                if (java.awt.Taskbar.isTaskbarSupported() && java.awt.Taskbar.getTaskbar().isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
+                    java.awt.Taskbar.getTaskbar().setIconImage(appIcon);
+                }
+
+                // Set multiple icon sizes to fix high-DPI blurriness and taskbar issues
+                primaryStage.getIcons().addAll(
+                    new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 16, 16, true, true),
+                    new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 32, 32, true, true),
+                    new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 64, 64, true, true),
+                    new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 128, 128, true, true),
+                    new javafx.scene.image.Image(SDRTrunk.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"))
+                );
+            } catch (Exception e) {
+                mLog.error("Error setting application icon", e);
+            }
+
+            primaryStage.setTitle(mTitle);
+
+            primaryStage.setScene(scene);
+            primaryStage.show();
+
+            CalibrationManager calibrationManager = CalibrationManager.getInstance(mUserPreferences);
+            final boolean calibrating = !calibrationManager.isCalibrated() &&
+                !mUserPreferences.getVectorCalibrationPreference().isHideCalibrationDialog();
+
+            // Workaround for SwingNode and intermittent page contents not painting initially
+            javafx.application.Platform.runLater(() -> {
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (mMainContentPanel != null) {
+                        mMainContentPanel.revalidate();
+                        mMainContentPanel.repaint();
+                    }
+
+                    Platform.runLater(() -> {
+                        if(calibrating)
+                        {
+                            CalibrationDialog calibrationDialog = mJavaFxWindowManager.getCalibrationDialog(mUserPreferences);
+                            java.util.Optional<ButtonType> calibrate = calibrationDialog.showAndWait();
+                            if(calibrate.isPresent() && calibrate.get().getText().equals("Calibrate"))
+                            {
+                                //Request focus and execute calibration
+                                MyEventBus.getGlobalEventBus().post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.VECTOR_CALIBRATION));
+                                MyEventBus.getGlobalEventBus().post(new CalibrateRequest());
+                            }
+                            else
+                            {
+                                autoStartChannels();
+                            }
+                        }
+                        else
+                        {
+                            autoStartChannels();
+                        }
+                    });
+                });
+            });
+
+
+
+            try
+            {
+                TunerSpectralDisplayManager tunerSpectralDisplayManager = new TunerSpectralDisplayManager(mSpectralPanel, mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
+                Tuner tuner = tunerSpectralDisplayManager.showFirstTuner();
+
+                if(tuner != null)
+                {
+                    updateTitle(tuner.getPreferredName());
+                }
+
+                UsbMonitorManager.manage(mUserPreferences);
+            }
+            catch(Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void init() throws Exception
     {
         String operatingSystem = System.getProperty("os.name", "generic").toLowerCase(Locale.ENGLISH);
         ThemeManager themeManager = new ThemeManager();
@@ -237,7 +403,6 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 
         if(!GraphicsEnvironment.isHeadless())
         {
-            mMainGui = new JFrame();
         }
 
         mApplicationLog = new ApplicationLog(mUserPreferences);
@@ -290,8 +455,13 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
             mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this::onViewChanged);
 
             // Add Sidebar
-            mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
-            mMainGui.add(mSidebarPanel, BorderLayout.WEST);
+            try {
+                javax.swing.SwingUtilities.invokeAndWait(() -> {
+                    mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
+                });
+            } catch (Exception e) {
+                mLog.error("Error creating sidebar panel", e);
+            }
         }
 
 
@@ -328,20 +498,25 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 
         if(!GraphicsEnvironment.isHeadless())
         {
-            mControllerPanel = new ControllerPanel(mPlaylistManager, audioPlaybackManager, mIconModel, mapService,
-                    mSettingsManager, mTunerManager, mUserPreferences, mNowPlayingDetailsVisible, this);
+            try {
+                javax.swing.SwingUtilities.invokeAndWait(() -> {
+                    mControllerPanel = new io.github.dsheirer.controller.ControllerPanel(mPlaylistManager, audioPlaybackManager, mIconModel, mapService,
+                            mSettingsManager, mTunerManager, mUserPreferences, mNowPlayingDetailsVisible, this);
 
-            mControllerPanel.addView("playlist_editor", mJavaFxWindowManager.getPlaylistEditorPanel());
-            mControllerPanel.addView("user_prefs", mJavaFxWindowManager.getUserPreferencesEditorPanel());
-            mControllerPanel.addView("msg_viewer", mJavaFxWindowManager.getRecordingViewerPanel());
+                    mControllerPanel.addView("playlist_editor", mJavaFxWindowManager.getView(ViewIdentifier.PLAYLIST_EDITOR));
+                    mControllerPanel.addView("user_prefs", mJavaFxWindowManager.getView(ViewIdentifier.USER_PREFERENCES_EDITOR));
+                    mControllerPanel.addView("msg_viewer", mJavaFxWindowManager.getView(ViewIdentifier.RECORDING_VIEWER));
 
-            mControllerPanel.addView("logs", mJavaFxWindowManager.getLogsPanel());
+                    mControllerPanel.addView("logs", mJavaFxWindowManager.getView(ViewIdentifier.LOGS));
 
-
+                    mSpectralPanel = new SpectralDisplayPanel(mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
+                });
+            } catch (Exception e) {
+                mLog.error("Error creating controller panel", e);
+            }
         }
 
 
-        mSpectralPanel = new SpectralDisplayPanel(mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
 
         TunerSpectralDisplayManager tunerSpectralDisplayManager = new TunerSpectralDisplayManager(mSpectralPanel,
             mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
@@ -350,63 +525,6 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 
         mPlaylistManager.init();
 
-        if(GraphicsEnvironment.isHeadless())
-        {
-            mLog.info("starting main application headless");
-        }
-        else
-        {
-            mLog.info("starting main application gui");
-
-            //Initialize the GUI
-            initGUI();
-        }
-
-        //Start the gui
-        EventQueue.invokeLater(() -> {
-            try
-            {
-                if(!GraphicsEnvironment.isHeadless())
-                {
-                    mMainGui.setVisible(true);
-                    Tuner tuner = tunerSpectralDisplayManager.showFirstTuner();
-
-                    if(tuner != null)
-                    {
-                        updateTitle(tuner.getPreferredName());
-                    }
-
-                    UsbMonitorManager.manage(mUserPreferences);
-                }
-
-                if(calibrating && !GraphicsEnvironment.isHeadless())
-                {
-                    Platform.runLater(() ->
-                    {
-                        CalibrationDialog calibrationDialog = mJavaFxWindowManager.getCalibrationDialog(mUserPreferences);
-                        Optional<ButtonType> calibrate = calibrationDialog.showAndWait();
-                        if(calibrate.isPresent() && calibrate.get().getText().equals("Calibrate"))
-                        {
-                            //Request focus and execute calibration
-                            MyEventBus.getGlobalEventBus().post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.VECTOR_CALIBRATION));
-                            MyEventBus.getGlobalEventBus().post(new CalibrateRequest());
-                        }
-                        else
-                        {
-                            autoStartChannels();
-                        }
-                    });
-                }
-                else
-                {
-                    autoStartChannels();
-                }
-            }
-            catch(Exception e)
-            {
-                e.printStackTrace();
-            }
-        });
     }
 
     /**
@@ -452,36 +570,10 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
          * Setup main JFrame window
          */
         mTitle = SystemProperties.getInstance().getApplicationName();
-        mMainGui.setTitle(mTitle);
 
-        try {
-            java.awt.Image appIcon = javax.imageio.ImageIO.read(SDRTrunk.class.getResource("/images/SDRTrunk_Application_Icon.png"));
+        // The main application window is now JavaFX, not JFrame,
+        // so setting the taskbar icon is handled in the JavaFX start() method.
 
-            mMainGui.setIconImages(java.util.Collections.singletonList(appIcon));
-
-            if (java.awt.Taskbar.isTaskbarSupported() && java.awt.Taskbar.getTaskbar().isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
-                java.awt.Taskbar.getTaskbar().setIconImage(appIcon);
-            }
-        } catch (Exception e) {
-            mLog.error("Error setting application icon", e);
-        }
-
-        mMainGui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mMainGui.addWindowListener(new ShutdownMonitor());
-        mMainGui.addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                if (mMainGui.getExtendedState() == JFrame.NORMAL) {
-                    mNormalBounds = mMainGui.getBounds();
-                }
-            }
-            @Override
-            public void componentMoved(java.awt.event.ComponentEvent e) {
-                if (mMainGui.getExtendedState() == JFrame.NORMAL) {
-                    mNormalBounds = mMainGui.getBounds();
-                }
-            }
-        });
 
         Dimension dimension = mUserPreferences.getSwingPreference().getDimension(WINDOW_FRAME_IDENTIFIER);
 
@@ -506,38 +598,43 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
                 // mControllerPanel.setSize(controller);
             }
 
-            mMainGui.setSize(dimension);
 
-            if(mUserPreferences.getSwingPreference().getMaximized(WINDOW_FRAME_IDENTIFIER, false))
-            {
-                mMainGui.setExtendedState(JFrame.MAXIMIZED_BOTH);
-            }
         }
         else
         {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             int width = (int) (screenSize.width * 0.6);
             int height = (int) (screenSize.height * 0.6);
-            mMainGui.setSize(new Dimension(width, height));
         }
 
         Point location = mUserPreferences.getSwingPreference().getLocation(WINDOW_FRAME_IDENTIFIER);
         if(location != null)
         {
-            mMainGui.setLocation(location);
         }
         else
         {
-            mMainGui.setLocationRelativeTo(null);
         }
 
         mMainContentPanel = new JPanel(new BorderLayout());
-        mTopContentPanel = new JPanel(new BorderLayout());
-        mTopContentPanel.add(mControllerPanel.getAudioPanel(), BorderLayout.NORTH);
-        mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
-        mMainContentPanel.add(mTopContentPanel, BorderLayout.NORTH);
-        mMainContentPanel.add(mControllerPanel, BorderLayout.CENTER);
 
+        JPanel contentWithSidebar = new JPanel(new BorderLayout());
+        contentWithSidebar.add(mSidebarPanel, BorderLayout.WEST);
+
+        JPanel rightContentPanel = new JPanel(new BorderLayout());
+
+        JPanel rightTopPanel = new JPanel(new BorderLayout());
+        rightTopPanel.add(mControllerPanel.getAudioPanel(), BorderLayout.NORTH);
+
+        mTopContentPanel = new JPanel(new BorderLayout());
+        mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
+
+        rightTopPanel.add(mTopContentPanel, BorderLayout.CENTER);
+
+        rightContentPanel.add(rightTopPanel, BorderLayout.NORTH);
+        rightContentPanel.add(mControllerPanel, BorderLayout.CENTER);
+
+        contentWithSidebar.add(rightContentPanel, BorderLayout.CENTER);
+        mMainContentPanel.add(contentWithSidebar, BorderLayout.CENTER);
         mBroadcastStatusVisible = mPreferences.getBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, false);
         mResourceStatusVisible = mPreferences.getBoolean(PREFERENCE_RESOURCE_STATUS_VISIBLE, true);
 
@@ -546,11 +643,16 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
 
         mControllerPanel.getNowPlayingPanel().setComponents(mSpectralPanel, getBroadcastStatusPanel(), mNowPlayingResourceStatusPanel);
 
-        mMainGui.add(mMainContentPanel, BorderLayout.CENTER);
 
         mResourceMonitor.start();
         mControllerPanel.setResourcePanel(mControllerResourceStatusPanel);
 
+    }
+
+
+    @Override
+    public void stop() throws Exception {
+        processShutdown();
     }
 
     private void processShutdown()
@@ -558,15 +660,16 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         mLog.info("Application shutdown started ...");
         io.github.dsheirer.gui.WindowsReliabilityManager.stopWatchdog();
         mDiagnosticMonitor.stop();
-        if ((mMainGui.getExtendedState() & JFrame.MAXIMIZED_BOTH) != JFrame.MAXIMIZED_BOTH || mNormalBounds == null) {
-            mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, mMainGui.getLocation());
-            mUserPreferences.getSwingPreference().setDimension(WINDOW_FRAME_IDENTIFIER, mMainGui.getSize());
-        } else {
-            mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, mNormalBounds.getLocation());
-            mUserPreferences.getSwingPreference().setDimension(WINDOW_FRAME_IDENTIFIER, mNormalBounds.getSize());
+        if (mPrimaryStage != null) {
+            if (!mPrimaryStage.isMaximized() || mNormalBounds == null) {
+                mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, new Point((int)mPrimaryStage.getX(), (int)mPrimaryStage.getY()));
+                mUserPreferences.getSwingPreference().setDimension(WINDOW_FRAME_IDENTIFIER, new Dimension((int)mPrimaryStage.getWidth(), (int)mPrimaryStage.getHeight()));
+            } else {
+                mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, mNormalBounds.getLocation());
+                mUserPreferences.getSwingPreference().setDimension(WINDOW_FRAME_IDENTIFIER, mNormalBounds.getSize());
+            }
+            mUserPreferences.getSwingPreference().setMaximized(WINDOW_FRAME_IDENTIFIER, mPrimaryStage.isMaximized());
         }
-        mUserPreferences.getSwingPreference().setMaximized(WINDOW_FRAME_IDENTIFIER,
-            (mMainGui.getExtendedState() & JFrame.MAXIMIZED_BOTH) == JFrame.MAXIMIZED_BOTH);
         mUserPreferences.getSwingPreference().setDimension(SPECTRAL_PANEL_IDENTIFIER, mSpectralPanel.getSize());
         mUserPreferences.getSwingPreference().setDimension(CONTROLLER_PANEL_IDENTIFIER, mControllerPanel.getSize());
         mJavaFxWindowManager.shutdown();
@@ -609,7 +712,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         mPreferences.putBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, mBroadcastStatusVisible);
         EventQueue.invokeLater(() -> {
             mControllerPanel.getNowPlayingPanel().setBroadcastStatusPanelVisible(mBroadcastStatusVisible);
-            mMainGui.revalidate();
+            mMainContentPanel.revalidate();
         });
     }
 
@@ -733,24 +836,12 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
      */
     private void updateTitle(String tunerName)
     {
-        if(tunerName != null)
-        {
-            mMainGui.setTitle(mTitle + " - " + tunerName);
-        }
-        else
-        {
-            mMainGui.setTitle(mTitle);
+        final String finalTitle = tunerName != null ? mTitle + " - " + tunerName : mTitle;
+        if (mPrimaryStage != null) {
+            Platform.runLater(() -> mPrimaryStage.setTitle(finalTitle));
         }
     }
 
-    public class ShutdownMonitor extends WindowAdapter
-    {
-        @Override
-        public void windowClosing(WindowEvent e)
-        {
-            processShutdown();
-        }
-    }
 
     /**
      * Broadcast status panel visible toggle menu item
@@ -805,6 +896,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
      */
     public static void main(String[] args)
     {
+        System.setProperty("com.github.weisj.jsvg.disableStax", "true");
         System.setProperty("com.ctc.wstx.maxAttributeSize", "10000000");
         System.setProperty("jdk.xml.maxAttributeSize", "10000000");
         System.setProperty("awt.useSystemAAFontSettings", "on");
@@ -812,7 +904,7 @@ public class SDRTrunk implements Listener<TunerEvent>, io.github.dsheirer.gui.Vi
         System.setProperty("sun.java2d.d3d", "true");
         System.setProperty("sun.java2d.dpiaware", "true");
         System.setProperty("prism.allowhidpi", "true");
-        new SDRTrunk();
+        Application.launch(SDRTrunk.class, args);
     }
 
     public void onViewChanged(String id) {

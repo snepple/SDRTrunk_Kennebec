@@ -81,7 +81,7 @@ public abstract class DiscoveredRspTuner<R extends IControlRsp> extends Discover
     @Override
     public void start()
     {
-        if(isAvailable() && !hasTuner())
+        if(isEnabled() && !hasTuner())
         {
             try
             {
