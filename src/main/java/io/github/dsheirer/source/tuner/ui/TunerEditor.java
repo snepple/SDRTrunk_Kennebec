@@ -318,7 +318,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     {
         if(mFriendlyNameTextField == null)
         {
-            mFriendlyNameTextField = new JTextField();
+            mFriendlyNameTextField = new JTextField(20);
             mFriendlyNameTextField.setToolTipText("Enter a friendly name for this tuner");
 
             if(getConfiguration() != null && getConfiguration().getFriendlyName() != null)
@@ -967,9 +967,12 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     {
         public FrequencyPanel()
         {
-            setLayout(new MigLayout("insets 0,fill", "[][][][grow,fill]", ""));
+            setLayout(new MigLayout("insets 0,fill", "[][][][][grow,fill]", ""));
             add(getFrequencyControl(), "spany 2");
             add(new JLabel("PPM:"));
+            JButton helpButton = createHelpIcon("?");
+            helpButton.setToolTipText("<html><b>PPM (Parts Per Million):</b> Adjusts your tuner to match the exact frequency.<br>If your hardware gets warm and signals shift, adjust this until the signal is centered.</html>");
+            add(helpButton);
             add(getFrequencyCorrectionSpinner());
             add(getMeasuredPPMLabel(), "wrap");
             add(getAutoPPMCheckBox(), "span");
@@ -1133,5 +1136,14 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                 save();
             }
         }
+    }
+
+    private JButton createHelpIcon(String text) {
+        JButton button = new JButton(text);
+        button.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        return button;
     }
 }

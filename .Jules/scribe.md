@@ -24,3 +24,7 @@
 ## 2026-05-09 - Markdown Compatibility in HelpViewer
 **Learning:** The internal Java `HelpViewer` uses a standard Markdown parser and does not support MDX React components (like `<Steps>`, `<CardGroup>`, etc.) used by Mintlify.
 **Action:** When syncing documentation from `docs/` to `src/main/resources/docs/`, strip MDX tags and replace them with standard markdown equivalent (e.g. converting `<Step>` into numbered lists, `<Card>` into headers/links).
+## 2024-05-15 - Topic Selection
+**Topic:** Ignore Unwanted Talkgroups
+**Learning:** The "Ignore Unwanted Talkgroups" feature for DMR and P25 was listed in the "What's New" section but lacked a dedicated Markdown guide.
+**Action:** Created `src/main/resources/docs/ignore-unwanted-talkgroups.md` and integrated it into the navigation tree of `HelpViewer.java` under "Advanced & System".

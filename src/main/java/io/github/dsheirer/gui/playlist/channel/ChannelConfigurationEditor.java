@@ -174,6 +174,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         javafx.scene.control.ScrollPane generalScroll = new javafx.scene.control.ScrollPane(getTextFieldPane());
         generalScroll.setFitToWidth(true);
         generalScroll.setFitToHeight(true);
+        generalScroll.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
         addConfigurationPane("General", generalScroll);
 
         getChildren().add(inspectorCard);
@@ -189,6 +190,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         javafx.scene.control.ScrollPane alertsScroll = new javafx.scene.control.ScrollPane(getAlertsPane());
         alertsScroll.setFitToWidth(true);
         alertsScroll.setFitToHeight(true);
+        alertsScroll.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
         addConfigurationPane("Alerts", alertsScroll);
     }
 
