@@ -380,7 +380,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                     updateTitle(tuner.getPreferredName());
                 }
 
-                UsbMonitorManager.manage(mUserPreferences);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    UsbMonitorManager.manage(mUserPreferences);
+                });
             }
             catch(Exception e)
             {
@@ -410,7 +412,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         mTwoToneLog = new TwoToneLog(mUserPreferences);
         mTwoToneLog.start();
-        UsbMonitorManager.manage(mUserPreferences);
         io.github.dsheirer.gui.WindowsReliabilityManager.manage(mUserPreferences);
 
         //Note: invoke this early in the application lifecycle, before the TunerManager causes the sdrplay classes

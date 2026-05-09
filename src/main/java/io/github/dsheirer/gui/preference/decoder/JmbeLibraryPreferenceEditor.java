@@ -336,7 +336,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
                         fileChooser.setInitialDirectory(path.toFile());
                     }
 
-                    Stage stage = (Stage)getSelectButton().getScene().getWindow();
+                    javafx.stage.Window stage = getSelectButton().getScene().getWindow();
                     File selected = fileChooser.showOpenDialog(stage);
 
                     if(selected != null)
