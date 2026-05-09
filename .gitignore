@@ -1,2 +1,7 @@
-.DS_Store
 build/
+.gradle/
+*.class
+*.log
+.DS_Store
+.idea/
+*.iml
