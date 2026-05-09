@@ -279,7 +279,7 @@ public class LogsViewController {
             try {
                 String os = System.getProperty("os.name").toLowerCase();
                 if (os.contains("win")) {
-                    new ProcessBuilder("cmd", "/c", "start", "", logFile.getAbsolutePath()).start();
+                    new ProcessBuilder("notepad.exe", logFile.getAbsolutePath()).start();
                 } else if (os.contains("mac")) {
                     new ProcessBuilder("open", logFile.getAbsolutePath()).start();
                 } else {

@@ -41,6 +41,37 @@ where g++ >nul 2>&1 || (echo [ERROR] MinGW/g++ missing. & pause & exit)
 if "!JAVA_HOME!"=="" (echo [ERROR] JAVA_HOME not set. & pause & exit)
 for %%I in ("!JAVA_HOME!") do set "JH=%%~sI"
 
+:: Libvolk Dependency Check
+call :drawProgressBar 10 "Checking libvolk dependency..."
+if not exist "%VOLK_BASE%\volk\volk.h" (
+    echo [INFO] libvolk missing. Downloading v3.3.0...
+    powershell -Command "Invoke-WebRequest -Uri 'https://api.github.com/repos/gnuradio/volk/zipball/v3.3.0' -OutFile 'volk.zip'" >nul 2>&1
+    if not exist "volk.zip" (
+        echo [WARNING] Failed to download libvolk.
+        goto skip_volk
+    )
+    echo [INFO] Extracting libvolk...
+    powershell -Command "Expand-Archive -Path 'volk.zip' -DestinationPath 'volk_src' -Force" >nul 2>&1
+
+    echo [INFO] Compiling libvolk...
+    for /d %%D in (volk_src\*) do set "VOLK_DIR=%%D"
+    cd /d "!VOLK_DIR!"
+    if not exist build mkdir build
+    cd build
+    cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX="%VOLK_BASE%\.." .. >nul 2>&1
+    cmake --build . --target install >nul 2>&1
+    cd /d "%ROOT_DIR%"
+
+    rmdir /s /q volk_src >nul 2>&1
+    del volk.zip >nul 2>&1
+
+    if not exist "%VOLK_BASE%\volk\volk.h" (
+        echo [WARNING] libvolk installation failed.
+        goto skip_volk
+    )
+)
+:skip_volk
+
 :: Step 2: Cleanup
 call :drawProgressBar 15 "Cleaning workspace..."
 taskkill /F /FI "IMAGENAME eq java.exe" /T >nul 2>&1
@@ -82,7 +113,7 @@ for %%I in ("%VOLK_BASE%\..\lib") do set "V_LIB=%%~sI"
 g++ -shared -fPIC -I"!JH!\include" -I"!JH!\include\win32" -I"!JNI_GEN!" -I"src\main\cpp" -I"!V_INC!" -L"!V_LIB!" src\main\cpp\library.cpp -lvolk -o src\main\resources\native\library.dll 2> cpp_error.log
 if !ERRORLEVEL! NEQ 0 (
     type cpp_error.log >> "%LOG_FILE%"
-    goto ai_triage
+    echo [WARNING] C++ compilation failed. Using Java fallback.
 )
 
 :: Step 6: Final Packaging
@@ -130,7 +161,7 @@ echo ==========================================
 echo [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 > triage.ps1
 echo $log = if (Test-Path 'build_log.txt') { Get-Content 'build_log.txt' -Tail 30 ^| Out-String } else { 'No log' } >> triage.ps1
 :: Corrected the caret escape [^^^] to preserve the character in the PS1 script
-echo $log = $log -replace '[^^^\x20-\x7E]', '' -replace '\"', ' ' -replace '\\', '/' >> triage.ps1
+echo $log = $log -replace '[^^^\x20-\x7E]', '' -replace [char]34, ' ' -replace '\\', '/' >> triage.ps1
 echo $instr = 'SDRTrunk build failed. Log: ' + $log + '. Return JSON ONLY: {"target":"REPO|SCRIPT","content":"Fix advice"}' >> triage.ps1
 echo $body = @{ contents = @( @{ parts = @( @{ text = $instr } ) } ) } ^| ConvertTo-Json -Depth 10 >> triage.ps1
 echo try { >> triage.ps1
