@@ -180,6 +180,7 @@ public class HelpViewer extends JPanel {
         advancedSystemNode.add(new DefaultMutableTreeNode("Audio Recordings"));
         advancedSystemNode.add(new DefaultMutableTreeNode("Diagnostics"));
         advancedSystemNode.add(new DefaultMutableTreeNode("Gemini Ai"));
+        advancedSystemNode.add(new DefaultMutableTreeNode("Ignore Unwanted Talkgroups"));
         advancedSystemNode.add(new DefaultMutableTreeNode("Inactivity Monitoring"));
         advancedSystemNode.add(new DefaultMutableTreeNode("Notifications"));
         advancedSystemNode.add(new DefaultMutableTreeNode("System Requirements"));
