@@ -41,6 +41,38 @@ where g++ >nul 2>&1 || (echo [ERROR] MinGW/g++ missing. & pause & exit)
 if "!JAVA_HOME!"=="" (echo [ERROR] JAVA_HOME not set. & pause & exit)
 for %%I in ("!JAVA_HOME!") do set "JH=%%~sI"
 
+:: Libvolk Dependency Check
+call :drawProgressBar 10 "Checking libvolk dependency..."
+if not exist "%VOLK_BASE%\volk\volk.h" (
+    echo [INFO] libvolk missing. Downloading v3.3.0...
+    powershell -Command "Invoke-WebRequest -Uri 'https://api.github.com/repos/gnuradio/volk/zipball/v3.3.0' -OutFile 'volk.zip'" >nul 2>&1
+    if not exist "volk.zip" (
+        echo [ERROR] Failed to download libvolk.
+        pause
+        goto ai_triage
+    )
+    echo [INFO] Extracting libvolk...
+    powershell -Command "Expand-Archive -Path 'volk.zip' -DestinationPath 'volk_src' -Force" >nul 2>&1
+
+    echo [INFO] Compiling libvolk...
+    for /d %%D in (volk_src\*) do set "VOLK_DIR=%%D"
+    cd /d "!VOLK_DIR!"
+    if not exist build mkdir build
+    cd build
+    cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX="%VOLK_BASE%\.." .. >nul 2>&1
+    cmake --build . --target install >nul 2>&1
+    cd /d "%ROOT_DIR%"
+
+    rmdir /s /q volk_src >nul 2>&1
+    del volk.zip >nul 2>&1
+
+    if not exist "%VOLK_BASE%\volk\volk.h" (
+        echo [ERROR] libvolk installation failed.
+        pause
+        goto ai_triage
+    )
+)
+
 :: Step 2: Cleanup
 call :drawProgressBar 15 "Cleaning workspace..."
 taskkill /F /FI "IMAGENAME eq java.exe" /T >nul 2>&1
