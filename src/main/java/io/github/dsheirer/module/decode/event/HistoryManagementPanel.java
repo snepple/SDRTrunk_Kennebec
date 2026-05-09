@@ -28,6 +28,7 @@ import javafx.scene.Scene;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.util.function.Consumer;
 
 /**
@@ -92,6 +93,7 @@ public class HistoryManagementPanel<T> extends JPanel
         add(mDummyAnchor, BorderLayout.EAST);
 
         mJfxPanel = new JFXPanel();
+        mJfxPanel.setPreferredSize(new Dimension(300, 38));
         add(mJfxPanel, BorderLayout.CENTER);
 
         Platform.runLater(this::initJavaFX);
