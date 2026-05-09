@@ -1,1 +1,5 @@
 .DS_Store
+
+build/
+.gradle/
+src/main/resources/native/liblibrary-linux-x64.so
