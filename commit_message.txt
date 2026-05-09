@@ -1,0 +1,3 @@
+Fix update_sdrtrunk.bat libvolk/compilation fallback logic
+
+Changed the `libvolk` installation and `g++` compilation steps in `update_sdrtrunk.bat` to emit a `[WARNING]` and continue the build process instead of emitting an `[ERROR]` and aborting via `goto ai_triage`. This allows the script to utilize the intended Java fallback implementation if native dependencies or tools are missing on the host system.

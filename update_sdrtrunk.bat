@@ -47,9 +47,8 @@ if not exist "%VOLK_BASE%\volk\volk.h" (
     echo [INFO] libvolk missing. Downloading v3.3.0...
     powershell -Command "Invoke-WebRequest -Uri 'https://api.github.com/repos/gnuradio/volk/zipball/v3.3.0' -OutFile 'volk.zip'" >nul 2>&1
     if not exist "volk.zip" (
-        echo [ERROR] Failed to download libvolk.
-        pause
-        goto ai_triage
+        echo [WARNING] Failed to download libvolk.
+        goto skip_volk
     )
     echo [INFO] Extracting libvolk...
     powershell -Command "Expand-Archive -Path 'volk.zip' -DestinationPath 'volk_src' -Force" >nul 2>&1
@@ -67,11 +66,11 @@ if not exist "%VOLK_BASE%\volk\volk.h" (
     del volk.zip >nul 2>&1
 
     if not exist "%VOLK_BASE%\volk\volk.h" (
-        echo [ERROR] libvolk installation failed.
-        pause
-        goto ai_triage
+        echo [WARNING] libvolk installation failed.
+        goto skip_volk
     )
 )
+:skip_volk
 
 :: Step 2: Cleanup
 call :drawProgressBar 15 "Cleaning workspace..."
@@ -114,7 +113,7 @@ for %%I in ("%VOLK_BASE%\..\lib") do set "V_LIB=%%~sI"
 g++ -shared -fPIC -I"!JH!\include" -I"!JH!\include\win32" -I"!JNI_GEN!" -I"src\main\cpp" -I"!V_INC!" -L"!V_LIB!" src\main\cpp\library.cpp -lvolk -o src\main\resources\native\library.dll 2> cpp_error.log
 if !ERRORLEVEL! NEQ 0 (
     type cpp_error.log >> "%LOG_FILE%"
-    goto ai_triage
+    echo [WARNING] C++ compilation failed. Using Java fallback.
 )
 
 :: Step 6: Final Packaging
