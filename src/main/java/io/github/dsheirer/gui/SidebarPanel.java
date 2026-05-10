@@ -91,6 +91,7 @@ public class SidebarPanel extends JPanel {
         playlistEditorItem.addSubItem("Radio Reference", "playlist_radioreference");
         playlistEditorItem.addSubItem("Two Tones", "playlist_twotones");
         playlistEditorItem.addSubItem("Playlists", "playlist_playlists");
+        playlistEditorItem.setExpanded(true);
         mItems.add(playlistEditorItem);
 
         mItems.add(new SidebarItem("Tuners", FontAwesome.SLIDERS, "tuners", true));
@@ -167,6 +168,10 @@ public class SidebarPanel extends JPanel {
             return !mSubItems.isEmpty();
         }
 
+        public void setExpanded(boolean expanded) {
+            mExpanded = expanded;
+        }
+
         public boolean isExpanded() {
             return mExpanded;
         }
@@ -220,12 +225,12 @@ public class SidebarPanel extends JPanel {
             mView.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseEntered(MouseEvent e) {
-                    if (!mActive) mView.setBackground(HOVER_COLOR);
+                    if (!mActive) { mView.setOpaque(true); mView.setBackground(HOVER_COLOR); }
                 }
 
                 @Override
                 public void mouseExited(MouseEvent e) {
-                    if (!mActive) mView.setBackground(BG_COLOR);
+                    if (!mActive) { mView.setOpaque(false); mView.setBackground(BG_COLOR); }
                 }
 
                 @Override
@@ -263,7 +268,7 @@ public class SidebarPanel extends JPanel {
         }
 
         public void updateStyle() {
-            mView.setBackground(mActive ? ACTIVE_COLOR : BG_COLOR);
+            if (mActive) { mView.setOpaque(true); mView.setBackground(ACTIVE_COLOR); } else { mView.setOpaque(false); mView.setBackground(BG_COLOR); }
             mView.setToolTipText(mCollapsed ? mLabel : null);
             mView.revalidate();
             mView.repaint();
@@ -320,12 +325,12 @@ public class SidebarPanel extends JPanel {
                 mView.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseEntered(MouseEvent e) {
-                        if (!mActive) mView.setBackground(HOVER_COLOR);
+                        if (!mActive) { mView.setOpaque(true); mView.setBackground(HOVER_COLOR); }
                     }
 
                     @Override
                     public void mouseExited(MouseEvent e) {
-                        if (!mActive) mView.setBackground(BG_COLOR);
+                        if (!mActive) { mView.setOpaque(false); mView.setBackground(BG_COLOR); }
                     }
 
 
@@ -342,7 +347,7 @@ public class SidebarPanel extends JPanel {
             }
 
             private void updateStyle() {
-                mView.setBackground(mActive ? ACTIVE_COLOR : BG_COLOR);
+                if (mActive) { mView.setOpaque(true); mView.setBackground(ACTIVE_COLOR); } else { mView.setOpaque(false); mView.setBackground(BG_COLOR); }
                 mView.setToolTipText(mCollapsed ? mLabel : null);
                 mView.revalidate();
                 mView.repaint();
