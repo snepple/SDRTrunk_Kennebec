@@ -274,6 +274,10 @@ public class TunerViewPanel extends JPanel
         if(mAddRecordingButton == null)
         {
             mAddRecordingButton = new JButton("Add Recording Tuner");
+            mAddRecordingButton.setMnemonic(java.awt.event.KeyEvent.VK_A);
+            mAddRecordingButton.setToolTipText("Add a new recording tuner to the workspace");
+            mAddRecordingButton.getAccessibleContext().setAccessibleName("Add Recording Tuner");
+            mAddRecordingButton.getAccessibleContext().setAccessibleDescription("Opens a dialog to add a new recording tuner");
             mAddRecordingButton.addActionListener(e ->
             {
                 AddRecordingTunerDialog dialog = new AddRecordingTunerDialog(mUserPreferences, mDiscoveredTunerModel,
@@ -291,6 +295,10 @@ public class TunerViewPanel extends JPanel
         if(mRemoveRecordingButton == null)
         {
             mRemoveRecordingButton = new JButton("Remove Recording Tuner");
+            mRemoveRecordingButton.setMnemonic(java.awt.event.KeyEvent.VK_R);
+            mRemoveRecordingButton.setToolTipText("Permanently remove the selected recording tuner. This action cannot be undone.");
+            mRemoveRecordingButton.getAccessibleContext().setAccessibleName("Remove Recording Tuner");
+            mRemoveRecordingButton.getAccessibleContext().setAccessibleDescription("Removes the currently selected recording tuner");
             mRemoveRecordingButton.setEnabled(false);
             mRemoveRecordingButton.addActionListener(e -> {
                 int[] indexes = mTunerTable.getSelectionModel().getSelectedIndices();
