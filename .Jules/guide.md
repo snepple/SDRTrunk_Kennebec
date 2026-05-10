@@ -18,3 +18,7 @@
 ## 2026-05-08 - PPM (Parts Per Million)
 **Simplified:**
 - PPM (Parts Per Million): Adjusts your tuner to match the exact frequency. If your hardware gets warm and signals shift, adjust this until the signal is centered.
+
+## 2026-05-08 - LNA Gain
+**Simplified:**
+- LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.

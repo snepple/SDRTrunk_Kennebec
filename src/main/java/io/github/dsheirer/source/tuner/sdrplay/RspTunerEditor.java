@@ -298,6 +298,19 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
     }
 
     /**
+     * Creates a standardized help icon button with the provided tooltip text.
+     */
+    protected JButton createHelpIcon(String text) {
+        JButton button = new JButton(text);
+        // Style as a subtle flat button
+        button.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        return button;
+    }
+
+    /**
      * IF Gain Slider
      */
     protected IfGainSlider getIfGainSlider()
