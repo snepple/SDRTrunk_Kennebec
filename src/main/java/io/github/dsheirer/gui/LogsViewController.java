@@ -277,16 +277,28 @@ public class LogsViewController {
 
     private void setupSearchField(TextField searchField, FilteredList<LogFile> filteredData) {
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.isEmpty()) {
+                filteredData.setPredicate(logFile -> true);
+                return;
+            }
+
+            Pattern searchPattern;
+            try {
+                searchPattern = Pattern.compile(newValue, Pattern.CASE_INSENSITIVE);
+            } catch (PatternSyntaxException e) {
+                searchPattern = null;
+            }
+
+            final Pattern pattern = searchPattern;
+            final String lowerCaseFilter = newValue.toLowerCase();
+
             filteredData.setPredicate(logFile -> {
-                if (newValue == null || newValue.isEmpty()) return true;
-                try {
-                    Pattern pattern = Pattern.compile(newValue, Pattern.CASE_INSENSITIVE);
+                if (pattern != null) {
                     if (pattern.matcher(logFile.getName()).find()) return true;
                     if (logFile.getDate() != null && pattern.matcher(logFile.getDate().toString()).find()) return true;
-                } catch (PatternSyntaxException e) {}
-                String lowerCaseFilter = newValue.toLowerCase();
+                }
                 if (logFile.getName().toLowerCase().contains(lowerCaseFilter)) return true;
-                if (logFile.getDate() != null && logFile.getDate().toString().contains(lowerCaseFilter)) return true;
+                if (logFile.getDate() != null && logFile.getDate().toString().toLowerCase().contains(lowerCaseFilter)) return true;
                 return false;
             });
         });
