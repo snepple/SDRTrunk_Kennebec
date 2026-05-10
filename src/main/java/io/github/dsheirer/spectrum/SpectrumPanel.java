@@ -193,7 +193,7 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
 
     public void setSampleSize(double sampleSize) {
         Validate.isTrue(2.0 <= sampleSize && sampleSize <= 64.0);
-        mDBScale = (float) (20.0 * FastMath.log10(FastMath.pow(2.0, sampleSize - 1)));
+        mDBScale = (float) (20.0 * FastMath.log10(1.0 / FastMath.pow(2.0, sampleSize - 1)));
         mNeedsRedraw = true;
     }
 
