@@ -152,15 +152,19 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     @Override
     public void onToggleDetails() {
         toggleNowPlayingDetailsPanelVisibility();
-        mMainContentPanel.revalidate();
-        mMainContentPanel.repaint();
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            mMainContentPanel.revalidate();
+            mMainContentPanel.repaint();
+        });
     }
 
     @Override
     public void onToggleStreaming() {
         toggleBroadcastStatusPanelVisibility();
-        mMainContentPanel.revalidate();
-        mMainContentPanel.repaint();
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            mMainContentPanel.revalidate();
+            mMainContentPanel.repaint();
+        });
     }
 
     @Override
@@ -564,6 +568,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
      */
     private void initGUI()
     {
+        try {
+            javax.swing.SwingUtilities.invokeAndWait(() -> {
 
         /**
          * Setup main JFrame window
@@ -646,6 +652,10 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mResourceMonitor.start();
         mControllerPanel.setResourcePanel(mControllerResourceStatusPanel);
 
+            });
+        } catch (Exception e) {
+            mLog.error("Error creating initGUI", e);
+        }
     }
 
 
