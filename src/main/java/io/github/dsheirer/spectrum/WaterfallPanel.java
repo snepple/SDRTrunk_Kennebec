@@ -107,7 +107,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
 
     private void reset() {
         if (mDFTSize <= 0) return;
-        mImageHeight = Math.max((int) Math.ceil(mCanvas.getHeight()), 100);
+        mImageHeight = Math.max((int) Math.ceil(mCanvas.getHeight()), 1);
 
         mRowQueue.clear();
         mWaterfallImage = new WritableImage(mDFTSize, mImageHeight);
@@ -196,7 +196,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
         double width = mCanvas.getWidth();
         double height = mCanvas.getHeight();
 
-        if ((int) Math.ceil(height) != mImageHeight && height > 0) {
+        if (Math.max((int) Math.ceil(height), 1) != mImageHeight && height > 0) {
             reset();
             return;
         }
