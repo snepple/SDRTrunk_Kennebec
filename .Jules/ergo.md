@@ -14,3 +14,7 @@
 ## 2024-05-24 - Application Preference Tooltips
 **Learning:** Legacy UI toggles for complex system interactions (like Watchdog or background scripts) lack explanatory tooltips, increasing user confusion.
 **Action:** When adding new application-level configuration options, always provide an attached `Tooltip` to clarify their purpose to the user.
+
+## 2024-05-24 - Alias Item Editor Tooltips
+**Learning:** In complex configuration panels like AliasItemEditor, primary fields (Name, Group, Listen, Record, Priority) often lack inline explanations, increasing user error and cognitive load.
+**Action:** Added clear, descriptive tooltips to primary configuration inputs to clarify their function and behavioral impact.
