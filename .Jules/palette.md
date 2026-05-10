@@ -50,3 +50,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-08 - Adding Tooltips to Preference Editors
 **Learning:** Adding context-specific tooltips to preference UI components (like CheckBoxes and ComboBoxes) significantly improves accessibility and user understanding of what technical settings do.
 **Action:** When updating or creating new JavaFX preferences UI, always include `Tooltip`s to explain technical settings, especially those that alter data formats or display behaviors.
+## 2026-05-10 - P25 Phase 2 Viewer HIG Improvements
+**Learning:** JavaFX Label graphics default to rendering on the left side of the text (`ContentDisplay.LEFT`). When adding help icons to standard form labels (e.g., `WACN:`), explicitly setting `setContentDisplay(ContentDisplay.RIGHT)` ensures the icon appears after the text, matching common HIG and web conventions.
+**Action:** When adding `IconNode` help graphics to JavaFX labels, always specify `setContentDisplay(ContentDisplay.RIGHT)` to ensure correct visual flow.
