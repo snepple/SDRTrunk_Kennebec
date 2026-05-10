@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.web.WebView?>
+
+<SplitPane dividerPositions="0.3" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.dsheirer.gui.help.HelpViewController">
+   <items>
+      <VBox spacing="5.0">
+         <children>
+            <TextField fx:id="searchField" promptText="Search Help..." />
+            <TreeView fx:id="navigationTree" VBox.vgrow="ALWAYS" />
+         </children>
+         <padding>
+            <Insets bottom="12.0" left="12.0" right="12.0" top="12.0" />
+         </padding>
+      </VBox>
+      <WebView fx:id="contentWebView" />
+   </items>
+</SplitPane>
