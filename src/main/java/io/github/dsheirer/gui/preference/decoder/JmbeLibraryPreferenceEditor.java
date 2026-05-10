@@ -207,7 +207,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
             {
                 Version current = mUserPreferences.getJmbeLibraryPreference().getCurrentVersion();
                 boolean useFork = mUserPreferences.getJmbeLibraryPreference().getUseBazinetaFork();
-                final Release release = GitHub.getLatestRelease(useFork ? JmbeCreator.GITHUB_BAZINETA_JMBE_RELEASES_URL : JmbeCreator.GITHUB_JMBE_RELEASES_URL);
+                final Release release = GitHub.getLatestRelease(JmbeCreator.GITHUB_JMBE_RELEASES_URL);
 
                 mLog.info("Checking for JMBE Library Updates ...");
                 mLog.info("Current: " + (current != null ? current.toString() : "empty"));
@@ -254,7 +254,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
                                     if(buttonType == ButtonType.YES)
                                     {
                                         mLog.info("Posting JMBE editor request to event bus");
-                                        MyEventBus.getGlobalEventBus().post(new JmbeEditorRequest(release));
+                                        MyEventBus.getGlobalEventBus().post(new JmbeEditorRequest(release, useFork));
                                     }
                                 });
                             }
