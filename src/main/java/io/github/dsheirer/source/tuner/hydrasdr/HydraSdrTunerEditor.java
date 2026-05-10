@@ -51,7 +51,6 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(HydraSdrTunerEditor.class);
-    private JButton mTunerInfoButton;
     private JComboBox<HydraSdrSampleRate> mSampleRateCombo;
     private JComboBox<GainMode> mGainModeCombo;
     private JSlider mMasterGainSlider;
@@ -116,7 +115,6 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
         getButtonPanel().updateControls();
         getFrequencyPanel().updateControls();
         getSampleRateCombo().setEnabled(hasTuner() && !getTuner().getTunerController().isLockedSampleRate());
-        getTunerInfoButton().setEnabled(hasTuner());
         getBiasTCheckBox().setEnabled(hasTuner());
         if(hasTuner() && hasConfiguration())
         {
@@ -145,12 +143,10 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 3", "[right][grow,fill][fill]",
-                "[][][][][][][][][][][][][][][][grow]"));
+        setLayout(new MigLayout("fill,wrap 2", "[right][grow,fill]", ""));
 
         add(new JLabel("Tuner:"));
         add(getTunerIdLabel());
-        add(getTunerInfoButton());
 
         add(new JLabel("Status:"));
         add(getTunerStatusLabel(), "wrap");
@@ -547,20 +543,7 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
     /**
      * Hyperlink button that provides tuner information
      */
-    private JButton getTunerInfoButton()
-    {
-        if(mTunerInfoButton == null)
-        {
-            mTunerInfoButton = new JButton("Info");
-            mTunerInfoButton.setEnabled(false);
-            mTunerInfoButton.addActionListener(e -> JOptionPane.showMessageDialog(HydraSdrTunerEditor.this,
-                    getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));
-        }
-
-        return mTunerInfoButton;
-    }
-
-    /**
+/**
      * Updates the enabled state of each of the gain controls according to the
      * specified gain mode.  The master gain control is enabled for linearity
      * and sensitivity and the individual gain controls are disabled, and
@@ -703,7 +686,7 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
         updateSampleRateToolTip();
     }
 
-    private String getTunerInfo()
+    protected String getTunerInfo()
     {
         if(getDiscoveredTuner().getTunerStatus() == TunerStatus.ERROR)
         {
