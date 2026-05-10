@@ -53,3 +53,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-08 - Adding Tooltips to Preference Editors
 **Learning:** Adding context-specific tooltips to preference UI components (like CheckBoxes and ComboBoxes) significantly improves accessibility and user understanding of what technical settings do.
 **Action:** When updating or creating new JavaFX preferences UI, always include `Tooltip`s to explain technical settings, especially those that alter data formats or display behaviors.
+## 2023-10-25 - Action Button Accessibility and Feedback
+**Learning:** Legacy Swing buttons in lists or toolbars often lack accessibility text or feedback tooltips, which makes interaction ambiguous (violating HIG's Clarity and Feedback rules) and impedes screen readers. Action buttons that are destructive need to indicate this clearly in the tooltip.
+**Action:** When working on Swing panels with action buttons (like TunerViewPanel), ensure each JButton has `setToolTipText()`, mnemonics via `setMnemonic()`, and accessible contexts set using `getAccessibleContext().setAccessibleName()` and `getAccessibleContext().setAccessibleDescription()`.
