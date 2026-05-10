@@ -48,7 +48,6 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(FCD1TunerEditor.class);
-    private JButton mTunerInfoButton;
     private JComboBox<LNAGain> mLnaGainCombo;
     private JComboBox<LNAEnhance> mLnaEnhanceCombo;
     private JComboBox<MixerGain> mMixerGainCombo;
@@ -114,7 +113,6 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
         getTunerStatusLabel().setText(status);
         getButtonPanel().updateControls();
         getFrequencyPanel().updateControls();
-        getTunerInfoButton().setEnabled(hasTuner());
 
         if(hasTuner() && hasConfiguration())
         {
@@ -145,7 +143,6 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
 
         add(new JLabel("Tuner:"));
         add(getTunerIdLabel());
-        add(getTunerInfoButton());
 
         add(new JLabel("Status:"));
         add(getTunerStatusLabel(), "wrap");
@@ -327,20 +324,7 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
         getFrequencyPanel().updateControls();
     }
 
-    public JButton getTunerInfoButton()
-    {
-        if(mTunerInfoButton == null)
-        {
-            mTunerInfoButton = new JButton("Tuner Info");
-            mTunerInfoButton.setEnabled(false);
-            mTunerInfoButton.addActionListener(e -> JOptionPane.showMessageDialog(FCD1TunerEditor.this,
-                    getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));
-        }
-
-        return mTunerInfoButton;
-    }
-
-    private String getTunerInfo()
+protected String getTunerInfo()
     {
         StringBuilder sb = new StringBuilder();
 

@@ -101,6 +101,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     private JButton mResetFrequenciesButton;
     private boolean mLoading = false;
     private JTextField mFriendlyNameTextField;
+    private JButton mInfoConfigButton;
 
     /**
      * Constructs an instance
@@ -377,6 +378,30 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         }
 
         return mFrequencyCorrectionSpinner;
+    }
+
+
+    protected JButton getInfoConfigButton()
+    {
+        if(mInfoConfigButton == null)
+        {
+            mInfoConfigButton = new JButton("Info/Config");
+            mInfoConfigButton.addActionListener(e -> {
+                JPanel panel = new JPanel(new MigLayout("insets 0", "[][grow,fill]", ""));
+                String info = getTunerInfo();
+                if(info != null && !info.isEmpty()) {
+                    panel.add(new JLabel(info), "span, wrap");
+                }
+                panel.add(new JLabel("Friendly Name:"));
+                panel.add(getFriendlyNameTextField());
+                JOptionPane.showMessageDialog(TunerEditor.this, panel, "Tuner Info/Config", JOptionPane.INFORMATION_MESSAGE);
+            });
+        }
+        return mInfoConfigButton;
+    }
+
+    protected String getTunerInfo() {
+        return "";
     }
 
     protected ButtonPanel getButtonPanel()
@@ -925,14 +950,21 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         /**
          * Constructs an instance
          */
-        public ButtonPanel()
+                public ButtonPanel()
         {
-            setLayout(new MigLayout("insets 0,fill", "[][][][][][grow,fill]", ""));
-            add(getEnabledButton());
-            add(getRecordButton());
-            add(getViewSpectrumButton());
-            add(getNewSpectrumButton());
-            add(getRestartTunerButton(), "wrap");
+            setLayout(new MigLayout("insets 0,fill", "", ""));
+            JPanel row1 = new JPanel(new MigLayout("insets 0", "[][][][]", ""));
+            row1.add(getEnabledButton());
+            row1.add(getRecordButton());
+            row1.add(getViewSpectrumButton());
+            row1.add(getNewSpectrumButton());
+
+            JPanel row2 = new JPanel(new MigLayout("insets 0", "[][]", ""));
+            row2.add(getInfoConfigButton());
+            row2.add(getRestartTunerButton());
+
+            add(row1, "wrap");
+            add(row2, "wrap");
             add(getRecordingStatusLabel(), "span");
         }
 
@@ -980,20 +1012,16 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
 
             JPanel minMaxPanel = new JPanel();
             minMaxPanel.setLayout(new MigLayout("insets 0", "[][][][][][grow,fill]", ""));
-            minMaxPanel.add(new JLabel("Minimum:"));
+            minMaxPanel.add(new JLabel("Min:"));
             minMaxPanel.add(getMinimumFrequencyTextField());
-            minMaxPanel.add(new JLabel("Maximum:"));
+            minMaxPanel.add(new JLabel("Max:"));
             minMaxPanel.add(getMaximumFrequencyTextField());
             minMaxPanel.add(getResetFrequenciesButton());
             add(minMaxPanel, "span");
 
             add(getTunerLockedStatusLabel(), "span");
 
-            JPanel friendlyNamePanel = new JPanel();
-            friendlyNamePanel.setLayout(new MigLayout("insets 0", "[][grow,fill]", ""));
-            friendlyNamePanel.add(new JLabel("Friendly Name:"));
-            friendlyNamePanel.add(getFriendlyNameTextField());
-            add(friendlyNamePanel, "span");
+
         }
 
         /**
