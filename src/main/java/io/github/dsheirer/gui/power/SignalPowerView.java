@@ -26,6 +26,7 @@ import io.github.dsheirer.module.ProcessingChain;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.source.SourceEvent;
 import java.awt.EventQueue;
+import java.awt.event.KeyEvent;
 import java.text.DecimalFormat;
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.swing.IconFontSwing;
@@ -109,8 +110,11 @@ public class SignalPowerView extends JPanel
         valuePanel.add(mSquelchDownButton, "wrap");
 
         mSquelchAutoTrackCheckBox = new JCheckBox("Auto Track");
-        mSquelchAutoTrackCheckBox.setToolTipText("Enable or disable monitoring of the noise floor to auto-adjust the " +
-                "squelch threshold value maintaining a consistent level/buffer above the noise floor");
+        mSquelchAutoTrackCheckBox.setMnemonic(KeyEvent.VK_A);
+        mSquelchAutoTrackCheckBox.setToolTipText("<html>Enable or disable monitoring of the noise floor to auto-adjust the<br>" +
+                "squelch threshold value, maintaining a consistent level above the noise floor.</html>");
+        mSquelchAutoTrackCheckBox.getAccessibleContext().setAccessibleName("Auto Track Squelch");
+        mSquelchAutoTrackCheckBox.getAccessibleContext().setAccessibleDescription("Enable or disable squelch auto-tracking");
         mSquelchAutoTrackCheckBox.setEnabled(false);
         mSquelchAutoTrackCheckBox.addActionListener(e ->
         {
