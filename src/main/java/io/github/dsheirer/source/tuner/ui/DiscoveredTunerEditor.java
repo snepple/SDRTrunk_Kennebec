@@ -30,6 +30,10 @@ import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
@@ -42,8 +46,8 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
     private static final Logger mLog = LoggerFactory.getLogger(DiscoveredTunerEditor.class);
     private UserPreferences mUserPreferences;
     private TunerManager mTunerManager;
-    private JPanel mEmptyEditor = new EmptyTunerEditor();
-    private JPanel mEditor = mEmptyEditor;
+    private JPanel mEmptyEditor;
+    private JPanel mEditor;
     private JScrollPane mEditorScroller;
 
     /**
@@ -55,6 +59,23 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
     {
         mUserPreferences = userPreferences;
         mTunerManager = tunerManager;
+
+        mEmptyEditor = new JPanel(new MigLayout("insets 0, hidemode 3, fill", "[grow,fill]", "[grow,fill]"));
+        JFXPanel jfxPanel = new JFXPanel();
+        mEmptyEditor.add(jfxPanel, "grow, push");
+
+        Platform.runLater(() -> {
+            EmptyTunerEditor emptyTunerEditor = new EmptyTunerEditor();
+            Scene scene = new Scene(emptyTunerEditor);
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+            jfxPanel.setScene(scene);
+        });
+
+        mEditor = mEmptyEditor;
+
         init();
     }
 

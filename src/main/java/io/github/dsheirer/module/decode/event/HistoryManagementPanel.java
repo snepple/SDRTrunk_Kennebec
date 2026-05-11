@@ -115,7 +115,10 @@ public class HistoryManagementPanel<T> extends JPanel
     }
 
     private void handleFilterClick() {
-        SwingUtilities.invokeLater(() -> getFilterEditor().setVisible(true));
+        Platform.runLater(() -> {
+            getFilterEditor().show();
+            getFilterEditor().toFront();
+        });
     }
 
     private void handleClearClick() {
@@ -173,7 +176,7 @@ public class HistoryManagementPanel<T> extends JPanel
     {
         if(mFilterEditor == null)
         {
-            mFilterEditor = new FilterEditor<>(mFilterEditorTitle, mDummyAnchor, mFilterSet);
+            mFilterEditor = new FilterEditor<>(mFilterEditorTitle, mFilterSet);
         }
 
         return mFilterEditor;

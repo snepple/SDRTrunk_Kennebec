@@ -19,45 +19,65 @@
 
 package io.github.dsheirer.filter;
 
-import java.awt.Component;
-import net.miginfocom.swing.MigLayout;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
+import java.io.IOException;
 
 /**
  * Filter editor
  * @param <T> item type for editing
  */
-public class FilterEditor<T> extends JFrame
+public class FilterEditor<T> extends Stage
 {
-    private FilterEditorPanel<T> mEditorPanel;
+    private static final Logger mLog = LoggerFactory.getLogger(FilterEditor.class);
+    private FilterEditorController<T> mController;
 
     /**
      * Constructor
      * @param title for the editor window frame
-     * @param owner to register the popup location
      * @param filterSet to use initially
      */
-    public FilterEditor(String title, Component owner, FilterSet<T> filterSet)
+    public FilterEditor(String title, FilterSet<T> filterSet)
     {
         if(filterSet == null)
         {
             throw new IllegalArgumentException("Unable to construct FilterEditor - FilterSet cannot be null");
         }
         setTitle(title);
-        setSize(600, 400);
-        setLocationRelativeTo(owner);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLayout(new MigLayout("", "[grow,fill]", "[grow,fill][]"));
-        mEditorPanel = new FilterEditorPanel<>(filterSet);
-        JScrollPane scroller = new JScrollPane(mEditorPanel);
-        scroller.setViewportView(mEditorPanel);
-        add(scroller, "wrap");
-        JButton close = new JButton("Close");
-        close.addActionListener(e -> dispose());
-        add(close);
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/FilterEditor.fxml"));
+            Parent root = loader.load();
+            mController = loader.getController();
+            mController.setFilterSet(filterSet);
+
+            Scene scene = new Scene(root, 600, 400);
+
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+
+            setScene(scene);
+        } catch (IOException e) {
+            mLog.error("Error loading FilterEditor.fxml", e);
+        }
+    }
+
+    /**
+     * Constructor compatible with old signature.
+     * @param title for the editor window frame
+     * @param owner legacy owner, ignored in JavaFX
+     * @param filterSet to use initially
+     */
+    public FilterEditor(String title, Object owner, FilterSet<T> filterSet)
+    {
+        this(title, filterSet);
     }
 
     /**
@@ -66,6 +86,8 @@ public class FilterEditor<T> extends JFrame
      */
     public void updateFilterSet(FilterSet<T> filterSet)
     {
-        mEditorPanel.updateFilterSet(filterSet);
+        if (mController != null) {
+            mController.setFilterSet(filterSet);
+        }
     }
 }
