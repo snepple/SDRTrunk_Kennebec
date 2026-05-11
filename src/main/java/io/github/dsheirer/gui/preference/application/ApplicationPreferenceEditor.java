@@ -39,6 +39,7 @@ import javafx.scene.layout.VBox;
 import io.github.dsheirer.gui.UsbMonitorManager;
 import io.github.dsheirer.gui.WindowsReliabilityManager;
 import org.controlsfx.control.ToggleSwitch;
+import javafx.scene.control.Tooltip;
 
 /**
  * Preference settings for application
@@ -54,6 +55,7 @@ public class ApplicationPreferenceEditor extends HBox
     private Label mMemoryWarningLabel;
     private ToggleSwitch mAutomaticDiagnosticMonitoringToggle;
     private ToggleSwitch mUsbMonitorToggle;
+    private boolean mUpdatingUsbMonitor = false;
 
     /**
      * Constructs an instance
@@ -170,6 +172,7 @@ public class ApplicationPreferenceEditor extends HBox
                 javafx.scene.layout.Region srSpacer1 = new javafx.scene.layout.Region();
                 HBox.setHgrow(srSpacer1, Priority.ALWAYS);
                 ToggleSwitch autoStartToggle = new ToggleSwitch();
+                autoStartToggle.setTooltip(new Tooltip("Automatically launch SDRTrunk when you log into Windows"));
                 autoStartToggle.setSelected(mApplicationPreference.isAutoStartEnabled());
                 autoStartToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
                     mApplicationPreference.setAutoStartEnabled(newValue);
@@ -185,6 +188,7 @@ public class ApplicationPreferenceEditor extends HBox
                 javafx.scene.layout.Region srSpacer2 = new javafx.scene.layout.Region();
                 HBox.setHgrow(srSpacer2, Priority.ALWAYS);
                 ToggleSwitch watchdogToggle = new ToggleSwitch();
+                watchdogToggle.setTooltip(new Tooltip("Monitors SDRTrunk and restarts it if it crashes or is closed unexpectedly"));
                 watchdogToggle.setSelected(mApplicationPreference.isWatchdogEnabled());
                 watchdogToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
                     mApplicationPreference.setWatchdogEnabled(newValue);
@@ -236,6 +240,7 @@ public class ApplicationPreferenceEditor extends HBox
         if(mAutomaticDiagnosticMonitoringToggle == null)
         {
             mAutomaticDiagnosticMonitoringToggle = new ToggleSwitch();
+            mAutomaticDiagnosticMonitoringToggle.setTooltip(new Tooltip("Monitors system health (memory, CPU, tuners) and logs warnings if issues are detected"));
             mAutomaticDiagnosticMonitoringToggle.setSelected(mApplicationPreference.isAutomaticDiagnosticMonitoring());
             mAutomaticDiagnosticMonitoringToggle.selectedProperty().addListener((observable, oldValue, enabled) ->
                     mApplicationPreference.setAutomaticDiagnosticMonitoring(enabled));
@@ -249,19 +254,26 @@ public class ApplicationPreferenceEditor extends HBox
         if(mUsbMonitorToggle == null)
         {
             mUsbMonitorToggle = new ToggleSwitch();
+            mUsbMonitorToggle.setTooltip(new Tooltip("Installs a Windows service to automatically reset SDR USB devices if they become unresponsive"));
             mUsbMonitorToggle.setSelected(mApplicationPreference.isUsbMonitorInstalled());
             mUsbMonitorToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                if (mUpdatingUsbMonitor) return;
+
                 if(newValue) {
                     // Trigger installation
                     boolean success = UsbMonitorManager.install(mUserPreferences);
                     if(!success) {
+                        mUpdatingUsbMonitor = true;
                         mUsbMonitorToggle.setSelected(false);
+                        mUpdatingUsbMonitor = false;
                     }
                 } else {
                     // Trigger uninstallation
                     boolean success = UsbMonitorManager.uninstall(mUserPreferences);
                     if(!success) {
+                        mUpdatingUsbMonitor = true;
                         mUsbMonitorToggle.setSelected(true);
+                        mUpdatingUsbMonitor = false;
                     }
                 }
             });

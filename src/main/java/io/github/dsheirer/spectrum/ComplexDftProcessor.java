@@ -260,9 +260,12 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
 				/* Only run if we're not currently running */
                 if(mRunning.compareAndSet(false, true))
                 {
-                    checkFFTSize();
-                    calculate();
-                    mRunning.set(false);
+                    try {
+                        checkFFTSize();
+                        calculate();
+                    } finally {
+                        mRunning.set(false);
+                    }
                 }
             }
             catch(Exception e)

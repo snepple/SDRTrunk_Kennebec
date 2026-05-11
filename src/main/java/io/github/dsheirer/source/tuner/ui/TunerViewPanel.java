@@ -28,6 +28,8 @@ import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.manager.TunerStatus;
 import io.github.dsheirer.source.tuner.recording.AddRecordingTunerDialog;
+import com.google.common.eventbus.Subscribe;
+import javax.swing.JOptionPane;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -94,6 +96,14 @@ public class TunerViewPanel extends JPanel
         mTunerConfigurationManager = tunerManager.getTunerConfigurationManager();
         mUserPreferences = userPreferences;
         init();
+    }
+
+    @Subscribe
+    public void process(USBAlertEvent event)
+    {
+        EventQueue.invokeLater(() -> {
+            JOptionPane.showMessageDialog(this, event.getMessage(), "USB Bus Overload Detected", JOptionPane.WARNING_MESSAGE);
+        });
     }
 
     private void init()
@@ -264,6 +274,10 @@ public class TunerViewPanel extends JPanel
         if(mAddRecordingButton == null)
         {
             mAddRecordingButton = new JButton("Add Recording Tuner");
+            mAddRecordingButton.setMnemonic(java.awt.event.KeyEvent.VK_A);
+            mAddRecordingButton.setToolTipText("Add a new recording tuner to the workspace");
+            mAddRecordingButton.getAccessibleContext().setAccessibleName("Add Recording Tuner");
+            mAddRecordingButton.getAccessibleContext().setAccessibleDescription("Opens a dialog to add a new recording tuner");
             mAddRecordingButton.addActionListener(e ->
             {
                 AddRecordingTunerDialog dialog = new AddRecordingTunerDialog(mUserPreferences, mDiscoveredTunerModel,
@@ -281,6 +295,10 @@ public class TunerViewPanel extends JPanel
         if(mRemoveRecordingButton == null)
         {
             mRemoveRecordingButton = new JButton("Remove Recording Tuner");
+            mRemoveRecordingButton.setMnemonic(java.awt.event.KeyEvent.VK_R);
+            mRemoveRecordingButton.setToolTipText("Permanently remove the selected recording tuner. This action cannot be undone.");
+            mRemoveRecordingButton.getAccessibleContext().setAccessibleName("Remove Recording Tuner");
+            mRemoveRecordingButton.getAccessibleContext().setAccessibleDescription("Removes the currently selected recording tuner");
             mRemoveRecordingButton.setEnabled(false);
             mRemoveRecordingButton.addActionListener(e -> {
                 int[] indexes = mTunerTable.getSelectionModel().getSelectedIndices();

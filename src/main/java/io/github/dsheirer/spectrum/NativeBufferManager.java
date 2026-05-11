@@ -91,6 +91,7 @@ public class NativeBufferManager<T extends INativeBuffer>
     {
         mTransferQueue.clear();
         mProducerQueue.clear();
+        mProducerAvailable = 0;
         mConsumerQueue.clear();
     }
 

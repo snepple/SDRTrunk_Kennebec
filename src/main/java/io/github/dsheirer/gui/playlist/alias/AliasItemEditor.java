@@ -1188,6 +1188,7 @@ public class AliasItemEditor extends Editor<Alias>
                     .or(Bindings.isNull(getAvailableStreamsView().getSelectionModel().selectedItemProperty())));
             mAddStreamButton.setMaxWidth(Double.MAX_VALUE);
             mAddStreamButton.setGraphic(new IconNode(FontAwesome.ANGLE_RIGHT));
+            mAddStreamButton.setTooltip(new Tooltip("Add selected stream"));
             mAddStreamButton.setAlignment(Pos.CENTER);
             mAddStreamButton.setOnAction(event -> {
                 String stream = getAvailableStreamsView().getSelectionModel().getSelectedItem();
@@ -1214,6 +1215,7 @@ public class AliasItemEditor extends Editor<Alias>
                     .or(Bindings.isNull(getSelectedStreamsView().getSelectionModel().selectedItemProperty())));
             mRemoveStreamButton.setMaxWidth(Double.MAX_VALUE);
             mRemoveStreamButton.setGraphic(new IconNode(FontAwesome.ANGLE_LEFT));
+            mRemoveStreamButton.setTooltip(new Tooltip("Remove selected stream"));
             mRemoveStreamButton.setAlignment(Pos.CENTER);
             mRemoveStreamButton.setOnAction(event -> {
                 BroadcastChannel broadcastChannel = getSelectedStreamsView().getSelectionModel().getSelectedItem();
@@ -1365,6 +1367,7 @@ public class AliasItemEditor extends Editor<Alias>
         {
             mMonitorAudioToggleSwitch = new ToggleSwitch();
             mMonitorAudioToggleSwitch.setDisable(true);
+            mMonitorAudioToggleSwitch.setTooltip(new Tooltip("Enable to unmute and listen to audio when this alias is active."));
             mMonitorAudioToggleSwitch.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> {
                     if(!mSuppressModification)
@@ -1390,6 +1393,7 @@ public class AliasItemEditor extends Editor<Alias>
             }
 
             mMonitorPriorityComboBox.disableProperty().bind(getMonitorAudioToggleSwitch().selectedProperty().not());
+            mMonitorPriorityComboBox.setTooltip(new Tooltip("Lower numbers have higher priority to interrupt other playback."));
             mMonitorPriorityComboBox.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> {
                     if(!mSuppressModification)
@@ -1408,6 +1412,7 @@ public class AliasItemEditor extends Editor<Alias>
         {
             mRecordAudioToggleSwitch = new ToggleSwitch();
             mRecordAudioToggleSwitch.setDisable(true);
+            mRecordAudioToggleSwitch.setTooltip(new Tooltip("Enable to automatically save audio recordings for this alias."));
             mRecordAudioToggleSwitch.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> {
                     if(!mSuppressModification)
@@ -1428,6 +1433,7 @@ public class AliasItemEditor extends Editor<Alias>
             mColorPicker.setDisable(true);
             mColorPicker.setEditable(true);
             mColorPicker.setStyle("-fx-color-rect-width: 60px; -fx-color-label-visible: false;");
+            mColorPicker.setTooltip(new Tooltip("Sets the color used to highlight this alias in the event view."));
             mColorPicker.setOnAction(event -> {
                 if(!mSuppressModification)
                 {
@@ -1488,6 +1494,7 @@ public class AliasItemEditor extends Editor<Alias>
             mGroupField.setMaxWidth(Double.MAX_VALUE);
             mGroupField.textProperty().addListener(mEditorModificationListener);
             new AutoCompletionTextFieldBinding<>(mGroupField, getGroupSuggestionProvider());
+            mGroupField.setTooltip(new Tooltip("Assign a group to organize related aliases together."));
         }
 
         return mGroupField;
@@ -1501,6 +1508,7 @@ public class AliasItemEditor extends Editor<Alias>
             mNameField.setDisable(true);
             mNameField.setMaxWidth(Double.MAX_VALUE);
             mNameField.textProperty().addListener(mEditorModificationListener);
+            mNameField.setTooltip(new Tooltip("The display name for this alias."));
         }
 
         return mNameField;

@@ -40,6 +40,9 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-05 - TableView Empty State Placeholders
 **Learning:** When a `TableView` is empty, displaying a completely blank area is a missed UX opportunity and can confuse users. Providing an actionable empty state message or a clear indication that no data is present improves clarity.
 **Action:** Always provide an actionable empty state message. Update JavaFX `TableView` placeholders using `table.setPlaceholder(new Label("Actionable guidance"));` to guide the user towards the next logical action or explain the empty state.
+## 2026-05-06 - Missing Tooltips on Icon-Only Buttons in JavaFX Lists
+**Learning:** When using dual-list selection interfaces (e.g., available vs. selected items with left/right arrow buttons) in JavaFX applications, the action buttons often only contain icons (`FontAwesome.ANGLE_RIGHT`, etc.) without text labels. This presents an accessibility issue as screen readers cannot announce their function and sighted users lack context on hover.
+**Action:** Always add explicit `Tooltip` components to icon-only action buttons (e.g., `mAddButton.setTooltip(new Tooltip("Add selected item"))`). Ensure `javafx.scene.control.Tooltip` is imported when doing so.
 ## 2026-05-19 - HIG Modernization of MP3 Preferences
 **Learning:** Legacy UI preferences often use `GridPane` and manual padding which doesn't align with the Apple Human Interface Guidelines (HIG). Upgrading to custom HIG-compliant `SettingsCard` and `SettingsRow` requires changing the root container from `HBox` or `GridPane` to `VBox` to properly stack cards. Furthermore, replacing plain labels with Tooltips on CheckBoxes and ComboBoxes improves accessibility and layout cleanliness.
 **Action:** When updating preferences UI, check if `SettingsCard` and `SettingsRow` can replace `GridPane`s. Remember to add contextual `Tooltip`s to explain technical settings, and use `kennebec-secondary-text` for informational notices.
@@ -53,3 +56,6 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-10 - P25 Phase 2 Viewer HIG Improvements
 **Learning:** JavaFX Label graphics default to rendering on the left side of the text (`ContentDisplay.LEFT`). When adding help icons to standard form labels (e.g., `WACN:`), explicitly setting `setContentDisplay(ContentDisplay.RIGHT)` ensures the icon appears after the text, matching common HIG and web conventions.
 **Action:** When adding `IconNode` help graphics to JavaFX labels, always specify `setContentDisplay(ContentDisplay.RIGHT)` to ensure correct visual flow.
+## 2023-10-25 - Action Button Accessibility and Feedback
+**Learning:** Legacy Swing buttons in lists or toolbars often lack accessibility text or feedback tooltips, which makes interaction ambiguous (violating HIG's Clarity and Feedback rules) and impedes screen readers. Action buttons that are destructive need to indicate this clearly in the tooltip.
+**Action:** When working on Swing panels with action buttons (like TunerViewPanel), ensure each JButton has `setToolTipText()`, mnemonics via `setMnemonic()`, and accessible contexts set using `getAccessibleContext().setAccessibleName()` and `getAccessibleContext().setAccessibleDescription()`.

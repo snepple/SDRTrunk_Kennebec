@@ -42,7 +42,6 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
 {
     private final static Logger mLog = LoggerFactory.getLogger(FCD2TunerEditor.class);
     private static final long serialVersionUID = 1L;
-    private JButton mTunerInfoButton;
     private JCheckBox mLnaGainCheckBox;
     private JCheckBox mMixerGainCheckBox;
 
@@ -103,7 +102,6 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
         getTunerStatusLabel().setText(status);
         getButtonPanel().updateControls();
         getFrequencyPanel().updateControls();
-        getTunerInfoButton().setEnabled(hasTuner());
         getLnaGainCheckBox().setEnabled(hasTuner());
         getMixerGainCheckBox().setEnabled(hasTuner());
 
@@ -123,7 +121,6 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
 
         add(new JLabel("Tuner:"));
         add(getTunerIdLabel());
-        add(getTunerInfoButton());
 
         add(new JLabel("Status:"));
         add(getTunerStatusLabel(), "wrap");
@@ -139,20 +136,7 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
         add(getMixerGainCheckBox());
     }
 
-    public JButton getTunerInfoButton()
-    {
-        if(mTunerInfoButton == null)
-        {
-            mTunerInfoButton = new JButton("Tuner Info");
-            mTunerInfoButton.setEnabled(false);
-            mTunerInfoButton.addActionListener(e -> JOptionPane.showMessageDialog(FCD2TunerEditor.this,
-                    getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));
-        }
-
-        return mTunerInfoButton;
-    }
-
-    public JCheckBox getLnaGainCheckBox()
+public JCheckBox getLnaGainCheckBox()
     {
         if(mLnaGainCheckBox == null)
         {
@@ -210,7 +194,7 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
         getFrequencyPanel().updateControls();
     }
 
-    private String getTunerInfo()
+    protected String getTunerInfo()
     {
         StringBuilder sb = new StringBuilder();
 

@@ -101,6 +101,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     private JButton mResetFrequenciesButton;
     private boolean mLoading = false;
     private JTextField mFriendlyNameTextField;
+    private JButton mInfoConfigButton;
 
     /**
      * Constructs an instance
@@ -318,7 +319,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     {
         if(mFriendlyNameTextField == null)
         {
-            mFriendlyNameTextField = new JTextField();
+            mFriendlyNameTextField = new JTextField(20);
             mFriendlyNameTextField.setToolTipText("Enter a friendly name for this tuner");
 
             if(getConfiguration() != null && getConfiguration().getFriendlyName() != null)
@@ -377,6 +378,30 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         }
 
         return mFrequencyCorrectionSpinner;
+    }
+
+
+    protected JButton getInfoConfigButton()
+    {
+        if(mInfoConfigButton == null)
+        {
+            mInfoConfigButton = new JButton("Info/Config");
+            mInfoConfigButton.addActionListener(e -> {
+                JPanel panel = new JPanel(new MigLayout("insets 0", "[][grow,fill]", ""));
+                String info = getTunerInfo();
+                if(info != null && !info.isEmpty()) {
+                    panel.add(new JLabel(info), "span, wrap");
+                }
+                panel.add(new JLabel("Friendly Name:"));
+                panel.add(getFriendlyNameTextField());
+                JOptionPane.showMessageDialog(TunerEditor.this, panel, "Tuner Info/Config", JOptionPane.INFORMATION_MESSAGE);
+            });
+        }
+        return mInfoConfigButton;
+    }
+
+    protected String getTunerInfo() {
+        return "";
     }
 
     protected ButtonPanel getButtonPanel()
@@ -925,14 +950,21 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         /**
          * Constructs an instance
          */
-        public ButtonPanel()
+                public ButtonPanel()
         {
-            setLayout(new MigLayout("insets 0,fill", "[][][][][][grow,fill]", ""));
-            add(getEnabledButton());
-            add(getRecordButton());
-            add(getViewSpectrumButton());
-            add(getNewSpectrumButton());
-            add(getRestartTunerButton(), "wrap");
+            setLayout(new MigLayout("insets 0,fill", "", ""));
+            JPanel row1 = new JPanel(new MigLayout("insets 0", "[][][][]", ""));
+            row1.add(getEnabledButton());
+            row1.add(getRecordButton());
+            row1.add(getViewSpectrumButton());
+            row1.add(getNewSpectrumButton());
+
+            JPanel row2 = new JPanel(new MigLayout("insets 0", "[][]", ""));
+            row2.add(getInfoConfigButton());
+            row2.add(getRestartTunerButton());
+
+            add(row1, "wrap");
+            add(row2, "wrap");
             add(getRecordingStatusLabel(), "span");
         }
 
@@ -967,9 +999,12 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     {
         public FrequencyPanel()
         {
-            setLayout(new MigLayout("insets 0,fill", "[][][][grow,fill]", ""));
+            setLayout(new MigLayout("insets 0,fill", "[][][][][grow,fill]", ""));
             add(getFrequencyControl(), "spany 2");
             add(new JLabel("PPM:"));
+            JButton helpButton = createHelpIcon("?");
+            helpButton.setToolTipText("<html><b>PPM (Parts Per Million):</b> Adjusts your tuner to match the exact frequency.<br>If your hardware gets warm and signals shift, adjust this until the signal is centered.</html>");
+            add(helpButton);
             add(getFrequencyCorrectionSpinner());
             add(getMeasuredPPMLabel(), "wrap");
             add(getAutoPPMCheckBox(), "span");
@@ -977,20 +1012,16 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
 
             JPanel minMaxPanel = new JPanel();
             minMaxPanel.setLayout(new MigLayout("insets 0", "[][][][][][grow,fill]", ""));
-            minMaxPanel.add(new JLabel("Minimum:"));
+            minMaxPanel.add(new JLabel("Min:"));
             minMaxPanel.add(getMinimumFrequencyTextField());
-            minMaxPanel.add(new JLabel("Maximum:"));
+            minMaxPanel.add(new JLabel("Max:"));
             minMaxPanel.add(getMaximumFrequencyTextField());
             minMaxPanel.add(getResetFrequenciesButton());
             add(minMaxPanel, "span");
 
             add(getTunerLockedStatusLabel(), "span");
 
-            JPanel friendlyNamePanel = new JPanel();
-            friendlyNamePanel.setLayout(new MigLayout("insets 0", "[][grow,fill]", ""));
-            friendlyNamePanel.add(new JLabel("Friendly Name:"));
-            friendlyNamePanel.add(getFriendlyNameTextField());
-            add(friendlyNamePanel, "span");
+
         }
 
         /**
@@ -1133,5 +1164,14 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                 save();
             }
         }
+    }
+
+    private JButton createHelpIcon(String text) {
+        JButton button = new JButton(text);
+        button.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        return button;
     }
 }

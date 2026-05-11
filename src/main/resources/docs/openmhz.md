@@ -1,42 +1,57 @@
-# Stream decoded radio audio to OpenMHz
+# Upload Trunked Call Recordings to OpenMHz
 
-> Configure SDRTrunk Kennebec to broadcast decoded radio audio to an OpenMHz server in real time.
+OpenMHz is a public online radio archive platform at `openmhz.com` that lets anyone search and replay trunked radio calls organized by system and talkgroup. SDRTrunk Kennebec integrates with OpenMHz by uploading each completed call recording as an MP3 file to the OpenMHz call upload API at `https://api.openmhz.com`. Each call appears in the OpenMHz interface with metadata including talkgroup, timestamp, and radio ID, making it immediately searchable and playable by the public.
 
-SDRTrunk Kennebec can push completed, decoded radio audio directly to an OpenMHz server using its call upload API. This integration allows you to ingest audio calls seamlessly into your OpenMHz online radio archive platform.
+## Prerequisites
 
-## Audio Flow
+Before adding an OpenMHz broadcaster in SDRTrunk Kennebec, you need:
 
-```mermaid
-graph TD
-    A[Decoded Audio] -->|MP3 Encoding| B(OpenMHz Broadcaster)
-    B -->|HTTP POST| C[OpenMHz Server]
-```
+- An OpenMHz account with a system registered on `openmhz.com`
+- The short name assigned to your system during registration (for example, `countysheriff`)
+- The API key issued by OpenMHz for your system
 
-## Adding an OpenMHz broadcaster
+## Add the Broadcaster
 
-1. In SDRTrunk Kennebec, go to **View** > **Streaming**.
-2. Click the **+** (Add) button.
-3. Select **OpenMHz**.
+  **1. Open the Streaming Editor**
 
-## Configuration Fields
+    In SDRTrunk Kennebec, go to **View** > **Streaming**.
 
-Fill in the required fields in the configuration panel:
+  **2. Add an OpenMHz broadcaster**
 
-| Field | Description |
-| --- | --- |
-| **Format** | Currently defaults to MP3. |
-| **Name** | A label for this configuration, e.g. "My OpenMHz Stream". |
-| **API Key** | Your OpenMHz API key for authentication. |
-| **System Name** | Your system's short name as registered on OpenMHz (e.g. `countysheriff`). |
-| **OpenMHz URL** | The base URL of the OpenMHz server. Defaults to `https://api.openmhz.com`. |
+    Click **+** and select **OpenMHz**.
 
-> **Note:**
-  The `System Name` field should perfectly match the short name of your system configured in OpenMHz, otherwise uploads will be rejected.
+  **3. Enter the configuration**
 
-## Enable and Save
+    Fill in the following fields in the configuration panel:
 
-Once configured:
-1. Toggle the **Enabled** switch to turn on the stream.
-2. Click **Save** to apply your changes.
+    | Field | Description |
+    |---|---|
+    | **Name** | A label for this configuration, for example `My OpenMHz Stream` |
+    | **API Key** | Your OpenMHz API key for authentication |
+    | **System Name** | Your system's short name as registered on OpenMHz, for example `countysheriff` |
+    | **OpenMHz URL** | The OpenMHz API base URL. Defaults to `https://api.openmhz.com` — leave this unchanged unless you are using a self-hosted OpenMHz instance |
 
-SDRTrunk Kennebec will now upload recorded calls matching your alias configurations to the configured OpenMHz instance.
+  **4. Enable and save**
+
+    Toggle **Enabled** on, then click **Save**. SDRTrunk Kennebec begins uploading completed call recordings to OpenMHz.
+
+
+> **Warning**
+>
+  The **System Name** field must exactly match the short name registered for your system on OpenMHz. A mismatch — including differences in capitalization — will cause uploads to be rejected by the API.
+
+## How Calls Are Uploaded
+
+Each time a monitored trunked call ends, SDRTrunk Kennebec encodes the recording as MP3 and sends an HTTP POST request to `https://api.openmhz.com` (or your configured URL). The upload includes:
+
+| Metadata field | Description |
+|---|---|
+| `api_key` | Your OpenMHz API key |
+| `system_name` | Your registered system short name |
+| Audio file | The MP3-encoded call recording |
+
+The production endpoint is pre-filled and does not need to be changed for standard OpenMHz accounts.
+
+## Format Note
+
+All calls are uploaded as **MP3** audio. The format is set automatically — no additional audio configuration is required in SDRTrunk Kennebec.

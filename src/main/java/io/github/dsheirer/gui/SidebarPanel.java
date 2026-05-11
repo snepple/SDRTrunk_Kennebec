@@ -45,41 +45,39 @@ public class SidebarPanel extends JPanel {
         setPreferredSize(new Dimension(250, 0));
         setLayout(new MigLayout("insets 10 5 10 5, gapy 5, wrap 1, fillx", "[grow, fill]", "[]"));
 
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            mToggleBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.BARS, 18, TEXT_COLOR));
-            mToggleBtn.setContentAreaFilled(false);
-            mToggleBtn.setBorderPainted(false);
-            mToggleBtn.setFocusPainted(false);
-            mToggleBtn.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 6, 4, 6));
-            mToggleBtn.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-            mToggleBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            mToggleBtn.setToolTipText("Collapse Sidebar");
-            mToggleBtn.getAccessibleContext().setAccessibleName("Toggle Sidebar");
-            mToggleBtn.getAccessibleContext().setAccessibleDescription("Collapses or expands the main navigation sidebar");
+        mToggleBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.BARS, 18, TEXT_COLOR));
+        mToggleBtn.setContentAreaFilled(false);
+        mToggleBtn.setBorderPainted(false);
+        mToggleBtn.setFocusPainted(false);
+        mToggleBtn.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 6, 4, 6));
+        mToggleBtn.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        mToggleBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        mToggleBtn.setToolTipText("Collapse Sidebar");
+        mToggleBtn.getAccessibleContext().setAccessibleName("Toggle Sidebar");
+        mToggleBtn.getAccessibleContext().setAccessibleDescription("Collapses or expands the main navigation sidebar");
 
-            mToggleBtn.addActionListener(e -> {
-                mCollapsed = !mCollapsed;
+        mToggleBtn.addActionListener(e -> {
+            mCollapsed = !mCollapsed;
 
-                mToggleBtn.setToolTipText(mCollapsed ? "Expand Sidebar" : "Collapse Sidebar");
+            mToggleBtn.setToolTipText(mCollapsed ? "Expand Sidebar" : "Collapse Sidebar");
 
-                if (mCollapsed) {
-                    for (SidebarItem item : mItems) item.updateCollapsedState(true);
-                } else {
-                    for (SidebarItem item : mItems) item.updateCollapsedState(false);
-                }
-
-                setPreferredSize(new Dimension(mCollapsed ? 50 : 250, 0));
-                render();
-                revalidate();
-                repaint();
-            });
-
-            initItems();
-            render();
-            if (mActiveId != null) {
-                setActive(mActiveId);
+            if (mCollapsed) {
+                for (SidebarItem item : mItems) item.updateCollapsedState(true);
+            } else {
+                for (SidebarItem item : mItems) item.updateCollapsedState(false);
             }
+
+            setPreferredSize(new Dimension(mCollapsed ? 50 : 250, 0));
+            render();
+            revalidate();
+            repaint();
         });
+
+        initItems();
+        render();
+        if (mActiveId != null) {
+            setActive(mActiveId);
+        }
     }
 
     private void initItems() {
@@ -93,6 +91,7 @@ public class SidebarPanel extends JPanel {
         playlistEditorItem.addSubItem("Radio Reference", "playlist_radioreference");
         playlistEditorItem.addSubItem("Two Tones", "playlist_twotones");
         playlistEditorItem.addSubItem("Playlists", "playlist_playlists");
+        playlistEditorItem.setExpanded(true);
         mItems.add(playlistEditorItem);
 
         mItems.add(new SidebarItem("Tuners", FontAwesome.SLIDERS, "tuners", true));
@@ -169,6 +168,10 @@ public class SidebarPanel extends JPanel {
             return !mSubItems.isEmpty();
         }
 
+        public void setExpanded(boolean expanded) {
+            mExpanded = expanded;
+        }
+
         public boolean isExpanded() {
             return mExpanded;
         }
@@ -222,12 +225,12 @@ public class SidebarPanel extends JPanel {
             mView.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseEntered(MouseEvent e) {
-                    if (!mActive) mView.setBackground(HOVER_COLOR);
+                    if (!mActive) { mView.setOpaque(true); mView.setBackground(HOVER_COLOR); }
                 }
 
                 @Override
                 public void mouseExited(MouseEvent e) {
-                    if (!mActive) mView.setBackground(BG_COLOR);
+                    if (!mActive) { mView.setOpaque(false); mView.setBackground(BG_COLOR); }
                 }
 
                 @Override
@@ -265,7 +268,7 @@ public class SidebarPanel extends JPanel {
         }
 
         public void updateStyle() {
-            mView.setBackground(mActive ? ACTIVE_COLOR : BG_COLOR);
+            if (mActive) { mView.setOpaque(true); mView.setBackground(ACTIVE_COLOR); } else { mView.setOpaque(false); mView.setBackground(BG_COLOR); }
             mView.setToolTipText(mCollapsed ? mLabel : null);
             mView.revalidate();
             mView.repaint();
@@ -322,12 +325,12 @@ public class SidebarPanel extends JPanel {
                 mView.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseEntered(MouseEvent e) {
-                        if (!mActive) mView.setBackground(HOVER_COLOR);
+                        if (!mActive) { mView.setOpaque(true); mView.setBackground(HOVER_COLOR); }
                     }
 
                     @Override
                     public void mouseExited(MouseEvent e) {
-                        if (!mActive) mView.setBackground(BG_COLOR);
+                        if (!mActive) { mView.setOpaque(false); mView.setBackground(BG_COLOR); }
                     }
 
 
@@ -344,7 +347,7 @@ public class SidebarPanel extends JPanel {
             }
 
             private void updateStyle() {
-                mView.setBackground(mActive ? ACTIVE_COLOR : BG_COLOR);
+                if (mActive) { mView.setOpaque(true); mView.setBackground(ACTIVE_COLOR); } else { mView.setOpaque(false); mView.setBackground(BG_COLOR); }
                 mView.setToolTipText(mCollapsed ? mLabel : null);
                 mView.revalidate();
                 mView.repaint();

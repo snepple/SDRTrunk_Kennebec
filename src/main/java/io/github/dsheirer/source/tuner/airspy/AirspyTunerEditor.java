@@ -51,7 +51,6 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(AirspyTunerEditor.class);
-    private JButton mTunerInfoButton;
     private JComboBox<AirspySampleRate> mSampleRateCombo;
     private JComboBox<GainMode> mGainModeCombo;
     private JSlider mMasterGainSlider;
@@ -115,7 +114,6 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
         getButtonPanel().updateControls();
         getFrequencyPanel().updateControls();
         getSampleRateCombo().setEnabled(hasTuner() && !getTuner().getTunerController().isLockedSampleRate());
-        getTunerInfoButton().setEnabled(hasTuner());
         updateGainComponents((hasTuner() && hasConfiguration()) ? getConfiguration().getGain() : null);
 
         if(hasTuner())
@@ -144,7 +142,6 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
 
         add(new JLabel("Tuner:"));
         add(getTunerIdLabel());
-        add(getTunerInfoButton());
 
         add(new JLabel("Status:"));
         add(getTunerStatusLabel(), "wrap");
@@ -507,23 +504,7 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
     /**
      * Hyperlink button that provides tuner information
      */
-    private JButton getTunerInfoButton()
-    {
-        if(mTunerInfoButton == null)
-        {
-            mTunerInfoButton = new JButton("Info");
-            mTunerInfoButton.setToolTipText("Provides details and information about the Airspy tuner");
-            mTunerInfoButton.getAccessibleContext().setAccessibleName("Tuner Information");
-            mTunerInfoButton.getAccessibleContext().setAccessibleDescription("Displays hardware and configuration details for the connected Airspy tuner");
-            mTunerInfoButton.setEnabled(false);
-            mTunerInfoButton.addActionListener(e -> JOptionPane.showMessageDialog(AirspyTunerEditor.this,
-                    getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));
-        }
-
-        return mTunerInfoButton;
-    }
-
-    /**
+/**
      * Updates the enabled state of each of the gain controls according to the
      * specified gain mode.  The master gain control is enabled for linearity
      * and sensitivity and the individual gain controls are disabled, and
@@ -665,7 +646,7 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
         updateSampleRateToolTip();
     }
 
-    private String getTunerInfo()
+    protected String getTunerInfo()
     {
         if(getDiscoveredTuner().getTunerStatus() == TunerStatus.ERROR)
         {

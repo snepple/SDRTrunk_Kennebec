@@ -22,6 +22,11 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
@@ -78,7 +83,20 @@ public class LogsViewController {
 
         // Initialize Live Logs
         logListView.setItems(logData);
+        logListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         MyEventBus.getGlobalEventBus().register(this);
+
+        MenuItem copyItem = new MenuItem("Copy");
+        copyItem.setOnAction(event -> copySelectedLogs());
+        ContextMenu contextMenu = new ContextMenu(copyItem);
+        logListView.setContextMenu(contextMenu);
+
+        KeyCombination copyShortcut = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
+        logListView.setOnKeyPressed(event -> {
+            if (copyShortcut.match(event)) {
+                copySelectedLogs();
+            }
+        });
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -259,16 +277,28 @@ public class LogsViewController {
 
     private void setupSearchField(TextField searchField, FilteredList<LogFile> filteredData) {
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.isEmpty()) {
+                filteredData.setPredicate(logFile -> true);
+                return;
+            }
+
+            Pattern searchPattern;
+            try {
+                searchPattern = Pattern.compile(newValue, Pattern.CASE_INSENSITIVE);
+            } catch (PatternSyntaxException e) {
+                searchPattern = null;
+            }
+
+            final Pattern pattern = searchPattern;
+            final String lowerCaseFilter = newValue.toLowerCase();
+
             filteredData.setPredicate(logFile -> {
-                if (newValue == null || newValue.isEmpty()) return true;
-                try {
-                    Pattern pattern = Pattern.compile(newValue, Pattern.CASE_INSENSITIVE);
+                if (pattern != null) {
                     if (pattern.matcher(logFile.getName()).find()) return true;
                     if (logFile.getDate() != null && pattern.matcher(logFile.getDate().toString()).find()) return true;
-                } catch (PatternSyntaxException e) {}
-                String lowerCaseFilter = newValue.toLowerCase();
+                }
                 if (logFile.getName().toLowerCase().contains(lowerCaseFilter)) return true;
-                if (logFile.getDate() != null && logFile.getDate().toString().contains(lowerCaseFilter)) return true;
+                if (logFile.getDate() != null && logFile.getDate().toString().toLowerCase().contains(lowerCaseFilter)) return true;
                 return false;
             });
         });
@@ -279,7 +309,7 @@ public class LogsViewController {
             try {
                 String os = System.getProperty("os.name").toLowerCase();
                 if (os.contains("win")) {
-                    new ProcessBuilder("cmd", "/c", "start", "", logFile.getAbsolutePath()).start();
+                    new ProcessBuilder("notepad.exe", logFile.getAbsolutePath()).start();
                 } else if (os.contains("mac")) {
                     new ProcessBuilder("open", logFile.getAbsolutePath()).start();
                 } else {
@@ -415,6 +445,19 @@ public class LogsViewController {
             alert.setContentText(message);
             alert.showAndWait();
         });
+    }
+
+    private void copySelectedLogs() {
+        ObservableList<String> selectedItems = logListView.getSelectionModel().getSelectedItems();
+        if (selectedItems != null && !selectedItems.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (String item : selectedItems) {
+                sb.append(item).append("\n");
+            }
+            ClipboardContent content = new ClipboardContent();
+            content.putString(sb.toString());
+            Clipboard.getSystemClipboard().setContent(content);
+        }
     }
 
     public void destroy() {

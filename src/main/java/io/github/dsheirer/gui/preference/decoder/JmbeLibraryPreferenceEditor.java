@@ -39,6 +39,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -99,6 +100,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
         if(mAlertUserWhenMissingCheckBox == null)
         {
             mAlertUserWhenMissingCheckBox = new CheckBox("Alert when decoder requires missing JMBE library");
+            mAlertUserWhenMissingCheckBox.setTooltip(new Tooltip("Shows a warning notification if a digital voice channel needs the JMBE library but it is not installed."));
             mAlertUserWhenMissingCheckBox.setSelected(mUserPreferences.getJmbeLibraryPreference()
                 .getAlertIfMissingLibraryRequired());
             mAlertUserWhenMissingCheckBox.setOnAction(event -> {
@@ -114,6 +116,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
         if(mUseBazinetaForkCheckBox == null)
         {
             mUseBazinetaForkCheckBox = new CheckBox("Use alternative 'bazineta' JMBE fork (optimized/cleaned up)");
+            mUseBazinetaForkCheckBox.setTooltip(new Tooltip("Uses a highly optimized version of the JMBE library that performs better for SDRTrunk's specific needs."));
             mUseBazinetaForkCheckBox.setSelected(mUserPreferences.getJmbeLibraryPreference().getUseBazinetaFork());
             mUseBazinetaForkCheckBox.setOnAction(event -> {
                 boolean useFork = mUseBazinetaForkCheckBox.isSelected();
@@ -204,7 +207,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
             {
                 Version current = mUserPreferences.getJmbeLibraryPreference().getCurrentVersion();
                 boolean useFork = mUserPreferences.getJmbeLibraryPreference().getUseBazinetaFork();
-                final Release release = GitHub.getLatestRelease(useFork ? JmbeCreator.GITHUB_BAZINETA_JMBE_RELEASES_URL : JmbeCreator.GITHUB_JMBE_RELEASES_URL);
+                final Release release = GitHub.getLatestRelease(JmbeCreator.GITHUB_JMBE_RELEASES_URL);
 
                 mLog.info("Checking for JMBE Library Updates ...");
                 mLog.info("Current: " + (current != null ? current.toString() : "empty"));
@@ -251,7 +254,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
                                     if(buttonType == ButtonType.YES)
                                     {
                                         mLog.info("Posting JMBE editor request to event bus");
-                                        MyEventBus.getGlobalEventBus().post(new JmbeEditorRequest(release));
+                                        MyEventBus.getGlobalEventBus().post(new JmbeEditorRequest(release, useFork));
                                     }
                                 });
                             }

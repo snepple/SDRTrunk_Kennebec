@@ -1,89 +1,95 @@
-# Enable diagnostics and debug logging in SDRTrunk Kennebec
+# Enable Diagnostics and Debug Logging in SDRTrunk
 
-> Use the Diagnostics preferences panel in SDRTrunk Kennebec to enable per-category DEBUG logging at runtime without restarting the application.
+SDRTrunk Kennebec's **Diagnostics** panel gives you fine-grained control over debug logging for individual subsystems without touching configuration files or restarting the application. Changes take effect the moment you toggle a checkbox, making it straightforward to capture detailed logs for a specific component while a problem is actively occurring.
 
-SDRTrunk Kennebec's Diagnostics panel gives you fine-grained control over debug logging for individual subsystems without touching configuration files or restarting the application. Changes take effect the moment you toggle a checkbox, making it straightforward to capture detailed logs for a specific component while a problem is actively occurring.
+## Open the Diagnostics panel
 
-## Opening the Diagnostics panel
+  **1. Open User Preferences**
 
-  ### Open User Preferences
     In the main application window, open the **View** menu and select **User Preferences**.
 
+  **2. Navigate to Diagnostics**
 
-  ### Navigate to Diagnostics
     In the left sidebar, under the **Application** section header, click **Diagnostics (Logging)**.
 
 
-The panel displays a description, a volume warning, a master toggle, and a grid of per-category checkboxes.
+The panel displays a description, a log volume warning, a master toggle, and a grid of per-category checkboxes.
 
-***
+---
 
 ## Per-category toggles
 
-Each row in the Diagnostics panel represents a named subsystem. Checking a box sets that subsystem's Logback logger to `DEBUG`. Unchecking it returns the logger to `INFO`.
+Each row in the panel represents a named subsystem. Checking the box sets that subsystem's logger to `DEBUG`. Unchecking it returns the logger to `INFO`.
 
-| Category label           | Logger namespace                                   | Default  |
-| ------------------------ | -------------------------------------------------- | -------- |
-| Zello streaming          | `io.github.dsheirer.audio.broadcast.zello`         | Enabled  |
-| ThinLine Radio streaming | `io.github.dsheirer.audio.broadcast.thinlineradio` | Enabled  |
-| Rdio Scanner streaming   | `io.github.dsheirer.audio.broadcast.rdioscanner`   | Disabled |
-| SDRPlay / RSP tuners     | `io.github.dsheirer.source.tuner.sdrplay`          | Disabled |
-| Nooelec / RTL-SDR tuners | `io.github.dsheirer.source.tuner.rtl`              | Disabled |
-| Channelizer / DDC        | `io.github.dsheirer.dsp.filter.channelizer`        | Disabled |
-| Tuner manager / pool     | `io.github.dsheirer.source.tuner.manager`          | Disabled |
-| P25 decoder              | `io.github.dsheirer.module.decode.p25`             | Disabled |
-| NBFM / audio output      | `io.github.dsheirer.audio`                         | Disabled |
+| Category | Default | What it captures |
+| --- | --- | --- |
+| Zello streaming | Enabled | WebSocket session activity, Opus encoder state, stream start/stop events |
+| ThinLine Radio streaming | Enabled | Upload requests, HTTP responses, retry attempts |
+| Rdio Scanner streaming | Disabled | Upload activity and API responses |
+| SDRPlay / RSP tuners | Disabled | SDRPlay API events, gain changes, device errors |
+| RTL-SDR tuners | Disabled | USB transfers, gain settings, frequency corrections |
+| Channelizer | Disabled | Digital down-conversion and polyphase filter activity |
+| Tuner manager | Disabled | Device discovery, assignment, and removal events |
+| P25 decoder | Disabled | Message decoding, NAC filtering, control channel events |
+| NBFM / audio output | Disabled | Squelch state, audio filter chain, output events |
 
-> **Info:**
-  **Zello streaming** and **ThinLine Radio streaming** are enabled by default. This matches the `logback.xml` startup defaults so that live streaming sessions always have full diagnostic output available.
+> **Info**
+>
+  **Zello streaming** and **ThinLine Radio streaming** are enabled by default so that live streaming sessions capture full diagnostic output without any additional configuration.
 
-When a category is enabled, every logger whose name starts with the listed namespace is switched to `DEBUG`. For example, enabling **P25 decoder** captures debug output from all classes under `io.github.dsheirer.module.decode.p25`.
+When you enable a category, debug output is captured for all activity in that subsystem.
 
-***
+---
 
 ## Master "Enable ALL diagnostics" checkbox
 
-The **Enable ALL diagnostics categories** checkbox at the top of the panel is a convenience shortcut. Checking it enables every category simultaneously; unchecking it disables every category simultaneously.
+The **Enable ALL diagnostics categories** checkbox at the top of the panel is a convenience shortcut. Checking it enables every category simultaneously; unchecking it disables every category simultaneously. The master checkbox reflects the current state automatically: it appears checked only when every individual category is enabled, and unchecked the moment any single category is turned off.
 
-> **Warning:**
-  Enabling all categories at once generates extremely large log files — potentially hundreds of megabytes per day when P25 traffic is active. Only enable the categories you are actively debugging, and disable them when you are done.
+> **Warning**
+>
+  Enabling all categories at once generates extremely large log files — potentially hundreds of megabytes per day when P25 traffic is active. Enable only the categories you are actively debugging, and disable them when you are done.
 
-The master checkbox reflects the current state automatically: it appears checked only when every individual category is enabled, and unchecked the moment any single category is turned off.
-
-***
+---
 
 ## How runtime log level control works
 
 SDRTrunk Kennebec applies diagnostics preference changes directly to the running logging system. This means:
 
-* Changes take effect **immediately** — no application restart is needed.
-* No configuration files on disk are modified.
-* Your selections are persisted and reapplied automatically on the next startup, before the first log line is written.
+- Changes take effect **immediately** — no application restart is needed.
+- No configuration files on disk are modified.
+- Your selections are persisted and reapplied automatically on the next startup, before the first log line is written.
 
-> **Note:**
+> **Note**
+>
   Because diagnostics preferences are restored on startup, the categories you had enabled in your last session are active from the very first log entry after relaunch.
 
-***
+---
 
-## Sharing logs for support
+## View diagnostic output in the Logs panel
 
-When filing a bug report or requesting help, attach the relevant log file from your SDRTrunk logs directory (default: `~/SDRTrunk/logs/`).
+To see the debug output in real time, open **View → Logs** from the main menu bar. The Logs panel streams all log output and filters by level and logger namespace. Enable a diagnostics category, then switch to the Logs panel to watch the output immediately.
 
-  ### Enable the relevant category
-    Open **User Preferences > Diagnostics (Logging)** and enable the category that matches the subsystem you are troubleshooting. For example, enable **Zello streaming** if you are reporting a Zello connection issue.
+---
 
+## Collecting logs for a bug report
 
-  ### Reproduce the problem
+  **3. Enable the relevant category**
+
+    Open **User Preferences → Diagnostics (Logging)** and enable the category that matches the subsystem you are troubleshooting. For example, enable **Zello streaming** if you are reporting a Zello connection issue.
+
+  **4. Reproduce the problem**
+
     Perform the action that triggers the issue. Because changes take effect immediately, logs capture from the moment you enable the toggle.
 
+  **5. Locate the log file**
 
-  ### Locate the log file
     Navigate to `~/SDRTrunk/logs/` and find the most recent `sdrtrunk.log` file.
 
+  **6. Attach to your report**
 
-  ### Attach to your report
-    Attach the log file to your issue on the project's GitHub repository. If the file is very large, consider filtering for lines from the relevant logger namespace (shown in the second column of the category table above).
+    Attach the log file to your issue on the [GitHub repository](https://github.com/snepple/SDRTrunk_Kennebec/issues). If the file is large, you can filter it by the component name shown in the log lines.
 
 
-> **Tip:**
-  Disable diagnostics categories you no longer need after collecting logs. Leaving DEBUG enabled for high-volume categories like **P25 decoder** or **Channelizer / DDC** during normal operation will quickly fill your disk.
+> **Tip**
+>
+  Disable diagnostics categories you no longer need after collecting logs. Leaving DEBUG enabled for high-volume categories like **P25 decoder** or **Channelizer** during normal operation will quickly fill your disk.

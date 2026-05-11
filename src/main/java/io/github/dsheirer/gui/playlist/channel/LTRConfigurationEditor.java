@@ -104,6 +104,7 @@ public class LTRConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getSourceConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mSourcePane = sp;
 
         }
@@ -135,6 +136,7 @@ public class LTRConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
+            mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mDecoderPane = mDecoderPaneSp;
         }
 
@@ -147,6 +149,7 @@ public class LTRConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getEventLogConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mEventLogPane = sp;
 
         }
@@ -160,6 +163,7 @@ public class LTRConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getAuxDecoderConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mAuxDecoderPane = sp;
 
         }
@@ -179,6 +183,7 @@ public class LTRConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(vBox);
             mRecordPaneSp.setFitToWidth(true);
             mRecordPaneSp.setFitToHeight(true);
+            mRecordPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mRecordPane = mRecordPaneSp;
         }
 
