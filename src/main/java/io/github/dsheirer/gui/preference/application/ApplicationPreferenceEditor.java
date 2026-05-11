@@ -226,6 +226,7 @@ public class ApplicationPreferenceEditor extends HBox
         if(mTimeoutSpinner == null)
         {
             mTimeoutSpinner = new Spinner<>(0, 30, mApplicationPreference.getChannelAutoStartTimeout(), 1);
+            mTimeoutSpinner.setTooltip(new Tooltip("Delay in seconds before auto-starting channels when the application loads. Use higher values if tuners take longer to initialize."));
             mTimeoutSpinner.valueProperty().addListener((observable, oldValue, newValue) -> mApplicationPreference.setChannelAutoStartTimeout(newValue));
         }
 
