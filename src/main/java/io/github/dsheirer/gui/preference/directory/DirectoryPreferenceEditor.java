@@ -33,6 +33,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -277,6 +278,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mRecordingSpinner == null)
         {
             mRecordingSpinner = new Spinner<>(100, Integer.MAX_VALUE, mDirectoryPreference.getDirectoryMaxUsageRecordings(), 100);
+            mRecordingSpinner.setTooltip(new Tooltip("Maximum size limit in megabytes (MB) for the recordings directory. Older recordings will be automatically deleted when this limit is reached."));
             mRecordingSpinner.valueProperty().addListener((observable, oldValue, newValue) -> mDirectoryPreference
                     .setDirectoryMaxUsageRecordings(newValue));
         }
@@ -293,6 +295,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mEventLogSpinner == null)
         {
             mEventLogSpinner = new Spinner<>(100, Integer.MAX_VALUE, mDirectoryPreference.getDirectoryMaxUsageEventLogs(), 100);
+            mEventLogSpinner.setTooltip(new Tooltip("Maximum size limit in megabytes (MB) for the event logs directory. Older logs will be automatically deleted when this limit is reached."));
             mEventLogSpinner.setEditable(true);
             mEventLogSpinner.valueProperty().addListener((observable, oldValue, newValue) -> mDirectoryPreference
                     .setDirectoryMaxUsageEventLogs(newValue));

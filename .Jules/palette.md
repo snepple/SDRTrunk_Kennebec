@@ -56,6 +56,9 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2023-10-25 - Action Button Accessibility and Feedback
 **Learning:** Legacy Swing buttons in lists or toolbars often lack accessibility text or feedback tooltips, which makes interaction ambiguous (violating HIG's Clarity and Feedback rules) and impedes screen readers. Action buttons that are destructive need to indicate this clearly in the tooltip.
 **Action:** When working on Swing panels with action buttons (like TunerViewPanel), ensure each JButton has `setToolTipText()`, mnemonics via `setMnemonic()`, and accessible contexts set using `getAccessibleContext().setAccessibleName()` and `getAccessibleContext().setAccessibleDescription()`.
+## 2024-06-18 - [Spinner Tooltips]
+**Learning:** Numeric input Spinners that lack a visual unit label need descriptive Tooltips explaining the specific unit (e.g. MB, seconds) and behavior. This greatly reduces cognitive load for technical configurations.
+**Action:** Always verify if a numeric input needs a unit label, and default to adding an informative Tooltip if it's missing.
 ## 2026-05-11 - Squelch Auto Track Mnemonic and Tooltip Formatting
 Learning: JCheckBox configurations inside control panels (like SignalPowerView) are prime candidates for keyboard mnemonics (e.g., `Alt+A`) and require clear, HTML-wrapped tooltips and AccessibleContext settings to align with HIG accessibility guidelines.
 Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, structure long tooltips with `<html>` tags for wrapping, and always apply descriptive `AccessibleContext` names/descriptions.
