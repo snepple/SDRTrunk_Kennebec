@@ -18,3 +18,6 @@
 ## 2024-05-24 - Alias Item Editor Tooltips
 **Learning:** In complex configuration panels like AliasItemEditor, primary fields (Name, Group, Listen, Record, Priority) often lack inline explanations, increasing user error and cognitive load.
 **Action:** Added clear, descriptive tooltips to primary configuration inputs to clarify their function and behavioral impact.
+## 2024-10-24 - [Tooltip on Settings Spinner]
+**Learning:** Configuration elements like Spinners that represent arbitrary numeric values without units are confusing.
+**Action:** Always provide a descriptive Tooltip for Spinners to explain what the number represents and the expected unit (e.g., seconds).
