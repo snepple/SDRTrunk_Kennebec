@@ -161,7 +161,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getIgnoreDataCallsButton(), 4, 0);
             gridPane.getChildren().add(getIgnoreDataCallsButton());
 
-            Label directionLabel = new Label("Ignore Data Calls");
+            Label directionLabel = new Label("Ignore Data Calls", createHelpIcon("Skips processing data packets, focusing only on voice traffic."));
             GridPane.setHalignment(directionLabel, HPos.LEFT);
             GridPane.setConstraints(directionLabel, 5, 0);
             gridPane.getChildren().add(directionLabel);
@@ -181,7 +181,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.getChildren().add(nacBox);
 
             //Talkgroup Override - same row as NAC
-            Label tgLabel = new Label("Talkgroup To Assign:");
+            Label tgLabel = new Label("Talkgroup To Assign:", createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."));
             GridPane.setHalignment(tgLabel, HPos.RIGHT);
             GridPane.setConstraints(tgLabel, 2, 2);
             gridPane.getChildren().add(tgLabel);
@@ -192,7 +192,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getIgnoreUnaliasedTalkgroupsButton(), 4, 2);
             gridPane.getChildren().add(getIgnoreUnaliasedTalkgroupsButton());
 
-            Label ignoreUnaliasedLabel = new Label("Ignore Unaliased TGs");
+            Label ignoreUnaliasedLabel = new Label("Ignore Unaliased TGs", createHelpIcon("Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list."));
             GridPane.setHalignment(ignoreUnaliasedLabel, HPos.LEFT);
             GridPane.setConstraints(ignoreUnaliasedLabel, 5, 2);
             gridPane.getChildren().add(ignoreUnaliasedLabel);

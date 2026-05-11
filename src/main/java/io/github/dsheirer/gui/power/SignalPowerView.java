@@ -41,6 +41,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import java.text.DecimalFormat;
@@ -145,6 +146,7 @@ public class SignalPowerView extends JPanel
             }
 
             jfxPanel.setScene(scene);
+
         });
     }
 
