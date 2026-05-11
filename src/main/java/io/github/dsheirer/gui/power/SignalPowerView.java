@@ -21,21 +21,29 @@ package io.github.dsheirer.gui.power;
 
 import io.github.dsheirer.controller.channel.Channel;
 import io.github.dsheirer.dsp.squelch.ISquelchConfiguration;
+import io.github.dsheirer.gui.control.DbPowerMeterJFX;
 import io.github.dsheirer.gui.control.DbPowerMeter;
 import io.github.dsheirer.module.ProcessingChain;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.source.SourceEvent;
-import java.awt.EventQueue;
-import java.text.DecimalFormat;
-import jiconfont.icons.font_awesome.FontAwesome;
-import jiconfont.swing.IconFontSwing;
-import net.miginfocom.swing.MigLayout;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TitledPane;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 
-import javax.swing.Icon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
+import java.awt.BorderLayout;
+import java.text.DecimalFormat;
 
 /**
  * Swing view for displaying signal power measurements with integrated squelch control.
@@ -44,15 +52,17 @@ public class SignalPowerView extends JPanel
 {
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.0");
     private static final String NOT_AVAILABLE = "Not Available";
-    private final DbPowerMeter mPowerMeter = new DbPowerMeter();
+
+    // We keep mPowerMeter as DbPowerMeterJFX
+    private final DbPowerMeterJFX mPowerMeter = new DbPowerMeterJFX();
     private final PeakMonitor mPeakMonitor = new PeakMonitor(DbPowerMeter.DEFAULT_MINIMUM_POWER);
-    private final JLabel mPowerLabel;
-    private final JLabel mPeakLabel;
-    private final JLabel mSquelchLabel;
-    private final JLabel mSquelchValueLabel;
-    private final JButton mSquelchUpButton;
-    private final JButton mSquelchDownButton;
-    private final JCheckBox mSquelchAutoTrackCheckBox;
+    private Label mPowerLabel;
+    private Label mPeakLabel;
+    private Label mSquelchLabel;
+    private Label mSquelchValueLabel;
+    private Button mSquelchUpButton;
+    private Button mSquelchDownButton;
+    private CheckBox mSquelchAutoTrackCheckBox;
     private double mSquelchThreshold;
     private final PlaylistManager mPlaylistManager;
     private ProcessingChain mProcessingChain;
@@ -61,64 +71,81 @@ public class SignalPowerView extends JPanel
     {
         mPlaylistManager = playlistManager;
 
-        setLayout(new MigLayout("ins 16, gap 8 8", "[][][][grow,fill]", "[grow,fill]"));
-        mPowerMeter.setPeakVisible(true);
-        mPowerMeter.setSquelchThresholdVisible(true);
-        add(mPowerMeter);
+        setLayout(new BorderLayout());
+        JFXPanel jfxPanel = new JFXPanel();
+        add(jfxPanel, BorderLayout.CENTER);
 
-        JPanel valuePanel = new JPanel();
-        valuePanel.setLayout(new MigLayout("ins 16, gap 8 12", "[right][left][][]", ""));
+        Platform.runLater(() -> {
+            HBox root = new HBox(8);
+            root.setPadding(new Insets(16));
 
-        mPeakLabel = new JLabel("0");
-        mPeakLabel.setToolTipText("Current peak power level in decibels.");
-        valuePanel.add(new JLabel("Peak:"));
-        valuePanel.add(mPeakLabel, "wrap");
+            mPowerMeter.setPeakVisible(true);
+            mPowerMeter.setSquelchThresholdVisible(true);
 
-        mPowerLabel = new JLabel("0");
-        mPowerLabel.setToolTipText("Current Power level in decibels");
-        valuePanel.add(new JLabel("Power:"));
-        valuePanel.add(mPowerLabel, "wrap");
+            VBox meterContainer = new VBox();
+            meterContainer.setPadding(new Insets(5));
+            meterContainer.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 3;");
+            Label meterTitle = new Label("Power (dB)");
+            meterTitle.setStyle("-fx-padding: 0 0 5 0; -fx-text-fill: black;");
+            meterContainer.getChildren().addAll(meterTitle, mPowerMeter);
 
-        mSquelchLabel = new JLabel("Squelch:");
-        mSquelchLabel.setEnabled(false);
-        valuePanel.add(mSquelchLabel);
-        mSquelchValueLabel = new JLabel(NOT_AVAILABLE);
-        mSquelchValueLabel.setToolTipText("Squelch threshold value in decibels");
-        mSquelchValueLabel.setEnabled(false);
-        valuePanel.add(mSquelchValueLabel, "wrap");
+            root.getChildren().add(meterContainer);
 
-        IconFontSwing.register(FontAwesome.getIconFont());
-        Icon iconUp = IconFontSwing.buildIcon(FontAwesome.ANGLE_UP, 12);
-        mSquelchUpButton = new JButton(iconUp);
-        mSquelchUpButton.putClientProperty("JButton.buttonType", "roundRect");
-        mSquelchUpButton.setToolTipText("Increases the squelch threshold value");
-        mSquelchUpButton.getAccessibleContext().setAccessibleName("Increase Squelch");
-        mSquelchUpButton.getAccessibleContext().setAccessibleDescription("Increases the squelch threshold value");
-        mSquelchUpButton.setEnabled(false);
-        mSquelchUpButton.addActionListener(e -> broadcast(SourceEvent.requestSquelchThreshold(null, mSquelchThreshold + 1)));
-        valuePanel.add(mSquelchUpButton);
+            GridPane valuePanel = new GridPane();
+            valuePanel.setHgap(8);
+            valuePanel.setVgap(12);
+            valuePanel.setPadding(new Insets(16));
 
-        Icon iconDown = IconFontSwing.buildIcon(FontAwesome.ANGLE_DOWN, 12);
-        mSquelchDownButton = new JButton(iconDown);
-        mSquelchDownButton.putClientProperty("JButton.buttonType", "roundRect");
-        mSquelchDownButton.setToolTipText("Decreases the squelch threshold value.");
-        mSquelchDownButton.getAccessibleContext().setAccessibleName("Decrease Squelch");
-        mSquelchDownButton.getAccessibleContext().setAccessibleDescription("Decreases the squelch threshold value");
-        mSquelchDownButton.setEnabled(false);
-        mSquelchDownButton.addActionListener(e -> broadcast(SourceEvent.requestSquelchThreshold(null, mSquelchThreshold - 1)));
-        valuePanel.add(mSquelchDownButton, "wrap");
+            mPeakLabel = new Label("0");
+            mPeakLabel.setTooltip(new Tooltip("Current peak power level in decibels."));
+            valuePanel.add(new Label("Peak:"), 0, 0);
+            valuePanel.add(mPeakLabel, 1, 0);
 
-        mSquelchAutoTrackCheckBox = new JCheckBox("Auto Track");
-        mSquelchAutoTrackCheckBox.setToolTipText("Enable or disable monitoring of the noise floor to auto-adjust the " +
-                "squelch threshold value maintaining a consistent level/buffer above the noise floor");
-        mSquelchAutoTrackCheckBox.setEnabled(false);
-        mSquelchAutoTrackCheckBox.addActionListener(e ->
-        {
-            broadcast(SourceEvent.requestSquelchAutoTrack(mSquelchAutoTrackCheckBox.isSelected()));
+            mPowerLabel = new Label("0");
+            mPowerLabel.setTooltip(new Tooltip("Current Power level in decibels"));
+            valuePanel.add(new Label("Power:"), 0, 1);
+            valuePanel.add(mPowerLabel, 1, 1);
+
+            mSquelchLabel = new Label("Squelch:");
+            mSquelchLabel.setDisable(true);
+            valuePanel.add(mSquelchLabel, 0, 2);
+
+            mSquelchValueLabel = new Label(NOT_AVAILABLE);
+            mSquelchValueLabel.setTooltip(new Tooltip("Squelch threshold value in decibels"));
+            mSquelchValueLabel.setDisable(true);
+            valuePanel.add(mSquelchValueLabel, 1, 2);
+
+            mSquelchUpButton = new Button("▲");
+            mSquelchUpButton.setTooltip(new Tooltip("Increases the squelch threshold value"));
+            mSquelchUpButton.setDisable(true);
+            mSquelchUpButton.setOnAction(e -> broadcast(SourceEvent.requestSquelchThreshold(null, mSquelchThreshold + 1)));
+            valuePanel.add(mSquelchUpButton, 2, 2);
+
+            mSquelchDownButton = new Button("▼");
+            mSquelchDownButton.setTooltip(new Tooltip("Decreases the squelch threshold value."));
+            mSquelchDownButton.setDisable(true);
+            mSquelchDownButton.setOnAction(e -> broadcast(SourceEvent.requestSquelchThreshold(null, mSquelchThreshold - 1)));
+            valuePanel.add(mSquelchDownButton, 3, 2);
+
+            mSquelchAutoTrackCheckBox = new CheckBox("Auto Track");
+            mSquelchAutoTrackCheckBox.setTooltip(new Tooltip("Enable or disable monitoring of the noise floor to auto-adjust the squelch threshold value maintaining a consistent level/buffer above the noise floor"));
+            mSquelchAutoTrackCheckBox.setDisable(true);
+            mSquelchAutoTrackCheckBox.setOnAction(e -> {
+                broadcast(SourceEvent.requestSquelchAutoTrack(mSquelchAutoTrackCheckBox.isSelected()));
+            });
+            valuePanel.add(mSquelchAutoTrackCheckBox, 0, 3, 4, 1);
+
+            HBox.setHgrow(valuePanel, Priority.ALWAYS);
+            root.getChildren().add(valuePanel);
+
+            Scene scene = new Scene(root);
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+
+            jfxPanel.setScene(scene);
         });
-        valuePanel.add(mSquelchAutoTrackCheckBox, "span,left");
-
-        add(valuePanel);
     }
 
     /**
@@ -162,22 +189,23 @@ public class SignalPowerView extends JPanel
     }
 
     /**
-     * Resets controls when changing processing chain source.  Note: this must be called on the Swing
-     * dispatch thread because it directly invokes swing components.
+     * Resets controls when changing processing chain source.
      */
     private void reset()
     {
         mPeakMonitor.reset();
-        mPowerMeter.reset();
-        mPeakLabel.setText("0");
-        mPowerLabel.setText("0");
-        mSquelchLabel.setEnabled(false);
-        mSquelchValueLabel.setText("Not Available");
-        mSquelchValueLabel.setEnabled(false);
-        mSquelchUpButton.setEnabled(false);
-        mSquelchDownButton.setEnabled(false);
-        mSquelchAutoTrackCheckBox.setEnabled(false);
-        mSquelchAutoTrackCheckBox.setSelected(false);
+        Platform.runLater(() -> {
+            mPowerMeter.reset();
+            mPeakLabel.setText("0");
+            mPowerLabel.setText("0");
+            mSquelchLabel.setDisable(true);
+            mSquelchValueLabel.setText("Not Available");
+            mSquelchValueLabel.setDisable(true);
+            mSquelchUpButton.setDisable(true);
+            mSquelchDownButton.setDisable(true);
+            mSquelchAutoTrackCheckBox.setDisable(true);
+            mSquelchAutoTrackCheckBox.setSelected(false);
+        });
     }
 
     public void receive(SourceEvent sourceEvent)
@@ -189,7 +217,7 @@ public class SignalPowerView extends JPanel
                 final double power = sourceEvent.getValue().doubleValue();
                 final double peak = mPeakMonitor.process(power);
 
-                EventQueue.invokeLater(() -> {
+                Platform.runLater(() -> {
                     mPowerMeter.setPower(power);
                     mPowerLabel.setText(DECIMAL_FORMAT.format(power));
 
@@ -203,22 +231,22 @@ public class SignalPowerView extends JPanel
                 mSquelchThreshold = threshold;
                 setConfigSquelchThreshold((int)threshold);
 
-                EventQueue.invokeLater(() -> {
+                Platform.runLater(() -> {
                     mPowerMeter.setSquelchThreshold(threshold);
-                    mSquelchLabel.setEnabled(true);
-                    mSquelchValueLabel.setEnabled(true);
+                    mSquelchLabel.setDisable(false);
+                    mSquelchValueLabel.setDisable(false);
                     mSquelchValueLabel.setText(DECIMAL_FORMAT.format(threshold));
-                    mSquelchDownButton.setEnabled(true);
-                    mSquelchUpButton.setEnabled(true);
+                    mSquelchDownButton.setDisable(false);
+                    mSquelchUpButton.setDisable(false);
                 });
             }
             case NOTIFICATION_SQUELCH_AUTO_TRACK ->
             {
                 boolean autoTrack = sourceEvent.getValue().intValue() == 1;
                 setConfigSquelchAutoTrack(autoTrack);
-                EventQueue.invokeLater(() -> {
+                Platform.runLater(() -> {
                     mSquelchAutoTrackCheckBox.setSelected(autoTrack);
-                    mSquelchAutoTrackCheckBox.setEnabled(true);
+                    mSquelchAutoTrackCheckBox.setDisable(false);
                 });
             }
         }
