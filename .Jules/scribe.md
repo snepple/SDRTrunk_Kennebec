@@ -32,3 +32,7 @@
 **Topic:** P25 Talkgroup Override
 **Learning:** The "P25 NAC Override" and talkgroup assignment features for P25 Phase 1 and 2 channels were listed in the "What's New" section but lacked a dedicated mention in the setup guide.
 **Action:** Updated `src/main/resources/docs/p25.md` to include instructions on setting a Talkgroup Override when setting up a P25 channel.
+## 2024-05-19 - Topic Selection
+**Topic:** Spectrum & Waterfall Display
+**Learning:** Added a new documentation guide covering the Spectrum & Waterfall display, as there was no getting started guide for this core navigational component, and added a signal flow Mermaid diagram to clarify interactions.
+**Action:** Created `src/main/resources/docs/spectrum-&-waterfall.md` and integrated it into the navigation tree of `HelpViewer.java` under "Hardware & Tuners".
