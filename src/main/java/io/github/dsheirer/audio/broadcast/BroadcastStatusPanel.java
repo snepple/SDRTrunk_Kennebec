@@ -18,47 +18,25 @@
  */
 package io.github.dsheirer.audio.broadcast;
 
-import io.github.dsheirer.eventbus.MyEventBus;
-import io.github.dsheirer.gui.playlist.streaming.ViewStreamRequest;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import io.github.dsheirer.icon.Icon;
-import io.github.dsheirer.audio.broadcast.BroadcastEvent;
-import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.preference.UserPreferences;
-import io.github.dsheirer.preference.swing.JTableColumnWidthMonitor;
-import java.awt.Color;
-import java.awt.Component;
-import net.miginfocom.swing.MigLayout;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.TableView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JPopupMenu;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.SwingConstants;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableRowSorter;
-import javax.swing.RowFilter;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import javax.swing.JPopupMenu;
-import javax.swing.JCheckBoxMenuItem;
-
+import java.io.IOException;
 
 /**
  * Table of broadcast streams and statuses.
  */
-public class BroadcastStatusPanel extends JPanel
+public class BroadcastStatusPanel extends JFXPanel
 {
-    private JTable mTable;
-    private JTableColumnWidthMonitor mColumnWidthMonitor;
-    private JScrollPane mScrollPane;
-    private BroadcastModel mBroadcastModel;
-    private UserPreferences mUserPreferences;
-    private String mPreferenceKey;
+    private static final Logger mLog = LoggerFactory.getLogger(BroadcastStatusPanel.class);
+    private BroadcastStatusPanelController mController;
 
     /**
      * Constructs an instance
@@ -68,203 +46,27 @@ public class BroadcastStatusPanel extends JPanel
      */
     public BroadcastStatusPanel(BroadcastModel broadcastModel, UserPreferences userPreferences, String preferenceKey)
     {
-        mBroadcastModel = broadcastModel;
-        mUserPreferences = userPreferences;
-        mPreferenceKey = preferenceKey;
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/audio/broadcast/BroadcastStatusPanel.fxml"));
+                Parent root = loader.load();
+                mController = loader.getController();
+                mController.init(broadcastModel, userPreferences, preferenceKey);
 
-        init();
-    }
-
-    public JTable getTable()
-    {
-        return mTable;
-    }
-
-    private TableRowSorter<BroadcastModel> mRowSorter;
-
-    private void init()
-    {
-        setLayout(new MigLayout("insets 0 0 0 0 ", "[grow,fill]", "[grow,fill]"));
-
-        mTable = new JTable(mBroadcastModel);
-
-        mRowSorter = new TableRowSorter<>(mBroadcastModel);
-        mTable.setRowSorter(mRowSorter);
-
-        DefaultTableCellRenderer renderer = (DefaultTableCellRenderer)mTable.getDefaultRenderer(String.class);
-        renderer.setHorizontalAlignment(SwingConstants.LEFT);
-        DefaultTableCellRenderer intRenderer = (DefaultTableCellRenderer)mTable.getDefaultRenderer(Integer.class);
-        intRenderer.setHorizontalAlignment(SwingConstants.LEFT);
-
-        mTable.getColumnModel().getColumn(BroadcastModel.COLUMN_BROADCASTER_STATUS).setCellRenderer(new StatusCellRenderer());
-        mTable.getColumnModel().getColumn(BroadcastModel.COLUMN_BROADCAST_SERVER_TYPE).setCellRenderer(new ServerTypeRenderer());
-        mColumnWidthMonitor = new JTableColumnWidthMonitor(mUserPreferences, mTable, mPreferenceKey);
-
-        mTable.getTableHeader().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON3) {
-                    JPopupMenu popup = new JPopupMenu();
-                    JCheckBoxMenuItem hideDisabledItem = new JCheckBoxMenuItem("Hide Disabled Streams");
-                    hideDisabledItem.setSelected(mRowSorter.getRowFilter() != null);
-
-                    hideDisabledItem.addActionListener(evt -> {
-                        if (hideDisabledItem.isSelected()) {
-                            mRowSorter.setRowFilter(new RowFilter<BroadcastModel, Integer>() {
-                                @Override
-                                public boolean include(Entry<? extends BroadcastModel, ? extends Integer> entry) {
-                                    BroadcastModel model = entry.getModel();
-                                    BroadcastState state = (BroadcastState) model.getValueAt(entry.getIdentifier(), BroadcastModel.COLUMN_BROADCASTER_STATUS);
-                                    return state != BroadcastState.DISABLED;
-                                }
-                            });
-                        } else {
-                            mRowSorter.setRowFilter(null);
-                        }
-                    });
-
-                    popup.add(hideDisabledItem);
-                    popup.show(e.getComponent(), e.getX(), e.getY());
+                Scene scene = new Scene(root);
+                java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+                if (cssUrl != null) {
+                    scene.getStylesheets().add(cssUrl.toExternalForm());
                 }
+                setScene(scene);
+            } catch (IOException e) {
+                mLog.error("Error loading BroadcastStatusPanel.fxml", e);
             }
         });
-
-        mTable.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                int viewRowIndex = mTable.rowAtPoint(e.getPoint());
-                if (viewRowIndex >= 0) {
-                    if (e.getButton() == MouseEvent.BUTTON3) {
-                        mTable.setRowSelectionInterval(viewRowIndex, viewRowIndex);
-                        int modelRowIndex = mTable.convertRowIndexToModel(viewRowIndex);
-                        if (modelRowIndex >= 0) {
-                            String streamName = (String) mBroadcastModel.getValueAt(modelRowIndex, BroadcastModel.COLUMN_STREAM_NAME);
-                            BroadcastConfiguration config = mBroadcastModel.getBroadcastConfiguration(streamName);
-                            if (config != null) {
-                                JPopupMenu popup = new JPopupMenu();
-                                JCheckBoxMenuItem enableItem = new JCheckBoxMenuItem("Enable", config.isEnabled());
-                                enableItem.addActionListener(evt -> {
-                                    config.setEnabled(enableItem.isSelected());
-                                    mBroadcastModel.process(new BroadcastEvent(config, BroadcastEvent.Event.CONFIGURATION_CHANGE));
-                                });
-                                popup.add(enableItem);
-                                popup.show(e.getComponent(), e.getX(), e.getY());
-                            }
-                        }
-                    } else if (e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1) {
-                        int modelRowIndex = mTable.convertRowIndexToModel(viewRowIndex);
-                        if (modelRowIndex >= 0) {
-                            String streamName = (String) mBroadcastModel.getValueAt(modelRowIndex, BroadcastModel.COLUMN_STREAM_NAME);
-                            BroadcastConfiguration config = mBroadcastModel.getBroadcastConfiguration(streamName);
-                            if (config != null) {
-                                MyEventBus.getGlobalEventBus().post(new ViewStreamRequest(config));
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        mTable.setFillsViewportHeight(true);
-        mScrollPane = new JScrollPane(mTable);
-
-        add(mScrollPane, "grow");
     }
 
-    public class ServerTypeRenderer extends DefaultTableCellRenderer
+    public TableView<BroadcastStatusPanelController.BroadcastModelRow> getTable()
     {
-        public ServerTypeRenderer()
-        {
-            setOpaque(true);
-            setHorizontalAlignment(SwingConstants.LEFT);
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column)
-        {
-            JLabel component = (JLabel)super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-            if(value instanceof BroadcastServerType broadcastServerType)
-            {
-                component.setText(broadcastServerType.toString());
-                Icon icon = new Icon("empty", broadcastServerType.getIconPath());
-                ImageIcon imageIcon = icon.getIcon();
-                ImageIcon scaledIcon = IconModel.getScaledIcon(imageIcon, 13);
-                component.setIcon(scaledIcon);
-            }
-            else
-            {
-                component.setText(null);
-                component.setIcon(null);
-            }
-
-            return component;
-        }
-    }
-
-    /**
-     * Custom cell renderer for the broadcast state column.
-     */
-    public class StatusCellRenderer extends DefaultTableCellRenderer
-    {
-        public StatusCellRenderer()
-        {
-            setOpaque(true);
-            setHorizontalAlignment(SwingConstants.LEFT);
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                       boolean hasFocus, int row, int column)
-        {
-            JLabel component = (JLabel)super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-            if(isSelected)
-            {
-                setBackground(table.getSelectionBackground());
-                setForeground(table.getSelectionForeground());
-            }
-            else
-            {
-                if(value instanceof BroadcastState)
-                {
-                    BroadcastState state = (BroadcastState)value;
-
-                    if(state == BroadcastState.CONNECTED)
-                    {
-                        setBackground(Color.GREEN);
-                        setForeground(table.getForeground());
-                    }
-                    else if(state == BroadcastState.DISABLED)
-                    {
-                        setBackground(table.getBackground());
-                        setForeground(Color.LIGHT_GRAY);
-                    }
-                    else if(state == BroadcastState.INVALID_SETTINGS ||
-                            state == BroadcastState.NETWORK_UNAVAILABLE)
-                    {
-                        setBackground(Color.YELLOW);
-                        setForeground(table.getForeground());
-                    }
-                    else if(state.isErrorState())
-                    {
-                        setBackground(Color.RED);
-                        setForeground(table.getForeground());
-                    }
-                    else
-                    {
-                        setBackground(table.getBackground());
-                        setForeground(table.getForeground());
-                    }
-                }
-                else
-                {
-                    setForeground(table.getForeground());
-                    setBackground(table.getBackground());
-                }
-            }
-
-            return this;
-        }
+        return mController != null ? mController.getTable() : null;
     }
 }
