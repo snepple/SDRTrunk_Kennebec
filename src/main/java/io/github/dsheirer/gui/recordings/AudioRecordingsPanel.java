@@ -15,6 +15,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.ComboBox;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -114,19 +115,23 @@ public class AudioRecordingsPanel extends JPanel {
         mEndDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
         mStartHourSpinner = new Spinner<>(0, 23, 0);
+        mStartHourSpinner.setTooltip(new Tooltip("Start Hour (0-23)"));
         mStartHourSpinner.setPrefWidth(60);
         mStartHourSpinner.setEditable(true);
         mStartHourSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
         mStartMinuteSpinner = new Spinner<>(0, 59, 0);
+        mStartMinuteSpinner.setTooltip(new Tooltip("Start Minute (0-59)"));
         mStartMinuteSpinner.setPrefWidth(60);
         mStartMinuteSpinner.setEditable(true);
         mStartMinuteSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
         mEndHourSpinner = new Spinner<>(0, 23, 23);
+        mEndHourSpinner.setTooltip(new Tooltip("End Hour (0-23)"));
         mEndHourSpinner.setPrefWidth(60);
         mEndHourSpinner.setEditable(true);
         mEndHourSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
         mEndMinuteSpinner = new Spinner<>(0, 59, 59);
+        mEndMinuteSpinner.setTooltip(new Tooltip("End Minute (0-59)"));
         mEndMinuteSpinner.setPrefWidth(60);
         mEndMinuteSpinner.setEditable(true);
         mEndMinuteSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
