@@ -1,0 +1,7 @@
+Ah, I see! `AudioChannelsPanel` was rewritten already, BUT it currently instantiates `AudioChannelPanel` (Swing version) via `SwingNode`.
+Wait... let me read the prompt again:
+Task 1: Locate and rewrite the pure Swing leaf component AudioChannelsPanel. Convert it entirely right now using native JavaFX layouts and controls.
+Task 2: Wrap this newly created JavaFX AudioChannelsPanel in a javax.swing.JFXPanel so it can continue to be hosted inside its legacy Swing parent container.
+Task 3: Refactor the event handling to enforce the MVC pattern. Remove all Swing ActionListeners and replace them with JavaFX Properties and Data Binding, ensuring complete separation of the UI from the audio and radio logic.
+
+There is a conflict! `AudioChannelsPanel` ALREADY is a `JFXPanel` wrapper! Wait, if I read the commit history, `AudioChannelsPanel` and `AudioChannelsPanelController` were JUST ADDED. Wait, let me check the git history.

@@ -1,0 +1,26 @@
+Okay, it looks like `AudioChannelsPanel` (plural) WAS previously a Swing component (wait, if it was, the commit message "Migrate AudioChannelsPanel... to native JavaFX" confirms it!)
+But the prompt says:
+"Jules, proceed immediately to the next component in Phase 2: Bottom-Up Leaf Component Migration for the sdrtrunk_kennebec codebase.
+Task 1: Locate and rewrite the pure Swing leaf component AudioChannelsPanel. Convert it entirely right now using native JavaFX layouts and controls."
+
+Wait! Is the codebase right now ALREADY containing the converted `AudioChannelsPanel`?
+Let me look at `AudioChannelsPanel.java`. It IS already `JFXPanel` and uses `AudioChannelsPanelController`. BUT `AudioChannelPanel` (singular) is still `JPanel`.
+
+Could the user mean `AudioChannelPanel` (singular) and just typed it wrong? Yes! "AudioChannelsPanel" vs "AudioChannelPanel".
+Let's see what `AudioChannelPanel` (singular) does. It implements `Listener<AudioEvent>`. It is a pure Swing leaf component (has no children that are also custom panels, just JLabels etc).
+If I rewrite `AudioChannelPanel` to JavaFX and wrap it in `JFXPanel`, wait... if it is ALREADY instantiated in `AudioChannelsPanelController` inside a `SwingNode`:
+```java
+AudioChannelPanel swingPanel = new AudioChannelPanel(...);
+SwingNode swingNode = new SwingNode();
+SwingUtilities.invokeLater(() -> swingNode.setContent(swingPanel));
+```
+If I rewrite `AudioChannelPanel` to JavaFX, then `AudioChannelsPanelController` doesn't need to wrap it in a `SwingNode` anymore, it can just use it directly! Or wait, if `AudioChannelPanel` becomes a `JFXPanel`, then `AudioChannelsPanelController` would have to do `SwingNode.setContent(jfxPanel)` which is JavaFX -> Swing -> JavaFX... yuck!
+
+Wait, let's look at the instructions again carefully:
+"Task 1: Locate and rewrite the pure Swing leaf component AudioChannelsPanel. Convert it entirely right now using native JavaFX layouts and controls.
+Task 2: Wrap this newly created JavaFX AudioChannelsPanel in a javax.swing.JFXPanel so it can continue to be hosted inside its legacy Swing parent container.
+Task 3: Refactor the event handling to enforce the MVC pattern. Remove all Swing ActionListeners and replace them with JavaFX Properties and Data Binding, ensuring complete separation of the UI from the audio and radio logic.
+Output the fully refactored, implementable code for AudioChannelsPanel and its JFXPanel wrapper immediately."
+
+If they explicitly say `AudioChannelsPanel` AND they want me to wrap it in a `JFXPanel`, they MIGHT be unaware that `AudioChannelsPanel` was ALREADY migrated in `afd4c67`.
+Let me do a search: What if `AudioChannelsPanel` is currently a Swing component in the master branch, but I am on a detached HEAD or my current branch has it as JFXPanel? Let me check `git status`.
