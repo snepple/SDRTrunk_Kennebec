@@ -24,19 +24,25 @@ import io.github.dsheirer.audio.IAudioController;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.settings.SettingsManager;
-import java.awt.Color;
-import java.awt.Component;
-import net.miginfocom.swing.MigLayout;
 
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
-import javax.swing.UIManager;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * Displays one or more audio channel panels.
  */
-public class AudioChannelsPanel extends JPanel
+public class AudioChannelsPanel extends JFXPanel
 {
+    private static final Logger mLog = LoggerFactory.getLogger(AudioChannelsPanel.class);
+    private AudioChannelsPanelController mController;
+
     /**
      * Constructs an instance
      * @param iconModel for icon access
@@ -48,30 +54,23 @@ public class AudioChannelsPanel extends JPanel
     public AudioChannelsPanel(IconModel iconModel, UserPreferences userPreferences, SettingsManager settingsManager,
                               IAudioController controller, AliasModel aliasModel, BroadcastModel broadcastModel)
     {
-        setLayout(new MigLayout("insets 0 5 0 5, gapx 5",
-            "[][sizegroup abc,grow,fill][][sizegroup abc,grow,fill]", "[grow,fill]"));
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/audio/playback/AudioChannelsPanel.fxml"));
+                Parent root = loader.load();
+                mController = loader.getController();
+                mController.init(iconModel, userPreferences, settingsManager, controller, aliasModel, broadcastModel);
 
-        setBackground(UIManager.getColor("Panel.background"));
-
-        addSeparator();
-
-        for(int x = 0; x < controller.getAudioChannels().size(); x++)
-        {
-            add(new AudioChannelPanel(controller.getAudioChannels().get(x), aliasModel, iconModel, settingsManager, userPreferences, broadcastModel));
-
-            if(x < controller.getAudioChannels().size() - 1)
-            {
-                addSeparator();
+                Scene scene = new Scene(root);
+                java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+                if (cssUrl != null) {
+                    scene.getStylesheets().add(cssUrl.toExternalForm());
+                }
+                setScene(scene);
+            } catch (IOException e) {
+                mLog.error("Error loading AudioChannelsPanel.fxml", e);
             }
-        }
-
-		/* Add an empty channel panel so that the panel is sized appropriately
-         * for either a single channel or two channels */
-        if(controller.getAudioChannels().size() == 1)
-        {
-            addSeparator();
-            add(new AudioChannelPanel(null, aliasModel, iconModel, settingsManager, userPreferences, broadcastModel), "growx");
-        }
+        });
     }
 
     /**
@@ -79,23 +78,10 @@ public class AudioChannelsPanel extends JPanel
      */
     public void dispose()
     {
-        for(Component component: getComponents())
-        {
-            if(component instanceof AudioChannelPanel)
-            {
-                ((AudioChannelPanel)component).dispose();
+        Platform.runLater(() -> {
+            if (mController != null) {
+                mController.dispose();
             }
-        }
-    }
-
-    /**
-     * Adds a separator to this panel.
-     */
-    private void addSeparator()
-    {
-        JSeparator separator = new JSeparator(JSeparator.VERTICAL);
-        separator.setForeground(UIManager.getColor("Component.borderColor") != null ? UIManager.getColor("Component.borderColor") : Color.LIGHT_GRAY);
-        separator.setBackground(UIManager.getColor("Panel.background"));
-        add(separator);
+        });
     }
 }
