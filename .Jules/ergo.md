@@ -21,3 +21,7 @@
 ## 2024-10-24 - [Tooltip on Settings Spinner]
 **Learning:** Configuration elements like Spinners that represent arbitrary numeric values without units are confusing.
 **Action:** Always provide a descriptive Tooltip for Spinners to explain what the number represents and the expected unit (e.g., seconds).
+
+## $(date +'%Y-%m-%d') - [Convert IntegerTextField to ComboBox for Talkgroups]
+**Learning:** Manually typed text fields for configuration values known to the system, like Talkgroups, cause high cognitive load. Replacing `IntegerTextField` with an editable `ComboBox<Integer>` auto-populated from `AliasModel` drastically improves UX.
+**Action:** Always scan for text input fields capturing references to known entities and convert them to populated, editable `ComboBox`es, rendering the entity ID alongside its human-readable alias via `ListCell` cell factory.
