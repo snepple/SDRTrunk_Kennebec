@@ -68,6 +68,10 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-20 - Adding Tooltips to Numeric Spinners
 **Learning:** Numeric input Spinners that lack a visual unit label need descriptive Tooltips explaining the specific unit (e.g., MB, seconds) and behavior. This greatly reduces cognitive load for technical configurations.
 **Action:** Always verify if a numeric input needs a unit label, and default to adding an informative Tooltip if it's missing.
+
+## 2024-05-13 - P25P2Viewer Context
+**Learning:** Jargon-heavy configuration fields like WACN, System, and NAC can be confusing for users without context, leading to increased cognitive load and configuration errors.
+**Action:** Adding HIG-compliant tooltips via info circle icons to these configuration labels provides immediate, deferential feedback and clarity, improving the user experience without cluttering the interface.
 ## $(date +%Y-%m-%d) - Adding Tooltips to JMBE Action Buttons
 **Learning:** Action buttons in configuration panels (like `JmbeLibraryPreferenceEditor.java`) that lack textual context or explanation for their underlying complex behaviors (e.g., checking for updates, file selection, removing a library) cause user friction and fail accessibility checks.
 **Action:** Always verify if action buttons in JavaFX preference editors lack tooltips and add descriptive `Tooltip` objects explaining their specific functionality (e.g., "Select an existing JMBE audio library file from your system.") to improve context and accessibility.
