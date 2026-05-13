@@ -143,7 +143,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.setHgap(10);
             gridPane.setVgap(10);
 
-            Label modulationLabel = new Label("Modulation");
+            Label modulationLabel = new Label("Modulation", createHelpIcon("Defines how the digital signal is transmitted.\n\nC4FM: Use for single-tower repeaters or direct radio-to-radio communication.\nLSM: Use for simulcast systems where multiple towers transmit the exact same signal simultaneously."));
             GridPane.setHalignment(modulationLabel, HPos.RIGHT);
             GridPane.setConstraints(modulationLabel, 0, 0);
             gridPane.getChildren().add(modulationLabel);
