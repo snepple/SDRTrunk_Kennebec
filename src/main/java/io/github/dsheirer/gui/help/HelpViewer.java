@@ -8,20 +8,13 @@ import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
 import java.io.IOException;
 
-public class HelpViewer extends JPanel {
+public class HelpViewer extends JFXPanel {
 
     private static final Logger mLog = LoggerFactory.getLogger(HelpViewer.class);
 
     public HelpViewer() {
-        setLayout(new BorderLayout());
-
-        JFXPanel jfxPanel = new JFXPanel();
-        add(jfxPanel, BorderLayout.CENTER);
-
         Platform.runLater(() -> {
             try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/HelpView.fxml"));
@@ -31,7 +24,7 @@ public class HelpViewer extends JPanel {
                 if (cssUrl != null) {
                     scene.getStylesheets().add(cssUrl.toExternalForm());
                 }
-                jfxPanel.setScene(scene);
+                setScene(scene);
             } catch (IOException e) {
                 mLog.error("Error loading HelpView.fxml", e);
             }
