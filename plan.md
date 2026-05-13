@@ -1,34 +1,22 @@
-1. **Locate the pure Swing leaf component**: I found that `AudioChannelsPanel` (plural) is currently a `JFXPanel` wrapper in the repository, but it instantiates `AudioChannelPanel` (singular) via `SwingNode`. It appears `AudioChannelPanel` (singular) is the actual pure Swing leaf component that needs to be migrated to JavaFX.
-2. **Rewrite as native JavaFX**: I will write `AudioChannelPanel.fxml` using native JavaFX layouts (`HBox`, `Label`) to replace the MigLayout implementation. I will create `AudioChannelPanelController.java` to handle the MVC logic, removing `ActionListener` and `javax.swing.Timer` in favor of JavaFX data binding and `PauseTransition`.
-3. **Wrap in JFXPanel**: I will rewrite `AudioChannelPanel.java` to extend `JFXPanel` (instead of `JPanel`), which loads the FXML and acts as the wrapper to be hosted in legacy containers.
-4. **Complete pre-commit steps**: I will use the `run_in_bash_session` tool to run `./gradlew test` to verify the build, followed by `pre_commit_instructions` to ensure proper testing, verification, review, and reflection are done.
-5. **Output the code**: I will provide the fully refactored code for the `AudioChannelPanel` wrapper, the controller, and the FXML directly to the user as requested.
-1. **Goal:** Upgrade `mTalkgroupField` in `P25FullyQualifiedTalkgroupEditor.java` to a `ComboBox<IdentifierValue>` and populate it from known alias talkgroups.
-2. **Analysis:** The `P25FullyQualifiedTalkgroupEditor` currently takes `UserPreferences` and `PlaylistManager`. I can retrieve all aliases using `mPlaylistManager.getAliasModel().getAliases()`. I can iterate through all `Alias` items, look at their `getIdentities()`, check if they are `P25FullyQualifiedTalkgroup` instances, and if so, add their Talkgroup value and `Alias` name to the `mTalkgroupField` items as an `IdentifierValue`!
-3. **Implementation details:**
-    - Change `TextField mTalkgroupField` to `ComboBox<IdentifierValue> mTalkgroupField`.
-    - Update `getTalkgroupField()` to return a `ComboBox<IdentifierValue>` that is editable, uses a `CellFactory` to show `HEX - Label`, and a `StringConverter` to allow user text entry (same as `getWacnField()` and `getSystemField()`).
-    - Update `setItem(...)` to call `mTalkgroupField.setValue(null)` and `mTalkgroupField.getEditor().setText("")`.
-    - Update `updateTextFormatter()` to set the formatter using `mTalkgroupField.getEditor().setTextFormatter(...)`.
-    - Update `updateTextFormatter()` to set initial value:
-        ```java
-        if(getItem() != null) {
-            mTalkgroupTextFormatter.setValue(getItem().getValue());
-            mTalkgroupField.setValue(new IdentifierValue(getItem().getValue(), ""));
-        } else {
-            mTalkgroupTextFormatter.setValue(null);
-            mTalkgroupField.setValue(null);
+1. **Optimize Search Field Filters in P25 and DMR Viewers**:
+   - The memory note explicitly says: "In JavaFX `FilteredList` implementations (e.g., table search fields in SDRTrunk), avoid compiling regex patterns (`Pattern.compile()`) or applying invariant transformations (like `toLowerCase()`) inside the `setPredicate` lambda. Hoist these operations outside the predicate to prevent redundant O(N) evaluations per keystroke and severe UI lag."
+   - In `P25P1Viewer.java`, `P25P2Viewer.java`, and `DmrViewer.java`, we have this block:
+     ```java
+     Predicate<MessagePackage> textPredicate = message -> message.toString().toLowerCase().contains(filterText.toLowerCase());
+     ```
+   - I will hoist `filterText.toLowerCase()` into a `lowerCaseFilterText` variable outside the lambda.
+
+   Example change for `P25P1Viewer.java`:
+   ```java
+        if(filterText != null && !filterText.isEmpty())
+        {
+            final String lowerCaseFilterText = filterText.toLowerCase();
+            Predicate<MessagePackage> textPredicate = message -> message.toString().toLowerCase().contains(lowerCaseFilterText);
+            mFilteredMessagePackages.setPredicate(textPredicate);
         }
-        ```
-    - Update event listeners:
-        ```java
-        mTalkgroupField.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if(getItem() != null && newValue != null && newValue.getValue() != null) {
-                getItem().setValue(newValue.getValue());
-                modifiedProperty().set(true);
-            }
-        });
-        mTalkgroupTextFormatter.valueProperty().addListener(mTalkgroupValueChangeListener);
-        ```
-    - In `populateDropdowns()`, iterate through `mPlaylistManager.getAliasModel().getAliases()` to extract `P25FullyQualifiedTalkgroup` IDs and populate `mTalkgroupField`.
-4. **Pre-commit:** Verify `./gradlew classes`.
+   ```
+   (And similarly in the `find` methods of these 3 viewers, we should do the same optimization.)
+
+   Let's check `ChannelEditor.java`, `matchesFilter` also has `mFilterText = filterText.toLowerCase();` already outside the loop, but `channel.getName().toLowerCase()` is inside, which is fine since it's the item's own value.
+
+   So the main target is the 3 Viewers: `P25P1Viewer`, `P25P2Viewer`, `DmrViewer`. This is exactly the kind of optimization the agent 'Bolt' should do: Hoist loop invariant out of a lambda.

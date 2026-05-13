@@ -303,7 +303,8 @@ public class P25P1Viewer extends VBox
 
         if(filterText != null && !filterText.isEmpty())
         {
-            Predicate<MessagePackage> textPredicate = message -> message.toString().toLowerCase().contains(filterText.toLowerCase());
+            final String lowerCaseFilterText = filterText.toLowerCase();
+            Predicate<MessagePackage> textPredicate = message -> message.toString().toLowerCase().contains(lowerCaseFilterText);
             mFilteredMessagePackages.setPredicate(textPredicate);
         }
         else
@@ -320,9 +321,10 @@ public class P25P1Viewer extends VBox
     {
         if(text != null && !text.isEmpty())
         {
+            final String lowerCaseText = text.toLowerCase();
             for(MessagePackage messagePackage: mFilteredMessagePackages)
             {
-                if(messagePackage.toString().toLowerCase().contains(text.toLowerCase()))
+                if(messagePackage.toString().toLowerCase().contains(lowerCaseText))
                 {
                     getMessagePackageTableView().getSelectionModel().select(messagePackage);
                     getMessagePackageTableView().scrollTo(messagePackage);
