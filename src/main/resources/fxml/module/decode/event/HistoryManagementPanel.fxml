@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+
+<HBox fx:id="root" spacing="5" alignment="CENTER_LEFT" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.dsheirer.module.decode.event.HistoryManagementPanelController">
+    <Button fx:id="filterButton" text="Filter" />
+    <Button fx:id="clearButton" text="Clear" />
+    <Label text="History:" />
+    <Slider fx:id="historySlider" min="0" max="1000" />
+    <Label fx:id="historyValueLabel" text="0" />
+</HBox>

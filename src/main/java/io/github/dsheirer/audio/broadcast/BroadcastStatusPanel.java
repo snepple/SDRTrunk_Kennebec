@@ -69,4 +69,16 @@ public class BroadcastStatusPanel extends JFXPanel
     {
         return mController != null ? mController.getTable() : null;
     }
+
+    public void setDisable(boolean disable) {
+        if (mController != null && mController.getTable() != null) {
+            Platform.runLater(() -> mController.getTable().setDisable(disable));
+        } else {
+            Platform.runLater(() -> {
+                if (mController != null && mController.getTable() != null) {
+                    mController.getTable().setDisable(disable);
+                }
+            });
+        }
+    }
 }
