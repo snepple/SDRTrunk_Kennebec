@@ -47,7 +47,7 @@ import javax.swing.tree.TreeSelectionModel;
  *
  * @param <T> element type for the filter set.
  */
-public class FilterEditorPanel<T> extends JPanel
+public class FilterEditorPanel<T> extends javafx.embed.swing.JFXPanel
 {
     private static final long serialVersionUID = 1L;
     private JTree mTree;
@@ -60,7 +60,7 @@ public class FilterEditorPanel<T> extends JPanel
      */
     public FilterEditorPanel(FilterSet<T> filterSet)
     {
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
+
         mFilterSet = filterSet;
         init();
     }
@@ -116,7 +116,14 @@ public class FilterEditorPanel<T> extends JPanel
         mTree.setCellRenderer(new EditorTreeCellRenderer());
         mTree.setCellEditor(new FilterTreeCellEditor());
         mTree.setEditable(true);
-        add(mTree);
+
+        javafx.application.Platform.runLater(() -> {
+            javafx.scene.layout.BorderPane jfxRoot = new javafx.scene.layout.BorderPane();
+            javafx.embed.swing.SwingNode treeNode = new javafx.embed.swing.SwingNode();
+            treeNode.setContent(mTree);
+            jfxRoot.setCenter(treeNode);
+            setScene(new javafx.scene.Scene(jfxRoot));
+        });
     }
 
     /**
