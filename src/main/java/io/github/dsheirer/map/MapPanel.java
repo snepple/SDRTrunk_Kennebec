@@ -57,7 +57,7 @@ import javax.swing.event.ChangeListener;
 /**
  * Swing map panel.
  */
-public class MapPanel extends JPanel implements IPlottableUpdateListener
+public class MapPanel extends javafx.embed.swing.JFXPanel implements IPlottableUpdateListener
 {
     private static final long serialVersionUID = 1L;
 
@@ -106,7 +106,17 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
 
     private void init()
     {
-        setLayout(new BorderLayout());
+
+        javax.swing.JPanel innerPanel = new javax.swing.JPanel(new BorderLayout());
+
+        javafx.application.Platform.runLater(() -> {
+            javafx.scene.layout.BorderPane root = new javafx.scene.layout.BorderPane();
+            javafx.embed.swing.SwingNode mapNode = new javafx.embed.swing.SwingNode();
+            mapNode.setContent(innerPanel);
+            root.setCenter(mapNode);
+            setScene(new javafx.scene.Scene(root));
+        });
+
         mMapService.addListener(this);
 
         // Sidebar (Master-Detail)
@@ -229,7 +239,7 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
         splitPane.setRightComponent(map);
         splitPane.setBorder(javax.swing.BorderFactory.createEmptyBorder());
 
-        add(splitPane, BorderLayout.CENTER);
+        innerPanel.add(splitPane, BorderLayout.CENTER);
 
         // Hide legacy UI components but keep them initialized for background state changes
         getFollowButton();
