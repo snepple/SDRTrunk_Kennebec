@@ -57,7 +57,7 @@ import javax.swing.event.ChangeListener;
 /**
  * Swing map panel.
  */
-public class MapPanel extends javafx.embed.swing.JFXPanel implements IPlottableUpdateListener
+public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottableUpdateListener
 {
     private static final long serialVersionUID = 1L;
 
@@ -110,11 +110,9 @@ public class MapPanel extends javafx.embed.swing.JFXPanel implements IPlottableU
         javax.swing.JPanel innerPanel = new javax.swing.JPanel(new BorderLayout());
 
         javafx.application.Platform.runLater(() -> {
-            javafx.scene.layout.BorderPane root = new javafx.scene.layout.BorderPane();
             javafx.embed.swing.SwingNode mapNode = new javafx.embed.swing.SwingNode();
             mapNode.setContent(innerPanel);
-            root.setCenter(mapNode);
-            setScene(new javafx.scene.Scene(root));
+            this.setCenter(mapNode);
         });
 
         mMapService.addListener(this);
@@ -424,7 +422,7 @@ public class MapPanel extends javafx.embed.swing.JFXPanel implements IPlottableU
             mClearMapButton.addActionListener(e ->
             {
                 mMapPainter.clearAllEntities();
-                repaint();
+                // repaint(); not needed for JavaFX
             });
         }
 
@@ -452,7 +450,7 @@ public class MapPanel extends javafx.embed.swing.JFXPanel implements IPlottableU
         {
             mDeleteAllTracksButton = new JButton("Delete All");
             mDeleteAllTracksButton.addActionListener(e -> {
-                int confirmation = JOptionPane.showConfirmDialog(MapPanel.this,
+                int confirmation = JOptionPane.showConfirmDialog(null,
                         "Are you sure you want to delete all tracks?",
                         "Delete All Tracks", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                 if (confirmation == JOptionPane.YES_OPTION) {
@@ -485,7 +483,7 @@ public class MapPanel extends javafx.embed.swing.JFXPanel implements IPlottableU
                         ? "Are you sure you want to delete the selected track?"
                         : "Are you sure you want to delete the " + selectedIndices.length + " selected tracks?";
 
-                int confirmation = JOptionPane.showConfirmDialog(MapPanel.this,
+                int confirmation = JOptionPane.showConfirmDialog(null,
                         message, "Delete Tracks", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
                 if (confirmation == JOptionPane.YES_OPTION) {

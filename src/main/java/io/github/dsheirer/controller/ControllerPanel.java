@@ -52,9 +52,17 @@ import org.slf4j.LoggerFactory;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
+import javafx.embed.swing.SwingNode;
+import javafx.scene.Node;
 import io.github.dsheirer.gui.help.HelpViewer;
 import javax.swing.JSplitPane;
 import javax.swing.JPanel;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
+import javafx.embed.swing.SwingNode;
+import javafx.scene.Node;
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
 import javax.swing.JScrollPane;
@@ -65,7 +73,7 @@ import java.awt.CardLayout;
 import java.awt.BorderLayout;
 
 
-public class ControllerPanel extends JPanel
+public class ControllerPanel extends javafx.scene.layout.BorderPane
 {
     private final static Logger mLog = LoggerFactory.getLogger(ControllerPanel.class);
     private static final long serialVersionUID = 1L;
@@ -77,11 +85,11 @@ public class ControllerPanel extends JPanel
     private TunerViewPanel mTunerManagerPanel;
     private AudioRecordingsPanel mAudioRecordingsPanel;
 
-    private JSplitPane mSplitPane;
-    private JPanel mCardPanel;
-    private CardLayout mCardLayout;
+
+    private StackPane mCardPanel;
+
     private JList<String> mSidebarList;
-    private javax.swing.JComponent mResourcePanel;
+    private Node mResourcePanel;
 
     public ControllerPanel(PlaylistManager playlistManager, AudioPlaybackManager audioPlaybackManager,
                            IconModel iconModel, MapService mapService, SettingsManager settingsManager,
@@ -119,41 +127,62 @@ public class ControllerPanel extends JPanel
 
     private void init()
     {
-        setLayout(new BorderLayout());
+        mCardPanel = new StackPane();
 
-        mCardLayout = new CardLayout();
-        mCardPanel = new JPanel(mCardLayout);
+        // Wrap Swing components in SwingNode
+        SwingNode nowPlayingNode = new SwingNode();
+        nowPlayingNode.setContent(mNowPlayingPanel);
+        mCardPanel.getChildren().add(nowPlayingNode);
+        nowPlayingNode.setId("now_playing");
+        nowPlayingNode.setVisible(false);
+
+        mCardPanel.getChildren().add(mMapPanel);
+        mMapPanel.setId("map");
+        mMapPanel.setVisible(false);
         
-        mCardPanel.add(mNowPlayingPanel, "now_playing");
-        mCardPanel.add(mMapPanel, "map");
-        mCardPanel.add(mTunerManagerPanel, "tuners");
-        mCardPanel.add(mAudioRecordingsPanel, "audio_recordings");
-        mCardPanel.add(new HelpViewer(), "help_viewer");
+        SwingNode tunerManagerNode = new SwingNode();
+        tunerManagerNode.setContent(mTunerManagerPanel);
+        mCardPanel.getChildren().add(tunerManagerNode);
+        tunerManagerNode.setId("tuners");
+        tunerManagerNode.setVisible(false);
 
-        add(mCardPanel, BorderLayout.CENTER);
+        SwingNode audioRecordingsNode = new SwingNode();
+        audioRecordingsNode.setContent(mAudioRecordingsPanel);
+        mCardPanel.getChildren().add(audioRecordingsNode);
+        audioRecordingsNode.setId("audio_recordings");
+        audioRecordingsNode.setVisible(false);
+
+        HelpViewer helpViewer = new HelpViewer();
+        mCardPanel.getChildren().add(helpViewer);
+        helpViewer.setId("help_viewer");
+        helpViewer.setVisible(false);
+
+        this.setCenter(mCardPanel);
         // AudioPanel moved to SDRTrunk.java
     }
 
-    public void addView(String id, java.awt.Component view) {
-        mCardPanel.add(view, id);
+    public void addView(String id, Node view) {
+        mCardPanel.getChildren().add(view);
+        view.setId(id);
+        view.setVisible(false);
     }
 
     public void showView(String id) {
         mNowPlayingPanel.getManageWidgetsButton().setVisible("now_playing".equals(id));
-        mCardLayout.show(mCardPanel, id);
+        for (Node child : mCardPanel.getChildren()) {
+            child.setVisible(id.equals(child.getId()));
+        }
     }
 
-    public void setResourcePanel(javax.swing.JComponent resourcePanel) {
+    public void setResourcePanel(Node resourcePanel) {
         mResourcePanel = resourcePanel;
-        add(mResourcePanel, BorderLayout.SOUTH);
+        this.setBottom(mResourcePanel);
         mResourcePanel.setVisible(false);
     }
 
     public void setResourcePanelVisible(boolean visible) {
         if (mResourcePanel != null) {
             mResourcePanel.setVisible(visible);
-            revalidate();
-            repaint();
         }
     }
 
