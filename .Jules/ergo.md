@@ -25,3 +25,7 @@
 ## $(date +'%Y-%m-%d') - [Convert IntegerTextField to ComboBox for Talkgroups]
 **Learning:** Manually typed text fields for configuration values known to the system, like Talkgroups, cause high cognitive load. Replacing `IntegerTextField` with an editable `ComboBox<Integer>` auto-populated from `AliasModel` drastically improves UX.
 **Action:** Always scan for text input fields capturing references to known entities and convert them to populated, editable `ComboBox`es, rendering the entity ID alongside its human-readable alias via `ListCell` cell factory.
+
+## 2024-05-13 - P25 Talkgroup Dropdown Conversion
+**Learning:** Legacy JavaFX TextFields for Identifiers fail to provide any discovery for existing system configurations. Converting Talkgroup fields to ComboBox<IdentifierValue> populated by AliasList scanning allows rapid re-use of configurations, reducing redundant entry for operators tracking pre-existing Phase 2 talkgroups.
+**Action:** When refactoring Identifier UIs, systematically replace text-based ID inputs with searchable ComboBox fields hooked to AliasList tracking. Ensure the ComboBox retains an editable StringConverter fallback so new IDs can still be added.
