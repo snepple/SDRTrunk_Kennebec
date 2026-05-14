@@ -25,7 +25,7 @@ import io.github.dsheirer.source.tuner.hackrf.HackRFTunerController.HackRFSample
 import io.github.dsheirer.source.tuner.hackrf.HackRFTunerController.HackRFVGAGain;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +42,7 @@ import javax.usb.UsbException;
 /**
  * HackRF Tuner Editor
  */
-public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfiguration>
+public class HackRFTunerEditor extends SwingTunerEditor<HackRFTuner,HackRFTunerConfiguration>
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(HackRFTunerEditor.class);

@@ -21,7 +21,7 @@ package io.github.dsheirer.source.tuner.recording;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +32,7 @@ import javax.swing.JSeparator;
 /**
  * Recording tuner configuration editor
  */
-public class RecordingTunerEditor extends TunerEditor<RecordingTuner,RecordingTunerConfiguration>
+public class RecordingTunerEditor extends SwingTunerEditor<RecordingTuner,RecordingTunerConfiguration>
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(RecordingTunerEditor.class);

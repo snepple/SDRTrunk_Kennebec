@@ -24,7 +24,7 @@ import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.sdrplay.api.SDRPlayException;
 import io.github.dsheirer.source.tuner.sdrplay.api.device.TunerSelect;
 import io.github.dsheirer.source.tuner.sdrplay.api.parameter.control.AgcMode;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import io.github.dsheirer.util.ThreadPool;
 import java.awt.Color;
 import java.awt.EventQueue;
@@ -44,7 +44,7 @@ import javax.swing.JToggleButton;
 /**
  * Abstract RSP tuner editor
  */
-public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends TunerEditor<RspTuner,C> implements ITunerStatusListener
+public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends SwingTunerEditor<RspTuner,C> implements ITunerStatusListener
 {
     private Logger mLog = LoggerFactory.getLogger(RspTunerEditor.class);
     protected static final String MANUAL = "Manual";
