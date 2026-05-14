@@ -248,7 +248,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             content.setPadding(new Insets(10, 10, 10, 10));
 
             mGraphicEQEnabledSwitch = new ToggleSwitch("Enable Graphic Equalizer");
-            mGraphicEQEnabledSwitch.setTooltip(new Tooltip("Apply a 5-band graphic EQ to decoded P25 audio"));
+            mGraphicEQEnabledSwitch.setTooltip(new Tooltip("Apply a 10-band graphic EQ to decoded P25 audio"));
             mGraphicEQEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
                 modifiedProperty().set(true);
                 for(int i = 0; i < GraphicEqualizer.BAND_COUNT; i++)
