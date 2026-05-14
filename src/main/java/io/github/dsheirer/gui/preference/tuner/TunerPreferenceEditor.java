@@ -22,27 +22,22 @@ package io.github.dsheirer.gui.preference.tuner;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.source.ChannelizerType;
 import io.github.dsheirer.preference.source.TunerPreference;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
+import javafx.scene.layout.VBox;
 
-import jiconfont.icons.font_awesome.FontAwesome;
-import jiconfont.javafx.IconNode;
 
 
 /**
  * Preference settings for channel event view
  */
-public class TunerPreferenceEditor extends HBox
+public class TunerPreferenceEditor extends VBox
 {
     private static final String HELP_TEXT_POLYPHASE = "Processes all channels from tuner.  This " +
         "channelizer is more efficient when decoding 3 or more channels.";
@@ -50,57 +45,47 @@ public class TunerPreferenceEditor extends HBox
         "channelizer may work better for computers with constrained resources when processing a small number of channels.";
 
     private TunerPreference mTunerPreference;
-    private GridPane mEditorPane;
     private ChoiceBox<ChannelizerType> mChannelizerTypeChoiceBox;
-    private Label mChannelizerLabel;
     private Label mPolyphaseLabel;
     private Label mHelpTextPolyphaseLabel;
     private Label mHeterodyneLabel;
     private Label mHelpTextHeterodyneLabel;
     private ChoiceBox<RspDuoSelectionMode> mRspDuoTunerModeChoiceBox;
-    private Label mRspDuoModeLabel;
 
     public TunerPreferenceEditor(UserPreferences userPreferences)
     {
         mTunerPreference = userPreferences.getTunerPreference();
-        getChildren().add(getEditorPane());
-    }
 
-    private GridPane getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            int row = 0;
-            mEditorPane = new GridPane();
-            mEditorPane.setVgap(10);
-            mEditorPane.setHgap(10);
-            mEditorPane.setPadding(new Insets(10, 10, 10, 10));
-            GridPane.setHalignment(getChannelizerLabel(), HPos.RIGHT);
-            mEditorPane.add(getChannelizerLabel(), 0, row);
-            mEditorPane.add(getChannelizerTypeChoiceBox(), 1, row);
-            mEditorPane.add(getPolyphaseLabel(), 0, ++row, 2, 1);
-            mEditorPane.add(getHelpTextPolyphaseLabel(), 0, ++row, 2, 3);
-            row += 3;
-            mEditorPane.add(new Label(" "), 0, row);
-            mEditorPane.add(getHeterodyneLabel(), 0, ++row, 2, 1);
-            mEditorPane.add(getHelpTextHeterodyneLabel(), 0, ++row, 2, 3);
-            row += 3;
-            mEditorPane.add(new Separator(Orientation.HORIZONTAL), 0, row, 2, 1);
-            mEditorPane.add(getRspDuoModeLabel(), 0, ++row);
-            mEditorPane.add(getRspDuoTunerModeChoiceBox(), 1, row);
-        }
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
 
-        return mEditorPane;
-    }
+        Label headerLabel = new Label("Source Tuners");
+        headerLabel.getStyleClass().add("hig-section-header");
+        getChildren().add(headerLabel);
 
-    private Label getChannelizerLabel()
-    {
-        if(mChannelizerLabel == null)
-        {
-            mChannelizerLabel = new Label("Channelizer Type", createHelpIcon("Determines how the SDR hardware processes incoming radio signals across its tuned bandwidth. Polyphase is more efficient for decoding 3 or more channels, while Heterodyne processes each channel on-demand."));
-        }
+        SettingsCard mainCard = new SettingsCard();
 
-        return mChannelizerLabel;
+        VBox channelizerBox = new VBox(5);
+        channelizerBox.getChildren().addAll(getChannelizerTypeChoiceBox());
+        SettingsRow channelizerRow = new SettingsRow("Channelizer Type", channelizerBox);
+
+        VBox polyphaseBox = new VBox(2);
+        polyphaseBox.setPadding(new Insets(0, 0, 10, 30));
+        getHelpTextPolyphaseLabel().getStyleClass().add("kennebec-secondary-text");
+        polyphaseBox.getChildren().addAll(getPolyphaseLabel(), getHelpTextPolyphaseLabel());
+
+        VBox heterodyneBox = new VBox(2);
+        heterodyneBox.setPadding(new Insets(0, 0, 10, 30));
+        getHelpTextHeterodyneLabel().getStyleClass().add("kennebec-secondary-text");
+        heterodyneBox.getChildren().addAll(getHeterodyneLabel(), getHelpTextHeterodyneLabel());
+
+        VBox modeBox = new VBox(5);
+        modeBox.getChildren().add(getRspDuoTunerModeChoiceBox());
+        SettingsRow modeRow = new SettingsRow("SDRPlay RSPduo Selection Mode", modeBox);
+
+        mainCard.getChildren().addAll(channelizerRow, polyphaseBox, heterodyneBox, modeRow);
+
+        getChildren().add(mainCard);
     }
 
     private ChoiceBox<ChannelizerType> getChannelizerTypeChoiceBox()
@@ -109,6 +94,7 @@ public class TunerPreferenceEditor extends HBox
         {
             mChannelizerTypeChoiceBox = new ChoiceBox<>();
             mChannelizerTypeChoiceBox.getItems().addAll(ChannelizerType.values());
+            mChannelizerTypeChoiceBox.setTooltip(new Tooltip("Determines how the SDR hardware processes incoming radio signals across its tuned bandwidth. Polyphase is more efficient for decoding 3 or more channels, while Heterodyne processes each channel on-demand."));
 
             ChannelizerType current = mTunerPreference.getChannelizerType();
             mChannelizerTypeChoiceBox.getSelectionModel().select(current);
@@ -177,6 +163,7 @@ public class TunerPreferenceEditor extends HBox
         {
             mRspDuoTunerModeChoiceBox = new ChoiceBox<>();
             mRspDuoTunerModeChoiceBox.getItems().addAll(RspDuoSelectionMode.values());
+            mRspDuoTunerModeChoiceBox.setTooltip(new Tooltip("Configures the dual-tuner behavior of the SDRPlay RSPduo hardware (e.g., Single Tuner vs. Dual Tuner mode)."));
 
             RspDuoSelectionMode current = mTunerPreference.getRspDuoTunerMode();
             mRspDuoTunerModeChoiceBox.getSelectionModel().select(current);
@@ -197,25 +184,4 @@ public class TunerPreferenceEditor extends HBox
         return mRspDuoTunerModeChoiceBox;
     }
 
-    private Label getRspDuoModeLabel()
-    {
-        if(mRspDuoModeLabel == null)
-        {
-            mRspDuoModeLabel = new Label("SDRPlay RSPduo Selection Mode", createHelpIcon("Configures the dual-tuner behavior of the SDRPlay RSPduo hardware (e.g., Single Tuner vs. Dual Tuner mode)."));
-        }
-
-        return mRspDuoModeLabel;
-    }
-
-    private Label createHelpIcon(String tooltipText) {
-        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
-        iconNode.setIconSize(14);
-        iconNode.setFill(Color.GRAY);
-        Label label = new Label("", iconNode);
-        Tooltip tooltip = new Tooltip(tooltipText);
-        tooltip.setWrapText(true);
-        tooltip.setMaxWidth(400);
-        label.setTooltip(tooltip);
-        return label;
-    }
 }
