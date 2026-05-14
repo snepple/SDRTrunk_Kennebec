@@ -62,7 +62,7 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-11 - Squelch Auto Track Mnemonic and Tooltip Formatting
 Learning: JCheckBox configurations inside control panels (like SignalPowerView) are prime candidates for keyboard mnemonics (e.g., `Alt+A`) and require clear, HTML-wrapped tooltips and AccessibleContext settings to align with HIG accessibility guidelines.
 Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, structure long tooltips with `<html>` tags for wrapping, and always apply descriptive `AccessibleContext` names/descriptions.
-## 2024-05-23 - [Settings Format Standardization]
+## $(date +%Y-%m-%d) - [Settings Format Standardization]
 **Learning:** [Apple HIG states preferences should be grouped in bordered card views with separators. The original manual VBox/HBox combinations broke layout consistency.]
 **Action:** [Migrated Application Preference Editor to use standard SettingsCard and SettingsRow containers.]
 ## 2026-05-20 - Adding Tooltips to Numeric Spinners
@@ -72,9 +72,9 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-05-13 - P25P2Viewer Context
 **Learning:** Jargon-heavy configuration fields like WACN, System, and NAC can be confusing for users without context, leading to increased cognitive load and configuration errors.
 **Action:** Adding HIG-compliant tooltips via info circle icons to these configuration labels provides immediate, deferential feedback and clarity, improving the user experience without cluttering the interface.
-## 2024-05-23 - Adding Tooltips to JMBE Action Buttons
+## $(date +%Y-%m-%d) - Adding Tooltips to JMBE Action Buttons
 **Learning:** Action buttons in configuration panels (like `JmbeLibraryPreferenceEditor.java`) that lack textual context or explanation for their underlying complex behaviors (e.g., checking for updates, file selection, removing a library) cause user friction and fail accessibility checks.
 **Action:** Always verify if action buttons in JavaFX preference editors lack tooltips and add descriptive `Tooltip` objects explaining their specific functionality (e.g., "Select an existing JMBE audio library file from your system.") to improve context and accessibility.
-## 2024-05-23 - Adding Tooltips to Numeric Spinners
+## $(date +%Y-%m-%d) - Adding Tooltips to Numeric Spinners
 **Learning:** Numeric input Spinners that lack a visual unit label need descriptive Tooltips explaining the specific unit (e.g., MB, seconds) and behavior. This greatly reduces cognitive load for technical configurations.
 **Action:** Always verify if a numeric input needs a unit label, and default to adding an informative Tooltip if it's missing.
