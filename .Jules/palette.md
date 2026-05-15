@@ -78,3 +78,7 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-05-23 - Adding Tooltips to Audio Test Buttons
 **Learning:** Action buttons, especially those that trigger auditory feedback like "Test" buttons for playback devices or tones, should have descriptive Tooltips indicating what they are testing. This provides important context, especially since they are grouped with other similar testing functions.
 **Action:** Always add descriptive `Tooltip` components to test buttons in audio playback configuration panels.
+
+## 2024-05-18 - Directory Preference Layout HIG Update
+**Learning:** Legacy `GridPane` layouts for preferences often break aesthetic integrity due to mismatched alignment and unstandardized spacing, making it difficult for the user to intuitively understand grouping.
+**Action:** Always replace legacy nested layout panels (like `HBox` containing `GridPane`) with a vertical flow `VBox` housing `SettingsCard` and `SettingsRow` elements. This provides consistent standard spacing, automatic right-alignment of trailing controls, and clear visual grouping according to Apple HIG principles.
