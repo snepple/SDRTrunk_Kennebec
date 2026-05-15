@@ -13,3 +13,7 @@
 ## 2026-05-08 - Formatting 32-bit Unsigned Talkgroups
 **Learning:** Talkgroups, especially in NBFM, can exceed the bounds of a signed 32-bit integer. The talkgroup field accepts up to 4,294,967,295 (unsigned `int` max). If we use `String.valueOf(talkgroup)` directly, it prints as a negative number when it exceeds 2,147,483,647.
 **Action:** Use `Integer.toUnsignedString()` when fetching talkgroup IDs for display instead of `String.valueOf()` to correctly display values larger than `Integer.MAX_VALUE`.
+
+## 2024-05-18 - FilteredList Predicate Invariant Hoisting
+**Learning:** In JavaFX `FilteredList` implementations, executing expensive invariant operations (like compiling regular expressions or converting search strings to lowercase) inside the `setPredicate` lambda causes severe performance bottlenecks. For a list of N items, these operations execute N times per UI update/keypress, leading to O(N) redundant object allocations and UI freezes, particularly when catching exceptions for invalid inputs.
+**Action:** Always hoist invariant transformations outside the `setPredicate` lambda block. Compile patterns and prepare filter strings once, assign them to `final` or effectively final variables, and then reference those variables within the predicate to ensure they are evaluated only once per update cycle.
