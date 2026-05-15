@@ -22,13 +22,13 @@
 **Learning:** Configuration elements like Spinners that represent arbitrary numeric values without units are confusing.
 **Action:** Always provide a descriptive Tooltip for Spinners to explain what the number represents and the expected unit (e.g., seconds).
 
-## $(date +'%Y-%m-%d') - [Convert IntegerTextField to ComboBox for Talkgroups]
+## 2024-10-24 - [Convert IntegerTextField to ComboBox for Talkgroups]
 **Learning:** Manually typed text fields for configuration values known to the system, like Talkgroups, cause high cognitive load. Replacing `IntegerTextField` with an editable `ComboBox<Integer>` auto-populated from `AliasModel` drastically improves UX.
 **Action:** Always scan for text input fields capturing references to known entities and convert them to populated, editable `ComboBox`es, rendering the entity ID alongside its human-readable alias via `ListCell` cell factory.
 
 ## 2024-05-13 - P25 Talkgroup Dropdown Conversion
 **Learning:** Legacy JavaFX TextFields for Identifiers fail to provide any discovery for existing system configurations. Converting Talkgroup fields to ComboBox<IdentifierValue> populated by AliasList scanning allows rapid re-use of configurations, reducing redundant entry for operators tracking pre-existing Phase 2 talkgroups.
 **Action:** When refactoring Identifier UIs, systematically replace text-based ID inputs with searchable ComboBox fields hooked to AliasList tracking. Ensure the ComboBox retains an editable StringConverter fallback so new IDs can still be added.
-## 2025-02-27 - Smart Dropdowns for P25 Phase 2 Settings
-**Learning:** Using basic IntegerTextFields for complex IDs like WACN, System, and NAC requires users to type hex strings perfectly and recall them across channels.
-**Action:** Replace IntegerTextField with a ComboBox<Integer> that dynamically populates with discovered WACN/System/NAC parameters from existing channel models, utilizing a custom StringConverter for proper Hex formatting.
+## 2024-10-24 - Convert Radio ID Text Field to Smart Dropdown
+**Learning:** Forcing users to manually enter large numeric identifiers (like 6-digit Radio IDs) into standard `TextField`s increases cognitive load and data entry error rates. We can extract existing identifiers from `AliasList` (via `PlaylistManager`) and populate an editable `ComboBox`, which serves as a smart dropdown.
+**Action:** Convert manual text inputs for radio identifiers into an editable `ComboBox<IdentifierValue>`. Retain an editable `StringConverter` fallback to allow users to still input new unaliased IDs while getting suggestions for existing ones.
