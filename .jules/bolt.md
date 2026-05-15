@@ -7,3 +7,6 @@
 ## 2025-02-12 - Invariant Object Creation in JavaFX FilteredList Predicates
 **Learning:** In JavaFX `FilteredList` implementations mapping to large UI tables, compiling regex patterns or calling `.toLowerCase()` on the search string *inside* the `setPredicate` lambda causes redundant string allocations and evaluations for every row during every keystroke, leading to O(N) complexity for an operation that should be O(1) and causing severe UI lag.
 **Action:** Always hoist invariant transformations (like `toLowerCase()` on search text) or `Pattern.compile()` outside the predicate lambda so they are only evaluated once per keystroke instead of N times.
+## 2025-02-12 - Recompiling Regexes and Redundant Matching
+**Learning:** Checking `String.matches()` internally compiles a new `Pattern` every time. Doing `Pattern.compile()` right after `matches()` doubles the work.
+**Action:** When matching regex patterns multiple times, declare a `static final Pattern` variable and use `pattern.matcher(string).find()` to avoid redundant `Pattern.compile` allocations and matching invocations.
