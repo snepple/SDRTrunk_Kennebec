@@ -27,8 +27,5 @@
 **Action:** Always scan for text input fields capturing references to known entities and convert them to populated, editable `ComboBox`es, rendering the entity ID alongside its human-readable alias via `ListCell` cell factory.
 
 ## 2024-05-13 - P25 Talkgroup Dropdown Conversion
-**Learning:** Legacy JavaFX TextFields for Identifiers fail to provide any discovery for existing system configurations. Converting Talkgroup fields to ComboBox<IdentifierValue> populated by AliasList scanning allows rapid re-use of configurations, reducing redundant entry for operators tracking pre-existing Phase 2 talkgroups.
+**Learning:** Legacy JavaFX TextFields for Identifiers fail to provide any discovery for existing system configurations. Converting Talkgroup fields to ComboBox&lt;IdentifierValue&gt; populated by AliasList scanning allows rapid re-use of configurations, reducing redundant entry for operators tracking pre-existing Phase 2 talkgroups.
 **Action:** When refactoring Identifier UIs, systematically replace text-based ID inputs with searchable ComboBox fields hooked to AliasList tracking. Ensure the ComboBox retains an editable StringConverter fallback so new IDs can still be added.
-## 2025-02-27 - Smart Dropdowns for P25 Phase 2 Settings
-**Learning:** Using basic IntegerTextFields for complex IDs like WACN, System, and NAC requires users to type hex strings perfectly and recall them across channels.
-**Action:** Replace IntegerTextField with a ComboBox<Integer> that dynamically populates with discovered WACN/System/NAC parameters from existing channel models, utilizing a custom StringConverter for proper Hex formatting.

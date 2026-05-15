@@ -78,6 +78,3 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## $(date +%Y-%m-%d) - HIG Modernization of Tuner Preferences
 **Learning:** Legacy UI preferences often use `GridPane` and manual padding which doesn't align with the Apple Human Interface Guidelines (HIG). Upgrading to custom HIG-compliant `SettingsCard` and `SettingsRow` requires changing the root container from `HBox` or `GridPane` to `VBox` to properly stack cards. Furthermore, replacing custom help icons with standard Label Tooltips improves accessibility and layout cleanliness.
 **Action:** When updating preferences UI, check if `SettingsCard` and `SettingsRow` can replace `GridPane`s. Use standard Tooltips on labels instead of manual graphic help icons.
-## $(date +%Y-%m-%d) - Adding Tooltips to Numeric Spinners
-**Learning:** Numeric input Spinners that lack a visual unit label need descriptive Tooltips explaining the specific unit (e.g., MB, seconds) and behavior. This greatly reduces cognitive load for technical configurations.
-**Action:** Always verify if a numeric input needs a unit label, and default to adding an informative Tooltip if it's missing.

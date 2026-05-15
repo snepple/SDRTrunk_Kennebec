@@ -10,14 +10,14 @@
 
 
     <Card
-      title={Get started}
+      title="Get started"
       icon="rocket"
       href="/quickstart"
       className="product-guide-feature-card"
       size={64}
     >
       Download or build SDRTrunk Kennebec and decode your first channel.
-
+    </Card>
 
     [/hardware/supported-tuners](
 
