@@ -33,3 +33,6 @@
 ## 2024-05-31 - Modulation (C4FM/LSM)
 **Simplified:**
 - C4FM: Single-tower systems. LSM: Multi-tower simulcast systems where towers transmit simultaneously.
+## 2024-05-24 - LNA Gain
+**Simplified:**
+- The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
