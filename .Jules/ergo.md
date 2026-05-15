@@ -29,3 +29,6 @@
 ## 2024-05-13 - P25 Talkgroup Dropdown Conversion
 **Learning:** Legacy JavaFX TextFields for Identifiers fail to provide any discovery for existing system configurations. Converting Talkgroup fields to ComboBox<IdentifierValue> populated by AliasList scanning allows rapid re-use of configurations, reducing redundant entry for operators tracking pre-existing Phase 2 talkgroups.
 **Action:** When refactoring Identifier UIs, systematically replace text-based ID inputs with searchable ComboBox fields hooked to AliasList tracking. Ensure the ComboBox retains an editable StringConverter fallback so new IDs can still be added.
+## 2024-10-24 - Convert Radio ID Text Field to Smart Dropdown
+**Learning:** Forcing users to manually enter large numeric identifiers (like 6-digit Radio IDs) into standard `TextField`s increases cognitive load and data entry error rates. We can extract existing identifiers from `AliasList` (via `PlaylistManager`) and populate an editable `ComboBox`, which serves as a smart dropdown.
+**Action:** Convert manual text inputs for radio identifiers into an editable `ComboBox<IdentifierValue>`. Retain an editable `StringConverter` fallback to allow users to still input new unaliased IDs while getting suggestions for existing ones.
