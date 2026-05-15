@@ -41,7 +41,14 @@ import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JFrame;
+import javafx.application.Platform;
+import javafx.embed.swing.SwingNode;
+import javafx.scene.Scene;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import javax.swing.SwingUtilities;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -49,7 +56,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class SynthesizerViewer extends JFrame
+public class SynthesizerViewer extends Stage
 {
     private final static Logger mLog = LoggerFactory.getLogger(SynthesizerViewer.class);
 
@@ -84,11 +91,20 @@ public class SynthesizerViewer extends JFrame
     private void init()
     {
         setTitle("Polyphase Synthesizer Viewer");
-        setSize(500, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
-        setLocationRelativeTo(null);
-        add(getPrimaryPanel());
+        setWidth(500);
+        setHeight(400);
+        setOnCloseRequest(event -> System.exit(0));
+
+        SwingNode swingNode = new SwingNode();
+        SwingUtilities.invokeLater(() -> {
+            swingNode.setContent(getPrimaryPanel());
+        });
+
+        VBox vbox = new VBox(swingNode);
+        VBox.setVgrow(swingNode, Priority.ALWAYS);
+
+        Scene scene = new Scene(vbox);
+        setScene(scene);
     }
 
     private JPanel getPrimaryPanel()
@@ -298,7 +314,7 @@ public class SynthesizerViewer extends JFrame
         final SynthesizerViewer frame = new SynthesizerViewer();
 
         EventQueue.invokeLater(() -> {
-            frame.setVisible(true);
+            frame.show();
             frame.start();
         });
     }

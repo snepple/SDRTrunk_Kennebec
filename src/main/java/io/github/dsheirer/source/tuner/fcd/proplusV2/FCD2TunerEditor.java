@@ -31,7 +31,11 @@ import org.slf4j.LoggerFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
 import javax.swing.JSeparator;
 import javax.swing.SpinnerNumberModel;
 

@@ -37,7 +37,11 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.SpinnerNumberModel;
@@ -263,7 +267,7 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
                     catch(Exception e1)
                     {
                         mLog.error("Error setting Bias-T", e1);
-                        JOptionPane.showMessageDialog(mBiasTCheckBox, "Couldn't set Bias-T: " + e1.getMessage());
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set Bias-T: " + e1.getMessage())); alert.showAndWait(); });
                     }
                 }
             });
@@ -306,7 +310,7 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
                     catch(Exception e)
                     {
                         mLog.error("Couldn't set HydraSDR LNA gain to:" + gain, e);
-                        JOptionPane.showMessageDialog(mLNAGainSlider, "Couldn't set LNA gain value to " + gain);
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set LNA gain value to " + gain)); alert.showAndWait(); });
                     }
                 }
 
@@ -354,7 +358,7 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
                         catch(Exception e)
                         {
                             mLog.error("Couldn't set HydraSDR Mixer gain to:" + gain, e);
-                            JOptionPane.showMessageDialog(mMixerGainSlider, "Couldn't set Mixer gain value to " + gain);
+                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set Mixer gain value to " + gain)); alert.showAndWait(); });
                         }
                     }
 
@@ -410,7 +414,7 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
                     catch(Exception e)
                     {
                         mLog.error("Couldn't set HydraSDR IF gain to:" + gain, e);
-                        JOptionPane.showMessageDialog(mIFGainSlider, "Couldn't set IF gain value to " + gain);
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set IF gain value to " + gain)); alert.showAndWait(); });
                     }
                 }
 
@@ -468,8 +472,8 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
                     catch(Exception e)
                     {
                         mLog.error("Couldn't set HydraSDR gain to:" + gain.name(), e);
-                        JOptionPane.showMessageDialog(mMasterGainSlider, "Couldn't set gain value to " +
-                                gain.getValue());
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set gain value to " +
+                                gain.getValue())); alert.showAndWait(); });
                     }
                 }
 
@@ -528,8 +532,7 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
                         }
                         catch(Exception e1)
                         {
-                            JOptionPane.showMessageDialog(HydraSdrTunerEditor.this,
-                                    "Couldn't set sample rate to " + rate.getLabel());
+                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set sample rate to " + rate.getLabel())); alert.showAndWait(); });
                             mLog.error("Error setting HydraSDR sample rate", e1);
                         }
                     }
