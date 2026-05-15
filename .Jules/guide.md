@@ -33,3 +33,6 @@
 ## 2024-05-31 - Modulation (C4FM/LSM)
 **Simplified:**
 - C4FM: Single-tower systems. LSM: Multi-tower simulcast systems where towers transmit simultaneously.
+## 2026-05-09 - System (P25 System Identifier)
+**Simplified:**
+- System Identifier: Combined with the WACN, uniquely identifies a P25 system.
