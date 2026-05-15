@@ -80,6 +80,7 @@ import jiconfont.javafx.IconNode;
 import org.controlsfx.control.ToggleSwitch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javafx.scene.control.Tooltip;
 
 /**
  * Channel configuration editor
@@ -454,6 +455,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mInactivityDurationSpinner = new Spinner<>();
             mInactivityDurationSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1440, 10));
             mInactivityDurationSpinner.setEditable(true);
+            mInactivityDurationSpinner.setTooltip(new Tooltip("Duration in minutes of inactivity before an alert is triggered."));
             mInactivityDurationSpinner.valueProperty().addListener((obs, old, newValue) -> modifiedProperty().set(true));
         }
         return mInactivityDurationSpinner;
@@ -477,6 +479,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mAiAudioMonitoringCheckIntervalSpinner = new Spinner<>();
             mAiAudioMonitoringCheckIntervalSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, Integer.MAX_VALUE, 1));
             mAiAudioMonitoringCheckIntervalSpinner.setEditable(true);
+            mAiAudioMonitoringCheckIntervalSpinner.setTooltip(new Tooltip("Interval in minutes between AI audio monitoring checks."));
             mAiAudioMonitoringCheckIntervalSpinner.valueProperty().addListener((obs, old, newValue) -> modifiedProperty().set(true));
         }
         return mAiAudioMonitoringCheckIntervalSpinner;
@@ -495,6 +498,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mAiAudioMonitoringAlertThresholdSpinner = new Spinner<>();
             mAiAudioMonitoringAlertThresholdSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 3));
             mAiAudioMonitoringAlertThresholdSpinner.setEditable(true);
+            mAiAudioMonitoringAlertThresholdSpinner.setTooltip(new Tooltip("Number of consecutive monitoring failures before an alert is triggered."));
             mAiAudioMonitoringAlertThresholdSpinner.valueProperty().addListener((obs, old, newValue) -> modifiedProperty().set(true));
         }
         return mAiAudioMonitoringAlertThresholdSpinner;

@@ -90,6 +90,7 @@ public class HelpViewController {
 
         TreeItem<String> integrationsStreamingNode = new TreeItem<>("Integrations & Streaming");
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Broadcastify"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Channels Aliases Streaming"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Mqtt"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Openmhz"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Other Platforms"));
