@@ -20,6 +20,8 @@
 package io.github.dsheirer.gui.playlist.channel;
 
 import io.github.dsheirer.gui.control.IntegerTextField;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ComboBox;
 import io.github.dsheirer.gui.playlist.eventlog.EventLogConfigurationEditor;
 import io.github.dsheirer.gui.playlist.record.RecordConfigurationEditor;
 import io.github.dsheirer.gui.playlist.source.FrequencyEditor;
@@ -39,6 +41,7 @@ import io.github.dsheirer.source.config.SourceConfiguration;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
@@ -71,9 +74,9 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
     private SourceConfigurationEditor mSourceConfigurationEditor;
     private EventLogConfigurationEditor mEventLogConfigurationEditor;
     private RecordConfigurationEditor mRecordConfigurationEditor;
-    private IntegerTextField mWacnTextField;
-    private IntegerTextField mSystemTextField;
-    private IntegerTextField mNacTextField;
+    private ComboBox<Integer> mWacnComboBox;
+    private ComboBox<Integer> mSystemComboBox;
+    private ComboBox<Integer> mNacComboBox;
     private ToggleSwitch mIgnoreDataCallsButton;
     private ToggleSwitch mIgnoreUnaliasedTalkgroupsButton;
     private Spinner<Integer> mTrafficChannelPoolSizeSpinner;
@@ -157,24 +160,24 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(wacnLabel, 0, ++row);
             gridPane.getChildren().add(wacnLabel);
 
-            GridPane.setConstraints(getWacnTextField(), 1, row);
-            gridPane.getChildren().add(getWacnTextField());
+            GridPane.setConstraints(getWacnComboBox(), 1, row);
+            gridPane.getChildren().add(getWacnComboBox());
 
             Label systemLabel = new Label("System", createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system."));
             GridPane.setHalignment(systemLabel, HPos.RIGHT);
             GridPane.setConstraints(systemLabel, 2, row);
             gridPane.getChildren().add(systemLabel);
 
-            GridPane.setConstraints(getSystemTextField(), 3, row);
-            gridPane.getChildren().add(getSystemTextField());
+            GridPane.setConstraints(getSystemComboBox(), 3, row);
+            gridPane.getChildren().add(getSystemComboBox());
 
             Label nacLabel = new Label("NAC", createHelpIcon("Network Access Code (NAC). A unique code identifying a specific radio system to follow."));
             GridPane.setHalignment(nacLabel, HPos.RIGHT);
             GridPane.setConstraints(nacLabel, 4, row);
             gridPane.getChildren().add(nacLabel);
 
-            GridPane.setConstraints(getNacTextField(), 5, row);
-            gridPane.getChildren().add(getNacTextField());
+            GridPane.setConstraints(getNacComboBox(), 5, row);
+            gridPane.getChildren().add(getNacComboBox());
 
             Label noteLabel = new Label("Note: WACN/System/NAC values are auto-detected (ie not required) from " +
                     "the control channel and are only required when decoding individual traffic channels");
@@ -300,40 +303,61 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
         return mTrafficChannelPoolSizeSpinner;
     }
 
-    private IntegerTextField getWacnTextField()
+    private ComboBox<Integer> getWacnComboBox()
     {
-        if(mWacnTextField == null)
+        if(mWacnComboBox == null)
         {
-            mWacnTextField = new IntegerTextField();
-            mWacnTextField.setDisable(true);
-            mWacnTextField.textProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
+            mWacnComboBox = new ComboBox<>();
+            mWacnComboBox.setEditable(true);
+            mWacnComboBox.setDisable(true);
+            mWacnComboBox.setConverter(new javafx.util.StringConverter<Integer>() {
+                @Override
+                public String toString(Integer object) { return object != null ? object.toString() : ""; }
+                @Override
+                public Integer fromString(String string) { try { return Integer.parseInt(string); } catch(NumberFormatException e) { return null; } }
+            });
+            mWacnComboBox.getEditor().textProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
 
-        return mWacnTextField;
+        return mWacnComboBox;
     }
 
-    private IntegerTextField getSystemTextField()
+    private ComboBox<Integer> getSystemComboBox()
     {
-        if(mSystemTextField == null)
+        if(mSystemComboBox == null)
         {
-            mSystemTextField = new IntegerTextField();
-            mSystemTextField.setDisable(true);
-            mSystemTextField.textProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
+            mSystemComboBox = new ComboBox<>();
+            mSystemComboBox.setEditable(true);
+            mSystemComboBox.setDisable(true);
+            mSystemComboBox.setConverter(new javafx.util.StringConverter<Integer>() {
+                @Override
+                public String toString(Integer object) { return object != null ? object.toString() : ""; }
+                @Override
+                public Integer fromString(String string) { try { return Integer.parseInt(string); } catch(NumberFormatException e) { return null; } }
+            });
+            mSystemComboBox.getEditor().textProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
 
-        return mSystemTextField;
+        return mSystemComboBox;
     }
 
-    private IntegerTextField getNacTextField()
+    private ComboBox<Integer> getNacComboBox()
     {
-        if(mNacTextField == null)
+        if(mNacComboBox == null)
         {
-            mNacTextField = new IntegerTextField();
-            mNacTextField.setDisable(true);
-            mNacTextField.textProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
+            mNacComboBox = new ComboBox<>();
+            mNacComboBox.setEditable(true);
+            mNacComboBox.setDisable(true);
+            mNacComboBox.setConverter(new javafx.util.StringConverter<Integer>() {
+                @Override
+                public String toString(Integer object) { return object != null ? object.toString() : ""; }
+                @Override
+                public Integer fromString(String string) { try { return Integer.parseInt(string); } catch(NumberFormatException e) { return null; } }
+            });
+            mNacComboBox.getEditor().textProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
 
-        return mNacTextField;
+        return mNacComboBox;
     }
 
     private RecordConfigurationEditor getRecordConfigurationEditor()
@@ -361,23 +385,48 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
     {
         if(config instanceof DecodeConfigP25Phase2 decodeConfig)
         {
-            getWacnTextField().setDisable(false);
-            getSystemTextField().setDisable(false);
-            getNacTextField().setDisable(false);
+            getWacnComboBox().setDisable(false);
+            getSystemComboBox().setDisable(false);
+            getNacComboBox().setDisable(false);
+
+            java.util.Set<Integer> knownWacns = new java.util.TreeSet<>();
+            java.util.Set<Integer> knownSystems = new java.util.TreeSet<>();
+            java.util.Set<Integer> knownNacs = new java.util.TreeSet<>();
+            if(getPlaylistManager() != null && getPlaylistManager().getChannelModel() != null) {
+                for(io.github.dsheirer.controller.channel.Channel channel : getPlaylistManager().getChannelModel().getChannels()) {
+                    if(channel.getDecodeConfiguration() instanceof DecodeConfigP25Phase2 p25) {
+                        ScrambleParameters sp = p25.getScrambleParameters();
+                        if(sp != null) {
+                            knownWacns.add(sp.getWACN());
+                            knownSystems.add(sp.getSystem());
+                            knownNacs.add(sp.getNAC());
+                        }
+                    }
+                }
+            }
+            getWacnComboBox().setItems(javafx.collections.FXCollections.observableArrayList(knownWacns));
+            getSystemComboBox().setItems(javafx.collections.FXCollections.observableArrayList(knownSystems));
+            getNacComboBox().setItems(javafx.collections.FXCollections.observableArrayList(knownNacs));
 
             ScrambleParameters scrambleParameters = decodeConfig.getScrambleParameters();
 
             if(scrambleParameters != null)
             {
-                getWacnTextField().set(scrambleParameters.getWACN());
-                getSystemTextField().set(scrambleParameters.getSystem());
-                getNacTextField().set(scrambleParameters.getNAC());
+                getWacnComboBox().setValue(scrambleParameters.getWACN());
+                getWacnComboBox().getEditor().setText(String.format("%X", scrambleParameters.getWACN()));
+                getSystemComboBox().setValue(scrambleParameters.getSystem());
+                getSystemComboBox().getEditor().setText(String.format("%X", scrambleParameters.getSystem()));
+                getNacComboBox().setValue(scrambleParameters.getNAC());
+                getNacComboBox().getEditor().setText(String.format("%X", scrambleParameters.getNAC()));
             }
             else
             {
-                getWacnTextField().set(0);
-                getSystemTextField().set(0);
-                getNacTextField().set(0);
+                getWacnComboBox().setValue(0);
+                getWacnComboBox().getEditor().setText("0");
+                getSystemComboBox().setValue(0);
+                getSystemComboBox().getEditor().setText("0");
+                getNacComboBox().setValue(0);
+                getNacComboBox().getEditor().setText("0");
             }
 
             getIgnoreDataCallsButton().setDisable(false);
@@ -389,12 +438,15 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
         }
         else
         {
-            getWacnTextField().set(0);
-            getSystemTextField().set(0);
-            getNacTextField().set(0);
-            getWacnTextField().setDisable(true);
-            getSystemTextField().setDisable(true);
-            getNacTextField().setDisable(true);
+            getWacnComboBox().setValue(0);
+                getWacnComboBox().getEditor().setText("0");
+            getSystemComboBox().setValue(0);
+                getSystemComboBox().getEditor().setText("0");
+            getNacComboBox().setValue(0);
+                getNacComboBox().getEditor().setText("0");
+            getWacnComboBox().setDisable(true);
+            getSystemComboBox().setDisable(true);
+            getNacComboBox().setDisable(true);
             getIgnoreDataCallsButton().setDisable(true);
             getIgnoreUnaliasedTalkgroupsButton().setDisable(true);
             getTrafficChannelPoolSizeSpinner().setDisable(true);
@@ -416,9 +468,9 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
         }
 
         config.setAutoDetectScrambleParameters(false);
-        int wacn = getWacnTextField().get();
-        int system = getSystemTextField().get();
-        int nac = getNacTextField().get();
+        Integer wacnVal = getWacnComboBox().getValue(); if (wacnVal == null) { try { wacnVal = Integer.parseInt(getWacnComboBox().getEditor().getText(), 16); } catch(Exception e) {} } int wacn = wacnVal != null ? wacnVal : 0;
+        Integer systemVal = getSystemComboBox().getValue(); if (systemVal == null) { try { systemVal = Integer.parseInt(getSystemComboBox().getEditor().getText(), 16); } catch(Exception e) {} } int system = systemVal != null ? systemVal : 0;
+        Integer nacVal = getNacComboBox().getValue(); if (nacVal == null) { try { nacVal = Integer.parseInt(getNacComboBox().getEditor().getText(), 16); } catch(Exception e) {} } int nac = nacVal != null ? nacVal : 0;
         config.setScrambleParameters(new ScrambleParameters(wacn, system, nac));
         config.setIgnoreDataCalls(getIgnoreDataCallsButton().isSelected());
         config.setIgnoreUnaliasedTalkgroups(getIgnoreUnaliasedTalkgroupsButton().isSelected());
