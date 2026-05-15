@@ -38,6 +38,7 @@ import org.controlsfx.control.ToggleSwitch;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javafx.scene.control.Tooltip;
 
 /**
  * Editor for event logging configuration objects using a VBox to visually display a vertical list of boolean toggle
@@ -84,6 +85,7 @@ public class RecordConfigurationEditor extends Editor<RecordConfiguration>
         mThresholdSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(-100, -30, -70, 1));
         mThresholdSpinner.setEditable(true);
         mThresholdSpinner.setPrefWidth(80);
+        mThresholdSpinner.setTooltip(new Tooltip("Squelch threshold level in decibels (dB) to trigger recording"));
         mThresholdSpinner.valueProperty().addListener((obs, oldVal, newVal) -> modifiedProperty().set(true));
 
         HBox thresholdBox = new HBox(10, mThresholdLabel, mThresholdSpinner);

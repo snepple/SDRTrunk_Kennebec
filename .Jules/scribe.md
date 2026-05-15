@@ -39,3 +39,7 @@
 ## 2024-05-20 - Aliases and Talkgroups Diagram
 **Learning:** Users often confuse Aliases with Talkgroups—always include a 'Relationship' diagram for these.
 **Action:** Added a Mermaid signal flow diagram to aliases-talkgroups.md to clarify the relationship between Frequency, Decoder, Alias, and Audio.
+## 2024-05-21 - Topic Selection
+**Topic:** Channels Aliases Streaming
+**Learning:** The interaction between Channels, Aliases, and Streaming involves complex logic that is best explained using a Mermaid flowchart and UI wireframes.
+**Action:** Created `src/main/resources/docs/channels-aliases-streaming.md` and integrated it into the navigation tree of `HelpViewer.java` under "Integrations & Streaming".
