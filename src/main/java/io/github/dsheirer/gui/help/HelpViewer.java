@@ -14,16 +14,18 @@ public class HelpViewer extends VBox {
     private static final Logger mLog = LoggerFactory.getLogger(HelpViewer.class);
 
     public HelpViewer() {
-                try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/HelpView.fxml"));
-            Parent root = loader.load();
-            this.getChildren().add(root);
-            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
-            if (cssUrl != null) {
-                this.getStylesheets().add(cssUrl.toExternalForm());
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/HelpView.fxml"));
+                Parent root = loader.load();
+                this.getChildren().add(root);
+                java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+                if (cssUrl != null) {
+                    this.getStylesheets().add(cssUrl.toExternalForm());
+                }
+            } catch (IOException e) {
+                mLog.error("Error loading HelpView.fxml", e);
             }
-        } catch (IOException e) {
-            mLog.error("Error loading HelpView.fxml", e);
-        }
+        });
     }
 }
