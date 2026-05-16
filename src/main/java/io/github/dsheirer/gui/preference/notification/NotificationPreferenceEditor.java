@@ -29,6 +29,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -138,6 +139,10 @@ public class NotificationPreferenceEditor extends VBox {
 
         TextField smtpPortField = new TextField(preference.getSmtpPort());
         smtpPortField.setTooltip(new Tooltip("e.g. 465 or 587"));
+        smtpPortField.setTextFormatter(new TextFormatter<>(change -> {
+            if (!change.isContentChange()) return change;
+            return change.getControlNewText().matches("\\d{0,5}") ? change : null;
+        }));
         smtpPortField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpPort(newValue));
         smtpPortField.disableProperty().bind(emailEnable.selectedProperty().not());
 
