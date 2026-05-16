@@ -24,7 +24,7 @@ import io.github.dsheirer.source.tuner.hydrasdr.HydraSdrTunerController.GainMode
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.manager.TunerStatus;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
@@ -47,7 +47,7 @@ import javax.swing.event.ChangeListener;
 /**
  * HydraSDR tuner editor/controller
  */
-public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTunerConfiguration>
+public class HydraSdrTunerEditor extends SwingTunerEditor<HydraSdrTuner, HydraSdrTunerConfiguration>
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(HydraSdrTunerEditor.class);

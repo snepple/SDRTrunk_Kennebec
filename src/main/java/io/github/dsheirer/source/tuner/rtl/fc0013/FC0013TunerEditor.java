@@ -25,7 +25,7 @@ import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.rtl.RTL2832Tuner;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController.SampleRate;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,7 @@ import javax.swing.SpinnerNumberModel;
 /**
  * FC0013 Tuner Editor
  */
-public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConfiguration>
+public class FC0013TunerEditor extends SwingTunerEditor<RTL2832Tuner, FC0013TunerConfiguration>
 {
     private final static Logger mLog = LoggerFactory.getLogger(FC0013TunerEditor.class);
     private static final long serialVersionUID = 1L;
