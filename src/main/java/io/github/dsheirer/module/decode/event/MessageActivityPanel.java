@@ -27,39 +27,35 @@ import io.github.dsheirer.message.MessageHistory;
 import io.github.dsheirer.module.ProcessingChain;
 import io.github.dsheirer.module.decode.DecoderFactory;
 import io.github.dsheirer.preference.UserPreferences;
-import io.github.dsheirer.preference.swing.JTableColumnWidthMonitor;
 import io.github.dsheirer.sample.Listener;
-import java.util.ArrayList;
-import java.util.List;
-import net.miginfocom.swing.MigLayout;
+
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.RowFilter;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Panel to display decoded messages/activity.
  */
-public class MessageActivityPanel extends JPanel implements Listener<ProcessingChain>
+public class MessageActivityPanel extends JFXPanel implements Listener<ProcessingChain>
 {
-    private static final long serialVersionUID = 1L;
     private static final Logger mLog = LoggerFactory.getLogger(MessageActivityPanel.class);
     private final String TABLE_PREFERENCE_KEY = "message.activity.panel";
     private MessageActivityModel mMessageModel = new MessageActivityModel();
     private MessageHistory mCurrentMessageHistory;
-    private JTable mTable = new JTable(mMessageModel);
 
-    private TableRowSorter<TableModel> mTableRowSorter;
-    private JTableColumnWidthMonitor mTableColumnWidthMonitor;
     private UserPreferences mUserPreferences;
     private FilterSet<IMessage> mMessageFilterSet;
     private boolean mRestoringFilters = false;
     private HistoryManagementPanel<IMessage> mHistoryManagementPanel;
+    private MessageActivityPanelController mController;
 
     /**
      * Constructs an instance
@@ -68,15 +64,25 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
     public MessageActivityPanel(UserPreferences userPreferences)
     {
         mUserPreferences = userPreferences;
-        mTable.setFillsViewportHeight(true);
-        mTableRowSorter = new TableRowSorter<>(mMessageModel);
-        mTableRowSorter.setRowFilter(new MessageRowFilter());
-        mTable.setRowSorter(mTableRowSorter);
-        mTableColumnWidthMonitor = new JTableColumnWidthMonitor(mUserPreferences, mTable, TABLE_PREFERENCE_KEY);
-        setLayout(new MigLayout("insets 0 0 0 0", "[][grow,fill]", "[]0[grow,fill]"));
         mHistoryManagementPanel = new HistoryManagementPanel<>(mMessageModel, "Message Filter Editor");
-        add(mHistoryManagementPanel, "span,growx");
-        add(new JScrollPane(mTable), "span,grow");
+
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/module/decode/event/MessageActivityPanel.fxml"));
+                Parent root = loader.load();
+                mController = loader.getController();
+                mController.init(mMessageModel, mHistoryManagementPanel);
+
+                Scene scene = new Scene(root);
+                java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+                if (cssUrl != null) {
+                    scene.getStylesheets().add(cssUrl.toExternalForm());
+                }
+                setScene(scene);
+            } catch (IOException e) {
+                mLog.error("Error loading MessageActivityPanel.fxml", e);
+            }
+        });
     }
 
     /**
@@ -103,6 +109,13 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
             mRestoringFilters = true;
             restoreFilterStates(mMessageFilterSet);
             mRestoringFilters = false;
+
+            Platform.runLater(() -> {
+                if (mController != null) {
+                    mController.setMessageFilterSet(mMessageFilterSet);
+                }
+            });
+
             //Register filter change listener to refresh the table and persist filter states.
             mMessageFilterSet.register(() -> {
                 if(!mRestoringFilters)
@@ -110,6 +123,9 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
                     saveFilterStates(mMessageFilterSet);
                 }
                 mMessageModel.fireTableDataChanged();
+                Platform.runLater(() -> {
+                    if (mController != null) mController.refreshFilter();
+                });
             });
             if(mHistoryManagementPanel != null)
             {
@@ -132,6 +148,11 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
             mMessageFilterSet = null;
             mMessageModel.clear();
             mHistoryManagementPanel.setEnabled(false);
+            Platform.runLater(() -> {
+                if (mController != null) {
+                    mController.setMessageFilterSet(null);
+                }
+            });
         }
     }
 
@@ -162,29 +183,6 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
                     mUserPreferences.getNowPlayingPreference().setFilterEnabled(key, element.isEnabled());
                 }
             }
-        }
-    }
-
-    /**
-     * Row visibility filter for messages
-     */
-    public class MessageRowFilter extends RowFilter<TableModel, Integer>
-    {
-        @Override
-        public boolean include(Entry<? extends TableModel, ? extends Integer> entry)
-        {
-            if(entry.getModel() instanceof MessageActivityModel model)
-            {
-                MessageItem item = model.getItem(entry.getIdentifier());
-
-                if(mMessageFilterSet != null && item != null && item.getMessage() != null)
-                {
-                    IMessage message = item.getMessage();
-                    return mMessageFilterSet.canProcess(message) && mMessageFilterSet.passes(message);
-                }
-            }
-
-            return false;
         }
     }
 }

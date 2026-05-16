@@ -212,7 +212,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private ChannelAlertMonitor mChannelAlertMonitor;
     private AudioStreamingManager mAudioStreamingManager;
     private BroadcastStatusPanel mBroadcastStatusPanel;
-    private ControllerPanel mControllerPanel;
+    private io.github.dsheirer.controller.ControllerPanelWrapper mControllerPanel;
     private DiagnosticMonitor mDiagnosticMonitor;
     private IconModel mIconModel = new IconModel();
     private PlaylistManager mPlaylistManager;
@@ -221,7 +221,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private JPanel mMainContentPanel;
     private JPanel mTopContentPanel;
     private JavaFxWindowManager mJavaFxWindowManager;
-    private io.github.dsheirer.gui.SidebarPanel mSidebarPanel;
+    private io.github.dsheirer.gui.SidebarPanelWrapper mSidebarPanel;
     private UserPreferences mUserPreferences = new UserPreferences();
     private TunerManager mTunerManager;
     private ApplicationLog mApplicationLog;
@@ -460,7 +460,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             // Add Sidebar
             try {
                 javax.swing.SwingUtilities.invokeAndWait(() -> {
-                    mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
+                    mSidebarPanel = new io.github.dsheirer.gui.SidebarPanelWrapper(this);
                 });
             } catch (Exception e) {
                 mLog.error("Error creating sidebar panel", e);
@@ -503,7 +503,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         {
             try {
                 javax.swing.SwingUtilities.invokeAndWait(() -> {
-                    mControllerPanel = new io.github.dsheirer.controller.ControllerPanel(mPlaylistManager, audioPlaybackManager, mIconModel, mapService,
+                    mControllerPanel = new io.github.dsheirer.controller.ControllerPanelWrapper(mPlaylistManager, audioPlaybackManager, mIconModel, mapService,
                             mSettingsManager, mTunerManager, mUserPreferences, mNowPlayingDetailsVisible, this);
 
                     mControllerPanel.addView("playlist_editor", mJavaFxWindowManager.getView(ViewIdentifier.PLAYLIST_EDITOR));
@@ -650,7 +650,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
 
         mResourceMonitor.start();
-        mControllerPanel.setResourcePanel(mControllerResourceStatusPanel);
+        javafx.embed.swing.SwingNode resourceNode = new javafx.embed.swing.SwingNode();
+        resourceNode.setContent(mControllerResourceStatusPanel);
+        mControllerPanel.setResourcePanel(resourceNode);
 
             });
         } catch (Exception e) {
@@ -707,7 +709,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mBroadcastStatusPanel = new BroadcastStatusPanel(mPlaylistManager.getBroadcastModel(), mUserPreferences,
                 "application.broadcast.status.panel");
             mBroadcastStatusPanel.setPreferredSize(new Dimension(880, 70));
-            mBroadcastStatusPanel.getTable().setEnabled(false);
+            mBroadcastStatusPanel.setDisable(true);
         }
 
         return mBroadcastStatusPanel;

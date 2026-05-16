@@ -1,0 +1,34 @@
+--- src/main/java/io/github/dsheirer/gui/preference/notification/NotificationPreferenceEditor.java
++++ src/main/java/io/github/dsheirer/gui/preference/notification/NotificationPreferenceEditor.java
+@@ -74,6 +74,7 @@
+
+         Button telegramTestBtn = new Button("_Send Test");
+         telegramTestBtn.setMnemonicParsing(true);
++        telegramTestBtn.setTooltip(new Tooltip("Send a test message to the configured Telegram bot."));
+         telegramTestBtn.setOnAction(e -> {
+             TextInputDialog dialog = new TextInputDialog();
+             dialog.setTitle("Test Telegram");
+@@ -166,6 +167,7 @@
+
+         Button emailTestBtn = new Button("_Send Test");
+         emailTestBtn.setMnemonicParsing(true);
++        emailTestBtn.setTooltip(new Tooltip("Send a test email using the configured SMTP server."));
+         emailTestBtn.setOnAction(e -> {
+             TextInputDialog dialog = new TextInputDialog();
+             dialog.setTitle("Test Email");
+@@ -256,6 +258,7 @@
+         });
+
+         Button addBtn = new Button("Add Recipient");
++        addBtn.setTooltip(new Tooltip("Add a new notification recipient."));
+         addBtn.setOnAction(e -> {
+             NotificationRecipient nr = new NotificationRecipient();
+             mRecipientsList.add(nr);
+@@ -264,6 +267,7 @@
+         });
+
+         Button removeBtn = new Button("Remove Selected");
++        removeBtn.setTooltip(new Tooltip("Remove the currently selected notification recipient."));
+         removeBtn.setOnAction(e -> {
+             NotificationRecipient selected = mRecipientListView.getSelectionModel().getSelectedItem();
+             if(selected != null) {

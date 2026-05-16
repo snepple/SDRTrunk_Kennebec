@@ -7,6 +7,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import org.controlsfx.control.ToggleSwitch;
@@ -55,6 +56,7 @@ public class AIPreferenceEditor extends VBox {
         });
 
         Button testButton = new Button("Test");
+        testButton.setTooltip(new Tooltip("Test the provided Gemini API key by requesting the available models list."));
         Label testResultLabel = new Label("");
 
         Label modelLabel = new Label("Gemini Model:");

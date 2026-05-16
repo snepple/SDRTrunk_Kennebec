@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Map;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -232,19 +233,12 @@ public class AliasModel
      */
     public List<String> getGroupNames()
     {
-        List<String> groupNames = new ArrayList<>();
-
-        for(Alias alias : mAliases)
-        {
-            if(alias.hasGroup() && !groupNames.contains(alias.getGroup()))
-            {
-                groupNames.add(alias.getGroup());
-            }
-        }
-
-        Collections.sort(groupNames);
-
-        return groupNames;
+        return mAliases.stream()
+                .filter(Alias::hasGroup)
+                .map(Alias::getGroup)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     /**

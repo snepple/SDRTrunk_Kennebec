@@ -77,6 +77,9 @@ import org.controlsfx.control.textfield.TextFields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
+import javafx.application.Platform;
+
 public class SystemTalkgroupSelectionEditor extends GridPane
 {
     private static final Logger mLog = LoggerFactory.getLogger(SystemTalkgroupSelectionEditor.class);
@@ -350,26 +353,60 @@ public class SystemTalkgroupSelectionEditor extends GridPane
      */
     public void createAliases(List<Talkgroup> talkgroups)
     {
-        List<Alias> createdAliases = new ArrayList<>();
+        getImportAllTalkgroupsButton().setDisable(true);
+        setLoading(true);
 
-        for(Talkgroup talkgroup: talkgroups)
-        {
-            TalkgroupCategory talkgroupCategory = getTalkgroupCategory(talkgroup);
-            String group = (talkgroupCategory != null ? talkgroupCategory.getName() : null);
-            Alias alias = getRadioReferenceDecoder().createAlias(talkgroup, getCurrentSystem(),
-                    getAliasListNameComboBox().getSelectionModel().getSelectedItem(), group);
+        String selectedAliasList = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
+        boolean encryptedAsDoNotMonitor = getEncryptedAsDoNotMonitorSwitch().selectedProperty().get();
+        System currentSystem = getCurrentSystem();
+        RadioReferenceDecoder decoder = getRadioReferenceDecoder();
 
-            if(getEncryptedAsDoNotMonitorSwitch().selectedProperty().get() &&
-                    TalkgroupEncryption.lookup(talkgroup.getEncryptionState()) == TalkgroupEncryption.FULL)
+        // Capture talkgroup categories on the UI thread to avoid accessing the combobox later
+        List<TalkgroupCategory> categories = new ArrayList<>(getTalkgroupCategoryComboBox().getItems());
+
+        CompletableFuture.supplyAsync(() -> {
+            List<Alias> createdAliases = new ArrayList<>();
+
+            for(Talkgroup talkgroup: talkgroups)
             {
-                int priority = io.github.dsheirer.alias.id.priority.Priority.DO_NOT_MONITOR;
-                alias.addAliasID(new io.github.dsheirer.alias.id.priority.Priority(priority));
+                TalkgroupCategory talkgroupCategory = null;
+                if(talkgroup != null)
+                {
+                    for(TalkgroupCategory category: categories)
+                    {
+                        if(category.getTalkgroupCategoryId() == talkgroup.getTalkgroupCategoryId())
+                        {
+                            talkgroupCategory = category;
+                            break;
+                        }
+                    }
+                }
+
+                String group = (talkgroupCategory != null ? talkgroupCategory.getName() : null);
+                Alias alias = decoder.createAlias(talkgroup, currentSystem, selectedAliasList, group);
+
+                if(encryptedAsDoNotMonitor &&
+                        TalkgroupEncryption.lookup(talkgroup.getEncryptionState()) == TalkgroupEncryption.FULL)
+                {
+                    int priority = io.github.dsheirer.alias.id.priority.Priority.DO_NOT_MONITOR;
+                    alias.addAliasID(new io.github.dsheirer.alias.id.priority.Priority(priority));
+                }
+
+                createdAliases.add(alias);
             }
-
-            createdAliases.add(alias);
-        }
-
-        mPlaylistManager.getAliasModel().addAliases(createdAliases);
+            return createdAliases;
+        }).thenAcceptAsync((List<Alias> createdAliases) -> {
+            mPlaylistManager.getAliasModel().addAliases(createdAliases);
+            getImportAllTalkgroupsButton().setDisable(false);
+            setLoading(false);
+        }, Platform::runLater).exceptionally(ex -> {
+            Platform.runLater(() -> {
+                getImportAllTalkgroupsButton().setDisable(false);
+                setLoading(false);
+                mLog.error("Error creating aliases from Radio Reference", ex);
+            });
+            return null;
+        });
     }
 
     /**

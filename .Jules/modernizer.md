@@ -1,3 +1,6 @@
 ## 2026-05-08 - Modernize MapPanel integration
 **Learning:** Legacy UI integration wrapped a Swing `MapPanel` in a `MapPanelFXWrapper` (which extended JavaFX `BorderPane` and embedded the Swing panel in a `SwingNode`), only to be later re-embedded in a `JFXPanel` inside `ControllerPanel`. This double-embedding (`Swing -> JFXPanel -> Scene -> MapPanelFXWrapper -> SwingNode -> Swing MapPanel`) caused rendering unreliability, delayed painting, and general content rendering issues.
 **Action:** Removed `MapPanelFXWrapper` and the intermediary `JFXPanel` in `ControllerPanel`. Attached the Swing `MapPanel` directly to the `mCardPanel` (which is a Swing `JPanel` using `CardLayout`), thus resolving the rendering issues and streamlining the component hierarchy.
+## 2025-02-28 - MapPanel and FilterEditorPanel JFXPanel wrappers
+**Learning:** Legacy UI integration of simple components like `MapPanel` and `FilterEditorPanel` can be migrated to JavaFX efficiently by using `JFXPanel` wrappers directly within the Swing `JPanel` components, and embedding the respective `JTree` and `JXMapViewer` using `SwingNode`.
+**Action:** Always verify `add()` components during encapsulation inside `SwingNode` so that the layout manager processes it correctly.
