@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.embed.swing.SwingNode?>
+
+<VBox fx:id="mainContainer" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.dsheirer.module.decode.event.MessageActivityPanelController" spacing="0">
+    <SwingNode fx:id="historyManagementNode" VBox.vgrow="NEVER" />
+    <TableView fx:id="tableView" VBox.vgrow="ALWAYS">
+        <!-- Columns will be added dynamically by controller -->
+    </TableView>
+</VBox>

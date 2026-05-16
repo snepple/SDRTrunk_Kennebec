@@ -8,6 +8,16 @@ An alias list is a named collection of aliases scoped to a single playlist. You 
 
 You can create multiple alias lists — for example, one per agency or region — and assign the appropriate list to each channel.
 
+### Relationship: Channels, Talkgroups, and Aliases
+
+```mermaid
+flowchart LR
+    A[Frequency / Channel] -->|Decodes| B(Talkgroup ID)
+    B -->|Lookup| C{Alias List}
+    C -->|Match| D[Alias: Name, Color, Actions]
+    D --> E((Audio / Stream))
+```
+
 ## Open the Alias Editor
 
 In the **Playlist Editor**, click **Aliases** in the left sidebar. The Alias Editor opens with three view modes selectable from the top toolbar:

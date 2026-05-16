@@ -23,7 +23,10 @@ import io.github.dsheirer.filter.FilterEditor;
 import io.github.dsheirer.filter.FilterSet;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -34,7 +37,7 @@ import java.util.function.Consumer;
 /**
  * History management panel with controls for managing item histories.
  */
-public class HistoryManagementPanel<T> extends JPanel
+public class HistoryManagementPanel<T> extends JFXPanel
 {
     private ClearableHistoryModel mModel;
     private FilterSet<T> mFilterSet;
@@ -47,11 +50,9 @@ public class HistoryManagementPanel<T> extends JPanel
      */
     private Consumer<Integer> mHistorySizeChangedCallback;
 
-    private JFXPanel mJfxPanel;
-    private HistoryManagementView mView;
+    private HistoryManagementPanelController mController;
 
-    // For Swing interoperability when showing the filter editor
-    private JPanel mDummyAnchor;
+
 
     /**
      * Constructs an instance using the model's current history size as the
@@ -87,14 +88,8 @@ public class HistoryManagementPanel<T> extends JPanel
             model.setHistorySize(initialHistorySize);
         }
 
-        setLayout(new BorderLayout());
 
-        mDummyAnchor = new JPanel();
-        add(mDummyAnchor, BorderLayout.EAST);
-
-        mJfxPanel = new JFXPanel();
-        mJfxPanel.setPreferredSize(new Dimension(300, 38));
-        add(mJfxPanel, BorderLayout.CENTER);
+        setPreferredSize(new Dimension(300, 38));
 
         Platform.runLater(this::initJavaFX);
 
@@ -102,22 +97,35 @@ public class HistoryManagementPanel<T> extends JPanel
     }
 
     private void initJavaFX() {
-        mView = new HistoryManagementView(mModel.getHistorySize(), this::handleFilterClick, this::handleClearClick, this::handleHistorySizeChanged);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/module/decode/event/HistoryManagementPanel.fxml"));
+            Parent root = loader.load();
 
-        Scene scene = new Scene(mView.getRoot());
+            mController = loader.getController();
+            mController.setCallbacks(this::handleFilterClick, this::handleClearClick, this::handleHistorySizeChanged);
+            mController.setInitialHistorySize(mModel.getHistorySize());
+            mController.setDisable(!isEnabled());
 
-        java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
-        if (cssUrl != null) {
-            scene.getStylesheets().add(cssUrl.toExternalForm());
+            Scene scene = new Scene(root);
+
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+
+            setScene(scene);
+        } catch (Exception e) {
+            LoggerFactory.getLogger(HistoryManagementPanel.class).error("Error loading HistoryManagementPanel FXML", e);
         }
-
-        mJfxPanel.setScene(scene);
     }
 
     private void handleFilterClick() {
         Platform.runLater(() -> {
-            getFilterEditor().show();
-            getFilterEditor().toFront();
+            if(!getFilterEditor().isShowing()) {
+                getFilterEditor().show();
+            } else {
+                getFilterEditor().requestFocus();
+            }
         });
     }
 
@@ -156,13 +164,13 @@ public class HistoryManagementPanel<T> extends JPanel
     public void setEnabled(boolean enabled)
     {
         super.setEnabled(enabled);
-        if (mView != null) {
-            Platform.runLater(() -> mView.setDisable(!enabled));
+        if (mController != null) {
+            Platform.runLater(() -> mController.setDisable(!enabled));
         } else {
             // If view is not yet initialized, enqueue the disable update
             Platform.runLater(() -> {
-                if (mView != null) {
-                    mView.setDisable(!enabled);
+                if (mController != null) {
+                    mController.setDisable(!enabled);
                 }
             });
         }

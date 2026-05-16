@@ -19,20 +19,40 @@
 
 package io.github.dsheirer.source.tuner.ui;
 
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Empty tuner editor panel
  */
-public class EmptyTunerEditor extends StackPane
+public class EmptyTunerEditor extends JFXPanel
 {
+    private static final long serialVersionUID = 1L;
+
     /**
      * Constructs an instance
      */
     public EmptyTunerEditor()
     {
-        Label label = new Label("No tuner selected");
-        getChildren().add(label);
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/source/tuner/ui/EmptyTunerEditor.fxml"));
+                Parent root = loader.load();
+
+                Scene scene = new Scene(root);
+                java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+                if (cssUrl != null) {
+                    scene.getStylesheets().add(cssUrl.toExternalForm());
+                }
+                setScene(scene);
+            } catch (Exception e) {
+                LoggerFactory.getLogger(EmptyTunerEditor.class).error("Error loading EmptyTunerEditor FXML", e);
+            }
+        });
     }
 }

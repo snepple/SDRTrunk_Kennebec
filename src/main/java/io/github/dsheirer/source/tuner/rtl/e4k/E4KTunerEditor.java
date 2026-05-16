@@ -35,7 +35,7 @@ import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController.SampleRate;
 import io.github.dsheirer.source.tuner.rtl.e4k.E4KEmbeddedTuner.E4KGain;
 import io.github.dsheirer.source.tuner.rtl.e4k.E4KEmbeddedTuner.E4KLNAGain;
 import io.github.dsheirer.source.tuner.rtl.e4k.E4KEmbeddedTuner.E4KMixerGain;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import net.miginfocom.swing.MigLayout;
@@ -55,7 +55,7 @@ import javax.usb.UsbException;
 /**
  * E4000 tuner editor
  */
-public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfiguration>
+public class E4KTunerEditor extends SwingTunerEditor<RTL2832Tuner, E4KTunerConfiguration>
 {
     private final static Logger mLog = LoggerFactory.getLogger(E4KTunerEditor.class);
     private static final long serialVersionUID = 1L;

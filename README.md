@@ -1,4 +1,4 @@
-### Latest Compiled Release: [Download K.00.046](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.046)
+### Latest Compiled Release: [Download K.00.051](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.051)
 
 <h1>sdrtrunk - Kennebec Version</h1>
 

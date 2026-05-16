@@ -20,11 +20,16 @@
 package io.github.dsheirer.module.decode.event.filter;
 
 import com.jidesoft.swing.JideButton;
-import io.github.dsheirer.filter.FilterEditor;
+import io.github.dsheirer.filter.FilterEditorPanel;
 import io.github.dsheirer.filter.FilterSet;
-import javafx.application.Platform;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import net.miginfocom.swing.MigLayout;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
 
 /**
  * Event filter button that includes split button functionality to allow user to select filter items.
@@ -79,10 +84,25 @@ public class EventFilterButton<T> extends JideButton
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            Platform.runLater(() -> {
-                FilterEditor<T> editor = new FilterEditor<>(mTitle, mFilterSet);
-                editor.show();
-            });
+            final JFrame editor = new JFrame();
+            editor.setTitle(mTitle);
+            editor.setLocationRelativeTo(EventFilterButton.this);
+            editor.setSize(600, 400);
+            editor.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            editor.setLayout(new MigLayout("", "[grow,fill]", "[grow,fill][][]"));
+            FilterEditorPanel<T> panel = new FilterEditorPanel<T>(mFilterSet);
+            javafx.embed.swing.JFXPanel fxPanel = new javafx.embed.swing.JFXPanel();
+            javafx.application.Platform.runLater(() -> fxPanel.setScene(new javafx.scene.Scene(panel)));
+            JScrollPane scroller = new JScrollPane(fxPanel);
+            scroller.setViewportView(fxPanel);
+            editor.add(scroller, "wrap");
+            JButton close = new JButton("Close");
+            close.setToolTipText("Close the filter editor");
+            close.getAccessibleContext().setAccessibleName("Close Event Filter Editor");
+            close.getAccessibleContext().setAccessibleDescription("Closes the event filter editor dialog");
+            close.addActionListener(e1 -> editor.dispose());
+            editor.add(close);
+            EventQueue.invokeLater(() -> editor.setVisible(true));
         }
     }
 }

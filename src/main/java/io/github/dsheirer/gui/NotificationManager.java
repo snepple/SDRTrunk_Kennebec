@@ -3,15 +3,8 @@ package io.github.dsheirer.gui;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-
-import java.awt.AWTException;
-import java.awt.Image;
-import java.awt.SystemTray;
-import java.awt.Toolkit;
-import java.awt.TrayIcon;
+import javax.swing.*;
+import java.awt.*;
 
 public class NotificationManager {
     private static final Logger mLog = LoggerFactory.getLogger(NotificationManager.class);
@@ -50,20 +43,15 @@ public class NotificationManager {
         if (useSystemTray && trayIcon != null) {
             trayIcon.displayMessage(title, message, messageType);
         } else {
-            // Fallback to JavaFX Alert
-            Platform.runLater(() -> {
-                Alert.AlertType alertType = Alert.AlertType.INFORMATION;
-                if (messageType == TrayIcon.MessageType.ERROR) {
-                    alertType = Alert.AlertType.ERROR;
-                } else if (messageType == TrayIcon.MessageType.WARNING) {
-                    alertType = Alert.AlertType.WARNING;
-                }
+            // Fallback to legacy Swing popup
+            int jOptionType = JOptionPane.INFORMATION_MESSAGE;
+            if (messageType == TrayIcon.MessageType.ERROR) {
+                jOptionType = JOptionPane.ERROR_MESSAGE;
+            } else if (messageType == TrayIcon.MessageType.WARNING) {
+                jOptionType = JOptionPane.WARNING_MESSAGE;
+            }
 
-                Alert alert = new Alert(alertType, message, ButtonType.OK);
-                alert.setTitle(title);
-                alert.setHeaderText(title);
-                alert.showAndWait();
-            });
+            JOptionPane.showMessageDialog(null, message, title, jOptionType);
         }
     }
 }

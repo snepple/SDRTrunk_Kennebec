@@ -11,3 +11,17 @@ build/
 .DS_Store
 .idea/
 *.iml
+resolve_script.sh
+resolve_conflicts.sh
+test.md
+plan.txt
+test_audio.py
+javafx_transition_plan.md
+audio_rewrite_plan3.txt
+pr_description.txt
+plan.md
+memory-optimization-review.md
+patch_notif.diff
+commit_message.txt
+test_javafx.py
+*.orig

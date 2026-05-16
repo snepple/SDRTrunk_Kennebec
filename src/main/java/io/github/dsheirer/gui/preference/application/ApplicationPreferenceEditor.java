@@ -85,92 +85,54 @@ public class ApplicationPreferenceEditor extends HBox
             mEditorPane.setPadding(new Insets(10, 10, 10, 10));
 
             // Card 1: Diagnostic Monitoring
-            VBox diagCard = new VBox(10);
-            diagCard.getStyleClass().add("preferences-card");
             Label monitoringLabel = new Label("Application Health and Diagnostic Monitoring.");
-            monitoringLabel.getStyleClass().add("kennebec-header");
-
-            HBox diagRow = new HBox(10);
-            diagRow.getStyleClass().add("preferences-card-row");
-            diagRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            Label enableDiagLabel = new Label("Enable Diagnostic Monitoring");
-            javafx.scene.layout.Region spacer1 = new javafx.scene.layout.Region();
-            HBox.setHgrow(spacer1, Priority.ALWAYS);
-            diagRow.getChildren().addAll(enableDiagLabel, spacer1, getAutomaticDiagnosticMonitoringToggle());
-
-            diagCard.getChildren().addAll(monitoringLabel, diagRow);
+            monitoringLabel.getStyleClass().add("hig-section-header");
+            io.github.dsheirer.gui.preference.layout.SettingsCard diagCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
+            diagCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Enable Diagnostic Monitoring", getAutomaticDiagnosticMonitoringToggle()));
 
             // Card 2: Auto Start
-            VBox autoStartCard = new VBox(10);
-            autoStartCard.getStyleClass().add("preferences-card");
-
-            HBox autoStartRow = new HBox(10);
-            autoStartRow.getStyleClass().add("preferences-card-row");
-            autoStartRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            javafx.scene.layout.Region spacer2 = new javafx.scene.layout.Region();
-            HBox.setHgrow(spacer2, Priority.ALWAYS);
-
+            Label autoStartLabel = new Label("Channel Auto-start Disable Timeout");
+            autoStartLabel.getStyleClass().add("hig-section-header");
             HBox spinnerBox = new HBox(5);
             spinnerBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             spinnerBox.getChildren().addAll(getTimeoutSpinner(), new Label("seconds"));
-
-            autoStartRow.getChildren().addAll(getAutoStartTimeoutLabel(), spacer2, spinnerBox);
-            autoStartCard.getChildren().addAll(autoStartRow);
+            io.github.dsheirer.gui.preference.layout.SettingsCard autoStartCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
+            autoStartCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Timeout Duration", spinnerBox));
 
             // Card 3: Memory Limit
-            VBox memoryCard = new VBox(10);
-            memoryCard.getStyleClass().add("preferences-card");
-
-            HBox memoryRow = new HBox(10);
-            memoryRow.getStyleClass().add("preferences-card-row");
-            memoryRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            javafx.scene.layout.Region spacer3 = new javafx.scene.layout.Region();
-            HBox.setHgrow(spacer3, Priority.ALWAYS);
-
-            memoryRow.getChildren().addAll(getMemoryLimitLabel(), spacer3, getMemoryComboBox());
-
+            Label memoryLabel = new Label("Memory Limit");
+            memoryLabel.getStyleClass().add("hig-section-header");
+            io.github.dsheirer.gui.preference.layout.SettingsCard memoryCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
+            memoryCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Allocated Memory", getMemoryComboBox()));
             getMemoryWarningLabel().getStyleClass().add("kennebec-secondary-text");
-            memoryCard.getChildren().addAll(memoryRow, getMemoryWarningLabel());
+            getMemoryWarningLabel().setPadding(new Insets(5, 15, 5, 15));
 
             // Card 4: USB Monitor (Only on Windows 10/11)
-            VBox usbMonitorCard = null;
+            Label usbLabel = null;
+            io.github.dsheirer.gui.preference.layout.SettingsCard usbMonitorCard = null;
+            Label usbDesc = null;
             String osName = System.getProperty("os.name");
             if (osName != null && (osName.startsWith("Windows 10") || osName.startsWith("Windows 11"))) {
-                usbMonitorCard = new VBox(10);
-                usbMonitorCard.getStyleClass().add("preferences-card");
-                Label usbLabel = new Label("USB Monitor Script");
-                usbLabel.getStyleClass().add("kennebec-header");
+                usbLabel = new Label("USB Monitor Script");
+                usbLabel.getStyleClass().add("hig-section-header");
+                usbMonitorCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
+                usbMonitorCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Install Tuner Monitoring Power Script", getUsbMonitorToggle()));
 
-                HBox usbRow = new HBox(10);
-                usbRow.getStyleClass().add("preferences-card-row");
-                usbRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-                Label installUsbLabel = new Label("Install Tuner Monitoring Power Script");
-                javafx.scene.layout.Region spacer4 = new javafx.scene.layout.Region();
-                HBox.setHgrow(spacer4, Priority.ALWAYS);
-                usbRow.getChildren().addAll(installUsbLabel, spacer4, getUsbMonitorToggle());
-
-                Label usbDesc = new Label("Installs a background script to auto-reset failing SDR USB devices.");
+                usbDesc = new Label("Installs a background script to auto-reset failing SDR USB devices.");
                 usbDesc.getStyleClass().add("kennebec-secondary-text");
-
-                usbMonitorCard.getChildren().addAll(usbLabel, usbRow, usbDesc);
+                usbDesc.setPadding(new Insets(5, 15, 5, 15));
             }
 
 
             // Card 5: System Reliability (Only on Windows 10/11)
-            VBox systemReliabilityCard = null;
+            Label srLabel = null;
+            io.github.dsheirer.gui.preference.layout.SettingsCard systemReliabilityCard = null;
             if (WindowsReliabilityManager.isWindows10OrNewer()) {
-                systemReliabilityCard = new VBox(10);
-                systemReliabilityCard.getStyleClass().add("preferences-card");
-                Label srLabel = new Label("System Reliability");
-                srLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #333333;");
+                srLabel = new Label("System Reliability");
+                srLabel.getStyleClass().add("hig-section-header");
 
-                // Auto Start Row
-                HBox srAutoStartRow = new HBox(10);
-                srAutoStartRow.getStyleClass().add("preferences-card-row");
-                srAutoStartRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-                Label autoStartToggleLabel = new Label("Start SDRTrunk automatically on computer startup");
-                javafx.scene.layout.Region srSpacer1 = new javafx.scene.layout.Region();
-                HBox.setHgrow(srSpacer1, Priority.ALWAYS);
+                systemReliabilityCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
+
                 ToggleSwitch autoStartToggle = new ToggleSwitch();
                 autoStartToggle.setTooltip(new Tooltip("Automatically launch SDRTrunk when you log into Windows"));
                 autoStartToggle.setSelected(mApplicationPreference.isAutoStartEnabled());
@@ -178,32 +140,26 @@ public class ApplicationPreferenceEditor extends HBox
                     mApplicationPreference.setAutoStartEnabled(newValue);
                     WindowsReliabilityManager.setAutoStart(newValue);
                 });
-                srAutoStartRow.getChildren().addAll(autoStartToggleLabel, srSpacer1, autoStartToggle);
 
-                // Watchdog Row
-                HBox watchdogRow = new HBox(10);
-                watchdogRow.getStyleClass().add("preferences-card-row");
-                watchdogRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-                Label watchdogToggleLabel = new Label("Automatically restart SDRTrunk if it closes unexpectedly");
-                javafx.scene.layout.Region srSpacer2 = new javafx.scene.layout.Region();
-                HBox.setHgrow(srSpacer2, Priority.ALWAYS);
                 ToggleSwitch watchdogToggle = new ToggleSwitch();
                 watchdogToggle.setTooltip(new Tooltip("Monitors SDRTrunk and restarts it if it crashes or is closed unexpectedly"));
                 watchdogToggle.setSelected(mApplicationPreference.isWatchdogEnabled());
                 watchdogToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
                     mApplicationPreference.setWatchdogEnabled(newValue);
                 });
-                watchdogRow.getChildren().addAll(watchdogToggleLabel, srSpacer2, watchdogToggle);
 
-                systemReliabilityCard.getChildren().addAll(srLabel, srAutoStartRow, watchdogRow);
+                systemReliabilityCard.getChildren().addAll(
+                        new io.github.dsheirer.gui.preference.layout.SettingsRow("Start SDRTrunk automatically on computer startup", autoStartToggle),
+                        new io.github.dsheirer.gui.preference.layout.SettingsRow("Automatically restart SDRTrunk if it closes unexpectedly", watchdogToggle)
+                );
             }
 
-            mEditorPane.getChildren().addAll(diagCard, autoStartCard, memoryCard);
+            mEditorPane.getChildren().addAll(monitoringLabel, diagCard, autoStartLabel, autoStartCard, memoryLabel, memoryCard, getMemoryWarningLabel());
             if (usbMonitorCard != null) {
-                mEditorPane.getChildren().add(usbMonitorCard);
+                mEditorPane.getChildren().addAll(usbLabel, usbMonitorCard, usbDesc);
             }
             if (systemReliabilityCard != null) {
-                mEditorPane.getChildren().add(systemReliabilityCard);
+                mEditorPane.getChildren().addAll(srLabel, systemReliabilityCard);
             }
         }
 
@@ -226,6 +182,7 @@ public class ApplicationPreferenceEditor extends HBox
         if(mTimeoutSpinner == null)
         {
             mTimeoutSpinner = new Spinner<>(0, 30, mApplicationPreference.getChannelAutoStartTimeout(), 1);
+            mTimeoutSpinner.setTooltip(new Tooltip("Delay in seconds before auto-starting channels when the application loads. Use higher values if tuners take longer to initialize."));
             mTimeoutSpinner.valueProperty().addListener((observable, oldValue, newValue) -> mApplicationPreference.setChannelAutoStartTimeout(newValue));
         }
 

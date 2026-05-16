@@ -70,6 +70,7 @@ public class HelpViewController {
         TreeItem<String> hardwareTunersNode = new TreeItem<>("Hardware & Tuners");
         hardwareTunersNode.getChildren().add(new TreeItem<>("Airspy Hackrf"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Rtl Sdr"));
+        hardwareTunersNode.getChildren().add(new TreeItem<>("Spectrum & Waterfall"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Supported Tuners"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Self Healing"));
         guidesNode.getChildren().add(hardwareTunersNode);

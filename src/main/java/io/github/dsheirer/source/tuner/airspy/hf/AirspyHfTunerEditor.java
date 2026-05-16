@@ -23,7 +23,7 @@ import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.SourceException;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import java.io.IOException;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ import javax.swing.SpinnerNumberModel;
 /**
  * Tuner editor for Airspy HF+/Discovery tuners
  */
-public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTunerConfiguration>
+public class AirspyHfTunerEditor extends SwingTunerEditor<AirspyHfTuner,AirspyHfTunerConfiguration>
 {
     private static final Logger mLog = LoggerFactory.getLogger(AirspyHfTunerEditor.class);
     private JComboBox<AirspyHfSampleRate> mSampleRateCombo;

@@ -15,6 +15,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.ComboBox;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -37,10 +38,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AudioRecordingsPanel extends JPanel {
+public class AudioRecordingsPanel extends BorderPane {
     private final static Logger mLog = LoggerFactory.getLogger(AudioRecordingsPanel.class);
     private UserPreferences mUserPreferences;
-    private JFXPanel mJfxPanel;
 
     private ObservableList<RecordingItem> mRecordings;
     private FilteredList<RecordingItem> mFilteredRecordings;
@@ -64,12 +64,7 @@ public class AudioRecordingsPanel extends JPanel {
     public AudioRecordingsPanel(UserPreferences userPreferences, io.github.dsheirer.playlist.PlaylistManager playlistManager) {
         mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
-        setLayout(new net.miginfocom.swing.MigLayout("insets 0, hidemode 3, fill", "[grow,fill]", "[grow,fill]"));
-
-        mJfxPanel = new JFXPanel();
-        add(mJfxPanel, "grow, push");
-
-        Platform.runLater(this::initFx);
+        initFx();
     }
 
 
@@ -94,8 +89,19 @@ public class AudioRecordingsPanel extends JPanel {
     }
 
     private void initFx() {
-        BorderPane root = new BorderPane();
-        root.setPadding(new Insets(10));
+        this.setPadding(new Insets(10));
+
+        // Ensure stylesheets are applied when added to a scene
+        this.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+                if (cssUrl != null) {
+                    if (!newScene.getStylesheets().contains(cssUrl.toExternalForm())) {
+                        newScene.getStylesheets().add(cssUrl.toExternalForm());
+                    }
+                }
+            }
+        });
 
         mTableView = new TableView<>();
         mRecordings = FXCollections.observableArrayList();
@@ -114,19 +120,23 @@ public class AudioRecordingsPanel extends JPanel {
         mEndDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
         mStartHourSpinner = new Spinner<>(0, 23, 0);
+        mStartHourSpinner.setTooltip(new Tooltip("Start Hour (0-23)"));
         mStartHourSpinner.setPrefWidth(60);
         mStartHourSpinner.setEditable(true);
         mStartHourSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
         mStartMinuteSpinner = new Spinner<>(0, 59, 0);
+        mStartMinuteSpinner.setTooltip(new Tooltip("Start Minute (0-59)"));
         mStartMinuteSpinner.setPrefWidth(60);
         mStartMinuteSpinner.setEditable(true);
         mStartMinuteSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
         mEndHourSpinner = new Spinner<>(0, 23, 23);
+        mEndHourSpinner.setTooltip(new Tooltip("End Hour (0-23)"));
         mEndHourSpinner.setPrefWidth(60);
         mEndHourSpinner.setEditable(true);
         mEndHourSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
         mEndMinuteSpinner = new Spinner<>(0, 59, 59);
+        mEndMinuteSpinner.setTooltip(new Tooltip("End Minute (0-59)"));
         mEndMinuteSpinner.setPrefWidth(60);
         mEndMinuteSpinner.setEditable(true);
         mEndMinuteSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
@@ -216,7 +226,7 @@ public class AudioRecordingsPanel extends JPanel {
             refreshButton, mStopButton, deleteSelectedButton, deleteAllButton
         );
 
-        root.setTop(filterBox);
+        this.setTop(filterBox);
 
         // Table
         mTableView.setPlaceholder(new Label("No audio recordings found"));
@@ -272,11 +282,9 @@ public class AudioRecordingsPanel extends JPanel {
         sortedData.comparatorProperty().bind(mTableView.comparatorProperty());
         mTableView.setItems(sortedData);
 
-        root.setCenter(mTableView);
+        this.setCenter(mTableView);
 
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/sdrtrunk_style.css").toExternalForm());
-        mJfxPanel.setScene(scene);
+
 
         loadRecordings();
         populateFilterOptions();

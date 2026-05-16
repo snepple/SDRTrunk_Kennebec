@@ -21,7 +21,7 @@ package io.github.dsheirer.source.tuner.recording;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +32,7 @@ import javax.swing.JSeparator;
 /**
  * Recording tuner configuration editor
  */
-public class RecordingTunerEditor extends TunerEditor<RecordingTuner,RecordingTunerConfiguration>
+public class RecordingTunerEditor extends SwingTunerEditor<RecordingTuner,RecordingTunerConfiguration>
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(RecordingTunerEditor.class);
@@ -101,8 +101,8 @@ public class RecordingTunerEditor extends TunerEditor<RecordingTuner,RecordingTu
 
     private void init()
     {
-        // HIG inspired layout: more whitespace (insets), more gap between logical groups
-        setLayout(new MigLayout("fill,wrap 2, insets 20 20 20 20, gapy 12", "[right, 100!][grow,fill]",
+        // HIG inspired layout: standardized 8pt grid with gaps
+        setLayout(new MigLayout("fill,wrap 2, insets 16 16 16 16, gapy 8", "[right, 100!][grow,fill]",
             "[][][][][24!][][grow]"));
 
         add(new JLabel("Tuner:"));
@@ -122,7 +122,6 @@ public class RecordingTunerEditor extends TunerEditor<RecordingTuner,RecordingTu
         add(new JLabel("Frequency (MHz):"));
         add(getFrequencyPanel(), "wrap");
     }
-
     private JLabel getRecordingPath()
     {
         if(mRecordingPath == null)
