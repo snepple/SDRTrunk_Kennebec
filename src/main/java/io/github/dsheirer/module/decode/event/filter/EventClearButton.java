@@ -1,111 +1,58 @@
-/*
- * *****************************************************************************
- * Copyright (C) 2014-2023 Dennis Sheirer
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- * ****************************************************************************
- */
-
 package io.github.dsheirer.module.decode.event.filter;
 
-import com.jidesoft.swing.JideSplitButton;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import javafx.scene.control.SplitMenuButton;
+import javafx.scene.control.Slider;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.control.CustomMenuItem;
+import javafx.geometry.Pos;
 
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.SwingUtilities;
+public class EventClearButton extends SplitMenuButton {
 
-public class EventClearButton extends JideSplitButton
-    {
-        private static final long serialVersionUID = 1L;
-        private EventClearHandler mEventClearHandler;
+    private EventClearHandler mEventClearHandler;
 
-        public EventClearButton(int maxHistoryCount)
-        {
-            super("Clear");
+    public EventClearButton(int maxHistoryCount) {
+        setText("Clear");
 
-            JPanel historyPanel = new JPanel();
+        HBox historyPanel = new HBox(5);
+        historyPanel.setAlignment(Pos.CENTER_LEFT);
 
-            historyPanel.add(new JLabel("History Size:"));
-            final JSlider historySlider = initializeHistorySlider();
-            JLabel valueLabel = new JLabel(String.valueOf(maxHistoryCount));
+        historyPanel.getChildren().add(new Label("History Size:"));
 
-            historySlider.setValue(maxHistoryCount);
-            historySlider.addChangeListener(arg0 -> {
-                if (mEventClearHandler != null)
-                {
-                    mEventClearHandler.onHistoryLimitChanged(historySlider.getValue());
-                }
+        Slider historySlider = new Slider(0, 2000, maxHistoryCount);
+        historySlider.setMajorTickUnit(500);
+        historySlider.setShowTickMarks(true);
+        historySlider.setShowTickLabels(true);
 
-                valueLabel.setText(String.valueOf(historySlider.getValue()));
-            });
+        Label valueLabel = new Label(String.valueOf(maxHistoryCount));
 
-            historyPanel.add(historySlider);
-            historyPanel.add(valueLabel);
-            add(historyPanel);
+        historySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            int val = newVal.intValue();
+            if (mEventClearHandler != null) {
+                mEventClearHandler.onHistoryLimitChanged(val);
+            }
+            valueLabel.setText(String.valueOf(val));
+        });
 
-            /* This handles the click action on the main button. Clear messages */
-            addActionListener(e -> {
-                if (mEventClearHandler != null)
-                {
-                    mEventClearHandler.onClearHistoryClicked();
-                }
-            });
-        }
+        historySlider.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                historySlider.setValue(500); // default
+            }
+        });
 
-        public void setEventClearHandler(EventClearHandler eventClearHandler) {
-            this.mEventClearHandler = eventClearHandler;
-        }
+        historyPanel.getChildren().addAll(historySlider, valueLabel);
 
-        private JSlider initializeHistorySlider()
-        {
-            final JSlider slider = new JSlider();
-            slider.setMinimum(0);
-            slider.setMaximum(2000);
-            slider.setMajorTickSpacing(500);
-            slider.setPaintTicks(true);
-            slider.setPaintLabels(true);
+        CustomMenuItem customMenuItem = new CustomMenuItem(historyPanel, false);
+        getItems().add(customMenuItem);
 
-            slider.addMouseListener(new MouseListener()
-            {
-                @Override
-                public void mouseClicked(MouseEvent arg0)
-                {
-                    if(SwingUtilities.isLeftMouseButton(arg0) && arg0.getClickCount() == 2)
-                    {
-                        slider.setValue(500); //default
-                    }
-                }
-
-                public void mouseEntered(MouseEvent arg0)
-                {
-                }
-
-                public void mouseExited(MouseEvent arg0)
-                {
-                }
-
-                public void mousePressed(MouseEvent arg0)
-                {
-                }
-
-                public void mouseReleased(MouseEvent arg0)
-                {
-                }
-            });
-            return slider;
-        }
+        setOnAction(e -> {
+            if (mEventClearHandler != null) {
+                mEventClearHandler.onClearHistoryClicked();
+            }
+        });
     }
+
+    public void setEventClearHandler(EventClearHandler eventClearHandler) {
+        this.mEventClearHandler = eventClearHandler;
+    }
+}

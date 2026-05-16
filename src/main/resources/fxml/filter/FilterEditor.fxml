@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.geometry.Insets?>
+<?import io.github.dsheirer.filter.FilterEditorPanel?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.dsheirer.filter.FilterEditorController">
+    <center>
+        <!-- The wrapper panel will be injected by the controller since it requires filterSet -->
+        <VBox fx:id="mContentBox" BorderPane.alignment="CENTER" />
+    </center>
+    <bottom>
+        <VBox alignment="CENTER" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10" />
+            </padding>
+            <Button fx:id="mCloseButton" text="Close" onAction="#handleClose" />
+        </VBox>
+    </bottom>
+</BorderPane>

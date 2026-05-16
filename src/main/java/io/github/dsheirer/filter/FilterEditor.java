@@ -1,71 +1,38 @@
-/*
- * *****************************************************************************
- * Copyright (C) 2014-2023 Dennis Sheirer
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- * ****************************************************************************
- */
-
 package io.github.dsheirer.filter;
 
-import java.awt.Component;
-import net.miginfocom.swing.MigLayout;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
+import java.io.IOException;
 
-/**
- * Filter editor
- * @param <T> item type for editing
- */
-public class FilterEditor<T> extends JFrame
-{
-    private FilterEditorPanel<T> mEditorPanel;
+public class FilterEditor<T> extends Stage {
 
-    /**
-     * Constructor
-     * @param title for the editor window frame
-     * @param owner to register the popup location
-     * @param filterSet to use initially
-     */
-    public FilterEditor(String title, Component owner, FilterSet<T> filterSet)
-    {
-        if(filterSet == null)
-        {
+    private final static Logger mLog = LoggerFactory.getLogger(FilterEditor.class);
+    private FilterEditorController<T> mController;
+
+    public FilterEditor(String title, Object unusedOwnerOrAnchor, FilterSet<T> filterSet) {
+        if (filterSet == null) {
             throw new IllegalArgumentException("Unable to construct FilterEditor - FilterSet cannot be null");
         }
         setTitle(title);
-        setSize(600, 400);
-        setLocationRelativeTo(owner);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLayout(new MigLayout("", "[grow,fill]", "[grow,fill][]"));
-        mEditorPanel = new FilterEditorPanel<>(filterSet);
-        JScrollPane scroller = new JScrollPane(mEditorPanel);
-        scroller.setViewportView(mEditorPanel);
-        add(scroller, "wrap");
-        JButton close = new JButton("Close");
-        close.addActionListener(e -> dispose());
-        add(close);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/filter/FilterEditor.fxml"));
+            Scene scene = new Scene(loader.load(), 600, 400);
+            setScene(scene);
+            mController = loader.getController();
+            mController.setFilterSet(filterSet);
+            mController.setStage(this);
+        } catch (IOException e) {
+            mLog.error("Error loading FilterEditor FXML", e);
+        }
     }
 
-    /**
-     * Updates this editor with the filterset.
-     * @param filterSet to use in this editor.
-     */
-    public void updateFilterSet(FilterSet<T> filterSet)
-    {
-        mEditorPanel.updateFilterSet(filterSet);
+    public void updateFilterSet(FilterSet<T> filterSet) {
+        if (mController != null) {
+            mController.setFilterSet(filterSet);
+        }
     }
 }
