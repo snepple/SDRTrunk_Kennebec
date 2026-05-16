@@ -1188,7 +1188,6 @@ public class AliasItemEditor extends Editor<Alias>
                     .or(Bindings.isNull(getAvailableStreamsView().getSelectionModel().selectedItemProperty())));
             mAddStreamButton.setMaxWidth(Double.MAX_VALUE);
             mAddStreamButton.setGraphic(new IconNode(FontAwesome.ANGLE_RIGHT));
-            mAddStreamButton.setTooltip(new Tooltip("Add selected stream"));
             mAddStreamButton.setAlignment(Pos.CENTER);
             mAddStreamButton.setOnAction(event -> {
                 String stream = getAvailableStreamsView().getSelectionModel().getSelectedItem();
@@ -1215,7 +1214,6 @@ public class AliasItemEditor extends Editor<Alias>
                     .or(Bindings.isNull(getSelectedStreamsView().getSelectionModel().selectedItemProperty())));
             mRemoveStreamButton.setMaxWidth(Double.MAX_VALUE);
             mRemoveStreamButton.setGraphic(new IconNode(FontAwesome.ANGLE_LEFT));
-            mRemoveStreamButton.setTooltip(new Tooltip("Remove selected stream"));
             mRemoveStreamButton.setAlignment(Pos.CENTER);
             mRemoveStreamButton.setOnAction(event -> {
                 BroadcastChannel broadcastChannel = getSelectedStreamsView().getSelectionModel().getSelectedItem();

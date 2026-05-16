@@ -22,11 +22,6 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
@@ -83,20 +78,7 @@ public class LogsViewController {
 
         // Initialize Live Logs
         logListView.setItems(logData);
-        logListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         MyEventBus.getGlobalEventBus().register(this);
-
-        MenuItem copyItem = new MenuItem("Copy");
-        copyItem.setOnAction(event -> copySelectedLogs());
-        ContextMenu contextMenu = new ContextMenu(copyItem);
-        logListView.setContextMenu(contextMenu);
-
-        KeyCombination copyShortcut = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
-        logListView.setOnKeyPressed(event -> {
-            if (copyShortcut.match(event)) {
-                copySelectedLogs();
-            }
-        });
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -433,19 +415,6 @@ public class LogsViewController {
             alert.setContentText(message);
             alert.showAndWait();
         });
-    }
-
-    private void copySelectedLogs() {
-        ObservableList<String> selectedItems = logListView.getSelectionModel().getSelectedItems();
-        if (selectedItems != null && !selectedItems.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            for (String item : selectedItems) {
-                sb.append(item).append("\n");
-            }
-            ClipboardContent content = new ClipboardContent();
-            content.putString(sb.toString());
-            Clipboard.getSystemClipboard().setContent(content);
-        }
     }
 
     public void destroy() {

@@ -35,7 +35,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.Tooltip;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -304,7 +303,6 @@ public class TwoToneAliasSelectionEditor extends VBox
             mAddButton.setDisable(true);
             mAddButton.setMaxWidth(Double.MAX_VALUE);
             mAddButton.setGraphic(new IconNode(FontAwesome.ANGLE_RIGHT));
-            mAddButton.setTooltip(new Tooltip("Add selected alias"));
             mAddButton.setAlignment(Pos.CENTER);
             mAddButton.setOnAction(event -> {
                 Alias selectedAlias = getAvailableAliasTableView().getSelectionModel().getSelectedItem();
@@ -329,7 +327,6 @@ public class TwoToneAliasSelectionEditor extends VBox
             mAddAllButton.setDisable(true);
             mAddAllButton.setMaxWidth(Double.MAX_VALUE);
             mAddAllButton.setGraphic(new IconNode(FontAwesome.ANGLE_DOUBLE_RIGHT));
-            mAddAllButton.setTooltip(new Tooltip("Add all aliases"));
             mAddAllButton.setAlignment(Pos.CENTER);
             mAddAllButton.setOnAction(new EventHandler<ActionEvent>()
             {
@@ -364,7 +361,6 @@ public class TwoToneAliasSelectionEditor extends VBox
             mRemoveButton.setDisable(true);
             mRemoveButton.setMaxWidth(Double.MAX_VALUE);
             mRemoveButton.setGraphic(new IconNode(FontAwesome.ANGLE_LEFT));
-            mRemoveButton.setTooltip(new Tooltip("Remove selected alias"));
             mRemoveButton.setAlignment(Pos.CENTER);
             mRemoveButton.setOnAction(event -> {
                 Alias selectedAlias = getSelectedAliasTableView().getSelectionModel().getSelectedItem();
@@ -389,7 +385,6 @@ public class TwoToneAliasSelectionEditor extends VBox
             mRemoveAllButton.setDisable(true);
             mRemoveAllButton.setMaxWidth(Double.MAX_VALUE);
             mRemoveAllButton.setGraphic(new IconNode(FontAwesome.ANGLE_DOUBLE_LEFT));
-            mRemoveAllButton.setTooltip(new Tooltip("Remove all aliases"));
             mRemoveAllButton.setAlignment(Pos.CENTER);
             mRemoveAllButton.setOnAction(event -> {
                 List<Alias> selectedAliases =
