@@ -32,3 +32,7 @@
 ## 2024-10-24 - Convert Radio ID Text Field to Smart Dropdown
 **Learning:** Forcing users to manually enter large numeric identifiers (like 6-digit Radio IDs) into standard `TextField`s increases cognitive load and data entry error rates. We can extract existing identifiers from `AliasList` (via `PlaylistManager`) and populate an editable `ComboBox`, which serves as a smart dropdown.
 **Action:** Convert manual text inputs for radio identifiers into an editable `ComboBox<IdentifierValue>`. Retain an editable `StringConverter` fallback to allow users to still input new unaliased IDs while getting suggestions for existing ones.
+
+## 2024-05-18 - Input Validation on TextFields
+**Learning:** Pure JavaFX `TextField` fields are prone to user error since they accept any characters, which can cause backend processing crashes if users enter letters into numeric fields like ports.
+**Action:** Use a `TextFormatter` with a regular expression (e.g., `\\d{0,5}`) to proactively block invalid characters and lengths during data entry, shifting the error prevention burden to the UI.
