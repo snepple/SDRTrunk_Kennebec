@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.VBox?>
+
+<fx:root type="javafx.scene.layout.VBox" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.dsheirer.channel.details.ChannelDetailViewController">
+    <HBox spacing="8.0">
+        <padding>
+            <Insets bottom="12.0" left="12.0" right="12.0" top="12.0" />
+        </padding>
+        <Label text="System:" />
+        <Label fx:id="systemLabel" text=" " HBox.hgrow="ALWAYS" />
+
+        <Label text="Site:" />
+        <Label fx:id="siteLabel" text=" " HBox.hgrow="ALWAYS" />
+
+        <Label text="Channel Name:" />
+        <Label fx:id="nameLabel" text=" " HBox.hgrow="ALWAYS" />
+
+        <Button text="Refresh" onAction="#handleRefresh" />
+    </HBox>
+
+    <TextArea fx:id="detailTextPane" editable="false" VBox.vgrow="ALWAYS" />
+</fx:root>

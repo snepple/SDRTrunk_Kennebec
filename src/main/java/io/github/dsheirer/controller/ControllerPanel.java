@@ -128,7 +128,18 @@ public class ControllerPanel extends JPanel
         mCardPanel.add(mMapPanel, "map");
         mCardPanel.add(mTunerManagerPanel, "tuners");
         mCardPanel.add(mAudioRecordingsPanel, "audio_recordings");
-        mCardPanel.add(new HelpViewer(), "help_viewer");
+
+        JFXPanel helpViewerJFXPanel = new JFXPanel();
+        Platform.runLater(() -> {
+            HelpViewer helpViewer = new HelpViewer();
+            Scene scene = new Scene(helpViewer);
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+            helpViewerJFXPanel.setScene(scene);
+        });
+        mCardPanel.add(helpViewerJFXPanel, "help_viewer");
 
         add(mCardPanel, BorderLayout.CENTER);
         // AudioPanel moved to SDRTrunk.java

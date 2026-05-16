@@ -42,8 +42,8 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
     private static final Logger mLog = LoggerFactory.getLogger(DiscoveredTunerEditor.class);
     private UserPreferences mUserPreferences;
     private TunerManager mTunerManager;
-    private JPanel mEmptyEditor = new EmptyTunerEditor();
-    private JPanel mEditor = mEmptyEditor;
+    private javafx.embed.swing.JFXPanel mEmptyEditorJFXPanel;
+    private javax.swing.JComponent mEditor;
     private JScrollPane mEditorScroller;
 
     /**
@@ -55,6 +55,17 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
     {
         mUserPreferences = userPreferences;
         mTunerManager = tunerManager;
+        mEmptyEditorJFXPanel = new javafx.embed.swing.JFXPanel();
+        javafx.application.Platform.runLater(() -> {
+            EmptyTunerEditor emptyEditor = new EmptyTunerEditor();
+            javafx.scene.Scene scene = new javafx.scene.Scene(emptyEditor);
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+            mEmptyEditorJFXPanel.setScene(scene);
+        });
+        mEditor = mEmptyEditorJFXPanel;
         init();
     }
 
@@ -108,7 +119,7 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
         }
         else
         {
-            mEditor = mEmptyEditor;
+            mEditor = mEmptyEditorJFXPanel;
         }
 
         remove(mEditorScroller);

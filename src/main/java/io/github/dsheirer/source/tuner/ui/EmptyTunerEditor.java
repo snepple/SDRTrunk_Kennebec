@@ -19,43 +19,31 @@
 
 package io.github.dsheirer.source.tuner.ui;
 
-import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.StackPane;
-import net.miginfocom.swing.MigLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.swing.JPanel;
+import java.io.IOException;
 
 /**
  * Empty tuner editor panel
  */
-public class EmptyTunerEditor extends JPanel
+public class EmptyTunerEditor extends StackPane
 {
-    private static final long serialVersionUID = 1L;
+    private static final Logger mLog = LoggerFactory.getLogger(EmptyTunerEditor.class);
 
     /**
      * Constructs an instance
      */
     public EmptyTunerEditor()
     {
-        setLayout(new MigLayout("insets 0, hidemode 3, fill", "[grow,fill]", "[grow,fill]"));
-
-        JFXPanel jfxPanel = new JFXPanel();
-        add(jfxPanel, "grow, push");
-
-        Platform.runLater(() -> {
-            StackPane root = new StackPane();
-            Label label = new Label("No tuner selected");
-            root.getChildren().add(label);
-
-            Scene scene = new Scene(root);
-            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
-            if (cssUrl != null) {
-                scene.getStylesheets().add(cssUrl.toExternalForm());
-            }
-            jfxPanel.setScene(scene);
-        });
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/EmptyTunerView.fxml"));
+            loader.setRoot(this);
+            loader.load();
+        } catch (IOException e) {
+            mLog.error("Error loading EmptyTunerView.fxml", e);
+        }
     }
 }

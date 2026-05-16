@@ -59,7 +59,8 @@ import javax.swing.JLabel;
 public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
 {
     private final ChannelMetadataPanel mChannelMetadataPanel;
-    private final ChannelDetailPanel mChannelDetailPanel;
+    private io.github.dsheirer.channel.details.ChannelDetailPanel mChannelDetailPanel;
+    private final javafx.embed.swing.JFXPanel mChannelDetailJFXPanel;
     private final DecodeEventPanel mDecodeEventPanel;
     private final MessageActivityPanel mMessageActivityPanel;
     private final ChannelSpectrumPanel mChannelSpectrumSquelchPanel;
@@ -83,7 +84,16 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
                            SettingsManager settingsManager, TunerManager tunerManager, boolean detailTabsVisible, VisibilityListener visibilityListener)
     {
         mVisibilityListener = visibilityListener;
-        mChannelDetailPanel = new ChannelDetailPanel(playlistManager.getChannelProcessingManager());
+        mChannelDetailJFXPanel = new javafx.embed.swing.JFXPanel();
+        javafx.application.Platform.runLater(() -> {
+            mChannelDetailPanel = new io.github.dsheirer.channel.details.ChannelDetailPanel(playlistManager.getChannelProcessingManager());
+            javafx.scene.Scene scene = new javafx.scene.Scene(mChannelDetailPanel);
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+            mChannelDetailJFXPanel.setScene(scene);
+        });
         mDecodeEventPanel = new DecodeEventPanel(iconModel, userPreferences, playlistManager.getAliasModel(), playlistManager.getChannelProcessingManager());
         mMessageActivityPanel = new MessageActivityPanel(userPreferences);
         mChannelMetadataPanel = new ChannelMetadataPanel(playlistManager, iconModel, userPreferences, tunerManager);
@@ -103,8 +113,8 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
 
             if (processingChain == null) {
                 // Remove all tabs except Events
-                if (pane.indexOfComponent(mChannelDetailPanel) >= 0) {
-                    pane.remove(mChannelDetailPanel);
+                if (pane.indexOfComponent(mChannelDetailJFXPanel) >= 0) {
+                    pane.remove(mChannelDetailJFXPanel);
                 }
                 if (pane.indexOfComponent(mMessageActivityPanel) >= 0) {
                     pane.remove(mMessageActivityPanel);
@@ -116,7 +126,7 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
             } else {
                 // Restore all tabs in correct order: Details, Events, Messages, Channel
                 pane.removeAll();
-                pane.addTab("Details", mChannelDetailPanel);
+                pane.addTab("Details", mChannelDetailJFXPanel);
                 pane.addTab("Events", mDecodeEventPanel);
                 pane.addTab("Messages", mMessageActivityPanel);
                 pane.addTab("Channel", mChannelSpectrumSquelchPanel);
@@ -186,7 +196,7 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         if(mTabbedPane == null)
         {
             mTabbedPane = new JideTabbedPane();
-            mTabbedPane.addTab("Details", mChannelDetailPanel);
+            mTabbedPane.addTab("Details", mChannelDetailJFXPanel);
             mTabbedPane.addTab("Events", mDecodeEventPanel);
             mTabbedPane.addTab("Messages", mMessageActivityPanel);
             mTabbedPane.addTab("Channel", mChannelSpectrumSquelchPanel);
@@ -221,7 +231,11 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
     {
         setLayout( new MigLayout( "insets 0 0 0 0", "[grow,fill]", "[grow,fill][]") );
 
-        mChannelMetadataPanel.addProcessingChainSelectionListener(mChannelDetailPanel);
+        mChannelMetadataPanel.addProcessingChainSelectionListener(chain -> {
+            if (mChannelDetailPanel != null) {
+                mChannelDetailPanel.receive(chain);
+            }
+        });
         mChannelMetadataPanel.addProcessingChainSelectionListener(mDecodeEventPanel);
         mChannelMetadataPanel.addProcessingChainSelectionListener(mMessageActivityPanel);
         mChannelMetadataPanel.addProcessingChainSelectionListener(mChannelSpectrumSquelchPanel);
