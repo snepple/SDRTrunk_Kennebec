@@ -1,10 +1,15 @@
 package io.github.dsheirer.gui;
 
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.AWTException;
+import java.awt.Image;
+import java.awt.SystemTray;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
 
 public class NotificationManager {
     private static final Logger mLog = LoggerFactory.getLogger(NotificationManager.class);
@@ -28,7 +33,7 @@ public class NotificationManager {
                 mLog.error("SystemTray is supported, but could not be added.", e);
             }
         } else {
-            mLog.info("SystemTray is not supported on this platform. Falling back to Swing popups.");
+            mLog.info("SystemTray is not supported on this platform. Falling back to JavaFX popups.");
         }
     }
 
@@ -43,15 +48,21 @@ public class NotificationManager {
         if (useSystemTray && trayIcon != null) {
             trayIcon.displayMessage(title, message, messageType);
         } else {
-            // Fallback to legacy Swing popup
-            int jOptionType = JOptionPane.INFORMATION_MESSAGE;
-            if (messageType == TrayIcon.MessageType.ERROR) {
-                jOptionType = JOptionPane.ERROR_MESSAGE;
-            } else if (messageType == TrayIcon.MessageType.WARNING) {
-                jOptionType = JOptionPane.WARNING_MESSAGE;
-            }
+            // Fallback to JavaFX popup
+            Platform.runLater(() -> {
+                Alert.AlertType alertType = Alert.AlertType.INFORMATION;
+                if (messageType == TrayIcon.MessageType.ERROR) {
+                    alertType = Alert.AlertType.ERROR;
+                } else if (messageType == TrayIcon.MessageType.WARNING) {
+                    alertType = Alert.AlertType.WARNING;
+                }
 
-            JOptionPane.showMessageDialog(null, message, title, jOptionType);
+                Alert alert = new Alert(alertType);
+                alert.setTitle(title);
+                alert.setHeaderText(null);
+                alert.setContentText(message);
+                alert.showAndWait();
+            });
         }
     }
 }

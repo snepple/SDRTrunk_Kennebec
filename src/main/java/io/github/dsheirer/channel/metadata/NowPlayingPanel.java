@@ -35,6 +35,9 @@ import java.awt.Color;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JPanel;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.application.Platform;
 import java.awt.Cursor;
 import java.awt.Insets;
 import javax.swing.Box;
@@ -142,9 +145,9 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         if (!initialized) {
             setupWidgets();
         } else {
-            mWidgetContainer.ensureComponentInWidget("spectrum");
-            mWidgetContainer.ensureComponentInWidget("streaming");
-            mWidgetContainer.ensureComponentInWidget("resource");
+            javafx.application.Platform.runLater(() -> mWidgetContainer.ensureComponentInWidget("spectrum"));
+            javafx.application.Platform.runLater(() -> mWidgetContainer.ensureComponentInWidget("streaming"));
+            javafx.application.Platform.runLater(() -> mWidgetContainer.ensureComponentInWidget("resource"));
         }
     }
 
@@ -154,25 +157,25 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
 
     public void setSpectralPanelVisible(boolean visible) {
         if (mWidgetContainer != null) {
-            mWidgetContainer.setWidgetVisible("spectrum", visible);
+            javafx.application.Platform.runLater(() -> mWidgetContainer.setWidgetVisible("spectrum", visible));
         }
     }
 
     public void setResourceStatusPanelVisible(boolean visible) {
         if (mWidgetContainer != null) {
-            mWidgetContainer.setWidgetVisible("resource", visible);
+            javafx.application.Platform.runLater(() -> mWidgetContainer.setWidgetVisible("resource", visible));
         }
     }
 
     public void setBroadcastStatusPanelVisible(boolean visible) {
         if (mWidgetContainer != null) {
-            mWidgetContainer.setWidgetVisible("streaming", visible);
+            javafx.application.Platform.runLater(() -> mWidgetContainer.setWidgetVisible("streaming", visible));
         }
     }
 
     public void setDetailTabsVisible(boolean visible) {
         if (mWidgetContainer != null) {
-            mWidgetContainer.setWidgetVisible("details", visible);
+            javafx.application.Platform.runLater(() -> mWidgetContainer.setWidgetVisible("details", visible));
         }
     }
 
@@ -227,22 +230,33 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         mChannelMetadataPanel.addProcessingChainSelectionListener(mChannelSpectrumSquelchPanel);
         mChannelMetadataPanel.addProcessingChainSelectionListener(this);
 
-        mWidgetContainer = new WidgetContainer(mNowPlayingPreference);
-        mScrollPane = new JScrollPane(mWidgetContainer);
+        JFXPanel widgetJFXPanel = new JFXPanel();
+        mScrollPane = new JScrollPane(widgetJFXPanel);
+        Platform.runLater(() -> {
+            mWidgetContainer = new WidgetContainer(mNowPlayingPreference);
+            Scene scene = new Scene(mWidgetContainer);
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+            widgetJFXPanel.setScene(scene);
+
+            // Re-setup widgets if needed
+        });
         mScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         mScrollPane.setBorder(null);
         mScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         mScrollPane.addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
-                mWidgetContainer.revalidate();
+                // mWidgetContainer.revalidate(); handled by layoutWidgets
             }
         });
         add(mScrollPane, "grow, wrap, w 100%");
     }
 
     private void setupWidgets() {
-        mWidgetContainer.removeAll();
+        javafx.application.Platform.runLater(() -> { mWidgetContainer.removeAll();
 
         if (mSpectralPanel != null) {
             Widget spectrumWidget = new Widget("spectrum", "Spectrum/Waterfall", mSpectralPanel, mWidgetContainer, 150);
@@ -270,7 +284,7 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
             mWidgetContainer.addWidget(resourceWidget, true); // Pinned to bottom
         }
 
-        mWidgetContainer.layoutWidgets("resource");
+        mWidgetContainer.layoutWidgets("resource"); });
     }
 
     private void showManageWidgetsPopup(JButton source) {
@@ -288,7 +302,7 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
     private void addPopupItem(JPopupMenu popup, String label, String widgetId) {
         JCheckBoxMenuItem item = new JCheckBoxMenuItem(label);
         item.setSelected(mNowPlayingPreference.isWidgetVisible(widgetId, true));
-        item.addActionListener(e -> mWidgetContainer.setWidgetVisible(widgetId, item.isSelected()));
+        item.addActionListener(e -> javafx.application.Platform.runLater(() -> mWidgetContainer.setWidgetVisible(widgetId, item.isSelected())));
         popup.add(item);
     }
 }
