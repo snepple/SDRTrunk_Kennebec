@@ -50,6 +50,7 @@ public class JmbeEditor extends VBox
     private final static Logger mLog = LoggerFactory.getLogger(JmbeEditor.class);
     private UserPreferences mUserPreferences;
     private Release mCurrentRelease;
+    private boolean mUseBazinetaFork;
     private Label mCurrentVersionLabel;
     private Label mUpdatedVersionLabel;
     private Label mLibraryPathLabel;
@@ -83,6 +84,7 @@ public class JmbeEditor extends VBox
         if(request != null)
         {
             setCurrentRelease(request.getCurrentRelease());
+            mUseBazinetaFork = request.getUseBazinetaFork();
         }
     }
 
@@ -141,7 +143,7 @@ public class JmbeEditor extends VBox
      */
     private void createJmbeLibrary(Path library)
     {
-        JmbeCreator jmbeCreator = new JmbeCreator(mCurrentRelease, library);
+        JmbeCreator jmbeCreator = new JmbeCreator(mCurrentRelease, library, mUseBazinetaFork);
         getConsoleTextArea().textProperty().bind(jmbeCreator.consoleOutputProperty());
         jmbeCreator.completeProperty().addListener((observable, oldValue, newValue) -> {
             getCreateButton().setDisable(false);

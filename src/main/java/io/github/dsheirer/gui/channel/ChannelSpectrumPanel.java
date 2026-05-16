@@ -54,6 +54,7 @@ import java.util.List;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
 import net.miginfocom.swing.MigLayout;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -93,6 +94,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
     private final SignalPowerView mSignalPowerView;
     private final SymbolView mSymbolView = new SymbolView();
     private final JFXPanel mNoiseSquelchPanel;
+    private final JFXPanel mSignalPowerPanel;
     private final JFXPanel mSymbolPanel;
     private JPanel mInspectorPanel;
     private CardLayout mInspectorCardLayout;
@@ -207,6 +209,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         fftPanel.add(layeredPanel);
 
         mNoiseSquelchPanel = new JFXPanel();
+        mSignalPowerPanel = new JFXPanel();
         mSymbolPanel = new JFXPanel();
 
         //Spin noise squelch panel construction off onto the JavafX UI thread.
@@ -214,11 +217,14 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             Scene scene = new Scene(mNoiseSquelchView);
             mNoiseSquelchPanel.setScene(scene);
             Scene scene2 = new Scene(mSymbolView);
+            Scene scene3 = new Scene(mSignalPowerView);
             URL resource = getClass().getResource("/sdrtrunk_style.css");
 
             if(resource != null)
             {
+                scene.getStylesheets().add(resource.toExternalForm());
                 scene2.getStylesheets().add(resource.toExternalForm());
+                scene3.getStylesheets().add(resource.toExternalForm());
             }
             else
             {
@@ -226,6 +232,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             }
 
             mSymbolPanel.setScene(scene2);
+            mSignalPowerPanel.setScene(scene3);
         });
 
         mInspectorCardLayout = new CardLayout();
@@ -233,7 +240,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         mInspectorPanel.setBorder(new MatteBorder(0, 1, 0, 0, new Color(224, 224, 224))); // Apple HIG subtle border
 
         mInspectorPanel.add(mNoiseSquelchPanel, "NBFM");
-        mInspectorPanel.add(mSignalPowerView, "AM");
+        mInspectorPanel.add(mSignalPowerPanel, "AM");
         mInspectorPanel.add(mSymbolPanel, "FEEDBACK");
 
         // Use MigLayout for the main panel
@@ -266,6 +273,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         updateFFTProcessing();
         mNoiseSquelchView.setShowing(visible);
         mSymbolView.setShowing(visible);
+        mSignalPowerView.setShowing(visible);
     }
 
     /**
@@ -378,17 +386,17 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             PrimaryDecoder primaryDecoder = mProcessingChain.getPrimaryDecoder();
             if(primaryDecoder instanceof NBFMDecoder nbfmDecoder)
             {
-                setRightComponent(mNoiseSquelchPanel);
+                setRightComponent("NBFM");
                 mNoiseSquelchView.setController(nbfmDecoder);
             }
             else if(primaryDecoder instanceof AMDecoder)
             {
-                setRightComponent(mSignalPowerView);
+                setRightComponent("AM");
                 mSignalPowerView.setProcessingChain(mProcessingChain);
             }
             else if(primaryDecoder instanceof FeedbackDecoder feedbackDecoder)
             {
-                setRightComponent(mSymbolPanel);
+                setRightComponent("FEEDBACK");
                 mSymbolView.setSymbolProvider(feedbackDecoder);
                 mSymbolView.setProtocol(feedbackDecoder.getProtocolDescription());
             }
@@ -422,20 +430,42 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
      * Shows the component on the right side of the split pane.
      * @param component to show.
      */
-    private void setRightComponent(Component component)
+    private void setRightComponent(String type)
     {
-        if (component == mNoiseSquelchPanel) {
-            mInspectorCardLayout.show(mInspectorPanel, "NBFM");
-            mInspectorPanel.setVisible(true);
-        } else if (component == mSignalPowerView) {
-            mInspectorCardLayout.show(mInspectorPanel, "AM");
-            mInspectorPanel.setVisible(true);
-        } else if (component == mSymbolPanel) {
-            mInspectorCardLayout.show(mInspectorPanel, "FEEDBACK");
-            mInspectorPanel.setVisible(true);
-        } else {
-            mInspectorPanel.setVisible(false);
-        }
+        EventQueue.invokeLater(() -> {
+            if ("NBFM".equals(type)) {
+                mInspectorPanel.setVisible(true);
+            } else if ("AM".equals(type)) {
+                mInspectorPanel.setVisible(true);
+            } else if ("FEEDBACK".equals(type)) {
+                mInspectorPanel.setVisible(true);
+            } else {
+                mInspectorPanel.setVisible(false);
+            }
+        });
+
+        Platform.runLater(() -> {
+            if ("NBFM".equals(type)) {
+                mNoiseSquelchView.setVisible(true);
+                mNoiseSquelchView.toFront();
+                mSignalPowerView.setVisible(false);
+                mSymbolView.setVisible(false);
+            } else if ("AM".equals(type)) {
+                mSignalPowerView.setVisible(true);
+                mSignalPowerView.toFront();
+                mNoiseSquelchView.setVisible(false);
+                mSymbolView.setVisible(false);
+            } else if ("FEEDBACK".equals(type)) {
+                mSymbolView.setVisible(true);
+                mSymbolView.toFront();
+                mNoiseSquelchView.setVisible(false);
+                mSignalPowerView.setVisible(false);
+            } else {
+                mNoiseSquelchView.setVisible(false);
+                mSignalPowerView.setVisible(false);
+                mSymbolView.setVisible(false);
+            }
+        });
     }
 
     /**

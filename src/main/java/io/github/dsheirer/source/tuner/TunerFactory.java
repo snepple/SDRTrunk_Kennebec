@@ -125,7 +125,7 @@ import io.github.dsheirer.source.tuner.sdrplay.rspDx.IControlRspDx;
 import io.github.dsheirer.source.tuner.sdrplay.rspDx.RspDxTunerConfiguration;
 import io.github.dsheirer.source.tuner.sdrplay.rspDx.RspDxTunerController;
 import io.github.dsheirer.source.tuner.sdrplay.rspDx.RspDxTunerEditor;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.ITunerEditor;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -460,7 +460,7 @@ public class TunerFactory
     /**
      * Creates a tuner editor gui for the specified tuner
      */
-    public static TunerEditor getEditor(UserPreferences userPreferences, DiscoveredTuner discoveredTuner,
+    public static javax.swing.JComponent getEditor(UserPreferences userPreferences, DiscoveredTuner discoveredTuner,
                                         TunerManager tunerManager)
     {
         switch(discoveredTuner.getTunerClass())

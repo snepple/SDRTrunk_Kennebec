@@ -552,38 +552,38 @@ return panel;
     }
 
 
-    private java.util.Map<ViewIdentifier, JFXPanel> mViewMap = new java.util.HashMap<>();
+    private java.util.Map<ViewIdentifier, javafx.scene.Node> mViewMap = new java.util.HashMap<>();
 
-    public JFXPanel getView(ViewIdentifier viewIdentifier) {
+    public javafx.scene.Node getView(ViewIdentifier viewIdentifier) {
         if (mViewMap.containsKey(viewIdentifier)) {
             return mViewMap.get(viewIdentifier);
         }
-        JFXPanel panel = new JFXPanel();
-        mViewMap.put(viewIdentifier, panel);
+        javafx.scene.layout.StackPane wrapper = new javafx.scene.layout.StackPane();
+        mViewMap.put(viewIdentifier, wrapper);
         Platform.runLater(() -> {
-            Scene scene = null;
+            javafx.scene.Parent root = null;
             switch(viewIdentifier) {
                 case PLAYLIST_EDITOR:
-                    scene = new Scene(getPlaylistEditor(), 1000, 750);
+                    root = getPlaylistEditor();
                     break;
                 case ICON_MANAGER:
-                    scene = new Scene(getIconManager(), 500, 500);
+                    root = getIconManager();
                     break;
                 case USER_PREFERENCES_EDITOR:
-                    scene = new Scene(getUserPreferencesEditor(), 900, 500);
+                    root = getUserPreferencesEditor();
                     break;
                 case LOGS:
-                    scene = new Scene(new LogsPanel(mUserPreferences), 1000, 750);
+                    root = new LogsPanel(mUserPreferences);
                     break;
                 case RECORDING_VIEWER:
-                    scene = new Scene(getRecordingViewer(), 1100, 800);
+                    root = getRecordingViewer();
                     break;
             }
-            if (scene != null) {
-                panel.setScene(scene);
+            if (root != null) {
+                wrapper.getChildren().add(root);
             }
         });
-        return panel;
+        return wrapper;
     }
 
 

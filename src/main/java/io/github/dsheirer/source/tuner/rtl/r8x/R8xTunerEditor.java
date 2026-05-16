@@ -32,7 +32,7 @@ import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.rtl.RTL2832Tuner;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController.SampleRate;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +40,8 @@ import org.usb4java.LibUsbException;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JPanel;
+
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
@@ -50,12 +52,11 @@ import javax.usb.UsbException;
 /**
  * R8xxx Tuner Editor
  */
-public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfiguration>
+public class R8xTunerEditor extends SwingTunerEditor<RTL2832Tuner, R8xTunerConfiguration>
 {
     private final static Logger mLog = LoggerFactory.getLogger(R8xTunerEditor.class);
     private static final long serialVersionUID = 1L;
     private static final R8xEmbeddedTuner.MasterGain DEFAULT_GAIN = R8xEmbeddedTuner.MasterGain.GAIN_279;
-    private JButton mTunerInfoButton;
     private JToggleButton mBiasTButton;
     private JComboBox<SampleRate> mSampleRateCombo;
     private JComboBox<R8xEmbeddedTuner.MasterGain> mMasterGainCombo;
@@ -109,41 +110,41 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 3", "[right][grow,fill][fill]",
-                "[][][][][][][][][][][][][][][][grow]"));
+        setLayout(new MigLayout("fill,wrap 2", "[right][grow,fill]", ""));
 
         add(new JLabel("Tuner:"));
         add(getTunerIdLabel());
-        add(getTunerInfoButton());
 
         add(new JLabel("Status:"));
         add(getTunerStatusLabel());
-        add(getBiasTButton(), "wrap");
+
+        add(new JLabel("Bias-T:"));
+        add(getBiasTButton());
 
         add(getButtonPanel(), "span,align left");
 
         add(new JSeparator(), "span,growx,push");
 
         add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel(), "wrap");
+        add(getFrequencyPanel());
 
         add(new JLabel("Sample Rate:"));
-        add(getSampleRateCombo(), "wrap");
+        add(getSampleRateCombo());
 
         add(new JSeparator(), "span,growx,push");
-        add(new JLabel("Gain Control"), "wrap");
 
-        add(new JLabel("Master:"));
-        add(getMasterGainCombo(), "wrap");
+        JPanel gainPanel = new JPanel(new MigLayout("insets 0", "[][grow,fill][][grow,fill]", ""));
+        gainPanel.add(new JLabel("Master:"));
+        gainPanel.add(getMasterGainCombo());
+        gainPanel.add(new JLabel("Mixer:"));
+        gainPanel.add(getMixerGainCombo(), "wrap");
+        gainPanel.add(new JLabel("LNA:"));
+        gainPanel.add(getLNAGainCombo());
+        gainPanel.add(new JLabel("VGA:"));
+        gainPanel.add(getVGAGainCombo(), "wrap");
 
-        add(new JLabel("Mixer:"));
-        add(getMixerGainCombo(), "wrap");
-
-        add(new JLabel("LNA:"));
-        add(getLNAGainCombo(), "wrap");
-
-        add(new JLabel("VGA:"));
-        add(getVGAGainCombo(), "wrap");
+        add(new JLabel("Gain:"));
+        add(gainPanel);
     }
 
     @Override
@@ -173,7 +174,6 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
         {
             getBiasTButton().setEnabled(true);
             getBiasTButton().setSelected(getConfiguration().isBiasT());
-            getTunerInfoButton().setEnabled(true);
             getSampleRateCombo().setEnabled(true);
             getSampleRateCombo().setSelectedItem(getConfiguration().getSampleRate());
             getMasterGainCombo().setEnabled(true);
@@ -208,7 +208,6 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
         {
             getBiasTButton().setEnabled(false);
             getBiasTButton().setSelected(false);
-            getTunerInfoButton().setEnabled(false);
             getSampleRateCombo().setEnabled(false);
             getMasterGainCombo().setEnabled(false);
             getMixerGainCombo().setEnabled(false);
@@ -243,23 +242,7 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
         return mBiasTButton;
     }
 
-    /**
-     * Hyperlink button that provides tuner information
-     */
-    private JButton getTunerInfoButton()
-    {
-        if(mTunerInfoButton == null)
-        {
-            mTunerInfoButton = new JButton("Info");
-            mTunerInfoButton.setEnabled(false);
-            mTunerInfoButton.addActionListener(e -> JOptionPane.showMessageDialog(R8xTunerEditor.this,
-                    getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));
-        }
-
-        return mTunerInfoButton;
-    }
-
-    private JComboBox getVGAGainCombo()
+private JComboBox getVGAGainCombo()
     {
         if(mVGAGainCombo == null)
         {
@@ -492,7 +475,7 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
         updateSampleRateToolTip();
     }
 
-    private String getTunerInfo()
+    protected String getTunerInfo()
     {
         StringBuilder sb = new StringBuilder();
         RTL2832TunerController.Descriptor descriptor = getTuner().getController().getDescriptor();

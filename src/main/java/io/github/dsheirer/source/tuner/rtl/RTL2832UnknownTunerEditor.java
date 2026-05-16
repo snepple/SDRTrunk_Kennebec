@@ -29,7 +29,7 @@ import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.rtl.r8x.R8xEmbeddedTuner;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JLabel;
@@ -38,7 +38,7 @@ import javax.swing.JSeparator;
 /**
  * Tuner editor for RTL2832 tuner that has not been started, or for an unknown tuner type
  */
-public class RTL2832UnknownTunerEditor extends TunerEditor<RTL2832Tuner, RTL2832TunerConfiguration>
+public class RTL2832UnknownTunerEditor extends SwingTunerEditor<RTL2832Tuner, RTL2832TunerConfiguration>
 {
     /**
      * Constructs an instance

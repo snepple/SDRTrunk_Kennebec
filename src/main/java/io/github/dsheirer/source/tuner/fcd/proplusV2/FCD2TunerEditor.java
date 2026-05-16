@@ -23,7 +23,7 @@ import io.github.dsheirer.source.SourceException;
 import io.github.dsheirer.source.tuner.fcd.FCDTuner;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +38,10 @@ import javax.swing.SpinnerNumberModel;
 /**
  * Funcube Dongle Pro Plus tuner editor
  */
-public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguration>
+public class FCD2TunerEditor extends SwingTunerEditor<FCDTuner, FCD2TunerConfiguration>
 {
     private final static Logger mLog = LoggerFactory.getLogger(FCD2TunerEditor.class);
     private static final long serialVersionUID = 1L;
-    private JButton mTunerInfoButton;
     private JCheckBox mLnaGainCheckBox;
     private JCheckBox mMixerGainCheckBox;
 
@@ -103,7 +102,6 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
         getTunerStatusLabel().setText(status);
         getButtonPanel().updateControls();
         getFrequencyPanel().updateControls();
-        getTunerInfoButton().setEnabled(hasTuner());
         getLnaGainCheckBox().setEnabled(hasTuner());
         getMixerGainCheckBox().setEnabled(hasTuner());
 
@@ -123,7 +121,6 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
 
         add(new JLabel("Tuner:"));
         add(getTunerIdLabel());
-        add(getTunerInfoButton());
 
         add(new JLabel("Status:"));
         add(getTunerStatusLabel(), "wrap");
@@ -139,20 +136,7 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
         add(getMixerGainCheckBox());
     }
 
-    public JButton getTunerInfoButton()
-    {
-        if(mTunerInfoButton == null)
-        {
-            mTunerInfoButton = new JButton("Tuner Info");
-            mTunerInfoButton.setEnabled(false);
-            mTunerInfoButton.addActionListener(e -> JOptionPane.showMessageDialog(FCD2TunerEditor.this,
-                    getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));
-        }
-
-        return mTunerInfoButton;
-    }
-
-    public JCheckBox getLnaGainCheckBox()
+public JCheckBox getLnaGainCheckBox()
     {
         if(mLnaGainCheckBox == null)
         {
@@ -210,7 +194,7 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
         getFrequencyPanel().updateControls();
     }
 
-    private String getTunerInfo()
+    protected String getTunerInfo()
     {
         StringBuilder sb = new StringBuilder();
 

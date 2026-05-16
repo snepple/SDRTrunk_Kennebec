@@ -25,7 +25,7 @@ import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.rtl.RTL2832Tuner;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController.SampleRate;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,12 +47,11 @@ import javax.swing.SpinnerNumberModel;
 /**
  * FC0013 Tuner Editor
  */
-public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConfiguration>
+public class FC0013TunerEditor extends SwingTunerEditor<RTL2832Tuner, FC0013TunerConfiguration>
 {
     private final static Logger mLog = LoggerFactory.getLogger(FC0013TunerEditor.class);
     private static final long serialVersionUID = 1L;
     private static final FC0013EmbeddedTuner.LNAGain DEFAULT_LNA_GAIN = FC0013EmbeddedTuner.LNAGain.G14;
-    private JButton mTunerInfoButton;
     private JToggleButton mBiasTButton;
     private JComboBox<SampleRate> mSampleRateCombo;
 
@@ -105,12 +104,12 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 3", "[right][grow,fill][fill]",
+        setLayout(new MigLayout("fill,wrap 2", "[right][grow,fill][fill]",
                 "[][][][][][][][][][][][][][][][grow]"));
 
         add(new JLabel("Tuner:"));
         add(getTunerIdLabel());
-        add(getTunerInfoButton());
+
 
         add(new JLabel("Status:"));
         add(getTunerStatusLabel());
@@ -163,7 +162,6 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
         {
             getBiasTButton().setEnabled(true);
             getBiasTButton().setSelected(getConfiguration().isBiasT());
-            getTunerInfoButton().setEnabled(true);
             getSampleRateCombo().setEnabled(true);
             getSampleRateCombo().setSelectedItem(getConfiguration().getSampleRate());
             getAgcToggleButton().setEnabled(true);
@@ -175,7 +173,6 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
         {
             getBiasTButton().setEnabled(false);
             getBiasTButton().setSelected(false);
-            getTunerInfoButton().setEnabled(false);
             getSampleRateCombo().setEnabled(false);
             getAgcToggleButton().setEnabled(false);
             getLNAGainCombo().setEnabled(false);
@@ -211,20 +208,7 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
     /**
      * Hyperlink button that provides tuner information
      */
-    private JButton getTunerInfoButton()
-    {
-        if(mTunerInfoButton == null)
-        {
-            mTunerInfoButton = new JButton("Info");
-            mTunerInfoButton.setEnabled(false);
-            mTunerInfoButton.addActionListener(e -> JOptionPane.showMessageDialog(FC0013TunerEditor.this,
-                    getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));
-        }
-
-        return mTunerInfoButton;
-    }
-
-    private JComboBox getLNAGainCombo()
+private JComboBox getLNAGainCombo()
     {
         if(mLNAGainCombo == null)
         {
@@ -358,7 +342,7 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
         updateSampleRateToolTip();
     }
 
-    private String getTunerInfo()
+    protected String getTunerInfo()
     {
         StringBuilder sb = new StringBuilder();
         RTL2832TunerController.Descriptor descriptor = getTuner().getController().getDescriptor();

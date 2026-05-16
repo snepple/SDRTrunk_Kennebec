@@ -36,10 +36,41 @@ echo ==========================================
 
 :: Step 1: Env Check
 call :drawProgressBar 5 "Checking environment..."
+where git >nul 2>&1 || (echo [ERROR] Git missing. & pause & exit)
 where gh >nul 2>&1 || (echo [ERROR] GitHub CLI missing. & pause & exit)
+where cmake >nul 2>&1 || (echo [ERROR] CMake missing. & pause & exit)
 where g++ >nul 2>&1 || (echo [ERROR] MinGW/g++ missing. & pause & exit)
 if "!JAVA_HOME!"=="" (echo [ERROR] JAVA_HOME not set. & pause & exit)
 for %%I in ("!JAVA_HOME!") do set "JH=%%~sI"
+
+:: Libvolk Dependency Check
+call :drawProgressBar 10 "Checking libvolk dependency..."
+if not exist "%VOLK_BASE%\volk\volk.h" (
+    echo [INFO] libvolk missing. Cloning v3.3.0 with submodules...
+    git clone --branch v3.3.0 --recursive https://github.com/gnuradio/volk.git volk_src >nul 2>&1
+    if not exist "volk_src" (
+        echo [ERROR] Failed to clone libvolk.
+        pause
+        goto ai_triage
+    )
+
+    echo [INFO] Compiling libvolk...
+    python -m pip install mako >nul 2>&1
+    cd /d "volk_src"
+    if not exist build mkdir build
+    cd build
+    cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX="%VOLK_BASE%\.." .. > cmake_out.log 2>&1
+    cmake --build . --target install >> cmake_out.log 2>&1
+    cd /d "%ROOT_DIR%"
+
+    if not exist "%VOLK_BASE%\volk\volk.h" (
+        echo [ERROR] libvolk compilation or installation failed. Check volk_src\build\cmake_out.log for details.
+        pause
+        goto ai_triage
+    )
+
+    rmdir /s /q volk_src >nul 2>&1
+)
 
 :: Step 2: Cleanup
 call :drawProgressBar 15 "Cleaning workspace..."
@@ -82,7 +113,7 @@ for %%I in ("%VOLK_BASE%\..\lib") do set "V_LIB=%%~sI"
 g++ -shared -fPIC -I"!JH!\include" -I"!JH!\include\win32" -I"!JNI_GEN!" -I"src\main\cpp" -I"!V_INC!" -L"!V_LIB!" src\main\cpp\library.cpp -lvolk -o src\main\resources\native\library.dll 2> cpp_error.log
 if !ERRORLEVEL! NEQ 0 (
     type cpp_error.log >> "%LOG_FILE%"
-    goto ai_triage
+    echo [WARNING] C++ compilation failed. Using Java fallback.
 )
 
 :: Step 6: Final Packaging
@@ -96,10 +127,28 @@ call :drawProgressBar 85 "Installing..."
 :: Added -x compileJni here to ensure it doesn't re-trigger and fail
 call gradlew.bat installDist -x test -x javadoc -x compileJni --no-daemon --console=plain >> "%LOG_FILE%" 2>&1 || goto ai_triage
 
-:: Step 8: Success
+:: Step 8: Upload Release and Update README
+call :drawProgressBar 95 "Releasing and Updating README..."
+for /f "tokens=2 delims==" %%A in ('findstr /I "projectVersion" gradle.properties') do set "PROJ_VER=%%A"
+set "DIST_ZIP=%ROOT_DIR%\%FOLDER_NAME%\build\distributions\sdr-trunk-!PROJ_VER!.zip"
+if exist "!DIST_ZIP!" (
+    echo [INFO] Creating GitHub Release !PROJ_VER!...
+    gh release create !PROJ_VER! "!DIST_ZIP!" --repo %GH_REPO% --title "Release !PROJ_VER!" --notes "Automated release of !PROJ_VER!"
+    echo [INFO] Updating README.md...
+    cd /d "%ROOT_DIR%\%FOLDER_NAME%"
+    powershell -Command "(Get-Content README.md) -replace 'Latest Compiled Release: .*', 'Latest Compiled Release: [Download !PROJ_VER!](https://github.com/%GH_REPO%/releases/tag/!PROJ_VER!)' | Set-Content README.md"
+    git add README.md
+    git commit -m "Update README.md with release !PROJ_VER!"
+    git push origin HEAD
+) else (
+    echo [WARNING] !DIST_ZIP! not found. Skipping release.
+)
+
+:: Step 9: Success
 call :drawProgressBar 100 "Build Complete!"
 echo.
 echo [SUCCESS] Sam, Kennebec build is ready.
+cd /d "%ROOT_DIR%\%FOLDER_NAME%"
 for /d %%D in (build\install\*) do (if exist "%%D\bin\sdrtrunk.bat" start "" "%%D\bin\sdrtrunk.bat")
 pause
 exit /b 0
@@ -130,7 +179,7 @@ echo ==========================================
 echo [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 > triage.ps1
 echo $log = if (Test-Path 'build_log.txt') { Get-Content 'build_log.txt' -Tail 30 ^| Out-String } else { 'No log' } >> triage.ps1
 :: Corrected the caret escape [^^^] to preserve the character in the PS1 script
-echo $log = $log -replace '[^^^\x20-\x7E]', '' -replace '\"', ' ' -replace '\\', '/' >> triage.ps1
+echo $log = $log -replace '[^^^\x20-\x7E]', '' -replace [char]34, ' ' -replace '\\', '/' >> triage.ps1
 echo $instr = 'SDRTrunk build failed. Log: ' + $log + '. Return JSON ONLY: {"target":"REPO|SCRIPT","content":"Fix advice"}' >> triage.ps1
 echo $body = @{ contents = @( @{ parts = @( @{ text = $instr } ) } ) } ^| ConvertTo-Json -Depth 10 >> triage.ps1
 echo try { >> triage.ps1

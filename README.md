@@ -1,6 +1,30 @@
-### Latest Compiled Release: [Download pr-K.00.024](https://github.com/snepple/sdrtrunk_Sam/releases/tag/pr-K.00.024)
+### Latest Compiled Release: [Download K.00.051](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.051)
 
 <h1>sdrtrunk - Kennebec Version</h1>
+
+## 🆕 Recent Updates (Week of May 10, 2026)
+* **🚀 New Features:**
+  * **JMBE Support:** Added support for building the bazineta JMBE fork.
+  * **AI Integration:** Implemented AI Audio Monitoring for channels and added an "AI Optimize Audio Filters" button to the NBFM channel configuration.
+  * **System Health:** Implemented a new System Health Notification feature to alert you of application issues.
+  * **Geographic IDs:** Added a Geographic ID generator for NBFM channels.
+* **🎨 UI/UX Improvements:**
+  * **Channel Table Enhancements:** Enabled inline editing and added a right-click context menu to the channel table rows.
+  * **Alias & Streaming:** Added inline editing to the alias table, separated listen and priority columns in the Alias Configuration Editor, and added context menu filtering to the streaming widget.
+  * **Live Console:** Added multiple selection and clipboard copy support to Live Console logs.
+  * **Notifications:** Redesigned the Notifications configuration and added alerts.
+  * **Sidebar Update:** Updated the sidebar expand/contract styling to feature the SDRTrunk logo and dynamic positioning.
+* **🛡️ Security & Stability:**
+  * Fixed a GUI threading issue ensuring main GUI initialization and Swing UI component updates are correctly handled on the Event Dispatch Thread (EDT).
+  * Resolved a deadlock and buffer leak in the NativeBufferManager affecting the waterfall display.
+  * Fixed a resource leak in the AudioSegmentRecorder.
+  * Prevented application crashes on startup caused by MigLayout constraints.
+* **🔧 Bug Fixes:**
+  * Fixed an issue where the tuner enable button failed silently due to a bandwidth bug.
+  * Resolved UI bugs causing empty spectrum and waterfall displays.
+* **📚 Documentation:**
+  * Added new guides for Radio Reference import, OpenMHz streaming, Rdio Scanner streaming, and ThinLine Radio documentation.
+
 
 <p>Welcome to the Kennebec version of sdrtrunk—a modernized, cross-platform Java application engineered for decoding, monitoring, recording, and streaming trunked mobile and related radio protocols using Software Defined Radios (SDR).</p>
 
@@ -33,6 +57,8 @@
   <li>Consolidated settings in a single user preference area, eliminating the need to hunt across multiple menus</li>
   <li>New interface for reviewing logs and browsing recorded audio files</li>
   <li>Ability to set allocated memory directly via the user preferences Ux/GUI</li>
+  <li>AI Integration for Audio Monitoring and System Health Notifications</li>
+  <li>Automated Geographic ID generation for NBFM channels</li>
 </ul>
 
 <h3>In-App Knowledge Base</h3>
@@ -75,8 +101,9 @@
   <li>Manage talkgroups and route audio to various streaming platforms</li>
 </ul>
 
-<h2>Documentation</h2>
-<p>For more detailed information, setup guides, and tutorials, please visit the <a href="https://sam-64221fcd.mintlify.app/">SDRTrunk Kennebec Documentation</a>.</p>
+<h2>📚 Documentation & Guides</h2>
+<p><strong><a href="https://sam-64221fcd.mintlify.app/">Read the official SDRTrunk Kennebec Documentation</a></strong></p>
+<p>For detailed information, setup guides, tutorials, and troubleshooting, please visit our comprehensive documentation portal. The portal covers everything from initial hardware setup to advanced streaming and AI integration.</p>
 
 <h2>Screenshots</h2>
 

@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.JCheckBox;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
@@ -87,6 +88,9 @@ public class Rsp2TunerEditor extends RspTunerEditor<Rsp2TunerConfiguration>
         add(new JLabel("Gain:"));
         add(getGainPanel(), "wrap");
         add(new JLabel("LNA:"));
+        JButton lnaHelp = createHelpIcon("?");
+        lnaHelp.setToolTipText("<html><b>LNA Gain:</b> The power of the signal amplifier.<br>Increase this for distant signals, but lower it if you see a lot of static/noise.</html>");
+        add(lnaHelp, "split 2");
         add(getLNASlider(), "wrap");
         add(new JLabel("IF:"));
         add(getIfGainSlider(), "wrap");
@@ -393,5 +397,13 @@ public class Rsp2TunerEditor extends RspTunerEditor<Rsp2TunerConfiguration>
         {
             getSampleRateCombo().setToolTipText("No tuner available");
         }
+    }
+
+    protected JButton createHelpIcon(String text) {
+        JButton button = new JButton(text);
+        button.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        button.setFocusable(false);
+        button.setFont(button.getFont().deriveFont(10f));
+        return button;
     }
 }

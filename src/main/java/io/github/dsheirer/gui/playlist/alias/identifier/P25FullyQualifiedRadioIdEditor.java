@@ -92,7 +92,7 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
         GridPane.setConstraints(getWacnField(), 2, 0);
         gridPane.getChildren().add(getWacnField());
 
-        Label systemLabel = new Label("System");
+        Label systemLabel = new Label("System", createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system."));
         GridPane.setHalignment(systemLabel, HPos.RIGHT);
         GridPane.setConstraints(systemLabel, 3, 0);
         gridPane.getChildren().add(systemLabel);

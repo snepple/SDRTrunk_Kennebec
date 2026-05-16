@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.TableView?>
+
+<VBox fx:id="mainContainer" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.dsheirer.audio.broadcast.BroadcastStatusPanelController">
+    <TableView fx:id="tableView" VBox.vgrow="ALWAYS">
+        <!-- Columns will be added dynamically by controller based on BroadcastModel -->
+    </TableView>
+</VBox>

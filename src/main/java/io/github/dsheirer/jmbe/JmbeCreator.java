@@ -31,6 +31,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -44,7 +45,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Creates the JMBE library by downloading the JMBE Creator CLI application from GitHub and executing it.
+ * Creates the JMBE library by downloading the JMBE Creator CLI application from GitHub and executing it,
+ * or by directly downloading and building the source zip.
  */
 public class JmbeCreator
 {
@@ -53,12 +55,14 @@ public class JmbeCreator
     public static final String GITHUB_BAZINETA_JMBE_RELEASES_URL = "https://api.github.com/repos/bazineta/jmbe/releases";
     public static final String CREATOR_SCRIPT_LINUX = "creator";
     public static final String CREATOR_SCRIPT_WINDOWS = "creator.bat";
+    public static final String BAZINETA_ZIP_URL = "https://github.com/bazineta/jmbe/archive/refs/heads/master.zip";
 
     private StringProperty mConsoleOutput = new SimpleStringProperty();
     private BooleanProperty mCompleteProperty = new SimpleBooleanProperty();
     private boolean mHasErrors = false;
     private Release mRelease;
     private Path mLibraryPath;
+    private boolean mUseBazinetaFork;
     private StringBuilder mConsoleStringBuilder = new StringBuilder();
 
     /**
@@ -66,10 +70,11 @@ public class JmbeCreator
      * @param release for the version to create
      * @param library path where the library should be created
      */
-    public JmbeCreator(Release release, Path library)
+    public JmbeCreator(Release release, Path library, boolean useBazinetaFork)
     {
         mRelease = release;
         mLibraryPath = library;
+        mUseBazinetaFork = useBazinetaFork;
     }
 
     /**
@@ -121,6 +126,133 @@ public class JmbeCreator
      */
     public void execute()
     {
+        if(mUseBazinetaFork)
+        {
+            ThreadPool.CACHED.execute(() -> {
+                Path tempDirectory = null;
+                try
+                {
+                    tempDirectory = Files.createTempDirectory("sdrtrunk-jmbe-creator");
+                    printToConsole("Created: Temp Directory [" + tempDirectory.toString() + "]");
+                    printToConsole("Downloading: bazineta JMBE source ZIP");
+                    printToConsole("Please wait ...");
+
+                    Path zipPath = GitHub.downloadArtifact(BAZINETA_ZIP_URL, tempDirectory);
+
+                    if(zipPath != null)
+                    {
+                        printToConsole("Downloaded: " + zipPath.toString());
+                        Path unzipped = zipPath.getParent();
+                        Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.ZIP);
+                        archiver.extract(zipPath.toFile(), unzipped.toFile());
+                        printToConsole("Unzipped to: [" + unzipped.toString() + "]");
+
+                        Path extractDir = unzipped.resolve("jmbe-master");
+                        if (!Files.exists(extractDir)) {
+                            extractDir = unzipped;
+                        }
+
+                        Path script = null;
+                        OSType osType = OSType.getCurrentOSType();
+                        if(osType.isLinux() || osType.isOsx()) {
+                            script = extractDir.resolve("gradlew");
+                        } else if(osType.isWindows()) {
+                            script = extractDir.resolve("gradlew.bat");
+                        }
+
+                        if(script != null && Files.exists(script))
+                        {
+                            // Fix java 26 compatibility error inside build.gradle if present
+                            Path buildGradle = extractDir.resolve("build.gradle");
+                            if (Files.exists(buildGradle)) {
+                                String content = new String(Files.readAllBytes(buildGradle));
+                                content = content.replace("JavaVersion.VERSION_26", "JavaVersion.VERSION_21");
+                                Files.write(buildGradle, content.getBytes());
+                            }
+
+                            if (!osType.isWindows()) {
+                                script.toFile().setExecutable(true);
+                            }
+
+                            ProcessBuilder processBuilder = new ProcessBuilder();
+                            processBuilder.directory(extractDir.toFile());
+                            processBuilder.command(script.toString(), "build");
+
+                            try
+                            {
+                                Process process = processBuilder.start();
+                                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                                String line;
+                                while((line = reader.readLine()) != null)
+                                {
+                                    printToConsole(line);
+                                }
+
+                                int exitCode = process.waitFor();
+
+                                if(exitCode == 0)
+                                {
+                                    // Try to find the built jar
+                                    Path builtJar = extractDir.resolve("codec").resolve("build").resolve("libs").resolve("codec-1.0.9.jar");
+                                    if (!Files.exists(builtJar)) {
+                                        builtJar = extractDir.resolve("build").resolve("libs").resolve("jmbe-1.0.9.jar");
+                                    }
+                                    if (Files.exists(builtJar)) {
+                                        if (mLibraryPath.getParent() != null && !Files.exists(mLibraryPath.getParent())) {
+                                            Files.createDirectories(mLibraryPath.getParent());
+                                        }
+                                        Files.copy(builtJar, mLibraryPath, StandardCopyOption.REPLACE_EXISTING);
+                                        printToConsole("Library Created Successfully! " + mLibraryPath.toString());
+                                        Platform.runLater(() -> completeProperty().set(true));
+                                    } else {
+                                        terminateWithErrors("Failed: Built JAR file not found");
+                                    }
+                                }
+                                else
+                                {
+                                    terminateWithErrors("Failed: Build Script failed with exit code [" + exitCode + "]");
+                                    mLog.error("Script failed with exit code: " + exitCode);
+                                }
+                            }
+                            catch(InterruptedException ie)
+                            {
+                                terminateWithErrors("Failed: Script Process was interrupted");
+                                mLog.error("Interrupted", ie);
+                            }
+                        }
+                        else
+                        {
+                            terminateWithErrors("Failed: Unable to find build script in source zip");
+                        }
+                    } else {
+                        terminateWithErrors("Failed: Could not download zip from " + BAZINETA_ZIP_URL);
+                    }
+                }
+                catch(Throwable t)
+                {
+                    terminateWithErrors("Failed: Unknown Error - " + t.getLocalizedMessage());
+                    mLog.error("Failed to build the JMBE library", t);
+                }
+                finally
+                {
+                    if(tempDirectory != null)
+                    {
+                        try
+                        {
+                            FileUtils.deleteDirectory(tempDirectory.toFile());
+                            printToConsole("Deleted: Temporary Directory [" + tempDirectory.toString() + "]");
+                        }
+                        catch(IOException ioe)
+                        {
+                            printToConsole("Failed: Deleting Temporary Directory [" + tempDirectory.toString() + "]");
+                            mLog.error("Error deleting temporary directory [" + tempDirectory.toString() + "]");
+                        }
+                    }
+                }
+            });
+            return;
+        }
+
         final Asset asset = getJMBECreatorAsset(mRelease);
 
         if(asset != null)
@@ -326,7 +458,7 @@ public class JmbeCreator
     {
         Release release = GitHub.getLatestRelease(GITHUB_JMBE_RELEASES_URL);
         Path library = Paths.get("/home/denny/temp/jmbe.jar");
-        JmbeCreator jmbeCreator = new JmbeCreator(release, library);
+        JmbeCreator jmbeCreator = new JmbeCreator(release, library, false);
 
         jmbeCreator.execute();
 

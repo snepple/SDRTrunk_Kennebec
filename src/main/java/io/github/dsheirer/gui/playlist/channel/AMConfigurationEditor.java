@@ -19,7 +19,7 @@
 
 package io.github.dsheirer.gui.playlist.channel;
 
-import io.github.dsheirer.gui.control.DbPowerMeter;
+import io.github.dsheirer.gui.control.DbPowerMeterJFX;
 import io.github.dsheirer.gui.control.HexFormatter;
 import io.github.dsheirer.gui.control.IntegerFormatter;
 import io.github.dsheirer.gui.playlist.eventlog.EventLogConfigurationEditor;
@@ -78,8 +78,8 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
     private TextField mSquelchThresholdField;
     private ToggleSwitch mSquelchAutoTrackSwitch;
     private TextFormatter<Integer> mTalkgroupTextFormatter;
-    private IntegerFormatter mSquelchTextFormatter = new IntegerFormatter((int)DbPowerMeter.DEFAULT_MINIMUM_POWER,
-            (int)DbPowerMeter.DEFAULT_MAXIMUM_POWER);
+    private IntegerFormatter mSquelchTextFormatter = new IntegerFormatter((int)DbPowerMeterJFX.DEFAULT_MINIMUM_POWER,
+            (int)DbPowerMeterJFX.DEFAULT_MAXIMUM_POWER);
     private EventLogConfigurationEditor mEventLogConfigurationEditor;
     private TalkgroupValueChangeListener mTalkgroupValueChangeListener = new TalkgroupValueChangeListener();
     private IntegerFormatter mDecimalFormatter = new IntegerFormatter(1, 65535);
@@ -118,6 +118,7 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getSourceConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mSourcePane = sp;
 
         }
@@ -171,6 +172,7 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
+            mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mDecoderPane = mDecoderPaneSp;
 
             //Special handling - the pill button doesn't like to set a selected state if the pane is not expanded,
@@ -187,6 +189,7 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane sp = new javafx.scene.control.ScrollPane(getEventLogConfigurationEditor());
             sp.setFitToWidth(true);
             sp.setFitToHeight(true);
+            sp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mEventLogPane = sp;
 
         }
@@ -213,6 +216,7 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
             javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(gridPane);
             mRecordPaneSp.setFitToWidth(true);
             mRecordPaneSp.setFitToHeight(true);
+            mRecordPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
             mRecordPane = mRecordPaneSp;
         }
 

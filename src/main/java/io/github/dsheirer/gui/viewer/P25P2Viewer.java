@@ -68,6 +68,10 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.paint.Color;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -94,6 +98,7 @@ public class P25P2Viewer extends VBox
     private static final String LAST_SYSTEM_VALUE = "last.system.value.p25p2";
     private static final String LAST_NAC_VALUE = "last.nac.value.p25p2";
     private static final String FILE_FREQUENCY_REGEX = ".*\\d{8}_\\d{6}_(\\d{9}).*";
+    private static final Pattern FILE_FREQUENCY_PATTERN = Pattern.compile(FILE_FREQUENCY_REGEX);
     private Preferences mPreferences = Preferences.userNodeForPackage(P25P2Viewer.class);
     private Button mSelectFileButton;
     private Label mSelectedFileLabel;
@@ -115,6 +120,20 @@ public class P25P2Viewer extends VBox
     private StringProperty mLoadedFile = new SimpleStringProperty();
     private MessagePackageViewer mMessagePackageViewer;
 
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
+    }
+
+
+
     public P25P2Viewer()
     {
         setPadding(new Insets(5));
@@ -133,9 +152,9 @@ public class P25P2Viewer extends VBox
         HBox scrambleSettingsBox = new HBox();
         scrambleSettingsBox.setAlignment(Pos.BASELINE_LEFT);
         scrambleSettingsBox.setSpacing(5);
-        Label wacnLabel = new Label("WACN:");
-        Label systemLabel = new Label("SYSTEM:");
-        Label nacLabel = new Label("NAC:");
+        Label wacnLabel = new Label("WACN:", createHelpIcon("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."));
+        Label systemLabel = new Label("SYSTEM:", createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system."));
+        Label nacLabel = new Label("NAC:", createHelpIcon("Network Access Code (NAC). A unique code identifying a specific radio system to follow."));
         scrambleSettingsBox.getChildren().addAll(wacnLabel, getWACNTextField(), systemLabel, getSystemTextField(),
                 nacLabel, getNACTextField(), getReloadButton());
 
@@ -179,21 +198,17 @@ public class P25P2Viewer extends VBox
             return 0;
         }
 
-        if(file.matches(FILE_FREQUENCY_REGEX))
+        Matcher m = FILE_FREQUENCY_PATTERN.matcher(file);
+        if(m.find())
         {
-            Pattern p = Pattern.compile(FILE_FREQUENCY_REGEX);
-            Matcher m = p.matcher(file);
-            if(m.find())
+            try
             {
-                try
-                {
-                    String raw = m.group(1);
-                    return Long.parseLong(raw);
-                }
-                catch(Exception e)
-                {
-                    mLog.error("Couldn't parse frequency from bits file [" + file + "]");
-                }
+                String raw = m.group(1);
+                return Long.parseLong(raw);
+            }
+            catch(Exception e)
+            {
+                mLog.error("Couldn't parse frequency from bits file [" + file + "]");
             }
         }
 
@@ -338,7 +353,8 @@ public class P25P2Viewer extends VBox
         }
         else
         {
-            Predicate<MessagePackage> textPredicate = message -> message.toString().toLowerCase().contains(filterText.toLowerCase());
+            final String lowerCaseFilterText = filterText.toLowerCase();
+            Predicate<MessagePackage> textPredicate = message -> message.toString().toLowerCase().contains(lowerCaseFilterText);
             mFilteredMessagePackages.setPredicate(timeslotPredicate.and(textPredicate));
         }
     }
@@ -351,9 +367,10 @@ public class P25P2Viewer extends VBox
     {
         if(text != null && !text.isEmpty())
         {
+            final String lowerCaseText = text.toLowerCase();
             for(MessagePackage messagePackage: mFilteredMessagePackages)
             {
-                if(messagePackage.toString().toLowerCase().contains(text.toLowerCase()))
+                if(messagePackage.toString().toLowerCase().contains(lowerCaseText))
                 {
                     getMessagePackageTableView().getSelectionModel().select(messagePackage);
                     getMessagePackageTableView().scrollTo(messagePackage);

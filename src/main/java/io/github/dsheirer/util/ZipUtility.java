@@ -40,20 +40,21 @@ public class ZipUtility
     public void zip(List<File> listFiles, String destZipFile) throws FileNotFoundException,
         IOException
     {
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(destZipFile));
-        for(File file : listFiles)
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(destZipFile)))
         {
-            if(file.isDirectory())
+            for(File file : listFiles)
             {
-                zipDirectory(file, file.getName(), zos);
+                if(file.isDirectory())
+                {
+                    zipDirectory(file, file.getName(), zos);
+                }
+                else
+                {
+                    zipFile(file, zos);
+                }
             }
-            else
-            {
-                zipFile(file, zos);
-            }
+            zos.flush();
         }
-        zos.flush();
-        zos.close();
     }
 
     /**
@@ -104,14 +105,16 @@ public class ZipUtility
                 }
 
                 zos.putNextEntry(new ZipEntry(parentFolder + "/" + file.getName()));
-                BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-                long bytesRead = 0;
-                byte[] bytesIn = new byte[BUFFER_SIZE];
-                int read = 0;
-                while((read = bis.read(bytesIn)) != -1)
+                try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file)))
                 {
-                    zos.write(bytesIn, 0, read);
-                    bytesRead += read;
+                    long bytesRead = 0;
+                    byte[] bytesIn = new byte[BUFFER_SIZE];
+                    int read = 0;
+                    while((read = bis.read(bytesIn)) != -1)
+                    {
+                        zos.write(bytesIn, 0, read);
+                        bytesRead += read;
+                    }
                 }
                 zos.closeEntry();
             }
@@ -129,14 +132,16 @@ public class ZipUtility
     private void zipFile(File file, ZipOutputStream zos) throws FileNotFoundException, IOException
     {
         zos.putNextEntry(new ZipEntry(file.getName()));
-        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-        long bytesRead = 0;
-        byte[] bytesIn = new byte[BUFFER_SIZE];
-        int read = 0;
-        while((read = bis.read(bytesIn)) != -1)
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file)))
         {
-            zos.write(bytesIn, 0, read);
-            bytesRead += read;
+            long bytesRead = 0;
+            byte[] bytesIn = new byte[BUFFER_SIZE];
+            int read = 0;
+            while((read = bis.read(bytesIn)) != -1)
+            {
+                zos.write(bytesIn, 0, read);
+                bytesRead += read;
+            }
         }
         zos.closeEntry();
     }

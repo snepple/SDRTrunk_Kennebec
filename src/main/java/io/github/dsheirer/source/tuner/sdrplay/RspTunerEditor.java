@@ -24,7 +24,7 @@ import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.sdrplay.api.SDRPlayException;
 import io.github.dsheirer.source.tuner.sdrplay.api.device.TunerSelect;
 import io.github.dsheirer.source.tuner.sdrplay.api.parameter.control.AgcMode;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import io.github.dsheirer.util.ThreadPool;
 import java.awt.Color;
 import java.awt.EventQueue;
@@ -44,7 +44,7 @@ import javax.swing.JToggleButton;
 /**
  * Abstract RSP tuner editor
  */
-public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends TunerEditor<RspTuner,C> implements ITunerStatusListener
+public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends SwingTunerEditor<RspTuner,C> implements ITunerStatusListener
 {
     private Logger mLog = LoggerFactory.getLogger(RspTunerEditor.class);
     protected static final String MANUAL = "Manual";
@@ -295,6 +295,19 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
         {
             mLog.error("Error accessing current gain value from RSP tuner", se);
         }
+    }
+
+    /**
+     * Creates a standardized help icon button with the provided tooltip text.
+     */
+    protected JButton createHelpIcon(String text) {
+        JButton button = new JButton(text);
+        // Style as a subtle flat button
+        button.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        return button;
     }
 
     /**
