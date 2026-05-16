@@ -1,0 +1,8 @@
+Migrate TunerEditor and AirspyTunerEditor to pure JavaFX
+
+This change addresses Phase 3: Mid-Level Container Migration for Tuner Editors.
+- Extracted `ITunerEditor` interface to safely decouple the legacy Swing tuners from the modernized JavaFX tuners.
+- Cloned the legacy `TunerEditor` logic into `SwingTunerEditor` for the 13+ unmigrated Tuner classes to continue functioning reliably within the legacy Swing boundaries.
+- Completely rewrote the `TunerEditor` base class and `AirspyTunerEditor` to pure JavaFX (`JFXPanel` wrappers around native `VBox`/`GridPane` structures).
+- Exchanged legacy nested `JFrequencyControl` / `FrequencyTextField` components for the native JavaFX `FrequencyField` from Phase 2, resolving wrapping limitations.
+- Corrected EDT thread-safety bounds (`IllegalStateException`) on component disposal lifecycle actions using `Platform.runLater`.

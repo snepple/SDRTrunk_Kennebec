@@ -33,6 +33,6 @@
 ## 2024-05-31 - Modulation (C4FM/LSM)
 **Simplified:**
 - C4FM: Single-tower systems. LSM: Multi-tower simulcast systems where towers transmit simultaneously.
-## 2024-05-24 - LNA Gain
+## 2026-05-09 - System (P25 System Identifier)
 **Simplified:**
-- The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+- System Identifier: Combined with the WACN, uniquely identifies a P25 system.

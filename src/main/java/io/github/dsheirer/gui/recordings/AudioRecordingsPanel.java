@@ -38,10 +38,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AudioRecordingsPanel extends JPanel {
+public class AudioRecordingsPanel extends BorderPane {
     private final static Logger mLog = LoggerFactory.getLogger(AudioRecordingsPanel.class);
     private UserPreferences mUserPreferences;
-    private JFXPanel mJfxPanel;
 
     private ObservableList<RecordingItem> mRecordings;
     private FilteredList<RecordingItem> mFilteredRecordings;
@@ -65,12 +64,7 @@ public class AudioRecordingsPanel extends JPanel {
     public AudioRecordingsPanel(UserPreferences userPreferences, io.github.dsheirer.playlist.PlaylistManager playlistManager) {
         mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
-        setLayout(new net.miginfocom.swing.MigLayout("insets 0, hidemode 3, fill", "[grow,fill]", "[grow,fill]"));
-
-        mJfxPanel = new JFXPanel();
-        add(mJfxPanel, "grow, push");
-
-        Platform.runLater(this::initFx);
+        initFx();
     }
 
 
@@ -95,8 +89,19 @@ public class AudioRecordingsPanel extends JPanel {
     }
 
     private void initFx() {
-        BorderPane root = new BorderPane();
-        root.setPadding(new Insets(10));
+        this.setPadding(new Insets(10));
+
+        // Ensure stylesheets are applied when added to a scene
+        this.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+                if (cssUrl != null) {
+                    if (!newScene.getStylesheets().contains(cssUrl.toExternalForm())) {
+                        newScene.getStylesheets().add(cssUrl.toExternalForm());
+                    }
+                }
+            }
+        });
 
         mTableView = new TableView<>();
         mRecordings = FXCollections.observableArrayList();
@@ -221,7 +226,7 @@ public class AudioRecordingsPanel extends JPanel {
             refreshButton, mStopButton, deleteSelectedButton, deleteAllButton
         );
 
-        root.setTop(filterBox);
+        this.setTop(filterBox);
 
         // Table
         mTableView.setPlaceholder(new Label("No audio recordings found"));
@@ -277,11 +282,9 @@ public class AudioRecordingsPanel extends JPanel {
         sortedData.comparatorProperty().bind(mTableView.comparatorProperty());
         mTableView.setItems(sortedData);
 
-        root.setCenter(mTableView);
+        this.setCenter(mTableView);
 
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/sdrtrunk_style.css").toExternalForm());
-        mJfxPanel.setScene(scene);
+
 
         loadRecordings();
         populateFilterOptions();

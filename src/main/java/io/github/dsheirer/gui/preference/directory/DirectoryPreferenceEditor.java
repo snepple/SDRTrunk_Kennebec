@@ -35,6 +35,9 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
+import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.stage.DirectoryChooser;
@@ -46,12 +49,12 @@ import org.slf4j.LoggerFactory;
 /**
  * Preference settings for channel event view
  */
-public class DirectoryPreferenceEditor extends HBox
+public class DirectoryPreferenceEditor extends VBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(DirectoryPreferenceEditor.class);
 
     private DirectoryPreference mDirectoryPreference;
-    private GridPane mEditorPane;
+    private VBox mEditorPane;
 
     private Label mApplicationRootLabel;
     private Button mChangeApplicationRootButton;
@@ -108,7 +111,14 @@ public class DirectoryPreferenceEditor extends HBox
         //Register to receive directory preference update notifications so we can update the path labels
         MyEventBus.getGlobalEventBus().register(this);
 
-        HBox.setHgrow(getEditorPane(), Priority.ALWAYS);
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
+
+        Label headerLabel = new Label("Directory Preferences");
+        headerLabel.getStyleClass().add("hig-section-header");
+        getChildren().add(headerLabel);
+
+        VBox.setVgrow(getEditorPane(), Priority.ALWAYS);
         getChildren().add(getEditorPane());
     }
 
@@ -117,153 +127,87 @@ public class DirectoryPreferenceEditor extends HBox
         MyEventBus.getGlobalEventBus().unregister(this);
     }
 
-    private GridPane getEditorPane()
+    private VBox getEditorPane()
     {
         if(mEditorPane == null)
         {
-            mEditorPane = new GridPane();
-            mEditorPane.setPadding(new Insets(10, 10, 10, 10));
+            mEditorPane = new VBox();
 
-            int row = 0;
+            SettingsCard mainCard = new SettingsCard();
 
-            Label itemLabel = new Label("Item");
-            GridPane.setMargin(itemLabel, new Insets(0, 10, 0, 0));
-            mEditorPane.add(itemLabel, 0, row);
+            // Application Root
+            HBox rootControls = new HBox(10);
+            rootControls.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            getApplicationRootPathLabel().getStyleClass().add("kennebec-secondary-text");
+            rootControls.getChildren().addAll(getApplicationRootPathLabel(), getChangeApplicationRootButton(), getResetApplicationRootButton());
+            mainCard.getChildren().add(new SettingsRow("Application Root", rootControls));
 
-            Label directoryLabel = new Label("Directory");
-            GridPane.setMargin(directoryLabel, new Insets(0, 10, 0, 0));
-            mEditorPane.add(directoryLabel, 1, row++);
+            // Application Logs
+            HBox appLogsControls = new HBox(10);
+            appLogsControls.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            getApplicationLogsPathLabel().getStyleClass().add("kennebec-secondary-text");
+            appLogsControls.getChildren().addAll(getApplicationLogsPathLabel(), getChangeApplicationLogsButton(), getResetApplicationLogsButton());
+            mainCard.getChildren().add(new SettingsRow("Application Logs", appLogsControls));
 
-            mEditorPane.add(new Separator(Orientation.HORIZONTAL), 0, row++, 4, 1);
+            // Configuration
+            HBox configControls = new HBox(10);
+            configControls.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            getConfigurationPathLabel().getStyleClass().add("kennebec-secondary-text");
+            configControls.getChildren().addAll(getConfigurationPathLabel(), getChangeConfigurationButton(), getResetConfigurationButton());
+            mainCard.getChildren().add(new SettingsRow("Configuration", configControls));
 
-            GridPane.setMargin(getApplicationRootLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getApplicationRootLabel(), 0, row);
+            // Event Logs
+            HBox eventLogsControls = new HBox(10);
+            eventLogsControls.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            getEventLogsPathLabel().getStyleClass().add("kennebec-secondary-text");
+            eventLogsControls.getChildren().addAll(getEventLogsPathLabel(), getChangeEventLogsButton(), getResetEventLogsButton());
+            mainCard.getChildren().add(new SettingsRow("Event Logs", eventLogsControls));
 
-            GridPane.setMargin(getApplicationRootPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getApplicationRootPathLabel(), 1, row);
+            // JMBE Audio Library
+            HBox jmbeControls = new HBox(10);
+            jmbeControls.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            getJmbePathLabel().getStyleClass().add("kennebec-secondary-text");
+            jmbeControls.getChildren().addAll(getJmbePathLabel(), getChangeJmbeButton(), getResetJmbeButton());
+            mainCard.getChildren().add(new SettingsRow("JMBE Audio Library", jmbeControls));
 
-            GridPane.setMargin(getChangeApplicationRootButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeApplicationRootButton(), 2, row);
+            // Playlists
+            HBox playlistControls = new HBox(10);
+            playlistControls.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            getPlaylistPathLabel().getStyleClass().add("kennebec-secondary-text");
+            playlistControls.getChildren().addAll(getPlaylistPathLabel(), getChangePlaylistButton(), getResetPlaylistButton());
+            mainCard.getChildren().add(new SettingsRow("Playlists", playlistControls));
 
-            GridPane.setMargin(getResetApplicationRootButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetApplicationRootButton(), 3, row++);
+            // Recordings
+            HBox recordingControls = new HBox(10);
+            recordingControls.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            getRecordingPathLabel().getStyleClass().add("kennebec-secondary-text");
+            recordingControls.getChildren().addAll(getRecordingPathLabel(), getChangeRecordingButton(), getResetRecordingButton());
+            mainCard.getChildren().add(new SettingsRow("Recordings", recordingControls));
 
+            // Screen Captures
+            HBox captureControls = new HBox(10);
+            captureControls.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            getScreenCapturePathLabel().getStyleClass().add("kennebec-secondary-text");
+            captureControls.getChildren().addAll(getScreenCapturePathLabel(), getChangeScreenCaptureButton(), getResetScreenCaptureButton());
+            mainCard.getChildren().add(new SettingsRow("Screen Captures", captureControls));
 
-            GridPane.setMargin(getApplicationLogsLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getApplicationLogsLabel(), 0, row);
+            // Streaming
+            HBox streamingControls = new HBox(10);
+            streamingControls.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            getStreamingPathLabel().getStyleClass().add("kennebec-secondary-text");
+            streamingControls.getChildren().addAll(getStreamingPathLabel(), getChangeStreamingButton(), getResetStreamingButton());
+            mainCard.getChildren().add(new SettingsRow("Streaming", streamingControls));
 
-            GridPane.setMargin(getApplicationLogsPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getApplicationLogsPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeApplicationLogsButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeApplicationLogsButton(), 2, row);
-
-            GridPane.setMargin(getResetApplicationLogsButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetApplicationLogsButton(), 3, row++);
-
-
-            GridPane.setMargin(getConfigurationLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getConfigurationLabel(), 0, row);
-
-            GridPane.setMargin(getConfigurationPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getConfigurationPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeConfigurationButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeConfigurationButton(), 2, row);
-
-            GridPane.setMargin(getResetConfigurationButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetConfigurationButton(), 3, row++);
-
-
-            GridPane.setMargin(getEventLogsLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getEventLogsLabel(), 0, row);
-
-            GridPane.setMargin(getEventLogsPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getEventLogsPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeEventLogsButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeEventLogsButton(), 2, row);
-
-            GridPane.setMargin(getResetEventLogsButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetEventLogsButton(), 3, row++);
-
-
-            GridPane.setMargin(getJmbeLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getJmbeLabel(), 0, row);
-
-            GridPane.setMargin(getJmbePathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getJmbePathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeJmbeButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeJmbeButton(), 2, row);
-
-            GridPane.setMargin(getResetJmbeButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetJmbeButton(), 3, row++);
-
-
-            GridPane.setMargin(getPlaylistLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getPlaylistLabel(), 0, row);
-
-            GridPane.setMargin(getPlaylistPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getPlaylistPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangePlaylistButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangePlaylistButton(), 2, row);
-
-            GridPane.setMargin(getResetPlaylistButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetPlaylistButton(), 3, row++);
-
-
-            GridPane.setMargin(getRecordingLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getRecordingLabel(), 0, row);
-
-            GridPane.setMargin(getRecordingPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getRecordingPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeRecordingButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeRecordingButton(), 2, row);
-
-            GridPane.setMargin(getResetRecordingButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetRecordingButton(), 3, row++);
-
-
-            GridPane.setMargin(getScreenCaptureLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getScreenCaptureLabel(), 0, row);
-
-            GridPane.setMargin(getScreenCapturePathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getScreenCapturePathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeScreenCaptureButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeScreenCaptureButton(), 2, row);
-
-            GridPane.setMargin(getResetScreenCaptureButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetScreenCaptureButton(), 3, row++);
-
-
-            GridPane.setMargin(getStreamingLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getStreamingLabel(), 0, row);
-
-            GridPane.setMargin(getStreamingPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getStreamingPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeStreamingButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeStreamingButton(), 2, row);
-
-            GridPane.setMargin(getResetStreamingButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetStreamingButton(), 3, row++);
+            mEditorPane.getChildren().add(mainCard);
 
             Label monitorLabel = new Label("File storage usage monitoring - maximum size thresholds (MB)");
-            GridPane.setMargin(monitorLabel, new Insets(15, 0, 2, 0));
-            mEditorPane.add(monitorLabel, 0, row++, 4, 1);
-            mEditorPane.add(new Separator(Orientation.HORIZONTAL), 0, row++, 4, 1);
+            monitorLabel.getStyleClass().add("hig-section-header");
+            mEditorPane.getChildren().add(monitorLabel);
 
-            mEditorPane.add(new Label("Event Logs"), 0, row);
-            GridPane.setMargin(getEventLogSpinner(), new Insets(2, 2, 2, 0));
-            mEditorPane.add(getEventLogSpinner(), 1, row++);
-
-            mEditorPane.add(new Label("Recordings"), 0, row);
-            GridPane.setMargin(getRecordingSpinner(), new Insets(2, 2, 2, 0));
-            mEditorPane.add(getRecordingSpinner(), 1, row);
+            SettingsCard monitorCard = new SettingsCard();
+            monitorCard.getChildren().add(new SettingsRow("Event Logs", getEventLogSpinner()));
+            monitorCard.getChildren().add(new SettingsRow("Recordings", getRecordingSpinner()));
+            mEditorPane.getChildren().add(monitorCard);
         }
 
         return mEditorPane;
@@ -319,7 +263,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeApplicationRootButton == null)
         {
             mChangeApplicationRootButton = new Button("Change...");
-            mChangeApplicationRootButton.setTooltip(new Tooltip("Select a new folder for application root"));
+            mChangeApplicationRootButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeApplicationRootButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -347,7 +291,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetApplicationRootButton == null)
         {
             mResetApplicationRootButton = new Button("Reset");
-            mResetApplicationRootButton.setTooltip(new Tooltip("Restore the default folder location for application root"));
+            mResetApplicationRootButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetApplicationRootButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -386,7 +330,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeApplicationLogsButton == null)
         {
             mChangeApplicationLogsButton = new Button("Change...");
-            mChangeApplicationLogsButton.setTooltip(new Tooltip("Select a new folder for application logs"));
+            mChangeApplicationLogsButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeApplicationLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -414,7 +358,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetApplicationLogsButton == null)
         {
             mResetApplicationLogsButton = new Button("Reset");
-            mResetApplicationLogsButton.setTooltip(new Tooltip("Restore the default folder location for application logs"));
+            mResetApplicationLogsButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetApplicationLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -453,7 +397,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeConfigurationButton == null)
         {
             mChangeConfigurationButton = new Button("Change...");
-            mChangeConfigurationButton.setTooltip(new Tooltip("Select a new folder for configuration"));
+            mChangeConfigurationButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeConfigurationButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -481,7 +425,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetConfigurationButton == null)
         {
             mResetConfigurationButton = new Button("Reset");
-            mResetConfigurationButton.setTooltip(new Tooltip("Restore the default folder location for configuration"));
+            mResetConfigurationButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetConfigurationButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -520,7 +464,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeEventLogsButton == null)
         {
             mChangeEventLogsButton = new Button("Change...");
-            mChangeEventLogsButton.setTooltip(new Tooltip("Select a new folder for event logs"));
+            mChangeEventLogsButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeEventLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -548,7 +492,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetEventLogsButton == null)
         {
             mResetEventLogsButton = new Button("Reset");
-            mResetEventLogsButton.setTooltip(new Tooltip("Restore the default folder location for event logs"));
+            mResetEventLogsButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetEventLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -587,7 +531,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeJmbeButton == null)
         {
             mChangeJmbeButton = new Button("Change...");
-            mChangeJmbeButton.setTooltip(new Tooltip("Select a new folder for JMBE library"));
+            mChangeJmbeButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeJmbeButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -615,7 +559,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetJmbeButton == null)
         {
             mResetJmbeButton = new Button("Reset");
-            mResetJmbeButton.setTooltip(new Tooltip("Restore the default folder location for JMBE library"));
+            mResetJmbeButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetJmbeButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -654,7 +598,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangePlaylistButton == null)
         {
             mChangePlaylistButton = new Button("Change...");
-            mChangePlaylistButton.setTooltip(new Tooltip("Select a new folder for playlists"));
+            mChangePlaylistButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangePlaylistButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -682,7 +626,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetPlaylistButton == null)
         {
             mResetPlaylistButton = new Button("Reset");
-            mResetPlaylistButton.setTooltip(new Tooltip("Restore the default folder location for playlists"));
+            mResetPlaylistButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetPlaylistButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -721,7 +665,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeRecordingButton == null)
         {
             mChangeRecordingButton = new Button("Change...");
-            mChangeRecordingButton.setTooltip(new Tooltip("Select a new folder for recordings"));
+            mChangeRecordingButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeRecordingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -749,7 +693,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetRecordingButton == null)
         {
             mResetRecordingButton = new Button("Reset");
-            mResetRecordingButton.setTooltip(new Tooltip("Restore the default folder location for recordings"));
+            mResetRecordingButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetRecordingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -788,7 +732,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeScreenCaptureButton == null)
         {
             mChangeScreenCaptureButton = new Button("Change...");
-            mChangeScreenCaptureButton.setTooltip(new Tooltip("Select a new folder for screen captures"));
+            mChangeScreenCaptureButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeScreenCaptureButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -816,7 +760,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetScreenCaptureButton == null)
         {
             mResetScreenCaptureButton = new Button("Reset");
-            mResetScreenCaptureButton.setTooltip(new Tooltip("Restore the default folder location for screen captures"));
+            mResetScreenCaptureButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetScreenCaptureButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -855,7 +799,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeStreamingButton == null)
         {
             mChangeStreamingButton = new Button("Change...");
-            mChangeStreamingButton.setTooltip(new Tooltip("Select a new folder for streaming files"));
+            mChangeStreamingButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeStreamingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -883,7 +827,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetStreamingButton == null)
         {
             mResetStreamingButton = new Button("Reset");
-            mResetStreamingButton.setTooltip(new Tooltip("Restore the default folder location for streaming files"));
+            mResetStreamingButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetStreamingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override

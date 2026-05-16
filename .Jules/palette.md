@@ -75,6 +75,16 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## $(date +%Y-%m-%d) - Adding Tooltips to JMBE Action Buttons
 **Learning:** Action buttons in configuration panels (like `JmbeLibraryPreferenceEditor.java`) that lack textual context or explanation for their underlying complex behaviors (e.g., checking for updates, file selection, removing a library) cause user friction and fail accessibility checks.
 **Action:** Always verify if action buttons in JavaFX preference editors lack tooltips and add descriptive `Tooltip` objects explaining their specific functionality (e.g., "Select an existing JMBE audio library file from your system.") to improve context and accessibility.
-## $(date +%Y-%m-%d) - Adding Tooltips to Numeric Spinners
-**Learning:** Numeric input Spinners that lack a visual unit label need descriptive Tooltips explaining the specific unit (e.g., MB, seconds) and behavior. This greatly reduces cognitive load for technical configurations.
-**Action:** Always verify if a numeric input needs a unit label, and default to adding an informative Tooltip if it's missing.
+## 2024-05-23 - Adding Tooltips to Audio Test Buttons
+**Learning:** Action buttons, especially those that trigger auditory feedback like "Test" buttons for playback devices or tones, should have descriptive Tooltips indicating what they are testing. This provides important context, especially since they are grouped with other similar testing functions.
+**Action:** Always add descriptive `Tooltip` components to test buttons in audio playback configuration panels.
+
+## 2024-05-18 - Directory Preference Layout HIG Update
+**Learning:** Legacy `GridPane` layouts for preferences often break aesthetic integrity due to mismatched alignment and unstandardized spacing, making it difficult for the user to intuitively understand grouping.
+**Action:** Always replace legacy nested layout panels (like `HBox` containing `GridPane`) with a vertical flow `VBox` housing `SettingsCard` and `SettingsRow` elements. This provides consistent standard spacing, automatic right-alignment of trailing controls, and clear visual grouping according to Apple HIG principles.
+## 2024-05-16 - Add help tooltips to MPT1327 Channel Configuration fields
+**Learning:** Users need contextual help to understand what configuration options like "Max Traffic Channels" and "Call Timeout" mean in MPT1327 systems without leaving the interface.
+**Action:** Added help tooltips (createHelpIcon) to labels that provide explanations of these properties on hover to align with HIG accessibility and clarity principles.
+## 2024-05-23 - Adding Tooltips to General Test and Action Buttons
+**Learning:** Action buttons (like "Test", "Add", "Remove") in configuration panels (e.g., `AIPreferenceEditor.java` and `NotificationPreferenceEditor.java`) that lack textual context or explanation for their underlying behaviors cause user friction and fail accessibility checks.
+**Action:** Always verify if action buttons in JavaFX preference editors lack tooltips and add descriptive `Tooltip` objects explaining their specific functionality (e.g., "Test the provided Gemini API key...") to improve context and accessibility.

@@ -1,0 +1,12 @@
+--- gradle.properties
++++ gradle.properties
+@@ -22,8 +22,4 @@
+ # The YYY section must always remain exactly three digits long, using leading zeros as needed.
+ # For example, K.01.001 becomes K.01.002, and K.01.099 becomes K.01.100.
+
+-<<<<<<< HEAD
+-projectVersion=K.00.037
+-=======
+-projectVersion=K.00.040
+->>>>>>> origin/master
++projectVersion=K.00.041

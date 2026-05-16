@@ -18,7 +18,7 @@
  */
 package io.github.dsheirer.gui.channelizer;
 
-import io.github.dsheirer.buffer.FloatNativeBuffer;
+import io.github.dsheirer.sample.complex.ComplexSamplesNativeBufferAdapter;
 import io.github.dsheirer.buffer.INativeBuffer;
 import io.github.dsheirer.dsp.filter.channelizer.PolyphaseChannelSource;
 import io.github.dsheirer.sample.Listener;
@@ -388,9 +388,11 @@ public class ChannelizerViewer2 extends JFrame
             if(mSource != null)
             {
                 mLog.debug("Channel: " + mSource.getTunerChannel() + " Rate:" + mSource.getSampleRate());
+                // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
                 mSource.setListener((Listener<ComplexSamples>) complexSamples ->
                 {
-                    mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
+                    // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
+                    mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
                 });
 
                 if(mSource instanceof PolyphaseChannelSource pcs)

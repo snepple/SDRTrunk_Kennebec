@@ -18,7 +18,7 @@
  */
 package io.github.dsheirer.gui.channelizer;
 
-import io.github.dsheirer.buffer.FloatNativeBuffer;
+import io.github.dsheirer.sample.complex.ComplexSamplesNativeBufferAdapter;
 import io.github.dsheirer.buffer.INativeBuffer;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.sample.complex.ComplexSamples;
@@ -366,7 +366,8 @@ public class ChannelizerViewer extends JFrame
 
             if(mSource != null)
             {
-                mSource.setListener(complexSamples -> mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved())));
+                // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
+                mSource.setListener(complexSamples -> mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples)));
 
                 mSource.start();
             }
@@ -410,7 +411,8 @@ public class ChannelizerViewer extends JFrame
         @Override
         public void receive(ComplexSamples complexSamples)
         {
-            mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
+            // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
+            mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
         }
 
         @Override
@@ -466,7 +468,8 @@ public class ChannelizerViewer extends JFrame
                             mLog.debug("Samples:" + Arrays.toString(complexSamples.toInterleaved().samples()));
                         }
 
-                        mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
+                        // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
+                        mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
                     }
                 });
 
@@ -491,7 +494,8 @@ public class ChannelizerViewer extends JFrame
         @Override
         public void receive(ComplexSamples complexSamples)
         {
-            mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
+            // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
+            mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
         }
 
         @Override

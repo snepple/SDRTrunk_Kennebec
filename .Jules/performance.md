@@ -5,3 +5,6 @@
 ## 2023-10-27 - Radio Reference Import Bottleneck
 **Learning:** Mass alias creation and iteration during Radio Reference talkgroup imports blocks the UI thread if run synchronously.
 **Action:** Wrap the bulk alias creation logic in `CompletableFuture.supplyAsync`, extracting necessary UI properties on the application thread first, and update the AliasModel in a `Platform.runLater` block.
+## 2024-10-24 - Registry Monitor Polling Loop Thread Usage Optimization
+**Finding:** Synchronous `Thread.sleep(2000)` blocking the `mRegistryMonitorThread` in `ThemeManager.java`. A full thread was unnecessarily dedicated to a low-frequency polling mechanism, waking every two seconds just to verify a registry key and immediately going back to sleep.
+**Action:** Replaced the dedicated Thread with a `ScheduledFuture` managed by `ThreadPool.SCHEDULED`. Utilizing `scheduleWithFixedDelay(new Runnable() {...}, 0, 2, TimeUnit.SECONDS)`, the system can execute the fast polling action directly using the shared executor and save the memory/scheduler overhead of keeping a custom, constantly sleeping thread around.
