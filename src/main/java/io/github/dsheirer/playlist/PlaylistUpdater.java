@@ -65,6 +65,12 @@ public class PlaylistUpdater
     private static final Pattern FLEETSYNC_PATTERN = Pattern.compile(FLEETSYNC_TALKGROUP);
     private static final Pattern LTR_PATTERN = Pattern.compile(LTR_TALKGROUP);
     private static final Pattern MPT1327_PATTERN = Pattern.compile(MPT1327_TALKGROUP);
+    private static final Pattern APCO25_RADIO_ID_PATTERN = Pattern.compile(APCO25_RADIO_ID);
+    private static final Pattern APCO25_TALKGROUP_PATTERN = Pattern.compile(APCO25_TALKGROUP);
+    private static final Pattern LTR_TALKGROUP_WILDCARD_PATTERN = Pattern.compile(LTR_TALKGROUP_WILDCARD);
+    private static final Pattern MDC1200_TALKGROUP_PATTERN = Pattern.compile(MDC1200_TALKGROUP);
+    private static final Pattern MOBILE_ID_NUMBER_PATTERN = Pattern.compile(MOBILE_ID_NUMBER);
+    private static final Pattern PASSPORT_TALKGROUP_PATTERN = Pattern.compile(PASSPORT_TALKGROUP);
 
     /**
      * Updates the playlist as necessary.
@@ -331,7 +337,7 @@ public class PlaylistUpdater
 
                         if(talkgroup != null)
                         {
-                            if(talkgroup.matches(APCO25_TALKGROUP) || talkgroup.matches(APCO25_RADIO_ID))
+                            if(APCO25_TALKGROUP_PATTERN.matcher(talkgroup).matches() || APCO25_RADIO_ID_PATTERN.matcher(talkgroup).matches())
                             {
                                 if(talkgroup.contains("*"))
                                 {
@@ -353,11 +359,11 @@ public class PlaylistUpdater
                                     }
                                 }
                             }
-                            else if(talkgroup.matches(LTR_TALKGROUP))
+                            else if(LTR_PATTERN.matcher(talkgroup).matches())
                             {
                                 if(talkgroup.contains("*"))
                                 {
-                                    if(talkgroup.matches(LTR_TALKGROUP_WILDCARD))
+                                    if(LTR_TALKGROUP_WILDCARD_PATTERN.matcher(talkgroup).matches())
                                     {
                                         try
                                         {
@@ -406,7 +412,7 @@ public class PlaylistUpdater
                                     }
                                 }
                             }
-                            else if(talkgroup.matches(PASSPORT_TALKGROUP))
+                            else if(PASSPORT_TALKGROUP_PATTERN.matcher(talkgroup).matches())
                             {
                                 if(talkgroup.contains("*"))
                                 {
@@ -464,7 +470,7 @@ public class PlaylistUpdater
                     case MDC1200:
                         String mdc = ((MDC1200ID)next).getIdent();
 
-                        if(mdc != null && mdc.matches(MDC1200_TALKGROUP))
+                        if(mdc != null && MDC1200_TALKGROUP_PATTERN.matcher(mdc).matches())
                         {
                             try
                             {
@@ -487,7 +493,7 @@ public class PlaylistUpdater
                     case MPT1327:
                         String mpt = ((MPT1327ID)next).getIdent();
 
-                        if(mpt != null && mpt.matches(MPT1327_TALKGROUP))
+                        if(mpt != null && MPT1327_PATTERN.matcher(mpt).matches())
                         {
                             try
                             {
@@ -518,7 +524,7 @@ public class PlaylistUpdater
                     case MIN:
                         String min = ((Min)next).getMin();
 
-                        if(min.matches(MOBILE_ID_NUMBER))
+                        if(MOBILE_ID_NUMBER_PATTERN.matcher(min).matches())
                         {
                             if(min.contains("*"))
                             {

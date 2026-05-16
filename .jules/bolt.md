@@ -10,3 +10,6 @@
 ## 2025-02-12 - Recompiling Regexes and Redundant Matching
 **Learning:** Checking `String.matches()` internally compiles a new `Pattern` every time. Doing `Pattern.compile()` right after `matches()` doubles the work.
 **Action:** When matching regex patterns multiple times, declare a `static final Pattern` variable and use `pattern.matcher(string).find()` to avoid redundant `Pattern.compile` allocations and matching invocations.
+## 2024-05-18 - PlaylistUpdater Regex Compilation
+**Learning:** Checking `String.matches()` internally compiles a new `Pattern` every time. Calling this within a loop parsing playlist aliases with large files creates significant redundant object allocations and CPU load parsing Regex strings.
+**Action:** When matching regex patterns multiple times inside loops (such as verifying AliasID text formats), extract the Regex string to `static final Pattern` instances and use `pattern.matcher(string).matches()` to prevent redundant regex compilations and save CPU time.
