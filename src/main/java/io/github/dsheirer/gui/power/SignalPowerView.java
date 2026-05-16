@@ -22,7 +22,7 @@ package io.github.dsheirer.gui.power;
 import io.github.dsheirer.controller.channel.Channel;
 import io.github.dsheirer.dsp.squelch.ISquelchConfiguration;
 import io.github.dsheirer.gui.control.DbPowerMeterJFX;
-import io.github.dsheirer.gui.control.DbPowerMeter;
+import io.github.dsheirer.gui.control.DbPowerMeterJFX;
 import io.github.dsheirer.module.ProcessingChain;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.source.SourceEvent;
@@ -54,7 +54,7 @@ public class SignalPowerView extends ChannelView
 
     // We keep mPowerMeter as DbPowerMeterJFX
     private final DbPowerMeterJFX mPowerMeter = new DbPowerMeterJFX();
-    private final PeakMonitor mPeakMonitor = new PeakMonitor(DbPowerMeter.DEFAULT_MINIMUM_POWER);
+    private final PeakMonitor mPeakMonitor = new PeakMonitor(DbPowerMeterJFX.DEFAULT_MINIMUM_POWER);
     private Label mPowerLabel;
     private Label mPeakLabel;
     private Label mSquelchLabel;

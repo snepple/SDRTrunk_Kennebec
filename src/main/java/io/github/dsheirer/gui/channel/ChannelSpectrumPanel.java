@@ -54,6 +54,7 @@ import java.util.List;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
 import net.miginfocom.swing.MigLayout;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -385,17 +386,17 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             PrimaryDecoder primaryDecoder = mProcessingChain.getPrimaryDecoder();
             if(primaryDecoder instanceof NBFMDecoder nbfmDecoder)
             {
-                setRightComponent(mNoiseSquelchPanel);
+                setRightComponent("NBFM");
                 mNoiseSquelchView.setController(nbfmDecoder);
             }
             else if(primaryDecoder instanceof AMDecoder)
             {
-                setRightComponent(mSignalPowerPanel);
+                setRightComponent("AM");
                 mSignalPowerView.setProcessingChain(mProcessingChain);
             }
             else if(primaryDecoder instanceof FeedbackDecoder feedbackDecoder)
             {
-                setRightComponent(mSymbolPanel);
+                setRightComponent("FEEDBACK");
                 mSymbolView.setSymbolProvider(feedbackDecoder);
                 mSymbolView.setProtocol(feedbackDecoder.getProtocolDescription());
             }
@@ -429,20 +430,42 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
      * Shows the component on the right side of the split pane.
      * @param component to show.
      */
-    private void setRightComponent(Component component)
+    private void setRightComponent(String type)
     {
-        if (component == mNoiseSquelchPanel) {
-            mInspectorCardLayout.show(mInspectorPanel, "NBFM");
-            mInspectorPanel.setVisible(true);
-        } else if (component == mSignalPowerPanel) {
-            mInspectorCardLayout.show(mInspectorPanel, "AM");
-            mInspectorPanel.setVisible(true);
-        } else if (component == mSymbolPanel) {
-            mInspectorCardLayout.show(mInspectorPanel, "FEEDBACK");
-            mInspectorPanel.setVisible(true);
-        } else {
-            mInspectorPanel.setVisible(false);
-        }
+        EventQueue.invokeLater(() -> {
+            if ("NBFM".equals(type)) {
+                mInspectorPanel.setVisible(true);
+            } else if ("AM".equals(type)) {
+                mInspectorPanel.setVisible(true);
+            } else if ("FEEDBACK".equals(type)) {
+                mInspectorPanel.setVisible(true);
+            } else {
+                mInspectorPanel.setVisible(false);
+            }
+        });
+
+        Platform.runLater(() -> {
+            if ("NBFM".equals(type)) {
+                mNoiseSquelchView.setVisible(true);
+                mNoiseSquelchView.toFront();
+                mSignalPowerView.setVisible(false);
+                mSymbolView.setVisible(false);
+            } else if ("AM".equals(type)) {
+                mSignalPowerView.setVisible(true);
+                mSignalPowerView.toFront();
+                mNoiseSquelchView.setVisible(false);
+                mSymbolView.setVisible(false);
+            } else if ("FEEDBACK".equals(type)) {
+                mSymbolView.setVisible(true);
+                mSymbolView.toFront();
+                mNoiseSquelchView.setVisible(false);
+                mSignalPowerView.setVisible(false);
+            } else {
+                mNoiseSquelchView.setVisible(false);
+                mSignalPowerView.setVisible(false);
+                mSymbolView.setVisible(false);
+            }
+        });
     }
 
     /**
