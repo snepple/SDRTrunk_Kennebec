@@ -52,8 +52,7 @@ public class HistoryManagementPanel<T> extends JFXPanel
 
     private HistoryManagementPanelController mController;
 
-    // For Swing interoperability when showing the filter editor
-    private JPanel mDummyAnchor;
+
 
     /**
      * Constructs an instance using the model's current history size as the
@@ -89,9 +88,6 @@ public class HistoryManagementPanel<T> extends JFXPanel
             model.setHistorySize(initialHistorySize);
         }
 
-        mDummyAnchor = new JPanel();
-        // Since we are now a JFXPanel, we don't add the dummy anchor directly.
-        // It's just used as a component reference for the FilterEditor dialog location.
 
         setPreferredSize(new Dimension(300, 38));
 
@@ -124,7 +120,13 @@ public class HistoryManagementPanel<T> extends JFXPanel
     }
 
     private void handleFilterClick() {
-        SwingUtilities.invokeLater(() -> getFilterEditor().setVisible(true));
+        Platform.runLater(() -> {
+            if(!getFilterEditor().isShowing()) {
+                getFilterEditor().show();
+            } else {
+                getFilterEditor().requestFocus();
+            }
+        });
     }
 
     private void handleClearClick() {
@@ -182,7 +184,7 @@ public class HistoryManagementPanel<T> extends JFXPanel
     {
         if(mFilterEditor == null)
         {
-            mFilterEditor = new FilterEditor<>(mFilterEditorTitle, mDummyAnchor, mFilterSet);
+            mFilterEditor = new FilterEditor<>(mFilterEditorTitle, mFilterSet);
         }
 
         return mFilterEditor;
