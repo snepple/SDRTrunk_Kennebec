@@ -146,11 +146,9 @@ public class ControllerPanel extends javafx.scene.layout.BorderPane
         tunerManagerNode.setId("tuners");
         tunerManagerNode.setVisible(false);
 
-        SwingNode audioRecordingsNode = new SwingNode();
-        audioRecordingsNode.setContent(mAudioRecordingsPanel);
-        mCardPanel.getChildren().add(audioRecordingsNode);
-        audioRecordingsNode.setId("audio_recordings");
-        audioRecordingsNode.setVisible(false);
+        mCardPanel.getChildren().add(mAudioRecordingsPanel);
+        mAudioRecordingsPanel.setId("audio_recordings");
+        mAudioRecordingsPanel.setVisible(false);
 
         HelpViewer helpViewer = new HelpViewer();
         mCardPanel.getChildren().add(helpViewer);

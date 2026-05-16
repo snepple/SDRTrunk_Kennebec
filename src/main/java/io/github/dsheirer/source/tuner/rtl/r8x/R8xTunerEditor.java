@@ -32,7 +32,7 @@ import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.rtl.RTL2832Tuner;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController.SampleRate;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +52,7 @@ import javax.usb.UsbException;
 /**
  * R8xxx Tuner Editor
  */
-public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfiguration>
+public class R8xTunerEditor extends SwingTunerEditor<RTL2832Tuner, R8xTunerConfiguration>
 {
     private final static Logger mLog = LoggerFactory.getLogger(R8xTunerEditor.class);
     private static final long serialVersionUID = 1L;

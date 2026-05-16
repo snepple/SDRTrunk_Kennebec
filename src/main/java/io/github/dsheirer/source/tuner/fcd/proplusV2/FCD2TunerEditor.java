@@ -23,7 +23,7 @@ import io.github.dsheirer.source.SourceException;
 import io.github.dsheirer.source.tuner.fcd.FCDTuner;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import io.github.dsheirer.source.tuner.ui.TunerEditor;
+import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,7 @@ import javax.swing.SpinnerNumberModel;
 /**
  * Funcube Dongle Pro Plus tuner editor
  */
-public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguration>
+public class FCD2TunerEditor extends SwingTunerEditor<FCDTuner, FCD2TunerConfiguration>
 {
     private final static Logger mLog = LoggerFactory.getLogger(FCD2TunerEditor.class);
     private static final long serialVersionUID = 1L;
