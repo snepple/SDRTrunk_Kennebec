@@ -18,6 +18,14 @@
  */
 package io.github.dsheirer.gui;
 
+import javafx.scene.control.CheckMenuItem;
+import javafx.event.ActionEvent;
+import java.awt.Dimension;
+import java.awt.GraphicsEnvironment;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+
 import com.jidesoft.plaf.LookAndFeelFactory;
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.audio.DuplicateCallDetector;
@@ -66,12 +74,12 @@ import io.github.dsheirer.util.TimeStamp;
 import io.github.dsheirer.vector.calibrate.CalibrationManager;
 import java.awt.AWTException;
 import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.GraphicsEnvironment;
-import java.awt.Point;
+
+
+
+
 import java.awt.Robot;
-import java.awt.event.ActionEvent;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -83,12 +91,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
-import java.awt.BorderLayout;
-import java.awt.Rectangle;
-import java.awt.Toolkit;
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
-import javax.swing.JPanel;
+
+
+
+
 import java.util.Optional;
 import java.util.prefs.Preferences;
 
@@ -108,19 +114,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
+
+
+
+
 import javax.swing.JOptionPane;
-import javax.swing.JSeparator;
-import javax.swing.KeyStroke;
+
+
 import javax.swing.UIManager;
 import io.github.dsheirer.gui.theme.ThemeManager;
 
-import javax.swing.event.MenuEvent;
-import javax.swing.event.MenuListener;
+
+
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 public class SDRTrunk extends Application implements Listener<TunerEvent>, io.github.dsheirer.gui.VisibilityListener, io.github.dsheirer.gui.SidebarPanel.SidebarListener
@@ -138,40 +143,30 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         } else if (mCurrentViewId != null && mCurrentViewId.equals("tuners")) {
             mTunerSpectrumDisabled = !mTunerSpectrumDisabled;
             if (mTunerSpectrumDisabled) {
-                mTopContentPanel.remove(mSpectralPanel);
+                mTopContentPanel.setCenter(null);
                 mSpectralPanel.stop();
             } else {
-                mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
+                javafx.embed.swing.SwingNode spectralNode = new javafx.embed.swing.SwingNode();
+spectralNode.setContent(mSpectralPanel);
+mTopContentPanel.setCenter(spectralNode);
                 mSpectralPanel.start();
             }
         }
-        mMainContentPanel.revalidate();
-        mMainContentPanel.repaint();
     }
 
     @Override
     public void onToggleDetails() {
         toggleNowPlayingDetailsPanelVisibility();
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            mMainContentPanel.revalidate();
-            mMainContentPanel.repaint();
-        });
-    }
+}
 
     @Override
     public void onToggleStreaming() {
         toggleBroadcastStatusPanelVisibility();
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            mMainContentPanel.revalidate();
-            mMainContentPanel.repaint();
-        });
-    }
+}
 
     @Override
     public void onToggleResource() {
         toggleResourceStatusPanelVisibility();
-        mMainContentPanel.revalidate();
-        mMainContentPanel.repaint();
     }
 
     @Override
@@ -218,8 +213,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private PlaylistManager mPlaylistManager;
     private SettingsManager mSettingsManager;
     private SpectralDisplayPanel mSpectralPanel;
-    private JPanel mMainContentPanel;
-    private JPanel mTopContentPanel;
+    private BorderPane mTopContentPanel;
     private JavaFxWindowManager mJavaFxWindowManager;
     private io.github.dsheirer.gui.SidebarPanelWrapper mSidebarPanel;
     private UserPreferences mUserPreferences = new UserPreferences();
@@ -250,21 +244,17 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mLog.info("starting main application gui");
 
             //Initialize the GUI
-            initGUI();
-
             BorderPane root = new BorderPane();
             Scene scene = new Scene(root);
+
+            initGUI(root);
             try {
                 scene.getStylesheets().add(SDRTrunk.class.getResource("/sdrtrunk_style.css").toExternalForm());
             } catch (Exception e) {
                 mLog.error("Could not load stylesheet", e);
             }
 
-            SwingNode swingNode = new SwingNode();
-            javax.swing.SwingUtilities.invokeLater(() -> {
-                swingNode.setContent(mMainContentPanel);
-            });
-            root.setCenter(swingNode);
+
 
 
             Dimension dimension = mUserPreferences.getSwingPreference().getDimension(WINDOW_FRAME_IDENTIFIER);
@@ -339,15 +329,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             CalibrationManager calibrationManager = CalibrationManager.getInstance(mUserPreferences);
             final boolean calibrating = !calibrationManager.isCalibrated() &&
                 !mUserPreferences.getVectorCalibrationPreference().isHideCalibrationDialog();
-
-            // Workaround for SwingNode and intermittent page contents not painting initially
             javafx.application.Platform.runLater(() -> {
-                javax.swing.SwingUtilities.invokeLater(() -> {
-                    if (mMainContentPanel != null) {
-                        mMainContentPanel.revalidate();
-                        mMainContentPanel.repaint();
-                    }
-
                     Platform.runLater(() -> {
                         if(calibrating)
                         {
@@ -369,8 +351,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                             autoStartChannels();
                         }
                     });
-                });
             });
+
 
 
 
@@ -566,10 +548,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     /**
      * Initialize the contents of the frame.
      */
-    private void initGUI()
+    private void initGUI(BorderPane root)
     {
-        try {
-            javax.swing.SwingUtilities.invokeAndWait(() -> {
+
 
         /**
          * Setup main JFrame window
@@ -620,27 +601,34 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         {
         }
 
-        mMainContentPanel = new JPanel(new BorderLayout());
 
-        JPanel contentWithSidebar = new JPanel(new BorderLayout());
-        contentWithSidebar.add(mSidebarPanel, BorderLayout.WEST);
 
-        JPanel rightContentPanel = new JPanel(new BorderLayout());
+        root.setLeft(mSidebarPanel.getNode());
 
-        JPanel rightTopPanel = new JPanel(new BorderLayout());
-        rightTopPanel.add(mControllerPanel.getAudioPanel(), BorderLayout.NORTH);
+        BorderPane rightContent = new BorderPane();
+        BorderPane rightTop = new BorderPane();
 
-        mTopContentPanel = new JPanel(new BorderLayout());
-        mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
+        javafx.embed.swing.SwingNode audioNode = new javafx.embed.swing.SwingNode();
+        audioNode.setContent(mControllerPanel.getAudioPanel());
+        rightTop.setTop(audioNode);
 
-        rightTopPanel.add(mTopContentPanel, BorderLayout.CENTER);
 
-        rightContentPanel.add(rightTopPanel, BorderLayout.NORTH);
-        rightContentPanel.add(mControllerPanel, BorderLayout.CENTER);
+        // mTopContentPanel equivalent
+        mTopContentPanel = new BorderPane();
+        BorderPane spectralContainer = mTopContentPanel;
 
-        contentWithSidebar.add(rightContentPanel, BorderLayout.CENTER);
-        mMainContentPanel.add(contentWithSidebar, BorderLayout.CENTER);
-        mBroadcastStatusVisible = mPreferences.getBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, false);
+        javafx.embed.swing.SwingNode spectralNode = new javafx.embed.swing.SwingNode();
+        spectralNode.setContent(mSpectralPanel);
+        spectralContainer.setCenter(spectralNode);
+
+        rightTop.setCenter(spectralContainer);
+
+        rightContent.setTop(rightTop);
+        rightContent.setCenter(mControllerPanel.getNode());
+
+        root.setCenter(rightContent);
+
+mBroadcastStatusVisible = mPreferences.getBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, false);
         mResourceStatusVisible = mPreferences.getBoolean(PREFERENCE_RESOURCE_STATUS_VISIBLE, true);
 
         mControllerResourceStatusPanel = mJavaFxWindowManager.createStatusPanel(mResourceMonitor);
@@ -652,13 +640,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mResourceMonitor.start();
         javafx.embed.swing.SwingNode resourceNode = new javafx.embed.swing.SwingNode();
         resourceNode.setContent(mControllerResourceStatusPanel);
-        mControllerPanel.setResourcePanel(resourceNode);
+        mControllerPanel.setResourcePanel(mControllerResourceStatusPanel.getScene().getRoot());
 
-            });
-        } catch (Exception e) {
-            mLog.error("Error creating initGUI", e);
-        }
-    }
+                }
 
 
     @Override
@@ -721,9 +705,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private void toggleBroadcastStatusPanelVisibility() {
         mBroadcastStatusVisible = !mBroadcastStatusVisible;
         mPreferences.putBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, mBroadcastStatusVisible);
-        EventQueue.invokeLater(() -> {
+        javafx.application.Platform.runLater(() -> {
             mControllerPanel.getNowPlayingPanel().setBroadcastStatusPanelVisible(mBroadcastStatusVisible);
-            mMainContentPanel.revalidate();
         });
     }
 
@@ -736,7 +719,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mResourceStatusVisible = !mResourceStatusVisible;
         mPreferences.putBoolean(PREFERENCE_RESOURCE_STATUS_VISIBLE, mResourceStatusVisible);
 
-        EventQueue.invokeLater(() -> {
+        javafx.application.Platform.runLater(() -> {
             if (mCurrentViewId.equals("tuners")) {
                 mControllerPanel.setResourcePanelVisible(mResourceStatusVisible);
             } else if (mCurrentViewId.equals("now_playing")) {
@@ -857,13 +840,13 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     /**
      * Broadcast status panel visible toggle menu item
      */
-    public class BroadcastStatusVisibleMenuItem extends JCheckBoxMenuItem
+    public class BroadcastStatusVisibleMenuItem extends CheckMenuItem
     {
         public BroadcastStatusVisibleMenuItem()
         {
             super("Show Streaming Status");
             setSelected(mBroadcastStatusVisible);
-            addActionListener(e -> {
+            setOnAction(e -> {
                 toggleBroadcastStatusPanelVisibility();
                 setSelected(mBroadcastStatusVisible);
             });
@@ -873,13 +856,13 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     /**
      * Resource status panel visible toggle menu item
      */
-    public class ResourceStatusVisibleMenuItem extends JCheckBoxMenuItem
+    public class ResourceStatusVisibleMenuItem extends CheckMenuItem
     {
         public ResourceStatusVisibleMenuItem()
         {
             super("Show Resource Status");
             setSelected(mResourceStatusVisible);
-            addActionListener(e -> {
+            setOnAction(e -> {
                 toggleResourceStatusPanelVisibility();
                 setSelected(mResourceStatusVisible);
             });
@@ -889,13 +872,13 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     /**
      * Now Playing channel details visible toggle menu item
      */
-    public class NowPlayingChannelDetailsVisibleMenuItem extends JCheckBoxMenuItem
+    public class NowPlayingChannelDetailsVisibleMenuItem extends CheckMenuItem
     {
         public NowPlayingChannelDetailsVisibleMenuItem()
         {
             super("Show Now Playing Channel Details");
             setSelected(mNowPlayingDetailsVisible);
-            addActionListener(e -> {
+            setOnAction(e -> {
                 toggleNowPlayingDetailsPanelVisibility();
                 setSelected(mNowPlayingDetailsVisible);
             });
@@ -927,19 +910,17 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         if (id.startsWith("playlist_")) {
             mCurrentViewId = "playlist_editor";
-            mTopContentPanel.remove(mSpectralPanel);
+            mTopContentPanel.setCenter(null);
             mSpectralPanel.stop();
             mControllerPanel.setResourcePanelVisible(false);
             mControllerPanel.showView("playlist_editor");
-            mMainContentPanel.revalidate();
-            mMainContentPanel.repaint();
             return;
         }
 
         mCurrentViewId = id;
 
         if (id.equals("now_playing")) {
-            mTopContentPanel.remove(mSpectralPanel);
+            mTopContentPanel.setCenter(null);
             mControllerPanel.setResourcePanelVisible(false);
             mControllerPanel.getNowPlayingPanel().setComponents(mSpectralPanel, getBroadcastStatusPanel(), mNowPlayingResourceStatusPanel);
             mControllerPanel.getNowPlayingPanel().setSpectralPanelVisible(!mNowPlayingSpectrumDisabled);
@@ -950,23 +931,22 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             }
         } else if (id.equals("tuners")) {
             if (!mTunerSpectrumDisabled) {
-                mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
+                javafx.embed.swing.SwingNode spectralNode = new javafx.embed.swing.SwingNode();
+spectralNode.setContent(mSpectralPanel);
+mTopContentPanel.setCenter(spectralNode);
                 mSpectralPanel.start();
             } else {
-                mTopContentPanel.remove(mSpectralPanel);
+                mTopContentPanel.setCenter(null);
                 mSpectralPanel.stop();
             }
             mControllerPanel.setResourcePanelVisible(mResourceStatusVisible);
         } else {
-            mTopContentPanel.remove(mSpectralPanel);
+            mTopContentPanel.setCenter(null);
             mSpectralPanel.stop();
             mControllerPanel.setResourcePanelVisible(false);
         }
 
         mControllerPanel.showView(id);
-
-        mMainContentPanel.revalidate();
-        mMainContentPanel.repaint();
     }
 
     @Override
