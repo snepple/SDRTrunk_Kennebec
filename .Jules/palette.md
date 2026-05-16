@@ -78,3 +78,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-05-23 - Adding Tooltips to Audio Test Buttons
 **Learning:** Action buttons, especially those that trigger auditory feedback like "Test" buttons for playback devices or tones, should have descriptive Tooltips indicating what they are testing. This provides important context, especially since they are grouped with other similar testing functions.
 **Action:** Always add descriptive `Tooltip` components to test buttons in audio playback configuration panels.
+## 2024-05-16 - Add help tooltips to MPT1327 Channel Configuration fields
+**Learning:** Users need contextual help to understand what configuration options like "Max Traffic Channels" and "Call Timeout" mean in MPT1327 systems without leaving the interface.
+**Action:** Added help tooltips (createHelpIcon) to labels that provide explanations of these properties on hover to align with HIG accessibility and clarity principles.
