@@ -222,8 +222,8 @@ mTopContentPanel.setCenter(spectralNode);
     private TwoToneLog mTwoToneLog;
     private ResourceMonitor mResourceMonitor;
     private Rectangle mNormalBounds;
-    private JFXPanel mControllerResourceStatusPanel;
-    private JFXPanel mNowPlayingResourceStatusPanel;
+    private javafx.scene.Node mControllerResourceStatusPanel;
+    private javax.swing.JComponent mNowPlayingResourceStatusPanel;
 
     private String mTitle;
 
@@ -631,16 +631,13 @@ mTopContentPanel.setCenter(spectralNode);
 mBroadcastStatusVisible = mPreferences.getBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, false);
         mResourceStatusVisible = mPreferences.getBoolean(PREFERENCE_RESOURCE_STATUS_VISIBLE, true);
 
-        mControllerResourceStatusPanel = mJavaFxWindowManager.createStatusPanel(mResourceMonitor);
+        mControllerResourceStatusPanel = mJavaFxWindowManager.createStatusPanelFX(mResourceMonitor);
         mNowPlayingResourceStatusPanel = mJavaFxWindowManager.createStatusPanel(mResourceMonitor);
 
         mControllerPanel.getNowPlayingPanel().setComponents(mSpectralPanel, getBroadcastStatusPanel(), mNowPlayingResourceStatusPanel);
 
-
         mResourceMonitor.start();
-        javafx.embed.swing.SwingNode resourceNode = new javafx.embed.swing.SwingNode();
-        resourceNode.setContent(mControllerResourceStatusPanel);
-        mControllerPanel.setResourcePanel(mControllerResourceStatusPanel.getScene().getRoot());
+        mControllerPanel.setResourcePanel(mControllerResourceStatusPanel);
 
                 }
 

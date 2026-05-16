@@ -137,17 +137,18 @@ public class JavaFxWindowManager extends Application
      * @param resourceMonitor for statistics
      * @return JFXPanel accessible on Swing thread that delegates JavaFX scene creation to the FX event thread.
      */
-    public JFXPanel createStatusPanel(ResourceMonitor resourceMonitor)
-    {
-        JFXPanel panel = new JFXPanel();
-            panel.setPreferredSize(new java.awt.Dimension(0, 30));
+    public javafx.scene.Node createStatusPanelFX(ResourceMonitor resourceMonitor) {
+        return new StatusBox(resourceMonitor);
+    }
 
-            //JFXPanel has to be populated on the FX event thread
-            Platform.runLater(() -> {
-                Scene scene = new Scene(new StatusBox(resourceMonitor));
-                panel.setScene(scene);
-            });
-return panel;
+    public javafx.embed.swing.JFXPanel createStatusPanel(ResourceMonitor resourceMonitor) {
+        javafx.embed.swing.JFXPanel panel = new javafx.embed.swing.JFXPanel();
+        panel.setPreferredSize(new java.awt.Dimension(0, 30));
+        javafx.application.Platform.runLater(() -> {
+            javafx.scene.Scene scene = new javafx.scene.Scene(new StatusBox(resourceMonitor));
+            panel.setScene(scene);
+        });
+        return panel;
     }
 
     private void setup()
