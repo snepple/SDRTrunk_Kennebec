@@ -59,7 +59,6 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
 {
     private final static Logger mLog = LoggerFactory.getLogger(E4KTunerEditor.class);
     private static final long serialVersionUID = 1L;
-    private JButton mTunerInfoButton;
     private JToggleButton mBiasTButton;
     private JComboBox<SampleRate> mSampleRateCombo;
     private JComboBox<E4KGain> mMasterGainCombo;
@@ -108,12 +107,10 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 3", "[right][grow,fill][fill]",
-                "[][][][][][][][][][][][][][][][grow]"));
+        setLayout(new MigLayout("fill,wrap 2", "[right][grow,fill]", ""));
 
         add(new JLabel("Tuner:"));
         add(getTunerIdLabel());
-        add(getTunerInfoButton());
 
         add(new JLabel("Status:"));
         add(getTunerStatusLabel());
@@ -168,7 +165,6 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
         {
             getBiasTButton().setEnabled(true);
             getBiasTButton().setSelected(getConfiguration().isBiasT());
-            getTunerInfoButton().setEnabled(true);
             getSampleRateCombo().setEnabled(true);
             getSampleRateCombo().setSelectedItem(getConfiguration().getSampleRate());
             getMasterGainCombo().setEnabled(true);
@@ -200,7 +196,6 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
         {
             getBiasTButton().setEnabled(false);
             getBiasTButton().setSelected(false);
-            getTunerInfoButton().setEnabled(false);
             getSampleRateCombo().setEnabled(false);
             getMasterGainCombo().setEnabled(false);
             getMixerGainCombo().setEnabled(false);
@@ -412,20 +407,7 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
         return mSampleRateCombo;
     }
 
-    private JButton getTunerInfoButton()
-    {
-        if(mTunerInfoButton == null)
-        {
-            mTunerInfoButton = new JButton("Tuner Info");
-            mTunerInfoButton.setEnabled(false);
-            mTunerInfoButton.addActionListener(e -> JOptionPane.showMessageDialog(E4KTunerEditor.this,
-                    getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));
-        }
-
-        return mTunerInfoButton;
-    }
-
-    /**
+/**
      * Updates the sample rate tooltip according to the tuner controller's lock state.
      */
     /**
@@ -455,7 +437,7 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
         updateSampleRateToolTip();
     }
 
-    private String getTunerInfo()
+    protected String getTunerInfo()
     {
         StringBuilder sb = new StringBuilder();
 

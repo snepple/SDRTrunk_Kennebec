@@ -107,7 +107,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
 
     private void reset() {
         if (mDFTSize <= 0) return;
-        mImageHeight = Math.max((int) mCanvas.getHeight(), 100);
+        mImageHeight = Math.max((int) Math.ceil(mCanvas.getHeight()), 1);
 
         mRowQueue.clear();
         mWaterfallImage = new WritableImage(mDFTSize, mImageHeight);
@@ -196,7 +196,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
         double width = mCanvas.getWidth();
         double height = mCanvas.getHeight();
 
-        if (height != mImageHeight && height > 0) {
+        if (Math.max((int) Math.ceil(height), 1) != mImageHeight && height > 0) {
             reset();
             return;
         }
@@ -286,14 +286,14 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
         int[] newPixels = new int[update.length];
 
         double sum = 0.0d;
-        for (int x = 0; x < update.length - 1; x++) {
+        for (int x = 0; x < update.length; x++) {
             sum += update[x];
         }
 
-        float average = (float) (sum / (double) (update.length - 1));
+        float average = (float) (sum / (double) update.length);
         float scale = 256.0f / average;
 
-        for (int x = 0; x < update.length - 1; x++) {
+        for (int x = 0; x < update.length; x++) {
             float value = (average - update[x]) * scale;
             int colorIndex;
 

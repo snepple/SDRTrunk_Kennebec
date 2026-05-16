@@ -33,6 +33,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -277,6 +278,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mRecordingSpinner == null)
         {
             mRecordingSpinner = new Spinner<>(100, Integer.MAX_VALUE, mDirectoryPreference.getDirectoryMaxUsageRecordings(), 100);
+            mRecordingSpinner.setTooltip(new Tooltip("Maximum size limit in megabytes (MB) for the recordings directory. Older recordings will be automatically deleted when this limit is reached."));
             mRecordingSpinner.valueProperty().addListener((observable, oldValue, newValue) -> mDirectoryPreference
                     .setDirectoryMaxUsageRecordings(newValue));
         }
@@ -293,6 +295,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mEventLogSpinner == null)
         {
             mEventLogSpinner = new Spinner<>(100, Integer.MAX_VALUE, mDirectoryPreference.getDirectoryMaxUsageEventLogs(), 100);
+            mEventLogSpinner.setTooltip(new Tooltip("Maximum size limit in megabytes (MB) for the event logs directory. Older logs will be automatically deleted when this limit is reached."));
             mEventLogSpinner.setEditable(true);
             mEventLogSpinner.valueProperty().addListener((observable, oldValue, newValue) -> mDirectoryPreference
                     .setDirectoryMaxUsageEventLogs(newValue));
@@ -316,6 +319,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeApplicationRootButton == null)
         {
             mChangeApplicationRootButton = new Button("Change...");
+            mChangeApplicationRootButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeApplicationRootButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -343,6 +347,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetApplicationRootButton == null)
         {
             mResetApplicationRootButton = new Button("Reset");
+            mResetApplicationRootButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetApplicationRootButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -381,6 +386,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeApplicationLogsButton == null)
         {
             mChangeApplicationLogsButton = new Button("Change...");
+            mChangeApplicationLogsButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeApplicationLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -408,6 +414,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetApplicationLogsButton == null)
         {
             mResetApplicationLogsButton = new Button("Reset");
+            mResetApplicationLogsButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetApplicationLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -446,6 +453,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeConfigurationButton == null)
         {
             mChangeConfigurationButton = new Button("Change...");
+            mChangeConfigurationButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeConfigurationButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -473,6 +481,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetConfigurationButton == null)
         {
             mResetConfigurationButton = new Button("Reset");
+            mResetConfigurationButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetConfigurationButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -511,6 +520,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeEventLogsButton == null)
         {
             mChangeEventLogsButton = new Button("Change...");
+            mChangeEventLogsButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeEventLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -538,6 +548,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetEventLogsButton == null)
         {
             mResetEventLogsButton = new Button("Reset");
+            mResetEventLogsButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetEventLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -576,6 +587,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeJmbeButton == null)
         {
             mChangeJmbeButton = new Button("Change...");
+            mChangeJmbeButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeJmbeButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -603,6 +615,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetJmbeButton == null)
         {
             mResetJmbeButton = new Button("Reset");
+            mResetJmbeButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetJmbeButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -641,6 +654,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangePlaylistButton == null)
         {
             mChangePlaylistButton = new Button("Change...");
+            mChangePlaylistButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangePlaylistButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -668,6 +682,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetPlaylistButton == null)
         {
             mResetPlaylistButton = new Button("Reset");
+            mResetPlaylistButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetPlaylistButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -706,6 +721,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeRecordingButton == null)
         {
             mChangeRecordingButton = new Button("Change...");
+            mChangeRecordingButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeRecordingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -733,6 +749,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetRecordingButton == null)
         {
             mResetRecordingButton = new Button("Reset");
+            mResetRecordingButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetRecordingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -771,6 +788,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeScreenCaptureButton == null)
         {
             mChangeScreenCaptureButton = new Button("Change...");
+            mChangeScreenCaptureButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeScreenCaptureButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -798,6 +816,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetScreenCaptureButton == null)
         {
             mResetScreenCaptureButton = new Button("Reset");
+            mResetScreenCaptureButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetScreenCaptureButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -836,6 +855,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mChangeStreamingButton == null)
         {
             mChangeStreamingButton = new Button("Change...");
+            mChangeStreamingButton.setTooltip(new Tooltip("Select a different folder location."));
             mChangeStreamingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -863,6 +883,7 @@ public class DirectoryPreferenceEditor extends HBox
         if(mResetStreamingButton == null)
         {
             mResetStreamingButton = new Button("Reset");
+            mResetStreamingButton.setTooltip(new Tooltip("Restore the default folder location."));
             mResetStreamingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override

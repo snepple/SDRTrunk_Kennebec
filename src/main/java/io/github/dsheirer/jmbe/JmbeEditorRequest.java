@@ -28,14 +28,16 @@ public class JmbeEditorRequest
 {
     private Release mCurrentRelease;
     private boolean mCloseEditor = false;
+    private boolean mUseBazinetaFork = false;
 
     /**
      * Constructs an instance to request an edit of the specified release
      * @param release available on GitHub
      */
-    public JmbeEditorRequest(Release release)
+    public JmbeEditorRequest(Release release, boolean useBazinetaFork)
     {
         mCurrentRelease = release;
+        mUseBazinetaFork = useBazinetaFork;
     }
 
     /**
@@ -61,5 +63,9 @@ public class JmbeEditorRequest
     public Release getCurrentRelease()
     {
         return mCurrentRelease;
+    }
+    public boolean getUseBazinetaFork()
+    {
+        return mUseBazinetaFork;
     }
 }

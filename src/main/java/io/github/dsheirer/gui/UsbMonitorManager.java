@@ -28,21 +28,23 @@ public class UsbMonitorManager {
         boolean prompted = userPreferences.getApplicationPreference().isUsbMonitorPrompted();
 
         if (!prompted && !installed) {
-            JCheckBox dontShowAgain = new JCheckBox("Do not show this again");
-            Object[] params = {"A tuner monitoring power script is available to automatically reset USB devices if they fail.\nDo you want to install it? (Requires Administrator permissions)", dontShowAgain};
-            int result = JOptionPane.showConfirmDialog(null, params, "Install USB Monitor Script?", JOptionPane.YES_NO_OPTION);
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                JCheckBox dontShowAgain = new JCheckBox("Do not show this again");
+                Object[] params = {"A tuner monitoring power script is available to automatically reset USB devices if they fail.\nDo you want to install it? (Requires Administrator permissions)", dontShowAgain};
+                int result = JOptionPane.showConfirmDialog(null, params, "Install USB Monitor Script?", JOptionPane.YES_NO_OPTION);
 
-            if (result == JOptionPane.YES_OPTION) {
-                if (install(userPreferences)) {
-                    JOptionPane.showMessageDialog(null, "USB Monitor script successfully installed.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                if (result == JOptionPane.YES_OPTION) {
+                    if (install(userPreferences)) {
+                        JOptionPane.showMessageDialog(null, "USB Monitor script successfully installed.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Failed to install USB Monitor script. Check logs for details.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
                 } else {
-                    JOptionPane.showMessageDialog(null, "Failed to install USB Monitor script. Check logs for details.", "Error", JOptionPane.ERROR_MESSAGE);
+                    if (dontShowAgain.isSelected()) {
+                        userPreferences.getApplicationPreference().setUsbMonitorPrompted(true);
+                    }
                 }
-            } else {
-                if (dontShowAgain.isSelected()) {
-                    userPreferences.getApplicationPreference().setUsbMonitorPrompted(true);
-                }
-            }
+            });
         } else if (installed) {
             startSilent(userPreferences);
         }

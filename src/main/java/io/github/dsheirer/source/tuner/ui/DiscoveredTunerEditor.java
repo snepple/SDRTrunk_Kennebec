@@ -30,6 +30,7 @@ import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
@@ -42,8 +43,8 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
     private static final Logger mLog = LoggerFactory.getLogger(DiscoveredTunerEditor.class);
     private UserPreferences mUserPreferences;
     private TunerManager mTunerManager;
-    private JPanel mEmptyEditor = new EmptyTunerEditor();
-    private JPanel mEditor = mEmptyEditor;
+    private JComponent mEmptyEditor = new EmptyTunerEditor();
+    private JComponent mEditor = mEmptyEditor;
     private JScrollPane mEditorScroller;
 
     /**

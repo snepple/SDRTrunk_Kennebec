@@ -33,6 +33,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -126,6 +127,7 @@ public class PlaybackPreferenceEditor extends HBox
             mAudioPlaybackDevicesCombo.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue,
                               newValue) -> mPlaybackPreference.setAudioPlaybackDevice(newValue));
+            mAudioPlaybackDevicesCombo.setTooltip(new Tooltip("Selects the primary device for playing live audio."));
         }
 
         return mAudioPlaybackDevicesCombo;
@@ -139,6 +141,7 @@ public class PlaybackPreferenceEditor extends HBox
             IconNode iconNode = new IconNode(FontAwesome.PLAY);
             iconNode.setFill(Color.CORNFLOWERBLUE);
             mPlaybackDeviceTestButton.setGraphic(iconNode);
+            mPlaybackDeviceTestButton.setTooltip(new Tooltip("Test the selected audio playback device."));
             mPlaybackDeviceTestButton.setOnAction(event ->
                         play(mPlaybackPreference.getAudioPlaybackTestTone(), PlayTestAudioRequest.ALL_CHANNELS));
         }
@@ -155,6 +158,7 @@ public class PlaybackPreferenceEditor extends HBox
             mUseAudioSegmentStartToneSwitch.setSelected(mPlaybackPreference.getUseAudioSegmentStartTone());
             mUseAudioSegmentStartToneSwitch.selectedProperty().addListener((observable, oldValue, newValue) ->
                     mPlaybackPreference.setUseAudioSegmentStartTone(newValue));
+            mUseAudioSegmentStartToneSwitch.setTooltip(new Tooltip("Plays a tone at the beginning of each transmission segment."));
         }
 
         return mUseAudioSegmentStartToneSwitch;
@@ -168,6 +172,7 @@ public class PlaybackPreferenceEditor extends HBox
             mUseAudioSegmentDropToneSwitch.setSelected(mPlaybackPreference.getUseAudioSegmentDropTone());
             mUseAudioSegmentDropToneSwitch.selectedProperty().addListener((observable, oldValue, newValue) ->
                     mPlaybackPreference.setUseAudioSegmentDropTone(newValue));
+            mUseAudioSegmentDropToneSwitch.setTooltip(new Tooltip("Plays a tone when a transmission segment drops or ends."));
         }
 
         return mUseAudioSegmentDropToneSwitch;
@@ -181,6 +186,7 @@ public class PlaybackPreferenceEditor extends HBox
             IconNode iconNode = new IconNode(FontAwesome.PLAY);
             iconNode.setFill(Color.CORNFLOWERBLUE);
             mTestStartToneButton.setGraphic(iconNode);
+            mTestStartToneButton.setTooltip(new Tooltip("Test the configured start tone."));
             mTestStartToneButton.setOnAction(_ ->
                 play(mPlaybackPreference.getStartTone(PlaybackPreference.TONE_LENGTH_SAMPLES * 3),
                         PlayTestAudioRequest.ALL_CHANNELS));
@@ -198,6 +204,7 @@ public class PlaybackPreferenceEditor extends HBox
             IconNode iconNode = new IconNode(FontAwesome.PLAY);
             iconNode.setFill(Color.CORNFLOWERBLUE);
             mTestDropToneButton.setGraphic(iconNode);
+            mTestDropToneButton.setTooltip(new Tooltip("Test the configured drop tone."));
             mTestDropToneButton.setOnAction(_ ->
                     play(mPlaybackPreference.getDropTone(PlaybackPreference.TONE_LENGTH_SAMPLES * 3),
                             PlayTestAudioRequest.ALL_CHANNELS));
@@ -217,6 +224,7 @@ public class PlaybackPreferenceEditor extends HBox
             mDropToneFrequencyComboBox.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> mPlaybackPreference.setDropToneFrequency(newValue));
             mDropToneFrequencyComboBox.disableProperty().bind(getUseAudioSegmentDropToneSwitch().selectedProperty().not());
+            mDropToneFrequencyComboBox.setTooltip(new Tooltip("Selects the frequency (pitch) of the drop tone."));
         }
 
         return mDropToneFrequencyComboBox;
@@ -232,6 +240,7 @@ public class PlaybackPreferenceEditor extends HBox
             mDropToneVolumeComboBox.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> mPlaybackPreference.setDropToneVolume(newValue));
             mDropToneVolumeComboBox.disableProperty().bind(getUseAudioSegmentDropToneSwitch().selectedProperty().not());
+            mDropToneVolumeComboBox.setTooltip(new Tooltip("Selects the volume level of the drop tone."));
         }
 
         return mDropToneVolumeComboBox;
@@ -247,6 +256,7 @@ public class PlaybackPreferenceEditor extends HBox
             mStartToneFrequencyComboBox.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> mPlaybackPreference.setStartToneFrequency(newValue));
             mStartToneFrequencyComboBox.disableProperty().bind(getUseAudioSegmentStartToneSwitch().selectedProperty().not());
+            mStartToneFrequencyComboBox.setTooltip(new Tooltip("Selects the frequency (pitch) of the start tone."));
         }
 
         return mStartToneFrequencyComboBox;
@@ -262,6 +272,7 @@ public class PlaybackPreferenceEditor extends HBox
             mStartToneVolumeComboBox.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> mPlaybackPreference.setStartToneVolume(newValue));
             mStartToneVolumeComboBox.disableProperty().bind(getUseAudioSegmentStartToneSwitch().selectedProperty().not());
+            mStartToneVolumeComboBox.setTooltip(new Tooltip("Selects the volume level of the start tone."));
         }
 
         return mStartToneVolumeComboBox;

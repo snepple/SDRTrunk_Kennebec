@@ -272,7 +272,8 @@ public class DmrViewer extends VBox
         }
         else
         {
-            Predicate<MessagePackage> textPredicate = message -> message.toString().toLowerCase().contains(filterText.toLowerCase());
+            final String lowerCaseFilterText = filterText.toLowerCase();
+            Predicate<MessagePackage> textPredicate = message -> message.toString().toLowerCase().contains(lowerCaseFilterText);
             mFilteredMessagePackages.setPredicate(timeslotPredicate.and(textPredicate));
         }
     }
@@ -285,9 +286,10 @@ public class DmrViewer extends VBox
     {
         if(text != null && !text.isEmpty())
         {
+            final String lowerCaseText = text.toLowerCase();
             for(MessagePackage messagePackage: mFilteredMessagePackages)
             {
-                if(messagePackage.toString().toLowerCase().contains(text.toLowerCase()))
+                if(messagePackage.toString().toLowerCase().contains(lowerCaseText))
                 {
                     getMessagePackageTableView().getSelectionModel().select(messagePackage);
                     getMessagePackageTableView().scrollTo(messagePackage);

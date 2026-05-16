@@ -1,38 +1,19 @@
 package io.github.dsheirer.gui;
 
-import jiconfont.icons.font_awesome.FontAwesome;
-import jiconfont.swing.IconFontSwing;
-import net.miginfocom.swing.MigLayout;
+import io.github.dsheirer.gui.sidebar.SidebarController;
+import javafx.application.Platform;
+import javafx.scene.layout.VBox;
+import javafx.scene.Node;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.layout.VBox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import io.github.dsheirer.gui.help.HelpViewer;
+import java.io.IOException;
 
-import javax.swing.JPopupMenu;
-import javax.swing.JMenuItem;
-import javax.swing.Timer;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.List;
-
-public class SidebarPanel extends JPanel {
-    private boolean mCollapsed = false;
-    private SidebarListener mListener;
-
-    private final Color BG_COLOR = new Color(240, 240, 240);
-    private final Color HOVER_COLOR = new Color(220, 220, 220);
-    private final Color ACTIVE_COLOR = new Color(200, 200, 200);
-    private final Color TEXT_COLOR = Color.BLACK;
-
-    private List<SidebarItem> mItems = new ArrayList<>();
-    private JButton mToggleBtn;
-    private String mActiveId;
+public class SidebarPanel extends VBox {
+    private static final Logger mLog = LoggerFactory.getLogger(SidebarPanel.class);
+    private SidebarController controller;
 
     public interface SidebarListener {
         void onItemSelected(String id);
@@ -40,315 +21,22 @@ public class SidebarPanel extends JPanel {
     }
 
     public SidebarPanel(SidebarListener listener) {
-        mListener = listener;
-        setBackground(BG_COLOR);
-        setPreferredSize(new Dimension(250, 0));
-        setLayout(new MigLayout("insets 10 5 10 5, gapy 5, wrap 1, fillx", "[grow, fill]", "[]"));
-
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            mToggleBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.BARS, 18, TEXT_COLOR));
-            mToggleBtn.setContentAreaFilled(false);
-            mToggleBtn.setBorderPainted(false);
-            mToggleBtn.setFocusPainted(false);
-            mToggleBtn.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 6, 4, 6));
-            mToggleBtn.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-            mToggleBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            mToggleBtn.setToolTipText("Collapse Sidebar");
-            mToggleBtn.getAccessibleContext().setAccessibleName("Toggle Sidebar");
-            mToggleBtn.getAccessibleContext().setAccessibleDescription("Collapses or expands the main navigation sidebar");
-
-            mToggleBtn.addActionListener(e -> {
-                mCollapsed = !mCollapsed;
-
-                mToggleBtn.setToolTipText(mCollapsed ? "Expand Sidebar" : "Collapse Sidebar");
-
-                if (mCollapsed) {
-                    for (SidebarItem item : mItems) item.updateCollapsedState(true);
-                } else {
-                    for (SidebarItem item : mItems) item.updateCollapsedState(false);
-                }
-
-                setPreferredSize(new Dimension(mCollapsed ? 50 : 250, 0));
-                render();
-                revalidate();
-                repaint();
-            });
-
-            initItems();
-            render();
-            if (mActiveId != null) {
-                setActive(mActiveId);
-            }
-        });
-    }
-
-    private void initItems() {
-        mItems.add(new SidebarItem("Now Playing", FontAwesome.PLAY, "now_playing", true));
-        mItems.add(new SidebarItem("Map", FontAwesome.MAP, "map", true));
-
-        SidebarItem playlistEditorItem = new SidebarItem("Playlist Editor", FontAwesome.LIST, "playlist_editor", false);
-        playlistEditorItem.addSubItem("Channels", "playlist_channels");
-        playlistEditorItem.addSubItem("Aliases", "playlist_aliases");
-        playlistEditorItem.addSubItem("Streaming", "playlist_streaming");
-        playlistEditorItem.addSubItem("Radio Reference", "playlist_radioreference");
-        playlistEditorItem.addSubItem("Two Tones", "playlist_twotones");
-        playlistEditorItem.addSubItem("Playlists", "playlist_playlists");
-        mItems.add(playlistEditorItem);
-
-        mItems.add(new SidebarItem("Tuners", FontAwesome.SLIDERS, "tuners", true));
-
-        mItems.add(new SidebarItem("Performance & Logs", FontAwesome.FILE_TEXT, "logs", true));
-
-        mItems.add(new SidebarItem("Audio Recordings", FontAwesome.MICROPHONE, "audio_recordings", true));
-        mItems.add(new SidebarItem(".bits Viewer", FontAwesome.FILE_CODE_O, "msg_viewer", true));
-        mItems.add(new SidebarItem("User Preferences", FontAwesome.COGS, "user_prefs", true));
-        mItems.add(new SidebarItem("Help & Docs", FontAwesome.QUESTION_CIRCLE, "help_viewer", true));
-
-        mItems.add(new SidebarItem("Exit", FontAwesome.SIGN_OUT, "exit", true));
-    }
-
-    private void render() {
-        removeAll();
-
-        JPanel headerPanel = new JPanel(new MigLayout("insets 0, fillx, hidemode 3", "[]", "[]"));
-        headerPanel.setOpaque(false);
-        headerPanel.add(mToggleBtn, "align left");
-        add(headerPanel, "growx");
-
-        for (SidebarItem item : mItems) {
-            add(item.getView(), "growx");
-            if (item.isExpanded() && !mCollapsed && item.hasSubItems()) {
-                for (SidebarItem.SubItem sub : item.getSubItems()) {
-                    add(sub.getView(), "growx");
-                }
-            }
+                try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Sidebar.fxml"));
+            VBox root = loader.load();
+            controller = loader.getController();
+            controller.setListener(listener);
+            this.getChildren().add(root);
+        } catch (IOException e) {
+            mLog.error("Error loading Sidebar.fxml", e);
         }
-        revalidate();
-        repaint();
     }
 
     public void setActive(String id) {
-        mActiveId = id;
-        for (SidebarItem item : mItems) {
-            item.setActive(item.getId().equals(id));
-            if (item.hasSubItems()) {
-                for (SidebarItem.SubItem sub : item.getSubItems()) {
-                    sub.setActive(sub.getId().equals(id));
-                }
+        Platform.runLater(() -> {
+            if (controller != null) {
+                controller.setActive(id);
             }
-        }
-    }
-
-    private class SidebarItem {
-        private String mLabel;
-        private FontAwesome mIcon;
-        private String mId;
-        private boolean mIsSelectable;
-        private boolean mActive = false;
-        private boolean mExpanded = false;
-        private List<SubItem> mSubItems = new ArrayList<>();
-        private JPanel mView;
-        private JLabel mIconLabel;
-        private JLabel mTextLabel;
-
-        private JPanel mTextWrapper;
-
-        public SidebarItem(String label, FontAwesome icon, String id, boolean isSelectable) {
-            mLabel = label;
-            mIcon = icon;
-            mId = id;
-            mIsSelectable = isSelectable;
-            createView();
-        }
-
-        public void addSubItem(String label, String id) {
-            mSubItems.add(new SubItem(label, id));
-        }
-
-        public boolean hasSubItems() {
-            return !mSubItems.isEmpty();
-        }
-
-        public boolean isExpanded() {
-            return mExpanded;
-        }
-
-        public String getId() {
-            return mId;
-        }
-
-        public List<SubItem> getSubItems() {
-            return mSubItems;
-        }
-
-        public void setActive(boolean active) {
-            mActive = active;
-            updateStyle();
-        }
-
-        public JPanel getView() {
-            return mView;
-        }
-
-        public void updateCollapsedState(boolean collapsed) {
-            if (mTextWrapper != null) {
-                mTextWrapper.setVisible(!collapsed);
-            }
-            mView.setToolTipText(collapsed ? mLabel : null);
-            for (SubItem sub : mSubItems) sub.updateCollapsedState(collapsed);
-            mView.revalidate();
-            mView.repaint();
-        }
-
-        private void createView() {
-            mView = new JPanel(new MigLayout("insets 8, gapx 10, hidemode 3", "[][grow]", "[]"));
-            mView.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-            mIconLabel = new JLabel(new io.github.dsheirer.icon.MyFontIcon(mIcon, 16, TEXT_COLOR));
-            mTextLabel = new JLabel(mLabel);
-            mTextLabel.setForeground(TEXT_COLOR);
-            mTextLabel.setFont(mTextLabel.getFont().deriveFont(Font.BOLD));
-
-            mTextWrapper = new JPanel(new MigLayout("insets 0", "[grow]", "[]"));
-            mTextWrapper.setOpaque(false);
-            mTextWrapper.add(mTextLabel, "growx");
-
-            mView.add(mIconLabel);
-            mView.add(mTextWrapper, "growx");
-            mTextWrapper.setVisible(!mCollapsed);
-
-            updateStyle();
-
-            mView.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    if (!mActive) mView.setBackground(HOVER_COLOR);
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    if (!mActive) mView.setBackground(BG_COLOR);
-                }
-
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    if (mIsSelectable) {
-                        mListener.onItemSelected(mId);
-                    } else if (hasSubItems()) {
-                        if (mCollapsed) {
-                            showPopupMenu(mView);
-                        } else {
-                            boolean wasExpanded = mExpanded;
-                            mExpanded = !wasExpanded;
-                            if (!wasExpanded && !mSubItems.isEmpty()) {
-                                mListener.onItemSelected(mSubItems.get(0).getId());
-                            }
-                            SidebarPanel.this.render();
-                            SidebarPanel.this.revalidate();
-                            SidebarPanel.this.repaint();
-                        }
-                    } else {
-                        mListener.onActionRequested(mId);
-                    }
-                }
-            });
-        }
-
-        private void showPopupMenu(JPanel invoker) {
-            JPopupMenu popup = new JPopupMenu();
-            for (SubItem sub : mSubItems) {
-                JMenuItem item = new JMenuItem(sub.getLabel());
-                item.addActionListener(e -> mListener.onItemSelected(sub.getId()));
-                popup.add(item);
-            }
-            popup.show(invoker, invoker.getWidth(), 0);
-        }
-
-        public void updateStyle() {
-            mView.setBackground(mActive ? ACTIVE_COLOR : BG_COLOR);
-            mView.setToolTipText(mCollapsed ? mLabel : null);
-            mView.revalidate();
-            mView.repaint();
-        }
-
-        private class SubItem {
-            private String mLabel;
-            private String mId;
-            private boolean mActive = false;
-            private JPanel mView;
-            private JLabel mTextLabel;
-            private JPanel mTextWrapper;
-
-            public SubItem(String label, String id) {
-                mLabel = label;
-                mId = id;
-                createView();
-            }
-
-            public String getLabel() { return mLabel; }
-            public String getId() { return mId; }
-
-            public void setActive(boolean active) {
-                mActive = active;
-                updateStyle();
-            }
-
-            public JPanel getView() { return mView; }
-
-            public void updateCollapsedState(boolean collapsed) {
-                if (mTextWrapper != null) {
-                    mTextWrapper.setVisible(!collapsed);
-                }
-                mView.setToolTipText(collapsed ? mLabel : null);
-                mView.revalidate();
-                mView.repaint();
-            }
-
-            private void createView() {
-                mView = new JPanel(new MigLayout("insets 6 30 6 6, hidemode 3", "[grow]", "[]"));
-                mView.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                mTextLabel = new JLabel(mLabel);
-                mTextLabel.setForeground(TEXT_COLOR);
-
-                mTextWrapper = new JPanel(new MigLayout("insets 0", "[grow]", "[]"));
-                mTextWrapper.setOpaque(false);
-                mTextWrapper.add(mTextLabel, "growx");
-
-                mView.add(mTextWrapper, "growx");
-                mTextWrapper.setVisible(!mCollapsed);
-
-                updateStyle();
-
-                mView.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseEntered(MouseEvent e) {
-                        if (!mActive) mView.setBackground(HOVER_COLOR);
-                    }
-
-                    @Override
-                    public void mouseExited(MouseEvent e) {
-                        if (!mActive) mView.setBackground(BG_COLOR);
-                    }
-
-
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        if (mId.startsWith("vis_")) {
-                            mListener.onActionRequested(mId);
-                        } else {
-                            mListener.onItemSelected(mId);
-                        }
-                    }
-
-                });
-            }
-
-            private void updateStyle() {
-                mView.setBackground(mActive ? ACTIVE_COLOR : BG_COLOR);
-                mView.setToolTipText(mCollapsed ? mLabel : null);
-                mView.revalidate();
-                mView.repaint();
-            }
-        }
+        });
     }
 }

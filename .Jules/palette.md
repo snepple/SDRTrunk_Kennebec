@@ -40,6 +40,9 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-05 - TableView Empty State Placeholders
 **Learning:** When a `TableView` is empty, displaying a completely blank area is a missed UX opportunity and can confuse users. Providing an actionable empty state message or a clear indication that no data is present improves clarity.
 **Action:** Always provide an actionable empty state message. Update JavaFX `TableView` placeholders using `table.setPlaceholder(new Label("Actionable guidance"));` to guide the user towards the next logical action or explain the empty state.
+## 2026-05-06 - Missing Tooltips on Icon-Only Buttons in JavaFX Lists
+**Learning:** When using dual-list selection interfaces (e.g., available vs. selected items with left/right arrow buttons) in JavaFX applications, the action buttons often only contain icons (`FontAwesome.ANGLE_RIGHT`, etc.) without text labels. This presents an accessibility issue as screen readers cannot announce their function and sighted users lack context on hover.
+**Action:** Always add explicit `Tooltip` components to icon-only action buttons (e.g., `mAddButton.setTooltip(new Tooltip("Add selected item"))`). Ensure `javafx.scene.control.Tooltip` is imported when doing so.
 ## 2026-05-19 - HIG Modernization of MP3 Preferences
 **Learning:** Legacy UI preferences often use `GridPane` and manual padding which doesn't align with the Apple Human Interface Guidelines (HIG). Upgrading to custom HIG-compliant `SettingsCard` and `SettingsRow` requires changing the root container from `HBox` or `GridPane` to `VBox` to properly stack cards. Furthermore, replacing plain labels with Tooltips on CheckBoxes and ComboBoxes improves accessibility and layout cleanliness.
 **Action:** When updating preferences UI, check if `SettingsCard` and `SettingsRow` can replace `GridPane`s. Remember to add contextual `Tooltip`s to explain technical settings, and use `kennebec-secondary-text` for informational notices.
@@ -50,3 +53,28 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-08 - Adding Tooltips to Preference Editors
 **Learning:** Adding context-specific tooltips to preference UI components (like CheckBoxes and ComboBoxes) significantly improves accessibility and user understanding of what technical settings do.
 **Action:** When updating or creating new JavaFX preferences UI, always include `Tooltip`s to explain technical settings, especially those that alter data formats or display behaviors.
+## 2023-10-25 - Action Button Accessibility and Feedback
+**Learning:** Legacy Swing buttons in lists or toolbars often lack accessibility text or feedback tooltips, which makes interaction ambiguous (violating HIG's Clarity and Feedback rules) and impedes screen readers. Action buttons that are destructive need to indicate this clearly in the tooltip.
+**Action:** When working on Swing panels with action buttons (like TunerViewPanel), ensure each JButton has `setToolTipText()`, mnemonics via `setMnemonic()`, and accessible contexts set using `getAccessibleContext().setAccessibleName()` and `getAccessibleContext().setAccessibleDescription()`.
+## 2024-06-18 - [Spinner Tooltips]
+**Learning:** Numeric input Spinners that lack a visual unit label need descriptive Tooltips explaining the specific unit (e.g. MB, seconds) and behavior. This greatly reduces cognitive load for technical configurations.
+**Action:** Always verify if a numeric input needs a unit label, and default to adding an informative Tooltip if it's missing.
+## 2026-05-11 - Squelch Auto Track Mnemonic and Tooltip Formatting
+Learning: JCheckBox configurations inside control panels (like SignalPowerView) are prime candidates for keyboard mnemonics (e.g., `Alt+A`) and require clear, HTML-wrapped tooltips and AccessibleContext settings to align with HIG accessibility guidelines.
+Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, structure long tooltips with `<html>` tags for wrapping, and always apply descriptive `AccessibleContext` names/descriptions.
+## $(date +%Y-%m-%d) - [Settings Format Standardization]
+**Learning:** [Apple HIG states preferences should be grouped in bordered card views with separators. The original manual VBox/HBox combinations broke layout consistency.]
+**Action:** [Migrated Application Preference Editor to use standard SettingsCard and SettingsRow containers.]
+## 2026-05-20 - Adding Tooltips to Numeric Spinners
+**Learning:** Numeric input Spinners that lack a visual unit label need descriptive Tooltips explaining the specific unit (e.g., MB, seconds) and behavior. This greatly reduces cognitive load for technical configurations.
+**Action:** Always verify if a numeric input needs a unit label, and default to adding an informative Tooltip if it's missing.
+
+## 2024-05-13 - P25P2Viewer Context
+**Learning:** Jargon-heavy configuration fields like WACN, System, and NAC can be confusing for users without context, leading to increased cognitive load and configuration errors.
+**Action:** Adding HIG-compliant tooltips via info circle icons to these configuration labels provides immediate, deferential feedback and clarity, improving the user experience without cluttering the interface.
+## $(date +%Y-%m-%d) - Adding Tooltips to JMBE Action Buttons
+**Learning:** Action buttons in configuration panels (like `JmbeLibraryPreferenceEditor.java`) that lack textual context or explanation for their underlying complex behaviors (e.g., checking for updates, file selection, removing a library) cause user friction and fail accessibility checks.
+**Action:** Always verify if action buttons in JavaFX preference editors lack tooltips and add descriptive `Tooltip` objects explaining their specific functionality (e.g., "Select an existing JMBE audio library file from your system.") to improve context and accessibility.
+## 2024-05-23 - Adding Tooltips to Audio Test Buttons
+**Learning:** Action buttons, especially those that trigger auditory feedback like "Test" buttons for playback devices or tones, should have descriptive Tooltips indicating what they are testing. This provides important context, especially since they are grouped with other similar testing functions.
+**Action:** Always add descriptive `Tooltip` components to test buttons in audio playback configuration panels.

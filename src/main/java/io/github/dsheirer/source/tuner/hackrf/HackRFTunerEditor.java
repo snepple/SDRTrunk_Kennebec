@@ -46,7 +46,6 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(HackRFTunerEditor.class);
-    private JButton mTunerInfo;
     private JComboBox<HackRFSampleRate> mSampleRateCombo;
     private JToggleButton mAmplifier;
     private JComboBox<HackRFLNAGain> mLnaGainCombo;
@@ -84,7 +83,6 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
 
         add(new JLabel("Tuner:"));
         add(getTunerIdLabel());
-        add(getTunerInfoButton());
 
         add(new JLabel("Status:"));
         add(getTunerStatusLabel(), "wrap");
@@ -134,7 +132,6 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
         getFrequencyPanel().updateControls();
         getSampleRateCombo().setEnabled(hasTuner() && !getTuner().getTunerController().isLockedSampleRate());
         updateSampleRateToolTip();
-        getTunerInfoButton().setEnabled(hasTuner());
 
         getAmplifierToggle().setEnabled(hasTuner());
         getLnaGainCombo().setEnabled(hasTuner());
@@ -290,23 +287,7 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
         return mSampleRateCombo;
     }
 
-    private JButton getTunerInfoButton()
-    {
-        if(mTunerInfo == null)
-        {
-            mTunerInfo = new JButton("Tuner Info");
-            mTunerInfo.setToolTipText("Provides details and information about the tuner");
-            mTunerInfo.getAccessibleContext().setAccessibleName("Tuner Information");
-            mTunerInfo.getAccessibleContext().setAccessibleDescription("Displays hardware and configuration details for the connected HackRF tuner");
-            mTunerInfo.setEnabled(false);
-            mTunerInfo.addActionListener(e -> JOptionPane.showMessageDialog(HackRFTunerEditor.this,
-                    getTunerInfo(), "Tuner Info", JOptionPane.INFORMATION_MESSAGE));
-        }
-
-        return mTunerInfo;
-    }
-
-    /**
+/**
      * Updates the sample rate tooltip according to the tuner controller's lock state.
      */
     private void updateSampleRateToolTip()
@@ -329,7 +310,7 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
         updateSampleRateToolTip();
     }
 
-    private String getTunerInfo()
+    protected String getTunerInfo()
     {
         HackRFTunerController.BoardID board = HackRFTunerController.BoardID.INVALID;
 
