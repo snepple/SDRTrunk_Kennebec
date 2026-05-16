@@ -15,6 +15,7 @@ import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 
 public class ControllerPanelWrapper extends JFXPanel {
+    public javafx.scene.Node getNode() { return controllerPanel; }
     private ControllerPanel controllerPanel;
 
     public ControllerPanelWrapper(PlaylistManager playlistManager, AudioPlaybackManager audioPlaybackManager,

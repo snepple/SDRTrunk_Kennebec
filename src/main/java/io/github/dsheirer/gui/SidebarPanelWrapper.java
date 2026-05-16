@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import java.awt.Dimension;
 
 public class SidebarPanelWrapper extends JFXPanel {
+    public javafx.scene.Node getNode() { return sidebarPanel; }
     private SidebarPanel sidebarPanel;
 
     public SidebarPanelWrapper(SidebarPanel.SidebarListener listener) {
