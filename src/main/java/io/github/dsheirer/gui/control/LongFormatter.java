@@ -20,6 +20,7 @@
 package io.github.dsheirer.gui.control;
 
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.LongStringConverter;
 import org.slf4j.Logger;
@@ -48,7 +49,7 @@ public class LongFormatter extends TextFormatter<Long>
      */
     public static class LongFilter implements UnaryOperator<Change>
     {
-        private String DECIMAL_REGEX = "\\-?[0-9].*";
+        private static final Pattern DECIMAL_PATTERN = Pattern.compile("\\-?[0-9].*");
         private int mMinimum;
         private int mMaximum;
 
@@ -99,7 +100,7 @@ public class LongFormatter extends TextFormatter<Long>
                     return change;
                 }
 
-                if(!updatedText.matches(DECIMAL_REGEX) || !isValid(updatedText))
+                if(!DECIMAL_PATTERN.matcher(updatedText).matches() || !isValid(updatedText))
                 {
                     return null;
                 }

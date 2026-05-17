@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 
 /**
  * Text formatter for integer values displayed and edited as hexadecimal values that constrains values to
@@ -50,7 +51,7 @@ public class HexFormatter extends TextFormatter<Integer>
      */
     public static class HexFilter implements UnaryOperator<TextFormatter.Change>
     {
-        private String HEXADECIMAL_REGEX = "[0-9A-Fa-f].*";
+        private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("[0-9A-Fa-f].*");
         private int mMinimum;
         private int mMaximum;
 
@@ -78,7 +79,7 @@ public class HexFormatter extends TextFormatter<Integer>
                     return change;
                 }
 
-                if(!updatedText.matches(HEXADECIMAL_REGEX) ||
+                if(!HEXADECIMAL_PATTERN.matcher(updatedText).matches() ||
                    !isValid(HexIntegerStringConverter.getValue(change.getControlNewText())))
                 {
                     return null;
