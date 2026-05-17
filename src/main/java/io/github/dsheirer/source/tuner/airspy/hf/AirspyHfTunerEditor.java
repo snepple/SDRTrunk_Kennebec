@@ -41,6 +41,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
+import javax.swing.JButton;
 import javax.swing.SpinnerNumberModel;
 
 /**
@@ -107,6 +108,7 @@ public class AirspyHfTunerEditor extends SwingTunerEditor<AirspyHfTuner,AirspyHf
         buttonPanel.setLayout(new MigLayout("insets 0", "[left]", ""));
         buttonPanel.add(getAgcToggleButton());
         buttonPanel.add(getLnaToggleButton());
+        buttonPanel.add(createHelpIcon());
         add(new JLabel(" "));
         add(buttonPanel, "wrap");
 
@@ -366,5 +368,15 @@ public class AirspyHfTunerEditor extends SwingTunerEditor<AirspyHfTuner,AirspyHf
         }
 
         return mLnaToggleButton;
+    }
+
+    private JButton createHelpIcon() {
+        JButton button = new JButton("?");
+        button.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        button.setToolTipText("<html><b>LNA Gain:</b> Controls the input amplifier. <br>Higher values help pick up weak signals but may introduce noise.</html>");
+        return button;
     }
 }
