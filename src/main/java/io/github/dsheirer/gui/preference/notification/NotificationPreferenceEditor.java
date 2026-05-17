@@ -66,6 +66,7 @@ public class NotificationPreferenceEditor extends VBox {
 
         TextField botTokenField = new TextField(preference.getTelegramBotToken());
         botTokenField.setPrefWidth(300);
+        botTokenField.setPromptText("1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ");
         botTokenField.setTooltip(new Tooltip("The Telegram Bot Token from BotFather."));
         botTokenField.textProperty().addListener((obs, old, newValue) -> preference.setTelegramBotToken(newValue));
         botTokenField.disableProperty().bind(telegramEnable.selectedProperty().not());
@@ -133,12 +134,14 @@ public class NotificationPreferenceEditor extends VBox {
         emailEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setEmailEnabled(newValue));
 
         TextField smtpHostField = new TextField(preference.getSmtpHost());
-        smtpHostField.setTooltip(new Tooltip("e.g. smtp.gmail.com"));
+        smtpHostField.setPromptText("smtp.example.com");
+        smtpHostField.setTooltip(new Tooltip("The SMTP server address (e.g. smtp.gmail.com)"));
         smtpHostField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpHost(newValue));
         smtpHostField.disableProperty().bind(emailEnable.selectedProperty().not());
 
         TextField smtpPortField = new TextField(preference.getSmtpPort());
-        smtpPortField.setTooltip(new Tooltip("e.g. 465 or 587"));
+        smtpPortField.setPromptText("465");
+        smtpPortField.setTooltip(new Tooltip("The SMTP server port (e.g. 465 for SSL or 587 for TLS)"));
         smtpPortField.setTextFormatter(new TextFormatter<>(change -> {
             if (!change.isContentChange()) return change;
             return change.getControlNewText().matches("\\d{0,5}") ? change : null;
@@ -147,15 +150,21 @@ public class NotificationPreferenceEditor extends VBox {
         smtpPortField.disableProperty().bind(emailEnable.selectedProperty().not());
 
         TextField smtpUsernameField = new TextField(preference.getSmtpUsername());
+        smtpUsernameField.setPromptText("user@example.com");
+        smtpUsernameField.setTooltip(new Tooltip("The username to authenticate with the SMTP server"));
         smtpUsernameField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpUsername(newValue));
         smtpUsernameField.disableProperty().bind(emailEnable.selectedProperty().not());
 
         PasswordField smtpPasswordField = new PasswordField();
         smtpPasswordField.setText(preference.getSmtpPassword());
+        smtpPasswordField.setPromptText("Optional");
+        smtpPasswordField.setTooltip(new Tooltip("The password or App Password for the SMTP server"));
         smtpPasswordField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpPassword(newValue));
         smtpPasswordField.disableProperty().bind(emailEnable.selectedProperty().not());
 
         TextField smtpFromAddressField = new TextField(preference.getSmtpFromAddress());
+        smtpFromAddressField.setPromptText("sender@example.com");
+        smtpFromAddressField.setTooltip(new Tooltip("The email address that will appear as the sender"));
         smtpFromAddressField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpFromAddress(newValue));
         smtpFromAddressField.disableProperty().bind(emailEnable.selectedProperty().not());
 

@@ -88,3 +88,7 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-05-23 - Adding Tooltips to General Test and Action Buttons
 **Learning:** Action buttons (like "Test", "Add", "Remove") in configuration panels (e.g., `AIPreferenceEditor.java` and `NotificationPreferenceEditor.java`) that lack textual context or explanation for their underlying behaviors cause user friction and fail accessibility checks.
 **Action:** Always verify if action buttons in JavaFX preference editors lack tooltips and add descriptive `Tooltip` objects explaining their specific functionality (e.g., "Test the provided Gemini API key...") to improve context and accessibility.
+
+## 2024-05-17 - Add Placeholder Guidance to Notification Editors
+**Learning:** Complex technical inputs (like SMTP settings, API tokens) often lack clear context, causing user hesitation. Placeholder text combined with descriptive tooltips provides necessary guidance without cluttering the UI.
+**Action:** Always add `setPromptText` alongside `setTooltip` for inputs requiring specific formats or technical values (e.g., ports, hostnames, tokens).
