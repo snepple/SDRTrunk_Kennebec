@@ -43,3 +43,7 @@
 **Topic:** Channels, Aliases, and Streaming
 **Learning:** Users often struggle with the core interconnectivity of how a decoded channel routes to an alias, which then routes to a stream. A component map and signal flow diagram are essential here to clarify the system architecture for new users.
 **Action:** Created `src/main/resources/docs/channels-aliases-streaming.md` and integrated it into the navigation tree of `HelpViewer.java` under "Organization & Playlists".
+## 2024-05-22 - Topic Selection
+**Topic:** Now Playing Panel Guide
+**Learning:** The "Now Playing" panel is a core navigational and monitoring component, but it lacked a dedicated "Getting Started" guide explaining its states, interactions, and signal flow.
+**Action:** Created `src/main/resources/docs/now-playing.md` with a visual flow (Mermaid), UI wireframe, and step-by-step guide. Integrated it into the navigation tree of `HelpViewController.java` under "Getting Started".
