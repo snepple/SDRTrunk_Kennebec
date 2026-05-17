@@ -19,6 +19,17 @@
 package io.github.dsheirer.source.tuner.ui;
 
 import io.github.dsheirer.gui.control.FrequencyTextField;
+import javafx.scene.layout.GridPane;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import io.github.dsheirer.gui.control.JFrequencyControl;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import io.github.dsheirer.gui.control.JFrequencyControl;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.properties.SystemProperties;
@@ -50,7 +61,6 @@ import org.slf4j.LoggerFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JToggleButton;
@@ -387,14 +397,39 @@ public abstract class SwingTunerEditor<T extends Tuner,C extends TunerConfigurat
         {
             mInfoConfigButton = new JButton("Info/Config");
             mInfoConfigButton.addActionListener(e -> {
-                JPanel panel = new JPanel(new MigLayout("insets 0", "[][grow,fill]", ""));
                 String info = getTunerInfo();
-                if(info != null && !info.isEmpty()) {
-                    panel.add(new JLabel(info), "span, wrap");
-                }
-                panel.add(new JLabel("Friendly Name:"));
-                panel.add(getFriendlyNameTextField());
-                JOptionPane.showMessageDialog(SwingTunerEditor.this, panel, "Tuner Info/Config", JOptionPane.INFORMATION_MESSAGE);
+                String friendlyName = getFriendlyNameTextField().getText();
+
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Tuner Info/Config");
+                    alert.setHeaderText("Tuner Configuration");
+
+                    GridPane grid = new GridPane();
+                    grid.setHgap(10);
+                    grid.setVgap(10);
+
+                    int row = 0;
+                    if (info != null && !info.isEmpty()) {
+                        grid.add(new Label(info), 0, row, 2, 1);
+                        row++;
+                    }
+
+                    grid.add(new Label("Friendly Name:"), 0, row);
+                    TextField fxFriendlyName = new TextField(friendlyName);
+                    grid.add(fxFriendlyName, 1, row);
+
+                    alert.getDialogPane().setContent(grid);
+
+                    alert.showAndWait();
+
+                    // Update the swing component if it changed
+                    if (!fxFriendlyName.getText().equals(friendlyName)) {
+                        javax.swing.SwingUtilities.invokeLater(() -> {
+                            getFriendlyNameTextField().setText(fxFriendlyName.getText());
+                        });
+                    }
+                });
             });
         }
         return mInfoConfigButton;
@@ -457,9 +492,13 @@ public abstract class SwingTunerEditor<T extends Tuner,C extends TunerConfigurat
 
                         if(minimum < getMinimumTunableFrequency())
                         {
-                            JOptionPane.showMessageDialog(SwingTunerEditor.this, "Frequency value [" +
-                                            getMinimumFrequencyTextField().getText() + "] is below the supported frequency range for this tuner",
-                                    "Invalid Frequency", JOptionPane.ERROR_MESSAGE);
+                            Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Invalid Frequency");
+            alert.setContentText(String.valueOf("Frequency value [" +
+                                            getMinimumFrequencyTextField().getText() + "] is below the supported frequency range for this tuner"));
+            alert.showAndWait();
+        });
                             getMinimumFrequencyTextField().setFrequency(mExistingFrequency);
                             return;
                         }
@@ -475,10 +514,14 @@ public abstract class SwingTunerEditor<T extends Tuner,C extends TunerConfigurat
                             }
                             else
                             {
-                                JOptionPane.showMessageDialog(SwingTunerEditor.this, "Frequency value [" +
+                                Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Invalid Frequency");
+            alert.setContentText(String.valueOf("Frequency value [" +
                                                 getMinimumFrequencyTextField().getText() + "] is invalid for current sample rate " +
-                                                "and maximum supported frequency for this tuner", "Invalid Frequency",
-                                        JOptionPane.ERROR_MESSAGE);
+                                                "and maximum supported frequency for this tuner"));
+            alert.showAndWait();
+        });
                                 getMinimumFrequencyTextField().setFrequency(mExistingFrequency);
                                 return;
                             }
@@ -554,9 +597,13 @@ public abstract class SwingTunerEditor<T extends Tuner,C extends TunerConfigurat
                 }
                 else
                 {
-                    JOptionPane.showMessageDialog(SwingTunerEditor.this, "Unable to adjust tuner's " +
-                            "minimum and maximum frequency values to accommodate new sample rate [" + sampleRate + "]",
-                            "Frequency Error", JOptionPane.ERROR_MESSAGE);
+                    Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Frequency Error");
+            alert.setContentText(String.valueOf("Unable to adjust tuner's " +
+                            "minimum and maximum frequency values to accommodate new sample rate [" + sampleRate + "]"));
+            alert.showAndWait();
+        });
                 }
             }
         }
@@ -594,9 +641,14 @@ public abstract class SwingTunerEditor<T extends Tuner,C extends TunerConfigurat
 
                         if(maximum > getMaximumTunableFrequency())
                         {
-                            JOptionPane.showMessageDialog(SwingTunerEditor.this, "Frequency value [" +
+                            Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Invalid Frequency");
+            alert.setContentText(String.valueOf("Frequency value [" +
                                     getMaximumFrequencyTextField().getText() + "] is above the supported frequency " +
-                                    "range for this tuner", "Invalid Frequency", JOptionPane.ERROR_MESSAGE);
+                                    "range for this tuner"));
+            alert.showAndWait();
+        });
                             getMaximumFrequencyTextField().setFrequency(mExistingFrequency);
                             return;
                         }
@@ -612,10 +664,14 @@ public abstract class SwingTunerEditor<T extends Tuner,C extends TunerConfigurat
                             }
                             else
                             {
-                                JOptionPane.showMessageDialog(SwingTunerEditor.this, "Frequency value [" +
+                                Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Invalid Frequency");
+            alert.setContentText(String.valueOf("Frequency value [" +
                                                 getMaximumFrequencyTextField().getText() + "] is invalid for current sample rate " +
-                                                "and minimum supported frequency for this tuner", "Invalid Frequency",
-                                        JOptionPane.ERROR_MESSAGE);
+                                                "and minimum supported frequency for this tuner"));
+            alert.showAndWait();
+        });
                                 getMaximumFrequencyTextField().setFrequency(mExistingFrequency);
                                 return;
                             }

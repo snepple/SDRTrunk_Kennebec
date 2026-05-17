@@ -19,10 +19,16 @@
 package io.github.dsheirer.source.tuner.rtl.e4k;
 
 import javax.swing.ProgressMonitor;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import javax.swing.SwingUtilities;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.swing.JOptionPane;
 
 
 import io.github.dsheirer.preference.UserPreferences;
@@ -46,7 +52,6 @@ import org.usb4java.LibUsbException;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.SpinnerNumberModel;
@@ -250,8 +255,13 @@ public class E4KTunerEditor extends SwingTunerEditor<RTL2832Tuner, E4KTunerConfi
                         }
                         catch(LibUsbException lue)
                         {
-                            JOptionPane.showMessageDialog(E4KTunerEditor.this, "E4000 Tuner Controller - "
-                                    + "couldn't apply the IF setting - " + lue.getLocalizedMessage());
+                            Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Information");
+            alert.setContentText(String.valueOf("E4000 Tuner Controller - "
+                                    + "couldn't apply the IF setting - " + lue.getLocalizedMessage()));
+            alert.showAndWait();
+        });
                             mLog.error("E4000 Tuner Controller - couldn't apply IF gain setting", e);
                         }
                     }
@@ -281,8 +291,13 @@ public class E4KTunerEditor extends SwingTunerEditor<RTL2832Tuner, E4KTunerConfi
                     }
                     catch(UsbException e)
                     {
-                        JOptionPane.showMessageDialog(E4KTunerEditor.this, "E4000 Tuner Controller - "
-                                + "couldn't apply the LNA gain setting - " + e.getLocalizedMessage());
+                        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Information");
+            alert.setContentText(String.valueOf("E4000 Tuner Controller - "
+                                + "couldn't apply the LNA gain setting - " + e.getLocalizedMessage()));
+            alert.showAndWait();
+        });
                         mLog.error("E4000 Tuner Controller - couldn't apply LNA gain setting - ", e);
                     }
                 }
@@ -311,8 +326,13 @@ public class E4KTunerEditor extends SwingTunerEditor<RTL2832Tuner, E4KTunerConfi
                     }
                     catch(UsbException e)
                     {
-                        JOptionPane.showMessageDialog(E4KTunerEditor.this, "E4000 Tuner Controller - "
-                                + "couldn't apply the mixer gain setting - " + e.getLocalizedMessage());
+                        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Information");
+            alert.setContentText(String.valueOf("E4000 Tuner Controller - "
+                                + "couldn't apply the mixer gain setting - " + e.getLocalizedMessage()));
+            alert.showAndWait();
+        });
                         mLog.error("E4000 Tuner Controller - couldn't apply mixer gain setting", e);
                     }
                 }
@@ -357,8 +377,13 @@ public class E4KTunerEditor extends SwingTunerEditor<RTL2832Tuner, E4KTunerConfi
                     }
                     catch(UsbException e)
                     {
-                        JOptionPane.showMessageDialog(E4KTunerEditor.this, "E4000 Tuner Controller - "
-                                + "couldn't apply the gain setting - " + e.getLocalizedMessage());
+                        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Information");
+            alert.setContentText(String.valueOf("E4000 Tuner Controller - "
+                                + "couldn't apply the gain setting - " + e.getLocalizedMessage()));
+            alert.showAndWait();
+        });
                         mLog.error("E4000 Tuner Controller - couldn't apply gain setting", e);
                     }
                 }
@@ -393,9 +418,13 @@ public class E4KTunerEditor extends SwingTunerEditor<RTL2832Tuner, E4KTunerConfi
                     }
                     catch(SourceException | LibUsbException eSampleRate)
                     {
-                        JOptionPane.showMessageDialog(E4KTunerEditor.this,
-                                "E4000 Tuner Controller - couldn't apply the sample rate setting [" +
-                                        sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage());
+                        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Information");
+            alert.setContentText(String.valueOf("E4000 Tuner Controller - couldn't apply the sample rate setting [" +
+                                        sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage()));
+            alert.showAndWait();
+        });
 
                         mLog.error("E4000 Tuner Controller - couldn't apply sample rate setting [" +
                                 sampleRate.getLabel() + "]", eSampleRate);
@@ -507,14 +536,31 @@ public class E4KTunerEditor extends SwingTunerEditor<RTL2832Tuner, E4KTunerConfi
         javax.swing.JButton btn = new javax.swing.JButton("Change Serial Number");
         btn.addActionListener(e -> {
             if (!hasTuner()) return;
-            String newSerial = JOptionPane.showInputDialog(this,
-                    "Enter new Serial Number (Alphanumeric only, max 16 chars):\n\nWARNING: Writing to hardware memory is inherently risky.\nDo not disconnect the device during the write process.",
-                    "Change RTL-SDR Serial Number", JOptionPane.WARNING_MESSAGE);
+            String newSerial = null;
+        try {
+            FutureTask<String> task = new FutureTask<>(() -> {
+                TextInputDialog dialog = new TextInputDialog();
+                dialog.setTitle("Change RTL-SDR Serial Number");
+                dialog.setHeaderText(null);
+                dialog.setContentText(String.valueOf("Enter new Serial Number (Alphanumeric only, max 16 chars):\n\nWARNING: Writing to hardware memory is inherently risky.\nDo not disconnect the device during the write process."));
+                Optional<String> result = dialog.showAndWait();
+                return result.orElse(null);
+            });
+            Platform.runLater(task);
+            newSerial = task.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            // Ignore
+        };
 
             if (newSerial != null) {
                 newSerial = newSerial.trim();
                 if (!newSerial.matches("[A-Za-z0-9]*") || newSerial.length() > 16) {
-                    JOptionPane.showMessageDialog(this, "Invalid serial number. Must be alphanumeric and max 16 characters.", "Error", JOptionPane.ERROR_MESSAGE);
+                    Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setContentText(String.valueOf("Invalid serial number. Must be alphanumeric and max 16 characters."));
+            alert.showAndWait();
+        });
                     return;
                 }
 
@@ -530,12 +576,22 @@ public class E4KTunerEditor extends SwingTunerEditor<RTL2832Tuner, E4KTunerConfi
                         ((io.github.dsheirer.source.tuner.rtl.RTL2832TunerController)getTuner().getTunerController()).setSerialNumber(serialToSet);
                         SwingUtilities.invokeLater(() -> {
                             progressMonitor.setProgress(100);
-                            JOptionPane.showMessageDialog(this, "Serial number updated successfully.\nPlease disconnect and reconnect the tuner.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                            Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Success");
+            alert.setContentText(String.valueOf("Serial number updated successfully.\nPlease disconnect and reconnect the tuner."));
+            alert.showAndWait();
+        });
                         });
                     } catch (Exception ex) {
                         SwingUtilities.invokeLater(() -> {
                             progressMonitor.close();
-                            JOptionPane.showMessageDialog(this, "Failed to update serial number: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                            Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setContentText(String.valueOf("Failed to update serial number: " + ex.getMessage()));
+            alert.showAndWait();
+        });
                         });
                     }
                 });
