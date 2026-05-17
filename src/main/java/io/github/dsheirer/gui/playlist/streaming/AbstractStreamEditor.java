@@ -26,6 +26,7 @@ import io.github.dsheirer.audio.broadcast.BroadcastConfiguration;
 import io.github.dsheirer.gui.control.IntegerTextField;
 import io.github.dsheirer.playlist.PlaylistManager;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import org.controlsfx.control.ToggleSwitch;
@@ -113,6 +114,7 @@ public abstract class AbstractStreamEditor<T extends BroadcastConfiguration> ext
         {
             mHostTextField = new TextField();
             mHostTextField.setDisable(true);
+            mHostTextField.setTooltip(new Tooltip("Enter the IP address or hostname of the streaming server"));
             mHostTextField.textProperty().addListener(mEditorModificationListener);
         }
 
@@ -161,6 +163,7 @@ public abstract class AbstractStreamEditor<T extends BroadcastConfiguration> ext
         {
             mPortTextField = new IntegerTextField();
             mPortTextField.setDisable(true);
+            mPortTextField.setTooltip(new Tooltip("Enter the server port number (e.g., 8000)"));
             mPortTextField.textProperty().addListener(mEditorModificationListener);
         }
 

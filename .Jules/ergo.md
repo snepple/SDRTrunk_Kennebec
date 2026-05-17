@@ -36,3 +36,6 @@
 ## 2024-05-18 - Input Validation on TextFields
 **Learning:** Pure JavaFX `TextField` fields are prone to user error since they accept any characters, which can cause backend processing crashes if users enter letters into numeric fields like ports.
 **Action:** Use a `TextFormatter` with a regular expression (e.g., `\\d{0,5}`) to proactively block invalid characters and lengths during data entry, shifting the error prevention burden to the UI.
+## 2024-05-18 - Streaming Editor Tooltips
+**Learning:** Configurations for streaming servers like Icecast contain many backend-specific terms (Host, Port, Mount Point, Inline Metadata) that are confusing to users who aren't familiar with audio broadcasting software.
+**Action:** Always provide explicit tooltips to inputs in streaming editors (`AbstractStreamEditor`, `IcecastStreamEditor`) detailing the expected format and purpose (e.g., "Enter the server port number (e.g., 8000)") to lower the cognitive load.
