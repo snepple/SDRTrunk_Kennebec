@@ -39,6 +39,9 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javafx.scene.paint.Color;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 
 /**
  * Editor for talkgroup range alias identifiers
@@ -74,7 +77,7 @@ public class TalkgroupRangeEditor extends IdentifierEditor<TalkgroupRange>
         GridPane.setConstraints(getProtocolLabel(), 0, 0);
         gridPane.getChildren().add(getProtocolLabel());
 
-        Label valueLabel = new Label("Talkgroup Range");
+        Label valueLabel = new Label("Talkgroup Range", createHelpIcon("The range of unique talkgroup identifiers. Defines a contiguous block of talkgroup IDs."));
         GridPane.setHalignment(valueLabel, HPos.RIGHT);
         GridPane.setConstraints(valueLabel, 1, 0);
         gridPane.getChildren().add(valueLabel);
@@ -374,5 +377,17 @@ public class TalkgroupRangeEditor extends IdentifierEditor<TalkgroupRange>
         {
             return mTooltip;
         }
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }
