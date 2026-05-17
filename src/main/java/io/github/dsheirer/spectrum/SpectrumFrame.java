@@ -24,12 +24,13 @@ import io.github.dsheirer.source.tuner.Tuner;
 import io.github.dsheirer.source.tuner.ui.DiscoveredTunerModel;
 import net.miginfocom.swing.MigLayout;
 
-import javax.swing.JFrame;
-import java.awt.EventQueue;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import javafx.stage.Stage;
+import javafx.scene.Scene;
+import javafx.scene.layout.BorderPane;
+import javafx.embed.swing.SwingNode;
+import javafx.application.Platform;
 
-public class SpectrumFrame extends JFrame implements WindowListener
+public class SpectrumFrame extends Stage
 {
     private static final long serialVersionUID = 1L;
 
@@ -39,61 +40,24 @@ public class SpectrumFrame extends JFrame implements WindowListener
                          DiscoveredTunerModel discoveredTunerModel, Tuner tuner)
     {
         setTitle("SDRTRunk [" + tuner.getPreferredName() + "]");
-        setBounds(100, 100, 1280, 600);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setWidth(1280);
+        setHeight(600);
+        centerOnScreen();
 
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow]", "[grow]"));
+
+
 
         mSpectralDisplayPanel = new SpectralDisplayPanel(playlistManager, settingsManager, discoveredTunerModel);
 
         mSpectralDisplayPanel.showTuner(tuner);
-        add(mSpectralDisplayPanel, "grow");
+        SwingNode swingNode = new SwingNode();
+        swingNode.setContent(mSpectralDisplayPanel);
+        BorderPane root = new BorderPane();
+        root.setCenter(swingNode);
+        Scene scene = new Scene(root);
+        setScene(scene);
 
-        /* Register a shutdown listener */
-        this.addWindowListener(this);
+        setOnCloseRequest(e -> mSpectralDisplayPanel.dispose());
 
-        EventQueue.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                setVisible(true);
-            }
-        });
-    }
-
-    @Override
-    public void windowClosed(WindowEvent arg0)
-    {
-        mSpectralDisplayPanel.dispose();
-    }
-
-    @Override
-    public void windowActivated(WindowEvent arg0)
-    {
-    }
-
-    @Override
-    public void windowClosing(WindowEvent arg0)
-    {
-    }
-
-    @Override
-    public void windowDeactivated(WindowEvent arg0)
-    {
-    }
-
-    @Override
-    public void windowDeiconified(WindowEvent arg0)
-    {
-    }
-
-    @Override
-    public void windowIconified(WindowEvent arg0)
-    {
-    }
-
-    @Override
-    public void windowOpened(WindowEvent arg0)
-    {
     }
 }
