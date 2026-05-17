@@ -93,7 +93,6 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
     private final SignalPowerView mSignalPowerView;
     private final SymbolView mSymbolView = new SymbolView();
     private final JFXPanel mNoiseSquelchPanel;
-    private final JFXPanel mSignalPowerPanel;
     private final JFXPanel mSymbolPanel;
     private JPanel mInspectorPanel;
     private CardLayout mInspectorCardLayout;
@@ -208,7 +207,6 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         fftPanel.add(layeredPanel);
 
         mNoiseSquelchPanel = new JFXPanel();
-        mSignalPowerPanel = new JFXPanel();
         mSymbolPanel = new JFXPanel();
 
         //Spin noise squelch panel construction off onto the JavafX UI thread.
@@ -216,14 +214,11 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             Scene scene = new Scene(mNoiseSquelchView);
             mNoiseSquelchPanel.setScene(scene);
             Scene scene2 = new Scene(mSymbolView);
-            Scene scene3 = new Scene(mSignalPowerView);
             URL resource = getClass().getResource("/sdrtrunk_style.css");
 
             if(resource != null)
             {
-                scene.getStylesheets().add(resource.toExternalForm());
                 scene2.getStylesheets().add(resource.toExternalForm());
-                scene3.getStylesheets().add(resource.toExternalForm());
             }
             else
             {
@@ -231,7 +226,6 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             }
 
             mSymbolPanel.setScene(scene2);
-            mSignalPowerPanel.setScene(scene3);
         });
 
         mInspectorCardLayout = new CardLayout();
@@ -239,7 +233,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         mInspectorPanel.setBorder(new MatteBorder(0, 1, 0, 0, new Color(224, 224, 224))); // Apple HIG subtle border
 
         mInspectorPanel.add(mNoiseSquelchPanel, "NBFM");
-        mInspectorPanel.add(mSignalPowerPanel, "AM");
+        mInspectorPanel.add(mSignalPowerView, "AM");
         mInspectorPanel.add(mSymbolPanel, "FEEDBACK");
 
         // Use MigLayout for the main panel
@@ -272,7 +266,6 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         updateFFTProcessing();
         mNoiseSquelchView.setShowing(visible);
         mSymbolView.setShowing(visible);
-        mSignalPowerView.setShowing(visible);
     }
 
     /**
@@ -390,7 +383,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             }
             else if(primaryDecoder instanceof AMDecoder)
             {
-                setRightComponent(mSignalPowerPanel);
+                setRightComponent(mSignalPowerView);
                 mSignalPowerView.setProcessingChain(mProcessingChain);
             }
             else if(primaryDecoder instanceof FeedbackDecoder feedbackDecoder)
@@ -434,7 +427,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         if (component == mNoiseSquelchPanel) {
             mInspectorCardLayout.show(mInspectorPanel, "NBFM");
             mInspectorPanel.setVisible(true);
-        } else if (component == mSignalPowerPanel) {
+        } else if (component == mSignalPowerView) {
             mInspectorCardLayout.show(mInspectorPanel, "AM");
             mInspectorPanel.setVisible(true);
         } else if (component == mSymbolPanel) {
