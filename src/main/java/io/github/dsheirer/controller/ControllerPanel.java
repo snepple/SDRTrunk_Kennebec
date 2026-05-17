@@ -1,24 +1,5 @@
-/*
- * *****************************************************************************
- * Copyright (C) 2014-2023 Dennis Sheirer
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- * ****************************************************************************
- */
 package io.github.dsheirer.controller;
 
-import io.github.dsheirer.gui.SidebarPanel;
 import io.github.dsheirer.gui.VisibilityListener;
 import io.github.dsheirer.audio.playback.AudioPanel;
 import io.github.dsheirer.audio.playback.AudioPlaybackManager;
@@ -29,9 +10,8 @@ import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.fxml.FXMLLoader;
 import io.github.dsheirer.map.MapService;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
@@ -43,11 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.SwingUtilities;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
 
-public class ControllerPanel extends JFXPanel
-{
+public class ControllerPanel extends JFXPanel {
     private final static Logger mLog = LoggerFactory.getLogger(ControllerPanel.class);
 
     private AudioPanel mAudioPanel;
@@ -56,16 +34,12 @@ public class ControllerPanel extends JFXPanel
     private TunerViewPanel mTunerManagerPanel;
     private AudioRecordingsPanel mAudioRecordingsPanel;
 
-    private BorderPane mRootPane;
-    private StackPane mCardPane;
-    private SwingNode mResourceNode;
-
-    private Map<String, Node> mViews = new HashMap<>();
+    private ControllerPanelController mController;
 
     public ControllerPanel(PlaylistManager playlistManager, AudioPlaybackManager audioPlaybackManager,
                            IconModel iconModel, MapService mapService, SettingsManager settingsManager,
-                           TunerManager tunerManager, UserPreferences userPreferences, boolean detailTabsVisible, VisibilityListener visibilityListener)
-    {
+                           TunerManager tunerManager, UserPreferences userPreferences, boolean detailTabsVisible, VisibilityListener visibilityListener) {
+
         mAudioPanel = new AudioPanel(iconModel, userPreferences, settingsManager, audioPlaybackManager,
             playlistManager.getAliasModel(), playlistManager.getBroadcastModel());
         mNowPlayingPanel = new NowPlayingPanel(playlistManager, iconModel, userPreferences, settingsManager, tunerManager, detailTabsVisible, visibilityListener);
@@ -75,73 +49,47 @@ public class ControllerPanel extends JFXPanel
 
         mAudioPanel.setManageWidgetsButton(mNowPlayingPanel.getManageWidgetsButton());
 
-        init();
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ControllerPanel.fxml"));
+                Parent root = loader.load();
+                mController = loader.getController();
+
+                // Add Swing views by wrapping them in SwingNodes
+                mController.addView("now_playing", wrapSwingComponent(mNowPlayingPanel));
+                mController.addView("map", wrapSwingComponent(mMapPanel));
+                mController.addView("tuners", wrapSwingComponent(mTunerManagerPanel));
+                mController.addView("audio_recordings", wrapSwingComponent(mAudioRecordingsPanel));
+
+                // Add HelpViewer natively without SwingNode
+                mController.addView("help_viewer", new io.github.dsheirer.gui.help.HelpViewer());
+
+                setScene(new Scene(root));
+            } catch (IOException e) {
+                mLog.error("Error loading ControllerPanel.fxml", e);
+            }
+        });
     }
 
-    public AudioPanel getAudioPanel()
-    {
+    private SwingNode wrapSwingComponent(javax.swing.JComponent component) {
+        SwingNode swingNode = new SwingNode();
+        SwingUtilities.invokeLater(() -> swingNode.setContent(component));
+        return swingNode;
+    }
+
+    public AudioPanel getAudioPanel() {
         return mAudioPanel;
     }
 
-    public NowPlayingPanel getNowPlayingPanel()
-    {
+    public NowPlayingPanel getNowPlayingPanel() {
         return mNowPlayingPanel;
-    }
-
-    private void init()
-    {
-        Platform.runLater(() -> {
-            mRootPane = new BorderPane();
-            mCardPane = new StackPane();
-            mRootPane.setCenter(mCardPane);
-
-            Scene scene = new Scene(mRootPane);
-            setScene(scene);
-
-            addView("now_playing", mNowPlayingPanel);
-            addView("map", mMapPanel);
-            addView("tuners", mTunerManagerPanel);
-            addView("audio_recordings", mAudioRecordingsPanel);
-
-            // HelpViewer is already a JFXPanel, so we can embed it as a Node directly?
-            // Actually, JFXPanel is a Swing component, so we must wrap it in a SwingNode anyway
-            // unless we refactor it completely to be a pure JavaFX Node.
-            // Since we made HelpViewer extend JFXPanel, it's a Component.
-            addJavaFXView("help_viewer", loadHelpViewer());
-        });
-    }
-
-
-    private javafx.scene.Node loadHelpViewer() {
-        try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/fxml/HelpView.fxml"));
-            javafx.scene.Parent root = loader.load();
-            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
-            if (cssUrl != null) {
-                root.getStylesheets().add(cssUrl.toExternalForm());
-            }
-            return root;
-        } catch (java.io.IOException e) {
-            mLog.error("Error loading HelpView.fxml", e);
-            return new javafx.scene.layout.VBox();
-        }
-    }
-
-    public void addJavaFXView(String id, javafx.scene.Node view) {
-        Platform.runLater(() -> {
-            view.setVisible(false);
-            mCardPane.getChildren().add(view);
-            mViews.put(id, view);
-        });
     }
 
     public void addView(String id, java.awt.Component view) {
         Platform.runLater(() -> {
-            SwingNode swingNode = new SwingNode();
-            SwingUtilities.invokeLater(() -> swingNode.setContent((javax.swing.JComponent) view));
-            swingNode.setVisible(false);
-            mCardPane.getChildren().add(swingNode);
-            mViews.put(id, swingNode);
+            if (mController != null) {
+                mController.addView(id, wrapSwingComponent((javax.swing.JComponent) view));
+            }
         });
     }
 
@@ -149,29 +97,26 @@ public class ControllerPanel extends JFXPanel
         SwingUtilities.invokeLater(() -> mNowPlayingPanel.getManageWidgetsButton().setVisible("now_playing".equals(id)));
 
         Platform.runLater(() -> {
-            for (Map.Entry<String, Node> entry : mViews.entrySet()) {
-                entry.getValue().setVisible(entry.getKey().equals(id));
+            if (mController != null) {
+                mController.showView(id);
             }
         });
     }
 
     public void setResourcePanel(javax.swing.JComponent resourcePanel) {
         Platform.runLater(() -> {
-            if (mResourceNode == null) {
-                mResourceNode = new SwingNode();
-                mRootPane.setBottom(mResourceNode);
+            if (mController != null) {
+                mController.setResourceNode(wrapSwingComponent(resourcePanel));
+                mController.setResourcePanelVisible(false);
             }
-            SwingUtilities.invokeLater(() -> mResourceNode.setContent(resourcePanel));
-            mResourceNode.setVisible(false);
         });
     }
 
     public void setResourcePanelVisible(boolean visible) {
         Platform.runLater(() -> {
-            if (mResourceNode != null) {
-                mResourceNode.setVisible(visible);
+            if (mController != null) {
+                mController.setResourcePanelVisible(visible);
             }
         });
     }
-
 }
