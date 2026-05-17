@@ -92,3 +92,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-05-17 - Add Placeholder Guidance to Notification Editors
 **Learning:** Complex technical inputs (like SMTP settings, API tokens) often lack clear context, causing user hesitation. Placeholder text combined with descriptive tooltips provides necessary guidance without cluttering the UI.
 **Action:** Always add `setPromptText` alongside `setTooltip` for inputs requiring specific formats or technical values (e.g., ports, hostnames, tokens).
+## 2026-05-17 - HIG Compliant Tooltips for Editors
+**Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
+**Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
