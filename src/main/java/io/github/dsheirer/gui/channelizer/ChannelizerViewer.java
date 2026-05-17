@@ -46,7 +46,11 @@ import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JFrame;
+import javafx.stage.Stage;
+import javafx.scene.Scene;
+import javafx.embed.swing.SwingNode;
+import javafx.scene.layout.BorderPane;
+import javafx.application.Platform;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -55,7 +59,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class ChannelizerViewer extends JFrame
+public class ChannelizerViewer extends Stage
 {
     private final static Logger mLog = LoggerFactory.getLogger(ChannelizerViewer.class);
 
@@ -93,11 +97,17 @@ public class ChannelizerViewer extends JFrame
     private void init()
     {
         setTitle("Polyphase Channelizer Viewer");
-        setSize(1200, 800);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
-        setLocationRelativeTo(null);
-        add(getPrimaryPanel());
+        setWidth(1200);
+        setHeight(800);
+        centerOnScreen();
+        setOnCloseRequest(e -> System.exit(0));
+
+        SwingNode swingNode = new SwingNode();
+        swingNode.setContent(getPrimaryPanel());
+        BorderPane root = new BorderPane();
+        root.setCenter(swingNode);
+        Scene scene = new Scene(root);
+        setScene(scene);
     }
 
     private JPanel getPrimaryPanel()
@@ -516,14 +526,8 @@ public class ChannelizerViewer extends JFrame
 
             final ChannelizerViewer frame = new ChannelizerViewer(channelsPerRow);
 
-            EventQueue.invokeLater(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    frame.setVisible(true);
-                }
-            });
+            Platform.startup(() -> {});
+            Platform.runLater(() -> frame.show());
         }
         else
         {
