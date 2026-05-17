@@ -1,6 +1,13 @@
 package io.github.dsheirer.gui;
 
 import org.slf4j.Logger;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
@@ -44,14 +51,20 @@ public class NotificationManager {
             trayIcon.displayMessage(title, message, messageType);
         } else {
             // Fallback to legacy Swing popup
-            int jOptionType = JOptionPane.INFORMATION_MESSAGE;
+            Alert.AlertType alertType = Alert.AlertType.INFORMATION;
             if (messageType == TrayIcon.MessageType.ERROR) {
-                jOptionType = JOptionPane.ERROR_MESSAGE;
+                alertType = Alert.AlertType.ERROR;
             } else if (messageType == TrayIcon.MessageType.WARNING) {
-                jOptionType = JOptionPane.WARNING_MESSAGE;
+                alertType = Alert.AlertType.WARNING;
             }
 
-            JOptionPane.showMessageDialog(null, message, title, jOptionType);
+            final Alert.AlertType finalAlertType = alertType;
+            Platform.runLater(() -> {
+            Alert alert = new Alert(finalAlertType);
+            alert.setTitle(title);
+            alert.setContentText(String.valueOf(message));
+            alert.showAndWait();
+        });
         }
     }
 }

@@ -19,6 +19,13 @@
 package io.github.dsheirer.gui;
 
 import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import javafx.event.ActionEvent;
 import java.awt.Dimension;
 import java.awt.GraphicsEnvironment;
@@ -118,7 +125,6 @@ import javax.imageio.ImageIO;
 
 
 
-import javax.swing.JOptionPane;
 
 
 import javax.swing.UIManager;

@@ -19,6 +19,13 @@
 package io.github.dsheirer.map;
 
 import io.github.dsheirer.alias.AliasModel;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.identifier.Form;
 import io.github.dsheirer.identifier.Identifier;
@@ -43,7 +50,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
@@ -450,10 +456,19 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
         {
             mDeleteAllTracksButton = new JButton("Delete All");
             mDeleteAllTracksButton.addActionListener(e -> {
-                int confirmation = JOptionPane.showConfirmDialog(null,
-                        "Are you sure you want to delete all tracks?",
-                        "Delete All Tracks", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                if (confirmation == JOptionPane.YES_OPTION) {
+                boolean confirmation = false;
+        try {
+            FutureTask<Boolean> task = new FutureTask<>(() -> {
+                Alert alert = new Alert(Alert.AlertType.WARNING, String.valueOf("Are you sure you want to delete all tracks?"), ButtonType.YES, ButtonType.NO);
+                alert.setTitle("Delete All Tracks");
+                return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
+            });
+            Platform.runLater(task);
+            confirmation = task.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            // Ignore
+        };
+                if (confirmation) {
                     mMapService.getPlottableEntityModel().deleteAllTracks();
                     mMapPainter.clearAllEntities();
                     //Clear followed entity
@@ -483,10 +498,20 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
                         ? "Are you sure you want to delete the selected track?"
                         : "Are you sure you want to delete the " + selectedIndices.length + " selected tracks?";
 
-                int confirmation = JOptionPane.showConfirmDialog(null,
-                        message, "Delete Tracks", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                boolean confirmation = false;
+        try {
+            FutureTask<Boolean> task = new FutureTask<>(() -> {
+                Alert alert = new Alert(Alert.AlertType.WARNING, String.valueOf(message), ButtonType.YES, ButtonType.NO);
+                alert.setTitle("Delete Tracks");
+                return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
+            });
+            Platform.runLater(task);
+            confirmation = task.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            // Ignore
+        };
 
-                if (confirmation == JOptionPane.YES_OPTION) {
+                if (confirmation) {
                     List<PlottableEntityHistory> toDelete = new ArrayList<>();
 
                     for(int selectedIndex : selectedIndices)

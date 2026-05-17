@@ -20,6 +20,13 @@
 package io.github.dsheirer.source.tuner.sdrplay;
 
 import io.github.dsheirer.preference.UserPreferences;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.sdrplay.api.SDRPlayException;
 import io.github.dsheirer.source.tuner.sdrplay.api.device.TunerSelect;
@@ -36,7 +43,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JToggleButton;
@@ -279,7 +285,12 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Sw
             catch(Exception e)
             {
                 mLog.error("Couldn't set RSP gain to LNA:" + lna + " Gain Reduction:" + gr, e);
-                JOptionPane.showMessageDialog(mIfGainSlider, "Couldn't set RSP gain value to LNA:" + lna + " Gain Reduction:" + gr);
+                Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Information");
+            alert.setContentText("Couldn't set RSP gain value to LNA:" + lna + " Gain Reduction:" + gr);
+            alert.showAndWait();
+        });
             }
         }
     }

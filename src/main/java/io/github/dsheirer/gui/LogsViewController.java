@@ -408,7 +408,6 @@ public class LogsViewController {
                         webView.getEngine().loadContent("<html><body style='font-family: sans-serif;'>" + htmlResult + "</body></html>");
                         webView.setPrefSize(600, 400);
                         if (!alert.isShowing()) alert.show();
-                        alert.setHeaderText(null);
                         alert.getDialogPane().setContent(webView);
                         alert.getDialogPane().lookupButton(ButtonType.OK).setDisable(false);
                     } catch (Exception ex) {
@@ -443,7 +442,6 @@ public class LogsViewController {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
-            alert.setHeaderText(null);
             alert.setContentText(message);
             alert.showAndWait();
         });

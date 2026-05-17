@@ -342,7 +342,6 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                 Platform.runLater(() -> {
                     Alert alert = new Alert(AlertType.INFORMATION);
                     alert.setTitle("Tuner Info/Config");
-                    alert.setHeaderText(null);
                     VBox vBox = new VBox(5);
                     String info = getTunerInfo();
                     if(info != null && !info.isEmpty()) {
@@ -420,7 +419,6 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                             Platform.runLater(() -> {
                                 Alert alert = new Alert(AlertType.ERROR);
                                 alert.setTitle("Invalid Frequency");
-                                alert.setHeaderText(null);
                                 alert.setContentText("Frequency value [" +
                                                 mMinimumFrequencyTextField.getText() + "] is below the supported frequency range for this tuner");
                                 alert.showAndWait();
@@ -444,7 +442,6 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                                 Platform.runLater(() -> {
                                     Alert alert = new Alert(AlertType.ERROR);
                                     alert.setTitle("Invalid Frequency");
-                                    alert.setHeaderText(null);
                                     alert.setContentText("Frequency value [" +
                                                     mMinimumFrequencyTextField.getText() + "] is invalid for current sample rate " +
                                                     "and maximum supported frequency for this tuner");
@@ -519,7 +516,6 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                     Platform.runLater(() -> {
                         Alert alert = new Alert(AlertType.ERROR);
                         alert.setTitle("Frequency Error");
-                        alert.setHeaderText(null);
                         alert.setContentText("Unable to adjust tuner's " +
                                 "minimum and maximum frequency values to accommodate new sample rate [" + sampleRate + "]");
                         alert.showAndWait();
@@ -551,7 +547,6 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                             Platform.runLater(() -> {
                                 Alert alert = new Alert(AlertType.ERROR);
                                 alert.setTitle("Invalid Frequency");
-                                alert.setHeaderText(null);
                                 alert.setContentText("Frequency value [" +
                                         mMaximumFrequencyTextField.getText() + "] is above the supported frequency " +
                                         "range for this tuner");
@@ -576,7 +571,6 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                                 Platform.runLater(() -> {
                                     Alert alert = new Alert(AlertType.ERROR);
                                     alert.setTitle("Invalid Frequency");
-                                    alert.setHeaderText(null);
                                     alert.setContentText("Frequency value [" +
                                                     mMaximumFrequencyTextField.getText() + "] is invalid for current sample rate " +
                                                     "and minimum supported frequency for this tuner");

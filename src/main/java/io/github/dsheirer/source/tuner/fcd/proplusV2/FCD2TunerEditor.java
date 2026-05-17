@@ -19,6 +19,13 @@
 package io.github.dsheirer.source.tuner.fcd.proplusV2;
 
 import io.github.dsheirer.preference.UserPreferences;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import io.github.dsheirer.source.SourceException;
 import io.github.dsheirer.source.tuner.fcd.FCDTuner;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
@@ -31,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.SpinnerNumberModel;
 

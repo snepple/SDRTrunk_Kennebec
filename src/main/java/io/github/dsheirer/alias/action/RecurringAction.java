@@ -20,6 +20,15 @@
 package io.github.dsheirer.alias.action;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import javafx.scene.control.Alert;
+import javafx.application.Platform;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.message.IMessage;
@@ -71,9 +80,14 @@ public abstract class RecurringAction extends AliasAction
 
                     final String text = sb.toString();
 
-                    EventQueue.invokeLater(() -> {
-                        JOptionPane.showMessageDialog(null, text,
-                            "Alias Alert", JOptionPane.INFORMATION_MESSAGE);
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Alias Alert");
+                        // Using TextFlow or Label for HTML is a bit tricky, but since it's just a string, let's use Label
+                        // Note: JavaFX Alert doesn't support HTML tags, so we'll strip them out.
+                        String plainText = text.replaceAll("<[^>]*>", "").replaceAll("&nbsp;", " ");
+                        alert.setContentText(plainText);
+                        alert.showAndWait();
 
                         dismiss(false);
 

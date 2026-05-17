@@ -1,11 +1,15 @@
 package io.github.dsheirer.gui;
 
 import io.github.dsheirer.preference.UserPreferences;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.application.Platform;
+import javafx.scene.control.CheckBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.control.Label;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JCheckBox;
-import javax.swing.JOptionPane;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,16 +32,30 @@ public class UsbMonitorManager {
         boolean prompted = userPreferences.getApplicationPreference().isUsbMonitorPrompted();
 
         if (!prompted && !installed) {
-            javax.swing.SwingUtilities.invokeLater(() -> {
-                JCheckBox dontShowAgain = new JCheckBox("Do not show this again");
-                Object[] params = {"A tuner monitoring power script is available to automatically reset USB devices if they fail.\nDo you want to install it? (Requires Administrator permissions)", dontShowAgain};
-                int result = JOptionPane.showConfirmDialog(null, params, "Install USB Monitor Script?", JOptionPane.YES_NO_OPTION);
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "", ButtonType.YES, ButtonType.NO);
+                alert.setTitle("Install USB Monitor Script?");
 
-                if (result == JOptionPane.YES_OPTION) {
+                VBox contentBox = new VBox(10);
+                contentBox.getChildren().add(new Label("A tuner monitoring power script is available to automatically reset USB devices if they fail.\nDo you want to install it? (Requires Administrator permissions)"));
+                CheckBox dontShowAgain = new CheckBox("Do not show this again");
+                contentBox.getChildren().add(dontShowAgain);
+
+                alert.getDialogPane().setContent(contentBox);
+
+                if (alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES) {
                     if (install(userPreferences)) {
-                        JOptionPane.showMessageDialog(null, "USB Monitor script successfully installed.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                        successAlert.setTitle("Success");
+                        successAlert.setHeaderText(null);
+                        successAlert.setContentText("USB Monitor script successfully installed.");
+                        successAlert.showAndWait();
                     } else {
-                        JOptionPane.showMessageDialog(null, "Failed to install USB Monitor script. Check logs for details.", "Error", JOptionPane.ERROR_MESSAGE);
+                        Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                        errorAlert.setTitle("Error");
+                        errorAlert.setHeaderText(null);
+                        errorAlert.setContentText("Failed to install USB Monitor script. Check logs for details.");
+                        errorAlert.showAndWait();
                     }
                 } else {
                     if (dontShowAgain.isSelected()) {
