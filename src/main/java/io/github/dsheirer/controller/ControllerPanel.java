@@ -20,20 +20,18 @@ package io.github.dsheirer.controller;
 
 import io.github.dsheirer.gui.SidebarPanel;
 import io.github.dsheirer.gui.VisibilityListener;
-
-
-
-import com.jidesoft.swing.JideTabbedPane;
 import io.github.dsheirer.audio.playback.AudioPanel;
 import io.github.dsheirer.audio.playback.AudioPlaybackManager;
 import io.github.dsheirer.channel.metadata.NowPlayingPanel;
-import io.github.dsheirer.eventbus.MyEventBus;
-import io.github.dsheirer.gui.playlist.ViewPlaylistRequest;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.map.MapPanel;
-import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
 import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.embed.swing.SwingNode;
+import javafx.scene.Scene;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.Node;
 import io.github.dsheirer.map.MapService;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
@@ -41,35 +39,16 @@ import io.github.dsheirer.settings.SettingsManager;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.ui.TunerViewPanel;
 import io.github.dsheirer.gui.recordings.AudioRecordingsPanel;
-import java.awt.Color;
-import java.awt.Dimension;
-import jiconfont.icons.font_awesome.FontAwesome;
-import jiconfont.swing.IconFontSwing;
-import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.Icon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import io.github.dsheirer.gui.help.HelpViewer;
-import javax.swing.JSplitPane;
-import javax.swing.JPanel;
-import javax.swing.JList;
-import javax.swing.ListSelectionModel;
-import javax.swing.JScrollPane;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.DefaultListModel;
-import java.awt.CardLayout;
-import java.awt.BorderLayout;
+import javax.swing.SwingUtilities;
+import java.util.HashMap;
+import java.util.Map;
 
-
-public class ControllerPanel extends JPanel
+public class ControllerPanel extends JFXPanel
 {
     private final static Logger mLog = LoggerFactory.getLogger(ControllerPanel.class);
-    private static final long serialVersionUID = 1L;
-    private int mSettingsTabIndex = -1;
 
     private AudioPanel mAudioPanel;
     private NowPlayingPanel mNowPlayingPanel;
@@ -77,11 +56,11 @@ public class ControllerPanel extends JPanel
     private TunerViewPanel mTunerManagerPanel;
     private AudioRecordingsPanel mAudioRecordingsPanel;
 
-    private JSplitPane mSplitPane;
-    private JPanel mCardPanel;
-    private CardLayout mCardLayout;
-    private JList<String> mSidebarList;
-    private javax.swing.JComponent mResourcePanel;
+    private BorderPane mRootPane;
+    private StackPane mCardPane;
+    private SwingNode mResourceNode;
+
+    private Map<String, Node> mViews = new HashMap<>();
 
     public ControllerPanel(PlaylistManager playlistManager, AudioPlaybackManager audioPlaybackManager,
                            IconModel iconModel, MapService mapService, SettingsManager settingsManager,
@@ -99,13 +78,6 @@ public class ControllerPanel extends JPanel
         init();
     }
 
-    /**
-     * Now playing panel.
-     */
-
-    /**
-     * Audio panel.
-     */
     public AudioPanel getAudioPanel()
     {
         return mAudioPanel;
@@ -116,45 +88,90 @@ public class ControllerPanel extends JPanel
         return mNowPlayingPanel;
     }
 
-
     private void init()
     {
-        setLayout(new BorderLayout());
+        Platform.runLater(() -> {
+            mRootPane = new BorderPane();
+            mCardPane = new StackPane();
+            mRootPane.setCenter(mCardPane);
 
-        mCardLayout = new CardLayout();
-        mCardPanel = new JPanel(mCardLayout);
-        
-        mCardPanel.add(mNowPlayingPanel, "now_playing");
-        mCardPanel.add(mMapPanel, "map");
-        mCardPanel.add(mTunerManagerPanel, "tuners");
-        mCardPanel.add(mAudioRecordingsPanel, "audio_recordings");
-        mCardPanel.add(new HelpViewer(), "help_viewer");
+            Scene scene = new Scene(mRootPane);
+            setScene(scene);
 
-        add(mCardPanel, BorderLayout.CENTER);
-        // AudioPanel moved to SDRTrunk.java
+            addView("now_playing", mNowPlayingPanel);
+            addView("map", mMapPanel);
+            addView("tuners", mTunerManagerPanel);
+            addView("audio_recordings", mAudioRecordingsPanel);
+
+            // HelpViewer is already a JFXPanel, so we can embed it as a Node directly?
+            // Actually, JFXPanel is a Swing component, so we must wrap it in a SwingNode anyway
+            // unless we refactor it completely to be a pure JavaFX Node.
+            // Since we made HelpViewer extend JFXPanel, it's a Component.
+            addJavaFXView("help_viewer", loadHelpViewer());
+        });
+    }
+
+
+    private javafx.scene.Node loadHelpViewer() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/fxml/HelpView.fxml"));
+            javafx.scene.Parent root = loader.load();
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                root.getStylesheets().add(cssUrl.toExternalForm());
+            }
+            return root;
+        } catch (java.io.IOException e) {
+            mLog.error("Error loading HelpView.fxml", e);
+            return new javafx.scene.layout.VBox();
+        }
+    }
+
+    public void addJavaFXView(String id, javafx.scene.Node view) {
+        Platform.runLater(() -> {
+            view.setVisible(false);
+            mCardPane.getChildren().add(view);
+            mViews.put(id, view);
+        });
     }
 
     public void addView(String id, java.awt.Component view) {
-        mCardPanel.add(view, id);
+        Platform.runLater(() -> {
+            SwingNode swingNode = new SwingNode();
+            SwingUtilities.invokeLater(() -> swingNode.setContent((javax.swing.JComponent) view));
+            swingNode.setVisible(false);
+            mCardPane.getChildren().add(swingNode);
+            mViews.put(id, swingNode);
+        });
     }
 
     public void showView(String id) {
-        mNowPlayingPanel.getManageWidgetsButton().setVisible("now_playing".equals(id));
-        mCardLayout.show(mCardPanel, id);
+        SwingUtilities.invokeLater(() -> mNowPlayingPanel.getManageWidgetsButton().setVisible("now_playing".equals(id)));
+
+        Platform.runLater(() -> {
+            for (Map.Entry<String, Node> entry : mViews.entrySet()) {
+                entry.getValue().setVisible(entry.getKey().equals(id));
+            }
+        });
     }
 
     public void setResourcePanel(javax.swing.JComponent resourcePanel) {
-        mResourcePanel = resourcePanel;
-        add(mResourcePanel, BorderLayout.SOUTH);
-        mResourcePanel.setVisible(false);
+        Platform.runLater(() -> {
+            if (mResourceNode == null) {
+                mResourceNode = new SwingNode();
+                mRootPane.setBottom(mResourceNode);
+            }
+            SwingUtilities.invokeLater(() -> mResourceNode.setContent(resourcePanel));
+            mResourceNode.setVisible(false);
+        });
     }
 
     public void setResourcePanelVisible(boolean visible) {
-        if (mResourcePanel != null) {
-            mResourcePanel.setVisible(visible);
-            revalidate();
-            repaint();
-        }
+        Platform.runLater(() -> {
+            if (mResourceNode != null) {
+                mResourceNode.setVisible(visible);
+            }
+        });
     }
 
 }
