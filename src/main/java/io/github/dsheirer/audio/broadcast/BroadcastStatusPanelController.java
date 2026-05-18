@@ -1,52 +1,55 @@
 package io.github.dsheirer.audio.broadcast;
 
-import io.github.dsheirer.gui.playlist.streaming.ViewStreamRequest;
-import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.preference.UserPreferences;
+import io.github.dsheirer.audio.broadcast.BroadcastState;
+import io.github.dsheirer.audio.broadcast.BroadcastServerType;
+import io.github.dsheirer.audio.broadcast.BroadcastConfiguration;
+import io.github.dsheirer.audio.broadcast.BroadcastEvent;
 import io.github.dsheirer.eventbus.MyEventBus;
+
+import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.scene.image.ImageView;
-import javafx.scene.image.Image;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.fxml.FXML;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
+
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javafx.application.Platform;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BroadcastStatusPanelController {
 
-    @FXML
-    private VBox mainContainer;
     @FXML
     private TableView<BroadcastModelRow> tableView;
 
     private BroadcastModel mBroadcastModel;
     private UserPreferences mUserPreferences;
     private String mPreferenceKey;
+
     private ObservableList<BroadcastModelRow> rowData = FXCollections.observableArrayList();
     private FilteredList<BroadcastModelRow> filteredData;
     private boolean hideDisabled = false;
 
-    public class BroadcastModelRow {
-        private String streamName;
+    public static class BroadcastModelRow {
+        private final String streamName;
+
         public BroadcastModelRow(String streamName) {
             this.streamName = streamName;
         }
-        public String getStreamName() { return streamName; }
 
-        // Find current dynamic row index in model
+        public String getStreamName() {
+            return streamName;
+        }
+
         public int getRowIndex(BroadcastModel model) {
             for (int i = 0; i < model.getRowCount(); i++) {
                 if (streamName.equals(model.getValueAt(i, BroadcastModel.COLUMN_STREAM_NAME))) {
@@ -237,7 +240,7 @@ public class BroadcastStatusPanelController {
                     String streamName = selectedRow.getStreamName();
                     BroadcastConfiguration config = mBroadcastModel.getBroadcastConfiguration(streamName);
                     if (config != null) {
-                        MyEventBus.getGlobalEventBus().post(new ViewStreamRequest(config));
+                        MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.gui.playlist.streaming.ViewStreamRequest(config));
                     }
                 }
             }

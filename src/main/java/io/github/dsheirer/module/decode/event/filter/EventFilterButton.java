@@ -91,10 +91,8 @@ public class EventFilterButton<T> extends JideButton
             editor.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             editor.setLayout(new MigLayout("", "[grow,fill]", "[grow,fill][][]"));
             FilterEditorPanel<T> panel = new FilterEditorPanel<T>(mFilterSet);
-            javafx.embed.swing.JFXPanel fxPanel = new javafx.embed.swing.JFXPanel();
-            javafx.application.Platform.runLater(() -> fxPanel.setScene(new javafx.scene.Scene(panel)));
-            JScrollPane scroller = new JScrollPane(fxPanel);
-            scroller.setViewportView(fxPanel);
+            JScrollPane scroller = new JScrollPane(panel);
+            scroller.setViewportView(panel);
             editor.add(scroller, "wrap");
             JButton close = new JButton("Close");
             close.setToolTipText("Close the filter editor");

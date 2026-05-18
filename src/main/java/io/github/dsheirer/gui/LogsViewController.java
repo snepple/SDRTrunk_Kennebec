@@ -282,23 +282,21 @@ public class LogsViewController {
                 return;
             }
 
-            // ⚡ Bolt: Extracted Pattern.compile and toLowerCase out of the predicate loop.
-            // Compiling the regex once per keypress instead of per item reduces filtering time by ~40%
-            Pattern compiledPattern = null;
+            Pattern searchPattern;
             try {
-                compiledPattern = Pattern.compile(newValue, Pattern.CASE_INSENSITIVE);
+                searchPattern = Pattern.compile(newValue, Pattern.CASE_INSENSITIVE);
             } catch (PatternSyntaxException e) {
-                // Ignore invalid regex patterns
+                searchPattern = null;
             }
-            final Pattern finalPattern = compiledPattern;
+
+            final Pattern pattern = searchPattern;
             final String lowerCaseFilter = newValue.toLowerCase();
 
             filteredData.setPredicate(logFile -> {
-                if (finalPattern != null) {
-                    if (finalPattern.matcher(logFile.getName()).find()) return true;
-                    if (logFile.getDate() != null && finalPattern.matcher(logFile.getDate().toString()).find()) return true;
+                if (pattern != null) {
+                    if (pattern.matcher(logFile.getName()).find()) return true;
+                    if (logFile.getDate() != null && pattern.matcher(logFile.getDate().toString()).find()) return true;
                 }
-
                 if (logFile.getName().toLowerCase().contains(lowerCaseFilter)) return true;
                 if (logFile.getDate() != null && logFile.getDate().toString().toLowerCase().contains(lowerCaseFilter)) return true;
                 return false;
@@ -408,6 +406,7 @@ public class LogsViewController {
                         webView.getEngine().loadContent("<html><body style='font-family: sans-serif;'>" + htmlResult + "</body></html>");
                         webView.setPrefSize(600, 400);
                         if (!alert.isShowing()) alert.show();
+                        alert.setHeaderText(null);
                         alert.getDialogPane().setContent(webView);
                         alert.getDialogPane().lookupButton(ButtonType.OK).setDisable(false);
                     } catch (Exception ex) {
@@ -442,6 +441,7 @@ public class LogsViewController {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
+            alert.setHeaderText(null);
             alert.setContentText(message);
             alert.showAndWait();
         });

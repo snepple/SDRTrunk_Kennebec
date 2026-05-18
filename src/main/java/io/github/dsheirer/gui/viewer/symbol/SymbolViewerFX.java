@@ -19,12 +19,15 @@
 
 package io.github.dsheirer.gui.viewer.symbol;
 
+import io.github.dsheirer.util.SwingUtils;
 import java.util.concurrent.CountDownLatch;
 import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.swing.JFrame;
 
 /**
  * Utility for viewing sync detection results
@@ -54,16 +57,48 @@ public class SymbolViewerFX implements ISymbolResultsListener
      */
     private void initUI()
     {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        final JFXPanel fxPanel = new JFXPanel();
         Platform.runLater(() -> {
             Platform.setImplicitExit(false);
             SymbolViewPanel viewer = new SymbolViewPanel();
             mListener = viewer;
             Scene scene = new Scene(viewer, 1400, 1000);
 
-            Stage stage = new Stage();
-            stage.setTitle("Symbol Results Viewer");
-            stage.setScene(scene);
-            stage.show();
+//            URL resource = getClass().getResource("/sdrtrunk_style.css");
+//
+//            if(resource != null)
+//            {
+//                scene.getStylesheets().add(resource.toExternalForm());
+//            }
+//            else
+//            {
+//                LOGGER.warn("Can't find stylesheet resource for sdrtrunk");
+//            }
+
+            fxPanel.setScene(scene);
+            fxPanel.setVisible(true);
+
+            JFrame frame = new JFrame();
+            frame.setTitle("Symbol Results Viewer");
+            frame.setContentPane(fxPanel);
+            frame.setSize(1400, 1400);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setLocationRelativeTo(null);
+            SwingUtils.run(() -> {
+                frame.setVisible(true);
+                latch.countDown();
+            });
         });
+
+        try
+        {
+            latch.await();
+        }
+        catch(InterruptedException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 }

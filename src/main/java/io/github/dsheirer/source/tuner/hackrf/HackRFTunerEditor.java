@@ -19,20 +19,13 @@
 package io.github.dsheirer.source.tuner.hackrf;
 
 import io.github.dsheirer.preference.UserPreferences;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import io.github.dsheirer.source.SourceException;
 import io.github.dsheirer.source.tuner.hackrf.HackRFTunerController.HackRFLNAGain;
 import io.github.dsheirer.source.tuner.hackrf.HackRFTunerController.HackRFSampleRate;
 import io.github.dsheirer.source.tuner.hackrf.HackRFTunerController.HackRFVGAGain;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
+import io.github.dsheirer.source.tuner.ui.TunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.SpinnerNumberModel;
@@ -48,7 +42,7 @@ import javax.usb.UsbException;
 /**
  * HackRF Tuner Editor
  */
-public class HackRFTunerEditor extends SwingTunerEditor<HackRFTuner,HackRFTunerConfiguration>
+public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfiguration>
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(HackRFTunerEditor.class);
@@ -179,13 +173,8 @@ public class HackRFTunerEditor extends SwingTunerEditor<HackRFTuner,HackRFTunerC
                     }
                     catch(UsbException e)
                     {
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("HackRF Tuner Controller"
+                        JOptionPane.showMessageDialog(HackRFTunerEditor.this, "HackRF Tuner Controller"
                                 + " - couldn't apply the VGA gain setting - " + e.getLocalizedMessage());
-            alert.showAndWait();
-        });
 
                         mLog.error("HackRF Tuner Controller - couldn't apply VGA gain setting", e);
                     }
@@ -221,13 +210,8 @@ public class HackRFTunerEditor extends SwingTunerEditor<HackRFTuner,HackRFTunerC
                     }
                     catch(UsbException e)
                     {
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("HackRF Tuner Controller"
+                        JOptionPane.showMessageDialog(HackRFTunerEditor.this, "HackRF Tuner Controller"
                                 + " - couldn't apply the LNA gain setting - " + e.getLocalizedMessage());
-            alert.showAndWait();
-        });
                         mLog.error("HackRF Tuner Controller - couldn't apply LNA gain setting - ", e);
                     }
                 }
@@ -257,12 +241,8 @@ public class HackRFTunerEditor extends SwingTunerEditor<HackRFTuner,HackRFTunerC
                     {
                         mLog.error("couldn't enable/disable amplifier", e);
 
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error changing amplifier setting");
-            alert.setContentText("Couldn't change amplifier setting");
-            alert.showAndWait();
-        });
+                        JOptionPane.showMessageDialog(HackRFTunerEditor.this, "Couldn't change amplifier setting",
+                                "Error changing amplifier setting", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             });
@@ -293,14 +273,9 @@ public class HackRFTunerEditor extends SwingTunerEditor<HackRFTuner,HackRFTunerC
                     }
                     catch(SourceException | UsbException e2)
                     {
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("HackRF Tuner Controller"
+                        JOptionPane.showMessageDialog(HackRFTunerEditor.this, "HackRF Tuner Controller"
                                 + " - couldn't apply the sample rate setting [" + sampleRate.getLabel() +
                                 "] " + e2.getLocalizedMessage());
-            alert.showAndWait();
-        });
 
                         mLog.error("HackRF Tuner Controller - couldn't apply sample rate setting [" +
                                 sampleRate.getLabel() + "]", e);

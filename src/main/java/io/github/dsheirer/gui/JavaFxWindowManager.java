@@ -137,18 +137,17 @@ public class JavaFxWindowManager extends Application
      * @param resourceMonitor for statistics
      * @return JFXPanel accessible on Swing thread that delegates JavaFX scene creation to the FX event thread.
      */
-    public javafx.scene.Node createStatusPanelFX(ResourceMonitor resourceMonitor) {
-        return new StatusBox(resourceMonitor);
-    }
+    public JFXPanel createStatusPanel(ResourceMonitor resourceMonitor)
+    {
+        JFXPanel panel = new JFXPanel();
+            panel.setPreferredSize(new java.awt.Dimension(0, 30));
 
-    public javafx.embed.swing.JFXPanel createStatusPanel(ResourceMonitor resourceMonitor) {
-        javafx.embed.swing.JFXPanel panel = new javafx.embed.swing.JFXPanel();
-        panel.setPreferredSize(new java.awt.Dimension(0, 30));
-        javafx.application.Platform.runLater(() -> {
-            javafx.scene.Scene scene = new javafx.scene.Scene(new StatusBox(resourceMonitor));
-            panel.setScene(scene);
-        });
-        return panel;
+            //JFXPanel has to be populated on the FX event thread
+            Platform.runLater(() -> {
+                Scene scene = new Scene(new StatusBox(resourceMonitor));
+                panel.setScene(scene);
+            });
+return panel;
     }
 
     private void setup()
@@ -553,38 +552,38 @@ public class JavaFxWindowManager extends Application
     }
 
 
-    private java.util.Map<ViewIdentifier, javafx.scene.Node> mViewMap = new java.util.HashMap<>();
+    private java.util.Map<ViewIdentifier, JFXPanel> mViewMap = new java.util.HashMap<>();
 
-    public javafx.scene.Node getView(ViewIdentifier viewIdentifier) {
+    public JFXPanel getView(ViewIdentifier viewIdentifier) {
         if (mViewMap.containsKey(viewIdentifier)) {
             return mViewMap.get(viewIdentifier);
         }
-        javafx.scene.layout.StackPane wrapper = new javafx.scene.layout.StackPane();
-        mViewMap.put(viewIdentifier, wrapper);
+        JFXPanel panel = new JFXPanel();
+        mViewMap.put(viewIdentifier, panel);
         Platform.runLater(() -> {
-            javafx.scene.Parent root = null;
+            Scene scene = null;
             switch(viewIdentifier) {
                 case PLAYLIST_EDITOR:
-                    root = getPlaylistEditor();
+                    scene = new Scene(getPlaylistEditor(), 1000, 750);
                     break;
                 case ICON_MANAGER:
-                    root = getIconManager();
+                    scene = new Scene(getIconManager(), 500, 500);
                     break;
                 case USER_PREFERENCES_EDITOR:
-                    root = getUserPreferencesEditor();
+                    scene = new Scene(getUserPreferencesEditor(), 900, 500);
                     break;
                 case LOGS:
-                    root = new LogsPanel(mUserPreferences);
+                    scene = new Scene(new LogsPanel(mUserPreferences), 1000, 750);
                     break;
                 case RECORDING_VIEWER:
-                    root = getRecordingViewer();
+                    scene = new Scene(getRecordingViewer(), 1100, 800);
                     break;
             }
-            if (root != null) {
-                wrapper.getChildren().add(root);
+            if (scene != null) {
+                panel.setScene(scene);
             }
         });
-        return wrapper;
+        return panel;
     }
 
 

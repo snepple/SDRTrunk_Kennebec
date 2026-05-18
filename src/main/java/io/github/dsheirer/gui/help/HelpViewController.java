@@ -63,7 +63,6 @@ public class HelpViewController {
         TreeItem<String> gettingStartedNode = new TreeItem<>("Getting Started");
         gettingStartedNode.getChildren().add(new TreeItem<>("Index"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Introduction"));
-        gettingStartedNode.getChildren().add(new TreeItem<>("Now Playing"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Overview"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Quickstart"));
         guidesNode.getChildren().add(gettingStartedNode);
@@ -84,7 +83,6 @@ public class HelpViewController {
 
         TreeItem<String> organizationPlaylistsNode = new TreeItem<>("Organization & Playlists");
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Aliases Talkgroups"));
-        organizationPlaylistsNode.getChildren().add(new TreeItem<>("Channels Aliases Streaming"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Playlist Editor"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Radio Reference"));
         guidesNode.getChildren().add(organizationPlaylistsNode);

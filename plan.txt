@@ -1,4 +1,0 @@
-1. Refactor DirectoryPreferenceEditor from HBox to VBox
-2. Replace GridPane layout with SettingsCard and SettingsRow pattern
-3. Add tooltips for accessibility
-4. Ensure HIG compliance (padding, etc.)

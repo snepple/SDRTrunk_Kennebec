@@ -18,7 +18,7 @@
  */
 package io.github.dsheirer.gui.channelizer;
 
-import io.github.dsheirer.sample.complex.ComplexSamplesNativeBufferAdapter;
+import io.github.dsheirer.buffer.FloatNativeBuffer;
 import io.github.dsheirer.buffer.INativeBuffer;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.sample.complex.ComplexSamples;
@@ -46,11 +46,7 @@ import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javafx.stage.Stage;
-import javafx.scene.Scene;
-import javafx.embed.swing.SwingNode;
-import javafx.scene.layout.BorderPane;
-import javafx.application.Platform;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -59,7 +55,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class ChannelizerViewer extends Stage
+public class ChannelizerViewer extends JFrame
 {
     private final static Logger mLog = LoggerFactory.getLogger(ChannelizerViewer.class);
 
@@ -97,17 +93,11 @@ public class ChannelizerViewer extends Stage
     private void init()
     {
         setTitle("Polyphase Channelizer Viewer");
-        setWidth(1200);
-        setHeight(800);
-        centerOnScreen();
-        setOnCloseRequest(e -> System.exit(0));
-
-        SwingNode swingNode = new SwingNode();
-        swingNode.setContent(getPrimaryPanel());
-        BorderPane root = new BorderPane();
-        root.setCenter(swingNode);
-        Scene scene = new Scene(root);
-        setScene(scene);
+        setSize(1200, 800);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
+        setLocationRelativeTo(null);
+        add(getPrimaryPanel());
     }
 
     private JPanel getPrimaryPanel()
@@ -376,8 +366,7 @@ public class ChannelizerViewer extends Stage
 
             if(mSource != null)
             {
-                // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
-                mSource.setListener(complexSamples -> mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples)));
+                mSource.setListener(complexSamples -> mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved())));
 
                 mSource.start();
             }
@@ -421,8 +410,7 @@ public class ChannelizerViewer extends Stage
         @Override
         public void receive(ComplexSamples complexSamples)
         {
-            // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
-            mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
+            mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
         }
 
         @Override
@@ -478,8 +466,7 @@ public class ChannelizerViewer extends Stage
                             mLog.debug("Samples:" + Arrays.toString(complexSamples.toInterleaved().samples()));
                         }
 
-                        // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
-                        mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
+                        mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
                     }
                 });
 
@@ -504,8 +491,7 @@ public class ChannelizerViewer extends Stage
         @Override
         public void receive(ComplexSamples complexSamples)
         {
-            // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
-            mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
+            mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
         }
 
         @Override
@@ -526,8 +512,14 @@ public class ChannelizerViewer extends Stage
 
             final ChannelizerViewer frame = new ChannelizerViewer(channelsPerRow);
 
-            Platform.startup(() -> {});
-            Platform.runLater(() -> frame.show());
+            EventQueue.invokeLater(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    frame.setVisible(true);
+                }
+            });
         }
         else
         {

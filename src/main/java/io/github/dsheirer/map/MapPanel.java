@@ -19,13 +19,6 @@
 package io.github.dsheirer.map;
 
 import io.github.dsheirer.alias.AliasModel;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.identifier.Form;
 import io.github.dsheirer.identifier.Identifier;
@@ -50,6 +43,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
@@ -63,7 +57,7 @@ import javax.swing.event.ChangeListener;
 /**
  * Swing map panel.
  */
-public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottableUpdateListener
+public class MapPanel extends JPanel implements IPlottableUpdateListener
 {
     private static final long serialVersionUID = 1L;
 
@@ -112,15 +106,7 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
 
     private void init()
     {
-
-        javax.swing.JPanel innerPanel = new javax.swing.JPanel(new BorderLayout());
-
-        javafx.application.Platform.runLater(() -> {
-            javafx.embed.swing.SwingNode mapNode = new javafx.embed.swing.SwingNode();
-            mapNode.setContent(innerPanel);
-            this.setCenter(mapNode);
-        });
-
+        setLayout(new BorderLayout());
         mMapService.addListener(this);
 
         // Sidebar (Master-Detail)
@@ -243,7 +229,7 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
         splitPane.setRightComponent(map);
         splitPane.setBorder(javax.swing.BorderFactory.createEmptyBorder());
 
-        innerPanel.add(splitPane, BorderLayout.CENTER);
+        add(splitPane, BorderLayout.CENTER);
 
         // Hide legacy UI components but keep them initialized for background state changes
         getFollowButton();
@@ -428,7 +414,7 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
             mClearMapButton.addActionListener(e ->
             {
                 mMapPainter.clearAllEntities();
-                // repaint(); not needed for JavaFX
+                repaint();
             });
         }
 
@@ -456,19 +442,10 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
         {
             mDeleteAllTracksButton = new JButton("Delete All");
             mDeleteAllTracksButton.addActionListener(e -> {
-                boolean confirmation = false;
-        try {
-            FutureTask<Boolean> task = new FutureTask<>(() -> {
-                Alert alert = new Alert(Alert.AlertType.WARNING, String.valueOf("Are you sure you want to delete all tracks?"), ButtonType.YES, ButtonType.NO);
-                alert.setTitle("Delete All Tracks");
-                return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
-            });
-            Platform.runLater(task);
-            confirmation = task.get();
-        } catch (InterruptedException | ExecutionException ex) {
-            // Ignore
-        };
-                if (confirmation) {
+                int confirmation = JOptionPane.showConfirmDialog(MapPanel.this,
+                        "Are you sure you want to delete all tracks?",
+                        "Delete All Tracks", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (confirmation == JOptionPane.YES_OPTION) {
                     mMapService.getPlottableEntityModel().deleteAllTracks();
                     mMapPainter.clearAllEntities();
                     //Clear followed entity
@@ -498,20 +475,10 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
                         ? "Are you sure you want to delete the selected track?"
                         : "Are you sure you want to delete the " + selectedIndices.length + " selected tracks?";
 
-                boolean confirmation = false;
-        try {
-            FutureTask<Boolean> task = new FutureTask<>(() -> {
-                Alert alert = new Alert(Alert.AlertType.WARNING, String.valueOf(message), ButtonType.YES, ButtonType.NO);
-                alert.setTitle("Delete Tracks");
-                return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
-            });
-            Platform.runLater(task);
-            confirmation = task.get();
-        } catch (InterruptedException | ExecutionException ex) {
-            // Ignore
-        };
+                int confirmation = JOptionPane.showConfirmDialog(MapPanel.this,
+                        message, "Delete Tracks", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
-                if (confirmation) {
+                if (confirmation == JOptionPane.YES_OPTION) {
                     List<PlottableEntityHistory> toDelete = new ArrayList<>();
 
                     for(int selectedIndex : selectedIndices)

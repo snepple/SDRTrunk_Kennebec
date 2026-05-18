@@ -100,11 +100,10 @@ public class FloatNativeBuffer extends AbstractNativeBuffer
                 throw new IllegalStateException("No more samples");
             }
 
-            int processLength = Math.min(BUFFER_SIZE * 2, mInterleavedComplexSamples.length - mBufferPointer);
-            ComplexSamples samples = SampleUtils.deinterleave(mInterleavedComplexSamples, mBufferPointer, BUFFER_SIZE * 2, getTimestamp());
-            mBufferPointer += processLength;
+            float[] chunk = Arrays.copyOfRange(mInterleavedComplexSamples, mBufferPointer, mBufferPointer + BUFFER_SIZE * 2);
+            mBufferPointer += BUFFER_SIZE * 2;
 
-            return samples;
+            return SampleUtils.deinterleave(chunk, getTimestamp());
         }
     }
 
@@ -126,10 +125,8 @@ public class FloatNativeBuffer extends AbstractNativeBuffer
                 throw new IllegalStateException("No more samples");
             }
 
-            int processLength = Math.min(BUFFER_SIZE * 2, mInterleavedComplexSamples.length - mBufferPointer);
-            // ⚡ Bolt: Use processLength instead of BUFFER_SIZE * 2 to avoid copying zero-padded arrays that corrupt downstream buffers
-            float[] chunk = Arrays.copyOfRange(mInterleavedComplexSamples, mBufferPointer, mBufferPointer + processLength);
-            mBufferPointer += processLength;
+            float[] chunk = Arrays.copyOfRange(mInterleavedComplexSamples, mBufferPointer, mBufferPointer + BUFFER_SIZE * 2);
+            mBufferPointer += BUFFER_SIZE * 2;
 
             return new InterleavedComplexSamples(chunk, getTimestamp());
         }

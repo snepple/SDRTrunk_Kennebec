@@ -20,17 +20,10 @@
 package io.github.dsheirer.source.tuner.airspy.hf;
 
 import io.github.dsheirer.preference.UserPreferences;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import io.github.dsheirer.source.SourceException;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
+import io.github.dsheirer.source.tuner.ui.TunerEditor;
 import java.io.IOException;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
@@ -38,16 +31,16 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
-import javax.swing.JButton;
 import javax.swing.SpinnerNumberModel;
 
 /**
  * Tuner editor for Airspy HF+/Discovery tuners
  */
-public class AirspyHfTunerEditor extends SwingTunerEditor<AirspyHfTuner,AirspyHfTunerConfiguration>
+public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTunerConfiguration>
 {
     private static final Logger mLog = LoggerFactory.getLogger(AirspyHfTunerEditor.class);
     private JComboBox<AirspyHfSampleRate> mSampleRateCombo;
@@ -108,7 +101,6 @@ public class AirspyHfTunerEditor extends SwingTunerEditor<AirspyHfTuner,AirspyHf
         buttonPanel.setLayout(new MigLayout("insets 0", "[left]", ""));
         buttonPanel.add(getAgcToggleButton());
         buttonPanel.add(getLnaToggleButton());
-        buttonPanel.add(createHelpIcon());
         add(new JLabel(" "));
         add(buttonPanel, "wrap");
 
@@ -247,13 +239,9 @@ public class AirspyHfTunerEditor extends SwingTunerEditor<AirspyHfTuner,AirspyHf
                         catch(SourceException se)
                         {
                             mLog.error("Error setting Airspy Hf Sample Rate [" + sampleRate + "]", se);
-                            Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("Airspy Tuner Controller - couldn't apply the sample rate setting [" +
+                            JOptionPane.showMessageDialog(AirspyHfTunerEditor.this,
+                                    "Airspy Tuner Controller - couldn't apply the sample rate setting [" +
                                             sampleRate + "] " + se.getLocalizedMessage());
-            alert.showAndWait();
-        });
                         }
                     }
                 }
@@ -285,13 +273,9 @@ public class AirspyHfTunerEditor extends SwingTunerEditor<AirspyHfTuner,AirspyHf
                     catch(IOException ioe)
                     {
                         mLog.error("Error setting Airspy Hf attenuation [" + selected + "]", ioe);
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("Airspy Tuner Controller - couldn't apply attenuation setting [" +
+                        JOptionPane.showMessageDialog(AirspyHfTunerEditor.this,
+                                "Airspy Tuner Controller - couldn't apply attenuation setting [" +
                                         selected + "] " + ioe.getLocalizedMessage());
-            alert.showAndWait();
-        });
                     }
                 }
             });
@@ -321,12 +305,8 @@ public class AirspyHfTunerEditor extends SwingTunerEditor<AirspyHfTuner,AirspyHf
                     catch(IOException ioe)
                     {
                         mLog.error("Error setting Airspy HF AGC", ioe);
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("Airspy HF Tuner Controller - couldn't change AGC setting" + ioe.getLocalizedMessage());
-            alert.showAndWait();
-        });
+                        JOptionPane.showMessageDialog(AirspyHfTunerEditor.this,
+                        "Airspy HF Tuner Controller - couldn't change AGC setting" + ioe.getLocalizedMessage());
                     }
                 }
             });
@@ -356,27 +336,13 @@ public class AirspyHfTunerEditor extends SwingTunerEditor<AirspyHfTuner,AirspyHf
                     catch(IOException ioe)
                     {
                         mLog.error("Error setting Airspy HF LNA", ioe);
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("Airspy HF Tuner Controller - couldn't change LNA setting" + ioe.getLocalizedMessage());
-            alert.showAndWait();
-        });
+                        JOptionPane.showMessageDialog(AirspyHfTunerEditor.this,
+                                "Airspy HF Tuner Controller - couldn't change LNA setting" + ioe.getLocalizedMessage());
                     }
                 }
             });
         }
 
         return mLnaToggleButton;
-    }
-
-    private JButton createHelpIcon() {
-        JButton button = new JButton("?");
-        button.setMargin(new java.awt.Insets(0, 2, 0, 2));
-        button.setFocusPainted(false);
-        button.setContentAreaFilled(false);
-        button.setOpaque(false);
-        button.setToolTipText("<html><b>LNA Gain:</b> Controls the input amplifier. <br>Higher values help pick up weak signals but may introduce noise.</html>");
-        return button;
     }
 }

@@ -6,9 +6,3 @@
 * **State References**: Because `Platform.runLater()` executes asynchronously, any Swing code immediately requesting references to the newly instantiated JavaFX components must handle `null` states correctly.
 * **Event Dispatching**: Callbacks triggered by JavaFX input events (like `SidebarViewController` mouse clicks) execute on the JavaFX thread. If these callbacks update Swing UI states (like changing cards in `ControllerPanel`), they must be dispatched back to the EDT using `SwingUtilities.invokeLater()`.
 * **SwingNodes in JavaFX**: Legacy Swing custom components (e.g., `DbPowerMeter`) can be effectively embedded within JavaFX `VBox` or `GridPane` layouts using the `SwingNode` component. Ensure `setContent()` runs on the EDT if required by the component, or allow FX thread handling if strictly supported.
-
-## 2026-05-09 - Migrated ChannelDetailPanel
-**Learning:**
-When migrating UI components to JavaFX, keep track of parent container layout mechanisms. Swing interfaces frequently utilize layout elements (like `JideTabbedPane`) that need to inter-op with new JavaFX components securely via `JFXPanel` wrappers to minimize widespread regressions.
-**Action:**
-Ensure all JavaFX root nodes that are being injected back into Swing are securely isolated through a `JFXPanel` specifically initialized within the JavaFX environment via `Platform.runLater()`.

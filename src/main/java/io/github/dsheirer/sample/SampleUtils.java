@@ -37,36 +37,16 @@ public class SampleUtils
 	 */
 	public static ComplexSamples deinterleave(float[] samples, long timestamp)
 	{
-		return deinterleave(samples, 0, samples.length, timestamp);
-	}
+		float[] i = new float[samples.length / 2];
+		float[] q = new float[samples.length / 2];
 
-	/**
-	 * Converts a slice of an interleaved complex sample array to a sample record with the
-	 * I and Q in separate arrays, avoiding intermediate array allocations.
-	 * If the requested length exceeds the available samples, the result arrays will be zero-padded to length / 2.
-	 * @param samples that are interleaved complex samples
-	 * @param offset starting offset in the samples array
-	 * @param length requested total length of elements to process (should be even)
-	 * @param timestamp of the samples
-	 * @return deinterleaved complex samples instance
-	 */
-	public static ComplexSamples deinterleave(float[] samples, int offset, int length, long timestamp)
-	{
-		// Arrays are initialized to zero, providing auto-padding if limit < length
-		float[] i = new float[length / 2];
-		float[] q = new float[length / 2];
+		int offset;
 
-		int safeLength = Math.min(length, samples.length - offset);
-		safeLength = safeLength - (safeLength % 2); // Ensure even number of elements to process
-
-		int limit = offset + safeLength;
-		int idx = 0;
-
-		for(int x = offset; x < limit; x += 2)
+		for(int x = 0; x < i.length; x++)
 		{
-			i[idx] = samples[x];
-			q[idx] = samples[x + 1];
-			idx++;
+			offset = 2 * x;
+			i[x] = samples[offset];
+			q[x] = samples[offset + 1];
 		}
 
 		return new ComplexSamples(i, q, timestamp);
