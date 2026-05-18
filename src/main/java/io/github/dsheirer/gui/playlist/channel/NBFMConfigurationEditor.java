@@ -203,7 +203,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             gridPane.setHgap(10);
             gridPane.setVgap(10);
 
-            Label bandwidthLabel = new Label("Channel Bandwidth");
+            Label bandwidthLabel = new Label("Channel Bandwidth", createHelpIcon("Width of the radio frequency spectrum to be decoded."));
             GridPane.setHalignment(bandwidthLabel, HPos.RIGHT);
             GridPane.setConstraints(bandwidthLabel, 0, 0);
             gridPane.getChildren().add(bandwidthLabel);
@@ -211,7 +211,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getBandwidthButton(), 1, 0);
             gridPane.getChildren().add(getBandwidthButton());
 
-            Label talkgroupLabel = new Label("Talkgroup To Assign");
+            Label talkgroupLabel = new Label("Talkgroup To Assign", createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."));
             GridPane.setHalignment(talkgroupLabel, HPos.RIGHT);
             GridPane.setConstraints(talkgroupLabel, 0, 1);
             gridPane.getChildren().add(talkgroupLabel);

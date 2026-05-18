@@ -67,6 +67,11 @@ public class EsnEditor extends IdentifierEditor<Esn>
     public void setItem(Esn item)
     {
         super.setItem(item);
+        if(item != null) {
+            getEsnField().setText(item.getEsn());
+        } else {
+            getEsnField().setText("");
+        }
         modifiedProperty().set(false);
     }
 
@@ -87,10 +92,13 @@ public class EsnEditor extends IdentifierEditor<Esn>
         if(mEsnField == null)
         {
             mEsnField = new TextField();
+            mEsnField.setTooltip(new Tooltip("Enter the Electronic Serial Number (ESN)"));
             mEsnField.textProperty()
                 .addListener((observable, oldValue, newValue) -> {
-                    getItem().setEsn(getEsnField().getText());
-                    modifiedProperty().set(true);
+                    if(getItem() != null) {
+                        getItem().setEsn(getEsnField().getText());
+                        modifiedProperty().set(true);
+                    }
                 });
         }
 

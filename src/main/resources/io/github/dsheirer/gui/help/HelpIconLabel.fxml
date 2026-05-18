@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+import javafx.geometry.Pos?>
+import javafx.scene.control.Label?>
+import javafx.scene.control.Tooltip?>
+import javafx.scene.layout.StackPane?>
+import javafx.scene.paint.Color?>
+import javafx.scene.shape.SVGPath?>
+
+<StackPane style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="io.github.dsheirer.gui.help.HelpIconLabelController">
+    <Label fx:id="fxLabel" alignment="CENTER">
+        <graphic>
+            <SVGPath content="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="GRAY" scaleX="0.7" scaleY="0.7"/>
+        </graphic>
+        <tooltip>
+            <Tooltip fx:id="fxTooltip" maxWidth="300" wrapText="true"/>
+        </tooltip>
+    </Label>
+</StackPane>

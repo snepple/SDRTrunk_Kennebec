@@ -27,3 +27,6 @@
 - Ignore Data Calls: Skips processing data packets, focusing only on voice traffic.
 - Ignore Unaliased TGs: Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list.
 - Talkgroup To Assign: Forces all decoded audio from this channel to use a specific talkgroup ID.
+## 2024-05-14 - LNA Gain
+**Simplified:**
+- The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.

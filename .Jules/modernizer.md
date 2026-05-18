@@ -4,3 +4,6 @@
 ## $(date +%Y-%m-%d) - Modernize Standalone Frames and Dialogs
 **Learning:** Legacy UI integration heavily relied on `javax.swing.JOptionPane` for popups and `javax.swing.JFrame` for standalone windows.
 **Action:** Migrated `FilterEditor`, `SpectrumFrame`, `ChannelizerViewer`, `ChannelizerViewer2`, `HeterodyneChannelizerViewer`, and `SynthesizerViewer` to extend JavaFX `Stage` and use native `Scene` and `VBox` layouts. Systematically replaced all `JOptionPane` instances with `javafx.scene.control.Alert` and `TextInputDialog`, ensuring thread-safety by wrapping executions in `Platform.runLater()`.
+## 2026-05-17 - Migrated BroadcastStatusPanel and AudioChannelsPanel
+**Finding:** BroadcastStatusPanel and AudioChannelsPanel were using legacy Swing JTables and JPanels.
+**Action:** Created JavaFX VBox and HBox equivalents using FXML, wrapped them in JFXPanels, and updated controllers to use JavaFX properties and observable lists, decoupling Swing implementations.

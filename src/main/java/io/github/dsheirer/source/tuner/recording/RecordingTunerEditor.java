@@ -101,8 +101,8 @@ public class RecordingTunerEditor extends TunerEditor<RecordingTuner,RecordingTu
 
     private void init()
     {
-        // HIG inspired layout: more whitespace (insets), more gap between logical groups
-        setLayout(new MigLayout("fill,wrap 2, insets 20 20 20 20, gapy 12", "[right, 100!][grow,fill]",
+        // HIG inspired layout: standardized 8pt grid with gaps
+        setLayout(new MigLayout("fill,wrap 2, insets 16 16 16 16, gapy 8", "[right, 100!][grow,fill]",
             "[][][][][24!][][grow]"));
 
         add(new JLabel("Tuner:"));
@@ -122,7 +122,6 @@ public class RecordingTunerEditor extends TunerEditor<RecordingTuner,RecordingTu
         add(new JLabel("Frequency (MHz):"));
         add(getFrequencyPanel(), "wrap");
     }
-
     private JLabel getRecordingPath()
     {
         if(mRecordingPath == null)
