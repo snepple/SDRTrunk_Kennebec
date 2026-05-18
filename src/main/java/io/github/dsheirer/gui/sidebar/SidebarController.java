@@ -39,6 +39,7 @@ public class SidebarController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         root.setPrefWidth(250);
+        toggleBtn.setTooltip(new Tooltip("Collapse Sidebar"));
 
         // Define items (mimicking the original Swing setup)
         items.add(new SidebarItemModel("Now Playing", "M8 5v14l11-7z", "now_playing", true)); // Play icon
@@ -68,6 +69,7 @@ public class SidebarController implements Initializable {
     private void handleToggle() {
         collapsed = !collapsed;
         root.setPrefWidth(collapsed ? 60 : 250);
+        toggleBtn.getTooltip().setText(collapsed ? "Expand Sidebar" : "Collapse Sidebar");
         render();
     }
 

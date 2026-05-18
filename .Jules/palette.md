@@ -62,7 +62,7 @@ Action: To support FlatLaf dynamic themes, update icons dynamically using `UIMan
 ## 2026-05-11 - Squelch Auto Track Mnemonic and Tooltip Formatting
 Learning: JCheckBox configurations inside control panels (like SignalPowerView) are prime candidates for keyboard mnemonics (e.g., `Alt+A`) and require clear, HTML-wrapped tooltips and AccessibleContext settings to align with HIG accessibility guidelines.
 Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, structure long tooltips with `<html>` tags for wrapping, and always apply descriptive `AccessibleContext` names/descriptions.
-## $(date +%Y-%m-%d) - [Settings Format Standardization]
+## 2026-05-18 - [Settings Format Standardization]
 **Learning:** [Apple HIG states preferences should be grouped in bordered card views with separators. The original manual VBox/HBox combinations broke layout consistency.]
 **Action:** [Migrated Application Preference Editor to use standard SettingsCard and SettingsRow containers.]
 ## 2024-05-21 - Adding Tooltips to Preference Form Buttons
@@ -75,7 +75,7 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-05-13 - P25P2Viewer Context
 **Learning:** Jargon-heavy configuration fields like WACN, System, and NAC can be confusing for users without context, leading to increased cognitive load and configuration errors.
 **Action:** Adding HIG-compliant tooltips via info circle icons to these configuration labels provides immediate, deferential feedback and clarity, improving the user experience without cluttering the interface.
-## $(date +%Y-%m-%d) - Adding Tooltips to JMBE Action Buttons
+## 2026-05-18 - Adding Tooltips to JMBE Action Buttons
 **Learning:** Action buttons in configuration panels (like `JmbeLibraryPreferenceEditor.java`) that lack textual context or explanation for their underlying complex behaviors (e.g., checking for updates, file selection, removing a library) cause user friction and fail accessibility checks.
 **Action:** Always verify if action buttons in JavaFX preference editors lack tooltips and add descriptive `Tooltip` objects explaining their specific functionality (e.g., "Select an existing JMBE audio library file from your system.") to improve context and accessibility.
 ## 2024-05-23 - Adding Tooltips to Audio Test Buttons
@@ -98,3 +98,9 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-17 - HIG Compliant Tooltips for Editors
 **Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
 **Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
+## 2024-05-19 - Add dynamic tooltip to icon-only sidebar toggle button
+**Learning:** Icon-only buttons lack inherent accessibility and clear meaning for users. In JavaFX, `Tooltip` provides this context but needs to be dynamically updated when the button triggers a state change (like expanding/collapsing a sidebar).
+**Action:** Always verify that icon-only buttons have a clear, dynamic tooltip if they control state. Use `.setTooltip()` to initialize, and `.getTooltip().setText()` to dynamically change the tooltip text based on state.
+## 2026-05-18 - HIG Modernization of Tuner Preferences
+**Learning:** Legacy UI preferences often use `GridPane` and manual padding which doesn't align with the Apple Human Interface Guidelines (HIG). Upgrading to custom HIG-compliant `SettingsCard` and `SettingsRow` requires changing the root container from `HBox` or `GridPane` to `VBox` to properly stack cards. Furthermore, adding informational tooltips using `createHelpIcon` to preference labels instead of directly on input fields in editors enhances clarity and aesthetic integrity.
+**Action:** Migrated Tuner Preference Editor to use standard `SettingsCard` and `SettingsRow` containers inside a `VBox` root instead of a `GridPane` inside an `HBox`.

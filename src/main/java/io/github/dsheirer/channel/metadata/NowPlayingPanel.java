@@ -228,49 +228,52 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         mChannelMetadataPanel.addProcessingChainSelectionListener(this);
 
         mWidgetContainer = new WidgetContainer(mNowPlayingPreference);
-        mScrollPane = new JScrollPane(mWidgetContainer);
-        mScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        mScrollPane.setBorder(null);
-        mScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        mScrollPane.addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                mWidgetContainer.revalidate();
-            }
+        javafx.embed.swing.JFXPanel jfxPanel = new javafx.embed.swing.JFXPanel();
+
+        javafx.application.Platform.runLater(() -> {
+            javafx.scene.control.ScrollPane scrollPane = new javafx.scene.control.ScrollPane(mWidgetContainer);
+            scrollPane.setFitToWidth(true);
+            scrollPane.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
+            scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
+            javafx.scene.Scene scene = new javafx.scene.Scene(scrollPane);
+            jfxPanel.setScene(scene);
         });
-        add(mScrollPane, "grow, wrap, w 100%");
+
+        add(jfxPanel, "grow, wrap, w 100%, h 100%");
     }
 
     private void setupWidgets() {
-        mWidgetContainer.removeAll();
+        javafx.application.Platform.runLater(() -> {
+            mWidgetContainer.removeAll();
 
-        if (mSpectralPanel != null) {
-            Widget spectrumWidget = new Widget("spectrum", "Spectrum/Waterfall", mSpectralPanel, mWidgetContainer, 150);
-            mWidgetContainer.addWidget(spectrumWidget, false);
-        }
+            if (mSpectralPanel != null) {
+                Widget spectrumWidget = new Widget("spectrum", "Spectrum/Waterfall", mSpectralPanel, mWidgetContainer, 150);
+                mWidgetContainer.addWidget(spectrumWidget, false);
+            }
 
-        if (mChannelMetadataPanel != null) {
-            Widget channelTableWidget = new Widget("channel_table", "Channel Table", mChannelMetadataPanel, mWidgetContainer, 150);
-            mWidgetContainer.addWidget(channelTableWidget, false);
-        }
+            if (mChannelMetadataPanel != null) {
+                Widget channelTableWidget = new Widget("channel_table", "Channel Table", mChannelMetadataPanel, mWidgetContainer, 150);
+                mWidgetContainer.addWidget(channelTableWidget, false);
+            }
 
-        if (getTabbedPane() != null) {
-            Widget detailsWidget = new Widget("details", "Channel Details", getTabbedPane(), mWidgetContainer, 200);
-            mWidgetContainer.addWidget(detailsWidget, false);
-        }
+            if (getTabbedPane() != null) {
+                Widget detailsWidget = new Widget("details", "Channel Details", getTabbedPane(), mWidgetContainer, 200);
+                mWidgetContainer.addWidget(detailsWidget, false);
+            }
 
-        if (mBroadcastStatusPanel != null) {
-            Widget streamingWidget = new Widget("streaming", "Streaming Status", mBroadcastStatusPanel, mWidgetContainer, 70);
-            mWidgetContainer.addWidget(streamingWidget, false);
-        }
+            if (mBroadcastStatusPanel != null) {
+                Widget streamingWidget = new Widget("streaming", "Streaming Status", mBroadcastStatusPanel, mWidgetContainer, 70);
+                mWidgetContainer.addWidget(streamingWidget, false);
+            }
 
-        if (mResourceStatusPanel != null) {
-            Widget resourceWidget = new Widget("resource", "Resource Status", mResourceStatusPanel, mWidgetContainer, 30);
-            resourceWidget.setMinimizeButtonVisible(false);
-            mWidgetContainer.addWidget(resourceWidget, true); // Pinned to bottom
-        }
+            if (mResourceStatusPanel != null) {
+                Widget resourceWidget = new Widget("resource", "Resource Status", mResourceStatusPanel, mWidgetContainer, 30);
+                resourceWidget.setMinimizeButtonVisible(false);
+                mWidgetContainer.addWidget(resourceWidget, true); // Pinned to bottom
+            }
 
-        mWidgetContainer.layoutWidgets("resource");
+            mWidgetContainer.layoutWidgets("resource");
+        });
     }
 
     private void showManageWidgetsPopup(JButton source) {
