@@ -44,6 +44,9 @@ import io.github.dsheirer.controller.channel.Channel;
 import io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javafx.scene.paint.Color;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 
 /**
  * Editor for talkgroup alias identifiers
@@ -79,7 +82,7 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
         GridPane.setConstraints(getProtocolLabel(), 0, 0);
         gridPane.getChildren().add(getProtocolLabel());
 
-        Label valueLabel = new Label("Talkgroup");
+        Label valueLabel = new Label("Talkgroup", createHelpIcon("The unique identifier assigned to a specific group of users."));
         GridPane.setHalignment(valueLabel, HPos.RIGHT);
         GridPane.setConstraints(valueLabel, 1, 0);
         gridPane.getChildren().add(valueLabel);
@@ -357,5 +360,17 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
         {
             return mTooltip;
         }
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }
