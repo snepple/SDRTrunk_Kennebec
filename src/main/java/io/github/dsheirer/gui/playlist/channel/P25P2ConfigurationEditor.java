@@ -152,7 +152,7 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(ignoreUnaliasedLabel, 5, row);
             gridPane.getChildren().add(ignoreUnaliasedLabel);
 
-            Label wacnLabel = new Label("WACN", createHelpIcon("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."));
+            Label wacnLabel = new Label("WACN", createHelpIcon("A unique code identifying a large regional radio system. This is usually provided by RadioReference and tells the software which network to follow."));
             GridPane.setHalignment(wacnLabel, HPos.RIGHT);
             GridPane.setConstraints(wacnLabel, 0, ++row);
             gridPane.getChildren().add(wacnLabel);
