@@ -124,7 +124,7 @@ public class HistoryManagementPanel<T> extends JFXPanel
     }
 
     private void handleFilterClick() {
-        SwingUtilities.invokeLater(() -> javafx.application.Platform.runLater(() -> getFilterEditor().show()));
+        SwingUtilities.invokeLater(() -> getFilterEditor().setVisible(true));
     }
 
     private void handleClearClick() {

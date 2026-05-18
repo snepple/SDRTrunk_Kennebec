@@ -1,182 +1,195 @@
+/*
+ * *****************************************************************************
+ * Copyright (C) 2014-2024 Dennis Sheirer
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * ****************************************************************************
+ */
+
 package io.github.dsheirer.gui.control;
 
-import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.scene.control.TextFormatter;
-import javafx.scene.control.Tooltip;
-import javafx.scene.layout.StackPane;
+import java.awt.EventQueue;
+import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.Dimension;
-import java.awt.event.FocusListener;
-import java.util.concurrent.CountDownLatch;
-import java.util.function.UnaryOperator;
+import javax.swing.JFrame;
+import javax.swing.JTextField;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.DocumentFilter;
+import javax.swing.text.PlainDocument;
 
-public class FrequencyTextField extends JFXPanel {
+/**
+ * Swing text field control for entering frequency (MHz) values.
+ */
+public class FrequencyTextField extends JTextField
+{
     private static final Logger LOGGER = LoggerFactory.getLogger(FrequencyTextField.class);
+    //Value range: 0.000001 to 9999.999999
     private static final String REGEX = "^[0-9]{0,4}[.]?[0-9]{0,6}$";
+    //This lets users start typing a really small number like 1 Hertz ... 0.00000
     private static final String ZEROS_REGEX = "^0?([.]0{0,5})?$";
     private double mMinimum;
     private double mMaximum;
 
-    private FrequencyTextFieldController controller;
-
-    public FrequencyTextField(long minimum, long maximum, long current) {
+    /**
+     * Constructs an instance
+     *
+     * @param minimum allowable frequency value in Hertz
+     * @param maximum allowable frequency value in Hertz
+     * @param current frequency value in Hertz
+     */
+    public FrequencyTextField(long minimum, long maximum, long current)
+    {
+        super(6);
         mMinimum = minimum / 1E6d;
         mMaximum = maximum / 1E6d;
 
-        setPreferredSize(new Dimension(80, 26));
-
-        Platform.runLater(() -> {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/io/github/dsheirer/gui/control/FrequencyTextField.fxml"));
-                StackPane root = loader.load();
-                controller = loader.getController();
-
-                UnaryOperator<TextFormatter.Change> filter = change -> {
-                    String newText = change.getControlNewText();
-                    if (isValid(newText)) {
-                        return change;
-                    }
-                    return null;
-                };
-
-                controller.setupFilter(filter);
-
-                double frequencyMHz = current / 1E6d;
-                if (isValid(String.valueOf(frequencyMHz))) {
-                    controller.fxTextField.setText(String.valueOf(frequencyMHz));
-                }
-
-                controller.fxTextField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
-                    if (!isNowFocused) {
-                        java.awt.event.FocusEvent event = new java.awt.event.FocusEvent(this, java.awt.event.FocusEvent.FOCUS_LOST);
-                        for (FocusListener listener : getFocusListeners()) {
-                            listener.focusLost(event);
-                        }
-                    } else {
-                        java.awt.event.FocusEvent event = new java.awt.event.FocusEvent(this, java.awt.event.FocusEvent.FOCUS_GAINED);
-                        for (FocusListener listener : getFocusListeners()) {
-                            listener.focusGained(event);
-                        }
-                    }
-                });
-
-                Scene scene = new Scene(root);
-                setScene(scene);
-            } catch (Exception e) {
-                LOGGER.error("Failed to load FrequencyTextField FXML", e);
-            }
-        });
+        PlainDocument document = (PlainDocument)this.getDocument();
+        document.setDocumentFilter(new FrequencyFilter());
+        setFrequency(current);
     }
 
-    public long getFrequency() {
-        if (controller == null || controller.fxTextField == null) return 0;
+    /**
+     * Current frequency value
+     * @return frequency in Hertz
+     */
+    public long getFrequency()
+    {
+        String value = getText();
 
-        final String[] valueHolder = new String[1];
-        if (Platform.isFxApplicationThread()) {
-            valueHolder[0] = controller.fxTextField.getText();
-        } else {
-            CountDownLatch latch = new CountDownLatch(1);
-            Platform.runLater(() -> {
-                valueHolder[0] = controller.fxTextField.getText();
-                latch.countDown();
-            });
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return 0;
-            }
-        }
-
-        String value = valueHolder[0];
-        if (value == null || value.isEmpty()) {
+        if(value == null || value.isEmpty())
+        {
             return 0;
         }
 
-        try {
-            return (long)(Double.parseDouble(value) * 1E6d);
-        } catch (Exception e) {
+        try
+        {
+            return (long)(Double.parseDouble(getText()) * 1E6d);
+        }
+        catch(Exception e)
+        {
             LOGGER.error("Unable to parse frequency value from text [" + value + "] " + e.getLocalizedMessage());
         }
 
         return 0;
     }
 
-    public void setFrequency(long frequency) {
+    /**
+     * Sets the current frequency value
+     * @param frequency in Hertz
+     */
+    public void setFrequency(long frequency)
+    {
         double frequencyMHz = frequency / 1E6d;
 
-        if (isValid(String.valueOf(frequencyMHz))) {
-            Platform.runLater(() -> {
-                if (controller != null && controller.fxTextField != null) {
-                    controller.fxTextField.setText(String.valueOf(frequencyMHz));
-                }
-            });
-        } else {
+        if(isValid(String.valueOf(frequencyMHz)))
+        {
+            setText(String.valueOf(frequencyMHz));
+        }
+        else
+        {
             LOGGER.warn("Can't set frequency [" + frequency + "Hz / " + frequencyMHz + "MHz] with current minimum [" + mMinimum + "MHz] and maximum [" + mMaximum + "MHz] limits");
         }
     }
 
-    @Override
-    public void setToolTipText(String text) {
-        super.setToolTipText(text);
-        Platform.runLater(() -> {
-            if (controller != null && controller.fxTextField != null) {
-                controller.fxTextField.setTooltip(new Tooltip(text));
-            }
-        });
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        super.setEnabled(enabled);
-        Platform.runLater(() -> {
-            if (controller != null && controller.fxTextField != null) {
-                controller.fxTextField.setDisable(!enabled);
-            }
-        });
-    }
-
-    public String getText() {
-        if (controller == null || controller.fxTextField == null) return "";
-
-        final String[] valueHolder = new String[1];
-        if (Platform.isFxApplicationThread()) {
-            valueHolder[0] = controller.fxTextField.getText();
-        } else {
-            CountDownLatch latch = new CountDownLatch(1);
-            Platform.runLater(() -> {
-                valueHolder[0] = controller.fxTextField.getText();
-                latch.countDown();
-            });
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return "";
-            }
-        }
-        return valueHolder[0] != null ? valueHolder[0] : "";
-    }
-
-    private boolean isValid(String value) {
-        if (value == null || value.isEmpty() || value.matches(ZEROS_REGEX)) {
+    /**
+     * Indicates if the value is a valid double value that is between the minimum and maximum extents.
+     * @param value to test
+     * @return true if it is valid.
+     */
+    private boolean isValid(String value)
+    {
+        if(value == null || value.isEmpty() || value.matches(ZEROS_REGEX))
+        {
             return true;
         }
 
-        if (value.matches(REGEX)) {
-            try {
+        if(value.matches(REGEX))
+        {
+            try
+            {
                 double frequency = Double.parseDouble(value);
                 return mMinimum <= frequency && frequency <= mMaximum;
-            } catch (NumberFormatException e) {
+            }
+            catch(NumberFormatException e)
+            {
                 return false;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Input filter for user entered values.
+     */
+    class FrequencyFilter extends DocumentFilter
+    {
+        @Override
+        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException
+        {
+            Document doc = fb.getDocument();
+            StringBuilder sb = new StringBuilder();
+            sb.append(doc.getText(0, doc.getLength()));
+            sb.insert(offset, string);
+
+            if(isValid(sb.toString()))
+            {
+                super.insertString(fb, offset, string, attr);
+            }
+        }
+
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException
+        {
+            Document doc = fb.getDocument();
+            StringBuilder sb = new StringBuilder();
+            sb.append(doc.getText(0, doc.getLength()));
+            sb.replace(offset, offset + length, text);
+
+            if(isValid(sb.toString()))
+            {
+                super.replace(fb, offset, length, text, attrs);
+            }
+        }
+
+        @Override
+        public void remove(FilterBypass fb, int offset, int length) throws BadLocationException
+        {
+            Document doc = fb.getDocument();
+            StringBuilder sb = new StringBuilder();
+            sb.append(doc.getText(0, doc.getLength()));
+            sb.delete(offset, offset + length);
+
+            if(isValid(sb.toString()))
+            {
+                super.remove(fb, offset, length);
+            }
+        }
+    }
+
+    public static void main(String[] args)
+    {
+        JFrame frame = new JFrame("Frequency Control Test");
+        frame.setSize(300, 200);
+        FrequencyTextField ftf = new FrequencyTextField(1, 9_999_999_999l, 101_100_000);
+        frame.setLayout(new MigLayout());
+        frame.add(ftf);
+
+        EventQueue.invokeLater(() -> frame.setVisible(true));
     }
 }

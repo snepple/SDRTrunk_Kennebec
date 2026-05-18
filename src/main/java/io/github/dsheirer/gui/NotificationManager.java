@@ -4,11 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
 import java.awt.*;
 
 public class NotificationManager {
@@ -49,20 +44,14 @@ public class NotificationManager {
             trayIcon.displayMessage(title, message, messageType);
         } else {
             // Fallback to legacy Swing popup
-            Alert.AlertType alertType = Alert.AlertType.INFORMATION;
+            int jOptionType = JOptionPane.INFORMATION_MESSAGE;
             if (messageType == TrayIcon.MessageType.ERROR) {
-                alertType = Alert.AlertType.ERROR;
+                jOptionType = JOptionPane.ERROR_MESSAGE;
             } else if (messageType == TrayIcon.MessageType.WARNING) {
-                alertType = Alert.AlertType.WARNING;
+                jOptionType = JOptionPane.WARNING_MESSAGE;
             }
 
-            final Alert.AlertType finalAlertType = alertType;
-            Platform.runLater(() -> {
-                Alert alert = new Alert(finalAlertType);
-                alert.setTitle(title);
-                alert.setContentText(message);
-                alert.showAndWait();
-            });
+            JOptionPane.showMessageDialog(null, message, title, jOptionType);
         }
     }
 }

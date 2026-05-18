@@ -19,11 +19,6 @@
 package io.github.dsheirer.gui.editor;
 
 import javax.swing.*;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
 
 /**
  * Generic editor with change detection, save and reset functions.
@@ -90,11 +85,14 @@ public abstract class Editor<T> extends JPanel
     {
         if(isModified())
         {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "This item has changed.  Do you want to save these changes?", ButtonType.YES, ButtonType.NO);
-            alert.setTitle("Save Changes?");
-            Optional<ButtonType> option = alert.showAndWait();
+            int option = JOptionPane.showConfirmDialog(
+                Editor.this,
+                "This item has changed.  Do you want to save these changes?",
+                "Save Changes?",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
 
-            if(option.isPresent() && option.get() == ButtonType.YES)
+            if(option == JOptionPane.YES_OPTION)
             {
                 saveRequest();
             }

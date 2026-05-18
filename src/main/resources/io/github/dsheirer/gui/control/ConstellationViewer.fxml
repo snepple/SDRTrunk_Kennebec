@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-import javafx.scene.canvas.Canvas?>
-import javafx.scene.layout.StackPane?>
-
-<StackPane style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="io.github.dsheirer.gui.control.ConstellationViewerController" fx:id="rootPane">
-    <Canvas fx:id="fxCanvas" width="200" height="200"/>
-</StackPane>

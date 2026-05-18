@@ -22,49 +22,78 @@ import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.settings.SettingsManager;
 import io.github.dsheirer.source.tuner.Tuner;
 import io.github.dsheirer.source.tuner.ui.DiscoveredTunerModel;
+import net.miginfocom.swing.MigLayout;
 
-import javafx.application.Platform;
-import javafx.embed.swing.SwingNode;
-import javafx.scene.Scene;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
+import javax.swing.JFrame;
+import java.awt.EventQueue;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
-import javax.swing.SwingUtilities;
-
-public class SpectrumFrame extends Stage
+public class SpectrumFrame extends JFrame implements WindowListener
 {
+    private static final long serialVersionUID = 1L;
+
     private SpectralDisplayPanel mSpectralDisplayPanel;
 
     public SpectrumFrame(PlaylistManager playlistManager, SettingsManager settingsManager,
                          DiscoveredTunerModel discoveredTunerModel, Tuner tuner)
     {
         setTitle("SDRTRunk [" + tuner.getPreferredName() + "]");
-        setWidth(1280);
-        setHeight(600);
-        setX(100);
-        setY(100);
+        setBounds(100, 100, 1280, 600);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        setLayout(new MigLayout("insets 0 0 0 0", "[grow]", "[grow]"));
 
         mSpectralDisplayPanel = new SpectralDisplayPanel(playlistManager, settingsManager, discoveredTunerModel);
+
         mSpectralDisplayPanel.showTuner(tuner);
+        add(mSpectralDisplayPanel, "grow");
 
-        SwingNode swingNode = new SwingNode();
-        SwingUtilities.invokeLater(() -> {
-            swingNode.setContent(mSpectralDisplayPanel);
+        /* Register a shutdown listener */
+        this.addWindowListener(this);
+
+        EventQueue.invokeLater(new Runnable()
+        {
+            public void run()
+            {
+                setVisible(true);
+            }
         });
+    }
 
-        VBox vbox = new VBox(swingNode);
-        VBox.setVgrow(swingNode, Priority.ALWAYS);
+    @Override
+    public void windowClosed(WindowEvent arg0)
+    {
+        mSpectralDisplayPanel.dispose();
+    }
 
-        Scene scene = new Scene(vbox);
-        setScene(scene);
+    @Override
+    public void windowActivated(WindowEvent arg0)
+    {
+    }
 
-        setOnCloseRequest(event -> {
-            mSpectralDisplayPanel.dispose();
-        });
+    @Override
+    public void windowClosing(WindowEvent arg0)
+    {
+    }
 
-        Platform.runLater(() -> {
-            show();
-        });
+    @Override
+    public void windowDeactivated(WindowEvent arg0)
+    {
+    }
+
+    @Override
+    public void windowDeiconified(WindowEvent arg0)
+    {
+    }
+
+    @Override
+    public void windowIconified(WindowEvent arg0)
+    {
+    }
+
+    @Override
+    public void windowOpened(WindowEvent arg0)
+    {
     }
 }

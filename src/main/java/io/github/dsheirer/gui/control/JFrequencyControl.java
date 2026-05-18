@@ -42,11 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.JLabel;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
@@ -440,7 +436,7 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
 
                     if(se instanceof InvalidFrequencyException ife)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(ife.getMessage() + " for this tuner.")); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(this, ife.getMessage() + " for this tuner.");
                     }
                 }
             }

@@ -43,7 +43,7 @@ To receive alerts through Telegram, you need a bot token and a chat ID. Both are
     Send any message to your new bot, then open a browser and visit:
 
     ```text
-    https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
+    https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates
     ```
 
     Look for the `"id"` field inside the `"chat"` object. That number is your chat ID.

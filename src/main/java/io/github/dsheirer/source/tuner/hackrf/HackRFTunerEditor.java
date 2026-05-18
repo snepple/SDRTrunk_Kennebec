@@ -33,11 +33,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
+import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.SpinnerNumberModel;
@@ -177,8 +173,8 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
                     }
                     catch(UsbException e)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("HackRF Tuner Controller"
-                                + " - couldn't apply the VGA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(HackRFTunerEditor.this, "HackRF Tuner Controller"
+                                + " - couldn't apply the VGA gain setting - " + e.getLocalizedMessage());
 
                         mLog.error("HackRF Tuner Controller - couldn't apply VGA gain setting", e);
                     }
@@ -214,8 +210,8 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
                     }
                     catch(UsbException e)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("HackRF Tuner Controller"
-                                + " - couldn't apply the LNA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(HackRFTunerEditor.this, "HackRF Tuner Controller"
+                                + " - couldn't apply the LNA gain setting - " + e.getLocalizedMessage());
                         mLog.error("HackRF Tuner Controller - couldn't apply LNA gain setting - ", e);
                     }
                 }
@@ -245,7 +241,8 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
                     {
                         mLog.error("couldn't enable/disable amplifier", e);
 
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Couldn't change amplifier setting")); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(HackRFTunerEditor.this, "Couldn't change amplifier setting",
+                                "Error changing amplifier setting", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             });
@@ -276,9 +273,9 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
                     }
                     catch(SourceException | UsbException e2)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("HackRF Tuner Controller"
+                        JOptionPane.showMessageDialog(HackRFTunerEditor.this, "HackRF Tuner Controller"
                                 + " - couldn't apply the sample rate setting [" + sampleRate.getLabel() +
-                                "] " + e2.getLocalizedMessage())); alert.showAndWait(); });
+                                "] " + e2.getLocalizedMessage());
 
                         mLog.error("HackRF Tuner Controller - couldn't apply sample rate setting [" +
                                 sampleRate.getLabel() + "]", e);

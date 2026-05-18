@@ -1,20 +1,12 @@
 package io.github.dsheirer.gui;
 
-import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.scene.layout.VBox;
-import io.github.dsheirer.gui.sidebar.SidebarController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.github.dsheirer.gui.sidebar.SidebarJFXPanel;
+import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.io.IOException;
+import javax.swing.JPanel;
 
-public class SidebarPanel extends JFXPanel {
-    private static final Logger mLog = LoggerFactory.getLogger(SidebarPanel.class);
-    private SidebarController controller;
+public class SidebarPanel extends JPanel {
+    private SidebarJFXPanel jfxPanel;
 
     public interface SidebarListener {
         void onItemSelected(String id);
@@ -22,27 +14,15 @@ public class SidebarPanel extends JFXPanel {
     }
 
     public SidebarPanel(SidebarListener listener) {
+        setLayout(new BorderLayout());
+        jfxPanel = new SidebarJFXPanel(listener);
+        add(jfxPanel, BorderLayout.CENTER);
         setPreferredSize(new Dimension(250, 0));
-
-        Platform.runLater(() -> {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Sidebar.fxml"));
-                VBox root = loader.load();
-                controller = loader.getController();
-                controller.setListener(listener);
-                Scene scene = new Scene(root);
-                setScene(scene);
-            } catch (IOException e) {
-                mLog.error("Error loading Sidebar.fxml", e);
-            }
-        });
     }
 
     public void setActive(String id) {
-        Platform.runLater(() -> {
-            if (controller != null) {
-                controller.setActive(id);
-            }
-        });
+        if (jfxPanel != null) {
+            jfxPanel.setActive(id);
+        }
     }
 }

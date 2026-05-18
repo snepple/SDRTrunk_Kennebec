@@ -63,7 +63,6 @@ public class HelpViewController {
         TreeItem<String> gettingStartedNode = new TreeItem<>("Getting Started");
         gettingStartedNode.getChildren().add(new TreeItem<>("Index"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Introduction"));
-        gettingStartedNode.getChildren().add(new TreeItem<>("Now Playing"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Overview"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Quickstart"));
         guidesNode.getChildren().add(gettingStartedNode);

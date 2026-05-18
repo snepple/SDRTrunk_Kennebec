@@ -37,9 +37,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AudioRecordingsPanel extends JFXPanel {
+public class AudioRecordingsPanel extends JPanel {
     private final static Logger mLog = LoggerFactory.getLogger(AudioRecordingsPanel.class);
     private UserPreferences mUserPreferences;
+    private JFXPanel mJfxPanel;
 
     private ObservableList<RecordingItem> mRecordings;
     private FilteredList<RecordingItem> mFilteredRecordings;
@@ -63,6 +64,10 @@ public class AudioRecordingsPanel extends JFXPanel {
     public AudioRecordingsPanel(UserPreferences userPreferences, io.github.dsheirer.playlist.PlaylistManager playlistManager) {
         mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
+        setLayout(new net.miginfocom.swing.MigLayout("insets 0, hidemode 3, fill", "[grow,fill]", "[grow,fill]"));
+
+        mJfxPanel = new JFXPanel();
+        add(mJfxPanel, "grow, push");
 
         Platform.runLater(this::initFx);
     }
@@ -271,7 +276,7 @@ public class AudioRecordingsPanel extends JFXPanel {
 
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/sdrtrunk_style.css").toExternalForm());
-        setScene(scene);
+        mJfxPanel.setScene(scene);
 
         loadRecordings();
         populateFilterOptions();

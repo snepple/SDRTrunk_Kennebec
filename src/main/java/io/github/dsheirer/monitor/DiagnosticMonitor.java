@@ -43,11 +43,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
+import javax.swing.JOptionPane;
 
 /**
  * Utility class for monitoring system components and producing logging reports.
@@ -159,7 +155,7 @@ public class DiagnosticMonitor
                                          "The application may degrade over time and eventually run out of memory.\n" +
                                          "A diagnostic report was generated.  Please open an issue on the GitHub\n" +
                                          "website and attach this diagnostic report:\n\n" + reportPath.toString();
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf(title)); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }

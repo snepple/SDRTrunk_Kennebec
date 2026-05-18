@@ -29,11 +29,7 @@ import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.manager.TunerStatus;
 import io.github.dsheirer.source.tuner.recording.AddRecordingTunerDialog;
 import com.google.common.eventbus.Subscribe;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
+import javax.swing.JOptionPane;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -106,7 +102,7 @@ public class TunerViewPanel extends JPanel
     public void process(USBAlertEvent event)
     {
         EventQueue.invokeLater(() -> {
-            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.WARNING); alert.setContentText(String.valueOf(event.getMessage())); alert.showAndWait(); });
+            JOptionPane.showMessageDialog(this, event.getMessage(), "USB Bus Overload Detected", JOptionPane.WARNING_MESSAGE);
         });
     }
 

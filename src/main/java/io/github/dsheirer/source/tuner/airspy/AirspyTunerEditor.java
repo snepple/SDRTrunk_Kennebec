@@ -37,11 +37,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
+import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.SpinnerNumberModel;
@@ -271,7 +267,7 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
                     catch(Exception e)
                     {
                         mLog.error("Couldn't set airspy LNA gain to:" + gain, e);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set LNA gain value to " + gain)); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(mLNAGainSlider, "Couldn't set LNA gain value to " + gain);
                     }
                 }
 
@@ -319,7 +315,7 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
                         catch(Exception e)
                         {
                             mLog.error("Couldn't set airspy Mixer gain to:" + gain, e);
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set Mixer gain value to " + gain)); alert.showAndWait(); });
+                            JOptionPane.showMessageDialog(mMixerGainSlider, "Couldn't set Mixer gain value to " + gain);
                         }
                     }
 
@@ -375,7 +371,7 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
                     catch(Exception e)
                     {
                         mLog.error("Couldn't set airspy IF gain to:" + gain, e);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set IF gain value to " + gain)); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(mIFGainSlider, "Couldn't set IF gain value to " + gain);
                     }
                 }
 
@@ -433,8 +429,8 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
                     catch(Exception e)
                     {
                         mLog.error("Couldn't set airspy gain to:" + gain.name(), e);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set gain value to " +
-                                gain.getValue())); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(mMasterGainSlider, "Couldn't set gain value to " +
+                                gain.getValue());
                     }
                 }
 
@@ -493,7 +489,8 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
                         }
                         catch(Exception e1)
                         {
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set sample rate to " + rate.getLabel())); alert.showAndWait(); });
+                            JOptionPane.showMessageDialog(AirspyTunerEditor.this,
+                                    "Couldn't set sample rate to " + rate.getLabel());
                             mLog.error("Error setting airspy sample rate", e1);
                         }
                     }

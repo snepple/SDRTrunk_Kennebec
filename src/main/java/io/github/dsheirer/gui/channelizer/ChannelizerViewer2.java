@@ -48,20 +48,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.JButton;
-import javafx.application.Platform;
-import javafx.embed.swing.SwingNode;
-import javafx.scene.Scene;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
-
-import javax.swing.SwingUtilities;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JToggleButton;
@@ -69,7 +58,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class ChannelizerViewer2 extends Stage
+public class ChannelizerViewer2 extends JFrame
 {
     private final static Logger mLog = LoggerFactory.getLogger(ChannelizerViewer2.class);
 
@@ -100,20 +89,11 @@ public class ChannelizerViewer2 extends Stage
     private void init()
     {
         setTitle("Polyphase Channelizer Viewer");
-        setWidth(1200);
-        setHeight(700);
-        setOnCloseRequest(event -> System.exit(0));
-
-        SwingNode swingNode = new SwingNode();
-        SwingUtilities.invokeLater(() -> {
-            swingNode.setContent(getPrimaryPanel());
-        });
-
-        VBox vbox = new VBox(swingNode);
-        VBox.setVgrow(swingNode, Priority.ALWAYS);
-
-        Scene scene = new Scene(vbox);
-        setScene(scene);
+        setSize(1200, 700);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
+        setLocationRelativeTo(null);
+        add(getPrimaryPanel());
     }
 
     private JPanel getPrimaryPanel()
@@ -203,10 +183,7 @@ public class ChannelizerViewer2 extends Stage
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
-                    TextInputDialog dialog = new TextInputDialog();
-                    dialog.setHeaderText("Frequency?");
-                    Optional<String> result = dialog.showAndWait();
-                    String value = result.orElse(null);
+                    String value = JOptionPane.showInputDialog(ChannelizerViewer2.this, "Frequency?");
 
                     if(value != null && !value.isEmpty())
                     {
@@ -244,10 +221,7 @@ public class ChannelizerViewer2 extends Stage
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
-                    TextInputDialog dialog = new TextInputDialog();
-                    dialog.setHeaderText("Frequency?");
-                    Optional<String> result = dialog.showAndWait();
-                    String value = result.orElse(null);
+                    String value = JOptionPane.showInputDialog(ChannelizerViewer2.this, "Frequency?");
 
                     if(value != null && !value.isEmpty())
                     {
@@ -489,12 +463,12 @@ public class ChannelizerViewer2 extends Stage
     {
         final ChannelizerViewer2 frame = new ChannelizerViewer2();
 
-        Platform.runLater(new Runnable()
+        EventQueue.invokeLater(new Runnable()
         {
             @Override
             public void run()
             {
-                frame.show();
+                frame.setVisible(true);
             }
         });
     }

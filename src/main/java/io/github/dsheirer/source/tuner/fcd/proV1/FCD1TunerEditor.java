@@ -34,11 +34,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
+import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerModel;
@@ -198,8 +194,8 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
                     }
                     catch(Exception e)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("FCD Pro Tuner " +
-                                "Controller - error setting LNA gain [" + gain + "]")); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(FCD1TunerEditor.this, "FCD Pro Tuner " +
+                                "Controller - error setting LNA gain [" + gain + "]");
 
                         mLog.error("FuncubeDonglePro Controller - error setting gain [" + gain + "]", e);
                     }
@@ -230,8 +226,8 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
                     }
                     catch(Exception e1)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("FCD Pro Tuner"
-                                + " error setting LNA enhance gain [" + enhance + "]")); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(FCD1TunerEditor.this, "FCD Pro Tuner"
+                                + " error setting LNA enhance gain [" + enhance + "]");
 
                         mLog.error("FCDPro - error setting LNA enhance  [" + enhance + "]", e1);
                     }
@@ -262,8 +258,8 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
                     }
                     catch(Exception e1)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("FCDPro - error setting"
-                                + " mixer gain [" + gain + "]")); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(FCD1TunerEditor.this, "FCDPro - error setting"
+                                + " mixer gain [" + gain + "]");
 
                         mLog.error("FCDPro - error setting mixer gain [" + gain + "]", e1);
                     }
@@ -438,8 +434,8 @@ protected String getTunerInfo()
                     }
                     catch(Exception e1)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("FCDPro - error "
-                                + "applying " + mCorrectionComponent.toString() + " correction value [" + value + "]")); alert.showAndWait(); });
+                        JOptionPane.showMessageDialog(FCD1TunerEditor.this, "FCDPro - error "
+                                + "applying " + mCorrectionComponent.toString() + " correction value [" + value + "]");
 
                         mLog.error("FCDPro - error applying " + mCorrectionComponent.toString() + " correction value [" +
                                 value + "]", e1);

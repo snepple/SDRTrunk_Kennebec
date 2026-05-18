@@ -43,11 +43,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
@@ -446,10 +442,10 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
         {
             mDeleteAllTracksButton = new JButton("Delete All");
             mDeleteAllTracksButton.addActionListener(e -> {
-                Alert alert = new Alert(Alert.AlertType.WARNING, "Are you sure you want to delete all tracks?", ButtonType.YES, ButtonType.NO);
-                alert.setTitle("Delete All Tracks");
-                Optional<ButtonType> confirmation = alert.showAndWait();
-                if (confirmation.isPresent() && confirmation.get() == ButtonType.YES) {
+                int confirmation = JOptionPane.showConfirmDialog(MapPanel.this,
+                        "Are you sure you want to delete all tracks?",
+                        "Delete All Tracks", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (confirmation == JOptionPane.YES_OPTION) {
                     mMapService.getPlottableEntityModel().deleteAllTracks();
                     mMapPainter.clearAllEntities();
                     //Clear followed entity
@@ -479,11 +475,10 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
                         ? "Are you sure you want to delete the selected track?"
                         : "Are you sure you want to delete the " + selectedIndices.length + " selected tracks?";
 
-                Alert alert = new Alert(Alert.AlertType.WARNING, message, ButtonType.YES, ButtonType.NO);
-                alert.setTitle("Delete Tracks");
-                Optional<ButtonType> confirmation = alert.showAndWait();
+                int confirmation = JOptionPane.showConfirmDialog(MapPanel.this,
+                        message, "Delete Tracks", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
-                if (confirmation.isPresent() && confirmation.get() == ButtonType.YES) {
+                if (confirmation == JOptionPane.YES_OPTION) {
                     List<PlottableEntityHistory> toDelete = new ArrayList<>();
 
                     for(int selectedIndex : selectedIndices)
