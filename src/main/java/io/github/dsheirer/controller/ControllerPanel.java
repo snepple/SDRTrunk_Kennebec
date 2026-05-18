@@ -1,39 +1,17 @@
-/*
- * *****************************************************************************
- * Copyright (C) 2014-2023 Dennis Sheirer
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- * ****************************************************************************
- */
 package io.github.dsheirer.controller;
 
-import io.github.dsheirer.gui.SidebarPanel;
 import io.github.dsheirer.gui.VisibilityListener;
-
-
-
-import com.jidesoft.swing.JideTabbedPane;
 import io.github.dsheirer.audio.playback.AudioPanel;
 import io.github.dsheirer.audio.playback.AudioPlaybackManager;
 import io.github.dsheirer.channel.metadata.NowPlayingPanel;
-import io.github.dsheirer.eventbus.MyEventBus;
-import io.github.dsheirer.gui.playlist.ViewPlaylistRequest;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.map.MapPanel;
-import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
 import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.embed.swing.SwingNode;
+import javafx.scene.Scene;
+import javafx.scene.Parent;
+import javafx.fxml.FXMLLoader;
 import io.github.dsheirer.map.MapService;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
@@ -41,35 +19,14 @@ import io.github.dsheirer.settings.SettingsManager;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.ui.TunerViewPanel;
 import io.github.dsheirer.gui.recordings.AudioRecordingsPanel;
-import java.awt.Color;
-import java.awt.Dimension;
-import jiconfont.icons.font_awesome.FontAwesome;
-import jiconfont.swing.IconFontSwing;
-import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.Icon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import io.github.dsheirer.gui.help.HelpViewer;
-import javax.swing.JSplitPane;
-import javax.swing.JPanel;
-import javax.swing.JList;
-import javax.swing.ListSelectionModel;
-import javax.swing.JScrollPane;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.DefaultListModel;
-import java.awt.CardLayout;
-import java.awt.BorderLayout;
+import javax.swing.SwingUtilities;
+import java.io.IOException;
 
-
-public class ControllerPanel extends JPanel
-{
+public class ControllerPanel extends JFXPanel {
     private final static Logger mLog = LoggerFactory.getLogger(ControllerPanel.class);
-    private static final long serialVersionUID = 1L;
-    private int mSettingsTabIndex = -1;
 
     private AudioPanel mAudioPanel;
     private NowPlayingPanel mNowPlayingPanel;
@@ -77,16 +34,12 @@ public class ControllerPanel extends JPanel
     private TunerViewPanel mTunerManagerPanel;
     private AudioRecordingsPanel mAudioRecordingsPanel;
 
-    private JSplitPane mSplitPane;
-    private JPanel mCardPanel;
-    private CardLayout mCardLayout;
-    private JList<String> mSidebarList;
-    private javax.swing.JComponent mResourcePanel;
+    private ControllerPanelController mController;
 
     public ControllerPanel(PlaylistManager playlistManager, AudioPlaybackManager audioPlaybackManager,
                            IconModel iconModel, MapService mapService, SettingsManager settingsManager,
-                           TunerManager tunerManager, UserPreferences userPreferences, boolean detailTabsVisible, VisibilityListener visibilityListener)
-    {
+                           TunerManager tunerManager, UserPreferences userPreferences, boolean detailTabsVisible, VisibilityListener visibilityListener) {
+
         mAudioPanel = new AudioPanel(iconModel, userPreferences, settingsManager, audioPlaybackManager,
             playlistManager.getAliasModel(), playlistManager.getBroadcastModel());
         mNowPlayingPanel = new NowPlayingPanel(playlistManager, iconModel, userPreferences, settingsManager, tunerManager, detailTabsVisible, visibilityListener);
@@ -96,65 +49,74 @@ public class ControllerPanel extends JPanel
 
         mAudioPanel.setManageWidgetsButton(mNowPlayingPanel.getManageWidgetsButton());
 
-        init();
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ControllerPanel.fxml"));
+                Parent root = loader.load();
+                mController = loader.getController();
+
+                // Add Swing views by wrapping them in SwingNodes
+                mController.addView("now_playing", wrapSwingComponent(mNowPlayingPanel));
+                mController.addView("map", wrapSwingComponent(mMapPanel));
+                mController.addView("tuners", wrapSwingComponent(mTunerManagerPanel));
+                mController.addView("audio_recordings", wrapSwingComponent(mAudioRecordingsPanel));
+
+                // Add HelpViewer natively without SwingNode
+                mController.addView("help_viewer", new io.github.dsheirer.gui.help.HelpViewer());
+
+                setScene(new Scene(root));
+            } catch (IOException e) {
+                mLog.error("Error loading ControllerPanel.fxml", e);
+            }
+        });
     }
 
-    /**
-     * Now playing panel.
-     */
+    private SwingNode wrapSwingComponent(javax.swing.JComponent component) {
+        SwingNode swingNode = new SwingNode();
+        SwingUtilities.invokeLater(() -> swingNode.setContent(component));
+        return swingNode;
+    }
 
-    /**
-     * Audio panel.
-     */
-    public AudioPanel getAudioPanel()
-    {
+    public AudioPanel getAudioPanel() {
         return mAudioPanel;
     }
 
-    public NowPlayingPanel getNowPlayingPanel()
-    {
+    public NowPlayingPanel getNowPlayingPanel() {
         return mNowPlayingPanel;
     }
 
-
-    private void init()
-    {
-        setLayout(new BorderLayout());
-
-        mCardLayout = new CardLayout();
-        mCardPanel = new JPanel(mCardLayout);
-        
-        mCardPanel.add(mNowPlayingPanel, "now_playing");
-        mCardPanel.add(mMapPanel, "map");
-        mCardPanel.add(mTunerManagerPanel, "tuners");
-        mCardPanel.add(mAudioRecordingsPanel, "audio_recordings");
-        mCardPanel.add(new HelpViewer(), "help_viewer");
-
-        add(mCardPanel, BorderLayout.CENTER);
-        // AudioPanel moved to SDRTrunk.java
-    }
-
     public void addView(String id, java.awt.Component view) {
-        mCardPanel.add(view, id);
+        Platform.runLater(() -> {
+            if (mController != null) {
+                mController.addView(id, wrapSwingComponent((javax.swing.JComponent) view));
+            }
+        });
     }
 
     public void showView(String id) {
-        mNowPlayingPanel.getManageWidgetsButton().setVisible("now_playing".equals(id));
-        mCardLayout.show(mCardPanel, id);
+        SwingUtilities.invokeLater(() -> mNowPlayingPanel.getManageWidgetsButton().setVisible("now_playing".equals(id)));
+
+        Platform.runLater(() -> {
+            if (mController != null) {
+                mController.showView(id);
+            }
+        });
     }
 
     public void setResourcePanel(javax.swing.JComponent resourcePanel) {
-        mResourcePanel = resourcePanel;
-        add(mResourcePanel, BorderLayout.SOUTH);
-        mResourcePanel.setVisible(false);
+        Platform.runLater(() -> {
+            if (mController != null) {
+                mController.setResourceNode(wrapSwingComponent(resourcePanel));
+                mController.setResourcePanelVisible(false);
+            }
+        });
     }
 
     public void setResourcePanelVisible(boolean visible) {
-        if (mResourcePanel != null) {
-            mResourcePanel.setVisible(visible);
-            revalidate();
-            repaint();
-        }
+        Platform.runLater(() -> {
+            if (mController != null) {
+                mController.setResourcePanelVisible(visible);
+            }
+        });
     }
-
 }
