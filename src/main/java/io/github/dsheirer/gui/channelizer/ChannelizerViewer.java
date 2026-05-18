@@ -18,8 +18,8 @@
  */
 package io.github.dsheirer.gui.channelizer;
 
-import io.github.dsheirer.buffer.FloatNativeBuffer;
 import io.github.dsheirer.buffer.INativeBuffer;
+import io.github.dsheirer.sample.complex.ComplexSamplesNativeBufferAdapter;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.sample.complex.ComplexSamples;
 import io.github.dsheirer.settings.SettingsManager;
@@ -382,7 +382,7 @@ public class ChannelizerViewer extends Stage
 
             if(mSource != null)
             {
-                mSource.setListener(complexSamples -> mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved())));
+                mSource.setListener(complexSamples -> mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples)));
 
                 mSource.start();
             }
@@ -426,7 +426,7 @@ public class ChannelizerViewer extends Stage
         @Override
         public void receive(ComplexSamples complexSamples)
         {
-            mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
+            mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
         }
 
         @Override
@@ -482,7 +482,7 @@ public class ChannelizerViewer extends Stage
                             mLog.debug("Samples:" + Arrays.toString(complexSamples.toInterleaved().samples()));
                         }
 
-                        mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
+                        mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
                     }
                 });
 
@@ -507,7 +507,7 @@ public class ChannelizerViewer extends Stage
         @Override
         public void receive(ComplexSamples complexSamples)
         {
-            mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
+            mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
         }
 
         @Override

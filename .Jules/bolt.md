@@ -9,3 +9,7 @@
 ## 2026-05-18 - Spectrum Analyzer and Waterfall Drawing Bugs
 **Learning:** Mathematical sign errors when refactoring audio spectrum math (e.g. log scaling `mDBScale`) can result in out-of-bounds metrics resulting in entire charts clamping to Y=0 or skipping the last bin (`update.length - 1`). Dynamic range (in decibels) is a negative value `20 * log10(1 / (2 ^ (bit_depth - 1)))`.
 **Action:** When updating spectrum code, ensure loop index logic accurately bounds the array size (`update.length`) rather than off-by-one offsets. Ensure that dynamically scaled bounds evaluate to their true negative values so UI scaling metrics (like `scalor = height / -mDBScale`) correctly map into positive view bounds.
+
+## 2026-05-18 - Lazy Buffer Evaluation in Channelizer Views
+**Learning:** Using `FloatNativeBuffer` with eagerly evaluated `toInterleaved()` calls on `ComplexSamples` in GUI channelizer views causes massive memory churn from unused arrays when frames are dropped by the `NativeBufferManager`.
+**Action:** Always use `ComplexSamplesNativeBufferAdapter` to lazily defer array allocations until explicitly pulled by consumers to conserve memory during high-speed spectrum updates.
