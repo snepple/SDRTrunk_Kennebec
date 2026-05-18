@@ -54,6 +54,8 @@ import java.util.List;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
+import javafx.application.Platform;
+import javafx.scene.Scene;
 import net.miginfocom.swing.MigLayout;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -91,6 +93,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
     private boolean mDftProcessing = false;
     private final NoiseSquelchView mNoiseSquelchView;
     private final SignalPowerView mSignalPowerView;
+    private JFXPanel mSignalPowerWrapper;
     private final SymbolView mSymbolView = new SymbolView();
     private final JFXPanel mNoiseSquelchPanel;
     private final JFXPanel mSymbolPanel;
@@ -233,7 +236,16 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         mInspectorPanel.setBorder(new MatteBorder(0, 1, 0, 0, new Color(224, 224, 224))); // Apple HIG subtle border
 
         mInspectorPanel.add(mNoiseSquelchPanel, "NBFM");
-        mInspectorPanel.add(mSignalPowerView, "AM");
+        mSignalPowerWrapper = new JFXPanel();
+        Platform.runLater(() -> {
+            Scene scene = new Scene(mSignalPowerView);
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+            mSignalPowerWrapper.setScene(scene);
+        });
+        mInspectorPanel.add(mSignalPowerWrapper, "AM");
         mInspectorPanel.add(mSymbolPanel, "FEEDBACK");
 
         // Use MigLayout for the main panel
@@ -383,7 +395,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             }
             else if(primaryDecoder instanceof AMDecoder)
             {
-                setRightComponent(mSignalPowerView);
+                setRightComponent(mSignalPowerWrapper);
                 mSignalPowerView.setProcessingChain(mProcessingChain);
             }
             else if(primaryDecoder instanceof FeedbackDecoder feedbackDecoder)
@@ -427,7 +439,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         if (component == mNoiseSquelchPanel) {
             mInspectorCardLayout.show(mInspectorPanel, "NBFM");
             mInspectorPanel.setVisible(true);
-        } else if (component == mSignalPowerView) {
+        } else if (component == mSignalPowerWrapper) {
             mInspectorCardLayout.show(mInspectorPanel, "AM");
             mInspectorPanel.setVisible(true);
         } else if (component == mSymbolPanel) {

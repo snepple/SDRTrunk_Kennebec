@@ -61,7 +61,7 @@ import javax.swing.event.ChangeListener;
 /**
  * Swing map panel.
  */
-public class MapPanel extends JPanel implements IPlottableUpdateListener
+public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottableUpdateListener
 {
     private static final long serialVersionUID = 1L;
 
@@ -110,7 +110,7 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
 
     private void init()
     {
-        setLayout(new BorderLayout());
+
         mMapService.addListener(this);
 
         // Sidebar (Master-Detail)
@@ -233,7 +233,11 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
         splitPane.setRightComponent(map);
         splitPane.setBorder(javax.swing.BorderFactory.createEmptyBorder());
 
-        add(splitPane, BorderLayout.CENTER);
+        javafx.embed.swing.SwingNode swingNode = new javafx.embed.swing.SwingNode();
+        javafx.application.Platform.runLater(() -> setCenter(swingNode));
+        javax.swing.SwingUtilities.invokeLater(() -> swingNode.setContent(splitPane));
+
+
 
         // Hide legacy UI components but keep them initialized for background state changes
         getFollowButton();
@@ -418,7 +422,7 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
             mClearMapButton.addActionListener(e ->
             {
                 mMapPainter.clearAllEntities();
-                repaint();
+                // repaint();
             });
         }
 
