@@ -79,8 +79,8 @@ public class ThemeManager {
             if (mIsWindows11) {
                 UIManager.put("TitlePane.useWindowDecorations", true);
                 UIManager.put("TitlePane.menuBarEmbedded", false);
-                JFrame.setDefaultLookAndFeelDecorated(true);
-                JDialog.setDefaultLookAndFeelDecorated(true);
+
+
             }
 
 

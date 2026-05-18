@@ -28,7 +28,14 @@ import java.awt.event.ActionListener;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JButton;
-import javax.swing.JFrame;
+
+import javafx.application.Platform;
+import javafx.embed.swing.SwingNode;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
 import javax.swing.JScrollPane;
 
 /**
@@ -84,23 +91,33 @@ public class EventFilterButton<T> extends JideButton
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            final JFrame editor = new JFrame();
-            editor.setTitle(mTitle);
-            editor.setLocationRelativeTo(EventFilterButton.this);
-            editor.setSize(600, 400);
-            editor.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            editor.setLayout(new MigLayout("", "[grow,fill]", "[grow,fill][][]"));
+            JPanel wrapperPanel = new JPanel();
+            wrapperPanel.setLayout(new MigLayout("", "[grow,fill]", "[grow,fill][][]"));
             FilterEditorPanel<T> panel = new FilterEditorPanel<T>(mFilterSet);
             JScrollPane scroller = new JScrollPane(panel);
             scroller.setViewportView(panel);
-            editor.add(scroller, "wrap");
+            wrapperPanel.add(scroller, "wrap");
             JButton close = new JButton("Close");
             close.setToolTipText("Close the filter editor");
             close.getAccessibleContext().setAccessibleName("Close Event Filter Editor");
             close.getAccessibleContext().setAccessibleDescription("Closes the event filter editor dialog");
-            close.addActionListener(e1 -> editor.dispose());
-            editor.add(close);
-            EventQueue.invokeLater(() -> editor.setVisible(true));
+
+            Platform.runLater(() -> {
+                Stage stage = new Stage();
+                stage.setTitle(mTitle);
+                stage.setWidth(600);
+                stage.setHeight(400);
+
+                close.addActionListener(e1 -> Platform.runLater(() -> stage.close()));
+                wrapperPanel.add(close);
+
+                SwingNode swingNode = new SwingNode();
+                SwingUtilities.invokeLater(() -> swingNode.setContent(wrapperPanel));
+
+                Scene scene = new Scene(new javafx.scene.layout.StackPane(swingNode));
+                stage.setScene(scene);
+                stage.show();
+            });
         }
     }
 }
