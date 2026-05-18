@@ -306,6 +306,8 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
         {
             mWacnTextField = new IntegerTextField();
             mWacnTextField.setDisable(true);
+            mWacnTextField.setPromptText("e.g. 104, 300");
+            mWacnTextField.setTooltip(new Tooltip("Wide Area Communication Network (WACN) identifier (decimal)"));
             mWacnTextField.textProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
 
@@ -318,6 +320,8 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
         {
             mSystemTextField = new IntegerTextField();
             mSystemTextField.setDisable(true);
+            mSystemTextField.setPromptText("e.g. 10, 20");
+            mSystemTextField.setTooltip(new Tooltip("System Identifier (decimal)"));
             mSystemTextField.textProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
 
@@ -330,6 +334,8 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
         {
             mNacTextField = new IntegerTextField();
             mNacTextField.setDisable(true);
+            mNacTextField.setPromptText("e.g. 293, 400");
+            mNacTextField.setTooltip(new Tooltip("Network Access Code (NAC) (decimal)"));
             mNacTextField.textProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
 

@@ -68,6 +68,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -418,6 +419,8 @@ public class P25P2Viewer extends VBox
         if(mWACNTextField == null)
         {
             mWACNTextField = new IntegerTextField();
+            mWACNTextField.setPromptText("e.g. 104, 300");
+            mWACNTextField.setTooltip(new Tooltip("Wide Area Communication Network (WACN) identifier (decimal)"));
             mWACNTextField.textProperty().addListener((ob, ol, ne) -> mPreferences.putInt(LAST_WACN_VALUE, getWACNTextField().get()));
             int previous = mPreferences.getInt(LAST_WACN_VALUE, 0);
             if(previous > 0)
@@ -434,6 +437,8 @@ public class P25P2Viewer extends VBox
         if(mSystemTextField == null)
         {
             mSystemTextField = new IntegerTextField();
+            mSystemTextField.setPromptText("e.g. 10, 20");
+            mSystemTextField.setTooltip(new Tooltip("System Identifier (decimal)"));
             mSystemTextField.textProperty().addListener((ob, ol, ne) -> mPreferences.putInt(LAST_SYSTEM_VALUE, getSystemTextField().get()));
             int previous = mPreferences.getInt(LAST_SYSTEM_VALUE, 0);
             if(previous > 0)
@@ -450,6 +455,8 @@ public class P25P2Viewer extends VBox
         if(mNACTextField == null)
         {
             mNACTextField = new IntegerTextField();
+            mNACTextField.setPromptText("e.g. 293, 400");
+            mNACTextField.setTooltip(new Tooltip("Network Access Code (NAC) (decimal)"));
             mNACTextField.textProperty().addListener((ob, ol, ne) -> mPreferences.putInt(LAST_NAC_VALUE, getNACTextField().get()));
             int previous = mPreferences.getInt(LAST_NAC_VALUE, 0);
             if(previous > 0)
