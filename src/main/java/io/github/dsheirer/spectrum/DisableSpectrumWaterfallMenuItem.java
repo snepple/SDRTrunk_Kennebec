@@ -20,14 +20,13 @@ package io.github.dsheirer.spectrum;
 
 import io.github.dsheirer.properties.SystemProperties;
 import jiconfont.icons.font_awesome.FontAwesome;
-import jiconfont.swing.IconFontSwing;
 
-import javax.swing.JMenuItem;
+import javafx.scene.control.MenuItem;
 
 /**
  * Menu item to disable the spectrum and waterfall and no longer monitor a tuner.
  */
-public class DisableSpectrumWaterfallMenuItem extends JMenuItem
+public class DisableSpectrumWaterfallMenuItem extends MenuItem
 {
     private SpectralDisplayPanel mSpectralDisplayPanel;
 
@@ -38,15 +37,14 @@ public class DisableSpectrumWaterfallMenuItem extends JMenuItem
     public DisableSpectrumWaterfallMenuItem(SpectralDisplayPanel spectralDisplayPanel)
     {
         super("Disable Spectrum & Waterfall");
-        setIcon(IconFontSwing.buildIcon(FontAwesome.EYE_SLASH, 12));
+        setGraphic(new javafx.scene.image.ImageView(new io.github.dsheirer.icon.Icon("Eye Slash", "images/icon_remove.png").getFxImage()));
 
         mSpectralDisplayPanel = spectralDisplayPanel;
 
-        addActionListener(e -> {
+        setOnAction(e -> {
             SystemProperties properties = SystemProperties.getInstance();
             properties.set(SpectralDisplayPanel.SPECTRAL_DISPLAY_ENABLED, false);
             mSpectralDisplayPanel.clearTuner();
         });
     }
 }
-
