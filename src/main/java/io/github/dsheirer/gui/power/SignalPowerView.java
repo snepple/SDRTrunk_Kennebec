@@ -27,7 +27,6 @@ import io.github.dsheirer.module.ProcessingChain;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.source.SourceEvent;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -42,14 +41,12 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
 import java.text.DecimalFormat;
 
 /**
  * Swing view for displaying signal power measurements with integrated squelch control.
  */
-public class SignalPowerView extends JPanel
+public class SignalPowerView extends HBox
 {
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.0");
     private static final String NOT_AVAILABLE = "Not Available";
@@ -72,13 +69,9 @@ public class SignalPowerView extends JPanel
     {
         mPlaylistManager = playlistManager;
 
-        setLayout(new BorderLayout());
-        JFXPanel jfxPanel = new JFXPanel();
-        add(jfxPanel, BorderLayout.CENTER);
-
         Platform.runLater(() -> {
-            HBox root = new HBox(8);
-            root.setPadding(new Insets(16));
+            setSpacing(8);
+            setPadding(new Insets(16));
 
             mPowerMeter.setPeakVisible(true);
             mPowerMeter.setSquelchThresholdVisible(true);
@@ -90,7 +83,7 @@ public class SignalPowerView extends JPanel
             meterTitle.setStyle("-fx-padding: 0 0 5 0; -fx-text-fill: black;");
             meterContainer.getChildren().addAll(meterTitle, mPowerMeter);
 
-            root.getChildren().add(meterContainer);
+            getChildren().add(meterContainer);
 
             GridPane valuePanel = new GridPane();
             valuePanel.setHgap(8);
@@ -137,15 +130,12 @@ public class SignalPowerView extends JPanel
             valuePanel.add(mSquelchAutoTrackCheckBox, 0, 3, 4, 1);
 
             HBox.setHgrow(valuePanel, Priority.ALWAYS);
-            root.getChildren().add(valuePanel);
+            getChildren().add(valuePanel);
 
-            Scene scene = new Scene(root);
             java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
             if (cssUrl != null) {
-                scene.getStylesheets().add(cssUrl.toExternalForm());
+                getStylesheets().add(cssUrl.toExternalForm());
             }
-
-            jfxPanel.setScene(scene);
 
         });
     }

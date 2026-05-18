@@ -57,9 +57,9 @@ public class ControllerPanel extends JFXPanel {
 
                 // Add Swing views by wrapping them in SwingNodes
                 mController.addView("now_playing", wrapSwingComponent(mNowPlayingPanel));
-                mController.addView("map", wrapSwingComponent(mMapPanel));
+                mController.addView("map", mMapPanel);
                 mController.addView("tuners", wrapSwingComponent(mTunerManagerPanel));
-                mController.addView("audio_recordings", wrapSwingComponent(mAudioRecordingsPanel));
+                mController.addView("audio_recordings", mAudioRecordingsPanel);
 
                 // Add HelpViewer natively without SwingNode
                 mController.addView("help_viewer", new io.github.dsheirer.gui.help.HelpViewer());

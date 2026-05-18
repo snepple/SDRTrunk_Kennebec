@@ -8,7 +8,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.embed.swing.JFXPanel;
 import javafx.scene.control.SelectionMode;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -24,8 +23,6 @@ import javafx.scene.media.MediaPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import java.awt.BorderLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,7 +34,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AudioRecordingsPanel extends JFXPanel {
+public class AudioRecordingsPanel extends BorderPane {
     private final static Logger mLog = LoggerFactory.getLogger(AudioRecordingsPanel.class);
     private UserPreferences mUserPreferences;
 
@@ -89,7 +86,7 @@ public class AudioRecordingsPanel extends JFXPanel {
     }
 
     private void initFx() {
-        BorderPane root = new BorderPane();
+        BorderPane root = this;
         root.setPadding(new Insets(10));
 
         mTableView = new TableView<>();
@@ -269,9 +266,7 @@ public class AudioRecordingsPanel extends JFXPanel {
 
         root.setCenter(mTableView);
 
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/sdrtrunk_style.css").toExternalForm());
-        setScene(scene);
+        this.getStylesheets().add(getClass().getResource("/sdrtrunk_style.css").toExternalForm());
 
         loadRecordings();
         populateFilterOptions();
