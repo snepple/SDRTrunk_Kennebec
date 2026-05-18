@@ -46,7 +46,14 @@ import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JFrame;
+import javafx.application.Platform;
+import javafx.embed.swing.SwingNode;
+import javafx.scene.Scene;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import javax.swing.SwingUtilities;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -55,7 +62,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class ChannelizerViewer extends JFrame
+public class ChannelizerViewer extends Stage
 {
     private final static Logger mLog = LoggerFactory.getLogger(ChannelizerViewer.class);
 
@@ -93,11 +100,20 @@ public class ChannelizerViewer extends JFrame
     private void init()
     {
         setTitle("Polyphase Channelizer Viewer");
-        setSize(1200, 800);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
-        setLocationRelativeTo(null);
-        add(getPrimaryPanel());
+        setWidth(1200);
+        setHeight(800);
+        setOnCloseRequest(event -> System.exit(0));
+
+        SwingNode swingNode = new SwingNode();
+        SwingUtilities.invokeLater(() -> {
+            swingNode.setContent(getPrimaryPanel());
+        });
+
+        VBox vbox = new VBox(swingNode);
+        VBox.setVgrow(swingNode, Priority.ALWAYS);
+
+        Scene scene = new Scene(vbox);
+        setScene(scene);
     }
 
     private JPanel getPrimaryPanel()
@@ -512,12 +528,12 @@ public class ChannelizerViewer extends JFrame
 
             final ChannelizerViewer frame = new ChannelizerViewer(channelsPerRow);
 
-            EventQueue.invokeLater(new Runnable()
+            Platform.runLater(new Runnable()
             {
                 @Override
                 public void run()
                 {
-                    frame.setVisible(true);
+                    frame.show();
                 }
             });
         }

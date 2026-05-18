@@ -20,17 +20,23 @@
 package io.github.dsheirer.filter;
 
 import java.awt.Component;
-import net.miginfocom.swing.MigLayout;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
+import javafx.embed.swing.SwingNode;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import javax.swing.SwingUtilities;
 
 /**
  * Filter editor
  * @param <T> item type for editing
  */
-public class FilterEditor<T> extends JFrame
+public class FilterEditor<T> extends Stage
 {
     private FilterEditorPanel<T> mEditorPanel;
 
@@ -47,17 +53,28 @@ public class FilterEditor<T> extends JFrame
             throw new IllegalArgumentException("Unable to construct FilterEditor - FilterSet cannot be null");
         }
         setTitle(title);
-        setSize(600, 400);
-        setLocationRelativeTo(owner);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLayout(new MigLayout("", "[grow,fill]", "[grow,fill][]"));
+        setWidth(600);
+        setHeight(400);
+
         mEditorPanel = new FilterEditorPanel<>(filterSet);
-        JScrollPane scroller = new JScrollPane(mEditorPanel);
-        scroller.setViewportView(mEditorPanel);
-        add(scroller, "wrap");
-        JButton close = new JButton("Close");
-        close.addActionListener(e -> dispose());
-        add(close);
+
+        SwingNode swingNode = new SwingNode();
+        SwingUtilities.invokeLater(() -> {
+            javax.swing.JScrollPane scroller = new javax.swing.JScrollPane(mEditorPanel);
+            scroller.setViewportView(mEditorPanel);
+            swingNode.setContent(scroller);
+        });
+
+        Button close = new Button("Close");
+        close.setOnAction(e -> close());
+
+        VBox vbox = new VBox(10, swingNode, close);
+        vbox.setPadding(new Insets(10));
+        vbox.setAlignment(Pos.CENTER_RIGHT);
+        VBox.setVgrow(swingNode, Priority.ALWAYS);
+
+        Scene scene = new Scene(vbox);
+        setScene(scene);
     }
 
     /**

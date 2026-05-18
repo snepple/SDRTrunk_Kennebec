@@ -65,6 +65,9 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## $(date +%Y-%m-%d) - [Settings Format Standardization]
 **Learning:** [Apple HIG states preferences should be grouped in bordered card views with separators. The original manual VBox/HBox combinations broke layout consistency.]
 **Action:** [Migrated Application Preference Editor to use standard SettingsCard and SettingsRow containers.]
+## 2024-05-21 - Adding Tooltips to Preference Form Buttons
+**Learning:** Adding context-specific tooltips to preference UI action buttons (like Select/Reset in JMBE library preferences) significantly improves accessibility and user understanding of what those actions actually do.
+**Action:** When updating or creating new JavaFX preferences UI, always include `Tooltip`s for buttons to explain what they do.
 ## 2026-05-20 - Adding Tooltips to Numeric Spinners
 **Learning:** Numeric input Spinners that lack a visual unit label need descriptive Tooltips explaining the specific unit (e.g., MB, seconds) and behavior. This greatly reduces cognitive load for technical configurations.
 **Action:** Always verify if a numeric input needs a unit label, and default to adding an informative Tooltip if it's missing.

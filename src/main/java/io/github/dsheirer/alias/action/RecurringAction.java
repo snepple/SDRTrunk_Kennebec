@@ -26,6 +26,11 @@ import io.github.dsheirer.message.IMessage;
 import io.github.dsheirer.util.ThreadPool;
 
 import javax.swing.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
 import java.awt.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -72,8 +77,7 @@ public abstract class RecurringAction extends AliasAction
                     final String text = sb.toString();
 
                     EventQueue.invokeLater(() -> {
-                        JOptionPane.showMessageDialog(null, text,
-                            "Alias Alert", JOptionPane.INFORMATION_MESSAGE);
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(text)); alert.showAndWait(); });
 
                         dismiss(false);
 
