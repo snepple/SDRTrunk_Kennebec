@@ -36,3 +36,7 @@
 **Topic:** Spectrum & Waterfall Display
 **Learning:** Added a new documentation guide covering the Spectrum & Waterfall display, as there was no getting started guide for this core navigational component, and added a signal flow Mermaid diagram to clarify interactions.
 **Action:** Created `src/main/resources/docs/spectrum-&-waterfall.md` and integrated it into the navigation tree of `HelpViewer.java` under "Hardware & Tuners".
+## 2026-05-18 - Transition Plan Update
+**Topic:** JavaFX Transition Plan
+**Learning:** Updated `javafx_transition_plan.md` to reflect the current state of the transition, counting remaining JFrame, JPanel, and SwingNode instances.
+**Action:** The multi-phase plan was refined based on the remaining work items, emphasizing a bottom-up leaf component migration for the 40 remaining JPanels.
