@@ -96,6 +96,10 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
+import io.github.dsheirer.gui.sidebar.SidebarController;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.layout.VBox;
+import javafx.scene.Node;
 import javafx.embed.swing.SwingNode;
 
 import javafx.application.Platform;
@@ -142,23 +146,21 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         } else if (mCurrentViewId != null && mCurrentViewId.equals("tuners")) {
             mTunerSpectrumDisabled = !mTunerSpectrumDisabled;
             if (mTunerSpectrumDisabled) {
-                mTopContentPanel.remove(mSpectralPanel);
+
                 mSpectralPanel.stop();
             } else {
-                mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
+
                 mSpectralPanel.start();
             }
         }
-        mMainContentPanel.revalidate();
-        mMainContentPanel.repaint();
+
     }
 
     @Override
     public void onToggleDetails() {
         toggleNowPlayingDetailsPanelVisibility();
         javax.swing.SwingUtilities.invokeLater(() -> {
-            mMainContentPanel.revalidate();
-            mMainContentPanel.repaint();
+
         });
     }
 
@@ -166,16 +168,14 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     public void onToggleStreaming() {
         toggleBroadcastStatusPanelVisibility();
         javax.swing.SwingUtilities.invokeLater(() -> {
-            mMainContentPanel.revalidate();
-            mMainContentPanel.repaint();
+
         });
     }
 
     @Override
     public void onToggleResource() {
         toggleResourceStatusPanelVisibility();
-        mMainContentPanel.revalidate();
-        mMainContentPanel.repaint();
+
     }
 
     @Override
@@ -222,10 +222,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private PlaylistManager mPlaylistManager;
     private SettingsManager mSettingsManager;
     private SpectralDisplayPanel mSpectralPanel;
-    private JPanel mMainContentPanel;
-    private JPanel mTopContentPanel;
-    private JavaFxWindowManager mJavaFxWindowManager;
-    private io.github.dsheirer.gui.SidebarPanel mSidebarPanel;
+    private javafx.scene.layout.BorderPane mRootPane;
+        private JavaFxWindowManager mJavaFxWindowManager;
+    private io.github.dsheirer.gui.sidebar.SidebarController mSidebarController;
     private UserPreferences mUserPreferences = new UserPreferences();
     private TunerManager mTunerManager;
     private ApplicationLog mApplicationLog;
@@ -256,19 +255,13 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             //Initialize the GUI
             initGUI();
 
-            BorderPane root = new BorderPane();
-            Scene scene = new Scene(root);
+            mRootPane = new BorderPane();
+            Scene scene = new Scene(mRootPane);
             try {
                 scene.getStylesheets().add(SDRTrunk.class.getResource("/sdrtrunk_style.css").toExternalForm());
             } catch (Exception e) {
                 mLog.error("Could not load stylesheet", e);
             }
-
-            SwingNode swingNode = new SwingNode();
-            javax.swing.SwingUtilities.invokeLater(() -> {
-                swingNode.setContent(mMainContentPanel);
-            });
-            root.setCenter(swingNode);
 
 
             Dimension dimension = mUserPreferences.getSwingPreference().getDimension(WINDOW_FRAME_IDENTIFIER);
@@ -347,10 +340,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             // Workaround for SwingNode and intermittent page contents not painting initially
             javafx.application.Platform.runLater(() -> {
                 javax.swing.SwingUtilities.invokeLater(() -> {
-                    if (mMainContentPanel != null) {
-                        mMainContentPanel.revalidate();
-                        mMainContentPanel.repaint();
-                    }
+
 
                     Platform.runLater(() -> {
                         if(calibrating)
@@ -461,14 +451,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         {
             mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this::onViewChanged);
 
-            // Add Sidebar
-            try {
-                javax.swing.SwingUtilities.invokeAndWait(() -> {
-                    mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
-                });
-            } catch (Exception e) {
-                mLog.error("Error creating sidebar panel", e);
-            }
+            // Sidebar FXML is loaded in initGUI on the FX thread
         }
 
 
@@ -624,26 +607,36 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         {
         }
 
-        mMainContentPanel = new JPanel(new BorderLayout());
+        javafx.application.Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Sidebar.fxml"));
+                VBox sidebarRoot = loader.load();
+                mSidebarController = loader.getController();
+                mSidebarController.setListener(this);
+                mRootPane.setLeft(sidebarRoot);
+            } catch (Exception e) {
+                mLog.error("Error loading sidebar", e);
+            }
 
-        JPanel contentWithSidebar = new JPanel(new BorderLayout());
-        contentWithSidebar.add(mSidebarPanel, BorderLayout.WEST);
+            SwingNode spectralNode = new SwingNode();
+            javax.swing.SwingUtilities.invokeLater(() -> spectralNode.setContent(mSpectralPanel));
 
-        JPanel rightContentPanel = new JPanel(new BorderLayout());
+            SwingNode controllerNode = new SwingNode();
+            javax.swing.SwingUtilities.invokeLater(() -> controllerNode.setContent(mControllerPanel));
 
-        JPanel rightTopPanel = new JPanel(new BorderLayout());
-        rightTopPanel.add(mControllerPanel.getAudioPanel(), BorderLayout.NORTH);
+            SwingNode audioNode = new SwingNode();
+            javax.swing.SwingUtilities.invokeLater(() -> audioNode.setContent(mControllerPanel.getAudioPanel()));
 
-        mTopContentPanel = new JPanel(new BorderLayout());
-        mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
+            BorderPane rightTopPane = new BorderPane();
+            rightTopPane.setTop(audioNode);
+            rightTopPane.setCenter(spectralNode);
 
-        rightTopPanel.add(mTopContentPanel, BorderLayout.CENTER);
+            BorderPane rightContentPane = new BorderPane();
+            rightContentPane.setTop(rightTopPane);
+            rightContentPane.setCenter(controllerNode);
 
-        rightContentPanel.add(rightTopPanel, BorderLayout.NORTH);
-        rightContentPanel.add(mControllerPanel, BorderLayout.CENTER);
-
-        contentWithSidebar.add(rightContentPanel, BorderLayout.CENTER);
-        mMainContentPanel.add(contentWithSidebar, BorderLayout.CENTER);
+            mRootPane.setCenter(rightContentPane);
+        });
         mBroadcastStatusVisible = mPreferences.getBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, false);
         mResourceStatusVisible = mPreferences.getBoolean(PREFERENCE_RESOURCE_STATUS_VISIBLE, true);
 
@@ -725,7 +718,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mPreferences.putBoolean(PREFERENCE_BROADCAST_STATUS_VISIBLE, mBroadcastStatusVisible);
         EventQueue.invokeLater(() -> {
             mControllerPanel.getNowPlayingPanel().setBroadcastStatusPanelVisible(mBroadcastStatusVisible);
-            mMainContentPanel.revalidate();
+
         });
     }
 
@@ -923,25 +916,31 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     public void onViewChanged(String id) {
         if (id == null) return;
 
-        if (mSidebarPanel != null) {
-            mSidebarPanel.setActive(id);
+        if (mSidebarController != null) {
+            javafx.application.Platform.runLater(() -> mSidebarController.setActive(id));
         }
 
         if (id.startsWith("playlist_")) {
             mCurrentViewId = "playlist_editor";
-            mTopContentPanel.remove(mSpectralPanel);
             mSpectralPanel.stop();
             mControllerPanel.setResourcePanelVisible(false);
             mControllerPanel.showView("playlist_editor");
-            mMainContentPanel.revalidate();
-            mMainContentPanel.repaint();
+
+            javafx.application.Platform.runLater(() -> {
+                if (mRootPane != null && mRootPane.getCenter() instanceof BorderPane) {
+                    BorderPane rightContentPane = (BorderPane) mRootPane.getCenter();
+                    if (rightContentPane.getTop() instanceof BorderPane) {
+                        BorderPane rightTopPane = (BorderPane) rightContentPane.getTop();
+                        rightTopPane.setCenter(null);
+                    }
+                }
+            });
             return;
         }
 
         mCurrentViewId = id;
 
         if (id.equals("now_playing")) {
-            mTopContentPanel.remove(mSpectralPanel);
             mControllerPanel.setResourcePanelVisible(false);
             mControllerPanel.getNowPlayingPanel().setComponents(mSpectralPanel, getBroadcastStatusPanel(), mNowPlayingResourceStatusPanel);
             mControllerPanel.getNowPlayingPanel().setSpectralPanelVisible(!mNowPlayingSpectrumDisabled);
@@ -950,25 +949,58 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             } else {
                 mSpectralPanel.start();
             }
+
+            javafx.application.Platform.runLater(() -> {
+                if (mRootPane != null && mRootPane.getCenter() instanceof BorderPane) {
+                    BorderPane rightContentPane = (BorderPane) mRootPane.getCenter();
+                    if (rightContentPane.getTop() instanceof BorderPane) {
+                        BorderPane rightTopPane = (BorderPane) rightContentPane.getTop();
+                        rightTopPane.setCenter(null);
+                    }
+                }
+            });
         } else if (id.equals("tuners")) {
             if (!mTunerSpectrumDisabled) {
-                mTopContentPanel.add(mSpectralPanel, BorderLayout.CENTER);
                 mSpectralPanel.start();
+                javafx.application.Platform.runLater(() -> {
+                    if (mRootPane != null && mRootPane.getCenter() instanceof BorderPane) {
+                        BorderPane rightContentPane = (BorderPane) mRootPane.getCenter();
+                        if (rightContentPane.getTop() instanceof BorderPane) {
+                            BorderPane rightTopPane = (BorderPane) rightContentPane.getTop();
+                            SwingNode spectralNode = new SwingNode();
+                            javax.swing.SwingUtilities.invokeLater(() -> spectralNode.setContent(mSpectralPanel));
+                            rightTopPane.setCenter(spectralNode);
+                        }
+                    }
+                });
             } else {
-                mTopContentPanel.remove(mSpectralPanel);
                 mSpectralPanel.stop();
+                javafx.application.Platform.runLater(() -> {
+                    if (mRootPane != null && mRootPane.getCenter() instanceof BorderPane) {
+                        BorderPane rightContentPane = (BorderPane) mRootPane.getCenter();
+                        if (rightContentPane.getTop() instanceof BorderPane) {
+                            BorderPane rightTopPane = (BorderPane) rightContentPane.getTop();
+                            rightTopPane.setCenter(null);
+                        }
+                    }
+                });
             }
             mControllerPanel.setResourcePanelVisible(mResourceStatusVisible);
         } else {
-            mTopContentPanel.remove(mSpectralPanel);
             mSpectralPanel.stop();
             mControllerPanel.setResourcePanelVisible(false);
+            javafx.application.Platform.runLater(() -> {
+                if (mRootPane != null && mRootPane.getCenter() instanceof BorderPane) {
+                    BorderPane rightContentPane = (BorderPane) mRootPane.getCenter();
+                    if (rightContentPane.getTop() instanceof BorderPane) {
+                        BorderPane rightTopPane = (BorderPane) rightContentPane.getTop();
+                        rightTopPane.setCenter(null);
+                    }
+                }
+            });
         }
 
         mControllerPanel.showView(id);
-
-        mMainContentPanel.revalidate();
-        mMainContentPanel.repaint();
     }
 
     @Override

@@ -177,6 +177,7 @@ public class JmbeCreator
                             ProcessBuilder processBuilder = new ProcessBuilder();
                             processBuilder.directory(extractDir.toFile());
                             processBuilder.command(script.toString(), "build");
+                            processBuilder.redirectErrorStream(true);
 
                             try
                             {
@@ -293,6 +294,8 @@ public class JmbeCreator
                         {
                             ProcessBuilder processBuilder = new ProcessBuilder();
                             processBuilder.command(script.toString(), mLibraryPath.toString());
+                            processBuilder.directory(unzipped.toFile());
+                            processBuilder.redirectErrorStream(true);
 
                                 try
                                 {
