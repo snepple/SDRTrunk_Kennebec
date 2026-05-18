@@ -5,7 +5,7 @@ SDRTrunk has made significant progress in adopting JavaFX. The application entry
 However, the architecture is currently inverted: the JavaFX outer application hosts a massive legacy Swing `JPanel` (`mMainContentPanel`) via an embedded `SwingNode`. Inside this Swing tree, various components use `JFXPanel` (the bridge class) to embed smaller, modernized JavaFX components back into the Swing hierarchy.
 
 **Current Metrics:**
-*   **4** files still extend `JFrame` (e.g., `EventFilterButton.java`, `SymbolViewerFX.java`, `SyncResultsViewer.java`).
+*   **1** files still extend `JFrame` (e.g., `EventFilterButton.java`, `SymbolViewerFX.java`, `SyncResultsViewer.java`).
 *   **40** files still extend `JPanel` (representing the bulk of the legacy UI).
 *   **25** files utilize `SwingNode` to bridge Swing components into JavaFX.
 
