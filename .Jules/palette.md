@@ -98,3 +98,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-17 - HIG Compliant Tooltips for Editors
 **Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
 **Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
+## 2024-05-19 - Add dynamic tooltip to icon-only sidebar toggle button
+**Learning:** Icon-only buttons lack inherent accessibility and clear meaning for users. In JavaFX, `Tooltip` provides this context but needs to be dynamically updated when the button triggers a state change (like expanding/collapsing a sidebar).
+**Action:** Always verify that icon-only buttons have a clear, dynamic tooltip if they control state. Use `.setTooltip()` to initialize, and `.getTooltip().setText()` to dynamically change the tooltip text based on state.
