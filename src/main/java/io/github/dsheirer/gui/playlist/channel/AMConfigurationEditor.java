@@ -60,6 +60,10 @@ import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.control.ToggleSwitch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javafx.scene.paint.Color;
+import jiconfont.icons.font_awesome.FontAwesome;
+import javafx.scene.control.Tooltip;
+import jiconfont.javafx.IconNode;
 
 /**
  * AM channel configuration editor
@@ -136,7 +140,7 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
 
             int row = 0;
 
-            Label bandwidthLabel = new Label("Channel Bandwidth");
+            Label bandwidthLabel = new Label("Channel Bandwidth", createHelpIcon("Width of the radio frequency spectrum to be decoded."));
             GridPane.setHalignment(bandwidthLabel, HPos.RIGHT);
             GridPane.setConstraints(bandwidthLabel, 0, row);
             gridPane.getChildren().add(bandwidthLabel);
@@ -144,7 +148,7 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getBandwidthButton(), 1, row++, 3, 1);
             gridPane.getChildren().add(getBandwidthButton());
 
-            Label squelchLabel = new Label("Squelch Threshold");
+            Label squelchLabel = new Label("Squelch Threshold", createHelpIcon("The signal power level required to open the audio output."));
             GridPane.setHalignment(squelchLabel, HPos.RIGHT);
             GridPane.setConstraints(squelchLabel, 0, row);
             gridPane.getChildren().add(squelchLabel);
@@ -152,7 +156,7 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getSquelchThresholdField(), 1, row);
             gridPane.getChildren().add(getSquelchThresholdField());
 
-            Label autoTrackLabel = new Label("Squelch Auto-Track");
+            Label autoTrackLabel = new Label("Squelch Auto-Track", createHelpIcon("Automatically adjusts the squelch threshold based on background noise."));
             GridPane.setHalignment(autoTrackLabel, HPos.RIGHT);
             GridPane.setConstraints(autoTrackLabel, 2, row);
             gridPane.getChildren().add(autoTrackLabel);
@@ -161,7 +165,7 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setHalignment(getSquelchAutoTrackSwitch(), HPos.LEFT);
             gridPane.getChildren().add(getSquelchAutoTrackSwitch());
 
-            Label talkgroupLabel = new Label("Talkgroup To Assign");
+            Label talkgroupLabel = new Label("Talkgroup To Assign", createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."));
             GridPane.setHalignment(talkgroupLabel, HPos.RIGHT);
             GridPane.setConstraints(talkgroupLabel, 4, row);
             gridPane.getChildren().add(talkgroupLabel);
@@ -582,5 +586,17 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
         getSourceConfigurationEditor().save();
         SourceConfiguration sourceConfiguration = getSourceConfigurationEditor().getSourceConfiguration();
         getItem().setSourceConfiguration(sourceConfiguration);
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }

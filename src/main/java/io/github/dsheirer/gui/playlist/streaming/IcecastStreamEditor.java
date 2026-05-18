@@ -26,6 +26,7 @@ package io.github.dsheirer.gui.playlist.streaming;
 import io.github.dsheirer.audio.broadcast.icecast.IcecastConfiguration;
 import io.github.dsheirer.playlist.PlaylistManager;
 import javafx.geometry.HPos;
+import javafx.scene.control.Tooltip;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -241,6 +242,7 @@ public abstract class IcecastStreamEditor extends AbstractStreamEditor<IcecastCo
         {
             mMountPointTextField = new TextField();
             mMountPointTextField.setDisable(true);
+            mMountPointTextField.setTooltip(new Tooltip("Enter the mount point for the stream (e.g., /mystream)"));
             mMountPointTextField.textProperty().addListener(mEditorModificationListener);
         }
 
@@ -253,6 +255,7 @@ public abstract class IcecastStreamEditor extends AbstractStreamEditor<IcecastCo
         {
             mInlineToggleSwitch = new ToggleSwitch();
             mInlineToggleSwitch.setDisable(true);
+            mInlineToggleSwitch.setTooltip(new Tooltip("Enable to send metadata within the stream instead of a separate stream"));
             mInlineToggleSwitch.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
