@@ -18,7 +18,7 @@
  */
 package io.github.dsheirer.gui.channelizer;
 
-import io.github.dsheirer.sample.complex.ComplexSamplesNativeBufferAdapter;
+import io.github.dsheirer.buffer.FloatNativeBuffer;
 import io.github.dsheirer.buffer.INativeBuffer;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.sample.complex.ComplexSamples;
@@ -367,8 +367,7 @@ public class HeterodyneChannelizerViewer extends JFrame
 
             if(mSource != null)
             {
-                // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
-                mSource.setListener(complexSamples -> mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples)));
+                mSource.setListener(complexSamples -> mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved())));
 
                 mSource.start();
             }
@@ -412,8 +411,7 @@ public class HeterodyneChannelizerViewer extends JFrame
         @Override
         public void receive(ComplexSamples complexSamples)
         {
-            // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
-            mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
+            mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
         }
 
         @Override
@@ -469,8 +467,7 @@ public class HeterodyneChannelizerViewer extends JFrame
                             mLog.debug("Samples:" + Arrays.toString(complexSamples.toInterleaved().samples()));
                         }
 
-                        // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
-                        mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
+                        mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
                     }
                 });
 
@@ -495,8 +492,7 @@ public class HeterodyneChannelizerViewer extends JFrame
         @Override
         public void receive(ComplexSamples complexSamples)
         {
-            // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
-            mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
+            mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
         }
 
         @Override

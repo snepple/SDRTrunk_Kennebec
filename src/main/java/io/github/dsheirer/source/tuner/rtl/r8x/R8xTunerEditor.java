@@ -19,16 +19,10 @@
 package io.github.dsheirer.source.tuner.rtl.r8x;
 
 import javax.swing.ProgressMonitor;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import javax.swing.SwingUtilities;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.swing.JOptionPane;
 
 
 import io.github.dsheirer.preference.UserPreferences;
@@ -38,7 +32,7 @@ import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.rtl.RTL2832Tuner;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController.SampleRate;
-import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
+import io.github.dsheirer.source.tuner.ui.TunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +43,7 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.SpinnerNumberModel;
@@ -57,7 +52,7 @@ import javax.usb.UsbException;
 /**
  * R8xxx Tuner Editor
  */
-public class R8xTunerEditor extends SwingTunerEditor<RTL2832Tuner, R8xTunerConfiguration>
+public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfiguration>
 {
     private final static Logger mLog = LoggerFactory.getLogger(R8xTunerEditor.class);
     private static final long serialVersionUID = 1L;
@@ -273,13 +268,8 @@ private JComboBox getVGAGainCombo()
                 }
                 catch(UsbException e)
                 {
-                    Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText(String.valueOf(getLogPrefix() +
-                            "couldn't apply the VGA gain setting - " + e.getLocalizedMessage()));
-            alert.showAndWait();
-        });
+                    JOptionPane.showMessageDialog(R8xTunerEditor.this, getLogPrefix() +
+                            "couldn't apply the VGA gain setting - " + e.getLocalizedMessage());
                     mLog.error(getLogPrefix() + "couldn't apply VGA gain setting", e);
                 }
             });
@@ -315,13 +305,8 @@ private JComboBox getVGAGainCombo()
                 }
                 catch(UsbException e)
                 {
-                    Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText(String.valueOf(getLogPrefix() +
-                            "couldn't apply the LNA gain setting - " + e.getLocalizedMessage()));
-            alert.showAndWait();
-        });
+                    JOptionPane.showMessageDialog(R8xTunerEditor.this, getLogPrefix() +
+                            "couldn't apply the LNA gain setting - " + e.getLocalizedMessage());
                     mLog.error(getLogPrefix() + "couldn't apply LNA " + "gain setting - ", e);
                 }
             });
@@ -352,13 +337,9 @@ private JComboBox getVGAGainCombo()
                     }
                     catch(SourceException | LibUsbException eSampleRate)
                     {
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText(String.valueOf(getLogPrefix() + "couldn't apply the sample rate setting [" +
-                                        sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage()));
-            alert.showAndWait();
-        });
+                        JOptionPane.showMessageDialog(R8xTunerEditor.this,
+                                getLogPrefix() + "couldn't apply the sample rate setting [" +
+                                        sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage());
 
                         mLog.error(getLogPrefix() + "couldn't apply sample rate setting [" + sampleRate.getLabel() +
                                 "]", eSampleRate);
@@ -398,13 +379,8 @@ private JComboBox getVGAGainCombo()
                     }
                     catch(UsbException e)
                     {
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText(String.valueOf(getLogPrefix() +
-                                "couldn't apply the mixer gain setting - " + e.getLocalizedMessage()));
-            alert.showAndWait();
-        });
+                        JOptionPane.showMessageDialog(R8xTunerEditor.this, getLogPrefix() +
+                                "couldn't apply the mixer gain setting - " + e.getLocalizedMessage());
 
                         mLog.error(getLogPrefix() + "couldn't apply mixer gain setting - ", e);
                     }
@@ -458,13 +434,8 @@ private JComboBox getVGAGainCombo()
                     }
                     catch(UsbException e)
                     {
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText(String.valueOf(getLogPrefix() +
-                                "couldn't apply the gain setting - " + e.getLocalizedMessage()));
-            alert.showAndWait();
-        });
+                        JOptionPane.showMessageDialog(R8xTunerEditor.this, getLogPrefix() +
+                                "couldn't apply the gain setting - " + e.getLocalizedMessage());
                         mLog.error(getLogPrefix() + "couldn't apply gain setting - ", e);
                     }
                 }
@@ -577,31 +548,14 @@ private JComboBox getVGAGainCombo()
         javax.swing.JButton btn = new javax.swing.JButton("Change Serial Number");
         btn.addActionListener(e -> {
             if (!hasTuner()) return;
-            String newSerial = null;
-        try {
-            FutureTask<String> task = new FutureTask<>(() -> {
-                TextInputDialog dialog = new TextInputDialog();
-                dialog.setTitle("Change RTL-SDR Serial Number");
-                dialog.setHeaderText(null);
-                dialog.setContentText(String.valueOf("Enter new Serial Number (Alphanumeric only, max 16 chars):\n\nWARNING: Writing to hardware memory is inherently risky.\nDo not disconnect the device during the write process."));
-                Optional<String> result = dialog.showAndWait();
-                return result.orElse(null);
-            });
-            Platform.runLater(task);
-            newSerial = task.get();
-        } catch (InterruptedException | ExecutionException ex) {
-            // Ignore
-        };
+            String newSerial = JOptionPane.showInputDialog(this,
+                    "Enter new Serial Number (Alphanumeric only, max 16 chars):\n\nWARNING: Writing to hardware memory is inherently risky.\nDo not disconnect the device during the write process.",
+                    "Change RTL-SDR Serial Number", JOptionPane.WARNING_MESSAGE);
 
             if (newSerial != null) {
                 newSerial = newSerial.trim();
                 if (!newSerial.matches("[A-Za-z0-9]*") || newSerial.length() > 16) {
-                    Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error");
-            alert.setContentText(String.valueOf("Invalid serial number. Must be alphanumeric and max 16 characters."));
-            alert.showAndWait();
-        });
+                    JOptionPane.showMessageDialog(this, "Invalid serial number. Must be alphanumeric and max 16 characters.", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
@@ -617,22 +571,12 @@ private JComboBox getVGAGainCombo()
                         ((io.github.dsheirer.source.tuner.rtl.RTL2832TunerController)getTuner().getTunerController()).setSerialNumber(serialToSet);
                         SwingUtilities.invokeLater(() -> {
                             progressMonitor.setProgress(100);
-                            Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Success");
-            alert.setContentText(String.valueOf("Serial number updated successfully.\nPlease disconnect and reconnect the tuner."));
-            alert.showAndWait();
-        });
+                            JOptionPane.showMessageDialog(this, "Serial number updated successfully.\nPlease disconnect and reconnect the tuner.", "Success", JOptionPane.INFORMATION_MESSAGE);
                         });
                     } catch (Exception ex) {
                         SwingUtilities.invokeLater(() -> {
                             progressMonitor.close();
-                            Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error");
-            alert.setContentText(String.valueOf("Failed to update serial number: " + ex.getMessage()));
-            alert.showAndWait();
-        });
+                            JOptionPane.showMessageDialog(this, "Failed to update serial number: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                         });
                     }
                 });

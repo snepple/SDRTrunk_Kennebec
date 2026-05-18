@@ -30,12 +30,3 @@
 ## 2024-05-14 - LNA Gain
 **Simplified:**
 - The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
-## 2024-05-31 - Modulation (C4FM/LSM)
-**Simplified:**
-- C4FM: Single-tower systems. LSM: Multi-tower simulcast systems where towers transmit simultaneously.
-## 2026-05-09 - System (P25 System Identifier)
-**Simplified:**
-- System Identifier: Combined with the WACN, uniquely identifies a P25 system.
-## 2024-05-24 - LNA
-**Simplified:**
-- Controls the input amplifier. Higher values help pick up weak signals but may introduce noise.

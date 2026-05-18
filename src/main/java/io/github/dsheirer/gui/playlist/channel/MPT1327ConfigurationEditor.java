@@ -49,9 +49,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
-import jiconfont.javafx.IconNode;
-import jiconfont.icons.font_awesome.FontAwesome;
-import javafx.scene.paint.Color;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tab;
 import javafx.scene.control.Tooltip;
@@ -143,7 +140,7 @@ public class MPT1327ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getChannelMapEditButton(), 3, 0);
             gridPane.getChildren().add(getChannelMapEditButton());
 
-            Label poolSizeLabel = new Label("Max Traffic Channels", createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."));
+            Label poolSizeLabel = new Label("Max Traffic Channels");
             GridPane.setHalignment(poolSizeLabel, HPos.RIGHT);
             GridPane.setConstraints(poolSizeLabel, 0, 1);
             gridPane.getChildren().add(poolSizeLabel);
@@ -151,7 +148,7 @@ public class MPT1327ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getTrafficChannelPoolSizeSpinner(), 1, 1);
             gridPane.getChildren().add(getTrafficChannelPoolSizeSpinner());
 
-            Label callTimeoutLabel = new Label("Call Timeout Seconds", createHelpIcon("Maximum call limit in seconds before the call is automatically terminated."));
+            Label callTimeoutLabel = new Label("Call Timeout Seconds");
             GridPane.setHalignment(callTimeoutLabel, HPos.RIGHT);
             GridPane.setConstraints(callTimeoutLabel, 2, 1);
             gridPane.getChildren().add(callTimeoutLabel);
@@ -463,17 +460,5 @@ public class MPT1327ConfigurationEditor extends ChannelConfigurationEditor
         getSourceConfigurationEditor().save();
         SourceConfiguration sourceConfiguration = getSourceConfigurationEditor().getSourceConfiguration();
         getItem().setSourceConfiguration(sourceConfiguration);
-    }
-
-    private Label createHelpIcon(String tooltipText) {
-        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
-        iconNode.setIconSize(14);
-        iconNode.setFill(Color.GRAY);
-        Label label = new Label("", iconNode);
-        Tooltip tooltip = new Tooltip(tooltipText);
-        tooltip.setWrapText(true);
-        tooltip.setMaxWidth(400);
-        label.setTooltip(tooltip);
-        return label;
     }
 }

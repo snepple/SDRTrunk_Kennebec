@@ -1,26 +1,30 @@
+### Latest Compiled Release: [Download K.00.046](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.046)
 ### Latest Compiled Release: [Download K.00.058](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.058)
 
 <h1>sdrtrunk - Kennebec Version</h1>
 
-## 🆕 Recent Updates (Week of May 17, 2026)
-* **🚀 New Features & Core Updates:**
-  * **Upstream Syncing:** Ported keepalive, CTCSS, and EQ fixes from upstream.
+## 🆕 Recent Updates (Week of May 10, 2026)
+* **🚀 New Features:**
+  * **JMBE Support:** Added support for building the bazineta JMBE fork.
+  * **AI Integration:** Implemented AI Audio Monitoring for channels and added an "AI Optimize Audio Filters" button to the NBFM channel configuration.
+  * **System Health:** Implemented a new System Health Notification feature to alert you of application issues.
+  * **Geographic IDs:** Added a Geographic ID generator for NBFM channels.
 * **🎨 UI/UX Improvements:**
-  * **Massive JavaFX Modernization:** Undertook significant structural layout inversions, converting the application root layout from Swing to native JavaFX.
-  * **Tuner Editors:** Migrated the TunerEditor and AirspyTunerEditor to pure JavaFX.
-  * **Controller & Sidebar:** Refactored ControllerPanel and SidebarPanel to pure JavaFX.
-  * **Smart Dropdowns:** Converted the P25 Talkgroup Editor and Radio ID text fields to use smart dropdowns with autocomplete capabilities.
-  * **Tooltips & HIG Alignment:** Added contextual Apple HIG-compliant tooltips across numerous editors, numeric spinners, and action buttons.
-* **⚡ Performance:**
-  * **DSP Memory Optimization:** Reduced memory churn in the DSP pipeline by using `ComplexSamplesNativeBufferAdapter` to lazily defer array allocations.
-  * **Search & UI Optimizations:** Optimized regex compilation in P25 viewers and PlaylistUpdater, and improved LogsViewController search filtering performance.
-  * **Background Tasks:** Offloaded Radio Reference Talkgroup import to a background thread to prevent UI freezing.
+  * **Channel Table Enhancements:** Enabled inline editing and added a right-click context menu to the channel table rows.
+  * **Alias & Streaming:** Added inline editing to the alias table, separated listen and priority columns in the Alias Configuration Editor, and added context menu filtering to the streaming widget.
+  * **Live Console:** Added multiple selection and clipboard copy support to Live Console logs.
+  * **Notifications:** Redesigned the Notifications configuration and added alerts.
+  * **Sidebar Update:** Updated the sidebar expand/contract styling to feature the SDRTrunk logo and dynamic positioning.
 * **🛡️ Security & Stability:**
-  * **Application Startup:** Resolved `IllegalStateException` and `NullPointerException` errors during application startup.
-  * **Resource Leaks:** Fixed resource leaks in `ZipUtility` using try-with-resources.
+  * Fixed a GUI threading issue ensuring main GUI initialization and Swing UI component updates are correctly handled on the Event Dispatch Thread (EDT).
+  * Resolved a deadlock and buffer leak in the NativeBufferManager affecting the waterfall display.
+  * Fixed a resource leak in the AudioSegmentRecorder.
+  * Prevented application crashes on startup caused by MigLayout constraints.
+* **🔧 Bug Fixes:**
+  * Fixed an issue where the tuner enable button failed silently due to a bandwidth bug.
+  * Resolved UI bugs causing empty spectrum and waterfall displays.
 * **📚 Documentation:**
-  * **Interconnectivity Guide:** Added a detailed guide for Channels, Aliases, and Streaming interconnectivity.
-  * **Visualizer Documentation:** Added new documentation for Spectrum and Waterfall displays.
+  * Added new guides for Radio Reference import, OpenMHz streaming, Rdio Scanner streaming, and ThinLine Radio documentation.
 
 
 <p>Welcome to the Kennebec version of sdrtrunk—a modernized, cross-platform Java application engineered for decoding, monitoring, recording, and streaming trunked mobile and related radio protocols using Software Defined Radios (SDR).</p>
@@ -51,7 +55,6 @@
 <h3>Modernized Interface and Workflow</h3>
 <ul>
   <li>Refreshed GUI with updated icons and an improved Now Playing view</li>
-  <li>Extensive JavaFX UI modernization and Apple HIG alignment for improved accessibility and look-and-feel</li>
   <li>Consolidated settings in a single user preference area, eliminating the need to hunt across multiple menus</li>
   <li>New interface for reviewing logs and browsing recorded audio files</li>
   <li>Ability to set allocated memory directly via the user preferences Ux/GUI</li>

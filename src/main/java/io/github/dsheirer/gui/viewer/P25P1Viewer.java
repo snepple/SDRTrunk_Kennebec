@@ -91,7 +91,6 @@ public class P25P1Viewer extends VBox
     private static final KeyCodeCombination KEY_CODE_COPY = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_ANY);
     private static final String LAST_SELECTED_DIRECTORY = "last.selected.directory.p25p1";
     private static final String FILE_FREQUENCY_REGEX = ".*\\d{8}_\\d{6}_(\\d{9}).*";
-    private static final Pattern FILE_FREQUENCY_PATTERN = Pattern.compile(FILE_FREQUENCY_REGEX);
     private Preferences mPreferences = Preferences.userNodeForPackage(P25P1Viewer.class);
     private Button mSelectFileButton;
     private Label mSelectedFileLabel;
@@ -274,17 +273,21 @@ public class P25P1Viewer extends VBox
             return 0;
         }
 
-        Matcher m = FILE_FREQUENCY_PATTERN.matcher(file);
-        if(m.find())
+        if(file.matches(FILE_FREQUENCY_REGEX))
         {
-            try
+            Pattern p = Pattern.compile(FILE_FREQUENCY_REGEX);
+            Matcher m = p.matcher(file);
+            if(m.find())
             {
-                String raw = m.group(1);
-                return Long.parseLong(raw);
-            }
-            catch(Exception e)
-            {
-                mLog.error("Couldn't parse frequency from bits file [" + file + "]");
+                try
+                {
+                    String raw = m.group(1);
+                    return Long.parseLong(raw);
+                }
+                catch(Exception e)
+                {
+                    mLog.error("Couldn't parse frequency from bits file [" + file + "]");
+                }
             }
         }
 
@@ -300,8 +303,7 @@ public class P25P1Viewer extends VBox
 
         if(filterText != null && !filterText.isEmpty())
         {
-            final String lowerCaseFilterText = filterText.toLowerCase();
-            Predicate<MessagePackage> textPredicate = message -> message.toString().toLowerCase().contains(lowerCaseFilterText);
+            Predicate<MessagePackage> textPredicate = message -> message.toString().toLowerCase().contains(filterText.toLowerCase());
             mFilteredMessagePackages.setPredicate(textPredicate);
         }
         else
@@ -318,10 +320,9 @@ public class P25P1Viewer extends VBox
     {
         if(text != null && !text.isEmpty())
         {
-            final String lowerCaseText = text.toLowerCase();
             for(MessagePackage messagePackage: mFilteredMessagePackages)
             {
-                if(messagePackage.toString().toLowerCase().contains(lowerCaseText))
+                if(messagePackage.toString().toLowerCase().contains(text.toLowerCase()))
                 {
                     getMessagePackageTableView().getSelectionModel().select(messagePackage);
                     getMessagePackageTableView().scrollTo(messagePackage);

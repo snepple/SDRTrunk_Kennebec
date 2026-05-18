@@ -19,20 +19,13 @@
 package io.github.dsheirer.source.tuner.fcd.proV1;
 
 import io.github.dsheirer.preference.UserPreferences;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import io.github.dsheirer.source.tuner.fcd.FCDTuner;
 import io.github.dsheirer.source.tuner.fcd.proV1.FCD1TunerController.LNAEnhance;
 import io.github.dsheirer.source.tuner.fcd.proV1.FCD1TunerController.LNAGain;
 import io.github.dsheirer.source.tuner.fcd.proV1.FCD1TunerController.MixerGain;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
+import io.github.dsheirer.source.tuner.ui.TunerEditor;
 import java.text.DecimalFormat;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
@@ -41,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerModel;
@@ -50,7 +44,7 @@ import javax.swing.SwingConstants;
 /**
  * Funcube Dongle Pro tuner editor
  */
-public class FCD1TunerEditor extends SwingTunerEditor<FCDTuner,FCD1TunerConfiguration>
+public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration>
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(FCD1TunerEditor.class);
@@ -200,13 +194,8 @@ public class FCD1TunerEditor extends SwingTunerEditor<FCDTuner,FCD1TunerConfigur
                     }
                     catch(Exception e)
                     {
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("FCD Pro Tuner " +
+                        JOptionPane.showMessageDialog(FCD1TunerEditor.this, "FCD Pro Tuner " +
                                 "Controller - error setting LNA gain [" + gain + "]");
-            alert.showAndWait();
-        });
 
                         mLog.error("FuncubeDonglePro Controller - error setting gain [" + gain + "]", e);
                     }
@@ -237,13 +226,8 @@ public class FCD1TunerEditor extends SwingTunerEditor<FCDTuner,FCD1TunerConfigur
                     }
                     catch(Exception e1)
                     {
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("FCD Pro Tuner"
+                        JOptionPane.showMessageDialog(FCD1TunerEditor.this, "FCD Pro Tuner"
                                 + " error setting LNA enhance gain [" + enhance + "]");
-            alert.showAndWait();
-        });
 
                         mLog.error("FCDPro - error setting LNA enhance  [" + enhance + "]", e1);
                     }
@@ -274,13 +258,8 @@ public class FCD1TunerEditor extends SwingTunerEditor<FCDTuner,FCD1TunerConfigur
                     }
                     catch(Exception e1)
                     {
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("FCDPro - error setting"
+                        JOptionPane.showMessageDialog(FCD1TunerEditor.this, "FCDPro - error setting"
                                 + " mixer gain [" + gain + "]");
-            alert.showAndWait();
-        });
 
                         mLog.error("FCDPro - error setting mixer gain [" + gain + "]", e1);
                     }
@@ -455,13 +434,8 @@ protected String getTunerInfo()
                     }
                     catch(Exception e1)
                     {
-                        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information");
-            alert.setContentText("FCDPro - error "
+                        JOptionPane.showMessageDialog(FCD1TunerEditor.this, "FCDPro - error "
                                 + "applying " + mCorrectionComponent.toString() + " correction value [" + value + "]");
-            alert.showAndWait();
-        });
 
                         mLog.error("FCDPro - error applying " + mCorrectionComponent.toString() + " correction value [" +
                                 value + "]", e1);

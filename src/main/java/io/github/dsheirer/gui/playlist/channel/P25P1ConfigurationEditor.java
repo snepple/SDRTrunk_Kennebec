@@ -45,7 +45,6 @@ import io.github.dsheirer.gui.control.IntegerTextField;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Slider;
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
@@ -82,7 +81,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     private ToggleSwitch mIgnoreUnaliasedTalkgroupsButton;
     private ToggleSwitch mNacFilterButton;
     private javafx.scene.control.TextField mNacTextField;
-    private ComboBox<Integer> mTalkgroupComboBox;
+    private IntegerTextField mTalkgroupTextField;
     private Spinner<Integer> mTrafficChannelPoolSizeSpinner;
     private SegmentedButton mModulationSegmentedButton;
     private ToggleButton mC4FMToggleButton;
@@ -143,7 +142,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.setHgap(10);
             gridPane.setVgap(10);
 
-            Label modulationLabel = new Label("Modulation", createHelpIcon("Defines how the digital signal is transmitted.\n\nC4FM: Use for single-tower repeaters or direct radio-to-radio communication.\nLSM: Use for simulcast systems where multiple towers transmit the exact same signal simultaneously."));
+            Label modulationLabel = new Label("Modulation");
             GridPane.setHalignment(modulationLabel, HPos.RIGHT);
             GridPane.setConstraints(modulationLabel, 0, 0);
             gridPane.getChildren().add(modulationLabel);
@@ -187,8 +186,8 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(tgLabel, 2, 2);
             gridPane.getChildren().add(tgLabel);
 
-            GridPane.setConstraints(getTalkgroupComboBox(), 3, 2);
-            gridPane.getChildren().add(getTalkgroupComboBox());
+            GridPane.setConstraints(getTalkgroupTextField(), 3, 2);
+            gridPane.getChildren().add(getTalkgroupTextField());
 
             GridPane.setConstraints(getIgnoreUnaliasedTalkgroupsButton(), 4, 2);
             gridPane.getChildren().add(getIgnoreUnaliasedTalkgroupsButton());
@@ -470,26 +469,19 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         return mNacTextField;
     }
 
-    private ComboBox<Integer> getTalkgroupComboBox()
+    private IntegerTextField getTalkgroupTextField()
     {
-        if(mTalkgroupComboBox == null)
+        if(mTalkgroupTextField == null)
         {
-            mTalkgroupComboBox = new ComboBox<>();
-            mTalkgroupComboBox.setEditable(true);
-            mTalkgroupComboBox.setDisable(true);
-            mTalkgroupComboBox.setPrefWidth(120);
-            mTalkgroupComboBox.getEditor().setPromptText("e.g. 1001");
-            mTalkgroupComboBox.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
-            mTalkgroupComboBox.setConverter(new javafx.util.StringConverter<Integer>() {
-                @Override
-                public String toString(Integer object) { return object != null ? object.toString() : ""; }
-                @Override
-                public Integer fromString(String string) { try { return Integer.parseInt(string); } catch(NumberFormatException e) { return null; } }
-            });
-            mTalkgroupComboBox.getEditor().textProperty()
+            mTalkgroupTextField = new IntegerTextField();
+            mTalkgroupTextField.setDisable(true);
+            mTalkgroupTextField.setPrefWidth(80);
+            mTalkgroupTextField.setPromptText("e.g. 1001");
+            mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
+            mTalkgroupTextField.textProperty()
                 .addListener((observable, oldValue, newValue) -> {
                     modifiedProperty().set(true);
-                    Integer tg = null; try { tg = Integer.parseInt(newValue); } catch (Exception e) {}
+                    Integer tg = mTalkgroupTextField.get();
                     if (tg != null && tg > 0) {
                         boolean conflict = false;
                         for (io.github.dsheirer.controller.channel.Channel c : getPlaylistManager().getChannelModel().channelList()) {
@@ -503,41 +495,20 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
                             }
                         }
                         if (conflict) {
-                            mTalkgroupComboBox.setStyle("-fx-border-color: red; -fx-border-width: 2px; -fx-border-radius: 3px;");
-                            mTalkgroupComboBox.setTooltip(new Tooltip("Talkgroup ID already assigned to another channel"));
+                            mTalkgroupTextField.setStyle("-fx-border-color: red; -fx-border-width: 2px; -fx-border-radius: 3px;");
+                            mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID already assigned to another channel"));
                         } else {
-                            mTalkgroupComboBox.setStyle("");
-                            mTalkgroupComboBox.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
+                            mTalkgroupTextField.setStyle("");
+                            mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
                         }
                     } else {
-                        mTalkgroupComboBox.setStyle("");
-                        mTalkgroupComboBox.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
+                        mTalkgroupTextField.setStyle("");
+                        mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
                     }
                 });
-            mTalkgroupComboBox.setCellFactory(lv -> new javafx.scene.control.ListCell<Integer>() {
-                @Override
-                protected void updateItem(Integer item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                    } else {
-                        String label = item.toString();
-                        if(getPlaylistManager() != null) {
-                            for(io.github.dsheirer.alias.Alias a : getPlaylistManager().getAliasModel().getAliases()) {
-                                for(io.github.dsheirer.alias.id.AliasID id : a.getAliasIdentifiers()) {
-                                    if(id instanceof io.github.dsheirer.alias.id.talkgroup.Talkgroup tgID && tgID.getValue() == item && tgID.getProtocol() == io.github.dsheirer.protocol.Protocol.APCO25) {
-                                        label = String.format("%d (%s)", item, a.getName());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        setText(label);
-                    }
-                }
-            });
         }
-        return mTalkgroupComboBox;
+
+        return mTalkgroupTextField;
     }
 
     private Spinner<Integer> getTrafficChannelPoolSizeSpinner()
@@ -586,7 +557,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         getTrafficChannelPoolSizeSpinner().setDisable(config == null);
         getNacFilterButton().setDisable(config == null);
         getNacTextField().setDisable(config == null);
-        getTalkgroupComboBox().setDisable(config == null);
+        getTalkgroupTextField().setDisable(config == null);
 
         if(config instanceof DecodeConfigP25Phase1)
         {
@@ -596,21 +567,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             getTrafficChannelPoolSizeSpinner().getValueFactory().setValue(decodeConfig.getTrafficChannelPoolSize());
             getNacFilterButton().setSelected(decodeConfig.isNacFilterEnabled());
             int tg = decodeConfig.getTalkgroup();
-            java.util.Set<Integer> knownTalkgroups = new java.util.TreeSet<>();
-            if(getPlaylistManager() != null) {
-                for(io.github.dsheirer.alias.Alias a : getPlaylistManager().getAliasModel().getAliases()) {
-                    for(io.github.dsheirer.alias.id.AliasID id : a.getAliasIdentifiers()) {
-                        if(id instanceof io.github.dsheirer.alias.id.talkgroup.Talkgroup tgID && tgID.getProtocol() == io.github.dsheirer.protocol.Protocol.APCO25) {
-                            knownTalkgroups.add(tgID.getValue());
-                        }
-                    }
-                }
-            }
-            javafx.collections.ObservableList<Integer> options = javafx.collections.FXCollections.observableArrayList(knownTalkgroups);
-            getTalkgroupComboBox().setItems(options);
-            if (tg > 0) getTalkgroupComboBox().setValue(tg);
-            else getTalkgroupComboBox().setValue(null);
-            getTalkgroupComboBox().getEditor().setText(tg > 0 ? String.valueOf(tg) : "");
+            getTalkgroupTextField().setText(tg > 0 ? String.valueOf(tg) : "");
 
             //Format NAC list for display
             StringBuilder sb = new StringBuilder();
@@ -651,8 +608,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             getTrafficChannelPoolSizeSpinner().getValueFactory().setValue(0);
             getNacFilterButton().setSelected(false);
             getNacTextField().setText("");
-            getTalkgroupComboBox().setValue(null);
-            getTalkgroupComboBox().getEditor().setText("");
+            getTalkgroupTextField().setText("");
 
             // Disable EQ
             mGraphicEQEnabledSwitch.setSelected(false);
@@ -669,8 +625,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     @Override
     protected Integer getConfiguredTalkgroup()
     {
-        Integer tg = getTalkgroupComboBox().getValue();
-        if (tg == null) { try { tg = Integer.parseInt(getTalkgroupComboBox().getEditor().getText()); } catch(Exception e) {} }
+        Integer tg = getTalkgroupTextField().get();
         if(tg != null && tg >= 1 && tg <= 65535)
         {
             return tg;
@@ -701,8 +656,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         int originalTalkgroup = config.getTalkgroup();
 
         //Parse talkgroup text field
-        Integer tg = getTalkgroupComboBox().getValue();
-        if (tg == null) { try { tg = Integer.parseInt(getTalkgroupComboBox().getEditor().getText()); } catch(Exception e) {} }
+        Integer tg = getTalkgroupTextField().get();
         if(tg != null && tg >= 1 && tg <= 65535)
         {
             config.setTalkgroup(tg);

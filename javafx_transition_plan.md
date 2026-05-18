@@ -1,9 +1,9 @@
 # JavaFX Transition Plan for SDRTrunk
 
 ## Current State Assessment
-SDRTrunk has made significant progress in adopting JavaFX. The application entry point `io.github.dsheirer.gui.SDRTrunk` now extends JavaFX `Application` and sets up a JavaFX `Scene`. However, the architecture is still mixed: the JavaFX outer application hosts several legacy Swing `JPanel` components via embedded `SwingNode`s (e.g. `spectralNode`, `audioNode`). Inside these Swing trees, various components use `JFXPanel` (the bridge class) to embed smaller, modernized JavaFX components back into the Swing hierarchy (e.g., `WaterfallPanel`, `HelpViewer`, `ChannelDetailPanel`).
+SDRTrunk has already made significant progress in adopting JavaFX. The application entry point `io.github.dsheirer.gui.SDRTrunk` now extends JavaFX `Application`. However, the architecture is currently inverted: the JavaFX outer application hosts a massive legacy Swing `JPanel` (`mMainContentPanel`) via an embedded `SwingNode`. Inside this Swing tree, various components use `JFXPanel` (the bridge class) to embed smaller, modernized JavaFX components back into the Swing hierarchy (e.g., `WaterfallPanel`, `HelpViewer`, `ChannelDetailPanel`).
 
-There are currently ~94 files still referencing `javax.swing`, including several top-level `JFrame` classes, standalone dialogs, and nested `JPanel` containers.
+There are currently ~102 files still referencing `javax.swing`, including several top-level `JFrame` classes, standalone dialogs, and nested `JPanel` containers.
 
 ## Multi-Phase Transition Plan
 
@@ -24,11 +24,11 @@ As the leaf components become JavaFX, begin refactoring the mid-level grouping c
 *   **Action:** Convert intermediate Swing containers like `ControllerPanel`, `SidebarPanel`, and various tuner editors (e.g., `TunerEditor`, `AirspyTunerEditor`) to pure JavaFX.
 *   **Action:** As a container is converted to JavaFX, remove any `JFXPanel` wrappers from its children (which were added in Phase 2 or prior). The children can now be added directly to the parent JavaFX layout.
 
-### Phase 4: Replace Remaining SwingNodes in Root Layout
-With the sub-components and sidebar panels migrated, the core application layout can be fully native JavaFX.
-*   **Action:** In `SDRTrunk.java`, replace the remaining instantiations of `SwingNode` (e.g., `spectralNode`, `audioNode`, `resourceNode`) that wrap legacy components (`mSpectralPanel`, `mControllerPanel.getAudioPanel()`, etc.) with their fully migrated JavaFX counterparts.
-*   **Action:** Attach the now-native JavaFX `AudioPanel`, `SpectralPanel`, and `ResourceStatusPanel` directly to the `BorderPane` layout.
-*   **Action:** Completely remove all `SwingNode` imports and instantiation blocks from `SDRTrunk.java`.
+### Phase 4: Root Application Layout Inversion (The Big Switch)
+With the sub-components and sidebar panels migrated, the core application layout can be updated to natively support them.
+*   **Action:** In `SDRTrunk.java`, replace the instantiation of the legacy `mMainContentPanel` (a `JPanel` inside a `SwingNode`) with a native JavaFX root container, such as `BorderPane`.
+*   **Action:** Attach the now-native JavaFX `SidebarPanel`, `ControllerPanel`, and spectral displays directly to this new JavaFX root.
+*   **Action:** Completely remove the `SwingNode` instantiation and the `javax.swing.SwingUtilities.invokeLater()` initialization block from the main application startup sequence.
 
 ### Phase 5: Eradication and Cleanup
 Ensure no legacy Swing code or bridging mechanisms remain.

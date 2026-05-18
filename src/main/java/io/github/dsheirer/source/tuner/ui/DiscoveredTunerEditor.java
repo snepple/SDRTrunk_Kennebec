@@ -65,7 +65,7 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
      */
     public void setTunerLockState(boolean locked)
     {
-        if(mEditor instanceof ITunerEditor tunerEditor)
+        if(mEditor instanceof TunerEditor tunerEditor)
         {
             tunerEditor.setTunerLockState(locked);
         }

@@ -93,24 +93,24 @@ public class LCHarrisTalkerAliasComplete extends LinkControlWord implements IMes
     {
         if(mTalkerAlias == null)
         {
-            StringBuilder alias = new StringBuilder(getPayloadFragmentString());
+            String alias = getPayloadFragmentString();
 
-            if(mFragment2 != null && alias.indexOf(mFragment2) == -1)
+            if(mFragment2 != null && !alias.contains(mFragment2))
             {
-                alias.append(mFragment2);
+                alias += mFragment2;
 
-                if(mFragment3 != null && alias.indexOf(mFragment3) == -1)
+                if(mFragment3 != null && !alias.contains(mFragment3))
                 {
-                    alias.append(mFragment3);
+                    alias += mFragment3;
 
-                    if(mFragment4 != null && alias.indexOf(mFragment4) == -1)
+                    if(mFragment4 != null && !alias.contains(mFragment4))
                     {
-                        alias.append(mFragment4);
+                        alias += mFragment4;
                     }
                 }
             }
 
-            mTalkerAlias = P25TalkerAliasIdentifier.create(alias.toString());
+            mTalkerAlias = P25TalkerAliasIdentifier.create(alias);
         }
 
         return mTalkerAlias;

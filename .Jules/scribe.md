@@ -36,14 +36,3 @@
 **Topic:** Spectrum & Waterfall Display
 **Learning:** Added a new documentation guide covering the Spectrum & Waterfall display, as there was no getting started guide for this core navigational component, and added a signal flow Mermaid diagram to clarify interactions.
 **Action:** Created `src/main/resources/docs/spectrum-&-waterfall.md` and integrated it into the navigation tree of `HelpViewer.java` under "Hardware & Tuners".
-## 2024-05-20 - Aliases and Talkgroups Diagram
-**Learning:** Users often confuse Aliases with Talkgroups—always include a 'Relationship' diagram for these.
-**Action:** Added a Mermaid signal flow diagram to aliases-talkgroups.md to clarify the relationship between Frequency, Decoder, Alias, and Audio.
-## 2024-05-21 - Topic Selection
-**Topic:** Channels, Aliases, and Streaming
-**Learning:** Users often struggle with the core interconnectivity of how a decoded channel routes to an alias, which then routes to a stream. A component map and signal flow diagram are essential here to clarify the system architecture for new users.
-**Action:** Created `src/main/resources/docs/channels-aliases-streaming.md` and integrated it into the navigation tree of `HelpViewer.java` under "Organization & Playlists".
-## 2024-05-22 - Topic Selection
-**Topic:** Now Playing Panel Guide
-**Learning:** The "Now Playing" panel is a core navigational and monitoring component, but it lacked a dedicated "Getting Started" guide explaining its states, interactions, and signal flow.
-**Action:** Created `src/main/resources/docs/now-playing.md` with a visual flow (Mermaid), UI wireframe, and step-by-step guide. Integrated it into the navigation tree of `HelpViewController.java` under "Getting Started".

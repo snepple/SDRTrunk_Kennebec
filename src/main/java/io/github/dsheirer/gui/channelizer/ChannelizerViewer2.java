@@ -18,14 +18,7 @@
  */
 package io.github.dsheirer.gui.channelizer;
 
-import io.github.dsheirer.sample.complex.ComplexSamplesNativeBufferAdapter;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import io.github.dsheirer.buffer.FloatNativeBuffer;
 import io.github.dsheirer.buffer.INativeBuffer;
 import io.github.dsheirer.dsp.filter.channelizer.PolyphaseChannelSource;
 import io.github.dsheirer.sample.Listener;
@@ -57,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JToggleButton;
@@ -189,21 +183,7 @@ public class ChannelizerViewer2 extends JFrame
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
-                    String value = null;
-        FutureTask<String> task = new FutureTask<>(() -> {
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("Input");
-            dialog.setHeaderText(null);
-            dialog.setContentText("Frequency?");
-            Optional<String> result = dialog.showAndWait();
-            return result.orElse(null);
-        });
-        Platform.runLater(task);
-        try {
-            value = task.get();
-        } catch (InterruptedException | ExecutionException ex) {
-            // Ignore
-        }
+                    String value = JOptionPane.showInputDialog(ChannelizerViewer2.this, "Frequency?");
 
                     if(value != null && !value.isEmpty())
                     {
@@ -241,21 +221,7 @@ public class ChannelizerViewer2 extends JFrame
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
-                    String value = null;
-        FutureTask<String> task = new FutureTask<>(() -> {
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("Input");
-            dialog.setHeaderText(null);
-            dialog.setContentText("Frequency?");
-            Optional<String> result = dialog.showAndWait();
-            return result.orElse(null);
-        });
-        Platform.runLater(task);
-        try {
-            value = task.get();
-        } catch (InterruptedException | ExecutionException ex) {
-            // Ignore
-        }
+                    String value = JOptionPane.showInputDialog(ChannelizerViewer2.this, "Frequency?");
 
                     if(value != null && !value.isEmpty())
                     {
@@ -422,11 +388,9 @@ public class ChannelizerViewer2 extends JFrame
             if(mSource != null)
             {
                 mLog.debug("Channel: " + mSource.getTunerChannel() + " Rate:" + mSource.getSampleRate());
-                // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
                 mSource.setListener((Listener<ComplexSamples>) complexSamples ->
                 {
-                    // ⚡ Bolt: Defer toInterleaved() array allocations until consumer pulls by using ComplexSamplesNativeBufferAdapter
-                    mComplexDftProcessor.receive(new ComplexSamplesNativeBufferAdapter(complexSamples));
+                    mComplexDftProcessor.receive(new FloatNativeBuffer(complexSamples.toInterleaved()));
                 });
 
                 if(mSource instanceof PolyphaseChannelSource pcs)

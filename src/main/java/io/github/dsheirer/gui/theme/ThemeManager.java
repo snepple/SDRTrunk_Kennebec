@@ -2,10 +2,6 @@ package io.github.dsheirer.gui.theme;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
-import io.github.dsheirer.util.ThreadPool;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 import org.slf4j.Logger;
@@ -20,7 +16,7 @@ public class ThemeManager {
     private static final String REGISTRY_KEY = "AppsUseLightTheme";
     
     private boolean mIsWindows11;
-    private ScheduledFuture<?> mRegistryMonitorFuture;
+    private Thread mRegistryMonitorThread;
 
     public ThemeManager() {
         String osName = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
@@ -105,23 +101,26 @@ public class ThemeManager {
     }
 
     private void startRegistryMonitor() {
-        mRegistryMonitorFuture = ThreadPool.SCHEDULED.scheduleWithFixedDelay(new Runnable() {
-            private int lastValue = -1;
-
-            @Override
-            public void run() {
-                try {
-                    int currentValue = Advapi32Util.registryGetIntValue(WinReg.HKEY_CURRENT_USER, REGISTRY_PATH, REGISTRY_KEY);
-                    if (lastValue == -1) {
-                        lastValue = currentValue;
-                    } else if (currentValue != lastValue) {
-                        lastValue = currentValue;
-                        SwingUtilities.invokeLater(ThemeManager.this::applyTheme);
+        mRegistryMonitorThread = new Thread(() -> {
+            try {
+                int lastValue = Advapi32Util.registryGetIntValue(WinReg.HKEY_CURRENT_USER, REGISTRY_PATH, REGISTRY_KEY);
+                while (!Thread.currentThread().isInterrupted()) {
+                    try {
+                        int currentValue = Advapi32Util.registryGetIntValue(WinReg.HKEY_CURRENT_USER, REGISTRY_PATH, REGISTRY_KEY);
+                        if (currentValue != lastValue) {
+                            lastValue = currentValue;
+                            SwingUtilities.invokeLater(this::applyTheme);
+                        }
+                    } catch (Exception ex) {
+                        // Key might not exist temporarily
                     }
-                } catch (Exception e) {
-                    // Key might not exist temporarily
+                    Thread.sleep(2000); // Poll every 2 seconds
                 }
+            } catch (Exception e) {
+                mLog.error("Registry monitor thread failed", e);
             }
-        }, 0, 2, TimeUnit.SECONDS);
+        });
+        mRegistryMonitorThread.setDaemon(true);
+        mRegistryMonitorThread.start();
     }
 }

@@ -19,18 +19,11 @@
 package io.github.dsheirer.source.tuner.fcd.proplusV2;
 
 import io.github.dsheirer.preference.UserPreferences;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import io.github.dsheirer.source.SourceException;
 import io.github.dsheirer.source.tuner.fcd.FCDTuner;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import io.github.dsheirer.source.tuner.ui.SwingTunerEditor;
+import io.github.dsheirer.source.tuner.ui.TunerEditor;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,13 +31,14 @@ import org.slf4j.LoggerFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.SpinnerNumberModel;
 
 /**
  * Funcube Dongle Pro Plus tuner editor
  */
-public class FCD2TunerEditor extends SwingTunerEditor<FCDTuner, FCD2TunerConfiguration>
+public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguration>
 {
     private final static Logger mLog = LoggerFactory.getLogger(FCD2TunerEditor.class);
     private static final long serialVersionUID = 1L;
