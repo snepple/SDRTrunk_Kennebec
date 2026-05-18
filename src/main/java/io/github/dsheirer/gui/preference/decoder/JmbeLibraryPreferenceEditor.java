@@ -191,6 +191,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
             mCreateButton = new Button();
             mCreateButton.setText(mUserPreferences.getJmbeLibraryPreference()
                 .getPathJmbeLibrary() != null ? CHECK_FOR_UPDATE : CREATE_LIBRARY);
+            mCreateButton.setTooltip(new Tooltip("Downloads the latest source code and compiles a new JMBE library automatically."));
             mCreateButton.setOnAction(event -> checkForUpdatedLibrary());
         }
 
@@ -324,6 +325,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
         if(mSelectButton == null)
         {
             mSelectButton = new Button("Select...");
+            mSelectButton.setTooltip(new Tooltip("Browse your computer to select an existing compiled JMBE library file."));
             mSelectButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -358,6 +360,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
         if(mResetButton == null)
         {
             mResetButton = new Button("Reset");
+            mResetButton.setTooltip(new Tooltip("Clears the currently selected JMBE library."));
             mResetButton.setOnAction(event -> mUserPreferences.getJmbeLibraryPreference().resetPathJmbeLibrary());
         }
 
