@@ -7,3 +7,6 @@
 ## 2026-05-17 - Migrated BroadcastStatusPanel and AudioChannelsPanel
 **Finding:** BroadcastStatusPanel and AudioChannelsPanel were using legacy Swing JTables and JPanels.
 **Action:** Created JavaFX VBox and HBox equivalents using FXML, wrapped them in JFXPanels, and updated controllers to use JavaFX properties and observable lists, decoupling Swing implementations.
+## $(date +%Y-%m-%d) - Modernized UI Leaf Menus
+**Learning:** Legacy UI integration heavily relied on `javax.swing.JMenuItem` for menus. While migrating pure leaf components, care must be taken if they are still embedded within legacy Swing `JMenu` or `JPopupMenu` containers, as Swing containers cannot host JavaFX `MenuItem`s.
+**Action:** Migrated 4 Tier 1 leaf files (`ColorSettingResetMenuItem.java`, `ColorSettingResetAllMenuItem.java`, `DisableSpectrumWaterfallMenuItem.java`, and `ShowTunerMenuItem.java`) to extend `javafx.scene.control.MenuItem`. Replaced internal action listeners with `setOnAction`. In legacy parent classes (like `SpectralDisplayPanel.java`), inline Swing `JMenuItem` instantiations were used as an intermediate bridge to maintain compatibility until the parent menus are fully migrated to JavaFX.

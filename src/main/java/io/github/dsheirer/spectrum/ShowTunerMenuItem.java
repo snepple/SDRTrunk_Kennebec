@@ -23,12 +23,10 @@ import io.github.dsheirer.source.tuner.Tuner;
 import io.github.dsheirer.source.tuner.TunerEvent;
 import io.github.dsheirer.source.tuner.ui.DiscoveredTunerModel;
 
-import javax.swing.JMenuItem;
-import java.awt.EventQueue;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javafx.application.Platform;
+import javafx.scene.control.MenuItem;
 
-public class ShowTunerMenuItem extends JMenuItem
+public class ShowTunerMenuItem extends MenuItem
 {
     private DiscoveredTunerModel mDiscoveredTunerModel;
     private Tuner mTuner;
@@ -39,22 +37,12 @@ public class ShowTunerMenuItem extends JMenuItem
         mDiscoveredTunerModel = discoveredTunerModel;
         mTuner = tuner;
 
-        addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                EventQueue.invokeLater(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        SystemProperties properties = SystemProperties.getInstance();
-                        properties.set(SpectralDisplayPanel.SPECTRAL_DISPLAY_ENABLED, true);
-                        mDiscoveredTunerModel.broadcast(new TunerEvent(mTuner, TunerEvent.Event.REQUEST_MAIN_SPECTRAL_DISPLAY));
-                    }
-                });
-            }
+        setOnAction(e -> {
+            Platform.runLater(() -> {
+                SystemProperties properties = SystemProperties.getInstance();
+                properties.set(SpectralDisplayPanel.SPECTRAL_DISPLAY_ENABLED, true);
+                mDiscoveredTunerModel.broadcast(new TunerEvent(mTuner, TunerEvent.Event.REQUEST_MAIN_SPECTRAL_DISPLAY));
+            });
         });
     }
 }

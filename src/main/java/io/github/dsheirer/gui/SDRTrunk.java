@@ -58,8 +58,8 @@ import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.sdrplay.api.SDRPlayLibraryHelper;
 import io.github.dsheirer.source.tuner.ui.TunerSpectralDisplayManager;
-import io.github.dsheirer.spectrum.DisableSpectrumWaterfallMenuItem;
-import io.github.dsheirer.spectrum.ShowTunerMenuItem;
+
+
 import io.github.dsheirer.spectrum.SpectralDisplayPanel;
 import io.github.dsheirer.util.ThreadPool;
 import io.github.dsheirer.util.TimeStamp;

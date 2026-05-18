@@ -19,18 +19,13 @@ package io.github.dsheirer.settings;
 
 import io.github.dsheirer.settings.ColorSetting.ColorSettingName;
 
-import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javafx.scene.control.MenuItem;
 
 /**
- * JMenuItem for selecting a color and automatically setting (saving) the
- * color selection in the settings manager
+ * MenuItem for resetting a color setting in the settings manager
  */
-public class ColorSettingResetAllMenuItem extends JMenuItem
+public class ColorSettingResetAllMenuItem extends MenuItem
 {
-    private static final long serialVersionUID = 1L;
-
     private SettingsManager mSettingsManager;
 	
 	public ColorSettingResetAllMenuItem( SettingsManager settingsManager, 
@@ -40,13 +35,6 @@ public class ColorSettingResetAllMenuItem extends JMenuItem
 
 		mSettingsManager = settingsManager;
 
-		addActionListener( new ActionListener() 
-		{
-			@Override
-            public void actionPerformed( ActionEvent e )
-            {
-				mSettingsManager.getSettingsModel().resetAllColorSettings();
-            }
-		} );
+		setOnAction( e -> mSettingsManager.getSettingsModel().resetAllColorSettings() );
 	}
 }

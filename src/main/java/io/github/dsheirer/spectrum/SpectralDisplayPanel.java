@@ -31,7 +31,7 @@ import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.properties.SystemProperties;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.settings.ColorSetting.ColorSettingName;
-import io.github.dsheirer.settings.ColorSettingMenuItem;
+
 import io.github.dsheirer.settings.SettingsManager;
 import io.github.dsheirer.source.ISourceEventProcessor;
 import io.github.dsheirer.source.SourceEvent;
@@ -653,21 +653,69 @@ public class SpectralDisplayPanel extends JPanel
                  */
                 JMenu colorMenu = new JMenu("Color");
 
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.CHANNEL_CONFIG));
+                javax.swing.JMenuItem swingColor1 = new javax.swing.JMenuItem(ColorSettingName.CHANNEL_CONFIG.getLabel());
+                swingColor1.setIcon(new io.github.dsheirer.util.ColorIcon(mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.CHANNEL_CONFIG).getColor()));
+                swingColor1.addActionListener(e -> {
+                    java.awt.Color newColor = javax.swing.JColorChooser.showDialog(SpectralDisplayPanel.this, ColorSettingName.CHANNEL_CONFIG.getDialogTitle(), mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.CHANNEL_CONFIG).getColor());
+                    if(newColor != null) mSettingsManager.getSettingsModel().setColorSetting(ColorSettingName.CHANNEL_CONFIG, newColor);
+                });
+                colorMenu.add(swingColor1);
 
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.CHANNEL_CONFIG_PROCESSING));
+                javax.swing.JMenuItem swingColor2 = new javax.swing.JMenuItem(ColorSettingName.CHANNEL_CONFIG_PROCESSING.getLabel());
+                swingColor2.setIcon(new io.github.dsheirer.util.ColorIcon(mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.CHANNEL_CONFIG_PROCESSING).getColor()));
+                swingColor2.addActionListener(e -> {
+                    java.awt.Color newColor = javax.swing.JColorChooser.showDialog(SpectralDisplayPanel.this, ColorSettingName.CHANNEL_CONFIG_PROCESSING.getDialogTitle(), mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.CHANNEL_CONFIG_PROCESSING).getColor());
+                    if(newColor != null) mSettingsManager.getSettingsModel().setColorSetting(ColorSettingName.CHANNEL_CONFIG_PROCESSING, newColor);
+                });
+                colorMenu.add(swingColor2);
 
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.CHANNEL_CONFIG_SELECTED));
+                javax.swing.JMenuItem swingColor3 = new javax.swing.JMenuItem(ColorSettingName.CHANNEL_CONFIG_SELECTED.getLabel());
+                swingColor3.setIcon(new io.github.dsheirer.util.ColorIcon(mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.CHANNEL_CONFIG_SELECTED).getColor()));
+                swingColor3.addActionListener(e -> {
+                    java.awt.Color newColor = javax.swing.JColorChooser.showDialog(SpectralDisplayPanel.this, ColorSettingName.CHANNEL_CONFIG_SELECTED.getDialogTitle(), mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.CHANNEL_CONFIG_SELECTED).getColor());
+                    if(newColor != null) mSettingsManager.getSettingsModel().setColorSetting(ColorSettingName.CHANNEL_CONFIG_SELECTED, newColor);
+                });
+                colorMenu.add(swingColor3);
 
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_CURSOR));
+                javax.swing.JMenuItem swingColor4 = new javax.swing.JMenuItem(ColorSettingName.SPECTRUM_CURSOR.getLabel());
+                swingColor4.setIcon(new io.github.dsheirer.util.ColorIcon(mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.SPECTRUM_CURSOR).getColor()));
+                swingColor4.addActionListener(e -> {
+                    java.awt.Color newColor = javax.swing.JColorChooser.showDialog(SpectralDisplayPanel.this, ColorSettingName.SPECTRUM_CURSOR.getDialogTitle(), mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.SPECTRUM_CURSOR).getColor());
+                    if(newColor != null) mSettingsManager.getSettingsModel().setColorSetting(ColorSettingName.SPECTRUM_CURSOR, newColor);
+                });
+                colorMenu.add(swingColor4);
 
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_LINE));
+                javax.swing.JMenuItem swingColor5 = new javax.swing.JMenuItem(ColorSettingName.SPECTRUM_LINE.getLabel());
+                swingColor5.setIcon(new io.github.dsheirer.util.ColorIcon(mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.SPECTRUM_LINE).getColor()));
+                swingColor5.addActionListener(e -> {
+                    java.awt.Color newColor = javax.swing.JColorChooser.showDialog(SpectralDisplayPanel.this, ColorSettingName.SPECTRUM_LINE.getDialogTitle(), mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.SPECTRUM_LINE).getColor());
+                    if(newColor != null) mSettingsManager.getSettingsModel().setColorSetting(ColorSettingName.SPECTRUM_LINE, newColor);
+                });
+                colorMenu.add(swingColor5);
 
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_BACKGROUND));
+                javax.swing.JMenuItem swingColor6 = new javax.swing.JMenuItem(ColorSettingName.SPECTRUM_BACKGROUND.getLabel());
+                swingColor6.setIcon(new io.github.dsheirer.util.ColorIcon(mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.SPECTRUM_BACKGROUND).getColor()));
+                swingColor6.addActionListener(e -> {
+                    java.awt.Color newColor = javax.swing.JColorChooser.showDialog(SpectralDisplayPanel.this, ColorSettingName.SPECTRUM_BACKGROUND.getDialogTitle(), mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.SPECTRUM_BACKGROUND).getColor());
+                    if(newColor != null) mSettingsManager.getSettingsModel().setColorSetting(ColorSettingName.SPECTRUM_BACKGROUND, newColor);
+                });
+                colorMenu.add(swingColor6);
 
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_GRADIENT_BOTTOM));
+                javax.swing.JMenuItem swingColor7 = new javax.swing.JMenuItem(ColorSettingName.SPECTRUM_GRADIENT_BOTTOM.getLabel());
+                swingColor7.setIcon(new io.github.dsheirer.util.ColorIcon(mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.SPECTRUM_GRADIENT_BOTTOM).getColor()));
+                swingColor7.addActionListener(e -> {
+                    java.awt.Color newColor = javax.swing.JColorChooser.showDialog(SpectralDisplayPanel.this, ColorSettingName.SPECTRUM_GRADIENT_BOTTOM.getDialogTitle(), mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.SPECTRUM_GRADIENT_BOTTOM).getColor());
+                    if(newColor != null) mSettingsManager.getSettingsModel().setColorSetting(ColorSettingName.SPECTRUM_GRADIENT_BOTTOM, newColor);
+                });
+                colorMenu.add(swingColor7);
 
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_GRADIENT_TOP));
+                javax.swing.JMenuItem swingColor8 = new javax.swing.JMenuItem(ColorSettingName.SPECTRUM_GRADIENT_TOP.getLabel());
+                swingColor8.setIcon(new io.github.dsheirer.util.ColorIcon(mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.SPECTRUM_GRADIENT_TOP).getColor()));
+                swingColor8.addActionListener(e -> {
+                    java.awt.Color newColor = javax.swing.JColorChooser.showDialog(SpectralDisplayPanel.this, ColorSettingName.SPECTRUM_GRADIENT_TOP.getDialogTitle(), mSettingsManager.getSettingsModel().getColorSetting(ColorSettingName.SPECTRUM_GRADIENT_TOP).getColor());
+                    if(newColor != null) mSettingsManager.getSettingsModel().setColorSetting(ColorSettingName.SPECTRUM_GRADIENT_TOP, newColor);
+                });
+                colorMenu.add(swingColor8);
 
                 contextMenu.add(colorMenu);
 
@@ -769,7 +817,14 @@ public class SpectralDisplayPanel extends JPanel
                 if(mTuner != null)
                 {
                     contextMenu.add(new JSeparator());
-                    contextMenu.add(new DisableSpectrumWaterfallMenuItem(SpectralDisplayPanel.this));
+                    javax.swing.JMenuItem swingDisable = new javax.swing.JMenuItem("Disable Spectrum & Waterfall");
+                    swingDisable.setIcon(jiconfont.swing.IconFontSwing.buildIcon(jiconfont.icons.font_awesome.FontAwesome.EYE_SLASH, 12));
+                    swingDisable.addActionListener(e -> {
+                        io.github.dsheirer.properties.SystemProperties properties = io.github.dsheirer.properties.SystemProperties.getInstance();
+                        properties.set(SpectralDisplayPanel.SPECTRAL_DISPLAY_ENABLED, false);
+                        SpectralDisplayPanel.this.clearTuner();
+                    });
+                    contextMenu.add(swingDisable);
                 }
 
                 boolean separatorAdded = false;
@@ -784,7 +839,15 @@ public class SpectralDisplayPanel extends JPanel
                             separatorAdded = true;
                         }
 
-                        contextMenu.add(new ShowTunerMenuItem(mDiscoveredTunerModel, discoveredTuner.getTuner()));
+                        javax.swing.JMenuItem swingShowTuner = new javax.swing.JMenuItem(discoveredTuner.getTuner() != null ? "Show: " + discoveredTuner.getTuner().getPreferredName() : "(empty)");
+                        swingShowTuner.addActionListener(e -> {
+                            java.awt.EventQueue.invokeLater(() -> {
+                                io.github.dsheirer.properties.SystemProperties properties = io.github.dsheirer.properties.SystemProperties.getInstance();
+                                properties.set(SpectralDisplayPanel.SPECTRAL_DISPLAY_ENABLED, true);
+                                mDiscoveredTunerModel.broadcast(new io.github.dsheirer.source.tuner.TunerEvent(discoveredTuner.getTuner(), io.github.dsheirer.source.tuner.TunerEvent.Event.REQUEST_MAIN_SPECTRAL_DISPLAY));
+                            });
+                        });
+                        contextMenu.add(swingShowTuner);
                     }
                 }
 
