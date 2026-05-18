@@ -31,7 +31,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
@@ -239,9 +243,8 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
                         catch(SourceException se)
                         {
                             mLog.error("Error setting Airspy Hf Sample Rate [" + sampleRate + "]", se);
-                            JOptionPane.showMessageDialog(AirspyHfTunerEditor.this,
-                                    "Airspy Tuner Controller - couldn't apply the sample rate setting [" +
-                                            sampleRate + "] " + se.getLocalizedMessage());
+                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Airspy Tuner Controller - couldn't apply the sample rate setting [" +
+                                            sampleRate + "] " + se.getLocalizedMessage())); alert.showAndWait(); });
                         }
                     }
                 }
@@ -273,9 +276,8 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
                     catch(IOException ioe)
                     {
                         mLog.error("Error setting Airspy Hf attenuation [" + selected + "]", ioe);
-                        JOptionPane.showMessageDialog(AirspyHfTunerEditor.this,
-                                "Airspy Tuner Controller - couldn't apply attenuation setting [" +
-                                        selected + "] " + ioe.getLocalizedMessage());
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Airspy Tuner Controller - couldn't apply attenuation setting [" +
+                                        selected + "] " + ioe.getLocalizedMessage())); alert.showAndWait(); });
                     }
                 }
             });
@@ -305,8 +307,7 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
                     catch(IOException ioe)
                     {
                         mLog.error("Error setting Airspy HF AGC", ioe);
-                        JOptionPane.showMessageDialog(AirspyHfTunerEditor.this,
-                        "Airspy HF Tuner Controller - couldn't change AGC setting" + ioe.getLocalizedMessage());
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Airspy HF Tuner Controller - couldn't change AGC setting" + ioe.getLocalizedMessage())); alert.showAndWait(); });
                     }
                 }
             });
@@ -336,8 +337,7 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
                     catch(IOException ioe)
                     {
                         mLog.error("Error setting Airspy HF LNA", ioe);
-                        JOptionPane.showMessageDialog(AirspyHfTunerEditor.this,
-                                "Airspy HF Tuner Controller - couldn't change LNA setting" + ioe.getLocalizedMessage());
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Airspy HF Tuner Controller - couldn't change LNA setting" + ioe.getLocalizedMessage())); alert.showAndWait(); });
                     }
                 }
             });

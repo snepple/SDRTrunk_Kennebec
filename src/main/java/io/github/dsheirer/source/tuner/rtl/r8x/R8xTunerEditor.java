@@ -22,7 +22,11 @@ import javax.swing.ProgressMonitor;
 import javax.swing.SwingUtilities;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.swing.JOptionPane;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
 
 
 import io.github.dsheirer.preference.UserPreferences;
@@ -43,7 +47,11 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
+import javafx.application.Platform;
+import java.util.Optional;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.SpinnerNumberModel;
@@ -268,8 +276,8 @@ private JComboBox getVGAGainCombo()
                 }
                 catch(UsbException e)
                 {
-                    JOptionPane.showMessageDialog(R8xTunerEditor.this, getLogPrefix() +
-                            "couldn't apply the VGA gain setting - " + e.getLocalizedMessage());
+                    Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() +
+                            "couldn't apply the VGA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
                     mLog.error(getLogPrefix() + "couldn't apply VGA gain setting", e);
                 }
             });
@@ -305,8 +313,8 @@ private JComboBox getVGAGainCombo()
                 }
                 catch(UsbException e)
                 {
-                    JOptionPane.showMessageDialog(R8xTunerEditor.this, getLogPrefix() +
-                            "couldn't apply the LNA gain setting - " + e.getLocalizedMessage());
+                    Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() +
+                            "couldn't apply the LNA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
                     mLog.error(getLogPrefix() + "couldn't apply LNA " + "gain setting - ", e);
                 }
             });
@@ -337,9 +345,8 @@ private JComboBox getVGAGainCombo()
                     }
                     catch(SourceException | LibUsbException eSampleRate)
                     {
-                        JOptionPane.showMessageDialog(R8xTunerEditor.this,
-                                getLogPrefix() + "couldn't apply the sample rate setting [" +
-                                        sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage());
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() + "couldn't apply the sample rate setting [" +
+                                        sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage())); alert.showAndWait(); });
 
                         mLog.error(getLogPrefix() + "couldn't apply sample rate setting [" + sampleRate.getLabel() +
                                 "]", eSampleRate);
@@ -379,8 +386,8 @@ private JComboBox getVGAGainCombo()
                     }
                     catch(UsbException e)
                     {
-                        JOptionPane.showMessageDialog(R8xTunerEditor.this, getLogPrefix() +
-                                "couldn't apply the mixer gain setting - " + e.getLocalizedMessage());
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() +
+                                "couldn't apply the mixer gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
 
                         mLog.error(getLogPrefix() + "couldn't apply mixer gain setting - ", e);
                     }
@@ -434,8 +441,8 @@ private JComboBox getVGAGainCombo()
                     }
                     catch(UsbException e)
                     {
-                        JOptionPane.showMessageDialog(R8xTunerEditor.this, getLogPrefix() +
-                                "couldn't apply the gain setting - " + e.getLocalizedMessage());
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() +
+                                "couldn't apply the gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
                         mLog.error(getLogPrefix() + "couldn't apply gain setting - ", e);
                     }
                 }
@@ -548,14 +555,16 @@ private JComboBox getVGAGainCombo()
         javax.swing.JButton btn = new javax.swing.JButton("Change Serial Number");
         btn.addActionListener(e -> {
             if (!hasTuner()) return;
-            String newSerial = JOptionPane.showInputDialog(this,
-                    "Enter new Serial Number (Alphanumeric only, max 16 chars):\n\nWARNING: Writing to hardware memory is inherently risky.\nDo not disconnect the device during the write process.",
-                    "Change RTL-SDR Serial Number", JOptionPane.WARNING_MESSAGE);
+TextInputDialog dialog = new TextInputDialog();
+            dialog.setTitle("Change RTL-SDR Serial Number");
+            dialog.setHeaderText("Enter new Serial Number (Alphanumeric only, max 16 chars):\n\nWARNING: Writing to hardware memory is inherently risky.\nDo not disconnect the device during the write process.");
+            Optional<String> result = dialog.showAndWait();
+            String newSerial = result.orElse(null);
 
             if (newSerial != null) {
                 newSerial = newSerial.trim();
                 if (!newSerial.matches("[A-Za-z0-9]*") || newSerial.length() > 16) {
-                    JOptionPane.showMessageDialog(this, "Invalid serial number. Must be alphanumeric and max 16 characters.", "Error", JOptionPane.ERROR_MESSAGE);
+                    Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Invalid serial number. Must be alphanumeric and max 16 characters.")); alert.showAndWait(); });
                     return;
                 }
 
@@ -571,12 +580,12 @@ private JComboBox getVGAGainCombo()
                         ((io.github.dsheirer.source.tuner.rtl.RTL2832TunerController)getTuner().getTunerController()).setSerialNumber(serialToSet);
                         SwingUtilities.invokeLater(() -> {
                             progressMonitor.setProgress(100);
-                            JOptionPane.showMessageDialog(this, "Serial number updated successfully.\nPlease disconnect and reconnect the tuner.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Serial number updated successfully.\nPlease disconnect and reconnect the tuner.")); alert.showAndWait(); });
                         });
                     } catch (Exception ex) {
                         SwingUtilities.invokeLater(() -> {
                             progressMonitor.close();
-                            JOptionPane.showMessageDialog(this, "Failed to update serial number: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Failed to update serial number: " + ex.getMessage())); alert.showAndWait(); });
                         });
                     }
                 });

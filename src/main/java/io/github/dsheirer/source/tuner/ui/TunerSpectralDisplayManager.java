@@ -113,7 +113,7 @@ public class TunerSpectralDisplayManager implements Listener<TunerEvent>
                 break;
             case REQUEST_NEW_SPECTRAL_DISPLAY:
                 final SpectrumFrame frame = new SpectrumFrame(mPlaylistManager, mSettingsManager, mDiscoveredTunerModel, event.getTuner());
-                SwingUtils.run(() -> frame.setVisible(true));
+                javafx.application.Platform.runLater(() -> frame.show());
                 break;
             case NOTIFICATION_ERROR_STATE:
             case NOTIFICATION_SHUTTING_DOWN:
