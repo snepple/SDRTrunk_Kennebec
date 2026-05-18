@@ -22,6 +22,10 @@ package io.github.dsheirer.filter;
 import java.awt.Component;
 import io.github.dsheirer.gui.help.HelpIconLabel;
 import javax.swing.JPanel;
+import javafx.embed.swing.JFXPanel;
+import javafx.application.Platform;
+import javafx.scene.Scene;
+
 import java.awt.FlowLayout;
 import javax.swing.JLabel;
 import java.util.Comparator;
@@ -33,6 +37,10 @@ import net.miginfocom.swing.MigLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javafx.embed.swing.JFXPanel;
+import javafx.application.Platform;
+import javafx.scene.Scene;
+
 import javax.swing.JTree;
 import javax.swing.event.CellEditorListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -49,7 +57,16 @@ import javax.swing.tree.TreeSelectionModel;
  */
 public class FilterEditorPanel<T> extends javafx.embed.swing.JFXPanel
 {
+
+    private static class SwingHelpIconLabel extends javax.swing.JLabel {
+        public SwingHelpIconLabel(String htmlHelpText) {
+            super(jiconfont.swing.IconFontSwing.buildIcon(jiconfont.icons.font_awesome.FontAwesome.INFO_CIRCLE, 14, java.awt.Color.GRAY));
+            setToolTipText(htmlHelpText);
+        }
+    }
+
     private static final long serialVersionUID = 1L;
+
     private JTree mTree;
     private DefaultTreeModel mModel;
     private FilterSet<T> mFilterSet;
@@ -318,7 +335,16 @@ public class FilterEditorPanel<T> extends javafx.embed.swing.JFXPanel
      */
     public class EditorTreeCellRenderer extends DefaultTreeCellRenderer
     {
-        private static final long serialVersionUID = 1L;
+
+    private static class SwingHelpIconLabel extends javax.swing.JLabel {
+        public SwingHelpIconLabel(String htmlHelpText) {
+            super(jiconfont.swing.IconFontSwing.buildIcon(jiconfont.icons.font_awesome.FontAwesome.INFO_CIRCLE, 14, java.awt.Color.GRAY));
+            setToolTipText(htmlHelpText);
+        }
+    }
+
+    private static final long serialVersionUID = 1L;
+
 
         public Component getTreeCellRendererComponent(JTree tree, Object treeNode, boolean selected, boolean expanded,
                                                       boolean leaf, int row, boolean hasFocus)
@@ -386,7 +412,7 @@ public class FilterEditorPanel<T> extends javafx.embed.swing.JFXPanel
                     }
 
                     if(tooltipText != null) {
-                        HelpIconLabel helpIcon = new HelpIconLabel(tooltipText);
+                        SwingHelpIconLabel helpIcon = new SwingHelpIconLabel(tooltipText);
                         helpIcon.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
                         panel.add(helpIcon);
                     }
@@ -404,7 +430,16 @@ public class FilterEditorPanel<T> extends javafx.embed.swing.JFXPanel
      */
     public class FilterCheckBox extends JCheckBox
     {
-        private static final long serialVersionUID = 1L;
+
+    private static class SwingHelpIconLabel extends javax.swing.JLabel {
+        public SwingHelpIconLabel(String htmlHelpText) {
+            super(jiconfont.swing.IconFontSwing.buildIcon(jiconfont.icons.font_awesome.FontAwesome.INFO_CIRCLE, 14, java.awt.Color.GRAY));
+            setToolTipText(htmlHelpText);
+        }
+    }
+
+    private static final long serialVersionUID = 1L;
+
         private IFilter<?> mFilter;
 
         /**
@@ -446,7 +481,16 @@ public class FilterEditorPanel<T> extends javafx.embed.swing.JFXPanel
      */
     public class FilterElementCheckBox extends JCheckBox
     {
-        private static final long serialVersionUID = 1L;
+
+    private static class SwingHelpIconLabel extends javax.swing.JLabel {
+        public SwingHelpIconLabel(String htmlHelpText) {
+            super(jiconfont.swing.IconFontSwing.buildIcon(jiconfont.icons.font_awesome.FontAwesome.INFO_CIRCLE, 14, java.awt.Color.GRAY));
+            setToolTipText(htmlHelpText);
+        }
+    }
+
+    private static final long serialVersionUID = 1L;
+
         private FilterElement<?> mFilter;
 
         /**
