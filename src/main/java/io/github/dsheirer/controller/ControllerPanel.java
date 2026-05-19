@@ -7,9 +7,8 @@ import io.github.dsheirer.channel.metadata.NowPlayingPanel;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.map.MapPanel;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+import javafx.scene.layout.BorderPane;
 import javafx.embed.swing.SwingNode;
-import javafx.scene.Scene;
 import javafx.scene.Parent;
 import javafx.fxml.FXMLLoader;
 import io.github.dsheirer.map.MapService;
@@ -25,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.SwingUtilities;
 import java.io.IOException;
 
-public class ControllerPanel extends JFXPanel {
+public class ControllerPanel extends BorderPane {
     private final static Logger mLog = LoggerFactory.getLogger(ControllerPanel.class);
 
     private AudioPanel mAudioPanel;
@@ -49,26 +48,23 @@ public class ControllerPanel extends JFXPanel {
 
         mAudioPanel.setManageWidgetsButton(mNowPlayingPanel.getManageWidgetsButton());
 
-        Platform.runLater(() -> {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ControllerPanel.fxml"));
-                Parent root = loader.load();
-                mController = loader.getController();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ControllerPanel.fxml"));
+            Parent root = loader.load();
+            this.setCenter(root);
+            mController = loader.getController();
 
-                // Add Swing views by wrapping them in SwingNodes
-                mController.addView("now_playing", wrapSwingComponent(mNowPlayingPanel));
-                mController.addView("map", mMapPanel);
-                mController.addView("tuners", wrapSwingComponent(mTunerManagerPanel));
-                mController.addView("audio_recordings", mAudioRecordingsPanel);
+            // Add Swing views by wrapping them in SwingNodes
+            mController.addView("now_playing", wrapSwingComponent(mNowPlayingPanel));
+            mController.addView("map", mMapPanel);
+            mController.addView("tuners", wrapSwingComponent(mTunerManagerPanel));
+            mController.addView("audio_recordings", mAudioRecordingsPanel);
 
-                // Add HelpViewer natively without SwingNode
-                mController.addView("help_viewer", new io.github.dsheirer.gui.help.HelpViewer());
-
-                setScene(new Scene(root));
-            } catch (IOException e) {
-                mLog.error("Error loading ControllerPanel.fxml", e);
-            }
-        });
+            // Add HelpViewer natively without SwingNode
+            mController.addView("help_viewer", new io.github.dsheirer.gui.help.HelpViewer());
+        } catch (IOException e) {
+            mLog.error("Error loading ControllerPanel.fxml", e);
+        }
     }
 
     private SwingNode wrapSwingComponent(javax.swing.JComponent component) {
