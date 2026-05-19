@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="io.github.dsheirer.source.tuner.rtl.fc0013.FC0013TunerEditorController"
+      spacing="8">
+    <padding>
+        <Insets top="16" right="16" bottom="16" left="16"/>
+    </padding>
+
+    <GridPane hgap="10" vgap="8">
+        <columnConstraints>
+            <ColumnConstraints minWidth="100" prefWidth="100" maxWidth="100" halignment="RIGHT"/>
+            <ColumnConstraints hgrow="ALWAYS" />
+        </columnConstraints>
+
+        <Label text="Tuner:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Label fx:id="tunerIdLabel" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+        <Label text="Status:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Label fx:id="tunerStatusLabel" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+        <VBox fx:id="buttonPanelContainer" GridPane.columnIndex="1" GridPane.rowIndex="2" alignment="CENTER_LEFT" />
+    </GridPane>
+
+    <Separator />
+
+    <GridPane hgap="10" vgap="8">
+        <columnConstraints>
+            <ColumnConstraints minWidth="100" prefWidth="100" maxWidth="100" halignment="RIGHT"/>
+            <ColumnConstraints hgrow="ALWAYS" />
+        </columnConstraints>
+
+        <Label text="Frequency (MHz):" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <VBox fx:id="frequencyPanelContainer" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+        <Label text="Sample Rate:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <ComboBox fx:id="sampleRateCombo" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+    </GridPane>
+
+    <Separator />
+
+    <GridPane hgap="10" vgap="8">
+        <columnConstraints>
+            <ColumnConstraints minWidth="100" prefWidth="100" maxWidth="100" halignment="RIGHT"/>
+            <ColumnConstraints hgrow="ALWAYS" />
+        </columnConstraints>
+
+        <Label text="Gain Control" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="2" style="-fx-font-weight: bold" />
+
+        <Label text="Bias-T:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <ToggleButton fx:id="biasTToggleButton" text="Bias-T" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+        <Label text="AGC:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <ToggleButton fx:id="agcToggleButton" text="AGC" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+        <Label text="LNA Gain:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <ComboBox fx:id="lnaGainCombo" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+    </GridPane>
+
+    <Separator />
+
+    <VBox alignment="CENTER_LEFT" spacing="8">
+        <Button fx:id="changeSerialButton" text="Change Serial Number" />
+    </VBox>
+
+</VBox>

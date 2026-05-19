@@ -26,53 +26,62 @@ import io.github.dsheirer.source.tuner.rtl.RTL2832Tuner;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController.SampleRate;
 import io.github.dsheirer.source.tuner.ui.TunerEditor;
-import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.usb4java.LibUsbException;
 
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javax.swing.SpinnerNumberModel;
 import java.util.Optional;
-import javax.swing.JPanel;
-import javax.swing.ProgressMonitor;
-import javax.swing.SwingUtilities;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.swing.JSeparator;
-import javax.swing.JToggleButton;
-import javax.swing.SpinnerNumberModel;
 
 /**
  * FC0013 Tuner Editor
  */
-public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConfiguration>
+public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner,FC0013TunerConfiguration>
 {
-    private final static Logger mLog = LoggerFactory.getLogger(FC0013TunerEditor.class);
     private static final long serialVersionUID = 1L;
-    private static final FC0013EmbeddedTuner.LNAGain DEFAULT_LNA_GAIN = FC0013EmbeddedTuner.LNAGain.G14;
-    private JToggleButton mBiasTButton;
-    private JComboBox<SampleRate> mSampleRateCombo;
+    private final static Logger mLog = LoggerFactory.getLogger(FC0013TunerEditor.class);
 
-    private JToggleButton mAgcToggleButton;
-    private JComboBox<FC0013EmbeddedTuner.LNAGain> mLNAGainCombo;
+    private FC0013TunerEditorController mController;
+
+    private static final FC0013EmbeddedTuner.LNAGain DEFAULT_LNA_GAIN = FC0013EmbeddedTuner.LNAGain.G00;
 
     /**
      * Constructs an instance
      * @param userPreferences for wide-band recordings
-     * @param tunerManager for saving configurations
-     * @param discoveredTuner to edit
+     * @param tunerManager to save configuration
+     * @param discoveredTuner to control
      */
     public FC0013TunerEditor(UserPreferences userPreferences, TunerManager tunerManager, DiscoveredTuner discoveredTuner)
     {
         super(userPreferences, tunerManager, discoveredTuner);
         init();
         tunerStatusUpdated();
+    }
+
+    private FC0013EmbeddedTuner getEmbeddedTuner()
+    {
+        if(hasTuner())
+        {
+            return (FC0013EmbeddedTuner)getTuner().getController().getEmbeddedTuner();
+        }
+
+        return null;
+    }
+
+    private String getLogPrefix()
+    {
+        if (hasTuner() && getEmbeddedTuner() != null) {
+            return getEmbeddedTuner().getTunerType().getLabel() + " Tuner Controller - ";
+        }
+        return "FC0013 Tuner Controller - ";
     }
 
     @Override
@@ -87,253 +96,206 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
         return FC0013EmbeddedTuner.MAXIMUM_TUNABLE_FREQUENCY_HZ;
     }
 
-    /**
-     * Access the FC0013 embedded tuner
-     * @return tuner if there is a tuner, or null otherwise
-     */
-    private FC0013EmbeddedTuner getEmbeddedTuner()
-    {
-        if(hasTuner())
-        {
-            return (FC0013EmbeddedTuner) getTuner().getController().getEmbeddedTuner();
-        }
-
-        return null;
-    }
-
-    private String getLogPrefix()
-    {
-        return getEmbeddedTuner().getTunerType().getLabel() + " Tuner Controller - ";
-    }
-
-    private void init()
-    {
-        setLayout(new MigLayout("fill,wrap 2", "[right][grow,fill][fill]",
-                "[][][][][][][][][][][][][][][][grow]"));
-
-        add(new JLabel("Tuner:"));
-        add(getTunerIdLabel());
-
-
-        add(new JLabel("Status:"));
-        add(getTunerStatusLabel());
-        add(getBiasTButton(), "wrap");
-
-        add(getButtonPanel(), "span,align left");
-
-        add(new JSeparator(), "span,growx,push");
-
-        add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel(), "wrap");
-
-        add(new JLabel("Sample Rate:"));
-        add(getSampleRateCombo(), "wrap");
-
-        add(new JSeparator(), "span,growx,push");
-
-        JPanel gainPanel = new JPanel();
-        gainPanel.add(new JLabel("Gain"));
-        gainPanel.add(getAgcToggleButton());
-        gainPanel.add(new JLabel("LNA:"));
-        add(gainPanel);
-        add(getLNAGainCombo(), "wrap");
-    }
-
     @Override
     protected void tunerStatusUpdated()
     {
         setLoading(true);
 
-        if(hasTuner())
-        {
-            getTunerIdLabel().setText(getTuner().getPreferredName() + getUsbInfo());
-        }
-        else
-        {
-            getTunerIdLabel().setText(getDiscoveredTuner().getName());
+        if(mController != null) {
+            Platform.runLater(() -> {
+                if(hasTuner())
+                {
+                    mController.getTunerIdLabel().setText(getTuner().getPreferredName() + getUsbInfo());
+                }
+                else
+                {
+                    mController.getTunerIdLabel().setText(getDiscoveredTuner().getName());
+                }
+
+                String status = getDiscoveredTuner().getTunerStatus().toString();
+                if(getDiscoveredTuner().hasErrorMessage())
+                {
+                    status += " - " + getDiscoveredTuner().getErrorMessage();
+                }
+                mController.getTunerStatusLabel().setText(status);
+
+                if(hasTuner())
+                {
+                    mController.getSampleRateCombo().getSelectionModel().select(getConfiguration().getSampleRate());
+                }
+                else if(hasConfiguration())
+                {
+                    mController.getSampleRateCombo().getSelectionModel().select(getConfiguration().getSampleRate());
+                }
+
+                mController.getBiasTToggleButton().setDisable(!hasTuner());
+                mController.getAgcToggleButton().setDisable(!hasTuner());
+
+                if(hasConfiguration())
+                {
+                    mController.getBiasTToggleButton().setSelected(getConfiguration().isBiasT());
+                    mController.getAgcToggleButton().setSelected(getConfiguration().getAGC());
+                    mController.getLnaGainCombo().getSelectionModel().select(getConfiguration().getLnaGain());
+                    mController.getLnaGainCombo().setDisable(getConfiguration().getAGC());
+                }
+
+                updateSampleRateToolTip();
+            });
         }
 
-        String status = getDiscoveredTuner().getTunerStatus().toString();
-        if(getDiscoveredTuner().hasErrorMessage())
-        {
-            status += " - " + getDiscoveredTuner().getErrorMessage();
-        }
-        getTunerStatusLabel().setText(status);
         getButtonPanel().updateControls();
         getFrequencyPanel().updateControls();
-
-        if(hasTuner())
-        {
-            getBiasTButton().setEnabled(true);
-            getBiasTButton().setSelected(getConfiguration().isBiasT());
-            getSampleRateCombo().setEnabled(true);
-            getSampleRateCombo().setSelectedItem(getConfiguration().getSampleRate());
-            getAgcToggleButton().setEnabled(true);
-            getAgcToggleButton().setSelected(getConfiguration().getAGC());
-            getLNAGainCombo().setEnabled(!getConfiguration().getAGC());
-            getLNAGainCombo().setSelectedItem(getConfiguration().getLnaGain());
-        }
-        else
-        {
-            getBiasTButton().setEnabled(false);
-            getBiasTButton().setSelected(false);
-            getSampleRateCombo().setEnabled(false);
-            getAgcToggleButton().setEnabled(false);
-            getLNAGainCombo().setEnabled(false);
-        }
-
-        updateSampleRateToolTip();
 
         setLoading(false);
     }
 
-    /**
-     * Bias-T toggle button
-     * @return bias-t button
-     */
-    private JToggleButton getBiasTButton()
+    private void init()
     {
-        if(mBiasTButton == null)
-        {
-            mBiasTButton = new JToggleButton("Bias-T");
-            mBiasTButton.setEnabled(false);
-            mBiasTButton.addActionListener(e -> {
-                if(!isLoading())
-                {
-                    getTuner().getController().setBiasT(mBiasTButton.isSelected());
-                    save();
-               }
-            });
-        }
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/source/tuner/rtl/fc0013/FC0013TunerEditor.fxml"));
+                Parent root = loader.load();
+                mController = loader.getController();
+                mController.setEditor(this);
 
-        return mBiasTButton;
-    }
+                mController.getButtonPanelContainer().getChildren().add(getButtonPanel());
+                mController.getFrequencyPanelContainer().getChildren().add(getFrequencyPanel());
 
-    /**
-     * Hyperlink button that provides tuner information
-     */
-private JComboBox getLNAGainCombo()
-    {
-        if(mLNAGainCombo == null)
-        {
-            mLNAGainCombo = new JComboBox<>(FC0013EmbeddedTuner.LNAGain.values());
-            mLNAGainCombo.setEnabled(false);
-            mLNAGainCombo.addActionListener(arg0 ->
-            {
-                if(!isLoading())
-                {
-                    try
-                    {
-                        FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain) mLNAGainCombo.getSelectedItem();
+                mController.getSampleRateCombo().getItems().addAll(SampleRate.values());
+                mController.getSampleRateCombo().setDisable(true);
+                mController.getSampleRateCombo().setOnAction(e -> {
+                    if(!isLoading()) {
+                        SampleRate sampleRate = mController.getSampleRateCombo().getSelectionModel().getSelectedItem();
+                        try {
+                            getTuner().getController().setSampleRate(sampleRate);
+                            adjustForSampleRate(sampleRate.getRate());
+                            save();
+                        } catch(SourceException | LibUsbException eSampleRate) {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setContentText(String.valueOf(getLogPrefix() + "couldn't apply the sample rate setting [" + sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage()));
+                            alert.showAndWait();
+                            mLog.error(getLogPrefix() + "couldn't apply sample rate setting [" + sampleRate.getLabel() + "]", eSampleRate);
+                        }
+                    }
+                });
 
-                        if(lnaGain == null)
-                        {
-                            lnaGain = DEFAULT_LNA_GAIN;
+                mController.getLnaGainCombo().getItems().addAll(FC0013EmbeddedTuner.LNAGain.values());
+                mController.getLnaGainCombo().setDisable(true);
+                mController.getLnaGainCombo().setOnAction(e -> {
+                    if(!isLoading()) {
+                        try {
+                            FC0013EmbeddedTuner.LNAGain lnaGain = mController.getLnaGainCombo().getSelectionModel().getSelectedItem();
+                            if(lnaGain == null) {
+                                lnaGain = DEFAULT_LNA_GAIN;
+                            }
+                            if(!mController.getLnaGainCombo().isDisabled() && getEmbeddedTuner() != null) {
+                                getEmbeddedTuner().setGain(mController.getAgcToggleButton().isSelected(), lnaGain);
+                            }
+                            save();
+                        } catch(Exception ex) {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setContentText(String.valueOf(getLogPrefix() + "couldn't apply the LNA gain setting - " + ex.getLocalizedMessage()));
+                            alert.showAndWait();
+                            mLog.error(getLogPrefix() + "couldn't apply LNA gain setting - ", ex);
+                        }
+                    }
+                });
+
+                mController.getBiasTToggleButton().setDisable(true);
+                mController.getBiasTToggleButton().setOnAction(e -> {
+                    if(!isLoading()) {
+                        try {
+                            getTuner().getController().setBiasT(mController.getBiasTToggleButton().isSelected());
+                            save();
+                        } catch (Exception ex) {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setContentText(String.valueOf(getLogPrefix() + "couldn't set bias-t" + ex.getLocalizedMessage()));
+                            alert.showAndWait();
+                            mLog.error(getLogPrefix() + "couldn't set bias-t", ex);
+                        }
+                    }
+                });
+
+                mController.getAgcToggleButton().setDisable(true);
+                mController.getAgcToggleButton().setOnAction(e -> {
+                    if(!isLoading()) {
+                        try {
+                            boolean agc = mController.getAgcToggleButton().isSelected();
+                            FC0013EmbeddedTuner.LNAGain lnaGain = mController.getLnaGainCombo().getSelectionModel().getSelectedItem();
+                            if (getEmbeddedTuner() != null) {
+                                getEmbeddedTuner().setGain(agc, lnaGain);
+                            }
+                            mController.getLnaGainCombo().setDisable(agc);
+                            save();
+                        } catch(Exception ex) {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setContentText(String.valueOf(getLogPrefix() + "couldn't set AGC" + ex.getLocalizedMessage()));
+                            alert.showAndWait();
+                            mLog.error(getLogPrefix() + "couldn't set AGC", ex);
+                        }
+                    }
+                });
+
+                mController.getChangeSerialButton().setOnAction(e -> {
+                    if (!hasTuner()) return;
+                    TextInputDialog dialog = new TextInputDialog();
+                    dialog.setTitle("Change RTL-SDR Serial Number");
+                    dialog.setHeaderText("Enter new Serial Number (Alphanumeric only, max 16 chars):\n\nWARNING: Writing to hardware memory is inherently risky.\nDo not disconnect the device during the write process.");
+                    Optional<String> result = dialog.showAndWait();
+                    String newSerial = result.orElse(null);
+
+                    if (newSerial != null) {
+                        newSerial = newSerial.trim();
+                        if (!newSerial.matches("[A-Za-z0-9]*") || newSerial.length() > 16) {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setContentText("Invalid serial number. Must be alphanumeric and max 16 characters.");
+                            alert.showAndWait();
+                            return;
                         }
 
-                        if(mLNAGainCombo.isEnabled())
-                        {
-                            getEmbeddedTuner().setGain(getAgcToggleButton().isSelected(), lnaGain);
-                        }
-
-                        save();
+                        final String serialToSet = newSerial;
+                        ExecutorService executor = Executors.newSingleThreadExecutor();
+                        executor.submit(() -> {
+                            try {
+                                ((io.github.dsheirer.source.tuner.rtl.RTL2832TunerController)getTuner().getTunerController()).setSerialNumber(serialToSet);
+                                Platform.runLater(() -> {
+                                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                                    alert.setContentText("Serial number updated successfully.\nPlease disconnect and reconnect the tuner.");
+                                    alert.showAndWait();
+                                });
+                            } catch (Exception ex) {
+                                Platform.runLater(() -> {
+                                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                                    alert.setContentText("Failed to update serial number: " + ex.getMessage());
+                                    alert.showAndWait();
+                                });
+                            }
+                        });
                     }
-                    catch(Exception e)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() +
-                                "couldn't apply the LNA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
-                        mLog.error(getLogPrefix() + "couldn't apply LNA gain setting - ", e);
-                    }
-                }
-            });
-            mLNAGainCombo.setToolTipText("<html>LNA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>");
-        }
+                });
 
-        return mLNAGainCombo;
+                this.getChildren().add(root);
+            } catch (Exception e) {
+                mLog.error("Error loading FC0013TunerEditor FXML", e);
+            }
+        });
     }
 
-    private JComboBox getSampleRateCombo()
-    {
-        if(mSampleRateCombo == null)
-        {
-            mSampleRateCombo = new JComboBox<>(SampleRate.values());
-            mSampleRateCombo.setEnabled(false);
-            mSampleRateCombo.addActionListener(e ->
-            {
-                if(!isLoading())
-                {
-                    SampleRate sampleRate = (SampleRate) mSampleRateCombo.getSelectedItem();
-
-                    try
-                    {
-                        getTuner().getController().setSampleRate(sampleRate);
-                        //Adjust the min/max values for the sample rate.
-                        adjustForSampleRate(sampleRate.getRate());
-                        save();
-                    }
-                    catch(SourceException | LibUsbException eSampleRate)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() + "couldn't apply the sample rate setting [" +
-                                        sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage())); alert.showAndWait(); });
-
-                        mLog.error(getLogPrefix() + "couldn't apply sample rate setting [" + sampleRate.getLabel() +
-                                "]", eSampleRate);
-                    }
-                }
-            });
-        }
-
-        return mSampleRateCombo;
-    }
-
-    private JToggleButton getAgcToggleButton()
-    {
-        if(mAgcToggleButton == null)
-        {
-            mAgcToggleButton = new JToggleButton("AGC");
-            mAgcToggleButton.setEnabled(false);
-            mAgcToggleButton.addActionListener(arg0 ->
-            {
-                if(!isLoading())
-                {
-                    try
-                    {
-                        boolean agc = getAgcToggleButton().isSelected();
-                        FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain)getLNAGainCombo().getSelectedItem();
-                        getEmbeddedTuner().setGain(agc, lnaGain);
-                        getLNAGainCombo().setEnabled(!agc);
-                        save();
-                    }
-                    catch(Exception e)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() +
-                                "couldn't set AGC" + e.getLocalizedMessage())); alert.showAndWait(); });
-                        mLog.error(getLogPrefix() + "couldn't set AGC", e);
-                    }
-                }
-            });
-            mAgcToggleButton.setToolTipText("<html>Automatic Gain Control (AGC). </html>");
-        }
-
-        return mAgcToggleButton;
-    }
-
-    /**
-     * Updates the sample rate tooltip according to the tuner controller's lock state.
-     */
     private void updateSampleRateToolTip()
     {
-        if(hasTuner() && getTuner().getTunerController().isLockedSampleRate())
-        {
-            getSampleRateCombo().setToolTipText("Sample Rate is locked.  Disable decoding channels to unlock.");
-        }
-        else if(hasTuner())
-        {
-            getSampleRateCombo().setToolTipText("Select a sample rate for the tuner");
-        }
-        else
-        {
-            getSampleRateCombo().setToolTipText("No tuner available");
+        if(mController != null) {
+            if(hasTuner() && getTuner().getTunerController().isLockedSampleRate())
+            {
+                mController.getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("Sample Rate is locked.  Disable decoding channels to unlock."));
+            }
+            else if(hasTuner())
+            {
+                mController.getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("Select a sample rate for the tuner"));
+            }
+            else
+            {
+                mController.getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("No tuner available"));
+            }
         }
     }
 
@@ -341,15 +303,24 @@ private JComboBox getLNAGainCombo()
     public void setTunerLockState(boolean locked)
     {
         getFrequencyPanel().updateControls();
-        getSampleRateCombo().setEnabled(!locked);
-        updateSampleRateToolTip();
+        if(mController != null) {
+            Platform.runLater(() -> {
+                mController.getSampleRateCombo().setDisable(locked);
+                updateSampleRateToolTip();
+            });
+        }
     }
 
     protected String getTunerInfo()
     {
         StringBuilder sb = new StringBuilder();
         RTL2832TunerController.Descriptor descriptor = getTuner().getController().getDescriptor();
-        sb.append("<html><h3>RTL-2832 with " + getEmbeddedTuner().getTunerType().getLabel() + " Tuner</h3>");
+
+        if (getEmbeddedTuner() != null) {
+            sb.append("<html><h3>RTL-2832 with ").append(getEmbeddedTuner().getTunerType().getLabel()).append(" Tuner</h3>");
+        } else {
+            sb.append("<html><h3>RTL-2832 Tuner</h3>");
+        }
 
         if(descriptor == null)
         {
@@ -357,31 +328,12 @@ private JComboBox getLNAGainCombo()
         }
         else
         {
-            sb.append("<b>USB ID: </b>");
-            sb.append(descriptor.getVendorID());
-            sb.append(":");
-            sb.append(descriptor.getProductID());
-            sb.append("<br>");
-
-            sb.append("<b>Vendor: </b>");
-            sb.append(descriptor.getVendorLabel());
-            sb.append("<br>");
-
-            sb.append("<b>Product: </b>");
-            sb.append(descriptor.getProductLabel());
-            sb.append("<br>");
-
-            sb.append("<b>Serial: </b>");
-            sb.append(descriptor.getSerial());
-            sb.append("<br>");
-
-            sb.append("<b>IR Enabled: </b>");
-            sb.append(descriptor.irEnabled());
-            sb.append("<br>");
-
-            sb.append("<b>Remote Wake: </b>");
-            sb.append(descriptor.remoteWakeupEnabled());
-            sb.append("<br>");
+            sb.append("<b>USB ID: </b>").append(descriptor.getVendorID()).append(":").append(descriptor.getProductID()).append("<br>");
+            sb.append("<b>Vendor: </b>").append(descriptor.getVendorLabel()).append("<br>");
+            sb.append("<b>Product: </b>").append(descriptor.getProductLabel()).append("<br>");
+            sb.append("<b>Serial: </b>").append(descriptor.getSerial()).append("<br>");
+            sb.append("<b>IR Enabled: </b>").append(descriptor.irEnabled()).append("<br>");
+            sb.append("<b>Remote Wake: </b>").append(descriptor.remoteWakeupEnabled()).append("<br>");
         }
 
         return sb.toString();
@@ -401,55 +353,18 @@ private JComboBox getLNAGainCombo()
             config.setFrequencyCorrection(value);
             config.setAutoPPMCorrectionEnabled(getAutoPPMCheckBox().isSelected());
 
-            config.setSampleRate((SampleRate)getSampleRateCombo().getSelectedItem());
-            config.setAGC(getAgcToggleButton().isSelected());
-            FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain)getLNAGainCombo().getSelectedItem();
-            config.setLnaGain(lnaGain);
-            saveConfiguration();
+            if(mController != null) {
+                Platform.runLater(() -> {
+                    config.setSampleRate(mController.getSampleRateCombo().getSelectionModel().getSelectedItem());
+                    config.setBiasT(mController.getBiasTToggleButton().isSelected());
+                    config.setAGC(mController.getAgcToggleButton().isSelected());
+                    FC0013EmbeddedTuner.LNAGain lnaGain = mController.getLnaGainCombo().getSelectionModel().getSelectedItem();
+                    config.setLnaGain(lnaGain);
+                    saveConfiguration();
+                });
+            } else {
+                saveConfiguration();
+            }
         }
     }
-
-    private javax.swing.JButton getChangeSerialButton() {
-        javax.swing.JButton btn = new javax.swing.JButton("Change Serial Number");
-        btn.addActionListener(e -> {
-            if (!hasTuner()) return;
-TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("Change RTL-SDR Serial Number");
-            dialog.setHeaderText("Enter new Serial Number (Alphanumeric only, max 16 chars):\n\nWARNING: Writing to hardware memory is inherently risky.\nDo not disconnect the device during the write process.");
-            Optional<String> result = dialog.showAndWait();
-            String newSerial = result.orElse(null);
-
-            if (newSerial != null) {
-                newSerial = newSerial.trim();
-                if (!newSerial.matches("[A-Za-z0-9]*") || newSerial.length() > 16) {
-                    Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Invalid serial number. Must be alphanumeric and max 16 characters.")); alert.showAndWait(); });
-                    return;
-                }
-
-                final String serialToSet = newSerial;
-                ProgressMonitor progressMonitor = new ProgressMonitor(null, "Writing EEPROM...", "", 0, 100);
-                progressMonitor.setMillisToDecideToPopup(0);
-                progressMonitor.setMillisToPopup(0);
-                progressMonitor.setProgress(10);
-
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                executor.submit(() -> {
-                    try {
-                        ((io.github.dsheirer.source.tuner.rtl.RTL2832TunerController)getTuner().getTunerController()).setSerialNumber(serialToSet);
-                        SwingUtilities.invokeLater(() -> {
-                            progressMonitor.setProgress(100);
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Serial number updated successfully.\nPlease disconnect and reconnect the tuner.")); alert.showAndWait(); });
-                        });
-                    } catch (Exception ex) {
-                        SwingUtilities.invokeLater(() -> {
-                            progressMonitor.close();
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Failed to update serial number: " + ex.getMessage())); alert.showAndWait(); });
-                        });
-                    }
-                });
-            }
-        });
-        return btn;
-    }
-
 }

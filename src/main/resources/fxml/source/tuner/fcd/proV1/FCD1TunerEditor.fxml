@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="io.github.dsheirer.source.tuner.fcd.proV1.FCD1TunerEditorController"
+      spacing="8">
+    <padding>
+        <Insets top="16" right="16" bottom="16" left="16"/>
+    </padding>
+
+    <GridPane hgap="10" vgap="8">
+        <columnConstraints>
+            <ColumnConstraints minWidth="100" prefWidth="100" maxWidth="100" halignment="RIGHT"/>
+            <ColumnConstraints hgrow="ALWAYS" />
+        </columnConstraints>
+
+        <Label text="Tuner:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Label fx:id="tunerIdLabel" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+        <Label text="Status:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Label fx:id="tunerStatusLabel" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+        <VBox fx:id="buttonPanelContainer" GridPane.columnIndex="1" GridPane.rowIndex="2" alignment="CENTER_LEFT" />
+    </GridPane>
+
+    <Separator />
+
+    <GridPane hgap="10" vgap="8">
+        <columnConstraints>
+            <ColumnConstraints minWidth="100" prefWidth="100" maxWidth="100" halignment="RIGHT"/>
+            <ColumnConstraints hgrow="ALWAYS" />
+        </columnConstraints>
+
+        <Label text="Frequency (MHz):" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <VBox fx:id="frequencyPanelContainer" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+    </GridPane>
+
+    <Separator />
+
+    <GridPane hgap="10" vgap="8">
+        <columnConstraints>
+            <ColumnConstraints minWidth="100" prefWidth="100" maxWidth="100" halignment="RIGHT"/>
+            <ColumnConstraints hgrow="ALWAYS" />
+        </columnConstraints>
+
+        <Label text="Gain" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="2" style="-fx-font-weight: bold" />
+
+        <Label text="LNA:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <ComboBox fx:id="lnaGainCombo" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+        <Label text="Enhance:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <ComboBox fx:id="lnaEnhanceCombo" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+        <Label text="Mixer:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <ComboBox fx:id="mixerGainCombo" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+    </GridPane>
+
+    <Separator />
+
+    <GridPane hgap="10" vgap="8">
+        <columnConstraints>
+            <ColumnConstraints minWidth="100" prefWidth="100" maxWidth="100" halignment="RIGHT"/>
+            <ColumnConstraints hgrow="ALWAYS" />
+        </columnConstraints>
+
+        <Label text="Correction" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="2" style="-fx-font-weight: bold" />
+
+        <Label text="DC I:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Spinner fx:id="dcCorrectionSpinnerI" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+        <Label text="DC Q:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <Spinner fx:id="dcCorrectionSpinnerQ" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+        <Label text="Gain:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <Spinner fx:id="gainCorrectionSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+        <Label text="Phase:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <Spinner fx:id="phaseCorrectionSpinner" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+    </GridPane>
+
+</VBox>
