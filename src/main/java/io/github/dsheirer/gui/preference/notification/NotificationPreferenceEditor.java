@@ -74,6 +74,7 @@ public class NotificationPreferenceEditor extends VBox {
 
         Button telegramTestBtn = new Button("_Send Test");
         telegramTestBtn.setMnemonicParsing(true);
+        telegramTestBtn.setTooltip(new Tooltip("Send a test message to a Telegram chat ID"));
         telegramTestBtn.setOnAction(e -> {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Test Telegram");
@@ -166,6 +167,7 @@ public class NotificationPreferenceEditor extends VBox {
 
         Button emailTestBtn = new Button("_Send Test");
         emailTestBtn.setMnemonicParsing(true);
+        emailTestBtn.setTooltip(new Tooltip("Send a test email using the configured SMTP settings"));
         emailTestBtn.setOnAction(e -> {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Test Email");
@@ -255,6 +257,7 @@ public class NotificationPreferenceEditor extends VBox {
         });
 
         Button addBtn = new Button("Add Recipient");
+        addBtn.setTooltip(new Tooltip("Add a new notification recipient"));
         addBtn.setOnAction(e -> {
             NotificationRecipient nr = new NotificationRecipient();
             mRecipientsList.add(nr);
@@ -263,6 +266,7 @@ public class NotificationPreferenceEditor extends VBox {
         });
 
         Button removeBtn = new Button("Remove Selected");
+        removeBtn.setTooltip(new Tooltip("Remove the selected notification recipient"));
         removeBtn.setOnAction(e -> {
             NotificationRecipient selected = mRecipientListView.getSelectionModel().getSelectedItem();
             if(selected != null) {
