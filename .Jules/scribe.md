@@ -44,3 +44,7 @@
 **Topic:** Now Playing Panel
 **Learning:** The "Now Playing" panel is a core navigational component but lacked a dedicated getting started guide explaining its widget system.
 **Action:** Created `src/main/resources/docs/now-playing.md` and integrated it into the navigation tree of `HelpViewer.java` under "Getting Started".
+## 2026-05-19 - Topic Selection
+**Topic:** Signal Flow & Routing
+**Learning:** A new documentation guide covering the high-level signal flow from the hardware tuner to audio routing was needed to help users understand SDRTrunk's core processing pipeline.
+**Action:** Created `src/main/resources/docs/signal-flow-&-routing.md` with a visual flow Mermaid diagram and added it to the 'Getting Started' section of the HelpViewController.

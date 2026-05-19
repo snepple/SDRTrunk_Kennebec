@@ -21,26 +21,19 @@ package io.github.dsheirer.module.decode.event;
 import io.github.dsheirer.message.IMessage;
 import io.github.dsheirer.message.StuffBitsMessage;
 import io.github.dsheirer.sample.Listener;
-import java.awt.EventQueue;
-import java.text.SimpleDateFormat;
-import javafx.collections.ObservableList;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
 import java.util.List;
 
 /**
- * Table Model for decoded IMessages.
+ * Observable Model for decoded IMessages.
  */
 public class MessageActivityModel extends ClearableHistoryModel<MessageItem> implements Listener<IMessage>
 {
     private static final long serialVersionUID = 1L;
-    private static final int TIME = 0;
-    private static final int PROTOCOL = 1;
-    private static final int TIMESLOT = 2;
-    private static final int MESSAGE = 3;
-
-    private String[] mHeaders = new String[]{"Time", "Protocol", "Timeslot", "Message"};
-    private SimpleDateFormat mSDFTime = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
-    private ObservableList<MessageItem> mObservableList;
+    private ObservableList<MessageItem> mItems = FXCollections.observableArrayList();
 
     /**
      * Constructor
@@ -49,9 +42,11 @@ public class MessageActivityModel extends ClearableHistoryModel<MessageItem> imp
     {
     }
 
-    public void setObservableList(ObservableList<MessageItem> observableList)
-    {
-        mObservableList = observableList;
+    /**
+     * Returns the observable list of items for binding to JavaFX UI.
+     */
+    public ObservableList<MessageItem> getItems() {
+        return mItems;
     }
 
     /**
@@ -66,69 +61,57 @@ public class MessageActivityModel extends ClearableHistoryModel<MessageItem> imp
             return;
         }
 
-        EventQueue.invokeLater(() -> {
-            MessageItem item = new MessageItem(message);
-            add(item);
-            if (mObservableList != null) {
-                Platform.runLater(() -> {
-                    mObservableList.add(0, item);
-                    while (mObservableList.size() > getHistorySize()) {
-                        mObservableList.remove(mObservableList.size() - 1);
-                    }
-                });
+        Platform.runLater(() -> add(new MessageItem(message)));
+    }
+
+    @Override
+    public void add(MessageItem item) {
+        if (!mItems.contains(item)) {
+            mItems.add(0, item);
+
+            while (mItems.size() > getHistorySize()) {
+                mItems.remove(mItems.size() - 1);
+            }
+        }
+    }
+
+    @Override
+    public void clear() {
+        Platform.runLater(() -> mItems.clear());
+    }
+
+    @Override
+    public void clearAndSet(List<MessageItem> items) {
+        Platform.runLater(() -> {
+            mItems.clear();
+            for (MessageItem item : items) {
+                add(item);
             }
         });
     }
 
     @Override
-    public int getColumnCount()
-    {
-        return mHeaders.length;
+    public MessageItem getItem(int index) {
+        if (index >= 0 && index < mItems.size()) {
+            return mItems.get(index);
+        }
+        return null;
     }
 
-    public String getColumnName(int column)
+    @Override
+    public int getColumnCount()
     {
-        return mHeaders[column];
+        return 4;
+    }
+
+    @Override
+    public int getRowCount() {
+        return mItems.size();
     }
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex)
     {
-        MessageItem item = getItem(rowIndex);
-
-        if(item != null)
-        {
-            switch(columnIndex)
-            {
-                case TIME:
-                    return item.getTimestamp(mSDFTime);
-                case PROTOCOL:
-                    return item.getProtocol();
-                case TIMESLOT:
-                    return item.getTimeslot();
-                case MESSAGE:
-                    return item.getText();
-                default:
-                    break;
-            }
-        }
-
         return null;
-    }
-
-    @Override
-    public void clear() {
-        super.clear();
-        if (mObservableList != null) {
-            Platform.runLater(() -> mObservableList.clear());
-        }
-    }
-
-    @Override
-    public void clearAndSet(List<MessageItem> items) {
-        super.clearAndSet(items);
-        if (mObservableList != null) {
-            Platform.runLater(() -> mObservableList.setAll(items));
-        }
     }
 }

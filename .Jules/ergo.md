@@ -39,3 +39,7 @@
 ## 2024-05-18 - Streaming Editor Tooltips
 **Learning:** Configurations for streaming servers like Icecast contain many backend-specific terms (Host, Port, Mount Point, Inline Metadata) that are confusing to users who aren't familiar with audio broadcasting software.
 **Action:** Always provide explicit tooltips to inputs in streaming editors (`AbstractStreamEditor`, `IcecastStreamEditor`) detailing the expected format and purpose (e.g., "Enter the server port number (e.g., 8000)") to lower the cognitive load.
+
+## 2024-05-18 - OpenMHz Configuration Tooltips
+**Learning:** Configurations for complex integrations like OpenMHz often use raw text inputs without placeholders or tooltips, increasing the chance of formatting errors (e.g., omitting the 'https://' prefix for the host, or misunderstanding 'System Short Name').
+**Action:** Consistently apply Tooltip and PromptText to OpenMHz and similar API configuration text fields to reduce cognitive load and prevent formatting errors.

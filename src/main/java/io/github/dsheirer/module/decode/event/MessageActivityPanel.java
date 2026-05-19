@@ -28,11 +28,13 @@ import io.github.dsheirer.module.ProcessingChain;
 import io.github.dsheirer.module.decode.DecoderFactory;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.sample.Listener;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 import javafx.scene.control.TableColumn;
@@ -40,7 +42,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -60,8 +61,7 @@ public class MessageActivityPanel extends JFXPanel implements Listener<Processin
     private boolean mRestoringFilters = false;
     private HistoryManagementPanel<IMessage> mHistoryManagementPanel;
     private TableView<MessageItem> mTable;
-    private ObservableList<MessageItem> observableMessageItems;
-    private FilteredList<MessageItem> filteredMessageItems;
+    private FilteredList<MessageItem> mFilteredItems;
 
     /**
      * Constructs an instance
@@ -70,7 +70,6 @@ public class MessageActivityPanel extends JFXPanel implements Listener<Processin
     public MessageActivityPanel(UserPreferences userPreferences)
     {
         mUserPreferences = userPreferences;
-
         mHistoryManagementPanel = new HistoryManagementPanel<>(mMessageModel, "Message Filter Editor");
 
         Platform.runLater(() -> {
@@ -93,11 +92,8 @@ public class MessageActivityPanel extends JFXPanel implements Listener<Processin
 
             mTable.getColumns().addAll(timeCol, protocolCol, timeslotCol, messageCol);
 
-            observableMessageItems = FXCollections.observableArrayList();
-            filteredMessageItems = new FilteredList<>(observableMessageItems, p -> true);
-            mTable.setItems(filteredMessageItems);
-
-            mMessageModel.setObservableList(observableMessageItems);
+            mFilteredItems = new FilteredList<>(mMessageModel.getItems(), this::evaluateFilter);
+            mTable.setItems(mFilteredItems);
 
             VBox vbox = new VBox();
             VBox.setVgrow(mTable, Priority.ALWAYS);
@@ -114,6 +110,14 @@ public class MessageActivityPanel extends JFXPanel implements Listener<Processin
             }
             setScene(scene);
         });
+    }
+
+    private boolean evaluateFilter(MessageItem item) {
+        if (mMessageFilterSet != null && item != null && item.getMessage() != null) {
+            IMessage message = item.getMessage();
+            return mMessageFilterSet.canProcess(message) && mMessageFilterSet.passes(message);
+        }
+        return false;
     }
 
     /**
@@ -146,8 +150,9 @@ public class MessageActivityPanel extends JFXPanel implements Listener<Processin
                 {
                     saveFilterStates(mMessageFilterSet);
                 }
-                updateFilter();
-                mMessageModel.fireTableDataChanged();
+                Platform.runLater(() -> {
+                    if (mFilteredItems != null) mFilteredItems.setPredicate(this::evaluateFilter);
+                });
             });
             if(mHistoryManagementPanel != null)
             {
@@ -169,7 +174,9 @@ public class MessageActivityPanel extends JFXPanel implements Listener<Processin
             mCurrentMessageHistory = null;
             mMessageFilterSet = null;
             mMessageModel.clear();
-            updateFilter();
+            Platform.runLater(() -> {
+                if (mFilteredItems != null) mFilteredItems.setPredicate(this::evaluateFilter);
+            });
             mHistoryManagementPanel.setEnabled(false);
         }
     }
@@ -202,20 +209,5 @@ public class MessageActivityPanel extends JFXPanel implements Listener<Processin
                 }
             }
         }
-    }
-
-    private void updateFilter() {
-        Platform.runLater(() -> {
-            if (filteredMessageItems != null) {
-                filteredMessageItems.setPredicate(item -> {
-                    if(mMessageFilterSet != null && item != null && item.getMessage() != null)
-                    {
-                        IMessage message = item.getMessage();
-                        return mMessageFilterSet.canProcess(message) && mMessageFilterSet.passes(message);
-                    }
-                    return false;
-                });
-            }
-        });
     }
 }

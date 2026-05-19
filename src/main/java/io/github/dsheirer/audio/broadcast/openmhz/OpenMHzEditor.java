@@ -31,6 +31,7 @@
  import javafx.scene.control.ButtonType;
  import javafx.scene.control.Label;
  import javafx.scene.control.TextField;
+ import javafx.scene.control.Tooltip;
  import javafx.scene.layout.GridPane;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
@@ -187,6 +188,8 @@
          {
              mMaxAgeTextField = new IntegerTextField();
              mMaxAgeTextField.setDisable(true);
+             mMaxAgeTextField.setPromptText("Optional");
+             mMaxAgeTextField.setTooltip(new Tooltip("Optional: The maximum age of a recording before it is deleted (in seconds)."));
              mMaxAgeTextField.textProperty().addListener(mEditorModificationListener);
          }
 
@@ -199,6 +202,8 @@
          {
              mHostTextField = new TextField();
              mHostTextField.setDisable(true);
+             mHostTextField.setPromptText("https://api.openmhz.com");
+             mHostTextField.setTooltip(new Tooltip("The base URL of the OpenMHz API server (e.g., https://api.openmhz.com)."));
              mHostTextField.textProperty().addListener(mEditorModificationListener);
          }
 
@@ -211,6 +216,7 @@
          {
              mApiKeyTextField = new TextField();
              mApiKeyTextField.setDisable(true);
+             mApiKeyTextField.setTooltip(new Tooltip("Your OpenMHz system API key."));
              mApiKeyTextField.textProperty().addListener(mEditorModificationListener);
          }
 
@@ -223,6 +229,8 @@
          {
              mSystemNameTextField = new TextField();
              mSystemNameTextField.setDisable(true);
+             mSystemNameTextField.setPromptText("System Short Name");
+             mSystemNameTextField.setTooltip(new Tooltip("The short name of your system as registered on OpenMHz."));
              mSystemNameTextField.textProperty().addListener(mEditorModificationListener);
          }
 

@@ -66,6 +66,7 @@ public class HelpViewController {
         gettingStartedNode.getChildren().add(new TreeItem<>("Now Playing"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Overview"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Quickstart"));
+        gettingStartedNode.getChildren().add(new TreeItem<>("Signal Flow & Routing"));
         guidesNode.getChildren().add(gettingStartedNode);
 
         TreeItem<String> hardwareTunersNode = new TreeItem<>("Hardware & Tuners");
