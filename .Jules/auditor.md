@@ -4,3 +4,6 @@
 
 ## 2025-02-28 - [RecordingTunerEditor HIG Consistency]
 **Global UI Constant:** All editor panels should strictly use the 8pt grid with standardized MigLayout gaps/insets for consistency, specifically adopting "insets 16 16 16 16, gapy 8" where explicit padding is required instead of arbitrary magic numbers.
+
+## 2025-02-28 - [R8xTunerEditor HIG Consistency]
+**Global UI Constant:** All editor panels should strictly use the 8pt grid with standardized MigLayout gaps/insets for consistency, specifically adopting "insets 16 16 16 16, gapy 8" where explicit padding is required instead of arbitrary magic numbers. Use "skip 1, align left, wrap" for button panels to align with input fields, and use empty labels (e.g. `new JLabel("")`) instead of `JSeparator` lines.

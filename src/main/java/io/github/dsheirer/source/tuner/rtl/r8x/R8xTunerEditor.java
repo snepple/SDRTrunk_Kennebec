@@ -118,30 +118,30 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 2", "[right][grow,fill]", ""));
+        setLayout(new MigLayout("fill,wrap 2, insets 16 16 16 16, gapy 8", "[right, 100!][grow,fill]", ""));
 
         add(new JLabel("Tuner:"));
-        add(getTunerIdLabel());
+        add(getTunerIdLabel(), "wrap");
 
         add(new JLabel("Status:"));
-        add(getTunerStatusLabel());
+        add(getTunerStatusLabel(), "wrap");
 
         add(new JLabel("Bias-T:"));
-        add(getBiasTButton());
+        add(getBiasTButton(), "wrap");
 
-        add(getButtonPanel(), "span,align left");
+        add(getButtonPanel(), "skip 1, align left, wrap");
 
-        add(new JSeparator(), "span,growx,push");
+        add(new JLabel(""), "wrap");
 
         add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel());
+        add(getFrequencyPanel(), "wrap");
 
         add(new JLabel("Sample Rate:"));
-        add(getSampleRateCombo());
+        add(getSampleRateCombo(), "wrap");
 
-        add(new JSeparator(), "span,growx,push");
+        add(new JLabel(""), "wrap");
 
-        JPanel gainPanel = new JPanel(new MigLayout("insets 0", "[][grow,fill][][grow,fill]", ""));
+        JPanel gainPanel = new JPanel(new MigLayout("insets 0, gap 8 8", "[][grow,fill][][grow,fill]", ""));
         gainPanel.add(new JLabel("Master:"));
         gainPanel.add(getMasterGainCombo());
         gainPanel.add(new JLabel("Mixer:"));
@@ -152,7 +152,7 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
         gainPanel.add(getVGAGainCombo(), "wrap");
 
         add(new JLabel("Gain:"));
-        add(gainPanel);
+        add(gainPanel, "wrap");
     }
 
     @Override
