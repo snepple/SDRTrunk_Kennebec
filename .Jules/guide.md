@@ -33,3 +33,6 @@
 ## 2026-05-18 - WACN (Wide Area Communication Network)
 **Simplified:**
 - WACN: A unique code identifying a large regional radio system. This is usually provided by RadioReference and tells the software which network to follow.
+## 2026-05-19 - System
+**Simplified:**
+- System: System Identifier. Combined with the WACN, uniquely identifies a P25 system.
