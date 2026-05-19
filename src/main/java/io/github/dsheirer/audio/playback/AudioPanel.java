@@ -25,32 +25,45 @@ import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.preference.PreferenceEditorType;
 import io.github.dsheirer.gui.preference.ViewUserPreferenceEditorRequest;
 import io.github.dsheirer.icon.IconModel;
+import io.github.dsheirer.icon.MyFontIcon;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.settings.SettingsManager;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import javax.swing.UIManager;
+
 import jiconfont.icons.font_awesome.FontAwesome;
-import jiconfont.swing.IconFontSwing;
-import net.miginfocom.swing.MigLayout;
+
+import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.binding.Bindings;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CustomMenuItem;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.Slider;
+import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.embed.swing.SwingNode;
 
 import javax.sound.sampled.FloatControl;
-import javax.swing.Icon;
-import javax.swing.JButton;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
-import javax.swing.BorderFactory;
+
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import javax.swing.Icon;
 
 /**
  * Audio playback panel
  */
-public class AudioPanel extends JPanel implements Listener<AudioEvent>
+public class AudioPanel extends HBox implements Listener<AudioEvent>
 {
     private final AliasModel mAliasModel;
     private final AudioPlaybackManager mAudioPlaybackManager;
@@ -59,7 +72,7 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
     private final UserPreferences mUserPreferences;
     private AudioChannelsPanel mAudioChannelsPanel;
     private final BroadcastModel mBroadcastModel;
-    private JButton mMuteButton;
+    private MuteButton mMuteButton;
 
     /**
      * Constructs an instance
@@ -82,20 +95,62 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
         init();
     }
 
+    private Image createFxIcon(jiconfont.IconCode fontIcon, int size) {
+        Icon swingIcon = new MyFontIcon(fontIcon, size, Color.BLACK);
+        BufferedImage bImg = new BufferedImage(swingIcon.getIconWidth(), swingIcon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics2D g2d = bImg.createGraphics();
+        swingIcon.paintIcon(null, g2d, 0, 0);
+        g2d.dispose();
+        return SwingFXUtils.toFXImage(bImg, null);
+    }
+
     /**
      * Initialize the display
      */
     private void init()
     {
-        setLayout(new MigLayout("insets 2 5 2 5", "[]5[grow,fill]5[]", "[fill]0[]"));
-        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor") != null ? UIManager.getColor("Component.borderColor") : Color.LIGHT_GRAY));
-        setBackground(UIManager.getColor("Panel.background"));
+        setSpacing(5);
+        setPadding(new Insets(2, 5, 2, 5));
+        setAlignment(Pos.CENTER_LEFT);
+
+        // Add bottom border via CSS
+        setStyle("-fx-border-color: transparent transparent lightgray transparent; -fx-border-width: 0 0 1 0;");
+
         mMuteButton = new MuteButton();
-        mMuteButton.setBackground(getBackground());
-        add(mMuteButton, "cell 0 0");
+
         mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel, mBroadcastModel);
-        add(mAudioChannelsPanel, "cell 1 0, growx");
-        addMouseListener(new MouseSelectionListener());
+        HBox.setHgrow(mAudioChannelsPanel, Priority.ALWAYS);
+
+        getChildren().addAll(mMuteButton, mAudioChannelsPanel);
+
+        setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.SECONDARY) {
+                ContextMenu popup = new ContextMenu();
+
+                MenuItem outputMenu = new MenuItem("Audio Playback Device ...");
+                outputMenu.setGraphic(new ImageView(createFxIcon(FontAwesome.COG, 14)));
+                outputMenu.setOnAction(e -> MyEventBus.getGlobalEventBus()
+                        .post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.AUDIO_OUTPUT)));
+                popup.getItems().add(outputMenu);
+
+                if(mAudioPlaybackManager.getAudioOutput() != null && mAudioPlaybackManager.getAudioOutput().hasGainControl())
+                {
+                    popup.getItems().add(new SeparatorMenuItem());
+
+                    MenuItem volume = new MenuItem("Audio Volume");
+                    volume.setDisable(true);
+                    volume.setGraphic(new ImageView(createFxIcon(FontAwesome.VOLUME_UP, 14)));
+                    popup.getItems().add(volume);
+
+                    VolumeSlider slider = new VolumeSlider(mAudioPlaybackManager.getAudioOutput().getGainControl());
+                    CustomMenuItem sliderItem = new CustomMenuItem(slider);
+                    sliderItem.setHideOnClick(false);
+                    popup.getItems().add(sliderItem);
+                }
+
+                popup.show(this, event.getScreenX(), event.getScreenY());
+            }
+        });
     }
 
     /**
@@ -109,14 +164,17 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
             case AUDIO_CONFIGURATION_CHANGE_STARTED:
                 break;
             case AUDIO_CONFIGURATION_CHANGE_COMPLETE:
-                EventQueue.invokeLater(() -> {
-                    remove(mAudioChannelsPanel);
+                Platform.runLater(() -> {
+                    getChildren().remove(mAudioChannelsPanel);
                     mAudioChannelsPanel.dispose();
                     mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel, mBroadcastModel);
-                    add(mAudioChannelsPanel, "cell 1 0, growx");
-                    mAudioChannelsPanel.repaint();
-                    revalidate();
-                    repaint();
+                    HBox.setHgrow(mAudioChannelsPanel, Priority.ALWAYS);
+
+                    if (getChildren().size() >= 1) {
+                        getChildren().add(1, mAudioChannelsPanel);
+                    } else {
+                        getChildren().add(mAudioChannelsPanel);
+                    }
                 });
                 break;
             default:
@@ -127,9 +185,10 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
     /**
      * Audio output mute control menu item.
      */
-    public static class AudioOutputMuteItem extends JMenuItem
+    public static class AudioOutputMuteItem extends MenuItem
     {
         private final AudioOutput mAudioOutput;
+        private final BooleanProperty mMutedProperty = new SimpleBooleanProperty(false);
 
         /**
          * Constructs an instance
@@ -137,71 +196,22 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
          */
         public AudioOutputMuteItem(AudioOutput audioOutput)
         {
-            super(audioOutput.isMuted() ? "Unmute" : "Mute");
             mAudioOutput = audioOutput;
-            addActionListener(e -> mAudioOutput.setMuted(!mAudioOutput.isMuted()));
-        }
-    }
+            mMutedProperty.set(audioOutput.isMuted());
 
-    /**
-     * Mouse listener
-     */
-    public class MouseSelectionListener implements MouseListener
-    {
-        @Override
-        public void mouseClicked(MouseEvent event)
-        {
-            if(SwingUtilities.isRightMouseButton(event))
-            {
-                JPopupMenu popup = new JPopupMenu();
-                JMenuItem outputMenu = new JMenuItem("Audio Playback Device ...");
-                Icon icon = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.COG, 14, null);
-                outputMenu.setIcon(icon);
-                outputMenu.addActionListener(e -> MyEventBus.getGlobalEventBus()
-                        .post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.AUDIO_OUTPUT)));
-                popup.add(outputMenu);
+            textProperty().bind(Bindings.when(mMutedProperty).then("Unmute").otherwise("Mute"));
 
-                //Add optional gain controller for th eaudio output
-                if(mAudioPlaybackManager.getAudioOutput() != null && mAudioPlaybackManager.getAudioOutput().hasGainControl())
-                {
-                    popup.add(new JPopupMenu.Separator());
-                    JMenuItem volume = new JMenuItem("Audio Volume");
-                    volume.setEnabled(false);
-                    Icon volumeIcon = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.VOLUME_UP, 14, null);
-                    volume.setIcon(volumeIcon);
-                    popup.add(volume);
-                    popup.add(new VolumeSlider(mAudioPlaybackManager.getAudioOutput().getGainControl()));
-                }
-
-                popup.show(event.getComponent(), event.getX(), event.getY());
-            }
-        }
-
-        @Override
-        public void mousePressed(MouseEvent e)
-        {
-        }
-
-        @Override
-        public void mouseReleased(MouseEvent e)
-        {
-        }
-
-        @Override
-        public void mouseEntered(MouseEvent e)
-        {
-        }
-
-        @Override
-        public void mouseExited(MouseEvent e)
-        {
+            setOnAction(e -> {
+                mAudioOutput.setMuted(!mAudioOutput.isMuted());
+                mMutedProperty.set(mAudioOutput.isMuted());
+            });
         }
     }
 
     /**
      * Audio volume (gain) adjustment slider control
      */
-    public static class VolumeSlider extends JSlider
+    public static class VolumeSlider extends Slider
     {
         private final FloatControl mFloatControl;
 
@@ -211,32 +221,26 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
          */
         public VolumeSlider(FloatControl control)
         {
-            super(0, 100, 0);
+            super(0, 100, 50);
+            setShowTickMarks(true);
+            setShowTickLabels(true);
+            setMajorTickUnit(25);
+            setMinorTickCount(4);
 
-            setMajorTickSpacing(25);
-            setMinorTickSpacing(5);
-            setPaintTicks(true);
-            setPaintLabels(true);
             mFloatControl = control;
             setValue(getIntegerValue(mFloatControl.getValue()));
-            addChangeListener(event -> mFloatControl.shift(mFloatControl.getValue(),
-                getFloatValue(VolumeSlider.this.getValue()),
-                1000));
 
-            addMouseListener(new MouseListener()
-            {
-                @Override
-                public void mouseClicked(MouseEvent event)
+            valueProperty().addListener((observable, oldValue, newValue) -> {
+                mFloatControl.shift(mFloatControl.getValue(),
+                    getFloatValue(newValue.intValue()),
+                    1000);
+            });
+
+            setOnMouseClicked(event -> {
+                if(event.getClickCount() == 2)
                 {
-                    if(event.getClickCount() == 2)
-                    {
-                        VolumeSlider.this.setValue(50);
-                    }
+                    setValue(50);
                 }
-                public void mouseReleased(MouseEvent arg0) {}
-                public void mousePressed(MouseEvent arg0) {}
-                public void mouseExited(MouseEvent arg0) {}
-                public void mouseEntered(MouseEvent arg0) {}
             });
         }
 
@@ -286,42 +290,48 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
      * Mute button to mute all audio output channels exposed by the audio
      * controller
      */
-    public void setManageWidgetsButton(JButton button)
+    public void setManageWidgetsButton(javax.swing.JButton button)
     {
-        add(button, "cell 2 0, aligny center");
-        revalidate();
-        repaint();
+        Platform.runLater(() -> {
+            SwingNode node = new SwingNode();
+            SwingUtilities.invokeLater(() -> node.setContent(button));
+
+            HBox.setMargin(node, new Insets(0, 0, 0, 5));
+            getChildren().add(node);
+        });
     }
 
-    public class MuteButton extends JButton
+    public class MuteButton extends Button
     {
-        private boolean mMuted = false;
+        private final BooleanProperty mMutedProperty = new SimpleBooleanProperty(false);
+        private final ImageView mIconView = new ImageView();
 
         public MuteButton()
         {
-            updateIcons();
-            setBorderPainted(false);
-            setToolTipText("Mute");
-            getAccessibleContext().setAccessibleName("Mute");
-            addActionListener(e -> {
-                mMuted = !mMuted;
-                mAudioPlaybackManager.getAudioOutput().setMuted(mMuted);
-                EventQueue.invokeLater(() -> {
-                    updateIcons();
-                    setToolTipText(mMuted ? "Unmute" : "Mute");
-                    getAccessibleContext().setAccessibleName(mMuted ? "Unmute" : "Mute");
-                });
+            setStyle("-fx-background-color: transparent; -fx-padding: 2;");
+
+            Tooltip tooltip = new Tooltip();
+            tooltip.textProperty().bind(Bindings.when(mMutedProperty).then("Unmute").otherwise("Mute"));
+            setTooltip(tooltip);
+
+            mIconView.setFitHeight(20);
+            mIconView.setFitWidth(20);
+            mIconView.setPreserveRatio(true);
+            setGraphic(mIconView);
+
+            mMutedProperty.addListener((obs, oldVal, newVal) -> updateIcons(newVal));
+            updateIcons(false);
+
+            setOnAction(e -> {
+                boolean nextState = !mMutedProperty.get();
+                mAudioPlaybackManager.getAudioOutput().setMuted(nextState);
+                mMutedProperty.set(nextState);
             });
         }
 
-        private void updateIcons() {
-            Color fg = UIManager.getColor("Label.foreground");
-            if (fg == null) fg = Color.BLACK;
-
-            Icon muted = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.VOLUME_OFF, 20, fg);
-            Icon unmuted = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.VOLUME_UP, 20, fg);
-
-            setIcon(mMuted ? muted : unmuted);
+        private void updateIcons(boolean muted) {
+            jiconfont.IconCode iconCode = muted ? FontAwesome.VOLUME_OFF : FontAwesome.VOLUME_UP;
+            mIconView.setImage(createFxIcon(iconCode, 20));
         }
     }
 }

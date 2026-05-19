@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<?import javafx.scene.layout.HBox?>
-
-<HBox fx:id="mainContainer" spacing="5" alignment="CENTER_LEFT" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.dsheirer.audio.playback.AudioChannelsPanelController">
-    <!-- Content will be populated dynamically by the controller -->
-</HBox>
