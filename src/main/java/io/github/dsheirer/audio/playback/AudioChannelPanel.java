@@ -24,10 +24,8 @@ import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.AliasList;
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.audio.broadcast.BroadcastModel;
-
 import io.github.dsheirer.alias.id.broadcast.BroadcastChannel;
 import io.github.dsheirer.audio.broadcast.AbstractAudioBroadcaster;
-
 import io.github.dsheirer.audio.AudioEvent;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.icon.IconModel;
@@ -38,46 +36,49 @@ import io.github.dsheirer.identifier.Role;
 import io.github.dsheirer.preference.PreferenceType;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.identifier.TalkgroupFormatPreference;
-import io.github.dsheirer.properties.SystemProperties;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.settings.ColorSetting;
 import io.github.dsheirer.settings.Setting;
 import io.github.dsheirer.settings.SettingChangeListener;
 import io.github.dsheirer.settings.SettingsManager;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Font;
+import io.github.dsheirer.dsp.tone.TwoToneDetectedEvent;
+
+import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import net.miginfocom.swing.MigLayout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.UIManager;
-
-import io.github.dsheirer.dsp.tone.TwoToneDetectedEvent;
-import javax.swing.Timer;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * UI to wrap an audio channel and provide display of metadata and playback state information.
  */
-public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, SettingChangeListener
+public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, SettingChangeListener
 {
-    private static final long serialVersionUID = 1L;
     private static final Logger mLog = LoggerFactory.getLogger(AudioChannelPanel.class);
-
-    public static final String PROPERTY_PREFIX = "audio.channel.panel.color.";
-    public static final String PROPERTY_COLOR_BACKGROUND = PROPERTY_PREFIX + "background";
-    public static final String PROPERTY_COLOR_LABEL = PROPERTY_PREFIX + "label";
-    public static final String PROPERTY_COLOR_MUTED = PROPERTY_PREFIX + "muted";
-    public static final String PROPERTY_COLOR_VALUE = PROPERTY_PREFIX + "value";
 
     private final AudioChannel mAudioChannel;
     private final AliasModel mAliasModel;
@@ -87,34 +88,28 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
     private final BroadcastModel mBroadcastModel;
     private final TalkgroupFormatPreference mTalkgroupFormatPreference;
     private Identifier mIdentifier;
-    private List<Alias> mAliases = Collections.EMPTY_LIST;
+    private List<Alias> mAliases = Collections.emptyList();
     private final Lock mLock = new ReentrantLock();
 
-    private final Font mFont = UIManager.getFont("Label.font") != null ? UIManager.getFont("Label.font").deriveFont(13f) : new Font(Font.SANS_SERIF, Font.PLAIN, 13);
-    private final Color mBackgroundColor;
-    private final Color mLabelColor;
-    private final Color mMutedColor;
-    private final Color mValueColor;
-    private final JLabel mMutedLabel = new JLabel("M");
-    private JLabel mChannelName = new JLabel(" ");
-    private final JLabel mIconLabel = new JLabel(" ");
+    private final Font mFont = Font.font("System", 13);
+    private final Font mBoldFont = Font.font("System", FontWeight.BOLD, 13);
 
-    private final JLabel mIdentifierLabel = new JLabel("-----");
+    private final Label mMutedLabel = new Label("M");
+    private final Label mChannelName;
+    private final Label mIdentifierLabel = new Label("-----");
+    private final Label mTwoToneAlertLabel = new Label("");
+    private final ImageView mIconView = new ImageView();
+    private final HBox mStreamIconsPanel = new HBox(2);
 
-    private final JLabel mTwoToneAlertLabel = new JLabel("");
-    private final JPanel mStreamIconsPanel = new JPanel(new MigLayout("insets 0, gap 2", "", ""));
+    private PauseTransition mTwoToneClearTimer;
 
-    private Timer mTwoToneClearTimer;
+    // MVC Properties
+    private final BooleanProperty mMutedProperty = new SimpleBooleanProperty(false);
+    private final StringProperty mIdentifierTextProperty = new SimpleStringProperty("-----");
+    private final ObjectProperty<Image> mIconImageProperty = new SimpleObjectProperty<>();
+    private final StringProperty mTwoToneAlertTextProperty = new SimpleStringProperty("");
+    private final BooleanProperty mTwoToneAlertActiveProperty = new SimpleBooleanProperty(false);
 
-
-    /**
-     * Constructs an instance
-     * @param audioChannel to wrap by this panel
-     * @param aliasModel for alias lookup
-     * @param iconModel for icon lookup
-     * @param settingsManager for monitoring changes to tone insertion
-     * @param userPreferences for lookup of tone and other preferences
-     */
     public AudioChannelPanel(AudioChannel audioChannel, AliasModel aliasModel, IconModel iconModel,
                              SettingsManager settingsManager, UserPreferences userPreferences, BroadcastModel broadcastModel)
     {
@@ -127,24 +122,36 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         mTalkgroupFormatPreference = mUserPreferences.getTalkgroupFormatPreference();
         mAudioChannel = audioChannel;
 
+        mChannelName = new Label(mAudioChannel != null ? mAudioChannel.getChannelName() : " ");
+
         if(mAudioChannel != null)
         {
             mAudioChannel.addAudioEventListener(this);
             mAudioChannel.setIdentifierCollectionListener(new AudioMetadataProcessor());
         }
 
-        mBackgroundColor = SystemProperties.getInstance().get(PROPERTY_COLOR_BACKGROUND, UIManager.getColor("Panel.background"));
-        mLabelColor = SystemProperties.getInstance().get(PROPERTY_COLOR_LABEL, UIManager.getColor("Label.foreground"));
-        mMutedColor = SystemProperties.getInstance().get(PROPERTY_COLOR_MUTED, Color.RED);
-        mValueColor = SystemProperties.getInstance().get(PROPERTY_COLOR_VALUE, UIManager.getColor("Label.foreground"));
-
         init();
+        setupBindings();
     }
 
-    /**
-     * Receives preference update notifications via the event bus
-     * @param preferenceType that was updated
-     */
+    private void setupBindings() {
+        mMutedLabel.visibleProperty().bind(mMutedProperty);
+        mMutedLabel.managedProperty().bind(mMutedProperty);
+
+        mIdentifierLabel.textProperty().bind(mIdentifierTextProperty);
+        mIconView.imageProperty().bind(mIconImageProperty);
+
+        mTwoToneAlertLabel.textProperty().bind(mTwoToneAlertTextProperty);
+        mTwoToneAlertLabel.visibleProperty().bind(mTwoToneAlertActiveProperty);
+        mTwoToneAlertLabel.managedProperty().bind(mTwoToneAlertActiveProperty);
+
+        mIdentifierLabel.visibleProperty().bind(mTwoToneAlertActiveProperty.not());
+        mIdentifierLabel.managedProperty().bind(mTwoToneAlertActiveProperty.not());
+
+        mIconView.visibleProperty().bind(mTwoToneAlertActiveProperty.not());
+        mIconView.managedProperty().bind(mTwoToneAlertActiveProperty.not());
+    }
+
     @Subscribe
     public void preferenceUpdated(PreferenceType preferenceType)
     {
@@ -154,43 +161,31 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         }
     }
 
-
     @Subscribe
     public void onTwoToneDetected(TwoToneDetectedEvent event) {
         if (mAudioChannel != null && event.getChannel() != null && event.getChannel().equals(mAudioChannel.getChannelName())) {
-            EventQueue.invokeLater(() -> {
-                mTwoToneAlertLabel.setText(event.getMessage());
-                mTwoToneAlertLabel.setVisible(true);
-                mIdentifierLabel.setVisible(false);
-                mIconLabel.setVisible(false);
+            Platform.runLater(() -> {
+                mTwoToneAlertTextProperty.set(event.getMessage());
+                mTwoToneAlertActiveProperty.set(true);
 
-                if (mTwoToneClearTimer != null && mTwoToneClearTimer.isRunning()) {
-                    mTwoToneClearTimer.restart();
+                if (mTwoToneClearTimer != null) {
+                    mTwoToneClearTimer.stop();
                 } else {
-                    mTwoToneClearTimer = new Timer(10000, new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            mTwoToneAlertLabel.setVisible(false);
-                            mIdentifierLabel.setVisible(true);
-                            mIconLabel.setVisible(true);
-                        }
-                    });
-                    mTwoToneClearTimer.setRepeats(false);
-                    mTwoToneClearTimer.start();
+                    mTwoToneClearTimer = new PauseTransition(Duration.seconds(10));
+                    mTwoToneClearTimer.setOnFinished(e -> mTwoToneAlertActiveProperty.set(false));
                 }
+                mTwoToneClearTimer.playFromStart();
             });
         }
     }
 
     public void dispose()
     {
-        //Deregister from receiving preference update notifications
         MyEventBus.getGlobalEventBus().unregister(this);
 
         if(mTwoToneClearTimer != null) {
             mTwoToneClearTimer.stop();
         }
-
 
         if(mAudioChannel != null)
         {
@@ -201,41 +196,30 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
 
     private void init()
     {
-        //Register to receive preference updates
         MyEventBus.getGlobalEventBus().register(this);
 
-        setLayout(new MigLayout("align center center, insets 0 2 0 2",
-            "[][][align right]5[grow,fill]", ""));
-        setBackground(mBackgroundColor);
+        setAlignment(Pos.CENTER_LEFT);
+        setSpacing(5);
+        setPadding(new Insets(2, 5, 2, 5));
+        getStyleClass().add("audio-channel-panel");
 
         mMutedLabel.setFont(mFont);
-        mMutedLabel.setForeground(mMutedColor);
-        mMutedLabel.setVisible(false);
-        add(mMutedLabel);
+        mMutedLabel.setTextFill(Color.RED);
 
-        mChannelName = new JLabel(mAudioChannel != null ? mAudioChannel.getChannelName() : " ");
-        mChannelName.setFont(mFont.deriveFont(Font.BOLD));
-        mChannelName.setForeground(mLabelColor);
-        add(mChannelName);
+        mChannelName.setFont(mBoldFont);
 
-        mIconLabel.setFont(mFont);
-        mIconLabel.setForeground(mValueColor);
-        add(mIconLabel);
+        mIconView.setFitHeight(18);
+        mIconView.setFitWidth(18);
+        mIconView.setPreserveRatio(true);
 
+        mIdentifierLabel.setFont(mBoldFont);
 
-        mIdentifierLabel.setFont(mFont.deriveFont(Font.BOLD));
-        mIdentifierLabel.setForeground(mValueColor);
-        add(mIdentifierLabel, "wmin 10lp");
+        mStreamIconsPanel.setAlignment(Pos.CENTER_LEFT);
 
-        mStreamIconsPanel.setOpaque(false);
-        add(mStreamIconsPanel, "wmin 10lp, hidemode 3");
+        mTwoToneAlertLabel.setFont(mBoldFont);
+        mTwoToneAlertLabel.setTextFill(Color.RED);
 
-
-        mTwoToneAlertLabel.setFont(mFont.deriveFont(Font.BOLD));
-        mTwoToneAlertLabel.setForeground(Color.RED);
-        mTwoToneAlertLabel.setVisible(false);
-        add(mTwoToneAlertLabel, "hidemode 3");
-
+        getChildren().addAll(mMutedLabel, mChannelName, mIconView, mIdentifierLabel, mStreamIconsPanel, mTwoToneAlertLabel);
     }
 
     @Override
@@ -244,32 +228,26 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         switch(audioEvent.getType())
         {
             case AUDIO_STOPPED:
-                EventQueue.invokeLater(this::resetLabels);
+                resetLabels();
                 break;
             case AUDIO_MUTED:
             case AUDIO_UNMUTED:
-                EventQueue.invokeLater(() -> mMutedLabel.setVisible(mAudioChannel.isMuted()));
+                Platform.runLater(() -> mMutedProperty.set(mAudioChannel.isMuted()));
                 break;
             default:
                 break;
         }
     }
 
-    /**
-     * Resets the from and to labels.
-     */
     private void resetLabels()
     {
-        //Protect access to mIdentifier and mAliases
         mLock.lock();
-
         try
         {
             boolean updated = mIdentifier != null;
             mIdentifier = null;
-            mAliases = Collections.EMPTY_LIST;
+            mAliases = Collections.emptyList();
 
-            //Hold the lock through the label update
             if(updated)
             {
                 updateLabels();
@@ -298,10 +276,7 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         }
 
         boolean updated = false;
-
-        //Protect access to mIdentifier and mAliases
         mLock.lock();
-
         try
         {
             if(toIds.size() == 1)
@@ -332,7 +307,6 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
                 updated = true;
             }
 
-            //Hold the lock through the label update
             if(updated)
             {
                 updateLabels();
@@ -344,17 +318,12 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         }
     }
 
-    /**
-     * Updates the alias label with text and icon from the alias.
-     */
     private void updateLabels()
     {
         String identifier = null;
         String iconName = null;
 
-        //Protect access to mIdentifier and mAliases
         mLock.lock();
-
         try
         {
             if(mAliases.size() == 1)
@@ -377,32 +346,53 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
                 identifier = "-----";
             }
 
-            final ImageIcon icon = iconName != null ? mIconModel.getIcon(iconName, 18) : null;
-            final String identifierText = identifier;
+            final String finalIdentifier = identifier;
+            final String finalIconName = iconName;
 
-            EventQueue.invokeLater(() -> {
-                mIdentifierLabel.setText(identifierText);
-                mIconLabel.setIcon(icon);
-
-                mStreamIconsPanel.removeAll();
-                if (mAliases != null) {
-                    java.util.Set<String> activeStreams = new java.util.HashSet<>();
-                    for (Alias alias : mAliases) {
-                        for (BroadcastChannel bc : alias.getBroadcastChannels()) {
-                            AbstractAudioBroadcaster<?> broadcaster = mBroadcastModel.getBroadcaster(bc.getChannelName());
-                            if (broadcaster != null && broadcaster.getBroadcastConfiguration().isEnabled()) {
-                                if (!activeStreams.contains(bc.getChannelName())) {
-                                    activeStreams.add(bc.getChannelName());
-                                    JLabel streamLabel = new JLabel(mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath(), 14));
-                                    streamLabel.setToolTipText(broadcaster.getBroadcastConfiguration().getName());
-                                    mStreamIconsPanel.add(streamLabel);
-                                }
+            // Collect stream info
+            final Set<AbstractAudioBroadcaster<?>> activeStreams = new HashSet<>();
+            if (mAliases != null) {
+                Set<String> processedNames = new HashSet<>();
+                for (Alias alias : mAliases) {
+                    for (BroadcastChannel bc : alias.getBroadcastChannels()) {
+                        AbstractAudioBroadcaster<?> broadcaster = mBroadcastModel.getBroadcaster(bc.getChannelName());
+                        if (broadcaster != null && broadcaster.getBroadcastConfiguration().isEnabled()) {
+                            if (!processedNames.contains(bc.getChannelName())) {
+                                processedNames.add(bc.getChannelName());
+                                activeStreams.add(broadcaster);
                             }
                         }
                     }
                 }
-                mStreamIconsPanel.revalidate();
-                mStreamIconsPanel.repaint();
+            }
+
+            Platform.runLater(() -> {
+                mIdentifierTextProperty.set(finalIdentifier);
+
+                if (finalIconName != null) {
+                    io.github.dsheirer.icon.Icon icon = mIconModel.getIcon(finalIconName);
+                    if (icon != null && icon.getFxImage() != null) {
+                        mIconImageProperty.set(icon.getFxImage());
+                    } else {
+                        mIconImageProperty.set(null);
+                    }
+                } else {
+                    mIconImageProperty.set(null);
+                }
+
+                mStreamIconsPanel.getChildren().clear();
+                for (AbstractAudioBroadcaster<?> broadcaster : activeStreams) {
+                    io.github.dsheirer.icon.Icon streamIconDef = mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath());
+                    if (streamIconDef != null && streamIconDef.getFxImage() != null) {
+                        ImageView streamIconView = new ImageView(streamIconDef.getFxImage());
+                        streamIconView.setFitHeight(14);
+                        streamIconView.setFitWidth(14);
+                        streamIconView.setPreserveRatio(true);
+                        Tooltip tooltip = new Tooltip(broadcaster.getBroadcastConfiguration().getName());
+                        Tooltip.install(streamIconView, tooltip);
+                        mStreamIconsPanel.getChildren().add(streamIconView);
+                    }
+                }
             });
         }
         finally
@@ -411,9 +401,6 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         }
     }
 
-    /**
-     * Processes audio metadata to update this panel's display values
-     */
     public class AudioMetadataProcessor implements Listener<IdentifierCollection>
     {
         @Override
@@ -428,25 +415,7 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
     {
         if(setting instanceof ColorSetting)
         {
-            ColorSetting colorSetting = (ColorSetting)setting;
-
-            switch(colorSetting.getColorSettingName())
-            {
-                case CHANNEL_STATE_LABEL_DECODER:
-                    EventQueue.invokeLater(() -> {
-                        if(mIdentifierLabel != null)
-                        {
-                            mIdentifierLabel.setForeground(mLabelColor);
-                        }
-                        if(mIconLabel != null)
-                        {
-                            mIconLabel.setForeground(mLabelColor);
-                        }
-                    });
-                    break;
-                default:
-                    break;
-            }
+            // Do nothing for color settings as we're migrating to CSS
         }
     }
 

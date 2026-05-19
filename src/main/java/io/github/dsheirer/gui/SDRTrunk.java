@@ -611,9 +611,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         BorderPane rightContentPane = new BorderPane();
         javafx.scene.layout.VBox rightTopPane = new javafx.scene.layout.VBox();
 
-        SwingNode audioPanelNode = new SwingNode();
-        javax.swing.SwingUtilities.invokeLater(() -> audioPanelNode.setContent(mControllerPanel.getAudioPanel()));
-        rightTopPane.getChildren().add(audioPanelNode);
+
+
+        rightTopPane.getChildren().add(mControllerPanel.getAudioPanel());
 
         mTopContentPane = new BorderPane();
         mSpectralSwingNode = new SwingNode();

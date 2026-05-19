@@ -26,22 +26,21 @@ import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.settings.SettingsManager;
 
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
+import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
+import javafx.scene.control.Separator;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /**
  * Displays one or more audio channel panels.
  */
-public class AudioChannelsPanel extends JFXPanel
+public class AudioChannelsPanel extends HBox
 {
     private static final Logger mLog = LoggerFactory.getLogger(AudioChannelsPanel.class);
-    private AudioChannelsPanelController mController;
 
     /**
      * Constructs an instance
@@ -54,21 +53,28 @@ public class AudioChannelsPanel extends JFXPanel
     public AudioChannelsPanel(IconModel iconModel, UserPreferences userPreferences, SettingsManager settingsManager,
                               IAudioController controller, AliasModel aliasModel, BroadcastModel broadcastModel)
     {
-        Platform.runLater(() -> {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/audio/playback/AudioChannelsPanel.fxml"));
-                Parent root = loader.load();
-                mController = loader.getController();
-                mController.init(iconModel, userPreferences, settingsManager, controller, aliasModel, broadcastModel);
+        setSpacing(5);
+        setAlignment(Pos.CENTER_LEFT);
 
-                Scene scene = new Scene(root);
-                java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
-                if (cssUrl != null) {
-                    scene.getStylesheets().add(cssUrl.toExternalForm());
+        Platform.runLater(() -> {
+            getChildren().clear();
+            getChildren().add(new Separator(Orientation.VERTICAL));
+
+            for (int x = 0; x < controller.getAudioChannels().size(); x++) {
+                AudioChannelPanel javaFxPanel = new AudioChannelPanel(controller.getAudioChannels().get(x), aliasModel, iconModel, settingsManager, userPreferences, broadcastModel);
+                HBox.setHgrow(javaFxPanel, Priority.ALWAYS);
+                getChildren().add(javaFxPanel);
+
+                if (x < controller.getAudioChannels().size() - 1) {
+                    getChildren().add(new Separator(Orientation.VERTICAL));
                 }
-                setScene(scene);
-            } catch (IOException e) {
-                mLog.error("Error loading AudioChannelsPanel.fxml", e);
+            }
+
+            if (controller.getAudioChannels().size() == 1) {
+                getChildren().add(new Separator(Orientation.VERTICAL));
+                AudioChannelPanel javaFxPanel = new AudioChannelPanel(null, aliasModel, iconModel, settingsManager, userPreferences, broadcastModel);
+                HBox.setHgrow(javaFxPanel, Priority.ALWAYS);
+                getChildren().add(javaFxPanel);
             }
         });
     }
@@ -79,8 +85,10 @@ public class AudioChannelsPanel extends JFXPanel
     public void dispose()
     {
         Platform.runLater(() -> {
-            if (mController != null) {
-                mController.dispose();
+            for (Node node : getChildren()) {
+                if (node instanceof AudioChannelPanel) {
+                    ((AudioChannelPanel)node).dispose();
+                }
             }
         });
     }
