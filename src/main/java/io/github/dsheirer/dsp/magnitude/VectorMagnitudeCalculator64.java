@@ -29,12 +29,24 @@ import jdk.incubator.vector.VectorSpecies;
 public class VectorMagnitudeCalculator64 implements IMagnitudeCalculator
 {
     private static final VectorSpecies<Float> VECTOR_SPECIES = FloatVector.SPECIES_64;
+    private float[] mMagnitude;
 
+    /**
+     * Calculates magnitude values from the provided inphase and quadrature arrays.
+     * To alleviate garbage collection pressure, this method reuses an internally cached
+     * magnitude array. Therefore, the returned array must not be retained by the caller
+     * across subsequent calls or used across threads.
+     */
     @Override
     public float[] calculate(float[] i, float[] q)
     {
         VectorUtilities.checkComplexArrayLength(i, q, VECTOR_SPECIES);
-        float[] magnitude = new float[i.length];
+
+        // ⚡ Bolt: Reuse the magnitude array to prevent allocating a new array per calculate call
+        if(mMagnitude == null || mMagnitude.length != i.length)
+        {
+            mMagnitude = new float[i.length];
+        }
 
         FloatVector iVector, qVector, result;
         for(int x = 0; x < i.length; x += VECTOR_SPECIES.length())
@@ -42,9 +54,9 @@ public class VectorMagnitudeCalculator64 implements IMagnitudeCalculator
             iVector = FloatVector.fromArray(VECTOR_SPECIES, i, x);
             qVector = FloatVector.fromArray(VECTOR_SPECIES, q, x);
             result = iVector.mul(iVector).add(qVector.mul(qVector));
-            result.intoArray(magnitude, x);
+            result.intoArray(mMagnitude, x);
         }
 
-        return magnitude;
+        return mMagnitude;
     }
 }
