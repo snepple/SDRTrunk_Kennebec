@@ -62,6 +62,11 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
 import java.util.Optional;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JToggleButton;
@@ -76,7 +81,7 @@ public class ChannelizerViewer2 extends Stage
     private static final int CHANNEL_BANDWIDTH = 12500;
 
     private SettingsManager mSettingsManager = new SettingsManager();
-    private JPanel mPrimaryPanel;
+    private VBox mPrimaryPanel;
     private JPanel mControlPanel;
     private JButton mTopFrameAddChannelButton;
     private JButton mBottomFrameAddChannelButton;
@@ -104,28 +109,27 @@ public class ChannelizerViewer2 extends Stage
         setHeight(700);
         setOnCloseRequest(event -> System.exit(0));
 
-        SwingNode swingNode = new SwingNode();
-        SwingUtilities.invokeLater(() -> {
-            swingNode.setContent(getPrimaryPanel());
-        });
-
-        VBox vbox = new VBox(swingNode);
-        VBox.setVgrow(swingNode, Priority.ALWAYS);
+        VBox vbox = getPrimaryPanel();
+        VBox.setVgrow(vbox, Priority.ALWAYS);
 
         Scene scene = new Scene(vbox);
         setScene(scene);
     }
 
-    private JPanel getPrimaryPanel()
+    private VBox getPrimaryPanel()
     {
         if(mPrimaryPanel == null)
         {
-            mPrimaryPanel = new JPanel();
-            mPrimaryPanel.setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[][][grow,fill][grow,fill]"));
-            mPrimaryPanel.add(getSpectrumPanel(), "wrap");
-            mPrimaryPanel.add(getControlPanel(), "wrap");
-            mPrimaryPanel.add(getTopChannelArrayPanel(), "wrap");
-            mPrimaryPanel.add(getBottomChannelArrayPanel());
+            mPrimaryPanel = new VBox();
+            mPrimaryPanel.setSpacing(5);
+            mPrimaryPanel.getChildren().add(getSpectrumPanel());
+
+            SwingNode controlNode = new SwingNode();
+            SwingUtilities.invokeLater(() -> controlNode.setContent(getControlPanel()));
+            mPrimaryPanel.getChildren().add(controlNode);
+
+            mPrimaryPanel.getChildren().add(getTopChannelArrayPanel());
+            mPrimaryPanel.getChildren().add(getBottomChannelArrayPanel());
         }
 
         return mPrimaryPanel;
@@ -137,7 +141,7 @@ public class ChannelizerViewer2 extends Stage
         {
             mPrimarySpectrumPanel = new PrimarySpectrumPanel(mSettingsManager,
                 mTestTuner.getTunerController().getSampleRate());
-            mPrimarySpectrumPanel.setPreferredSize(new Dimension(1200, 200));
+            mPrimarySpectrumPanel.setPrefSize(1200, 200);
             mPrimarySpectrumPanel.setDFTSize(mMainPanelDFTSize);
             mTestTuner.getTunerController().addBufferListener(mPrimarySpectrumPanel);
         }
@@ -301,8 +305,9 @@ public class ChannelizerViewer2 extends Stage
         return mBottomChannelArrayPanel;
     }
 
-    public class ChannelArrayPanel extends JPanel
+    public class ChannelArrayPanel extends VBox
     {
+        private HBox row;
         public ChannelArrayPanel()
         {
             init();
@@ -310,7 +315,9 @@ public class ChannelizerViewer2 extends Stage
 
         private void init()
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "fill", "fill"));
+            row = new HBox();
+            row.setSpacing(5);
+            this.getChildren().add(row);
         }
 
         public void addChannel(TunerChannel tunerChannel)
@@ -319,10 +326,8 @@ public class ChannelizerViewer2 extends Stage
                 tunerChannel.getFrequency(), CHANNEL_BANDWIDTH);
             channelPanel.setDFTSize(mChannelPanelDFTSize);
 
-            add(channelPanel, "grow,push");
-
-            validate();
-            repaint();
+            VBox.setVgrow(channelPanel, Priority.ALWAYS);
+            row.getChildren().add(channelPanel);
         }
     }
 
@@ -353,7 +358,7 @@ public class ChannelizerViewer2 extends Stage
         return tunerChannels;
     }
 
-    public class PrimarySpectrumPanel extends JPanel implements Listener<INativeBuffer>, ISourceEventProcessor
+    public class PrimarySpectrumPanel extends VBox implements Listener<INativeBuffer>, ISourceEventProcessor
     {
         private ComplexDftProcessor mComplexDftProcessor = new ComplexDftProcessor();
         private ComplexDecibelConverter mComplexDecibelConverter = new ComplexDecibelConverter();
@@ -361,10 +366,10 @@ public class ChannelizerViewer2 extends Stage
 
         public PrimarySpectrumPanel(SettingsManager settingsManager, double sampleRate)
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
             mSpectrumPanel = new SpectrumPanel(settingsManager);
             mSpectrumPanel.setSampleSize(16);
-            add(mSpectrumPanel);
+            VBox.setVgrow(mSpectrumPanel, Priority.ALWAYS);
+            this.getChildren().add(mSpectrumPanel);
 
             mComplexDftProcessor.addConverter(mComplexDecibelConverter);
             mComplexDecibelConverter.addListener(mSpectrumPanel);
@@ -388,7 +393,7 @@ public class ChannelizerViewer2 extends Stage
         }
     }
 
-    public class ChannelPanel extends JPanel implements Listener<INativeBuffer>, ISourceEventProcessor
+    public class ChannelPanel extends VBox implements Listener<INativeBuffer>, ISourceEventProcessor
     {
         private TunerChannelSource mSource;
         private ComplexDftProcessor mComplexDftProcessor = new ComplexDftProcessor();
@@ -399,10 +404,10 @@ public class ChannelizerViewer2 extends Stage
 
         public ChannelPanel(SettingsManager settingsManager, double sampleRate, long frequency, int bandwidth)
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill][grow,fill][grow,fill]", "[grow,fill][]"));
             mSpectrumPanel = new SpectrumPanel(settingsManager);
             mSpectrumPanel.setSampleSize(16);
-            add(mSpectrumPanel, "span");
+            VBox.setVgrow(mSpectrumPanel, Priority.ALWAYS);
+            this.getChildren().add(mSpectrumPanel);
 
             mComplexDftProcessor.addConverter(mComplexDecibelConverter);
             mComplexDecibelConverter.addListener(mSpectrumPanel);
@@ -446,17 +451,28 @@ public class ChannelizerViewer2 extends Stage
                 mLog.error("Couldn't get a source from the tuner for frequency: " + frequency);
             }
 
+            HBox infoRow = new HBox();
+            infoRow.setAlignment(Pos.CENTER);
             if(mSource != null)
             {
                 int half = (int)(sampleRate / 2.0f);
-                add(new JLabel("Min:" + (frequency - half)), "align left");
-                add(new JLabel("Center:" + frequency));
-                add(new JLabel("Max:" + (frequency + half)), "align right");
+                SwingNode labelNode = new SwingNode();
+                SwingUtilities.invokeLater(() -> {
+                    JPanel p = new JPanel(new MigLayout("insets 0", "[grow,fill][grow,fill][grow,fill]"));
+                    p.add(new JLabel("Min:" + (frequency - half)), "align left");
+                    p.add(new JLabel("Center:" + frequency), "align center");
+                    p.add(new JLabel("Max:" + (frequency + half)), "align right");
+                    labelNode.setContent(p);
+                });
+                infoRow.getChildren().add(labelNode);
             }
             else
             {
-                add(new JLabel("NO SRC:" + frequency));
+                SwingNode labelNode = new SwingNode();
+                SwingUtilities.invokeLater(() -> labelNode.setContent(new JLabel("NO SRC:" + frequency)));
+                infoRow.getChildren().add(labelNode);
             }
+            this.getChildren().add(infoRow);
 
             mLoggingButton = new JToggleButton("Logging");
             mLoggingButton.addActionListener(e -> mLoggingEnabled = mLoggingButton.isSelected());

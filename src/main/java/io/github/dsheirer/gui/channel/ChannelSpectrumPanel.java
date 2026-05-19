@@ -191,7 +191,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
          * and manages the sizing of each panel with the resize listener
          */
         JLayeredPane layeredPanel = new JLayeredPane();
-        layeredPanel.addComponentListener(new ResizeListener());
+        layeredPanel.addComponentListener(new ResizeListener(layeredPanel));
 
         /**
          * Create a mouse adapter to handle mouse events over the spectrum
@@ -204,7 +204,9 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         mFrequencyOverlayPanel.addMouseWheelListener(mouser);
 
         //Add the spectrum and channel panels to the layered panel
-        layeredPanel.add(mSpectrumPanel, 0, 0);
+        javafx.embed.swing.JFXPanel p = new javafx.embed.swing.JFXPanel();
+        javafx.application.Platform.runLater(() -> p.setScene(new javafx.scene.Scene(mSpectrumPanel)));
+        layeredPanel.add(p, 0, 0);
         layeredPanel.add(mFrequencyOverlayPanel, 1, 0);
 
         fftPanel.add(layeredPanel);
@@ -473,11 +475,13 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
      */
     public class ResizeListener implements ComponentListener
     {
+        private javax.swing.JLayeredPane lp;
+        public ResizeListener(javax.swing.JLayeredPane layeredPanel) { this.lp = layeredPanel; }
         @Override public void componentResized(ComponentEvent e)
         {
             Component c = e.getComponent();
 
-            mSpectrumPanel.setBounds(0, 0, c.getWidth(), c.getHeight());
+            lp.getComponent(0).setBounds(0, 0, c.getWidth(), c.getHeight());
             mFrequencyOverlayPanel.setBounds(0, 0, c.getWidth(), c.getHeight());
         }
 

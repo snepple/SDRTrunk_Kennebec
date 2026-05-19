@@ -70,9 +70,63 @@ import javax.swing.event.ChangeListener;
 /**
  * Base tuner configuration editor.
  */
-public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> extends JPanel
-        implements IDiscoveredTunerStatusListener, Listener<TunerEvent>
-{
+public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> extends javafx.scene.layout.VBox
+        implements IDiscoveredTunerStatusListener, Listener<TunerEvent> {
+    protected javafx.embed.swing.SwingNode wrapSwingNode(javax.swing.JComponent component) {
+        javafx.embed.swing.SwingNode node = new javafx.embed.swing.SwingNode();
+        javax.swing.SwingUtilities.invokeLater(() -> node.setContent(component));
+        javafx.scene.layout.VBox.setVgrow(node, javafx.scene.layout.Priority.ALWAYS);
+        return node;
+    }
+
+    private javax.swing.JPanel swingCompatPanel;
+
+    protected void setLayout(java.awt.LayoutManager layout) {
+        if (swingCompatPanel == null) {
+            swingCompatPanel = new javax.swing.JPanel();
+            javafx.embed.swing.SwingNode swingNode = new javafx.embed.swing.SwingNode();
+            javax.swing.SwingUtilities.invokeLater(() -> swingNode.setContent(swingCompatPanel));
+            javafx.scene.layout.VBox.setVgrow(swingNode, javafx.scene.layout.Priority.ALWAYS);
+            this.getChildren().add(swingNode);
+        }
+        swingCompatPanel.setLayout(layout);
+    }
+
+
+    protected void add(javafx.scene.Node node, Object constraints) {
+        if (swingCompatPanel != null) {
+            javafx.embed.swing.JFXPanel jfxPanel = new javafx.embed.swing.JFXPanel();
+            javafx.application.Platform.runLater(() -> {
+                javafx.scene.layout.StackPane root = new javafx.scene.layout.StackPane(node);
+                jfxPanel.setScene(new javafx.scene.Scene(root));
+            });
+            swingCompatPanel.add(jfxPanel, constraints);
+        }
+    }
+
+    protected void add(javafx.scene.Node node) {
+        if (swingCompatPanel != null) {
+            javafx.embed.swing.JFXPanel jfxPanel = new javafx.embed.swing.JFXPanel();
+            javafx.application.Platform.runLater(() -> {
+                javafx.scene.layout.StackPane root = new javafx.scene.layout.StackPane(node);
+                jfxPanel.setScene(new javafx.scene.Scene(root));
+            });
+            swingCompatPanel.add(jfxPanel);
+        }
+    }
+
+    protected void add(java.awt.Component comp) {
+        if (swingCompatPanel != null) {
+            swingCompatPanel.add(comp);
+        }
+    }
+
+    protected void add(java.awt.Component comp, Object constraints) {
+        if (swingCompatPanel != null) {
+            swingCompatPanel.add(comp, constraints);
+        }
+    }
+
     private Logger mLog = LoggerFactory.getLogger(TunerEditor.class);
     private static final long DEFAULT_MINIMUM_FREQUENCY = 1;
     private static final long DEFAULT_MAXIMUM_FREQUENCY = 9_999_999_999l;
@@ -360,7 +414,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         if(mFrequencyPanel == null)
         {
             mFrequencyPanel = new FrequencyPanel();
-            mFrequencyPanel.setToolTipText("Tuner frequency and PPM controls");
+            javafx.application.Platform.runLater(() -> javafx.scene.control.Tooltip.install(mFrequencyPanel, new javafx.scene.control.Tooltip("Tuner frequency and PPM controls")));
         }
 
         return mFrequencyPanel;
@@ -413,7 +467,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         if(mButtonsPanel == null)
         {
             mButtonsPanel = new ButtonPanel();
-            mButtonsPanel.setToolTipText("Button controls for the selected tuner");
+            javafx.application.Platform.runLater(() -> javafx.scene.control.Tooltip.install(mButtonsPanel, new javafx.scene.control.Tooltip("Button controls for the selected tuner")));
         }
 
         return mButtonsPanel;
@@ -945,27 +999,28 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Tuner buttons panel
      */
-    public class ButtonPanel extends JPanel
+    public class ButtonPanel extends javafx.scene.layout.VBox
     {
         /**
          * Constructs an instance
          */
-                public ButtonPanel()
+        public ButtonPanel()
         {
-            setLayout(new MigLayout("insets 0,fill", "", ""));
-            JPanel row1 = new JPanel(new MigLayout("insets 0", "[][][][]", ""));
-            row1.add(getEnabledButton());
-            row1.add(getRecordButton());
-            row1.add(getViewSpectrumButton());
-            row1.add(getNewSpectrumButton());
+            this.setSpacing(5);
 
-            JPanel row2 = new JPanel(new MigLayout("insets 0", "[][]", ""));
-            row2.add(getInfoConfigButton());
-            row2.add(getRestartTunerButton());
+            javafx.scene.layout.HBox row1 = new javafx.scene.layout.HBox(5);
+            row1.getChildren().add(wrapSwingNode(getEnabledButton()));
+            row1.getChildren().add(wrapSwingNode(getRecordButton()));
+            row1.getChildren().add(wrapSwingNode(getViewSpectrumButton()));
+            row1.getChildren().add(wrapSwingNode(getNewSpectrumButton()));
 
-            add(row1, "wrap");
-            add(row2, "wrap");
-            add(getRecordingStatusLabel(), "span");
+            javafx.scene.layout.HBox row2 = new javafx.scene.layout.HBox(5);
+            row2.getChildren().add(wrapSwingNode(getInfoConfigButton()));
+            row2.getChildren().add(wrapSwingNode(getRestartTunerButton()));
+
+            this.getChildren().add(row1);
+            this.getChildren().add(row2);
+            this.getChildren().add(wrapSwingNode(getRecordingStatusLabel()));
         }
 
         /**
@@ -995,33 +1050,39 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Sub panel that displays frequency control, ppm spinner and control, and tuner locked status label.
      */
-    public class FrequencyPanel extends JPanel
+    public class FrequencyPanel extends javafx.scene.layout.VBox
     {
         public FrequencyPanel()
         {
-            setLayout(new MigLayout("insets 0,fill", "[][][][][grow,fill]", ""));
-            add(getFrequencyControl(), "spany 2");
-            add(new JLabel("PPM:"));
+            this.setSpacing(5);
+            javafx.scene.layout.GridPane grid = new javafx.scene.layout.GridPane();
+            grid.setHgap(5);
+            grid.setVgap(5);
+
+            grid.add(wrapSwingNode(getFrequencyControl()), 0, 0, 1, 2);
+            grid.add(wrapSwingNode(new JLabel("PPM:")), 1, 0);
+
             JButton helpButton = createHelpIcon("?");
             helpButton.setToolTipText("<html><b>PPM (Parts Per Million):</b> Adjusts your tuner to match the exact frequency.<br>If your hardware gets warm and signals shift, adjust this until the signal is centered.</html>");
-            add(helpButton);
-            add(getFrequencyCorrectionSpinner());
-            add(getMeasuredPPMLabel(), "wrap");
-            add(getAutoPPMCheckBox(), "span");
-            add(getAutoOptimizeSampleRateCheckBox(), "span");
+            grid.add(wrapSwingNode(helpButton), 2, 0);
 
-            JPanel minMaxPanel = new JPanel();
-            minMaxPanel.setLayout(new MigLayout("insets 0", "[][][][][][grow,fill]", ""));
-            minMaxPanel.add(new JLabel("Min:"));
-            minMaxPanel.add(getMinimumFrequencyTextField());
-            minMaxPanel.add(new JLabel("Max:"));
-            minMaxPanel.add(getMaximumFrequencyTextField());
-            minMaxPanel.add(getResetFrequenciesButton());
-            add(minMaxPanel, "span");
+            grid.add(wrapSwingNode(getFrequencyCorrectionSpinner()), 3, 0);
+            grid.add(wrapSwingNode(getMeasuredPPMLabel()), 4, 0);
+            grid.add(wrapSwingNode(getAutoPPMCheckBox()), 1, 1, 4, 1);
 
-            add(getTunerLockedStatusLabel(), "span");
+            this.getChildren().add(grid);
+            this.getChildren().add(wrapSwingNode(getAutoOptimizeSampleRateCheckBox()));
 
+            javafx.scene.layout.HBox minMaxPanel = new javafx.scene.layout.HBox(5);
+            minMaxPanel.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            minMaxPanel.getChildren().add(wrapSwingNode(new JLabel("Min:")));
+            minMaxPanel.getChildren().add(getMinimumFrequencyTextField());
+            minMaxPanel.getChildren().add(wrapSwingNode(new JLabel("Max:")));
+            minMaxPanel.getChildren().add(getMaximumFrequencyTextField());
+            minMaxPanel.getChildren().add(wrapSwingNode(getResetFrequenciesButton()));
 
+            this.getChildren().add(minMaxPanel);
+            this.getChildren().add(wrapSwingNode(getTunerLockedStatusLabel()));
         }
 
         /**

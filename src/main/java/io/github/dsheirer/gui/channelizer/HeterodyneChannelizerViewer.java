@@ -56,6 +56,11 @@ import javafx.stage.Stage;
 
 import javax.swing.SwingUtilities;
 import javax.swing.JLabel;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JToggleButton;
@@ -71,7 +76,7 @@ public class HeterodyneChannelizerViewer extends Stage
     private static final int CHANNEL_FFT_FRAME_RATE = 20;
 
     private SettingsManager mSettingsManager = new SettingsManager();
-    private JPanel mPrimaryPanel;
+    private VBox mPrimaryPanel;
     private JPanel mControlPanel;
     private JLabel mToneFrequencyLabel;
     private PrimarySpectrumPanel mPrimarySpectrumPanel;
@@ -102,28 +107,27 @@ public class HeterodyneChannelizerViewer extends Stage
         setHeight(800);
         setOnCloseRequest(event -> System.exit(0));
 
-        SwingNode swingNode = new SwingNode();
-        SwingUtilities.invokeLater(() -> {
-            swingNode.setContent(getPrimaryPanel());
-        });
-
-        VBox vbox = new VBox(swingNode);
-        VBox.setVgrow(swingNode, Priority.ALWAYS);
+        VBox vbox = getPrimaryPanel();
+        VBox.setVgrow(vbox, Priority.ALWAYS);
 
         Scene scene = new Scene(vbox);
         setScene(scene);
     }
 
-    private JPanel getPrimaryPanel()
+    private VBox getPrimaryPanel()
     {
         if(mPrimaryPanel == null)
         {
-            mPrimaryPanel = new JPanel();
-            mPrimaryPanel.setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[][][grow,fill][grow,fill]"));
-            mPrimaryPanel.add(getSpectrumPanel(), "wrap");
-            mPrimaryPanel.add(getControlPanel(), "wrap");
-            mPrimaryPanel.add(getChannelArrayPanel(), "wrap");
-//            mPrimaryPanel.add(getDiscreteIndexChannelPanel());
+            mPrimaryPanel = new VBox();
+            mPrimaryPanel.setSpacing(5);
+            mPrimaryPanel.getChildren().add(getSpectrumPanel());
+
+            SwingNode controlNode = new SwingNode();
+            SwingUtilities.invokeLater(() -> controlNode.setContent(getControlPanel()));
+            mPrimaryPanel.getChildren().add(controlNode);
+
+            mPrimaryPanel.getChildren().add(getChannelArrayPanel());
+//            mPrimaryPanel.getChildren().add(getDiscreteIndexChannelPanel());
         }
 
         return mPrimaryPanel;
@@ -135,7 +139,7 @@ public class HeterodyneChannelizerViewer extends Stage
         {
             mPrimarySpectrumPanel = new PrimarySpectrumPanel(mSettingsManager,
                 mTestTuner.getTunerController().getSampleRate());
-            mPrimarySpectrumPanel.setPreferredSize(new Dimension(1200, 200));
+            mPrimarySpectrumPanel.setPrefSize(1200, 200);
             mPrimarySpectrumPanel.setDFTSize(mMainPanelDFTSize);
             mTestTuner.getTunerController().addBufferListener(mPrimarySpectrumPanel);
         }
@@ -209,7 +213,7 @@ public class HeterodyneChannelizerViewer extends Stage
         return mDiscreteIndexChannelPanel;
     }
 
-    public class ChannelArrayPanel extends JPanel
+    public class ChannelArrayPanel extends VBox
     {
         private final Logger mLog = LoggerFactory.getLogger(ChannelArrayPanel.class);
 
@@ -226,7 +230,9 @@ public class HeterodyneChannelizerViewer extends Stage
 
         private void init()
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "fill", "fill"));
+            HBox row = new HBox();
+            row.setSpacing(5);
+            this.getChildren().add(row);
 
             double spectralBandwidth = mTestTuner.getTunerController().getSampleRate();
             double halfSpectralBandwidth = spectralBandwidth / 2.0;
@@ -244,19 +250,19 @@ public class HeterodyneChannelizerViewer extends Stage
                 ChannelPanel channelPanel = new ChannelPanel(mSettingsManager, CHANNEL_BANDWIDTH * 2, frequency, CHANNEL_BANDWIDTH, (x == channelToLog));
                 channelPanel.setDFTSize(mChannelPanelDFTSize);
 
+                VBox.setVgrow(channelPanel, Priority.ALWAYS);
+                row.getChildren().add(channelPanel);
                 if(x % mChannelsPerRow == mChannelsPerRow - 1)
                 {
-                    add(channelPanel, "grow,push,wrap 2px");
-                }
-                else
-                {
-                    add(channelPanel, "grow,push");
+                    row = new HBox();
+                    row.setSpacing(5);
+                    this.getChildren().add(row);
                 }
             }
         }
     }
 
-    public class DiscreteIndexChannelArrayPanel extends JPanel
+    public class DiscreteIndexChannelArrayPanel extends VBox
     {
         public DiscreteIndexChannelArrayPanel()
         {
@@ -271,7 +277,9 @@ public class HeterodyneChannelizerViewer extends Stage
 
         private void init()
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "fill", "fill"));
+            HBox row = new HBox();
+            row.setSpacing(5);
+            this.getChildren().add(row);
 
             ChannelSpecification channelSpecification = new ChannelSpecification(25000.0, 12500, 6000.0, 6250.0);
             for(int x = 0; x < mChannelCount; x++)
@@ -284,13 +292,13 @@ public class HeterodyneChannelizerViewer extends Stage
 
                 mLog.debug("Testing Channel [" + x + "] is set to [" + source.getTunerChannel().getFrequency() + "]");
 
+                VBox.setVgrow(channelPanel, Priority.ALWAYS);
+                row.getChildren().add(channelPanel);
                 if(x % mChannelsPerRow == mChannelsPerRow - 1)
                 {
-                    add(channelPanel, "grow,push,wrap 2px");
-                }
-                else
-                {
-                    add(channelPanel, "grow,push");
+                    row = new HBox();
+                    row.setSpacing(5);
+                    this.getChildren().add(row);
                 }
             }
         }
@@ -323,7 +331,7 @@ public class HeterodyneChannelizerViewer extends Stage
         return tunerChannels;
     }
 
-    public class PrimarySpectrumPanel extends JPanel implements Listener<INativeBuffer>, ISourceEventProcessor
+    public class PrimarySpectrumPanel extends VBox implements Listener<INativeBuffer>, ISourceEventProcessor
     {
         private ComplexDftProcessor mComplexDftProcessor = new ComplexDftProcessor();
         private ComplexDecibelConverter mComplexDecibelConverter = new ComplexDecibelConverter();
@@ -331,10 +339,10 @@ public class HeterodyneChannelizerViewer extends Stage
 
         public PrimarySpectrumPanel(SettingsManager settingsManager, double sampleRate)
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
             mSpectrumPanel = new SpectrumPanel(settingsManager);
             mSpectrumPanel.setSampleSize(28);
-            add(mSpectrumPanel);
+            VBox.setVgrow(mSpectrumPanel, Priority.ALWAYS);
+            this.getChildren().add(mSpectrumPanel);
 
             mComplexDftProcessor.addConverter(mComplexDecibelConverter);
             mComplexDecibelConverter.addListener(mSpectrumPanel);
@@ -358,7 +366,7 @@ public class HeterodyneChannelizerViewer extends Stage
         }
     }
 
-    public class ChannelPanel extends JPanel implements Listener<ComplexSamples>, ISourceEventProcessor
+    public class ChannelPanel extends VBox implements Listener<ComplexSamples>, ISourceEventProcessor
     {
         private TunerChannelSource mSource;
         private ComplexDftProcessor mComplexDftProcessor = new ComplexDftProcessor();
@@ -369,10 +377,10 @@ public class HeterodyneChannelizerViewer extends Stage
 
         public ChannelPanel(SettingsManager settingsManager, double sampleRate, long frequency, int bandwidth, boolean enableLogging)
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "[center,grow,fill][]", "[grow,fill][]"));
             mSpectrumPanel = new SpectrumPanel(settingsManager);
             mSpectrumPanel.setSampleSize(32);
-            add(mSpectrumPanel, "span");
+            VBox.setVgrow(mSpectrumPanel, Priority.ALWAYS);
+            this.getChildren().add(mSpectrumPanel);
 
             mComplexDftProcessor.addConverter(mComplexDecibelConverter);
             mComplexDecibelConverter.addListener(mSpectrumPanel);
@@ -392,14 +400,21 @@ public class HeterodyneChannelizerViewer extends Stage
                 mLog.error("Couldn't get a source from the tuner for frequency: " + frequency);
             }
 
+            HBox infoRow = new HBox();
+            infoRow.setAlignment(Pos.CENTER);
             if(mSource != null)
             {
-                add(new JLabel("Center:" + frequency));
+                SwingNode labelNode = new SwingNode();
+                SwingUtilities.invokeLater(() -> labelNode.setContent(new JLabel("Center:" + frequency)));
+                infoRow.getChildren().add(labelNode);
             }
             else
             {
-                add(new JLabel("NO SRC:" + frequency));
+                SwingNode labelNode = new SwingNode();
+                SwingUtilities.invokeLater(() -> labelNode.setContent(new JLabel("NO SRC:" + frequency)));
+                infoRow.getChildren().add(labelNode);
             }
+            this.getChildren().add(infoRow);
 
             mLoggingButton = new JToggleButton("Logging");
             mLoggingButton.addActionListener(new ActionListener()
@@ -437,7 +452,7 @@ public class HeterodyneChannelizerViewer extends Stage
         }
     }
 
-    public class DiscreteChannelPanel extends JPanel implements Listener<ComplexSamples>, ISourceEventProcessor
+    public class DiscreteChannelPanel extends VBox implements Listener<ComplexSamples>, ISourceEventProcessor
     {
         private final Logger mLog = LoggerFactory.getLogger(DiscreteChannelPanel.class);
 
@@ -451,11 +466,17 @@ public class HeterodyneChannelizerViewer extends Stage
         public DiscreteChannelPanel(SettingsManager settingsManager, TunerChannelSource source, int index)
         {
             mSource = source;
-            setLayout(new MigLayout("insets 0 0 0 0", "[center,grow,fill][]", "[grow,fill][]"));
             mSpectrumPanel = new SpectrumPanel(settingsManager);
             mSpectrumPanel.setSampleSize(32);
-            add(mSpectrumPanel, "span");
-            add(new JLabel("Index:" + index));
+            VBox.setVgrow(mSpectrumPanel, Priority.ALWAYS);
+            this.getChildren().add(mSpectrumPanel);
+
+            HBox infoRow = new HBox();
+            infoRow.setAlignment(Pos.CENTER);
+            SwingNode labelNode = new SwingNode();
+            SwingUtilities.invokeLater(() -> labelNode.setContent(new JLabel("Index:" + index)));
+            infoRow.getChildren().add(labelNode);
+            this.getChildren().add(infoRow);
 
             mLoggingButton = new JToggleButton("Logging");
             mLoggingButton.addActionListener(new ActionListener()
