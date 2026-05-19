@@ -8,6 +8,8 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.ComboBox;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import org.controlsfx.control.ToggleSwitch;
@@ -29,26 +31,46 @@ public class AIPreferenceEditor extends VBox {
     public AIPreferenceEditor(UserPreferences userPreferences) {
         mUserPreferences = userPreferences;
 
-        setPadding(new Insets(10));
-        setSpacing(10);
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
 
-        ToggleSwitch enableAiSwitch = new ToggleSwitch("Enable AI Features");
+        Label headerLabel = new Label("AI Settings");
+        headerLabel.getStyleClass().add("hig-section-header");
+        getChildren().add(headerLabel);
+
+        SettingsCard mainCard = new SettingsCard();
+
+        ToggleSwitch enableAiSwitch = new ToggleSwitch();
+        enableAiSwitch.setTooltip(new Tooltip("Enables all AI features and services."));
         enableAiSwitch.setSelected(mUserPreferences.getAIPreference().isAIEnabled());
         enableAiSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
             mUserPreferences.getAIPreference().setAIEnabled(newValue);
         });
 
-        Label explanationLabel = new Label("If turned on, the application will save the last 5 audio files from each channel on the computer’s hard drive (to allow for review of audio).");
-        explanationLabel.setWrapText(true);
+        mainCard.getChildren().add(new SettingsRow("Enable AI Features", enableAiSwitch));
 
-        ToggleSwitch enableLogAnalysisSwitch = new ToggleSwitch("Intelligent Log Analysis");
+        Label explanationLabel = new Label("If turned on, the application will save the last 5 audio files from each channel on the computer's hard drive (to allow for review of audio).");
+        explanationLabel.setWrapText(true);
+        explanationLabel.getStyleClass().add("kennebec-secondary-text");
+        explanationLabel.setPadding(new Insets(0, 15, 5, 15));
+        mainCard.getChildren().add(explanationLabel);
+
+        getChildren().add(mainCard);
+
+        VBox settingsBox = new VBox(20);
+        SettingsCard aiCard = new SettingsCard();
+
+        ToggleSwitch enableLogAnalysisSwitch = new ToggleSwitch();
         enableLogAnalysisSwitch.setSelected(mUserPreferences.getAIPreference().isAILogAnalysisEnabled());
         enableLogAnalysisSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
             mUserPreferences.getAIPreference().setAILogAnalysisEnabled(newValue);
         });
-        Label logExplanationLabel = new Label("Translates cryptic stack traces and warning logs into plain-English explanations with actionable fixes.");
 
-        Label apiKeyLabel = new Label("Gemini API Key:");
+        Label logExplanationLabel = new Label("Translates cryptic stack traces and warning logs into plain-English explanations with actionable fixes.");
+        logExplanationLabel.setWrapText(true);
+        logExplanationLabel.getStyleClass().add("kennebec-secondary-text");
+        logExplanationLabel.setPadding(new Insets(0, 15, 5, 15));
+
         PasswordField apiKeyField = new PasswordField();
         apiKeyField.setText(mUserPreferences.getAIPreference().getGeminiApiKey());
         apiKeyField.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -59,7 +81,6 @@ public class AIPreferenceEditor extends VBox {
         testButton.setTooltip(new Tooltip("Test the provided Gemini API key and connection"));
         Label testResultLabel = new Label("");
 
-        Label modelLabel = new Label("Gemini Model:");
         ComboBox<String> modelComboBox = new ComboBox<>();
         modelComboBox.setEditable(true);
         modelComboBox.setValue(mUserPreferences.getAIPreference().getGeminiModel());
@@ -68,8 +89,6 @@ public class AIPreferenceEditor extends VBox {
                 mUserPreferences.getAIPreference().setGeminiModel(newValue);
             }
         });
-        HBox modelBox = new HBox(10, modelLabel, modelComboBox);
-        modelBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         Hyperlink apiKeyLink = new Hyperlink("Get a Gemini API Key here");
         apiKeyLink.setOnAction(e -> {
@@ -134,10 +153,10 @@ public class AIPreferenceEditor extends VBox {
                     });
         });
 
-        HBox apiKeyBox = new HBox(10, apiKeyLabel, apiKeyField, testButton, testResultLabel);
-        apiKeyBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        HBox apiKeyBox = new HBox(10, apiKeyField, testButton, testResultLabel);
+        apiKeyBox.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
 
-        ToggleSwitch enableSystemHealthSwitch = new ToggleSwitch("Enable System Health Advisor");
+        ToggleSwitch enableSystemHealthSwitch = new ToggleSwitch();
         enableSystemHealthSwitch.setSelected(mUserPreferences.getAIPreference().isSystemHealthAdvisorEnabled());
         enableSystemHealthSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
             mUserPreferences.getAIPreference().setSystemHealthAdvisorEnabled(newValue);
@@ -145,12 +164,22 @@ public class AIPreferenceEditor extends VBox {
 
         Label systemHealthExplanationLabel = new Label("If turned on, a background AI agent will monitor system metrics and suggest configuration optimizations.");
         systemHealthExplanationLabel.setWrapText(true);
-        VBox systemHealthBox = new VBox(5, enableSystemHealthSwitch, systemHealthExplanationLabel);
+        systemHealthExplanationLabel.getStyleClass().add("kennebec-secondary-text");
+        systemHealthExplanationLabel.setPadding(new Insets(0, 15, 5, 15));
 
-        VBox settingsBox = new VBox(10, explanationLabel, enableLogAnalysisSwitch, logExplanationLabel, apiKeyBox, modelBox, apiKeyLink, systemHealthBox);
+        aiCard.getChildren().add(new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch));
+        aiCard.getChildren().add(logExplanationLabel);
+        aiCard.getChildren().add(new SettingsRow("Enable System Health Advisor", enableSystemHealthSwitch));
+        aiCard.getChildren().add(systemHealthExplanationLabel);
+        aiCard.getChildren().add(new SettingsRow("Gemini API Key", apiKeyBox));
+        aiCard.getChildren().add(new SettingsRow("", apiKeyLink));
+        aiCard.getChildren().add(new SettingsRow("Gemini Model", modelComboBox));
+
+        settingsBox.getChildren().add(aiCard);
+
         settingsBox.visibleProperty().bind(enableAiSwitch.selectedProperty());
         settingsBox.managedProperty().bind(enableAiSwitch.selectedProperty());
 
-        getChildren().addAll(enableAiSwitch, settingsBox);
+        getChildren().addAll(settingsBox);
     }
 }
