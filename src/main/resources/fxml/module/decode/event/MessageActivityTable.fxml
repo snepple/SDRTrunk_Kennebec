@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.dsheirer.module.decode.event.MessageActivityTableController" VBox.vgrow="ALWAYS" stylesheets="@/sdrtrunk_style.css">
+    <TableView fx:id="messageTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="timeColumn" text="Time" prefWidth="150" />
+            <TableColumn fx:id="protocolColumn" text="Protocol" prefWidth="100" />
+            <TableColumn fx:id="timeslotColumn" text="Timeslot" prefWidth="80" />
+            <TableColumn fx:id="messageColumn" text="Message" prefWidth="500" />
+        </columns>
+    </TableView>
+</VBox>
