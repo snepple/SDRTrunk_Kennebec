@@ -60,8 +60,10 @@ public class FilterEditor<T> extends Stage
 
         SwingNode swingNode = new SwingNode();
         SwingUtilities.invokeLater(() -> {
-            javax.swing.JScrollPane scroller = new javax.swing.JScrollPane(mEditorPanel);
-            scroller.setViewportView(mEditorPanel);
+            javafx.embed.swing.JFXPanel jfxPanel = new javafx.embed.swing.JFXPanel();
+            javafx.application.Platform.runLater(() -> jfxPanel.setScene(new javafx.scene.Scene(mEditorPanel)));
+            javax.swing.JScrollPane scroller = new javax.swing.JScrollPane(jfxPanel);
+            scroller.setViewportView(jfxPanel);
             swingNode.setContent(scroller);
         });
 

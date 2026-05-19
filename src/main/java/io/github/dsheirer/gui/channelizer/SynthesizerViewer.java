@@ -168,7 +168,9 @@ public class SynthesizerViewer extends Stage
             setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
             mSpectrumPanel = new SpectrumPanel(settingsManager);
             mSpectrumPanel.setSampleSize(16);
-            add(mSpectrumPanel);
+            javafx.embed.swing.JFXPanel p = new javafx.embed.swing.JFXPanel();
+            javafx.application.Platform.runLater(() -> p.setScene(new javafx.scene.Scene(mSpectrumPanel)));
+            add(p);
 
             mComplexDftProcessor.addConverter(mComplexDecibelConverter);
             mComplexDftProcessor.setFrameRate(CHANNEL_FFT_FRAME_RATE);
@@ -199,7 +201,9 @@ public class SynthesizerViewer extends Stage
             setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill][]"));
             mSpectrumPanel = new SpectrumPanel(settingsManager);
             mSpectrumPanel.setSampleSize(16);
-            add(mSpectrumPanel, "wrap");
+            javafx.embed.swing.JFXPanel p = new javafx.embed.swing.JFXPanel();
+            javafx.application.Platform.runLater(() -> p.setScene(new javafx.scene.Scene(mSpectrumPanel)));
+            add(p, "wrap");
             add(channelControlPanel);
 
             mComplexDftProcessor.addConverter(mComplexDecibelConverter);

@@ -213,8 +213,8 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
         else if(!alert && mGainOverloadAlert.compareAndSet(true, false))
         {
             getGainOverloadButton().setEnabled(false);
-            getGainOverloadButton().setForeground(getForeground());
-            getGainOverloadButton().setBackground(getBackground());
+
+
         }
     }
 

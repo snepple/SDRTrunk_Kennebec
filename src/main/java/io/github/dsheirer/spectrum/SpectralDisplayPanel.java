@@ -360,7 +360,9 @@ public class SpectralDisplayPanel extends JPanel
         mOverlayPanel.addMouseWheelListener(mouser);
 
         //Add the spectrum and channel panels to the layered panel
-        mLayeredPanel.add(mSpectrumPanel, 0, 0);
+        javafx.embed.swing.JFXPanel p = new javafx.embed.swing.JFXPanel();
+        javafx.application.Platform.runLater(() -> p.setScene(new javafx.scene.Scene(mSpectrumPanel)));
+        mLayeredPanel.add(p, 0, 0);
         mLayeredPanel.add(mOverlayPanel, 1, 0);
 
         //Create the waterfall
@@ -496,7 +498,7 @@ public class SpectralDisplayPanel extends JPanel
         {
             Component c = e.getComponent();
 
-            mSpectrumPanel.setBounds(0, 0, c.getWidth(), c.getHeight());
+            mLayeredPanel.getComponent(0).setBounds(0, 0, c.getWidth(), c.getHeight());
             mOverlayPanel.setBounds(0, 0, c.getWidth(), c.getHeight());
         }
 

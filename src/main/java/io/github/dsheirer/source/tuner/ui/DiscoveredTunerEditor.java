@@ -44,7 +44,7 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
     private UserPreferences mUserPreferences;
     private TunerManager mTunerManager;
     private JComponent mEmptyEditor = new EmptyTunerEditor();
-    private JComponent mEditor = mEmptyEditor;
+    private Object mEditor = mEmptyEditor;
     private JScrollPane mEditorScroller;
 
     /**
@@ -74,7 +74,7 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
     public void init()
     {
         setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
-        mEditorScroller = new JScrollPane(mEditor);
+        mEditorScroller = new JScrollPane((java.awt.Component)mEditor);
         add(mEditorScroller);
     }
 
@@ -100,11 +100,14 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
 
         super.setItem(tuner);
 
-        mEditorScroller.remove(mEditor);
+                if (mEditor instanceof java.awt.Component) {
+            mEditorScroller.remove((java.awt.Component)mEditor);
+        }
 
         if(hasItem())
         {
             mEditor = TunerFactory.getEditor(mUserPreferences, getItem(), mTunerManager);
+
             getItem().addTunerStatusListener(this);
         }
         else
@@ -113,7 +116,18 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
         }
 
         remove(mEditorScroller);
-        mEditorScroller = new JScrollPane(mEditor);
+
+        java.awt.Component compToAdd;
+        if (mEditor instanceof javafx.scene.Node) {
+            javafx.embed.swing.JFXPanel jfxPanel = new javafx.embed.swing.JFXPanel();
+            javafx.scene.Node finalNode = (javafx.scene.Node) mEditor;
+            javafx.application.Platform.runLater(() -> jfxPanel.setScene(new javafx.scene.Scene(new javafx.scene.layout.StackPane(finalNode))));
+            compToAdd = jfxPanel;
+        } else {
+            compToAdd = (java.awt.Component) mEditor;
+        }
+
+        mEditorScroller = new JScrollPane(compToAdd);
         add(mEditorScroller);
         revalidate();
         repaint();

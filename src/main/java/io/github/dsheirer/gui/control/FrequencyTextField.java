@@ -1,21 +1,22 @@
 package io.github.dsheirer.gui.control;
 
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
+
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.StackPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.Dimension;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.awt.event.FocusListener;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.UnaryOperator;
 
-public class FrequencyTextField extends JFXPanel {
+public class FrequencyTextField extends StackPane {
     private static final Logger LOGGER = LoggerFactory.getLogger(FrequencyTextField.class);
     private static final String REGEX = "^[0-9]{0,4}[.]?[0-9]{0,6}$";
     private static final String ZEROS_REGEX = "^0?([.]0{0,5})?$";
@@ -23,18 +24,19 @@ public class FrequencyTextField extends JFXPanel {
     private double mMaximum;
 
     private FrequencyTextFieldController controller;
+    private List<java.awt.event.FocusListener> focusListeners = new CopyOnWriteArrayList<>();
 
     public FrequencyTextField(long minimum, long maximum, long current) {
         mMinimum = minimum / 1E6d;
         mMaximum = maximum / 1E6d;
 
-        setPreferredSize(new Dimension(80, 26));
+        this.setPrefSize(80, 26);
 
-        Platform.runLater(() -> {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/io/github/dsheirer/gui/control/FrequencyTextField.fxml"));
-                StackPane root = loader.load();
-                controller = loader.getController();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/io/github/dsheirer/gui/control/FrequencyTextField.fxml"));
+            StackPane root = loader.load();
+            this.getChildren().add(root);
+            controller = loader.getController();
 
                 UnaryOperator<TextFormatter.Change> filter = change -> {
                     String newText = change.getControlNewText();
@@ -53,24 +55,29 @@ public class FrequencyTextField extends JFXPanel {
 
                 controller.fxTextField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
                     if (!isNowFocused) {
-                        java.awt.event.FocusEvent event = new java.awt.event.FocusEvent(this, java.awt.event.FocusEvent.FOCUS_LOST);
-                        for (FocusListener listener : getFocusListeners()) {
+                        java.awt.event.FocusEvent event = new java.awt.event.FocusEvent(new javax.swing.JPanel(), java.awt.event.FocusEvent.FOCUS_LOST);
+                        for (java.awt.event.FocusListener listener : focusListeners) {
                             listener.focusLost(event);
                         }
                     } else {
-                        java.awt.event.FocusEvent event = new java.awt.event.FocusEvent(this, java.awt.event.FocusEvent.FOCUS_GAINED);
-                        for (FocusListener listener : getFocusListeners()) {
+                        java.awt.event.FocusEvent event = new java.awt.event.FocusEvent(new javax.swing.JPanel(), java.awt.event.FocusEvent.FOCUS_GAINED);
+                        for (java.awt.event.FocusListener listener : focusListeners) {
                             listener.focusGained(event);
                         }
                     }
                 });
 
-                Scene scene = new Scene(root);
-                setScene(scene);
-            } catch (Exception e) {
-                LOGGER.error("Failed to load FrequencyTextField FXML", e);
-            }
-        });
+        } catch (Exception e) {
+            LOGGER.error("Failed to load FrequencyTextField FXML", e);
+        }
+    }
+
+    public void addFocusListener(java.awt.event.FocusListener listener) {
+        focusListeners.add(listener);
+    }
+
+    public void removeFocusListener(java.awt.event.FocusListener listener) {
+        focusListeners.remove(listener);
     }
 
     public long getFrequency() {
@@ -121,9 +128,7 @@ public class FrequencyTextField extends JFXPanel {
         }
     }
 
-    @Override
     public void setToolTipText(String text) {
-        super.setToolTipText(text);
         Platform.runLater(() -> {
             if (controller != null && controller.fxTextField != null) {
                 controller.fxTextField.setTooltip(new Tooltip(text));
@@ -131,9 +136,7 @@ public class FrequencyTextField extends JFXPanel {
         });
     }
 
-    @Override
     public void setEnabled(boolean enabled) {
-        super.setEnabled(enabled);
         Platform.runLater(() -> {
             if (controller != null && controller.fxTextField != null) {
                 controller.fxTextField.setDisable(!enabled);

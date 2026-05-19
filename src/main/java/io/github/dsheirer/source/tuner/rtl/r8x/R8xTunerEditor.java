@@ -569,7 +569,7 @@ TextInputDialog dialog = new TextInputDialog();
                 }
 
                 final String serialToSet = newSerial;
-                ProgressMonitor progressMonitor = new ProgressMonitor(this, "Writing EEPROM...", "", 0, 100);
+                ProgressMonitor progressMonitor = new ProgressMonitor(null, "Writing EEPROM...", "", 0, 100);
                 progressMonitor.setMillisToDecideToPopup(0);
                 progressMonitor.setMillisToPopup(0);
                 progressMonitor.setProgress(10);

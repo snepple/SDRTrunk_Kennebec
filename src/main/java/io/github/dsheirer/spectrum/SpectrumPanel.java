@@ -13,8 +13,8 @@ import io.github.dsheirer.settings.SettingChangeListener;
 import io.github.dsheirer.settings.SettingsManager;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
+
+
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.StackPane;
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
-public class SpectrumPanel extends JFXPanel implements DFTResultsListener, SettingChangeListener, SpectralDisplayAdjuster {
+public class SpectrumPanel extends StackPane implements DFTResultsListener, SettingChangeListener, SpectralDisplayAdjuster {
     private static final long serialVersionUID = 1L;
 
     private final static Logger mLog = LoggerFactory.getLogger(SpectrumPanel.class);
@@ -65,33 +65,27 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
 
         getColors();
 
-        Platform.runLater(() -> {
-            mCanvas = new Canvas();
-            mGraphicsContext = mCanvas.getGraphicsContext2D();
+        mCanvas = new Canvas();
+        mGraphicsContext = mCanvas.getGraphicsContext2D();
 
-            StackPane root = new StackPane();
-            root.getChildren().add(mCanvas);
+        this.getChildren().add(mCanvas);
 
-            mCanvas.widthProperty().bind(root.widthProperty());
-            mCanvas.heightProperty().bind(root.heightProperty());
+        mCanvas.widthProperty().bind(this.widthProperty());
+        mCanvas.heightProperty().bind(this.heightProperty());
 
-            mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
-            mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
+        mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
+        mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
 
-            Scene scene = new Scene(root);
-            setScene(scene);
-
-            mAnimationTimer = new AnimationTimer() {
-                @Override
-                public void handle(long now) {
-                    if (mNeedsRedraw) {
-                        mNeedsRedraw = false;
-                        drawSpectrum();
-                    }
+        mAnimationTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (mNeedsRedraw) {
+                    mNeedsRedraw = false;
+                    drawSpectrum();
                 }
-            };
-            mAnimationTimer.start();
-        });
+            }
+        };
+        mAnimationTimer.start();
     }
 
     public void dispose() {

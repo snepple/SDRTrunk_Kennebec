@@ -21,18 +21,24 @@ package io.github.dsheirer.filter;
 
 import java.awt.Component;
 import io.github.dsheirer.gui.help.HelpIconLabel;
-import javax.swing.JPanel;
+
 import java.awt.FlowLayout;
 import javax.swing.JLabel;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.EventObject;
 import java.util.List;
-import net.miginfocom.swing.MigLayout;
+
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.Priority;
+import javafx.embed.swing.SwingNode;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javafx.application.Platform;
 import javax.swing.JTree;
 import javax.swing.event.CellEditorListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -47,7 +53,7 @@ import javax.swing.tree.TreeSelectionModel;
  *
  * @param <T> element type for the filter set.
  */
-public class FilterEditorPanel<T> extends JPanel
+public class FilterEditorPanel<T> extends VBox
 {
     private static final long serialVersionUID = 1L;
     private JTree mTree;
@@ -60,7 +66,7 @@ public class FilterEditorPanel<T> extends JPanel
      */
     public FilterEditorPanel(FilterSet<T> filterSet)
     {
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
+
         mFilterSet = filterSet;
         init();
     }
@@ -116,7 +122,16 @@ public class FilterEditorPanel<T> extends JPanel
         mTree.setCellRenderer(new EditorTreeCellRenderer());
         mTree.setCellEditor(new FilterTreeCellEditor());
         mTree.setEditable(true);
-        add(mTree);
+
+        SwingNode swingNode = new SwingNode();
+        SwingUtilities.invokeLater(() -> {
+            swingNode.setContent(mTree);
+        });
+
+        Platform.runLater(() -> {
+            VBox.setVgrow(swingNode, Priority.ALWAYS);
+            this.getChildren().add(swingNode);
+        });
     }
 
     /**
@@ -125,10 +140,10 @@ public class FilterEditorPanel<T> extends JPanel
      */
     public void updateFilterSet(FilterSet<T> filterSet)
     {
-        remove(mTree);
+        this.getChildren().clear();
         mFilterSet = filterSet;
         init();
-        revalidate();
+
     }
 
     /**
