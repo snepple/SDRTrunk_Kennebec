@@ -24,5 +24,11 @@ package io.github.dsheirer.dsp.magnitude;
  */
 public interface IMagnitudeCalculator
 {
+    /**
+     * Calculates the magnitude for the provided inphase and quadrature arrays.
+     * Note: Implementing classes may reuse an internal array buffer to reduce
+     * garbage collection overhead. Do not retain the returned array or use it
+     * across different threads.
+     */
     float[] calculate(float[] i, float[] q);
 }

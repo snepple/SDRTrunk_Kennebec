@@ -24,16 +24,28 @@ package io.github.dsheirer.dsp.magnitude;
  */
 public class ScalarMagnitudeCalculator implements IMagnitudeCalculator
 {
+    private float[] mMagnitude;
+
+    /**
+     * Calculates magnitude values from the provided inphase and quadrature arrays.
+     * To alleviate garbage collection pressure, this method reuses an internally cached
+     * magnitude array. Therefore, the returned array must not be retained by the caller
+     * across subsequent calls or used across threads.
+     */
     @Override
     public float[] calculate(float[] i, float[] q)
     {
-        float[] magnitude = new float[i.length];
+        // ⚡ Bolt: Reuse the magnitude array to prevent allocating a new array per calculate call
+        if(mMagnitude == null || mMagnitude.length != i.length)
+        {
+            mMagnitude = new float[i.length];
+        }
 
         for(int x = 0; x < i.length; x++)
         {
-            magnitude[x] = ((i[x] * i[x]) + (q[x] * q[x]));
+            mMagnitude[x] = ((i[x] * i[x]) + (q[x] * q[x]));
         }
 
-        return magnitude;
+        return mMagnitude;
     }
 }
