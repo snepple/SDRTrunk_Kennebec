@@ -124,20 +124,18 @@ public class HistoryManagementPanel<T> extends JFXPanel
     }
 
     private void handleFilterClick() {
-        SwingUtilities.invokeLater(() -> javafx.application.Platform.runLater(() -> getFilterEditor().show()));
+        Platform.runLater(() -> getFilterEditor().show());
     }
 
     private void handleClearClick() {
-        SwingUtilities.invokeLater(() -> mModel.clear());
+        mModel.clear();
     }
 
     private void handleHistorySizeChanged(int size) {
-        SwingUtilities.invokeLater(() -> {
-            mModel.setHistorySize(size);
-            if (mHistorySizeChangedCallback != null) {
-                mHistorySizeChangedCallback.accept(size);
-            }
-        });
+        mModel.setHistorySize(size);
+        if (mHistorySizeChangedCallback != null) {
+            mHistorySizeChangedCallback.accept(size);
+        }
     }
 
     /**

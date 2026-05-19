@@ -19,34 +19,26 @@
 
 package io.github.dsheirer.module.decode.event.filter;
 
-import com.jidesoft.swing.JideButton;
 import io.github.dsheirer.filter.FilterEditorPanel;
 import io.github.dsheirer.filter.FilterSet;
-import java.awt.EventQueue;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import net.miginfocom.swing.MigLayout;
-
-import javax.swing.JButton;
 
 import javafx.application.Platform;
-import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.geometry.Pos;
+import javafx.geometry.Insets;
 import javafx.stage.Stage;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-
-import javax.swing.JScrollPane;
 
 /**
  * Event filter button that includes split button functionality to allow user to select filter items.
  *
  * @param <T> type of filter.
  */
-public class EventFilterButton<T> extends JideButton
+public class EventFilterButton<T> extends Button
 {
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constructs an instance
      * @param dialogTitle for the dialog/panel that appears
@@ -66,62 +58,32 @@ public class EventFilterButton<T> extends JideButton
     public EventFilterButton(String buttonLabel, String dialogTitle, FilterSet<T> filterSet)
     {
         super(buttonLabel);
-        addActionListener(new EventFilterActionHandler(dialogTitle, filterSet));
-    }
+        setOnAction(e -> {
+            FilterEditorPanel<T> panel = new FilterEditorPanel<T>(filterSet);
+            ScrollPane scroller = new ScrollPane(panel);
+            scroller.setFitToWidth(true);
+            scroller.setFitToHeight(true);
+            VBox.setVgrow(scroller, Priority.ALWAYS);
 
-    /**
-     * Action handler for the button
-     */
-    public class EventFilterActionHandler implements ActionListener
-    {
-        private String mTitle;
-        private FilterSet<T> mFilterSet;
-
-        /**
-         * Constructs an instance
-         * @param title for this panel
-         * @param filterSet to edit
-         */
-        public EventFilterActionHandler(String title, FilterSet<T> filterSet)
-        {
-            mTitle = title;
-            mFilterSet = filterSet;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e)
-        {
-            JPanel wrapperPanel = new JPanel();
-            wrapperPanel.setLayout(new MigLayout("", "[grow,fill]", "[grow,fill][][]"));
-            FilterEditorPanel<T> panel = new FilterEditorPanel<T>(mFilterSet);
-        javafx.embed.swing.JFXPanel jfxPanel = new javafx.embed.swing.JFXPanel();
-        javafx.application.Platform.runLater(() -> jfxPanel.setScene(new javafx.scene.Scene(panel)));
-            javafx.embed.swing.SwingNode node = new javafx.embed.swing.SwingNode();
-            javax.swing.SwingUtilities.invokeLater(() -> node.setContent(new javax.swing.JPanel())); // placeholder
-            JScrollPane scroller = new JScrollPane(new javax.swing.JPanel());
-            /* wrapped */
-            wrapperPanel.add(scroller, "wrap");
-            JButton close = new JButton("Close");
-            close.setToolTipText("Close the filter editor");
-            close.getAccessibleContext().setAccessibleName("Close Event Filter Editor");
-            close.getAccessibleContext().setAccessibleDescription("Closes the event filter editor dialog");
+            Button close = new Button("Close");
+            close.setTooltip(new javafx.scene.control.Tooltip("Close the filter editor"));
 
             Platform.runLater(() -> {
                 Stage stage = new Stage();
-                stage.setTitle(mTitle);
+                stage.setTitle(dialogTitle);
                 stage.setWidth(600);
                 stage.setHeight(400);
 
-                close.addActionListener(e1 -> Platform.runLater(() -> stage.close()));
-                wrapperPanel.add(close);
+                close.setOnAction(e1 -> stage.close());
 
-                SwingNode swingNode = new SwingNode();
-                SwingUtilities.invokeLater(() -> swingNode.setContent(wrapperPanel));
+                VBox vbox = new VBox(10, scroller, close);
+                vbox.setPadding(new Insets(10));
+                vbox.setAlignment(Pos.CENTER_RIGHT);
 
-                Scene scene = new Scene(new javafx.scene.layout.StackPane(swingNode));
+                Scene scene = new Scene(vbox);
                 stage.setScene(scene);
                 stage.show();
             });
-        }
+        });
     }
 }

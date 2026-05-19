@@ -21,16 +21,14 @@ package io.github.dsheirer.filter;
 
 import java.awt.Component;
 
-import javafx.embed.swing.SwingNode;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
-import javax.swing.SwingUtilities;
 
 /**
  * Filter editor
@@ -58,22 +56,17 @@ public class FilterEditor<T> extends Stage
 
         mEditorPanel = new FilterEditorPanel<>(filterSet);
 
-        SwingNode swingNode = new SwingNode();
-        SwingUtilities.invokeLater(() -> {
-            javafx.embed.swing.JFXPanel jfxPanel = new javafx.embed.swing.JFXPanel();
-            javafx.application.Platform.runLater(() -> jfxPanel.setScene(new javafx.scene.Scene(mEditorPanel)));
-            javax.swing.JScrollPane scroller = new javax.swing.JScrollPane(jfxPanel);
-            scroller.setViewportView(jfxPanel);
-            swingNode.setContent(scroller);
-        });
+        ScrollPane scroller = new ScrollPane(mEditorPanel);
+        scroller.setFitToWidth(true);
+        scroller.setFitToHeight(true);
 
         Button close = new Button("Close");
         close.setOnAction(e -> close());
 
-        VBox vbox = new VBox(10, swingNode, close);
+        VBox vbox = new VBox(10, scroller, close);
         vbox.setPadding(new Insets(10));
         vbox.setAlignment(Pos.CENTER_RIGHT);
-        VBox.setVgrow(swingNode, Priority.ALWAYS);
+        VBox.setVgrow(scroller, Priority.ALWAYS);
 
         Scene scene = new Scene(vbox);
         setScene(scene);

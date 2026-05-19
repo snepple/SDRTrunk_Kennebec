@@ -19,93 +19,78 @@
 
 package io.github.dsheirer.module.decode.event.filter;
 
-import com.jidesoft.swing.JideSplitButton;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import javafx.geometry.Pos;
+import javafx.scene.control.CustomMenuItem;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.control.SplitMenuButton;
+import javafx.scene.layout.HBox;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.SwingUtilities;
+public class EventClearButton extends SplitMenuButton
+{
+    private EventClearHandler mEventClearHandler;
 
-public class EventClearButton extends JideSplitButton
+    public EventClearButton(int maxHistoryCount)
     {
-        private static final long serialVersionUID = 1L;
-        private EventClearHandler mEventClearHandler;
+        super();
+        setText("Clear");
 
-        public EventClearButton(int maxHistoryCount)
-        {
-            super("Clear");
+        HBox historyPanel = new HBox(5);
+        historyPanel.setAlignment(Pos.CENTER_LEFT);
 
-            JPanel historyPanel = new JPanel();
+        historyPanel.getChildren().add(new Label("History Size:"));
+        final Slider historySlider = initializeHistorySlider();
+        Label valueLabel = new Label(String.valueOf(maxHistoryCount));
 
-            historyPanel.add(new JLabel("History Size:"));
-            final JSlider historySlider = initializeHistorySlider();
-            JLabel valueLabel = new JLabel(String.valueOf(maxHistoryCount));
-
-            historySlider.setValue(maxHistoryCount);
-            historySlider.addChangeListener(arg0 -> {
-                if (mEventClearHandler != null)
-                {
-                    mEventClearHandler.onHistoryLimitChanged(historySlider.getValue());
-                }
-
-                valueLabel.setText(String.valueOf(historySlider.getValue()));
-            });
-
-            historyPanel.add(historySlider);
-            historyPanel.add(valueLabel);
-            add(historyPanel);
-
-            /* This handles the click action on the main button. Clear messages */
-            addActionListener(e -> {
-                if (mEventClearHandler != null)
-                {
-                    mEventClearHandler.onClearHistoryClicked();
-                }
-            });
-        }
-
-        public void setEventClearHandler(EventClearHandler eventClearHandler) {
-            this.mEventClearHandler = eventClearHandler;
-        }
-
-        private JSlider initializeHistorySlider()
-        {
-            final JSlider slider = new JSlider();
-            slider.setMinimum(0);
-            slider.setMaximum(2000);
-            slider.setMajorTickSpacing(500);
-            slider.setPaintTicks(true);
-            slider.setPaintLabels(true);
-
-            slider.addMouseListener(new MouseListener()
+        historySlider.setValue(maxHistoryCount);
+        historySlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (mEventClearHandler != null)
             {
-                @Override
-                public void mouseClicked(MouseEvent arg0)
-                {
-                    if(SwingUtilities.isLeftMouseButton(arg0) && arg0.getClickCount() == 2)
-                    {
-                        slider.setValue(500); //default
-                    }
-                }
+                mEventClearHandler.onHistoryLimitChanged(newValue.intValue());
+            }
+            valueLabel.setText(String.valueOf(newValue.intValue()));
+        });
 
-                public void mouseEntered(MouseEvent arg0)
-                {
-                }
+        historyPanel.getChildren().addAll(historySlider, valueLabel);
 
-                public void mouseExited(MouseEvent arg0)
-                {
-                }
+        CustomMenuItem customMenuItem = new CustomMenuItem(historyPanel);
+        customMenuItem.setHideOnClick(false);
+        getItems().add(customMenuItem);
 
-                public void mousePressed(MouseEvent arg0)
-                {
-                }
-
-                public void mouseReleased(MouseEvent arg0)
-                {
-                }
-            });
-            return slider;
-        }
+        /* This handles the click action on the main button. Clear messages */
+        setOnAction(e -> {
+            if (mEventClearHandler != null)
+            {
+                mEventClearHandler.onClearHistoryClicked();
+            }
+        });
     }
+
+    public void setEventClearHandler(EventClearHandler eventClearHandler) {
+        this.mEventClearHandler = eventClearHandler;
+    }
+
+    private Slider initializeHistorySlider()
+    {
+        final Slider slider = new Slider();
+        slider.setMin(0);
+        slider.setMax(2000);
+        slider.setMajorTickUnit(500);
+        slider.setMinorTickCount(0);
+        slider.setShowTickMarks(true);
+        slider.setShowTickLabels(true);
+        slider.setSnapToTicks(true);
+
+        // Disable click to avoid eating double click handler
+        slider.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
+            if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
+                slider.setValue(500); // default
+                e.consume();
+            }
+        });
+
+        return slider;
+    }
+}

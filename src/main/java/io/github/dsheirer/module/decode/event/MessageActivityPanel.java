@@ -27,39 +27,41 @@ import io.github.dsheirer.message.MessageHistory;
 import io.github.dsheirer.module.ProcessingChain;
 import io.github.dsheirer.module.decode.DecoderFactory;
 import io.github.dsheirer.preference.UserPreferences;
-import io.github.dsheirer.preference.swing.JTableColumnWidthMonitor;
 import io.github.dsheirer.sample.Listener;
 import java.util.ArrayList;
 import java.util.List;
-import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.RowFilter;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 
 /**
  * Panel to display decoded messages/activity.
  */
-public class MessageActivityPanel extends JPanel implements Listener<ProcessingChain>
+public class MessageActivityPanel extends JFXPanel implements Listener<ProcessingChain>
 {
     private static final long serialVersionUID = 1L;
     private static final Logger mLog = LoggerFactory.getLogger(MessageActivityPanel.class);
-    private final String TABLE_PREFERENCE_KEY = "message.activity.panel";
     private MessageActivityModel mMessageModel = new MessageActivityModel();
     private MessageHistory mCurrentMessageHistory;
-    private JTable mTable = new JTable(mMessageModel);
 
-    private TableRowSorter<TableModel> mTableRowSorter;
-    private JTableColumnWidthMonitor mTableColumnWidthMonitor;
     private UserPreferences mUserPreferences;
     private FilterSet<IMessage> mMessageFilterSet;
     private boolean mRestoringFilters = false;
     private HistoryManagementPanel<IMessage> mHistoryManagementPanel;
+    private TableView<MessageItem> mTable;
+    private ObservableList<MessageItem> observableMessageItems;
+    private FilteredList<MessageItem> filteredMessageItems;
 
     /**
      * Constructs an instance
@@ -68,15 +70,50 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
     public MessageActivityPanel(UserPreferences userPreferences)
     {
         mUserPreferences = userPreferences;
-        mTable.setFillsViewportHeight(true);
-        mTableRowSorter = new TableRowSorter<>(mMessageModel);
-        mTableRowSorter.setRowFilter(new MessageRowFilter());
-        mTable.setRowSorter(mTableRowSorter);
-        mTableColumnWidthMonitor = new JTableColumnWidthMonitor(mUserPreferences, mTable, TABLE_PREFERENCE_KEY);
-        setLayout(new MigLayout("insets 0 0 0 0", "[][grow,fill]", "[]0[grow,fill]"));
+
         mHistoryManagementPanel = new HistoryManagementPanel<>(mMessageModel, "Message Filter Editor");
-        add(mHistoryManagementPanel, "span,growx");
-        add(new JScrollPane(mTable), "span,grow");
+
+        Platform.runLater(() -> {
+            mTable = new TableView<>();
+            mTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+            TableColumn<MessageItem, String> timeCol = new TableColumn<>("Time");
+            timeCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getTimestamp(new java.text.SimpleDateFormat("yyyy:MM:dd HH:mm:ss"))
+            ));
+
+            TableColumn<MessageItem, String> protocolCol = new TableColumn<>("Protocol");
+            protocolCol.setCellValueFactory(new PropertyValueFactory<>("protocol"));
+
+            TableColumn<MessageItem, String> timeslotCol = new TableColumn<>("Timeslot");
+            timeslotCol.setCellValueFactory(new PropertyValueFactory<>("timeslot"));
+
+            TableColumn<MessageItem, String> messageCol = new TableColumn<>("Message");
+            messageCol.setCellValueFactory(new PropertyValueFactory<>("text"));
+
+            mTable.getColumns().addAll(timeCol, protocolCol, timeslotCol, messageCol);
+
+            observableMessageItems = FXCollections.observableArrayList();
+            filteredMessageItems = new FilteredList<>(observableMessageItems, p -> true);
+            mTable.setItems(filteredMessageItems);
+
+            mMessageModel.setObservableList(observableMessageItems);
+
+            VBox vbox = new VBox();
+            VBox.setVgrow(mTable, Priority.ALWAYS);
+
+            javafx.embed.swing.SwingNode historyNode = new javafx.embed.swing.SwingNode();
+            javax.swing.SwingUtilities.invokeLater(() -> historyNode.setContent(mHistoryManagementPanel));
+
+            vbox.getChildren().addAll(historyNode, mTable);
+
+            Scene scene = new Scene(vbox);
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+            setScene(scene);
+        });
     }
 
     /**
@@ -109,6 +146,7 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
                 {
                     saveFilterStates(mMessageFilterSet);
                 }
+                updateFilter();
                 mMessageModel.fireTableDataChanged();
             });
             if(mHistoryManagementPanel != null)
@@ -131,6 +169,7 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
             mCurrentMessageHistory = null;
             mMessageFilterSet = null;
             mMessageModel.clear();
+            updateFilter();
             mHistoryManagementPanel.setEnabled(false);
         }
     }
@@ -165,26 +204,18 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
         }
     }
 
-    /**
-     * Row visibility filter for messages
-     */
-    public class MessageRowFilter extends RowFilter<TableModel, Integer>
-    {
-        @Override
-        public boolean include(Entry<? extends TableModel, ? extends Integer> entry)
-        {
-            if(entry.getModel() instanceof MessageActivityModel model)
-            {
-                MessageItem item = model.getItem(entry.getIdentifier());
-
-                if(mMessageFilterSet != null && item != null && item.getMessage() != null)
-                {
-                    IMessage message = item.getMessage();
-                    return mMessageFilterSet.canProcess(message) && mMessageFilterSet.passes(message);
-                }
+    private void updateFilter() {
+        Platform.runLater(() -> {
+            if (filteredMessageItems != null) {
+                filteredMessageItems.setPredicate(item -> {
+                    if(mMessageFilterSet != null && item != null && item.getMessage() != null)
+                    {
+                        IMessage message = item.getMessage();
+                        return mMessageFilterSet.canProcess(message) && mMessageFilterSet.passes(message);
+                    }
+                    return false;
+                });
             }
-
-            return false;
-        }
+        });
     }
 }

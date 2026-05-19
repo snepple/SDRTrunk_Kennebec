@@ -23,6 +23,9 @@ import io.github.dsheirer.message.StuffBitsMessage;
 import io.github.dsheirer.sample.Listener;
 import java.awt.EventQueue;
 import java.text.SimpleDateFormat;
+import javafx.collections.ObservableList;
+import javafx.application.Platform;
+import java.util.List;
 
 /**
  * Table Model for decoded IMessages.
@@ -37,12 +40,18 @@ public class MessageActivityModel extends ClearableHistoryModel<MessageItem> imp
 
     private String[] mHeaders = new String[]{"Time", "Protocol", "Timeslot", "Message"};
     private SimpleDateFormat mSDFTime = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+    private ObservableList<MessageItem> mObservableList;
 
     /**
      * Constructor
      */
     public MessageActivityModel()
     {
+    }
+
+    public void setObservableList(ObservableList<MessageItem> observableList)
+    {
+        mObservableList = observableList;
     }
 
     /**
@@ -57,7 +66,18 @@ public class MessageActivityModel extends ClearableHistoryModel<MessageItem> imp
             return;
         }
 
-        EventQueue.invokeLater(() -> add(new MessageItem(message)));
+        EventQueue.invokeLater(() -> {
+            MessageItem item = new MessageItem(message);
+            add(item);
+            if (mObservableList != null) {
+                Platform.runLater(() -> {
+                    mObservableList.add(0, item);
+                    while (mObservableList.size() > getHistorySize()) {
+                        mObservableList.remove(mObservableList.size() - 1);
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -94,5 +114,21 @@ public class MessageActivityModel extends ClearableHistoryModel<MessageItem> imp
         }
 
         return null;
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        if (mObservableList != null) {
+            Platform.runLater(() -> mObservableList.clear());
+        }
+    }
+
+    @Override
+    public void clearAndSet(List<MessageItem> items) {
+        super.clearAndSet(items);
+        if (mObservableList != null) {
+            Platform.runLater(() -> mObservableList.setAll(items));
+        }
     }
 }
