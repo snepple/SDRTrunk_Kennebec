@@ -1059,7 +1059,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             grid.setHgap(5);
             grid.setVgap(5);
 
-            grid.add(wrapSwingNode(getFrequencyControl()), 0, 0, 1, 2);
+            grid.add(getFrequencyControl(), 0, 0, 1, 2);
             grid.add(wrapSwingNode(new JLabel("PPM:")), 1, 0);
 
             JButton helpButton = createHelpIcon("?");
