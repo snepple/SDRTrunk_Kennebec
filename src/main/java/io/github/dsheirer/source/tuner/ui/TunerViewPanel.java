@@ -274,8 +274,8 @@ public class TunerViewPanel extends JFXPanel
         Platform.runLater(() -> {
             VBox root = (VBox) getScene().getRoot();
 
-            SplitPane splitPane = new SplitPane();
-            VBox.setVgrow(splitPane, javafx.scene.layout.Priority.ALWAYS);
+            mSplitPane = new SplitPane();
+            VBox.setVgrow(mSplitPane, javafx.scene.layout.Priority.ALWAYS);
 
             VBox leftPane = new VBox();
             leftPane.setSpacing(5);
@@ -305,10 +305,10 @@ public class TunerViewPanel extends JFXPanel
                 editorSwingNode.setContent(editorScroller);
             });
 
-            splitPane.getItems().addAll(leftPane, editorSwingNode);
-            splitPane.setDividerPositions(0.5);
+            mSplitPane.getItems().addAll(leftPane, editorSwingNode);
+            mSplitPane.setDividerPositions(0.5);
 
-            root.getChildren().add(splitPane);
+            root.getChildren().add(mSplitPane);
         });
     }
 
