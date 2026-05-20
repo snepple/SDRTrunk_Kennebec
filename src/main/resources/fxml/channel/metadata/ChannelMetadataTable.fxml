@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.dsheirer.channel.metadata.ChannelMetadataTableController" VBox.vgrow="ALWAYS" stylesheets="@/sdrtrunk_style.css">
+    <TableView fx:id="metadataTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="statusColumn" text="Status" prefWidth="100" />
+            <TableColumn fx:id="decoderColumn" text="Decoder" prefWidth="100" />
+            <TableColumn fx:id="fromIdColumn" text="From" prefWidth="100" />
+            <TableColumn fx:id="fromAliasColumn" text="Alias" prefWidth="150" />
+            <TableColumn fx:id="toIdColumn" text="To" prefWidth="100" />
+            <TableColumn fx:id="toAliasColumn" text="Alias" prefWidth="150" />
+            <TableColumn fx:id="channelNameColumn" text="Channel Name" prefWidth="150" />
+            <TableColumn fx:id="frequencyColumn" text="Frequency" prefWidth="120" />
+            <TableColumn fx:id="channelColumn" text="Channel" prefWidth="150" />
+        </columns>
+    </TableView>
+</VBox>

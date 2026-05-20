@@ -55,7 +55,7 @@ public class ControllerPanel extends BorderPane {
             mController = loader.getController();
 
             // Add Swing views by wrapping them in SwingNodes
-            mController.addView("now_playing", wrapSwingComponent(mNowPlayingPanel));
+            mController.addView("now_playing", mNowPlayingPanel);
             mController.addView("map", mMapPanel);
             mController.addView("tuners", wrapSwingComponent(mTunerManagerPanel));
             mController.addView("audio_recordings", mAudioRecordingsPanel);
