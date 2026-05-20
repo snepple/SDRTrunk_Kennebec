@@ -190,7 +190,7 @@ public class DiagnosticMonitor
         sb.append(DIVIDER);
         sb.append(mChannelProcessingManager.getDiagnosticInformation());
         sb.append(DIVIDER);
-        sb.append(mChannelProcessingManager.getChannelMetadataModel().getDiagnosticInformation());
+
         sb.append(DIVIDER);
         sb.append(getThreadDumpReport());
         sb.append(DIVIDER);

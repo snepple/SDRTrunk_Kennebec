@@ -3,6 +3,7 @@ package io.github.dsheirer.gui.widget;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -19,18 +20,18 @@ public class Widget extends VBox {
 
     private final String mId;
     private final String mTitle;
-    private final JComponent mContentComponent;
+    private final Object mContentObject;
     private final WidgetContainer mContainer;
     private final int mMinHeight;
 
     private boolean mMinimized = false;
     private WidgetController mController;
-    private SwingNode mSwingNode;
+    private Node mContentNode;
 
-    public Widget(String id, String title, JComponent contentComponent, WidgetContainer container, int minHeight) {
+    public Widget(String id, String title, Object contentObject, WidgetContainer container, int minHeight) {
         mId = id;
         mTitle = title;
-        mContentComponent = contentComponent;
+        mContentObject = contentObject;
         mContainer = container;
         mMinHeight = minHeight;
 
@@ -58,18 +59,30 @@ public class Widget extends VBox {
             savedHeight = container.getPreference().getWidgetHeight(id, minHeight);
         }
 
-        if (savedHeight > 0) {
-            mContentComponent.setPreferredSize(new Dimension(0, savedHeight));
-        }
-        if (minHeight > 0) {
-            mContentComponent.setMinimumSize(new Dimension(0, minHeight));
+        if (contentObject instanceof JComponent) {
+            JComponent swingComp = (JComponent) contentObject;
+            if (savedHeight > 0) {
+                swingComp.setPreferredSize(new Dimension(0, savedHeight));
+            }
+            if (minHeight > 0) {
+                swingComp.setMinimumSize(new Dimension(0, minHeight));
+            }
+            SwingNode swingNode = new SwingNode();
+            SwingUtilities.invokeLater(() -> swingNode.setContent(swingComp));
+            mContentNode = swingNode;
+        } else if (contentObject instanceof Node) {
+            mContentNode = (Node) contentObject;
+            if (savedHeight > 0) {
+                if (mContentNode instanceof javafx.scene.layout.Region) {
+                    ((javafx.scene.layout.Region)mContentNode).setPrefHeight(savedHeight);
+                }
+            }
         }
 
-        mSwingNode = new SwingNode();
-        SwingUtilities.invokeLater(() -> mSwingNode.setContent(mContentComponent));
-        mController.contentContainer.getChildren().add(mSwingNode);
+        if (mContentNode != null) {
+            mController.contentContainer.getChildren().add(mContentNode);
+        }
 
-        // Styling for background and border
         setStyle("-fx-background-color: #f4f4f4; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-background-radius: 12; -fx-border-width: 1;");
 
         setupResizeHandle();
@@ -82,81 +95,48 @@ public class Widget extends VBox {
         });
 
         mController.resizeHandle.setOnMouseDragged(e -> {
-            double deltaY = e.getY(); // Local Y offset within resizeHandle
-            double newHeight = Math.max(mMinHeight, mSwingNode.getBoundsInParent().getHeight() + deltaY);
+            double deltaY = e.getY();
+            double newHeight = Math.max(mMinHeight, mContentNode.getBoundsInParent().getHeight() + deltaY);
 
-            SwingUtilities.invokeLater(() -> {
-                mContentComponent.setPreferredSize(new Dimension(mContentComponent.getWidth(), (int) newHeight));
-                mContentComponent.revalidate();
-            });
+            if (mContentObject instanceof JComponent) {
+                JComponent swingComp = (JComponent) mContentObject;
+                SwingUtilities.invokeLater(() -> {
+                    swingComp.setPreferredSize(new Dimension(swingComp.getWidth(), (int) newHeight));
+                    swingComp.revalidate();
+                });
+            } else if (mContentObject instanceof javafx.scene.layout.Region) {
+                ((javafx.scene.layout.Region)mContentObject).setPrefHeight(newHeight);
+            }
             e.consume();
         });
 
         mController.resizeHandle.setOnMouseReleased(e -> {
             if (mContainer != null && mContainer.getPreference() != null) {
-                mContainer.getPreference().setWidgetHeight(mId, mContentComponent.getHeight());
+                double h = 0;
+                if (mContentObject instanceof JComponent) {
+                    h = ((JComponent)mContentObject).getHeight();
+                } else if (mContentObject instanceof javafx.scene.layout.Region) {
+                    h = ((javafx.scene.layout.Region)mContentObject).getHeight();
+                }
+                mContainer.getPreference().setWidgetHeight(mId, (int) h);
             }
             e.consume();
         });
-    }
-
-    public void setCloseButtonVisible(boolean visible) {
-        mController.closeButton.setVisible(visible);
-        mController.closeButton.setManaged(visible);
-    }
-
-    public void setMinimizeButtonVisible(boolean visible) {
-        mController.minimizeButton.setVisible(visible);
-        mController.minimizeButton.setManaged(visible);
-    }
-
-    public boolean isMinimizeButtonVisible() {
-        return mController.minimizeButton.isVisible();
     }
 
     public String getWidgetId() {
         return mId;
     }
 
-    public HBox getHeaderPanel() {
-        return mController.headerBox;
-    }
-
-    public void ensureContentComponentParent() {
-        // Automatically handled by JavaFX/SwingNode embedding unless reparented
-        SwingUtilities.invokeLater(() -> {
-            if (mSwingNode.getContent() != mContentComponent) {
-                mSwingNode.setContent(mContentComponent);
-            }
-        });
-    }
-
-    public void setDragging(boolean dragging) {
-        if (dragging) {
-            mController.headerBox.setStyle("-fx-background-color: #dcdcdc; -fx-background-radius: 12 12 0 0;");
-        } else {
-            mController.headerBox.setStyle("-fx-background-color: transparent;");
-        }
-    }
-
-    public void setMinimized(boolean minimized) {
-        mMinimized = minimized;
-        mController.contentContainer.setVisible(!minimized);
-        mController.contentContainer.setManaged(!minimized);
-        mController.resizeHandle.setVisible(!minimized);
-        mController.resizeHandle.setManaged(!minimized);
-        updateIcons();
-        mController.minimizeButton.setTooltip(new Tooltip(minimized ? "Expand" : "Minimize"));
-    }
-
-    public boolean isMinimized() {
-        return mMinimized;
-    }
-
     private void toggleMinimized() {
-        setMinimized(!mMinimized);
+        mMinimized = !mMinimized;
+        mController.contentContainer.setVisible(!mMinimized);
+        mController.contentContainer.setManaged(!mMinimized);
+        mController.resizeHandle.setVisible(!mMinimized);
+        mController.resizeHandle.setManaged(!mMinimized);
+        updateIcons();
         if (mContainer != null) {
-            mContainer.onWidgetStateChanged(this);
+            mContainer.layoutWidgets(mId);
         }
     }
 
@@ -167,9 +147,44 @@ public class Widget extends VBox {
     }
 
     private void updateIcons() {
-        // Use simple text mapping for FontAwesome or simple unicode characters for now
-        // In a real migration we'd use a JavaFX icon font library
-        mController.minimizeButton.setText(mMinimized ? "+" : "-");
-        mController.closeButton.setText("x");
+        if(mMinimized) {
+            mController.minimizeButton.setText("+");
+        } else {
+            mController.minimizeButton.setText("-");
+        }
+    }
+
+    public void setMinimizeButtonVisible(boolean visible) {
+        mController.minimizeButton.setVisible(visible);
+        mController.minimizeButton.setManaged(visible);
+    }
+
+    public void setCloseButtonVisible(boolean visible) {
+        mController.closeButton.setVisible(visible);
+        mController.closeButton.setManaged(visible);
+    }
+
+    public boolean isMinimizeButtonVisible() {
+        return mController.minimizeButton.isVisible();
+    }
+
+    public void setMinimized(boolean minimized) {
+        if (mMinimized != minimized) {
+            toggleMinimized();
+        }
+    }
+
+    public boolean isMinimized() {
+        return mMinimized;
+    }
+
+    public HBox getHeaderPanel() {
+        return mController.headerBox;
+    }
+
+    public void setDragging(boolean dragging) {
+    }
+
+    public void ensureContentComponentParent() {
     }
 }
