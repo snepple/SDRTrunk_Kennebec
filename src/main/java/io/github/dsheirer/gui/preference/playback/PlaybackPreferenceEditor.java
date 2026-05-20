@@ -138,6 +138,7 @@ public class PlaybackPreferenceEditor extends HBox
         if(mPlaybackDeviceTestButton == null)
         {
             mPlaybackDeviceTestButton = new Button("Test");
+            mPlaybackDeviceTestButton.setTooltip(new Tooltip("Test the selected audio playback device"));
             IconNode iconNode = new IconNode(FontAwesome.PLAY);
             iconNode.setFill(Color.CORNFLOWERBLUE);
             mPlaybackDeviceTestButton.setGraphic(iconNode);
@@ -182,6 +183,7 @@ public class PlaybackPreferenceEditor extends HBox
         if(mTestStartToneButton == null)
         {
             mTestStartToneButton = new Button("Test");
+            mTestStartToneButton.setTooltip(new Tooltip("Test the segment start tone"));
             IconNode iconNode = new IconNode(FontAwesome.PLAY);
             iconNode.setFill(Color.CORNFLOWERBLUE);
             mTestStartToneButton.setGraphic(iconNode);
@@ -199,6 +201,7 @@ public class PlaybackPreferenceEditor extends HBox
         if(mTestDropToneButton == null)
         {
             mTestDropToneButton = new Button("Test");
+            mTestDropToneButton.setTooltip(new Tooltip("Test the segment drop tone"));
             IconNode iconNode = new IconNode(FontAwesome.PLAY);
             iconNode.setFill(Color.CORNFLOWERBLUE);
             mTestDropToneButton.setGraphic(iconNode);
