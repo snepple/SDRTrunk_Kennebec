@@ -61,7 +61,9 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
     private final ChannelMetadataPanel mChannelMetadataPanel;
     private final ChannelDetailPanel mChannelDetailPanel;
     private final DecodeEventPanel mDecodeEventPanel;
+    private final javafx.embed.swing.JFXPanel mDecodeEventJfxPanel;
     private final MessageActivityPanel mMessageActivityPanel;
+    private final javafx.embed.swing.JFXPanel mMessageActivityJfxPanel;
     private final ChannelSpectrumPanel mChannelSpectrumSquelchPanel;
     private JideTabbedPane mTabbedPane;
     private javax.swing.JComponent mBroadcastStatusPanel;
@@ -85,7 +87,11 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         mVisibilityListener = visibilityListener;
         mChannelDetailPanel = new ChannelDetailPanel(playlistManager.getChannelProcessingManager());
         mDecodeEventPanel = new DecodeEventPanel(iconModel, userPreferences, playlistManager.getAliasModel(), playlistManager.getChannelProcessingManager());
+        mDecodeEventJfxPanel = new javafx.embed.swing.JFXPanel();
+        javafx.application.Platform.runLater(() -> mDecodeEventJfxPanel.setScene(new javafx.scene.Scene(mDecodeEventPanel)));
         mMessageActivityPanel = new MessageActivityPanel(userPreferences);
+        mMessageActivityJfxPanel = new javafx.embed.swing.JFXPanel();
+        javafx.application.Platform.runLater(() -> mMessageActivityJfxPanel.setScene(new javafx.scene.Scene(mMessageActivityPanel)));
         mChannelMetadataPanel = new ChannelMetadataPanel(playlistManager, iconModel, userPreferences, tunerManager);
         mChannelSpectrumSquelchPanel = new ChannelSpectrumPanel(playlistManager, settingsManager);
         mNowPlayingPreference = new NowPlayingPreference();
@@ -106,8 +112,8 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
                 if (pane.indexOfComponent(mChannelDetailPanel) >= 0) {
                     pane.remove(mChannelDetailPanel);
                 }
-                if (pane.indexOfComponent(mMessageActivityPanel) >= 0) {
-                    pane.remove(mMessageActivityPanel);
+                if (pane.indexOfComponent(mMessageActivityJfxPanel) >= 0) {
+                    pane.remove(mMessageActivityJfxPanel);
                 }
                 if (pane.indexOfComponent(mChannelSpectrumSquelchPanel) >= 0) {
                     pane.remove(mChannelSpectrumSquelchPanel);
@@ -117,8 +123,8 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
                 // Restore all tabs in correct order: Details, Events, Messages, Channel
                 pane.removeAll();
                 pane.addTab("Details", mChannelDetailPanel);
-                pane.addTab("Events", mDecodeEventPanel);
-                pane.addTab("Messages", mMessageActivityPanel);
+                pane.addTab("Events", mDecodeEventJfxPanel);
+                pane.addTab("Messages", mMessageActivityJfxPanel);
                 pane.addTab("Channel", mChannelSpectrumSquelchPanel);
                 mChannelSpectrumSquelchPanel.setPanelVisible(pane.getSelectedIndex() == pane.indexOfComponent(mChannelSpectrumSquelchPanel));
             }
@@ -187,8 +193,8 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         {
             mTabbedPane = new JideTabbedPane();
             mTabbedPane.addTab("Details", mChannelDetailPanel);
-            mTabbedPane.addTab("Events", mDecodeEventPanel);
-            mTabbedPane.addTab("Messages", mMessageActivityPanel);
+            mTabbedPane.addTab("Events", mDecodeEventJfxPanel);
+            mTabbedPane.addTab("Messages", mMessageActivityJfxPanel);
             mTabbedPane.addTab("Channel", mChannelSpectrumSquelchPanel);
             mTabbedPane.setFont(this.getFont());
             mTabbedPane.setForeground(Color.BLACK);

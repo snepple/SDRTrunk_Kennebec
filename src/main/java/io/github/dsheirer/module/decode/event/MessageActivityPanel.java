@@ -42,12 +42,13 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 
-import javax.swing.JPanel;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.Priority;
 
 /**
  * Panel to display decoded messages/activity.
  */
-public class MessageActivityPanel extends JPanel implements Listener<ProcessingChain>
+public class MessageActivityPanel extends javafx.scene.layout.VBox implements Listener<ProcessingChain>
 {
     private static final long serialVersionUID = 1L;
     private static final Logger mLog = LoggerFactory.getLogger(MessageActivityPanel.class);
@@ -67,12 +68,16 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
     public MessageActivityPanel(UserPreferences userPreferences)
     {
         mUserPreferences = userPreferences;
-        setLayout(new MigLayout("insets 0 0 0 0", "[][grow,fill]", "[]0[grow,fill]"));
+        // setLayout(new MigLayout("insets 0 0 0 0", "[][grow,fill]", "[]0[grow,fill]"));
         mHistoryManagementPanel = new HistoryManagementPanel<>(mMessageModel, "Message Filter Editor");
-        add(mHistoryManagementPanel, "span,growx");
+        // add(mHistoryManagementPanel, "span,growx");
+        getChildren().add(mHistoryManagementPanel);
 
-        JFXPanel jfxPanel = new JFXPanel();
-        add(jfxPanel, "span,grow");
+        // JFXPanel jfxPanel = new JFXPanel();
+        // add(jfxPanel, "span,grow");
+        VBox jfxPanel = new VBox();
+        VBox.setVgrow(jfxPanel, Priority.ALWAYS);
+        getChildren().add(jfxPanel);
 
         Platform.runLater(() -> {
             try {
@@ -82,12 +87,11 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
                 mTableController.setItems(mMessageModel.getItems());
                 mTableController.setFilterPredicate(this::evaluateFilter);
 
-                Scene scene = new Scene(root);
                 java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
                 if (cssUrl != null) {
-                    scene.getStylesheets().add(cssUrl.toExternalForm());
+                    root.getStylesheets().add(cssUrl.toExternalForm());
                 }
-                jfxPanel.setScene(scene);
+                jfxPanel.getChildren().add(root);
             } catch (IOException e) {
                 mLog.error("Error loading MessageActivityTable.fxml", e);
             }
@@ -149,14 +153,14 @@ public class MessageActivityPanel extends JPanel implements Listener<ProcessingC
 
             mMessageModel.clearAndSet(currentHistory);
             mCurrentMessageHistory.addListener(mMessageModel);
-            mHistoryManagementPanel.setEnabled(true);
+            mHistoryManagementPanel.setDisable(false);
         }
         else
         {
             mCurrentMessageHistory = null;
             mMessageFilterSet = null;
             mMessageModel.clear();
-            mHistoryManagementPanel.setEnabled(false);
+            mHistoryManagementPanel.setDisable(true);
         }
     }
 

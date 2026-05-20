@@ -56,7 +56,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.Priority;
+import javafx.embed.swing.SwingNode;
+import javax.swing.SwingUtilities;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.RowFilter;
@@ -64,7 +67,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
-public class DecodeEventPanel extends JPanel implements Listener<ProcessingChain>
+public class DecodeEventPanel extends javafx.scene.layout.VBox implements Listener<ProcessingChain>
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(DecodeEventPanel.class);
@@ -122,7 +125,7 @@ public class DecodeEventPanel extends JPanel implements Listener<ProcessingChain
     {
         MyEventBus.getGlobalEventBus().register(this);
 
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[][grow,fill]"));
+        // MigLayout removed
         mIconModel = iconModel;
         mAliasModel = aliasModel;
         mUserPreferences = userPreferences;
@@ -150,9 +153,12 @@ public class DecodeEventPanel extends JPanel implements Listener<ProcessingChain
                 nowPlayingPreference::setEventHistorySize);
 
         mHistoryManagementPanel.updateFilterSet(mFilterSet);
-        add(mHistoryManagementPanel, "span,growx");
+        getChildren().add(mHistoryManagementPanel);
         mEmptyScroller = new JScrollPane(mTable);
-        add(mEmptyScroller);
+        SwingNode emptyScrollNode = new SwingNode();
+        SwingUtilities.invokeLater(() -> emptyScrollNode.setContent(mEmptyScroller));
+        VBox.setVgrow(emptyScrollNode, Priority.ALWAYS);
+        getChildren().add(emptyScrollNode);
 
         mFilterSet.register(() -> {
             saveFilterStates(nowPlayingPreference);
@@ -237,14 +243,14 @@ public class DecodeEventPanel extends JPanel implements Listener<ProcessingChain
                 processingChain.getDecodeEventHistory().addListener(mEventModel);
                 mTable.setModel(mEventModel);
                 mTableRowSorter.setModel(mEventModel);
-                mHistoryManagementPanel.setEnabled(true);
+                mHistoryManagementPanel.setDisable(false);
             }
             else
             {
                 mCurrentEventHistory = null;
                 mTable.setModel(mGlobalEventModel);
                 mTableRowSorter.setModel(mGlobalEventModel);
-                mHistoryManagementPanel.setEnabled(true);
+                mHistoryManagementPanel.setDisable(false);
             }
 
             updateCellRenderers();

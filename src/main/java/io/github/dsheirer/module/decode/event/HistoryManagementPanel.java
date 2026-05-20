@@ -22,13 +22,13 @@ package io.github.dsheirer.module.decode.event;
 import io.github.dsheirer.filter.FilterEditor;
 import io.github.dsheirer.filter.FilterSet;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JPanel;
+// import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -37,7 +37,7 @@ import java.util.function.Consumer;
 /**
  * History management panel with controls for managing item histories.
  */
-public class HistoryManagementPanel<T> extends JFXPanel
+public class HistoryManagementPanel<T> extends javafx.scene.layout.VBox
 {
     private ClearableHistoryModel mModel;
     private FilterSet<T> mFilterSet;
@@ -53,7 +53,7 @@ public class HistoryManagementPanel<T> extends JFXPanel
     private HistoryManagementPanelController mController;
 
     // For Swing interoperability when showing the filter editor
-    private JPanel mDummyAnchor;
+    private java.awt.Component mDummyAnchor;
 
     /**
      * Constructs an instance using the model's current history size as the
@@ -89,15 +89,15 @@ public class HistoryManagementPanel<T> extends JFXPanel
             model.setHistorySize(initialHistorySize);
         }
 
-        mDummyAnchor = new JPanel();
+        mDummyAnchor = new java.awt.Panel();
         // Since we are now a JFXPanel, we don't add the dummy anchor directly.
         // It's just used as a component reference for the FilterEditor dialog location.
 
-        setPreferredSize(new Dimension(300, 38));
+        // setPreferredSize(new Dimension(300, 38));
 
         Platform.runLater(this::initJavaFX);
 
-        setEnabled(false);
+        setDisable(true);
     }
 
     private void initJavaFX() {
@@ -108,16 +108,13 @@ public class HistoryManagementPanel<T> extends JFXPanel
             mController = loader.getController();
             mController.setCallbacks(this::handleFilterClick, this::handleClearClick, this::handleHistorySizeChanged);
             mController.setInitialHistorySize(mModel.getHistorySize());
-            mController.setDisable(!isEnabled());
-
-            Scene scene = new Scene(root);
+            mController.setDisable(isDisabled());
 
             java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
             if (cssUrl != null) {
-                scene.getStylesheets().add(cssUrl.toExternalForm());
+                root.getStylesheets().add(cssUrl.toExternalForm());
             }
-
-            setScene(scene);
+            getChildren().add(root);
         } catch (Exception e) {
             LoggerFactory.getLogger(HistoryManagementPanel.class).error("Error loading HistoryManagementPanel FXML", e);
         }
@@ -158,10 +155,8 @@ public class HistoryManagementPanel<T> extends JFXPanel
      * Overrides the panel method to also set the enabled state for the child controls.
      * @param enabled true if this component should be enabled, false otherwise
      */
-    @Override
-    public void setEnabled(boolean enabled)
-    {
-        super.setEnabled(enabled);
+    public void setEnabled(boolean enabled) {
+        setDisable(!enabled);
         if (mController != null) {
             Platform.runLater(() -> mController.setDisable(!enabled));
         } else {
