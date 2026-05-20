@@ -48,3 +48,7 @@
 **Topic:** Signal Flow & Routing
 **Learning:** A new documentation guide covering the high-level signal flow from the hardware tuner to audio routing was needed to help users understand SDRTrunk's core processing pipeline.
 **Action:** Created `src/main/resources/docs/signal-flow-&-routing.md` with a visual flow Mermaid diagram and added it to the 'Getting Started' section of the HelpViewController.
+## 2024-05-20 - Topic Selection
+**Topic:** Audio Quality & Tuning
+**Learning:** The "Audio Quality & Tuning" section from "What's New" didn't have a specific overarching guide. This guide connects features like Analog Hiss Reduction, Anti-Clipping, P25 Audio Enhancements, and VAC Routing.
+**Action:** Created `src/main/resources/docs/audio-quality-&-tuning.md` with a visual audio processing pipeline and integrated it into the navigation tree of `HelpViewer.java` under "Advanced & System".
