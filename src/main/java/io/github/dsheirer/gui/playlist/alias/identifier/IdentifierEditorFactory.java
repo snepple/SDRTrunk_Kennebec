@@ -51,7 +51,7 @@ public class IdentifierEditorFactory
             case P25_FULLY_QUALIFIED_TALKGROUP:
                 return new P25FullyQualifiedTalkgroupEditor(userPreferences, playlistManager);
             case RADIO_ID:
-                return new RadioIdEditor(userPreferences, playlistManager);
+                return new RadioIdEditor(userPreferences);
             case RADIO_ID_RANGE:
                 return new RadioIdRangeEditor(userPreferences);
             case TALKGROUP:

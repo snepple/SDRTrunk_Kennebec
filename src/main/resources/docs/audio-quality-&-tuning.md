@@ -8,10 +8,10 @@ Decoded audio from a channel passes through multiple filtering and processing st
 
 ```mermaid
 flowchart TD
-    A[Demodulator] --> B(Codec/Decoder)
-    B -->|Raw Audio| C{Filters & EQ}
+    A[Demodulator] --> B[Codec or Decoder]
+    B -->|Raw Audio| C[Filters and EQ]
     C -->|Processed Audio| D[Anti-Clipping AGC]
-    D -->|Gain Controlled| E[Output Device / Stream]
+    D -->|Gain Controlled| E[Output Device or Stream]
 ```
 
 ## Anti-Clipping
