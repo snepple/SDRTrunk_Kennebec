@@ -1,134 +1,84 @@
----
-title: "SDRTrunk Kennebec: Multi-Protocol Radio Scanner"
-description: Turn your SDR hardware into a multi-channel trunked radio scanner with live streaming, automated alerts, and optional AI monitoring.
-mode: frame
----
+# SDRTrunk Kennebec: Multi-Protocol Radio Scanner
 
-<div data-product-guide-index className="flex w-full flex-col gap-8 max-w-5xl mx-auto px-4 md:px-8 lg:px-12 py-10 lg:gap-14 lg:py-16">
-  <div className="flex max-w-[540px] flex-col gap-2 self-center text-center">
-    <h1 className="text-[30px] font-medium leading-9 tracking-tight text-gray-900 dark:text-gray-50">
+<h1 className="text-[30px] font-medium leading-9 tracking-tight text-gray-900 dark:text-gray-50">
       SDRTrunk Kennebec
     </h1>
     <p className="text-balance text-base leading-relaxed tracking-tight text-gray-600 dark:text-gray-400">
       A cross-platform Java application that decodes, monitors, records, and streams trunked radio traffic using Software Defined Radio hardware.
     </p>
-  </div>
 
-  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
     <Card
-      title={<span className="product-guide-feature-card-title">Get started</span>}
+      title="Get started"
       icon="rocket"
-      href="/quickstart"
-      className="product-guide-feature-card"
-      size={64}
+      href="/docs/quickstart"
     >
-      <span className="product-guide-feature-card-description">Download or build SDRTrunk Kennebec and decode your first channel.</span>
+      Download or build SDRTrunk Kennebec and decode your first channel.
     </Card>
 
-    <a
-      href="/hardware/supported-tuners"
-      className="rounded-2xl flex flex-col gap-4 border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
+    <Card
+      title="Hardware setup"
+      icon="cpu"
+      href="/docs/hardware/supported-tuners"
     >
-      <Icon icon="cpu" color="rgb(var(--primary))" size={18} className="shrink-0" />
-      <div className="flex flex-col gap-1">
-        <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Hardware setup</span>
-        <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-          Connect and configure RTL-SDR, Airspy, HackRF, or SDRPlay tuners.
-        </span>
-      </div>
-    </a>
-    <a
-      href="/streaming/broadcastify"
-      className="rounded-2xl flex flex-col gap-4 border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
+      Connect and configure RTL-SDR, Airspy, HackRF, or SDRPlay tuners.
+    </Card>
+
+    <Card
+      title="Live streaming"
+      icon="broadcast"
+      href="/docs/streaming/broadcastify"
     >
-      <Icon icon="broadcast" color="rgb(var(--primary))" size={18} className="shrink-0" />
-      <div className="flex flex-col gap-1">
-        <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Live streaming</span>
-        <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-          Route audio to Broadcastify, Zello, Rdio Scanner, OpenMHz, and more.
-        </span>
-      </div>
-    </a>
-  </div>
+      Route audio to Broadcastify, Zello, Rdio Scanner, OpenMHz, and more.
+    </Card>
 
-  <hr className="border-0 border-t border-border" />
-
-  <div className="flex flex-col gap-4">
     <h2 className="font-serif text-xl font-medium leading-normal text-gray-900 dark:text-gray-50">Common tasks</h2>
 
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <a
-        href="/decoding/channels-and-decoding"
-        className="rounded-2xl flex flex-col gap-4 border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
+    <CardGroup cols={2}>
+      <Card
+        title="Configure a channel"
+        icon="radio"
+        href="/docs/decoding/channels-and-decoding"
       >
-        <Icon icon="radio" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Configure a channel</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Set up a P25, DMR, or analog channel and start decoding radio traffic.
-          </span>
-        </div>
-      </a>
-      <a
-        href="/decoding/aliases-talkgroups"
-        className="rounded-2xl flex flex-col gap-4 border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
+        Set up a P25, DMR, or analog channel and start decoding radio traffic.
+      </Card>
+
+      <Card
+        title="Name your talkgroups"
+        icon="users"
+        href="/docs/decoding/aliases-talkgroups"
       >
-        <Icon icon="tag" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Name your talkgroups</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Assign readable names and icons to talkgroup IDs using aliases.
-          </span>
-        </div>
-      </a>
-      <a
-        href="/alerts/two-tone-detect"
-        className="rounded-2xl flex flex-col gap-4 border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
+        Assign readable names and icons to talkgroup IDs using aliases.
+      </Card>
+
+      <Card
+        title="Set up dispatch alerts"
+        icon="bell"
+        href="/docs/alerts/two-tone-detect"
       >
-        <Icon icon="siren" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Set up dispatch alerts</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Detect fire and EMS paging tones and trigger Zello or MQTT actions.
-          </span>
-        </div>
-      </a>
-      <a
-        href="/alerts/notifications"
-        className="rounded-2xl flex flex-col gap-4 border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
+        Detect fire and EMS paging tones and trigger Zello or MQTT actions.
+      </Card>
+
+      <Card
+        title="Configure notifications"
+        icon="envelope"
+        href="/docs/alerts/notifications"
       >
-        <Icon icon="bell" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Configure notifications</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Receive Telegram or Email alerts for tuner errors and channel inactivity.
-          </span>
-        </div>
-      </a>
-      <a
-        href="/alerts/gemini-ai"
-        className="rounded-2xl flex flex-col gap-4 border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
+        Receive Telegram or Email alerts for tuner errors and channel inactivity.
+      </Card>
+
+      <Card
+        title="Enable AI monitoring"
+        icon="robot"
+        href="/docs/alerts/gemini-ai"
       >
-        <Icon icon="sparkles" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Enable AI monitoring</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Use Gemini AI to auto-tune channels, analyze logs, and audit audio quality.
-          </span>
-        </div>
-      </a>
-      <a
-        href="/hardware/tuner-self-healing"
-        className="rounded-2xl flex flex-col gap-4 border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
+        Use Gemini AI to auto-tune channels, analyze logs, and audit audio quality.
+      </Card>
+
+      <Card
+        title="Recover failed tuners"
+        icon="wrench"
+        href="/docs/hardware/tuner-self-healing"
       >
-        <Icon icon="wrench" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Recover failed tuners</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Understand automatic USB recovery and Windows PowerShell reset options.
-          </span>
-        </div>
-      </a>
-    </div>
-  </div>
-</div>
+        Understand automatic USB recovery and Windows PowerShell reset options.
+      </Card>
+    </CardGroup>

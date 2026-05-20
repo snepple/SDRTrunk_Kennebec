@@ -75,6 +75,6 @@ Zello streams include a dedicated **Reconnect** button in the Broadcaster Status
 
 ## Platform guides
 
-* [Broadcastify Feed and Broadcastify Call](/streaming/broadcastify)
-* [Zello Work and Zello Consumer](/streaming/zello)
-* [Icecast, Shoutcast, Rdio Scanner, OpenMHz, ThinLine Radio, and IAmResponding](/streaming/other-platforms)
+* [Broadcastify Feed and Broadcastify Call](/docs/streaming/broadcastify)
+* [Zello Work and Zello Consumer](/docs/streaming/zello)
+* [Icecast, Shoutcast, Rdio Scanner, OpenMHz, ThinLine Radio, and IAmResponding](/docs/streaming/other-platforms)

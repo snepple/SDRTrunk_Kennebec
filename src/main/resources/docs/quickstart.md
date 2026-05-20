@@ -72,17 +72,17 @@ This guide walks you through getting SDRTrunk Kennebec running for the first tim
 
     Plug in your SDR device before or after launching the application. SDRTrunk automatically detects most supported hardware on startup.
 
-    Supported hardware families include RTL-SDR dongles, Airspy devices, HackRF, and SDRPlay. See [Supported tuners](/hardware/supported-tuners) for the full list.
+    Supported hardware families include RTL-SDR dongles, Airspy devices, HackRF, and SDRPlay. See [Supported tuners](/docs/hardware/supported-tuners) for the full list.
 
     To verify your tuner is recognized:
 
     1. Open the **Tuners** panel from the main toolbar.
     2. Your device should appear in the tuner list with its model name.
-    3. If it does not appear, check the [hardware setup guides](/hardware/supported-tuners) for driver and platform-specific instructions.
+    3. If it does not appear, check the [hardware setup guides](/docs/hardware/supported-tuners) for driver and platform-specific instructions.
 
     > **Warning**
 >
-      On Windows, most RTL-SDR devices require the WinUSB driver to be installed via Zadig before SDRTrunk can access them. See the [RTL-SDR setup guide](/hardware/rtl-sdr) for details.
+      On Windows, most RTL-SDR devices require the WinUSB driver to be installed via Zadig before SDRTrunk can access them. See the [RTL-SDR setup guide](/docs/hardware/rtl-sdr) for details.
 
 
 

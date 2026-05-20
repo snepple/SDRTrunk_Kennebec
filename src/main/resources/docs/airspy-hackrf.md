@@ -168,4 +168,4 @@ SDRTrunk Kennebec queries supported sample rates from the Airspy firmware during
 
 ### Tuner shows status `Recovering`
 
-SDRTrunk Kennebec detected a USB transfer error and is automatically attempting to restart the tuner. See [Tuner Self-Healing](/hardware/tuner-self-healing) for full details on the recovery process and what to do if the tuner does not recover.
+SDRTrunk Kennebec detected a USB transfer error and is automatically attempting to restart the tuner. See [Tuner Self-Healing](/docs/hardware/tuner-self-healing) for full details on the recovery process and what to do if the tuner does not recover.

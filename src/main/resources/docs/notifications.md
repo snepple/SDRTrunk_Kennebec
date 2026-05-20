@@ -12,7 +12,7 @@ Notifications trigger on two categories of events:
 | **System alerts** | An unhandled exception or critical failure occurs inside SDRTrunk Kennebec |
 | **Signal alerts** | A signal or decoding condition requires your attention |
 | **Integration alerts** | A streaming or external integration fails |
-| **Channel inactivity** | A monitored channel exceeds its configured silence threshold (see [Inactivity Monitoring](/alerts/inactivity-monitoring)) |
+| **Channel inactivity** | A monitored channel exceeds its configured silence threshold (see [Inactivity Monitoring](/docs/alerts/inactivity-monitoring)) |
 | **AI audio monitoring** | An AI-flagged audio quality issue is detected on a channel |
 
 > **Note**

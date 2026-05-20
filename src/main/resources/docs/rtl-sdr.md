@@ -159,7 +159,7 @@ Check the application log for the specific error message. Common causes include:
 
 ### Tuner shows status `Recovering`
 
-SDRTrunk Kennebec detected a USB transfer error and is attempting to restart the tuner automatically. The application makes up to 5 recovery attempts at 3-minute intervals before marking the tuner as permanently failed. See [Tuner Self-Healing](/hardware/tuner-self-healing) for full details.
+SDRTrunk Kennebec detected a USB transfer error and is attempting to restart the tuner automatically. The application makes up to 5 recovery attempts at 3-minute intervals before marking the tuner as permanently failed. See [Tuner Self-Healing](/docs/hardware/tuner-self-healing) for full details.
 
 ### Audio is distorted or channels fail to decode
 

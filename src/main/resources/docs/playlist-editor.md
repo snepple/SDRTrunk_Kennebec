@@ -75,7 +75,7 @@ The lower half of the Channels section is the detail editor. Its fields change d
 
 
   ### Alias list
-    The alias list to use for this channel. Talkgroup and radio ID lookups use the aliases defined in the list you select here. See [Organize talkgroups and radio IDs with aliases](/channels/aliases-talkgroups) for details on creating alias lists.
+    The alias list to use for this channel. Talkgroup and radio ID lookups use the aliases defined in the list you select here. See [Organize talkgroups and radio IDs with aliases](/docs/aliases-talkgroups) for details on creating alias lists.
 
 
   ### Auto-Start

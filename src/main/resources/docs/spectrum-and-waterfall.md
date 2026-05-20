@@ -6,14 +6,14 @@ The **Spectrum & Waterfall** display in SDRTrunk provides a real-time visual rep
 
 The spectral display consists of two main components that are vertically stacked:
 
-<br>
+<br/>
 
 | Component | Description |
 |---|---|
 | **Spectrum (Top)** | A real-time graph showing signal amplitude (power) on the vertical axis and frequency on the horizontal axis. Active signals appear as peaks. |
 | **Waterfall (Bottom)** | A scrolling historical view. Frequency is on the horizontal axis, time flows downwards, and color intensity represents signal strength (blue/black for noise, yellow/red for strong signals). |
 
-<br>
+<br/>
 
 ### Signal Flow Logic
 

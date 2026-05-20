@@ -71,7 +71,7 @@ Supported hardware families include:
 
 > **Info**
 >
-  On Windows, most RTL-SDR dongles require the WinUSB driver to be installed via [Zadig](https://zadig.akeo.ie/) before SDRTrunk can access them. See the [RTL-SDR setup guide](/hardware/rtl-sdr) for step-by-step instructions.
+  On Windows, most RTL-SDR dongles require the WinUSB driver to be installed via [Zadig](https://zadig.akeo.ie/) before SDRTrunk can access them. See the [RTL-SDR setup guide](/docs/hardware/rtl-sdr) for step-by-step instructions.
 
 A single SDR device can monitor one contiguous band of spectrum at a time. To monitor multiple separate frequency ranges simultaneously, you need multiple SDR devices. SDRTrunk Kennebec supports multiple tuners running concurrently.
 

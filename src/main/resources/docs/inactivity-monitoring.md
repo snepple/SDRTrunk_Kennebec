@@ -4,7 +4,7 @@ Inactivity monitoring watches your channels for audio activity and fires an aler
 
 > **Note**
 >
-  Inactivity monitoring relies on at least one notification delivery method being configured and enabled. Set up Telegram or Email in **User Preferences → Notifications** before enabling inactivity monitoring. See [Notifications](/alerts/notifications) for setup instructions.
+  Inactivity monitoring relies on at least one notification delivery method being configured and enabled. Set up Telegram or Email in **User Preferences → Notifications** before enabling inactivity monitoring. See [Notifications](/docs/alerts/notifications) for setup instructions.
 
 ## How inactivity monitoring works
 
@@ -86,7 +86,7 @@ This information is delivered identically whether you receive the alert via Tele
 
 ## Relationship to notification recipients
 
-Inactivity alerts are routed to recipients who have the **Channel Inactivity** toggle enabled on their recipient entry. You can have one recipient receive inactivity alerts and a different recipient receive hardware error alerts — the per-recipient toggles in the **Notifications** panel control this independently. See [Notifications](/alerts/notifications) for details on configuring recipients.
+Inactivity alerts are routed to recipients who have the **Channel Inactivity** toggle enabled on their recipient entry. You can have one recipient receive inactivity alerts and a different recipient receive hardware error alerts — the per-recipient toggles in the **Notifications** panel control this independently. See [Notifications](/docs/alerts/notifications) for details on configuring recipients.
 
 ## Troubleshooting
 

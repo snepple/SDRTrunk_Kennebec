@@ -19,7 +19,7 @@ flowchart TD
 
 The Now Playing panel consists of a customizable grid of widgets. By default, it includes the following layout:
 
-<br>
+<br/>
 
 | Area | Widget Name | Description |
 |---|---|---|
@@ -28,7 +28,7 @@ The Now Playing panel consists of a customizable grid of widgets. By default, it
 | **Middle Right** | **Message Activity** | A real-time log of decoded control messages, such as channel grants, unit registrations, and status updates. |
 | **Bottom** | **Resource Status** | Shows system health metrics, including CPU usage, memory consumption, and tuner status. |
 
-<br>
+<br/>
 
 ## Managing Widgets
 

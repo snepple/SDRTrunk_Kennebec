@@ -58,7 +58,7 @@ Use consistent naming across channels that belong to the same logical system so 
 
 Each playlist has its own set of alias lists. Alias lists are scoped to the playlist — they do not transfer automatically when you switch playlists or share a playlist file. When you assign a channel an alias list, it references the list by name within the same playlist.
 
-See [Aliases & talkgroups](/decoding/aliases-talkgroups) for full details on creating and managing aliases.
+See [Aliases & talkgroups](/docs/decoding/aliases-talkgroups) for full details on creating and managing aliases.
 
 ## Manage streaming outputs
 

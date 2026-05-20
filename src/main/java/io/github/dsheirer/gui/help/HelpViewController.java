@@ -57,7 +57,7 @@ public class HelpViewController {
     private void createNodes(TreeItem<String> root) {
         root.getChildren().add(new TreeItem<>("What's New"));
 
-        TreeItem<String> guidesNode = new TreeItem<>("Guides & Documentation");
+        TreeItem<String> guidesNode = new TreeItem<>("Guides And Documentation");
         guidesNode.setExpanded(true);
 
         TreeItem<String> gettingStartedNode = new TreeItem<>("Getting Started");
@@ -66,30 +66,30 @@ public class HelpViewController {
         gettingStartedNode.getChildren().add(new TreeItem<>("Now Playing"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Overview"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Quickstart"));
-        gettingStartedNode.getChildren().add(new TreeItem<>("Signal Flow & Routing"));
+        gettingStartedNode.getChildren().add(new TreeItem<>("Signal Flow Routing"));
         guidesNode.getChildren().add(gettingStartedNode);
 
-        TreeItem<String> hardwareTunersNode = new TreeItem<>("Hardware & Tuners");
+        TreeItem<String> hardwareTunersNode = new TreeItem<>("Hardware And Tuners");
         hardwareTunersNode.getChildren().add(new TreeItem<>("Airspy Hackrf"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Rtl Sdr"));
-        hardwareTunersNode.getChildren().add(new TreeItem<>("Spectrum & Waterfall"));
+        hardwareTunersNode.getChildren().add(new TreeItem<>("Spectrum And Waterfall"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Supported Tuners"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Self Healing"));
         guidesNode.getChildren().add(hardwareTunersNode);
 
-        TreeItem<String> channelsDecodingNode = new TreeItem<>("Channels & Decoding");
+        TreeItem<String> channelsDecodingNode = new TreeItem<>("Channels And Decoding");
         channelsDecodingNode.getChildren().add(new TreeItem<>("Analog"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("Dmr"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("P25"));
         guidesNode.getChildren().add(channelsDecodingNode);
 
-        TreeItem<String> organizationPlaylistsNode = new TreeItem<>("Organization & Playlists");
+        TreeItem<String> organizationPlaylistsNode = new TreeItem<>("Organization And Playlists");
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Aliases Talkgroups"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Playlist Editor"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Radio Reference"));
         guidesNode.getChildren().add(organizationPlaylistsNode);
 
-        TreeItem<String> integrationsStreamingNode = new TreeItem<>("Integrations & Streaming");
+        TreeItem<String> integrationsStreamingNode = new TreeItem<>("Integrations And Streaming");
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Broadcastify"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Mqtt"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Openmhz"));
@@ -100,7 +100,7 @@ public class HelpViewController {
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Zello"));
         guidesNode.getChildren().add(integrationsStreamingNode);
 
-        TreeItem<String> advancedSystemNode = new TreeItem<>("Advanced & System");
+        TreeItem<String> advancedSystemNode = new TreeItem<>("Advanced And System");
         advancedSystemNode.getChildren().add(new TreeItem<>("Audio Recordings"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Diagnostics"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Gemini Ai"));
@@ -163,7 +163,7 @@ public class HelpViewController {
             markdown.append("* **Live Diagnostics Panel:** New \"Diagnostics (Logging)\" settings panel to toggle detailed troubleshooting logs on the fly.\n");
             markdown.append("* **Hardware & Decoding Fixes:** Various stability fixes for DMR decoding and SDR hardware tuning.\n");
         } else {
-            String fileName = topic.toLowerCase().replace(" & ", "-&-").replace(" ", "-") + ".md";
+            String fileName = topic.toLowerCase().replace(" and ", "-and-").replace(" ", "-") + ".md";
             try (java.io.InputStream is = getClass().getResourceAsStream("/docs/" + fileName)) {
                 if (is != null) {
                     try (java.util.Scanner s = new java.util.Scanner(is, "UTF-8").useDelimiter("\\A")) {
@@ -180,7 +180,7 @@ public class HelpViewController {
     }
 
     private void updateContent(String topic) {
-        if (topic.equals("Knowledge Base") || topic.equals("Guides & Documentation")) {
+        if (topic.equals("Knowledge Base") || topic.equals("Guides And Documentation")) {
             contentWebView.getEngine().loadContent(
                     "<html><body style='font-family: sans-serif; padding: 20px;'>" +
                             "<h1>" + topic + "</h1>" +

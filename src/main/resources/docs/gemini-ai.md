@@ -104,7 +104,7 @@ When CPU usage exceeds 80%, the advisor recommends reducing sample rates or disa
 
 > **Note**
 >
-  The system health advisor displays its output within the SDRTrunk Kennebec application window. It does not send suggestions via Telegram or Email. For remote alerting on system health, use the standard [error notifications](/alerts/notifications) feature.
+  The system health advisor displays its output within the SDRTrunk Kennebec application window. It does not send suggestions via Telegram or Email. For remote alerting on system health, use the standard [error notifications](/docs/alerts/notifications) feature.
 
 ## How log analysis works
 

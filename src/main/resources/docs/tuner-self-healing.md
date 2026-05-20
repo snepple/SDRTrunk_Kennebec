@@ -125,4 +125,4 @@ If a tuner reaches `Error` status after exhausting all recovery attempts, self-h
 
 > **Note**
 >
-Recovery is not attempted for configuration errors, unknown tuner types, or other startup failures. These conditions move the tuner directly to `Error` status. On macOS Tahoe (OS version 26), a known libusb compatibility issue can also prevent USB tuner detection — see the [RTL-SDR setup guide](/hardware/rtl-sdr) for the Homebrew workaround.
+Recovery is not attempted for configuration errors, unknown tuner types, or other startup failures. These conditions move the tuner directly to `Error` status. On macOS Tahoe (OS version 26), a known libusb compatibility issue can also prevent USB tuner detection — see the [RTL-SDR setup guide](/docs/hardware/rtl-sdr) for the Homebrew workaround.

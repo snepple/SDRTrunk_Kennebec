@@ -177,4 +177,4 @@ IAmResponding is a first-responder alerting platform with a **Two Tone Detect** 
 
 If you want to route decoded audio to a desktop application not covered by any of the broadcast types above — such as a third-party recording tool, a paging tone detector, or a streaming encoder — you can use a virtual audio cable. SDRTrunk Kennebec routes audio to virtual audio devices at the alias level, giving you per-talkgroup routing to any application installed on the same machine.
 
-See the [Virtual Audio Cable](/configuration/virtual-audio-cable) configuration guide for setup instructions and supported VAC software for Windows, macOS, and Linux.
+See the [Virtual Audio Cable](/docs/configuration/virtual-audio-cable) configuration guide for setup instructions and supported VAC software for Windows, macOS, and Linux.
