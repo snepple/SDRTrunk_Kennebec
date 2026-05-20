@@ -64,11 +64,22 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.embed.swing.SwingNode;
+import javafx.scene.Scene;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.ToolBar;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javax.swing.SwingUtilities;
 
 /**
  * Panel containing a discovered tuners table and a tuner editor for a selected tuner.
  */
-public class TunerViewPanel extends JPanel
+public class TunerViewPanel extends JFXPanel
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(TunerViewPanel.class);
@@ -81,7 +92,7 @@ public class TunerViewPanel extends JPanel
     private JTable mTunerTable;
     private JTableColumnWidthMonitor mColumnWidthMonitor;
     private TableRowSorter<DiscoveredTunerModel> mRowSorter;
-    private JideSplitPane mSplitPane;
+    private SplitPane mSplitPane;
     private JButton mAddRecordingButton;
     private JButton mRemoveRecordingButton;
 
@@ -114,44 +125,55 @@ public class TunerViewPanel extends JPanel
     {
         io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().register(this);
 
-        setLayout(new MigLayout("insets 0 0 0 0", "[fill,grow]", "[][fill,grow]"));
+        Platform.runLater(() -> {
+            VBox root = new VBox();
 
-        JToolBar toolBar = new JToolBar();
-        toolBar.setFloatable(false);
+            ToolBar toolBar = new ToolBar();
 
-        JButton manageBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.COG, 14, Color.BLACK));
-        manageBtn.setToolTipText("Settings");
-        manageBtn.getAccessibleContext().setAccessibleName("Tuner Settings");
-        manageBtn.getAccessibleContext().setAccessibleDescription("Opens a menu for tuner settings like spectrum and resource toggles");
-        manageBtn.addActionListener(e -> {
-            JPopupMenu popup = new JPopupMenu();
+            javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-            String specText = "Toggle Spectrum/Waterfall";
-            if (mVisibilityListener != null) {
-                specText = mVisibilityListener.isSpectrumVisible() ? "Hide Spectrum/Waterfall" : "Show Spectrum/Waterfall";
-            }
-            JMenuItem specItem = new JMenuItem(specText);
-            specItem.addActionListener(evt -> {
-                if(mVisibilityListener != null) mVisibilityListener.onToggleSpectrum();
+            MenuButton manageBtn = new MenuButton();
+            manageBtn.setGraphic(new javafx.scene.image.ImageView(new javafx.scene.image.Image(getClass().getResourceAsStream("/images/settings_16x16.png"))));
+            manageBtn.setTooltip(new javafx.scene.control.Tooltip("Settings"));
+
+            manageBtn.setOnShowing(event -> {
+                manageBtn.getItems().clear();
+
+                MenuItem specItem = new MenuItem();
+                if (mVisibilityListener != null) {
+                    specItem.setText(mVisibilityListener.isSpectrumVisible() ? "Hide Spectrum/Waterfall" : "Show Spectrum/Waterfall");
+                } else {
+                    specItem.setText("Toggle Spectrum/Waterfall");
+                }
+                specItem.setOnAction(evt -> {
+                    if(mVisibilityListener != null) mVisibilityListener.onToggleSpectrum();
+                });
+
+                MenuItem resourceItem = new MenuItem();
+                if (mVisibilityListener != null) {
+                    resourceItem.setText(mVisibilityListener.isResourceVisible() ? "Hide Resource Status" : "Show Resource Status");
+                } else {
+                    resourceItem.setText("Toggle Resource Status");
+                }
+                resourceItem.setOnAction(evt -> {
+                    if(mVisibilityListener != null) mVisibilityListener.onToggleResource();
+                });
+
+                manageBtn.getItems().addAll(specItem, resourceItem);
             });
-            popup.add(specItem);
 
-            String resourceText = "Toggle Resource Status";
-            if (mVisibilityListener != null) {
-                resourceText = mVisibilityListener.isResourceVisible() ? "Hide Resource Status" : "Show Resource Status";
+            toolBar.getItems().addAll(spacer, manageBtn);
+
+            root.getChildren().add(toolBar);
+
+            Scene scene = new Scene(root);
+            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
             }
-            JMenuItem resourceItem = new JMenuItem(resourceText);
-            resourceItem.addActionListener(evt -> {
-                if(mVisibilityListener != null) mVisibilityListener.onToggleResource();
-            });
-            popup.add(resourceItem);
-
-            popup.show(manageBtn, 0, manageBtn.getHeight());
+            setScene(scene);
         });
-
-        toolBar.add(Box.createHorizontalGlue());
-        toolBar.add(manageBtn);
-        add(toolBar, "wrap");
 
         mRowSorter = new TableRowSorter<>(mDiscoveredTunerModel);
         List<RowSorter.SortKey> sortKeys = new ArrayList<>();
@@ -249,28 +271,45 @@ public class TunerViewPanel extends JPanel
         mColumnWidthMonitor = new JTableColumnWidthMonitor(mUserPreferences, mTunerTable, TABLE_PREFERENCE_KEY);
         JScrollPane tunerTableScroller = new JScrollPane(mTunerTable);
 
-        JPanel tunerTablePanel = new JPanel();
-        tunerTablePanel.setLayout(new MigLayout("insets 0", "[fill,grow,align center]", "[fill,grow][]"));
-        tunerTablePanel.add(tunerTableScroller, "span");
+        Platform.runLater(() -> {
+            VBox root = (VBox) getScene().getRoot();
 
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new MigLayout("insets 0 1 3 0", "", ""));
-        buttonPanel.add(getAddRecordingButton());
-        buttonPanel.add(getRemoveRecordingButton());
-        tunerTablePanel.add(buttonPanel);
+            mSplitPane = new SplitPane();
+            VBox.setVgrow(mSplitPane, javafx.scene.layout.Priority.ALWAYS);
 
-        tunerTablePanel.setPreferredSize(new Dimension(200,200));
-        JScrollPane editorScroller = new JScrollPane(mDiscoveredTunerEditor);
-        editorScroller.setPreferredSize(new Dimension(200, 200));
+            VBox leftPane = new VBox();
+            leftPane.setSpacing(5);
+            leftPane.setStyle("-fx-padding: 5;");
 
-        mSplitPane = new JideSplitPane();
-        mSplitPane.setOrientation(JideSplitPane.HORIZONTAL_SPLIT);
-        mSplitPane.add(tunerTablePanel);
-        mSplitPane.add(editorScroller);
-        mSplitPane.setProportionalLayout(true);
-        mSplitPane.setProportions(new double[]{0.5});
+            SwingNode tableSwingNode = new SwingNode();
+            SwingUtilities.invokeLater(() -> {
+                tableSwingNode.setContent(tunerTableScroller);
+            });
+            VBox.setVgrow(tableSwingNode, javafx.scene.layout.Priority.ALWAYS);
 
-        add(mSplitPane);
+            SwingNode buttonSwingNode = new SwingNode();
+            SwingUtilities.invokeLater(() -> {
+                JPanel buttonPanel = new JPanel();
+                buttonPanel.setLayout(new MigLayout("insets 0 1 3 0", "", ""));
+                buttonPanel.add(getAddRecordingButton());
+                buttonPanel.add(getRemoveRecordingButton());
+                buttonSwingNode.setContent(buttonPanel);
+            });
+
+            leftPane.getChildren().addAll(tableSwingNode, buttonSwingNode);
+
+            SwingNode editorSwingNode = new SwingNode();
+            SwingUtilities.invokeLater(() -> {
+                JScrollPane editorScroller = new JScrollPane(mDiscoveredTunerEditor);
+                editorScroller.setPreferredSize(new Dimension(200, 200));
+                editorSwingNode.setContent(editorScroller);
+            });
+
+            mSplitPane.getItems().addAll(leftPane, editorSwingNode);
+            mSplitPane.setDividerPositions(0.5);
+
+            root.getChildren().add(mSplitPane);
+        });
     }
 
     private JButton getAddRecordingButton()
