@@ -1,24 +1,6 @@
-## 2026-05-18 - AudioRecordingsPanel, SignalPowerView, and MapPanel
-**Migration:** Migrated JFXPanels and JPanels that were wrapping pure JavaFX roots into full JavaFX implementations (BorderPane, HBox) and fixed parent references in ChannelSpectrumPanel and ControllerPanel. Used SwingNode to nest legacy Swing map controls in a BorderPane.
+# JavaFX Migration Phase 1
 
-## 2026-05-08 - Modernize MapPanel integration
-**Learning:** Legacy UI integration wrapped a Swing `MapPanel` in a `MapPanelFXWrapper` (which extended JavaFX `BorderPane` and embedded the Swing panel in a `SwingNode`), only to be later re-embedded in a `JFXPanel` inside `ControllerPanel`. This double-embedding (`Swing -> JFXPanel -> Scene -> MapPanelFXWrapper -> SwingNode -> Swing MapPanel`) caused rendering unreliability, delayed painting, and general content rendering issues.
-**Action:** Removed `MapPanelFXWrapper` and the intermediary `JFXPanel` in `ControllerPanel`. Attached the Swing `MapPanel` directly to the `mCardPanel` (which is a Swing `JPanel` using `CardLayout`), thus resolving the rendering issues and streamlining the component hierarchy.
-## $(date +%Y-%m-%d) - Modernize Standalone Frames and Dialogs
-**Learning:** Legacy UI integration heavily relied on `javax.swing.JOptionPane` for popups and `javax.swing.JFrame` for standalone windows.
-**Action:** Migrated `FilterEditor`, `SpectrumFrame`, `ChannelizerViewer`, `ChannelizerViewer2`, `HeterodyneChannelizerViewer`, and `SynthesizerViewer` to extend JavaFX `Stage` and use native `Scene` and `VBox` layouts. Systematically replaced all `JOptionPane` instances with `javafx.scene.control.Alert` and `TextInputDialog`, ensuring thread-safety by wrapping executions in `Platform.runLater()`.
-## 2026-05-17 - Migrated BroadcastStatusPanel and AudioChannelsPanel
-**Finding:** BroadcastStatusPanel and AudioChannelsPanel were using legacy Swing JTables and JPanels.
-**Action:** Created JavaFX VBox and HBox equivalents using FXML, wrapped them in JFXPanels, and updated controllers to use JavaFX properties and observable lists, decoupling Swing implementations.
-## $(date +%Y-%m-%d) - Modernized UI Leaf Menus
-**Learning:** Legacy UI integration heavily relied on `javax.swing.JMenuItem` for menus. While migrating pure leaf components, care must be taken if they are still embedded within legacy Swing `JMenu` or `JPopupMenu` containers, as Swing containers cannot host JavaFX `MenuItem`s.
-**Action:** Migrated 4 Tier 1 leaf files (`ColorSettingResetMenuItem.java`, `ColorSettingResetAllMenuItem.java`, `DisableSpectrumWaterfallMenuItem.java`, and `ShowTunerMenuItem.java`) to extend `javafx.scene.control.MenuItem`. Replaced internal action listeners with `setOnAction`. In legacy parent classes (like `SpectralDisplayPanel.java`), inline Swing `JMenuItem` instantiations were used as an intermediate bridge to maintain compatibility until the parent menus are fully migrated to JavaFX.
-## $(date +%Y-%m-%d) - Modernized Intermediate Grouping Containers
-**Learning:** Legacy UI used `JFXPanel` wrappers to host newly migrated JavaFX leaf components within Swing container panels. This caused nested embeddings and UI artifacts.
-**Action:** Refactored intermediate grouping containers (`FilterEditorPanel`, `TunerEditor`, `ChannelizerViewer` series inner panels, etc.) to extend pure JavaFX layouts (like `VBox`, `StackPane`). Removed redundant `JFXPanel` wrappers from previously migrated child components (`FrequencyTextField`, `SpectrumPanel`) and directly attached them to the new JavaFX layout. Remaining legacy Swing children were wrapped in `SwingNode`s to bridge the gap until they are migrated.
-## $(date +%Y-%m-%d) - Modernized Root Application Layout (SDRTrunk)
-**Learning:** Legacy UI used a massive Swing `JPanel` (`mMainContentPanel`) as the root container, which heavily embedded numerous JavaFX components using `JFXPanel` wrappers.
-**Action:** Removed `mMainContentPanel` entirely. Replaced it with a native JavaFX `BorderPane` root within `SDRTrunk.java`'s `start()` method. Directly attached native JavaFX components (`SidebarPanel`, `ControllerPanel`) by changing their inheritance to JavaFX containers (`VBox` and `BorderPane` respectively) instead of `JFXPanel`. Wrapped remaining legacy Swing components (`mSpectralPanel`) in a `SwingNode`. Eliminated unnecessary `revalidate()` and `repaint()` calls, yielding full deference to JavaFX's native layout engine.
-## $(date +%Y-%m-%d) - Modernized Event and Activity Panels
-**Learning:** Legacy UI used `javax.swing.JPanel` and `JFXPanel` wrappers for nested panels like `DecodeEventPanel`, `MessageActivityPanel`, and `HistoryManagementPanel`. This caused nesting overhead inside the JavaFX bridge.
-**Action:** Migrated `DecodeEventPanel`, `MessageActivityPanel`, and `HistoryManagementPanel` to directly extend `javafx.scene.layout.VBox` instead of Swing `JPanel` and `JFXPanel`. Removed their direct Swing layouts (`MigLayout`). In `NowPlayingPanel`, which manages tabs, wrapped the newly native JavaFX components in `JFXPanel` to maintain compatibility with the legacy `JideTabbedPane`. Used `SwingNode` within the JavaFX parents for elements that still rely on Swing components (like `JScrollPane`).
+- Migrated `ClearableHistoryModel`, `MessageActivityModel`, `DecodeEventModel`, and `ChannelMetadataModel` to use `ObservableList` and run updates via `Platform.runLater()`.
+- Refactored `DecodeEventPanel`, `MessageActivityPanel`, `ChannelMetadataPanel`, and `NowPlayingPanel` to extend JavaFX layout components (like `VBox`).
+- Introduced new FXML descriptors for cleanly separating TableView concerns from the component lifecycle initialization.
+- Modified the `Widget` class to accept both Swing `JComponent` and native JavaFX `Node` components, enabling incremental modernization without breaking other features that still rely on Swing UI encapsulation.

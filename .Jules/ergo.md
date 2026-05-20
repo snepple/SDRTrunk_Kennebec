@@ -23,15 +23,15 @@
 **Action:** Always provide a descriptive Tooltip for Spinners to explain what the number represents and the expected unit (e.g., seconds).
 
 ## 2024-10-24 - [Convert IntegerTextField to ComboBox for Talkgroups]
-**Learning:** Manually typed text fields for configuration values known to the system, like Talkgroups, cause high cognitive load. Replacing `IntegerTextField` with an editable `ComboBox<Integer>` auto-populated from `AliasModel` drastically improves UX.
+**Learning:** Manually typed text fields for configuration values known to the system, like Talkgroups, cause high cognitive load. Replacing `IntegerTextField` with an editable `ComboBox&lt;Integer&gt;` auto-populated from `AliasModel` drastically improves UX.
 **Action:** Always scan for text input fields capturing references to known entities and convert them to populated, editable `ComboBox`es, rendering the entity ID alongside its human-readable alias via `ListCell` cell factory.
 
 ## 2024-05-13 - P25 Talkgroup Dropdown Conversion
-**Learning:** Legacy JavaFX TextFields for Identifiers fail to provide any discovery for existing system configurations. Converting Talkgroup fields to ComboBox<IdentifierValue> populated by AliasList scanning allows rapid re-use of configurations, reducing redundant entry for operators tracking pre-existing Phase 2 talkgroups.
+**Learning:** Legacy JavaFX TextFields for Identifiers fail to provide any discovery for existing system configurations. Converting Talkgroup fields to ComboBox&lt;IdentifierValue&gt; populated by AliasList scanning allows rapid re-use of configurations, reducing redundant entry for operators tracking pre-existing Phase 2 talkgroups.
 **Action:** When refactoring Identifier UIs, systematically replace text-based ID inputs with searchable ComboBox fields hooked to AliasList tracking. Ensure the ComboBox retains an editable StringConverter fallback so new IDs can still be added.
 ## 2024-10-24 - Convert Radio ID Text Field to Smart Dropdown
 **Learning:** Forcing users to manually enter large numeric identifiers (like 6-digit Radio IDs) into standard `TextField`s increases cognitive load and data entry error rates. We can extract existing identifiers from `AliasList` (via `PlaylistManager`) and populate an editable `ComboBox`, which serves as a smart dropdown.
-**Action:** Convert manual text inputs for radio identifiers into an editable `ComboBox<IdentifierValue>`. Retain an editable `StringConverter` fallback to allow users to still input new unaliased IDs while getting suggestions for existing ones.
+**Action:** Convert manual text inputs for radio identifiers into an editable `ComboBox&lt;IdentifierValue&gt;`. Retain an editable `StringConverter` fallback to allow users to still input new unaliased IDs while getting suggestions for existing ones.
 
 ## 2024-05-18 - Input Validation on TextFields
 **Learning:** Pure JavaFX `TextField` fields are prone to user error since they accept any characters, which can cause backend processing crashes if users enter letters into numeric fields like ports.
@@ -43,6 +43,3 @@
 ## 2024-05-18 - OpenMHz Configuration Tooltips
 **Learning:** Configurations for complex integrations like OpenMHz often use raw text inputs without placeholders or tooltips, increasing the chance of formatting errors (e.g., omitting the 'https://' prefix for the host, or misunderstanding 'System Short Name').
 **Action:** Consistently apply Tooltip and PromptText to OpenMHz and similar API configuration text fields to reduce cognitive load and prevent formatting errors.
-## 2026-05-20 - Convert manual Radio ID entry to smart dropdown
-**Learning:** Forcing manual text entry of complex numeric identifiers (like Radio IDs) increases cognitive load and error likelihood. When users configure aliases, the system already knows previously seen or configured Radio IDs.
-**Action:** Always prefer smart, editable dropdowns (like `ComboBox<Integer>` with a custom `CellFactory` to display the alias name) over simple `TextField`s for identifiers. This enables users to quickly select known IDs while still retaining the ability to manually enter new ones.

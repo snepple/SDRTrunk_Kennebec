@@ -1,21 +1,3 @@
-/*
- * *****************************************************************************
- * Copyright (C) 2014-2023 Dennis Sheirer
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- * ****************************************************************************
- */
 package io.github.dsheirer.module.decode.event;
 
 import io.github.dsheirer.filter.Filter;
@@ -30,25 +12,17 @@ import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.sample.Listener;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import net.miginfocom.swing.MigLayout;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
-
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 
-/**
- * Panel to display decoded messages/activity.
- */
-public class MessageActivityPanel extends javafx.scene.layout.VBox implements Listener<ProcessingChain>
+public class MessageActivityPanel extends VBox implements Listener<ProcessingChain>
 {
     private static final long serialVersionUID = 1L;
     private static final Logger mLog = LoggerFactory.getLogger(MessageActivityPanel.class);
@@ -61,25 +35,15 @@ public class MessageActivityPanel extends javafx.scene.layout.VBox implements Li
     private HistoryManagementPanel<IMessage> mHistoryManagementPanel;
     private MessageActivityTableController mTableController;
 
-    /**
-     * Constructs an instance
-     * @param userPreferences
-     */
     public MessageActivityPanel(UserPreferences userPreferences)
     {
         mUserPreferences = userPreferences;
-        // setLayout(new MigLayout("insets 0 0 0 0", "[][grow,fill]", "[]0[grow,fill]"));
-        mHistoryManagementPanel = new HistoryManagementPanel<>(mMessageModel, "Message Filter Editor");
-        // add(mHistoryManagementPanel, "span,growx");
-        getChildren().add(mHistoryManagementPanel);
 
-        // JFXPanel jfxPanel = new JFXPanel();
-        // add(jfxPanel, "span,grow");
-        VBox jfxPanel = new VBox();
-        VBox.setVgrow(jfxPanel, Priority.ALWAYS);
-        getChildren().add(jfxPanel);
+        mHistoryManagementPanel = new HistoryManagementPanel<>(mMessageModel, "Message Filter Editor");
 
         Platform.runLater(() -> {
+            getChildren().add(mHistoryManagementPanel);
+
             try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/module/decode/event/MessageActivityTable.fxml"));
                 Parent root = loader.load();
@@ -87,11 +51,8 @@ public class MessageActivityPanel extends javafx.scene.layout.VBox implements Li
                 mTableController.setItems(mMessageModel.getItems());
                 mTableController.setFilterPredicate(this::evaluateFilter);
 
-                java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
-                if (cssUrl != null) {
-                    root.getStylesheets().add(cssUrl.toExternalForm());
-                }
-                jfxPanel.getChildren().add(root);
+                VBox.setVgrow(root, Priority.ALWAYS);
+                getChildren().add(root);
             } catch (IOException e) {
                 mLog.error("Error loading MessageActivityTable.fxml", e);
             }
@@ -106,9 +67,6 @@ public class MessageActivityPanel extends javafx.scene.layout.VBox implements Li
         return false;
     }
 
-    /**
-     * Updates the message activity model with message history from the specified processing chain
-     */
     @Override
     public void receive(ProcessingChain processingChain)
     {
@@ -117,7 +75,6 @@ public class MessageActivityPanel extends javafx.scene.layout.VBox implements Li
             mCurrentMessageHistory.removeListener(mMessageModel);
         }
 
-        //Unregister from changes made to the filter set
         if(mMessageFilterSet != null)
         {
             mMessageFilterSet.register(null);
@@ -126,72 +83,72 @@ public class MessageActivityPanel extends javafx.scene.layout.VBox implements Li
         if(processingChain != null)
         {
             mCurrentMessageHistory = processingChain.getMessageHistory();
-            mMessageFilterSet = DecoderFactory.getMessageFilters(processingChain.getModules());
-            mRestoringFilters = true;
-            restoreFilterStates(mMessageFilterSet);
-            mRestoringFilters = false;
-            //Register filter change listener to refresh the table and persist filter states.
-            mMessageFilterSet.register(() -> {
-                if(!mRestoringFilters)
-                {
-                    saveFilterStates(mMessageFilterSet);
-                }
-                if (mTableController != null) {
-                    Platform.runLater(() -> mTableController.updateFilter());
-                }
-            });
-            if(mHistoryManagementPanel != null)
-            {
-                mHistoryManagementPanel.updateFilterSet(mMessageFilterSet);
-            }
 
-            List<MessageItem> currentHistory = new ArrayList<>();
-            for(IMessage message: mCurrentMessageHistory.getItems())
-            {
-                currentHistory.add(new MessageItem(message));
-            }
-
-            mMessageModel.clearAndSet(currentHistory);
             mCurrentMessageHistory.addListener(mMessageModel);
-            mHistoryManagementPanel.setDisable(false);
+
+            mMessageFilterSet = null;
+
+            mHistoryManagementPanel.updateFilterSet(mMessageFilterSet);
+            mHistoryManagementPanel.setEnabled(true);
+
+            if(mMessageFilterSet != null)
+            {
+                restoreFilterStates();
+                mMessageFilterSet.register(() -> {
+                    saveFilterStates();
+                    if (mTableController != null) {
+                        if (mTableController != null) { Platform.runLater(() -> mTableController.updateFilter()); }
+                    }
+                });
+                if (mTableController != null) { Platform.runLater(() -> mTableController.updateFilter()); }
+            }
         }
         else
         {
             mCurrentMessageHistory = null;
-            mMessageFilterSet = null;
             mMessageModel.clear();
-            mHistoryManagementPanel.setDisable(true);
+            mHistoryManagementPanel.setEnabled(false);
+            mMessageFilterSet = null;
+            mHistoryManagementPanel.updateFilterSet(null);
+            if (mTableController != null) { Platform.runLater(() -> mTableController.updateFilter()); }
         }
     }
 
-    private void restoreFilterStates(FilterSet<IMessage> filterSet)
+    private void restoreFilterStates()
     {
-        for(IFilter<IMessage> ifilter : filterSet.getFilters())
+        mRestoringFilters = true;
+
+        if(mMessageFilterSet != null)
         {
-            if(ifilter instanceof Filter<?,?> filter)
+            for(IFilter<IMessage> ifilter: mMessageFilterSet.getFilters())
             {
-                for(FilterElement<?> element : filter.getFilterElements())
+                if(ifilter instanceof Filter<?,?> filter)
                 {
-                    String key = filter.getName() + "." + element.getName();
-                    element.setEnabled(mUserPreferences.getNowPlayingPreference().isFilterEnabled(key));
+                    for(FilterElement<?> filterElement: filter.getFilterElements())
+                    {
+                        filterElement.setEnabled(false);
+                    }
+                }
+            }
+        }
+
+        mRestoringFilters = false;
+    }
+
+    private void saveFilterStates()
+    {
+        if(!mRestoringFilters && mMessageFilterSet != null)
+        {
+            for(IFilter<IMessage> ifilter: mMessageFilterSet.getFilters())
+            {
+                if(ifilter instanceof Filter<?,?> filter)
+                {
+                    for(FilterElement<?> filterElement: filter.getFilterElements())
+                    {
+
+                    }
                 }
             }
         }
     }
-
-    private void saveFilterStates(FilterSet<IMessage> filterSet)
-    {
-        for(IFilter<IMessage> ifilter : filterSet.getFilters())
-        {
-            if(ifilter instanceof Filter<?,?> filter)
-            {
-                for(FilterElement<?> element : filter.getFilterElements())
-                {
-                    String key = filter.getName() + "." + element.getName();
-                    mUserPreferences.getNowPlayingPreference().setFilterEnabled(key, element.isEnabled());
-                }
-            }
-        }
-    }
-
 }

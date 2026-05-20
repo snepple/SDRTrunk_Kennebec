@@ -33,3 +33,7 @@
 ## 2026-05-18 - WACN (Wide Area Communication Network)
 **Simplified:**
 - WACN: A unique code identifying a large regional radio system. This is usually provided by RadioReference and tells the software which network to follow.
+
+## 2026-05-18 - LNA Gain in HackRF Editor
+**Simplified:**
+- LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.

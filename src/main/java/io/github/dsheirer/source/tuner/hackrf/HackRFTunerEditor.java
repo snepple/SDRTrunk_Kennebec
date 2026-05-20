@@ -106,7 +106,10 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
         add(new JLabel("Gain Control"));
         add(getAmplifierToggle(), "wrap");
 
-        add(new JLabel("LNA:"));
+        add(new JLabel("LNA:"), "split 2");
+        JButton lnaHelp = createHelpIcon("?");
+        lnaHelp.setToolTipText("<html><b>LNA Gain:</b> The power of the signal amplifier.<br>Increase this for distant signals, but lower it if you see a lot of static/noise.</html>");
+        add(lnaHelp);
         add(getLnaGainCombo(), "wrap");
 
         add(new JLabel("VGA:"));
@@ -411,5 +414,18 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
             getConfiguration().setVGAGain((HackRFVGAGain)getVgaGainCombo().getSelectedItem());
             saveConfiguration();
         }
+    }
+
+    /**
+     * Creates a standardized help icon button with the provided tooltip text.
+     */
+    protected JButton createHelpIcon(String text) {
+        JButton button = new JButton(text);
+        // Style as a subtle flat button
+        button.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        return button;
     }
 }
