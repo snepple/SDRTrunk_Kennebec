@@ -52,3 +52,7 @@
 **Topic:** Audio Quality & Tuning
 **Learning:** The "Audio Quality & Tuning" section from "What's New" didn't have a specific overarching guide. This guide connects features like Analog Hiss Reduction, Anti-Clipping, P25 Audio Enhancements, and VAC Routing.
 **Action:** Created `src/main/resources/docs/audio-quality-&-tuning.md` with a visual audio processing pipeline and integrated it into the navigation tree of `HelpViewer.java` under "Advanced & System".
+## 2024-05-21 - Topic Selection
+**Topic:** JMBE Audio Library Setup
+**Learning:** The "JMBE Library" setup is crucial for P25 and DMR audio, and has differences like the Bazineta fork option, but lacked its own standalone guide.
+**Action:** Created `src/main/resources/docs/jmbe.md` detailing the setup process and standard vs Bazineta differences, and added it to the 'Channels & Decoding' section of the `HelpViewController.java` tree.
