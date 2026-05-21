@@ -143,6 +143,7 @@ public class PlaybackPreferenceEditor extends HBox
             mPlaybackDeviceTestButton.setGraphic(iconNode);
             mPlaybackDeviceTestButton.setOnAction(event ->
                         play(mPlaybackPreference.getAudioPlaybackTestTone(), PlayTestAudioRequest.ALL_CHANNELS));
+            mPlaybackDeviceTestButton.setTooltip(new Tooltip("Test the selected audio playback device"));
         }
 
         return mPlaybackDeviceTestButton;
@@ -189,6 +190,7 @@ public class PlaybackPreferenceEditor extends HBox
                 play(mPlaybackPreference.getStartTone(PlaybackPreference.TONE_LENGTH_SAMPLES * 3),
                         PlayTestAudioRequest.ALL_CHANNELS));
             mTestStartToneButton.disableProperty().bind(getUseAudioSegmentStartToneSwitch().selectedProperty().not());
+            mTestStartToneButton.setTooltip(new Tooltip("Play a test of the start tone with current settings"));
         }
 
         return mTestStartToneButton;
@@ -206,6 +208,7 @@ public class PlaybackPreferenceEditor extends HBox
                     play(mPlaybackPreference.getDropTone(PlaybackPreference.TONE_LENGTH_SAMPLES * 3),
                             PlayTestAudioRequest.ALL_CHANNELS));
             mTestDropToneButton.disableProperty().bind(getUseAudioSegmentDropToneSwitch().selectedProperty().not());
+            mTestDropToneButton.setTooltip(new Tooltip("Play a test of the drop tone with current settings"));
         }
 
         return mTestDropToneButton;
