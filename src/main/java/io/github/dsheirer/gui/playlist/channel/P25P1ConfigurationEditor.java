@@ -142,7 +142,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.setHgap(10);
             gridPane.setVgap(10);
 
-            Label modulationLabel = new Label("Modulation");
+            Label modulationLabel = new Label("Modulation", createHelpIcon("C4FM: repeaters and non-simulcast trunked systems. LSM: simulcast trunked systems."));
             GridPane.setHalignment(modulationLabel, HPos.RIGHT);
             GridPane.setConstraints(modulationLabel, 0, 0);
             gridPane.getChildren().add(modulationLabel);
@@ -165,10 +165,6 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setHalignment(directionLabel, HPos.LEFT);
             GridPane.setConstraints(directionLabel, 5, 0);
             gridPane.getChildren().add(directionLabel);
-
-            Label modulationHelpLabel = new Label("C4FM: repeaters and non-simulcast trunked systems.  LSM: simulcast trunked systems.");
-            GridPane.setConstraints(modulationHelpLabel, 0, 1, 6, 1);
-            gridPane.getChildren().add(modulationHelpLabel);
 
             //NAC Filter row
             GridPane.setConstraints(getNacFilterButton(), 0, 2);
