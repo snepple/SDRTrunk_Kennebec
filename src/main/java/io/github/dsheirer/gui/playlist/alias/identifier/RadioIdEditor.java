@@ -19,25 +19,35 @@
 
 package io.github.dsheirer.gui.playlist.alias.identifier;
 
+import io.github.dsheirer.alias.Alias;
+import io.github.dsheirer.alias.id.AliasID;
+import io.github.dsheirer.alias.id.AliasIDType;
 import io.github.dsheirer.alias.id.radio.Radio;
 import io.github.dsheirer.gui.control.HexFormatter;
 import io.github.dsheirer.gui.control.IntegerFormatter;
+import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.identifier.IntegerFormat;
 import io.github.dsheirer.protocol.Protocol;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
+import javafx.util.Callback;
+import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Editor for talkgroup alias identifiers
@@ -47,9 +57,10 @@ public class RadioIdEditor extends IdentifierEditor<Radio>
     private static final Logger mLog = LoggerFactory.getLogger(RadioIdEditor.class);
 
     private UserPreferences mUserPreferences;
+    private PlaylistManager mPlaylistManager;
     private Label mProtocolLabel;
     private Label mFormatLabel;
-    private TextField mRadioIdField;
+    private ComboBox<IdentifierValue> mRadioIdField;
     private TextFormatter<Integer> mIntegerTextFormatter;
     private List<RadioDetail> mRadioDetails = new ArrayList<>();
     private RadioValueChangeListener mRadioValueChangeListener = new RadioValueChangeListener();
@@ -57,10 +68,12 @@ public class RadioIdEditor extends IdentifierEditor<Radio>
     /**
      * Constructs an instance
      * @param userPreferences for determining user preferred talkgroup formats
+     * @param playlistManager for determining existing talkgroups
      */
-    public RadioIdEditor(UserPreferences userPreferences)
+    public RadioIdEditor(UserPreferences userPreferences, PlaylistManager playlistManager)
     {
         mUserPreferences = userPreferences;
+        mPlaylistManager = playlistManager;
 
         loadRadioDetails();
 
@@ -102,7 +115,10 @@ public class RadioIdEditor extends IdentifierEditor<Radio>
         }
         else
         {
-            getRadioIdField().setText(null);
+            if (mIntegerTextFormatter != null) {
+                mIntegerTextFormatter.setValue(null);
+            }
+            getRadioIdField().setValue(null);
         }
 
         modifiedProperty().set(false);
@@ -125,10 +141,23 @@ public class RadioIdEditor extends IdentifierEditor<Radio>
             {
                 mIntegerTextFormatter = radioDetail.getTextFormatter();
                 Integer value = getItem() != null ? getItem().getValue() : null;
-                mRadioIdField.setTextFormatter(mIntegerTextFormatter);
-                mRadioIdField.setTooltip(new Tooltip(radioDetail.getTooltip()));
+                getRadioIdField().getEditor().setTextFormatter(mIntegerTextFormatter);
+                getRadioIdField().setConverter(new StringConverter<IdentifierValue>() {
+                    @Override
+                    public String toString(IdentifierValue object) {
+                        if (object == null || object.getValue() == null) return "";
+                        return mIntegerTextFormatter.getValueConverter().toString(object.getValue());
+                    }
+                    @Override
+                    public IdentifierValue fromString(String string) {
+                        if (string == null || string.isEmpty()) return null;
+                        return new IdentifierValue(mIntegerTextFormatter.getValueConverter().fromString(string), "");
+                    }
+                });
+                getRadioIdField().setTooltip(new Tooltip(radioDetail.getTooltip() + ". Select an existing Radio ID or enter a new one."));
                 mIntegerTextFormatter.setValue(value);
                 mIntegerTextFormatter.valueProperty().addListener(mRadioValueChangeListener);
+                populateDropdown();
             }
             else
             {
@@ -177,15 +206,106 @@ public class RadioIdEditor extends IdentifierEditor<Radio>
         return mProtocolLabel;
     }
 
-    private TextField getRadioIdField()
+    private ComboBox<IdentifierValue> getRadioIdField()
     {
         if(mRadioIdField == null)
         {
-            mRadioIdField = new TextField();
-            mRadioIdField.setTextFormatter(mIntegerTextFormatter);
+            mRadioIdField = new ComboBox<>();
+            mRadioIdField.setEditable(true);
+            if(mIntegerTextFormatter != null) {
+                mRadioIdField.getEditor().setTextFormatter(mIntegerTextFormatter);
+                mRadioIdField.setConverter(new StringConverter<IdentifierValue>() {
+                    @Override
+                    public String toString(IdentifierValue object) {
+                        if (object == null || object.getValue() == null) return "";
+                        return mIntegerTextFormatter.getValueConverter().toString(object.getValue());
+                    }
+                    @Override
+                    public IdentifierValue fromString(String string) {
+                        if (string == null || string.isEmpty()) return null;
+                        return new IdentifierValue(mIntegerTextFormatter.getValueConverter().fromString(string), "");
+                    }
+                });
+            }
+
+            mRadioIdField.setCellFactory(new Callback<javafx.scene.control.ListView<IdentifierValue>, ListCell<IdentifierValue>>() {
+                @Override
+                public ListCell<IdentifierValue> call(javafx.scene.control.ListView<IdentifierValue> param) {
+                    return new ListCell<IdentifierValue>() {
+                        @Override
+                        protected void updateItem(IdentifierValue item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (item == null || empty) {
+                                setText(null);
+                            } else {
+                                String valStr = mIntegerTextFormatter != null && mIntegerTextFormatter.getValueConverter() != null
+                                        ? mIntegerTextFormatter.getValueConverter().toString(item.getValue())
+                                        : item.getValue().toString();
+                                if (item.getLabel() != null && !item.getLabel().isEmpty()) {
+                                    setText(valStr + " - " + item.getLabel());
+                                } else {
+                                    setText(valStr);
+                                }
+                            }
+                        }
+                    };
+                }
+            });
+
+            mRadioIdField.valueProperty().addListener((observable, oldValue, newValue) -> {
+                if (getItem() != null && newValue != null && newValue.getValue() != null) {
+                    if (mIntegerTextFormatter != null) {
+                        mIntegerTextFormatter.setValue(newValue.getValue());
+                    } else {
+                        getItem().setValue(newValue.getValue());
+                        modifiedProperty().set(true);
+                    }
+                }
+            });
         }
 
         return mRadioIdField;
+    }
+
+    private void populateDropdown() {
+        if (mPlaylistManager == null || mPlaylistManager.getAliasModel() == null || getItem() == null) {
+            return;
+        }
+
+        mRadioIdField.getItems().clear();
+        Protocol currentProtocol = getItem().getProtocol();
+        Set<Integer> uniqueValues = new HashSet<>();
+        List<IdentifierValue> options = new ArrayList<>();
+
+        for (Alias alias : mPlaylistManager.getAliasModel().getAliases()) {
+            for (AliasID aliasID : alias.getAliasIdentifiers()) {
+                if (aliasID.getType() == AliasIDType.RADIO_ID && aliasID instanceof Radio) {
+                    Radio radio = (Radio) aliasID;
+                    if (radio.getProtocol() == currentProtocol && uniqueValues.add(radio.getValue())) {
+                        options.add(new IdentifierValue(radio.getValue(), alias.getName()));
+                    }
+                }
+            }
+        }
+
+        // Sort options by value
+        options.sort((a, b) -> a.getValue().compareTo(b.getValue()));
+        mRadioIdField.getItems().addAll(options);
+
+        // Set current value
+        if (getItem() != null && getItem().getValue() != 0) {
+            boolean found = false;
+            for(IdentifierValue iv : options) {
+                if (iv.getValue().equals(getItem().getValue())) {
+                    mRadioIdField.setValue(iv);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                 mRadioIdField.setValue(new IdentifierValue(getItem().getValue(), ""));
+            }
+        }
     }
 
     public class RadioValueChangeListener implements ChangeListener<Integer>
