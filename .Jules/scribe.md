@@ -52,3 +52,7 @@
 **Topic:** Audio Quality & Tuning
 **Learning:** The "Audio Quality & Tuning" section from "What's New" didn't have a specific overarching guide. This guide connects features like Analog Hiss Reduction, Anti-Clipping, P25 Audio Enhancements, and VAC Routing.
 **Action:** Created `src/main/resources/docs/audio-quality-&-tuning.md` with a visual audio processing pipeline and integrated it into the navigation tree of `HelpViewer.java` under "Advanced & System".
+## 2024-05-21 - Topic Selection
+**Topic:** Map View
+**Learning:** The "Map View" is a navigational component for visualizing radio entity locations but lacked a specific getting started guide explaining its functionality and interface.
+**Action:** Created `src/main/resources/docs/map-view.md` with visual structure and integrated it into the navigation tree of `HelpViewController.java` under "Getting Started".
