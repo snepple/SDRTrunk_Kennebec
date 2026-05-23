@@ -60,6 +60,7 @@ public class NotificationPreferenceEditor extends VBox {
         SettingsCard telegramCard = new SettingsCard();
 
         CheckBox telegramEnable = new CheckBox();
+        telegramEnable.setTooltip(new Tooltip("Enable global Telegram notification dispatching"));
         telegramEnable.setSelected(preference.isTelegramEnabled());
         telegramEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setTelegramEnabled(newValue));
 
@@ -128,6 +129,7 @@ public class NotificationPreferenceEditor extends VBox {
         SettingsCard emailCard = new SettingsCard();
 
         CheckBox emailEnable = new CheckBox();
+        emailEnable.setTooltip(new Tooltip("Enable global Email notification dispatching via SMTP"));
         emailEnable.setSelected(preference.isEmailEnabled());
         emailEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setEmailEnabled(newValue));
 
