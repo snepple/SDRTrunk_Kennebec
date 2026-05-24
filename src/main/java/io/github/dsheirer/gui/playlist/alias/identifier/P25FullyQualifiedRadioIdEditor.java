@@ -92,7 +92,7 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
         GridPane.setConstraints(getWacnField(), 2, 0);
         gridPane.getChildren().add(getWacnField());
 
-        Label systemLabel = new Label("System");
+        Label systemLabel = new Label("System", createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system."));
         GridPane.setHalignment(systemLabel, HPos.RIGHT);
         GridPane.setConstraints(systemLabel, 3, 0);
         gridPane.getChildren().add(systemLabel);
@@ -100,7 +100,7 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
         GridPane.setConstraints(getSystemField(), 4, 0);
         gridPane.getChildren().add(getSystemField());
 
-        Label radioLabel = new Label("Radio ID");
+        Label radioLabel = new Label("Radio ID", createHelpIcon("The unique ID assigned to the individual radio unit."));
         GridPane.setHalignment(radioLabel, HPos.RIGHT);
         GridPane.setConstraints(radioLabel, 5, 0);
         gridPane.getChildren().add(radioLabel);

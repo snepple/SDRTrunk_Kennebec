@@ -37,3 +37,9 @@
 ## 2026-05-18 - LNA Gain in HackRF Editor
 **Simplified:**
 - LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+
+## 2026-05-24 - P25 Fully Qualified Alias
+**Simplified:**
+- System: System Identifier. Combined with the WACN, uniquely identifies a P25 system.
+- Radio ID: The unique ID assigned to the individual radio unit.
+- Talkgroup: A unique ID identifying a group of radio users.
