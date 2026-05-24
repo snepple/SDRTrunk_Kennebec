@@ -92,7 +92,7 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
         GridPane.setConstraints(getWacnField(), 2, 0);
         gridPane.getChildren().add(getWacnField());
 
-        Label systemLabel = new Label("System");
+        Label systemLabel = new Label("System", createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system."));
         GridPane.setHalignment(systemLabel, HPos.RIGHT);
         GridPane.setConstraints(systemLabel, 3, 0);
         gridPane.getChildren().add(systemLabel);
@@ -100,7 +100,7 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
         GridPane.setConstraints(getSystemField(), 4, 0);
         gridPane.getChildren().add(getSystemField());
 
-        Label radioLabel = new Label("Talkgroup");
+        Label radioLabel = new Label("Talkgroup", createHelpIcon("A unique ID identifying a group of radio users."));
         GridPane.setHalignment(radioLabel, HPos.RIGHT);
         GridPane.setConstraints(radioLabel, 5, 0);
         gridPane.getChildren().add(radioLabel);
