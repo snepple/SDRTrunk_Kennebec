@@ -29,6 +29,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -162,6 +163,7 @@ public class CallManagementPreferenceEditor extends HBox
         if(mDetectDuplicateTalkgroups == null)
         {
             mDetectDuplicateTalkgroups = new ToggleSwitch();
+            mDetectDuplicateTalkgroups.setTooltip(new Tooltip("Enable to detect duplicate calls by matching talkgroup or patchgroup values."));
             mDetectDuplicateTalkgroups.setSelected(mPreference.isDuplicateCallDetectionByTalkgroupEnabled());
             mDetectDuplicateTalkgroups.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateCallDetectionByTalkgroupEnabled(newValue));
@@ -175,6 +177,7 @@ public class CallManagementPreferenceEditor extends HBox
         if(mDetectDuplicateRadios == null)
         {
             mDetectDuplicateRadios = new ToggleSwitch();
+            mDetectDuplicateRadios.setTooltip(new Tooltip("Enable to detect duplicate calls by matching radio identifiers."));
             mDetectDuplicateRadios.setSelected(mPreference.isDuplicateCallDetectionByRadioEnabled());
             mDetectDuplicateRadios.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateCallDetectionByRadioEnabled(newValue));
@@ -188,6 +191,7 @@ public class CallManagementPreferenceEditor extends HBox
         if(mSuppressDuplicateListening == null)
         {
             mSuppressDuplicateListening = new ToggleSwitch();
+            mSuppressDuplicateListening.setTooltip(new Tooltip("Suppress duplicate call audio during live listening."));
             mSuppressDuplicateListening.disableProperty()
                 .bind(Bindings.and(getDetectDuplicateTalkgroups().selectedProperty().not(),
                     getDetectDuplicateRadios().selectedProperty().not()));
@@ -204,6 +208,7 @@ public class CallManagementPreferenceEditor extends HBox
         if(mSuppressDuplicateRecording == null)
         {
             mSuppressDuplicateRecording = new ToggleSwitch();
+            mSuppressDuplicateRecording.setTooltip(new Tooltip("Suppress duplicate call audio from being recorded."));
             mSuppressDuplicateRecording.disableProperty()
                 .bind(Bindings.and(getDetectDuplicateTalkgroups().selectedProperty().not(),
                     getDetectDuplicateRadios().selectedProperty().not()));
@@ -220,6 +225,7 @@ public class CallManagementPreferenceEditor extends HBox
         if(mSuppressDuplicateStreaming == null)
         {
             mSuppressDuplicateStreaming = new ToggleSwitch();
+            mSuppressDuplicateStreaming.setTooltip(new Tooltip("Suppress duplicate call audio from being streamed."));
             mSuppressDuplicateStreaming.disableProperty()
                 .bind(Bindings.and(getDetectDuplicateTalkgroups().selectedProperty().not(),
                     getDetectDuplicateRadios().selectedProperty().not()));
@@ -242,6 +248,7 @@ public class CallManagementPreferenceEditor extends HBox
             ObservableList<PatchGroupStreamingOption> options = FXCollections.observableArrayList();
             options.addAll(PatchGroupStreamingOption.values());
             mPatchGroupStreamingOptionComboBox = new ComboBox<>(options);
+            mPatchGroupStreamingOptionComboBox.setTooltip(new Tooltip("Select how patch group calls are streamed."));
             mPatchGroupStreamingOptionComboBox.getSelectionModel().select(mPreference.getPatchGroupStreamingOption());
             mPatchGroupStreamingOptionComboBox.getSelectionModel().selectedItemProperty()
                     .addListener((observable, oldValue, newValue) -> mPreference.setPatchGroupStreamingOption(newValue));
