@@ -109,3 +109,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 **Action:** Always verify if action buttons in JavaFX preference editors lack tooltips and add descriptive `Tooltip` objects explaining their specific functionality (e.g., "Test the provided Gemini API key...") to improve context and accessibility.
 ## 2026-05-19 - [HIG AI Preference Editor] Learning: [Ensure all newly added preferences panes align with HIG by utilizing SettingsCard and SettingsRow] Action: [Always check UI consistency when introducing new feature modules.]
 ## 2026-05-20 - [DirectoryPreferenceEditor Layout Migration] Learning: Consistent layout components like `SettingsCard` and `SettingsRow` should be preferred over manual grid layouts for preference tabs, adhering to Apple HIG's Consistency pillar. Action: Continue replacing legacy Swing-style GridPanes in preferences with SettingsCard/SettingsRow.
+## 2024-05-18 - Tooltips for Preference Controls
+**Learning:** Discovered that several toggle switches and combo boxes in the Call Management preferences lacked tooltips, reducing accessibility and context.
+**Action:** Always verify if action buttons or toggles lack tooltips and add descriptive Tooltip objects to explain their specific functionality.
