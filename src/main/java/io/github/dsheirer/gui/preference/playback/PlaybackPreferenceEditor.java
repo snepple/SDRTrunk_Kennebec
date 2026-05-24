@@ -36,8 +36,11 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
 import org.controlsfx.control.ToggleSwitch;
@@ -48,11 +51,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Preference settings for audio playback
  */
-public class PlaybackPreferenceEditor extends HBox
+public class PlaybackPreferenceEditor extends VBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(PlaybackPreferenceEditor.class);
     private final PlaybackPreference mPlaybackPreference;
-    private GridPane mEditorPane;
     private ComboBox<AudioPlaybackDeviceDescriptor> mAudioPlaybackDevicesCombo;
     private Button mPlaybackDeviceTestButton;
     private ToggleSwitch mUseAudioSegmentStartToneSwitch;
@@ -68,53 +70,48 @@ public class PlaybackPreferenceEditor extends HBox
     {
         mPlaybackPreference = userPreferences.getPlaybackPreference();
 
-        HBox.setHgrow(getEditorPane(), Priority.ALWAYS);
-        getChildren().add(getEditorPane());
-    }
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
 
-    private GridPane getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            int row = 0;
-            mEditorPane = new GridPane();
-            mEditorPane.setPadding(new Insets(10, 10, 10, 10));
-            mEditorPane.setHgap(10);
-            mEditorPane.setVgap(10);
-            Label outputLabel = new Label("Audio Playback Device");
-            GridPane.setHalignment(outputLabel, HPos.RIGHT);
-            mEditorPane.add(outputLabel, 0, row, 2, 1);
-            mEditorPane.add(getAudioPlaybackDevicesCombo(), 2, row, 3, 1);
-            mEditorPane.add(getPlaybackDeviceTestButton(), 5, row);
-            mEditorPane.add(new Separator(Orientation.HORIZONTAL), 0, ++row, 6, 1);
-            mEditorPane.add(new Label("Audio Playback Insert Tones"), 0, ++row, 2, 1);
+        Label deviceHeader = new Label("Audio Playback Device");
+        deviceHeader.getStyleClass().add("hig-section-header");
+        getChildren().add(deviceHeader);
 
-            mEditorPane.add(getUseAudioSegmentStartToneSwitch(), 0, ++row);
-            mEditorPane.add(new Label("Start Tone"), 1, row, 3, 1);
-            Label startFrequencyLabel = new Label("Frequency:");
-            GridPane.setHalignment(startFrequencyLabel, HPos.RIGHT);
-            mEditorPane.add(startFrequencyLabel, 1, ++row);
-            mEditorPane.add(getStartToneFrequencyComboBox(), 2, row);
-            Label startVolumeLabel = new Label("Volume:");
-            GridPane.setHalignment(startVolumeLabel, HPos.RIGHT);
-            mEditorPane.add(startVolumeLabel, 3, row);
-            mEditorPane.add(getStartToneVolumeComboBox(), 4, row);
-            mEditorPane.add(getTestStartToneButton(), 5, row);
+        SettingsCard deviceCard = new SettingsCard();
 
-            mEditorPane.add(getUseAudioSegmentDropToneSwitch(), 0, ++row);
-            mEditorPane.add(new Label("Drop Tone - Do Not Monitor"), 1, row, 3, 1);
-            Label dropFrequencyLabel = new Label("Frequency:");
-            GridPane.setHalignment(dropFrequencyLabel, HPos.RIGHT);
-            mEditorPane.add(dropFrequencyLabel, 1, ++row);
-            mEditorPane.add(getDropToneFrequencyComboBox(), 2, row);
-            Label dropVolumeLabel = new Label("Volume:");
-            GridPane.setHalignment(dropVolumeLabel, HPos.RIGHT);
-            mEditorPane.add(dropVolumeLabel, 3, row);
-            mEditorPane.add(getDropToneVolumeComboBox(), 4, row);
-            mEditorPane.add(getTestDropToneButton(), 5, row);
-        }
+        HBox deviceBox = new HBox(10);
+        deviceBox.setAlignment(Pos.CENTER_LEFT);
+        deviceBox.getChildren().addAll(getAudioPlaybackDevicesCombo(), getPlaybackDeviceTestButton());
 
-        return mEditorPane;
+        deviceCard.getChildren().add(new SettingsRow("Primary Device", deviceBox));
+
+        getChildren().add(deviceCard);
+
+        Label insertTonesHeader = new Label("Audio Playback Insert Tones");
+        insertTonesHeader.getStyleClass().add("hig-section-header");
+        getChildren().add(insertTonesHeader);
+
+        SettingsCard insertTonesCard = new SettingsCard();
+
+        HBox startToneBox = new HBox(10);
+        startToneBox.setAlignment(Pos.CENTER_LEFT);
+        startToneBox.getChildren().addAll(new Label("Freq:"), getStartToneFrequencyComboBox(), new Label("Vol:"), getStartToneVolumeComboBox(), getTestStartToneButton());
+
+        VBox startToneOuterBox = new VBox(5);
+        startToneOuterBox.getChildren().addAll(getUseAudioSegmentStartToneSwitch(), startToneBox);
+
+        insertTonesCard.getChildren().add(new SettingsRow("Start Tone", startToneOuterBox));
+
+        HBox dropToneBox = new HBox(10);
+        dropToneBox.setAlignment(Pos.CENTER_LEFT);
+        dropToneBox.getChildren().addAll(new Label("Freq:"), getDropToneFrequencyComboBox(), new Label("Vol:"), getDropToneVolumeComboBox(), getTestDropToneButton());
+
+        VBox dropToneOuterBox = new VBox(5);
+        dropToneOuterBox.getChildren().addAll(getUseAudioSegmentDropToneSwitch(), dropToneBox);
+
+        insertTonesCard.getChildren().add(new SettingsRow("Drop Tone - Do Not Monitor", dropToneOuterBox));
+
+        getChildren().add(insertTonesCard);
     }
 
     private ComboBox<AudioPlaybackDeviceDescriptor> getAudioPlaybackDevicesCombo()
