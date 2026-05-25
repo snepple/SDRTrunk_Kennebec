@@ -22,15 +22,16 @@ package io.github.dsheirer.gui.preference.call;
 import io.github.dsheirer.audio.broadcast.PatchGroupStreamingOption;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.duplicate.CallManagementPreference;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 import org.controlsfx.control.ToggleSwitch;
 import org.slf4j.Logger;
@@ -39,11 +40,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Preference settings for audio call management for duplicate calls and patch group streaming.
  */
-public class CallManagementPreferenceEditor extends HBox
+public class CallManagementPreferenceEditor extends VBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(CallManagementPreferenceEditor.class);
     private CallManagementPreference mPreference;
-    private GridPane mEditorPane;
+    private VBox mEditorPane;
     private ToggleSwitch mDetectDuplicateTalkgroups;
     private ToggleSwitch mDetectDuplicateRadios;
     private ToggleSwitch mSuppressDuplicateListening;
@@ -58,100 +59,60 @@ public class CallManagementPreferenceEditor extends HBox
     {
         mPreference = userPreferences.getCallManagementPreference();
 
-        HBox.setHgrow(getEditorPane(), Priority.ALWAYS);
+        VBox.setVgrow(getEditorPane(), Priority.ALWAYS);
         getChildren().add(getEditorPane());
     }
 
-    private GridPane getEditorPane()
+    private VBox getEditorPane()
     {
         if(mEditorPane == null)
         {
-            int row = 0;
-            mEditorPane = new GridPane();
+            mEditorPane = new VBox();
             mEditorPane.setPadding(new Insets(10, 10, 10, 10));
-            mEditorPane.setHgap(10);
-            mEditorPane.setVgap(10);
+            mEditorPane.setSpacing(20);
 
-            Label detectionLabel = new Label("Duplicate Call Detection.  Detect duplicate" +
-                " calls across channels that share a common System name in each channel configuration.");
-            detectionLabel.setWrapText(true);
-            GridPane.setConstraints(detectionLabel, 0, row, 2, 1);
-            mEditorPane.getChildren().add(detectionLabel);
+            // Duplicate Call Detection Section
+            Label detectionHeader = new Label("Duplicate Call Detection");
+            detectionHeader.getStyleClass().add("hig-section-header");
+            Label detectionDesc = new Label("Detect duplicate calls across channels that share a common System name.");
+            detectionDesc.getStyleClass().add("kennebec-secondary-text");
+            detectionDesc.setPadding(new Insets(0, 10, 5, 10));
 
-            GridPane.setConstraints(getDetectDuplicateTalkgroups(), 0, ++row);
-            mEditorPane.getChildren().add(getDetectDuplicateTalkgroups());
+            SettingsCard detectionCard = new SettingsCard();
+            detectionCard.getChildren().add(new SettingsRow("Detect by Talkgroup", getDetectDuplicateTalkgroups()));
+            detectionCard.getChildren().add(new SettingsRow("Detect by Radio ID", getDetectDuplicateRadios()));
 
-            Label talkgroupLabel = new Label("Talkgroup.  Detect duplicate calls by matching talkgroup or " +
-                "patchgroup values");
-            talkgroupLabel.setWrapText(true);
-            GridPane.setConstraints(talkgroupLabel, 1, row);
-            mEditorPane.getChildren().add(talkgroupLabel);
-
-            GridPane.setConstraints(getDetectDuplicateRadios(), 0, ++row);
-            mEditorPane.getChildren().add(getDetectDuplicateRadios());
-
-            Label radioLabel = new Label("Radio ID.  Detect duplicate calls by matching radio identifiers.");
-            radioLabel.setWrapText(true);
-            GridPane.setConstraints(radioLabel, 1, row);
-            mEditorPane.getChildren().add(radioLabel);
-
-            Label warningLabel = new Label("Note: be careful when enabling duplicate call detection by Radio ID " +
-                "because this can produce unintended side-effects.  For example, if you have two talkgroups with " +
-                "talkgroup 1 set to record and talkgroup 2 set to stream and dispatch radio ID 1234 makes a " +
-                "simultaneous call to both talkgroup 1 and talkgroup 2, there is no way to control which call audio " +
-                "(talkgroup 1 or 2) gets flagged as the duplicate call and therefore either the audio for talkgroup 1 " +
-                "doesn't record, or the audio for talkgroup 2 doesn't stream.");
+            Label warningLabel = new Label("Note: Enabling Radio ID detection can cause unintended side effects (e.g., stopping recording on one talkgroup if a radio broadcasts to two simultaneously).");
             warningLabel.setWrapText(true);
-            GridPane.setConstraints(warningLabel, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(warningLabel);
+            warningLabel.getStyleClass().add("kennebec-secondary-text");
+            warningLabel.setPadding(new Insets(5, 10, 0, 10));
 
-            Separator separator = new Separator();
-            GridPane.setHgrow(separator, Priority.ALWAYS);
-            GridPane.setConstraints(separator, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(separator);
+            VBox detectionBox = new VBox(detectionHeader, detectionDesc, detectionCard, warningLabel);
 
-            Label suppressionLabel = new Label("Duplicate Call Suppression.  When duplicate call audio is detected, " +
-                "suppress the audio during:");
-            suppressionLabel.setWrapText(true);
-            GridPane.setConstraints(suppressionLabel, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(suppressionLabel);
+            // Duplicate Call Suppression Section
+            Label suppressionHeader = new Label("Duplicate Call Suppression");
+            suppressionHeader.getStyleClass().add("hig-section-header");
+            Label suppressionDesc = new Label("When a duplicate call is detected, suppress the audio during:");
+            suppressionDesc.getStyleClass().add("kennebec-secondary-text");
+            suppressionDesc.setPadding(new Insets(0, 10, 5, 10));
 
-            GridPane.setConstraints(getSuppressDuplicateListening(), 0, ++row);
-            mEditorPane.getChildren().add(getSuppressDuplicateListening());
+            SettingsCard suppressionCard = new SettingsCard();
+            suppressionCard.getChildren().add(new SettingsRow("Listening", getSuppressDuplicateListening()));
+            suppressionCard.getChildren().add(new SettingsRow("Recording", getSuppressDuplicateRecording()));
+            suppressionCard.getChildren().add(new SettingsRow("Streaming", getSuppressDuplicateStreaming()));
 
-            Label listeningLabel = new Label("Listening");
-            listeningLabel.setWrapText(true);
-            GridPane.setConstraints(listeningLabel, 1, row);
-            mEditorPane.getChildren().add(listeningLabel);
+            VBox suppressionBox = new VBox(suppressionHeader, suppressionDesc, suppressionCard);
 
-            GridPane.setConstraints(getSuppressDuplicateRecording(), 0, ++row);
-            mEditorPane.getChildren().add(getSuppressDuplicateRecording());
+            // Patch Group Streaming Section
+            Label patchHeader = new Label("Patch Group Streaming");
+            patchHeader.getStyleClass().add("hig-section-header");
 
-            Label recordingLabel = new Label("Recording");
-            recordingLabel.setWrapText(true);
-            GridPane.setConstraints(recordingLabel, 1, row);
-            mEditorPane.getChildren().add(recordingLabel);
+            SettingsCard patchCard = new SettingsCard();
+            patchCard.getChildren().add(new SettingsRow("Stream patch group call as", getPatchGroupStreamingOptionComboBox()));
 
-            GridPane.setConstraints(getSuppressDuplicateStreaming(), 0, ++row);
-            mEditorPane.getChildren().add(getSuppressDuplicateStreaming());
+            VBox patchBox = new VBox(patchHeader, patchCard);
 
-            Label streamingLabel = new Label("Streaming");
-            streamingLabel.setWrapText(true);
-            GridPane.setConstraints(streamingLabel, 1, row);
-            mEditorPane.getChildren().add(streamingLabel);
-
-            Separator separator2 = new Separator();
-            GridPane.setHgrow(separator2, Priority.ALWAYS);
-            GridPane.setConstraints(separator2, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(separator2);
-
-            Label patchGroupLabel = new Label("Patch Group Streaming.  Stream a patch group call as:");
-            patchGroupLabel.setWrapText(true);
-            GridPane.setConstraints(patchGroupLabel, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(patchGroupLabel);
-
-            GridPane.setConstraints(getPatchGroupStreamingOptionComboBox(), 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(getPatchGroupStreamingOptionComboBox());
+            mEditorPane.getChildren().addAll(detectionBox, suppressionBox, patchBox);
         }
 
         return mEditorPane;
@@ -165,6 +126,7 @@ public class CallManagementPreferenceEditor extends HBox
             mDetectDuplicateTalkgroups.setSelected(mPreference.isDuplicateCallDetectionByTalkgroupEnabled());
             mDetectDuplicateTalkgroups.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateCallDetectionByTalkgroupEnabled(newValue));
+            mDetectDuplicateTalkgroups.setTooltip(new Tooltip("Detect duplicate calls by matching talkgroup or patchgroup values"));
         }
 
         return mDetectDuplicateTalkgroups;
@@ -178,6 +140,7 @@ public class CallManagementPreferenceEditor extends HBox
             mDetectDuplicateRadios.setSelected(mPreference.isDuplicateCallDetectionByRadioEnabled());
             mDetectDuplicateRadios.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateCallDetectionByRadioEnabled(newValue));
+            mDetectDuplicateRadios.setTooltip(new Tooltip("Detect duplicate calls by matching radio identifiers"));
         }
 
         return mDetectDuplicateRadios;
@@ -194,6 +157,7 @@ public class CallManagementPreferenceEditor extends HBox
             mSuppressDuplicateListening.setSelected(mPreference.isDuplicatePlaybackSuppressionEnabled());
             mSuppressDuplicateListening.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicatePlaybackSuppressionEnabled(newValue));
+            mSuppressDuplicateListening.setTooltip(new Tooltip("Suppress playing audio for duplicate calls locally"));
         }
 
         return mSuppressDuplicateListening;
@@ -210,6 +174,7 @@ public class CallManagementPreferenceEditor extends HBox
             mSuppressDuplicateRecording.setSelected(mPreference.isDuplicateRecordingSuppressionEnabled());
             mSuppressDuplicateRecording.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateRecordingSuppressionEnabled(newValue));
+            mSuppressDuplicateRecording.setTooltip(new Tooltip("Suppress saving audio for duplicate calls to disk"));
         }
 
         return mSuppressDuplicateRecording;
@@ -226,6 +191,7 @@ public class CallManagementPreferenceEditor extends HBox
             mSuppressDuplicateStreaming.setSelected(mPreference.isDuplicateStreamingSuppressionEnabled());
             mSuppressDuplicateStreaming.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateStreamingSuppressionEnabled(newValue));
+            mSuppressDuplicateStreaming.setTooltip(new Tooltip("Suppress broadcasting audio for duplicate calls over the internet"));
         }
 
         return mSuppressDuplicateStreaming;
@@ -245,6 +211,7 @@ public class CallManagementPreferenceEditor extends HBox
             mPatchGroupStreamingOptionComboBox.getSelectionModel().select(mPreference.getPatchGroupStreamingOption());
             mPatchGroupStreamingOptionComboBox.getSelectionModel().selectedItemProperty()
                     .addListener((observable, oldValue, newValue) -> mPreference.setPatchGroupStreamingOption(newValue));
+            mPatchGroupStreamingOptionComboBox.setTooltip(new Tooltip("Determine whether patch group calls stream via the Supergroup or the Member Sub-groups."));
         }
 
         return mPatchGroupStreamingOptionComboBox;
