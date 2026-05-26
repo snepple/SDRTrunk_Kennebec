@@ -13,3 +13,7 @@
 ## 2026-05-18 - Lazy Buffer Evaluation in Channelizer Views
 **Learning:** Using `FloatNativeBuffer` with eagerly evaluated `toInterleaved()` calls on `ComplexSamples` in GUI channelizer views causes massive memory churn from unused arrays when frames are dropped by the `NativeBufferManager`.
 **Action:** Always use `ComplexSamplesNativeBufferAdapter` to lazily defer array allocations until explicitly pulled by consumers to conserve memory during high-speed spectrum updates.
+
+## 2026-06-01 - Local Accumulator in FIR Convolution Loops
+**Learning:** Updating an array element directly within an inner convolution loop (e.g. `filtered[bufferPointer] += ...`) introduces overhead from array bounds checking and memory stores on every single iteration.
+**Action:** Use a local primitive variable (e.g. `float accumulator = 0.0f;`) within the outer loop to accumulate the sum, then perform a single assignment to the array element after the inner loop finishes.
