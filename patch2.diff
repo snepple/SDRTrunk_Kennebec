@@ -1,0 +1,11 @@
+--- ./src/main/java/io/github/dsheirer/source/tuner/sdrplay/rsp2/Rsp2TunerEditor.java
++++ ./src/main/java/io/github/dsheirer/source/tuner/sdrplay/rsp2/Rsp2TunerEditor.java
+@@ -95,7 +95,7 @@
+         add(new JLabel("IF:"));
+         add(getIfGainSlider(), "wrap");
+
+-        add(new JSeparator(), "span,growx,push");
++        add(new JLabel(""), "span,growx,push");
+
+         add(new JLabel());
+         add(getBiasTCheckBox(), "wrap");

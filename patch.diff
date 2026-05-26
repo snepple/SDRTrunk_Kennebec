@@ -1,0 +1,42 @@
+--- ./src/main/java/io/github/dsheirer/source/tuner/sdrplay/rsp2/Rsp2TunerEditor.java
++++ ./src/main/java/io/github/dsheirer/source/tuner/sdrplay/rsp2/Rsp2TunerEditor.java
+@@ -67,31 +67,30 @@
+     private void init()
+     {
+-        setLayout(new MigLayout("fill,wrap 3", "[right][grow,fill][fill]",
+-                "[][][][][][][][][][][][][][][grow]"));
++        setLayout(new MigLayout("insets 16 16 16 16, gapy 8, fill, wrap 3", "[right, 100!][grow,fill][fill]", ""));
+
+         add(new JLabel("Tuner:"));
+         add(getTunerIdLabel(), "wrap");
+
+         add(new JLabel("Status:"));
+         add(getTunerStatusLabel(), "wrap");
+
+-        add(getButtonPanel(), "span,align left");
++        add(getButtonPanel(), "skip 1, align left, wrap");
+
+-        add(new JSeparator(), "span,growx,push");
++        add(new JLabel(""), "span,growx,push");
+
+         add(new JLabel("Frequency (MHz):"));
+         add(getFrequencyPanel(), "wrap");
+
+         add(new JLabel("Sample Rate:"));
+         add(getSampleRateCombo(), "wrap");
+
+         add(new JLabel("Gain:"));
+         add(getGainPanel(), "wrap");
+         add(new JLabel("LNA:"));
+         JButton lnaHelp = createHelpIcon("?");
+         lnaHelp.setToolTipText("<html><b>LNA Gain:</b> The power of the signal amplifier.<br>Increase this for distant signals, but lower it if you see a lot of static/noise.</html>");
+         add(lnaHelp, "split 2");
+         add(getLNASlider(), "wrap");
+         add(new JLabel("IF:"));
+         add(getIfGainSlider(), "wrap");
+
+-        add(new JSeparator(), "span,growx,push");
++        add(new JLabel(""), "span,growx,push");
+
+         add(new JLabel());
+         add(getBiasTCheckBox(), "wrap");
