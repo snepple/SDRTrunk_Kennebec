@@ -94,7 +94,7 @@ public class Rsp2TunerEditor extends RspTunerEditor<Rsp2TunerConfiguration>
         add(new JLabel("IF:"));
         add(getIfGainSlider(), "wrap");
 
-        add(new JLabel(""), "span,growx,push");
+        add(new JSeparator(), "span,growx,push");
 
         add(new JLabel());
         add(getBiasTCheckBox(), "wrap");
