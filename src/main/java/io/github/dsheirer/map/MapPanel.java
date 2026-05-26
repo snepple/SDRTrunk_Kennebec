@@ -302,6 +302,9 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
         if(mReplotAllTracksButton == null)
         {
             mReplotAllTracksButton = new JButton("Replot All");
+            mReplotAllTracksButton.setToolTipText("Replot all tracked entities on the map");
+            mReplotAllTracksButton.getAccessibleContext().setAccessibleName("Replot All Tracks");
+            mReplotAllTracksButton.getAccessibleContext().setAccessibleDescription("Redraws all previously tracked map entities");
             mReplotAllTracksButton.addActionListener(e ->
             {
                 boolean added = mMapPainter.addAll(mMapService.getPlottableEntityModel().getAll());
@@ -397,6 +400,9 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
         if(mFollowButton == null)
         {
             mFollowButton = new JButton(FOLLOW);
+            mFollowButton.setToolTipText("Center the map on the currently selected track and follow its movement");
+            mFollowButton.getAccessibleContext().setAccessibleName("Follow Track");
+            mFollowButton.getAccessibleContext().setAccessibleDescription("Toggles following the selected track on the map");
             mFollowButton.setEnabled(false);
             mFollowButton.addActionListener(e ->
             {
@@ -419,6 +425,9 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
         if(mClearMapButton == null)
         {
             mClearMapButton = new JButton("Clear Map");
+            mClearMapButton.setToolTipText("Clear all currently plotted tracks from the map view");
+            mClearMapButton.getAccessibleContext().setAccessibleName("Clear Map");
+            mClearMapButton.getAccessibleContext().setAccessibleDescription("Removes all drawn tracks from the current map view");
             mClearMapButton.addActionListener(e ->
             {
                 mMapPainter.clearAllEntities();
@@ -449,6 +458,9 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
         if(mDeleteAllTracksButton == null)
         {
             mDeleteAllTracksButton = new JButton("Delete All");
+            mDeleteAllTracksButton.setToolTipText("Permanently delete all tracks. This action cannot be undone.");
+            mDeleteAllTracksButton.getAccessibleContext().setAccessibleName("Delete All Tracks");
+            mDeleteAllTracksButton.getAccessibleContext().setAccessibleDescription("Permanently removes all track history data");
             mDeleteAllTracksButton.addActionListener(e -> {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Are you sure you want to delete all tracks?", ButtonType.YES, ButtonType.NO);
                 alert.setTitle("Delete All Tracks");
@@ -471,6 +483,9 @@ public class MapPanel extends javafx.scene.layout.BorderPane implements IPlottab
         if(mDeleteTrackButton == null)
         {
             mDeleteTrackButton = new JButton("Delete");
+            mDeleteTrackButton.setToolTipText("Permanently delete the selected track. This action cannot be undone.");
+            mDeleteTrackButton.getAccessibleContext().setAccessibleName("Delete Selected Track");
+            mDeleteTrackButton.getAccessibleContext().setAccessibleDescription("Permanently removes the selected track history data");
             mDeleteTrackButton.setEnabled(false);
             mDeleteTrackButton.addActionListener(e -> {
 
