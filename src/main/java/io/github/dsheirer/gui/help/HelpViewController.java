@@ -104,6 +104,7 @@ public class HelpViewController {
         advancedSystemNode.getChildren().add(new TreeItem<>("Audio Quality & Tuning"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Audio Recordings"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Diagnostics"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("CTCSS DCS NAC Filtering"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Gemini Ai"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Ignore Unwanted Talkgroups"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Inactivity Monitoring"));
