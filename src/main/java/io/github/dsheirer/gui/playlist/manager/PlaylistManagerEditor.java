@@ -338,23 +338,38 @@ public class PlaylistManagerEditor extends BorderPane
 
                 if(playlistToAdd != null)
                 {
-                    if(PlaylistManager.isPlaylist(playlistToAdd.toPath()))
-                    {
-                        if(!getPlaylistListView().getItems().contains(playlistToAdd.toPath()))
-                        {
-                            getPlaylistListView().getItems().add(playlistToAdd.toPath());
-                            savePlaylistsPreference();
+                    getAddButton().setDisable(true);
+                    ThreadPool.CACHED.submit(() -> {
+                        try {
+                            boolean valid = PlaylistManager.isPlaylist(playlistToAdd.toPath());
+                            Platform.runLater(() -> {
+                                getAddButton().setDisable(false);
+                                if(valid)
+                                {
+                                    if(!getPlaylistListView().getItems().contains(playlistToAdd.toPath()))
+                                    {
+                                        getPlaylistListView().getItems().add(playlistToAdd.toPath());
+                                        savePlaylistsPreference();
+                                    }
+                                    else
+                                    {
+                                        new Alert(Alert.AlertType.INFORMATION, "Playlist already added", ButtonType.OK).show();
+                                    }
+                                }
+                                else
+                                {
+                                    new Alert(Alert.AlertType.ERROR, "This file is not a valid playlist",
+                                        ButtonType.OK).show();
+                                }
+                            });
+                        } catch (Exception ex) {
+                            Platform.runLater(() -> {
+                                getAddButton().setDisable(false);
+                                new Alert(Alert.AlertType.ERROR, "Error reading playlist file: " + ex.getMessage(),
+                                    ButtonType.OK).show();
+                            });
                         }
-                        else
-                        {
-                            new Alert(Alert.AlertType.INFORMATION, "Playlist already added", ButtonType.OK).show();
-                        }
-                    }
-                    else
-                    {
-                        new Alert(Alert.AlertType.ERROR, "This file is not a valid playlist",
-                            ButtonType.OK).show();
-                    }
+                    });
                 }
             });
         }
