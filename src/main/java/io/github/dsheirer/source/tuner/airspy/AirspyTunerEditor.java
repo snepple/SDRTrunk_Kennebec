@@ -178,7 +178,10 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
         add(getMixerGainSlider());
         add(getMixerGainValueLabel());
 
-        add(getLNAAGCCheckBox());
+        add(getLNAAGCCheckBox(), "split 2");
+        JButton lnaHelp = createHelpIcon("?");
+        lnaHelp.setToolTipText("<html><b>LNA Gain:</b> The power of the signal amplifier.<br>Increase this for distant signals, but lower it if you see a lot of static/noise.</html>");
+        add(lnaHelp);
         add(getLNAGainSlider());
         add(getLNAGainValueLabel());
     }
@@ -684,5 +687,14 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
         }
 
         return null;
+    }
+
+    protected JButton createHelpIcon(String text) {
+        JButton button = new JButton(text);
+        button.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        return button;
     }
 }

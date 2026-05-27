@@ -37,3 +37,7 @@
 ## 2026-05-18 - LNA Gain in HackRF Editor
 **Simplified:**
 - LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+
+## 2026-05-19 - LNA Gain in Airspy Editor
+**Simplified:**
+- LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
