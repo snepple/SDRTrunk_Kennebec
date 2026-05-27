@@ -43,3 +43,7 @@
 ## 2024-05-18 - OpenMHz Configuration Tooltips
 **Learning:** Configurations for complex integrations like OpenMHz often use raw text inputs without placeholders or tooltips, increasing the chance of formatting errors (e.g., omitting the 'https://' prefix for the host, or misunderstanding 'System Short Name').
 **Action:** Consistently apply Tooltip and PromptText to OpenMHz and similar API configuration text fields to reduce cognitive load and prevent formatting errors.
+
+## 2025-02-14 - Convert RadioIdEditor to Smart Dropdown
+**Learning:** Manually entering Radio IDs via a standard `TextField` causes high cognitive load. Converting to an editable `ComboBox` injected with the `PlaylistManager` allows the UI to populate existing aliases.
+**Action:** When updating or migrating custom identifier editors, always convert manual `TextField`s to `ComboBox`es populated from the `AliasModel`.
