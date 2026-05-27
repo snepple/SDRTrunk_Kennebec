@@ -142,7 +142,8 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.setHgap(10);
             gridPane.setVgap(10);
 
-            Label modulationLabel = new Label("Modulation");
+            Label modulationLabel = new Label("Modulation", createHelpIcon("C4FM: repeaters and non-simulcast trunked systems. LSM: simulcast trunked systems."));
+            modulationLabel.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
             GridPane.setHalignment(modulationLabel, HPos.RIGHT);
             GridPane.setConstraints(modulationLabel, 0, 0);
             gridPane.getChildren().add(modulationLabel);
@@ -151,6 +152,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.getChildren().addAll(getModulationSegmentedButton());
 
             Label poolSizeLabel = new Label("Max Traffic Channels", createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."));
+            poolSizeLabel.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
             GridPane.setHalignment(poolSizeLabel, HPos.RIGHT);
             GridPane.setConstraints(poolSizeLabel, 2, 0);
             gridPane.getChildren().add(poolSizeLabel);
@@ -162,19 +164,17 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.getChildren().add(getIgnoreDataCallsButton());
 
             Label directionLabel = new Label("Ignore Data Calls", createHelpIcon("Skips processing data packets, focusing only on voice traffic."));
+            directionLabel.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
             GridPane.setHalignment(directionLabel, HPos.LEFT);
             GridPane.setConstraints(directionLabel, 5, 0);
             gridPane.getChildren().add(directionLabel);
-
-            Label modulationHelpLabel = new Label("C4FM: repeaters and non-simulcast trunked systems.  LSM: simulcast trunked systems.");
-            GridPane.setConstraints(modulationHelpLabel, 0, 1, 6, 1);
-            gridPane.getChildren().add(modulationHelpLabel);
 
             //NAC Filter row
             GridPane.setConstraints(getNacFilterButton(), 0, 2);
             gridPane.getChildren().add(getNacFilterButton());
 
             Label nacLabel = new Label("NAC Filter (hex):", createHelpIcon("A unique code identifying a specific radio system. This is usually provided by RadioReference and tells the software which network to follow."));
+            nacLabel.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
             javafx.scene.layout.HBox nacBox = new javafx.scene.layout.HBox(5, nacLabel, getNacTextField());
             nacBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             GridPane.setConstraints(nacBox, 1, 2);
@@ -182,6 +182,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
 
             //Talkgroup Override - same row as NAC
             Label tgLabel = new Label("Talkgroup To Assign:", createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."));
+            tgLabel.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
             GridPane.setHalignment(tgLabel, HPos.RIGHT);
             GridPane.setConstraints(tgLabel, 2, 2);
             gridPane.getChildren().add(tgLabel);
@@ -193,6 +194,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             gridPane.getChildren().add(getIgnoreUnaliasedTalkgroupsButton());
 
             Label ignoreUnaliasedLabel = new Label("Ignore Unaliased TGs", createHelpIcon("Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list."));
+            ignoreUnaliasedLabel.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
             GridPane.setHalignment(ignoreUnaliasedLabel, HPos.LEFT);
             GridPane.setConstraints(ignoreUnaliasedLabel, 5, 2);
             gridPane.getChildren().add(ignoreUnaliasedLabel);
