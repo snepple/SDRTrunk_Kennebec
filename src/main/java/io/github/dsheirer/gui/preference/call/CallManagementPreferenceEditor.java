@@ -29,6 +29,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -163,6 +164,7 @@ public class CallManagementPreferenceEditor extends HBox
         {
             mDetectDuplicateTalkgroups = new ToggleSwitch();
             mDetectDuplicateTalkgroups.setSelected(mPreference.isDuplicateCallDetectionByTalkgroupEnabled());
+            mDetectDuplicateTalkgroups.setTooltip(new Tooltip("Detect duplicate calls by matching talkgroup or patchgroup values."));
             mDetectDuplicateTalkgroups.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateCallDetectionByTalkgroupEnabled(newValue));
         }
@@ -176,6 +178,7 @@ public class CallManagementPreferenceEditor extends HBox
         {
             mDetectDuplicateRadios = new ToggleSwitch();
             mDetectDuplicateRadios.setSelected(mPreference.isDuplicateCallDetectionByRadioEnabled());
+            mDetectDuplicateRadios.setTooltip(new Tooltip("Detect duplicate calls by matching radio identifiers."));
             mDetectDuplicateRadios.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateCallDetectionByRadioEnabled(newValue));
         }
@@ -192,6 +195,7 @@ public class CallManagementPreferenceEditor extends HBox
                 .bind(Bindings.and(getDetectDuplicateTalkgroups().selectedProperty().not(),
                     getDetectDuplicateRadios().selectedProperty().not()));
             mSuppressDuplicateListening.setSelected(mPreference.isDuplicatePlaybackSuppressionEnabled());
+            mSuppressDuplicateListening.setTooltip(new Tooltip("Suppress duplicate call audio during listening."));
             mSuppressDuplicateListening.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicatePlaybackSuppressionEnabled(newValue));
         }
@@ -208,6 +212,7 @@ public class CallManagementPreferenceEditor extends HBox
                 .bind(Bindings.and(getDetectDuplicateTalkgroups().selectedProperty().not(),
                     getDetectDuplicateRadios().selectedProperty().not()));
             mSuppressDuplicateRecording.setSelected(mPreference.isDuplicateRecordingSuppressionEnabled());
+            mSuppressDuplicateRecording.setTooltip(new Tooltip("Suppress duplicate call audio during recording."));
             mSuppressDuplicateRecording.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateRecordingSuppressionEnabled(newValue));
         }
@@ -224,6 +229,7 @@ public class CallManagementPreferenceEditor extends HBox
                 .bind(Bindings.and(getDetectDuplicateTalkgroups().selectedProperty().not(),
                     getDetectDuplicateRadios().selectedProperty().not()));
             mSuppressDuplicateStreaming.setSelected(mPreference.isDuplicateStreamingSuppressionEnabled());
+            mSuppressDuplicateStreaming.setTooltip(new Tooltip("Suppress duplicate call audio during streaming."));
             mSuppressDuplicateStreaming.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateStreamingSuppressionEnabled(newValue));
         }
@@ -243,6 +249,7 @@ public class CallManagementPreferenceEditor extends HBox
             options.addAll(PatchGroupStreamingOption.values());
             mPatchGroupStreamingOptionComboBox = new ComboBox<>(options);
             mPatchGroupStreamingOptionComboBox.getSelectionModel().select(mPreference.getPatchGroupStreamingOption());
+            mPatchGroupStreamingOptionComboBox.setTooltip(new Tooltip("Stream a patch group call as specific option."));
             mPatchGroupStreamingOptionComboBox.getSelectionModel().selectedItemProperty()
                     .addListener((observable, oldValue, newValue) -> mPreference.setPatchGroupStreamingOption(newValue));
         }
