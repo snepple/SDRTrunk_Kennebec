@@ -142,21 +142,20 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
                 mIntegerTextFormatter.setValue(value);
                 mIntegerTextFormatter.valueProperty().addListener(mTalkgroupValueChangeListener);
 
-                if (getItem().getProtocol() == Protocol.NBFM) {
-                    mTalkgroupField.getItems().clear();
-                    List<Integer> talkgroups = new ArrayList<>();
-                    for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
-                        if (channel.getDecodeConfiguration() instanceof DecodeConfigNBFM) {
-                            DecodeConfigNBFM nbfmConfig = (DecodeConfigNBFM) channel.getDecodeConfiguration();
-                            if (!talkgroups.contains(nbfmConfig.getTalkgroup())) {
-                                talkgroups.add(nbfmConfig.getTalkgroup());
+                mTalkgroupField.getItems().clear();
+                List<Integer> existingIds = new ArrayList<>();
+                for (io.github.dsheirer.alias.Alias alias : mPlaylistManager.getAliasModel().aliasList()) {
+                    for (io.github.dsheirer.alias.id.AliasID id : alias.getAliasIdentifiers()) {
+                        if (id instanceof io.github.dsheirer.alias.id.talkgroup.Talkgroup) {
+                            io.github.dsheirer.alias.id.talkgroup.Talkgroup tg = (io.github.dsheirer.alias.id.talkgroup.Talkgroup) id;
+                            if (tg.getProtocol() == getItem().getProtocol() && !existingIds.contains(tg.getValue())) {
+                                existingIds.add(tg.getValue());
                             }
                         }
                     }
-                    mTalkgroupField.getItems().addAll(talkgroups);
-                } else {
-                    mTalkgroupField.getItems().clear();
                 }
+                java.util.Collections.sort(existingIds);
+                mTalkgroupField.getItems().addAll(existingIds);
             }
             else
             {
@@ -224,10 +223,18 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
                         setText(null);
                     } else {
                         String label = item.toString();
-                        for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
-                            if (channel.getDecodeConfiguration() instanceof DecodeConfigNBFM nbfmConfig && nbfmConfig.getTalkgroup() == item) {
-                                label = String.format("%d (%s, %s, %s)", item, channel.getSystem() != null ? channel.getSystem() : "", channel.getSite() != null ? channel.getSite() : "", channel.getName() != null ? channel.getName() : "");
-                                break;
+                        if (mIntegerTextFormatter != null && mIntegerTextFormatter.getValueConverter() != null) {
+                            label = mIntegerTextFormatter.getValueConverter().toString(item);
+                        }
+                        for (io.github.dsheirer.alias.Alias alias : mPlaylistManager.getAliasModel().aliasList()) {
+                            for (io.github.dsheirer.alias.id.AliasID id : alias.getAliasIdentifiers()) {
+                                if (id instanceof io.github.dsheirer.alias.id.talkgroup.Talkgroup) {
+                                    io.github.dsheirer.alias.id.talkgroup.Talkgroup tg = (io.github.dsheirer.alias.id.talkgroup.Talkgroup) id;
+                                    if (tg.getProtocol() == TalkgroupEditor.this.getItem().getProtocol() && tg.getValue() == item) {
+                                        label = String.format("%s (%s)", label, alias.getName());
+                                        break;
+                                    }
+                                }
                             }
                         }
                         setText(label);
