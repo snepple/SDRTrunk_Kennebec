@@ -52,3 +52,7 @@
 **Topic:** Audio Quality & Tuning
 **Learning:** The "Audio Quality & Tuning" section from "What's New" didn't have a specific overarching guide. This guide connects features like Analog Hiss Reduction, Anti-Clipping, P25 Audio Enhancements, and VAC Routing.
 **Action:** Created `src/main/resources/docs/audio-quality-&-tuning.md` with a visual audio processing pipeline and integrated it into the navigation tree of `HelpViewer.java` under "Advanced & System".
+## 2024-05-21 - Topic Selection
+**Topic:** CTCSS / DCS / NAC Filtering
+**Learning:** The application has robust support for filtering channels using CTCSS/DCS sub-audible tones and P25 Network Access Codes (NAC), but it lacked a dedicated getting started guide to help users configure and troubleshoot these filters. Users often get confused about how these filters interact with the decoding process. Always include a 'The Filtering Logic' diagram to clarify the signal flow.
+**Action:** Created `src/main/resources/docs/ctcss-dcs-nac-filtering.md` with a Mermaid flowchart to explain filtering logic, added step-by-step instructions for analog and digital channels, and integrated it into the navigation tree of `HelpViewController.java` under "Advanced & System".
