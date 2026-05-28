@@ -225,6 +225,7 @@ public class ScriptEditor extends ActionEditor<ScriptAction>
             mTestButton = new Button("Test");
             mTestButton.setMaxWidth(Double.MAX_VALUE);
             mTestButton.setDisable(true);
+            mTestButton.setTooltip(new javafx.scene.control.Tooltip("Test the selected script"));
             mTestButton.setOnAction(event -> test());
         }
 
@@ -238,6 +239,7 @@ public class ScriptEditor extends ActionEditor<ScriptAction>
             mFileChooser = new Button(("Select ..."));
             mFileChooser.setMaxWidth(Double.MAX_VALUE);
             mFileChooser.setDisable(true);
+            mFileChooser.setTooltip(new javafx.scene.control.Tooltip("Select a script file from your system"));
             mFileChooser.setOnAction(event -> {
                 FileChooser fileChooser = new FileChooser();
                 fileChooser.setTitle("Select Script File");
