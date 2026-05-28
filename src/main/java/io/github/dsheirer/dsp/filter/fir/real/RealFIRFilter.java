@@ -83,10 +83,13 @@ public class RealFIRFilter implements IRealFilter
 
         for(int bufferPointer = 0; bufferPointer < samples.length; bufferPointer++)
         {
+            // Performance optimization: Accumulate locally to eliminate array bounds checking and memory stores in the inner loop
+            float accumulator = 0.0f;
             for(int coefficientPointer = 0; coefficientPointer < mCoefficients.length; coefficientPointer++)
             {
-                filtered[bufferPointer] += mBuffer[bufferPointer + coefficientPointer] * mCoefficients[coefficientPointer];
+                accumulator += mBuffer[bufferPointer + coefficientPointer] * mCoefficients[coefficientPointer];
             }
+            filtered[bufferPointer] = accumulator;
         }
 
         return filtered;
