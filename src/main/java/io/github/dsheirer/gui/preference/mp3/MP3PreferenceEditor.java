@@ -32,6 +32,11 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
+import jiconfont.javafx.IconNode;
+import jiconfont.icons.font_awesome.FontAwesome;
+import javafx.scene.paint.Color;
+import javafx.scene.control.ContentDisplay;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,9 +68,9 @@ public class MP3PreferenceEditor extends VBox
 
         SettingsCard mainCard = new SettingsCard();
 
-        mainCard.getChildren().add(new SettingsRow("Normalize Audio Before Encoding", getNormalizeAudioCheckBox()));
-        mainCard.getChildren().add(new SettingsRow("(LAME) Encoder Setting", getMP3SettingComboBox()));
-        mainCard.getChildren().add(new SettingsRow("Input Audio Sample Rate", getAudioSampleRateComboBox()));
+        mainCard.getChildren().add(new SettingsRow(createLabelWithHelp("Normalize Audio Before Encoding", "Evens out the volume levels before encoding the audio."), getNormalizeAudioCheckBox()));
+        mainCard.getChildren().add(new SettingsRow(createLabelWithHelp("(LAME) Encoder Setting", "Adjusts the MP3 encoding quality and compression level."), getMP3SettingComboBox()));
+        mainCard.getChildren().add(new SettingsRow(createLabelWithHelp("Input Audio Sample Rate", "Selects the sampling rate used for generating the MP3 file."), getAudioSampleRateComboBox()));
 
         getChildren().add(mainCard);
 
@@ -157,5 +162,24 @@ public class MP3PreferenceEditor extends VBox
         }
 
         return mNormalizeAudioCheckBox;
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        label.setContentDisplay(ContentDisplay.RIGHT);
+        return label;
+    }
+
+    private Label createLabelWithHelp(String text, String tooltipText) {
+        Label label = new Label(text, createHelpIcon(tooltipText));
+        label.setContentDisplay(ContentDisplay.RIGHT);
+        return label;
     }
 }

@@ -11,6 +11,11 @@ import javafx.scene.control.ComboBox;
 import io.github.dsheirer.gui.preference.layout.SettingsCard;
 import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.scene.layout.VBox;
+import jiconfont.javafx.IconNode;
+import jiconfont.icons.font_awesome.FontAwesome;
+import javafx.scene.paint.Color;
+import javafx.scene.control.ContentDisplay;
+
 import javafx.scene.layout.HBox;
 import org.controlsfx.control.ToggleSwitch;
 import javafx.application.Platform;
@@ -47,7 +52,7 @@ public class AIPreferenceEditor extends VBox {
             mUserPreferences.getAIPreference().setAIEnabled(newValue);
         });
 
-        mainCard.getChildren().add(new SettingsRow("Enable AI Features", enableAiSwitch));
+        mainCard.getChildren().add(new SettingsRow(createLabelWithHelp("Enable AI Features", "Turns on all AI services such as intelligent log analysis and system health advisor."), enableAiSwitch));
 
         Label explanationLabel = new Label("If turned on, the application will save the last 5 audio files from each channel on the computer's hard drive (to allow for review of audio).");
         explanationLabel.setWrapText(true);
@@ -167,13 +172,13 @@ public class AIPreferenceEditor extends VBox {
         systemHealthExplanationLabel.getStyleClass().add("kennebec-secondary-text");
         systemHealthExplanationLabel.setPadding(new Insets(0, 15, 5, 15));
 
-        aiCard.getChildren().add(new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch));
+        aiCard.getChildren().add(new SettingsRow(createLabelWithHelp("Intelligent Log Analysis", "Translates cryptic stack traces and warning logs into plain-English explanations with actionable fixes."), enableLogAnalysisSwitch));
         aiCard.getChildren().add(logExplanationLabel);
-        aiCard.getChildren().add(new SettingsRow("Enable System Health Advisor", enableSystemHealthSwitch));
+        aiCard.getChildren().add(new SettingsRow(createLabelWithHelp("Enable System Health Advisor", "A background AI agent monitors system metrics and suggests configuration optimizations."), enableSystemHealthSwitch));
         aiCard.getChildren().add(systemHealthExplanationLabel);
-        aiCard.getChildren().add(new SettingsRow("Gemini API Key", apiKeyBox));
+        aiCard.getChildren().add(new SettingsRow(createLabelWithHelp("Gemini API Key", "API key required to access Google Gemini AI services."), apiKeyBox));
         aiCard.getChildren().add(new SettingsRow("", apiKeyLink));
-        aiCard.getChildren().add(new SettingsRow("Gemini Model", modelComboBox));
+        aiCard.getChildren().add(new SettingsRow(createLabelWithHelp("Gemini Model", "Select the specific Gemini AI model to use for analysis."), modelComboBox));
 
         settingsBox.getChildren().add(aiCard);
 
@@ -181,5 +186,24 @@ public class AIPreferenceEditor extends VBox {
         settingsBox.managedProperty().bind(enableAiSwitch.selectedProperty());
 
         getChildren().addAll(settingsBox);
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        label.setContentDisplay(ContentDisplay.RIGHT);
+        return label;
+    }
+
+    private Label createLabelWithHelp(String text, String tooltipText) {
+        Label label = new Label(text, createHelpIcon(tooltipText));
+        label.setContentDisplay(ContentDisplay.RIGHT);
+        return label;
     }
 }

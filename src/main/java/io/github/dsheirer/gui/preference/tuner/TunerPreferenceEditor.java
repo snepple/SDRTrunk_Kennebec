@@ -69,12 +69,12 @@ public class TunerPreferenceEditor extends VBox
         SettingsCard mainCard = new SettingsCard();
 
         Label channelizerLabel = new Label("Channelizer Type", createHelpIcon("Determines how the SDR hardware processes incoming radio signals across its tuned bandwidth. Polyphase is more efficient for decoding 3 or more channels, while Heterodyne processes each channel on-demand."));
-        SettingsRow channelizerRow = new SettingsRow(null, getChannelizerTypeChoiceBox());
+        SettingsRow channelizerRow = new SettingsRow((String)null, getChannelizerTypeChoiceBox());
         channelizerRow.getChildren().set(0, channelizerLabel);
         mainCard.getChildren().add(channelizerRow);
 
         Label rspDuoModeLabel = new Label("SDRPlay RSPduo Selection Mode", createHelpIcon("Configures the dual-tuner behavior of the SDRPlay RSPduo hardware (e.g., Single Tuner vs. Dual Tuner mode)."));
-        SettingsRow rspDuoRow = new SettingsRow(null, getRspDuoTunerModeChoiceBox());
+        SettingsRow rspDuoRow = new SettingsRow((String)null, getRspDuoTunerModeChoiceBox());
         rspDuoRow.getChildren().set(0, rspDuoModeLabel);
         mainCard.getChildren().add(rspDuoRow);
 
