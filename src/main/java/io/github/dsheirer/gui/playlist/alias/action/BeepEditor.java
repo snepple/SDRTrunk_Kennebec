@@ -156,6 +156,7 @@ public class BeepEditor extends ActionEditor<BeepAction>
         {
             mTestButton = new Button("Test");
             mTestButton.setMaxWidth(Double.MAX_VALUE);
+            mTestButton.setTooltip(new javafx.scene.control.Tooltip("Test the configured beep action"));
             mTestButton.setOnAction(event -> test());
         }
 
