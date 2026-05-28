@@ -25,4 +25,16 @@ public class SettingsRow extends HBox {
             getChildren().addAll(trailingControls);
         }
     }
+
+    public SettingsRow(Node leadingNode, Node... trailingControls) {
+        getStyleClass().add("hig-settings-row");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        getChildren().addAll(leadingNode, spacer);
+        if (trailingControls != null) {
+            getChildren().addAll(trailingControls);
+        }
+    }
 }

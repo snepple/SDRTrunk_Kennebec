@@ -34,6 +34,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import jiconfont.javafx.IconNode;
+import jiconfont.icons.font_awesome.FontAwesome;
+import javafx.scene.paint.Color;
+import javafx.scene.control.ContentDisplay;
+
 
 import java.util.Set;
 
@@ -68,7 +73,9 @@ public class TalkgroupFormatPreferenceEditor extends VBox
             controlsBox.getChildren().addAll(fixedWidthEditor, formatEditor);
             controlsBox.setAlignment(Pos.CENTER_RIGHT);
 
-            SettingsRow row = new SettingsRow(protocol.toString(), controlsBox);
+            Label label = new Label(protocol.toString(), createHelpIcon("Select the display format and fixed width padding preference for " + protocol.toString() + " talkgroups and radio IDs."));
+            label.setContentDisplay(ContentDisplay.RIGHT);
+            SettingsRow row = new SettingsRow(label, controlsBox);
             mainCard.getChildren().add(row);
         }
 
@@ -115,5 +122,18 @@ public class TalkgroupFormatPreferenceEditor extends VBox
             setTooltip(new Tooltip("Pads the IDs with leading zeros to maintain a fixed width."));
             setOnAction(event -> mTalkgroupFormatPreference.setTalkgroupFixedWidth(mProtocol, isSelected()));
         }
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        label.setContentDisplay(ContentDisplay.RIGHT);
+        return label;
     }
 }
