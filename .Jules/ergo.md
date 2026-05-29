@@ -43,3 +43,6 @@
 ## 2024-05-18 - OpenMHz Configuration Tooltips
 **Learning:** Configurations for complex integrations like OpenMHz often use raw text inputs without placeholders or tooltips, increasing the chance of formatting errors (e.g., omitting the 'https://' prefix for the host, or misunderstanding 'System Short Name').
 **Action:** Consistently apply Tooltip and PromptText to OpenMHz and similar API configuration text fields to reduce cognitive load and prevent formatting errors.
+## 2024-05-28 - CallManagementPreferenceEditor HIG Alignment
+**Learning:** Legacy configuration panels utilizing `GridPane` with inline, long-form explanatory labels create significant visual clutter and high cognitive load for users when navigating complex configurations.
+**Action:** Replace `GridPane` layouts with the semantic HIG-aligned `SettingsCard` and `SettingsRow` components. Consolidate explanatory text into tooltips attached to `createHelpIcon()` instances to provide progressive disclosure of technical context, reducing screen noise and simplifying configuration flows.

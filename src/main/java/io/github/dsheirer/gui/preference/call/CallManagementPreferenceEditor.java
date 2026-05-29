@@ -22,28 +22,35 @@ package io.github.dsheirer.gui.preference.call;
 import io.github.dsheirer.audio.broadcast.PatchGroupStreamingOption;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.duplicate.CallManagementPreference;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
-import javafx.scene.layout.GridPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.paint.Color;
 import org.controlsfx.control.ToggleSwitch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
+
 /**
- * Preference settings for audio call management for duplicate calls and patch group streaming.
+ * Preference settings for call management
  */
 public class CallManagementPreferenceEditor extends HBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(CallManagementPreferenceEditor.class);
     private CallManagementPreference mPreference;
-    private GridPane mEditorPane;
+    private VBox mEditorPane;
+
     private ToggleSwitch mDetectDuplicateTalkgroups;
     private ToggleSwitch mDetectDuplicateRadios;
     private ToggleSwitch mSuppressDuplicateListening;
@@ -62,38 +69,43 @@ public class CallManagementPreferenceEditor extends HBox
         getChildren().add(getEditorPane());
     }
 
-    private GridPane getEditorPane()
+    private VBox getEditorPane()
     {
         if(mEditorPane == null)
         {
-            int row = 0;
-            mEditorPane = new GridPane();
+            mEditorPane = new VBox();
             mEditorPane.setPadding(new Insets(10, 10, 10, 10));
-            mEditorPane.setHgap(10);
-            mEditorPane.setVgap(10);
+            mEditorPane.setSpacing(20);
 
-            Label detectionLabel = new Label("Duplicate Call Detection.  Detect duplicate" +
-                " calls across channels that share a common System name in each channel configuration.");
-            detectionLabel.setWrapText(true);
-            GridPane.setConstraints(detectionLabel, 0, row, 2, 1);
-            mEditorPane.getChildren().add(detectionLabel);
+            // --- Duplicate Call Detection ---
+            Label detectionLabel = new Label("Duplicate Call Detection", createHelpIcon("Detect duplicate calls across channels that share a common System name in each channel configuration."));
+            detectionLabel.getStyleClass().add("hig-section-header");
 
-            GridPane.setConstraints(getDetectDuplicateTalkgroups(), 0, ++row);
-            mEditorPane.getChildren().add(getDetectDuplicateTalkgroups());
+            SettingsCard detectionCard = new SettingsCard();
 
-            Label talkgroupLabel = new Label("Talkgroup.  Detect duplicate calls by matching talkgroup or " +
-                "patchgroup values");
-            talkgroupLabel.setWrapText(true);
-            GridPane.setConstraints(talkgroupLabel, 1, row);
-            mEditorPane.getChildren().add(talkgroupLabel);
+            SettingsRow talkgroupRow = new SettingsRow("Talkgroup", getDetectDuplicateTalkgroups());
+            detectionCard.getChildren().add(talkgroupRow);
 
-            GridPane.setConstraints(getDetectDuplicateRadios(), 0, ++row);
-            mEditorPane.getChildren().add(getDetectDuplicateRadios());
+            SettingsRow radioRow = new SettingsRow("Radio ID", getDetectDuplicateRadios());
+            detectionCard.getChildren().add(radioRow);
 
-            Label radioLabel = new Label("Radio ID.  Detect duplicate calls by matching radio identifiers.");
-            radioLabel.setWrapText(true);
-            GridPane.setConstraints(radioLabel, 1, row);
-            mEditorPane.getChildren().add(radioLabel);
+            // --- Duplicate Call Suppression ---
+            Label suppressionLabel = new Label("Duplicate Call Suppression", createHelpIcon("When duplicate call audio is detected, suppress the audio during the selected actions."));
+            suppressionLabel.getStyleClass().add("hig-section-header");
+
+            SettingsCard suppressionCard = new SettingsCard();
+            suppressionCard.getChildren().add(new SettingsRow("Listening", getSuppressDuplicateListening()));
+            suppressionCard.getChildren().add(new SettingsRow("Recording", getSuppressDuplicateRecording()));
+            suppressionCard.getChildren().add(new SettingsRow("Streaming", getSuppressDuplicateStreaming()));
+
+            // --- Patch Group Streaming ---
+            Label patchGroupLabel = new Label("Patch Group Streaming", createHelpIcon("Stream a patch group call as the selected option."));
+            patchGroupLabel.getStyleClass().add("hig-section-header");
+
+            SettingsCard patchGroupCard = new SettingsCard();
+            patchGroupCard.getChildren().add(new SettingsRow("Streaming Mode", getPatchGroupStreamingOptionComboBox()));
+
+            mEditorPane.getChildren().addAll(detectionLabel, detectionCard);
 
             Label warningLabel = new Label("Note: be careful when enabling duplicate call detection by Radio ID " +
                 "because this can produce unintended side-effects.  For example, if you have two talkgroups with " +
@@ -102,56 +114,12 @@ public class CallManagementPreferenceEditor extends HBox
                 "(talkgroup 1 or 2) gets flagged as the duplicate call and therefore either the audio for talkgroup 1 " +
                 "doesn't record, or the audio for talkgroup 2 doesn't stream.");
             warningLabel.setWrapText(true);
-            GridPane.setConstraints(warningLabel, 0, ++row, 2, 1);
+            warningLabel.getStyleClass().add("kennebec-secondary-text");
+            warningLabel.setPadding(new Insets(0, 10, 0, 10));
             mEditorPane.getChildren().add(warningLabel);
 
-            Separator separator = new Separator();
-            GridPane.setHgrow(separator, Priority.ALWAYS);
-            GridPane.setConstraints(separator, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(separator);
-
-            Label suppressionLabel = new Label("Duplicate Call Suppression.  When duplicate call audio is detected, " +
-                "suppress the audio during:");
-            suppressionLabel.setWrapText(true);
-            GridPane.setConstraints(suppressionLabel, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(suppressionLabel);
-
-            GridPane.setConstraints(getSuppressDuplicateListening(), 0, ++row);
-            mEditorPane.getChildren().add(getSuppressDuplicateListening());
-
-            Label listeningLabel = new Label("Listening");
-            listeningLabel.setWrapText(true);
-            GridPane.setConstraints(listeningLabel, 1, row);
-            mEditorPane.getChildren().add(listeningLabel);
-
-            GridPane.setConstraints(getSuppressDuplicateRecording(), 0, ++row);
-            mEditorPane.getChildren().add(getSuppressDuplicateRecording());
-
-            Label recordingLabel = new Label("Recording");
-            recordingLabel.setWrapText(true);
-            GridPane.setConstraints(recordingLabel, 1, row);
-            mEditorPane.getChildren().add(recordingLabel);
-
-            GridPane.setConstraints(getSuppressDuplicateStreaming(), 0, ++row);
-            mEditorPane.getChildren().add(getSuppressDuplicateStreaming());
-
-            Label streamingLabel = new Label("Streaming");
-            streamingLabel.setWrapText(true);
-            GridPane.setConstraints(streamingLabel, 1, row);
-            mEditorPane.getChildren().add(streamingLabel);
-
-            Separator separator2 = new Separator();
-            GridPane.setHgrow(separator2, Priority.ALWAYS);
-            GridPane.setConstraints(separator2, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(separator2);
-
-            Label patchGroupLabel = new Label("Patch Group Streaming.  Stream a patch group call as:");
-            patchGroupLabel.setWrapText(true);
-            GridPane.setConstraints(patchGroupLabel, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(patchGroupLabel);
-
-            GridPane.setConstraints(getPatchGroupStreamingOptionComboBox(), 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(getPatchGroupStreamingOptionComboBox());
+            mEditorPane.getChildren().addAll(suppressionLabel, suppressionCard);
+            mEditorPane.getChildren().addAll(patchGroupLabel, patchGroupCard);
         }
 
         return mEditorPane;
@@ -165,6 +133,7 @@ public class CallManagementPreferenceEditor extends HBox
             mDetectDuplicateTalkgroups.setSelected(mPreference.isDuplicateCallDetectionByTalkgroupEnabled());
             mDetectDuplicateTalkgroups.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateCallDetectionByTalkgroupEnabled(newValue));
+            mDetectDuplicateTalkgroups.setTooltip(new Tooltip("Detect duplicate calls by matching talkgroup or patchgroup values"));
         }
 
         return mDetectDuplicateTalkgroups;
@@ -178,6 +147,7 @@ public class CallManagementPreferenceEditor extends HBox
             mDetectDuplicateRadios.setSelected(mPreference.isDuplicateCallDetectionByRadioEnabled());
             mDetectDuplicateRadios.selectedProperty()
                 .addListener((observable, oldValue, newValue) -> mPreference.setDuplicateCallDetectionByRadioEnabled(newValue));
+            mDetectDuplicateRadios.setTooltip(new Tooltip("Detect duplicate calls by matching radio identifiers."));
         }
 
         return mDetectDuplicateRadios;
@@ -248,5 +218,18 @@ public class CallManagementPreferenceEditor extends HBox
         }
 
         return mPatchGroupStreamingOptionComboBox;
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        label.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
+        return label;
     }
 }
