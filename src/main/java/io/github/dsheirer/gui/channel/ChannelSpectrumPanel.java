@@ -65,6 +65,21 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.control.Label;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.Button;
+import javafx.scene.control.Tooltip;
+import javafx.scene.Node;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.embed.swing.SwingNode;
+
 import javax.swing.JSpinner;
 import javax.swing.border.MatteBorder;
 import java.awt.Color;
@@ -75,7 +90,7 @@ import javax.swing.event.MouseInputAdapter;
 /**
  * Display for channel FFT and squelch details
  */
-public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingChain>
+public class ChannelSpectrumPanel extends javafx.embed.swing.JFXPanel implements Listener<ProcessingChain>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelSpectrumPanel.class);
     private static final DecimalFormat FREQUENCY_FORMAT = new DecimalFormat("0.00000");
@@ -86,19 +101,19 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
     private SpectrumPanel mSpectrumPanel;
     private final FrequencyOverlayPanel mFrequencyOverlayPanel;
     private final SourceEventProcessor mSourceEventProcessor = new SourceEventProcessor();
-    private final SpinnerNumberModel mNoiseFloorSpinnerModel;
-    private final JLabel mEstimatedCarrierOffsetFrequencyTitleLabel;
-    private final JLabel mEstimatedCarrierOffsetFrequencyValueLabel;
+    private final SpinnerValueFactory.DoubleSpinnerValueFactory mNoiseFloorSpinnerModel;
+    private final Label mEstimatedCarrierOffsetFrequencyTitleLabel;
+    private final Label mEstimatedCarrierOffsetFrequencyValueLabel;
     private boolean mPanelVisible = false;
     private boolean mDftProcessing = false;
     private final NoiseSquelchView mNoiseSquelchView;
     private final SignalPowerView mSignalPowerView;
-    private JFXPanel mSignalPowerWrapper;
+
     private final SymbolView mSymbolView = new SymbolView();
-    private final JFXPanel mNoiseSquelchPanel;
-    private final JFXPanel mSymbolPanel;
-    private JPanel mInspectorPanel;
-    private CardLayout mInspectorCardLayout;
+
+
+    private StackPane mInspectorPanel;
+
 
     /**
      * Constructs an instance.
@@ -108,38 +123,44 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         mPlaylistManager = playlistManager;
         mNoiseSquelchView = new NoiseSquelchView(mPlaylistManager);
         mSignalPowerView = new SignalPowerView(mPlaylistManager);
-        setLayout(new MigLayout("insets 0", "[grow,fill]", "[grow,fill]"));
 
-        JPanel fftPanel = new JPanel();
-        fftPanel.setLayout(new MigLayout("insets 0", "[grow,fill]", "[][grow,fill]"));
 
-        JPanel labelPanel = new JPanel();
-        labelPanel.setLayout(new MigLayout("insets 2", "[grow,fill][grow,fill,left][right][][]", ""));
-        labelPanel.add(new JLabel("Channel Spectrum    "));
+        VBox fftPanel = new VBox();
+        HBox.setHgrow(fftPanel, Priority.ALWAYS);
 
-        mEstimatedCarrierOffsetFrequencyTitleLabel = new JLabel("Carrier Offset:");
-        mEstimatedCarrierOffsetFrequencyTitleLabel.setForeground(new java.awt.Color(142, 142, 147)); // HIG subtle gray
-        labelPanel.add(mEstimatedCarrierOffsetFrequencyTitleLabel);
+        HBox labelPanel = new HBox(5);
+        labelPanel.setPadding(new Insets(2));
+        labelPanel.setAlignment(Pos.CENTER_LEFT);
+        labelPanel.getChildren().add(new Label("Channel Spectrum    "));
 
-        mEstimatedCarrierOffsetFrequencyValueLabel = new JLabel("0 Hz");
-        mEstimatedCarrierOffsetFrequencyValueLabel.setFont(mEstimatedCarrierOffsetFrequencyValueLabel.getFont().deriveFont(java.awt.Font.BOLD));
-        mEstimatedCarrierOffsetFrequencyValueLabel.setEnabled(false);
-        labelPanel.add(mEstimatedCarrierOffsetFrequencyValueLabel, "width 60!");
+        mEstimatedCarrierOffsetFrequencyTitleLabel = new Label("Carrier Offset:");
+        mEstimatedCarrierOffsetFrequencyTitleLabel.setStyle("-fx-text-fill: #8e8e93;"); // HIG subtle gray
+        labelPanel.getChildren().add(mEstimatedCarrierOffsetFrequencyTitleLabel);
 
-        mNoiseFloorSpinnerModel = new SpinnerNumberModel(18, 8, 36, 1);
-        mNoiseFloorSpinnerModel.addChangeListener(e -> {
-            Number number = mNoiseFloorSpinnerModel.getNumber();
-            mSpectrumPanel.setSampleSize(number.doubleValue());
+        mEstimatedCarrierOffsetFrequencyValueLabel = new Label("0 Hz");
+        mEstimatedCarrierOffsetFrequencyValueLabel.setStyle("-fx-font-weight: bold;");
+        mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(true);
+        mEstimatedCarrierOffsetFrequencyValueLabel.setPrefWidth(60);
+        labelPanel.getChildren().add(mEstimatedCarrierOffsetFrequencyValueLabel);
+
+        // Add spacer to push the next elements to the right
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        labelPanel.getChildren().add(spacer);
+
+        mNoiseFloorSpinnerModel = new SpinnerValueFactory.DoubleSpinnerValueFactory(8.0, 36.0, 18.0, 1.0);
+        mNoiseFloorSpinnerModel.valueProperty().addListener((obs, oldVal, newVal) -> {
+            mSpectrumPanel.setSampleSize(newVal);
         });
-        JSpinner noiseFloorSpinner = new JSpinner(mNoiseFloorSpinnerModel);
-        labelPanel.add(noiseFloorSpinner);
-        labelPanel.add(new JLabel("Noise Floor"));
+        Spinner<Double> noiseFloorSpinner = new Spinner<>(mNoiseFloorSpinnerModel);
+        labelPanel.getChildren().add(noiseFloorSpinner);
+        labelPanel.getChildren().add(new Label("Noise Floor"));
 
-        JButton logIndexesButton = new JButton("Log Settings");
-        logIndexesButton.setToolTipText("Log channel spectrum settings");
-        logIndexesButton.getAccessibleContext().setAccessibleName("Log Spectrum Settings");
-        logIndexesButton.getAccessibleContext().setAccessibleDescription("Logs the current configuration settings of the channel spectrum to the application log");
-        logIndexesButton.addActionListener(e -> {
+        Button logIndexesButton = new Button("Log Settings");
+        logIndexesButton.setTooltip(new Tooltip("Log channel spectrum settings"));
+        // Accessible description
+        logIndexesButton.setAccessibleText("Logs the current configuration settings of the channel spectrum to the application log");
+        logIndexesButton.setOnAction(e -> {
             if(mProcessingChain != null)
             {
                 Source source = mProcessingChain.getSource();
@@ -178,82 +199,61 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             }
         });
         //This is a debug button to log the current settings to the app log.
-//        labelPanel.add(mLogIndexesButton);
+//        labelPanel.getChildren().add(logIndexesButton);
 
-        fftPanel.add(labelPanel, "wrap");
+        fftPanel.getChildren().add(labelPanel);
 
         mFrequencyOverlayPanel = new FrequencyOverlayPanel(settingsManager);
         mSpectrumPanel = new SpectrumPanel(settingsManager);
         mSpectrumPanel.setSampleSize(18.0);
 
-        /**
-         * The layered pane holds the overlapping spectrum and channel panels
-         * and manages the sizing of each panel with the resize listener
-         */
-        JLayeredPane layeredPanel = new JLayeredPane();
-        layeredPanel.addComponentListener(new ResizeListener(layeredPanel));
+        StackPane layeredPanel = new StackPane();
+        VBox.setVgrow(layeredPanel, Priority.ALWAYS);
 
-        /**
-         * Create a mouse adapter to handle mouse events over the spectrum
-         * and waterfall panels
-         */
         MouseEventProcessor mouser = new MouseEventProcessor();
-
         mFrequencyOverlayPanel.addMouseListener(mouser);
         mFrequencyOverlayPanel.addMouseMotionListener(mouser);
         mFrequencyOverlayPanel.addMouseWheelListener(mouser);
 
-        //Add the spectrum and channel panels to the layered panel
-        javafx.embed.swing.JFXPanel p = new javafx.embed.swing.JFXPanel();
-        javafx.application.Platform.runLater(() -> p.setScene(new javafx.scene.Scene(mSpectrumPanel)));
-        layeredPanel.add(p, 0, 0);
-        layeredPanel.add(mFrequencyOverlayPanel, 1, 0);
+        SwingNode frequencyNode = new SwingNode();
+        javax.swing.SwingUtilities.invokeLater(() -> frequencyNode.setContent(mFrequencyOverlayPanel));
 
-        fftPanel.add(layeredPanel);
-
-        mNoiseSquelchPanel = new JFXPanel();
-        mSymbolPanel = new JFXPanel();
-
-        //Spin noise squelch panel construction off onto the JavafX UI thread.
-        Platform.runLater(() -> {
-            Scene scene = new Scene(mNoiseSquelchView);
-            mNoiseSquelchPanel.setScene(scene);
-            Scene scene2 = new Scene(mSymbolView);
-            URL resource = getClass().getResource("/sdrtrunk_style.css");
-
-            if(resource != null)
-            {
-                scene2.getStylesheets().add(resource.toExternalForm());
-            }
-            else
-            {
-                LOGGER.warn("Can't find stylesheet resource for sdrtrunk");
-            }
-
-            mSymbolPanel.setScene(scene2);
+        // Use size listener for layered effect resizing, as StackPane doesn't perfectly propagate down to SwingNode without layout
+        layeredPanel.layoutBoundsProperty().addListener((obs, oldVal, newVal) -> {
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                mFrequencyOverlayPanel.setBounds(0, 0, (int)newVal.getWidth(), (int)newVal.getHeight());
+            });
         });
 
-        mInspectorCardLayout = new CardLayout();
-        mInspectorPanel = new JPanel(mInspectorCardLayout);
-        mInspectorPanel.setBorder(new MatteBorder(0, 1, 0, 0, new Color(224, 224, 224))); // Apple HIG subtle border
+        layeredPanel.getChildren().addAll(mSpectrumPanel, frequencyNode);
+        fftPanel.getChildren().add(layeredPanel);
 
-        mInspectorPanel.add(mNoiseSquelchPanel, "NBFM");
-        mSignalPowerWrapper = new JFXPanel();
-        Platform.runLater(() -> {
-            Scene scene = new Scene(mSignalPowerView);
+        mInspectorPanel = new StackPane();
+        mInspectorPanel.setStyle("-fx-border-color: transparent transparent transparent #e0e0e0; -fx-border-width: 0 0 0 1;"); // Apple HIG subtle border
+        HBox.setHgrow(mInspectorPanel, Priority.ALWAYS);
+
+        // Add all views but hide them initially
+        mNoiseSquelchView.setVisible(false);
+        mSignalPowerView.setVisible(false);
+        mSymbolView.setVisible(false);
+        mInspectorPanel.getChildren().addAll(mNoiseSquelchView, mSignalPowerView, mSymbolView);
+
+        HBox mainLayout = new HBox();
+        VBox.setVgrow(mainLayout, Priority.ALWAYS);
+
+        // Give 50% width preference to both sides
+        fftPanel.prefWidthProperty().bind(mainLayout.widthProperty().divide(2));
+        mInspectorPanel.prefWidthProperty().bind(mainLayout.widthProperty().divide(2));
+
+        mainLayout.getChildren().addAll(fftPanel, mInspectorPanel);
+                Platform.runLater(() -> {
+            Scene scene = new Scene(mainLayout);
             java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
             if (cssUrl != null) {
                 scene.getStylesheets().add(cssUrl.toExternalForm());
             }
-            mSignalPowerWrapper.setScene(scene);
+            this.setScene(scene);
         });
-        mInspectorPanel.add(mSignalPowerWrapper, "AM");
-        mInspectorPanel.add(mSymbolPanel, "FEEDBACK");
-
-        // Use MigLayout for the main panel
-        setLayout(new MigLayout("insets 0, gap 0", "[50%,fill][50%,fill]", "[grow,fill]"));
-        add(fftPanel, "grow");
-        add(mInspectorPanel, "grow");
 
         mSampleStreamTapModule.setListener(mComplexDftProcessor);
         DFTResultsConverter DFTResultsConverter = new ComplexDecibelConverter();
@@ -333,9 +333,9 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
     {
         //Note: we flip the sign on the error measurement because the value represents the amount of offset the PLL
         //has to apply to move the signal to center/baseband
-        EventQueue.invokeLater(() -> {
+        Platform.runLater(() -> {
             mEstimatedCarrierOffsetFrequencyValueLabel.setText(carrierOffsetFrequency + " Hz");
-            mEstimatedCarrierOffsetFrequencyValueLabel.setEnabled(true);
+            mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(false);
         });
 
         mFrequencyOverlayPanel.setEstimatedCarrierOffsetFrequency(carrierOffsetFrequency);
@@ -355,8 +355,10 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
      */
     private void reset()
     {
-        mEstimatedCarrierOffsetFrequencyValueLabel.setText("0 Hz");
-        mEstimatedCarrierOffsetFrequencyValueLabel.setEnabled(false);
+        Platform.runLater(() -> {
+            mEstimatedCarrierOffsetFrequencyValueLabel.setText("0 Hz");
+            mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(true);
+        });
         mFrequencyOverlayPanel.process(SourceEvent.frequencyChange(null, 0));
         mFrequencyOverlayPanel.process(SourceEvent.sampleRateChange(0));
         mFrequencyOverlayPanel.setEstimatedCarrierOffsetFrequency(0);
@@ -380,7 +382,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             mProcessingChain.removeModule(mSampleStreamTapModule);
         }
 
-        //Invoking reset - we're on the Swing dispatch thread here
+        //Invoking reset
         reset();
 
         mProcessingChain = processingChain;
@@ -392,17 +394,17 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
             PrimaryDecoder primaryDecoder = mProcessingChain.getPrimaryDecoder();
             if(primaryDecoder instanceof NBFMDecoder nbfmDecoder)
             {
-                setRightComponent(mNoiseSquelchPanel);
+                setRightComponent(mNoiseSquelchView);
                 mNoiseSquelchView.setController(nbfmDecoder);
             }
             else if(primaryDecoder instanceof AMDecoder)
             {
-                setRightComponent(mSignalPowerWrapper);
+                setRightComponent(mSignalPowerView);
                 mSignalPowerView.setProcessingChain(mProcessingChain);
             }
             else if(primaryDecoder instanceof FeedbackDecoder feedbackDecoder)
             {
-                setRightComponent(mSymbolPanel);
+                setRightComponent(mSymbolView);
                 mSymbolView.setSymbolProvider(feedbackDecoder);
                 mSymbolView.setProtocol(feedbackDecoder.getProtocolDescription());
             }
@@ -436,20 +438,20 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
      * Shows the component on the right side of the split pane.
      * @param component to show.
      */
-    private void setRightComponent(Component component)
+    private void setRightComponent(Node component)
     {
-        if (component == mNoiseSquelchPanel) {
-            mInspectorCardLayout.show(mInspectorPanel, "NBFM");
-            mInspectorPanel.setVisible(true);
-        } else if (component == mSignalPowerWrapper) {
-            mInspectorCardLayout.show(mInspectorPanel, "AM");
-            mInspectorPanel.setVisible(true);
-        } else if (component == mSymbolPanel) {
-            mInspectorCardLayout.show(mInspectorPanel, "FEEDBACK");
-            mInspectorPanel.setVisible(true);
-        } else {
-            mInspectorPanel.setVisible(false);
-        }
+        Platform.runLater(() -> {
+            mNoiseSquelchView.setVisible(false);
+            mSignalPowerView.setVisible(false);
+            mSymbolView.setVisible(false);
+
+            if (component != null) {
+                component.setVisible(true);
+                mInspectorPanel.setVisible(true);
+            } else {
+                mInspectorPanel.setVisible(false);
+            }
+        });
     }
 
     /**
@@ -469,26 +471,7 @@ public class ChannelSpectrumPanel extends JPanel implements Listener<ProcessingC
         }
     }
 
-    /**
-     * Monitors the sizing of the layered pane and resizes the spectrum and
-     * channel panels whenever the layered pane is resized
-     */
-    public class ResizeListener implements ComponentListener
-    {
-        private javax.swing.JLayeredPane lp;
-        public ResizeListener(javax.swing.JLayeredPane layeredPanel) { this.lp = layeredPanel; }
-        @Override public void componentResized(ComponentEvent e)
-        {
-            Component c = e.getComponent();
 
-            lp.getComponent(0).setBounds(0, 0, c.getWidth(), c.getHeight());
-            mFrequencyOverlayPanel.setBounds(0, 0, c.getWidth(), c.getHeight());
-        }
-
-        @Override public void componentHidden(ComponentEvent arg0) {}
-        @Override public void componentMoved(ComponentEvent arg0) {}
-        @Override public void componentShown(ComponentEvent arg0) {}
-    }
 
     /**
      * Mouse event handler for the spectral display panel.
