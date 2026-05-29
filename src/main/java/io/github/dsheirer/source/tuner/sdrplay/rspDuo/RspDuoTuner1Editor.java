@@ -97,6 +97,9 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
         add(new JLabel("Gain:"));
         add(getGainPanel(), "wrap");
         add(new JLabel("LNA:"));
+        javax.swing.JButton lnaHelp = createHelpIcon("?");
+        lnaHelp.setToolTipText("<html><b>LNA Gain:</b> The power of the signal amplifier.<br>Increase this for distant signals, but lower it if you see a lot of static/noise.</html>");
+        add(lnaHelp, "split 2");
         add(getLNASlider(), "wrap");
         add(new JLabel("IF:"));
         add(getIfGainSlider(), "wrap");
