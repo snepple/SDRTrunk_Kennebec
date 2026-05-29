@@ -37,3 +37,7 @@
 ## 2026-05-18 - LNA Gain in HackRF Editor
 **Simplified:**
 - LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+
+## 2025-03-08 - LNA Gain Tooltips Added to SDRPlay RSP 1B and Duo
+**Simplified:**
+- LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
