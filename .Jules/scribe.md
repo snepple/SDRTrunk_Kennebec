@@ -52,3 +52,5 @@
 **Topic:** Audio Quality & Tuning
 **Learning:** The "Audio Quality & Tuning" section from "What's New" didn't have a specific overarching guide. This guide connects features like Analog Hiss Reduction, Anti-Clipping, P25 Audio Enhancements, and VAC Routing.
 **Action:** Created `src/main/resources/docs/audio-quality-&-tuning.md` with a visual audio processing pipeline and integrated it into the navigation tree of `HelpViewer.java` under "Advanced & System".
+## 2024-05-21 - Tone & Code Filtering
+**Learning:** Users often need a visual flowchart to understand how SDRTrunk routing logic makes discard/pass decisions based on squelch conditions like CTCSS and P25 NACs. Always include logic gates in advanced filtering guides.
