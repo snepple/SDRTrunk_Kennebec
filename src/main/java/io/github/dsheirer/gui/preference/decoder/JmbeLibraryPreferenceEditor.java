@@ -40,10 +40,11 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -67,8 +68,6 @@ public class JmbeLibraryPreferenceEditor extends VBox
     private static final String LIBRARY_NOT_SETUP = "None.  Click Select or Create Library button to setup.";
 
     private UserPreferences mUserPreferences;
-    private GridPane mEditorPane;
-    private Label mJmbeLibraryLabel;
     private Label mJmbeVersionLabel;
     private Label mPathToJmbeLibraryLabel;
     private Button mSelectButton;
@@ -86,8 +85,23 @@ public class JmbeLibraryPreferenceEditor extends VBox
         MyEventBus.getGlobalEventBus().register(this);
 
         setPadding(new Insets(10,10,10,10));
-        setSpacing(10);
-        getChildren().addAll(getEditorPane(), getButtonsBox(), getAlertUserWhenMissingCheckBox(), getUseBazinetaForkCheckBox());
+        setSpacing(20);
+
+        Label headerLabel = new Label("JMBE Audio Library");
+        headerLabel.getStyleClass().add("hig-section-header");
+        getChildren().add(headerLabel);
+
+        SettingsCard mainCard = new SettingsCard();
+        mainCard.getChildren().add(new SettingsRow("Current Version", getJmbeVersionLabel()));
+        mainCard.getChildren().add(new SettingsRow("File", getPathToJmbeLibraryLabel()));
+
+        // Wrap buttons in a SettingsRow with no leading label to align them properly
+        mainCard.getChildren().add(new SettingsRow("", getButtonsBox()));
+
+        mainCard.getChildren().add(new SettingsRow("Alert when decoder requires missing JMBE library", getAlertUserWhenMissingCheckBox()));
+        mainCard.getChildren().add(new SettingsRow("Use alternative 'bazineta' JMBE fork (optimized/cleaned up)", getUseBazinetaForkCheckBox()));
+
+        getChildren().add(mainCard);
     }
 
     public void dispose()
@@ -99,7 +113,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
     {
         if(mAlertUserWhenMissingCheckBox == null)
         {
-            mAlertUserWhenMissingCheckBox = new CheckBox("Alert when decoder requires missing JMBE library");
+            mAlertUserWhenMissingCheckBox = new CheckBox();
             mAlertUserWhenMissingCheckBox.setTooltip(new Tooltip("Shows a warning notification if a digital voice channel needs the JMBE library but it is not installed."));
             mAlertUserWhenMissingCheckBox.setSelected(mUserPreferences.getJmbeLibraryPreference()
                 .getAlertIfMissingLibraryRequired());
@@ -115,7 +129,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
     {
         if(mUseBazinetaForkCheckBox == null)
         {
-            mUseBazinetaForkCheckBox = new CheckBox("Use alternative 'bazineta' JMBE fork (optimized/cleaned up)");
+            mUseBazinetaForkCheckBox = new CheckBox();
             mUseBazinetaForkCheckBox.setTooltip(new Tooltip("Uses a highly optimized version of the JMBE library that performs better for SDRTrunk's specific needs."));
             mUseBazinetaForkCheckBox.setSelected(mUserPreferences.getJmbeLibraryPreference().getUseBazinetaFork());
             mUseBazinetaForkCheckBox.setOnAction(event -> {
@@ -156,33 +170,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
         return mButtonsBox;
     }
 
-    private GridPane getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            mEditorPane = new GridPane();
-            mEditorPane.setVgap(10);
-            mEditorPane.setHgap(10);
 
-            int row = 0;
-
-            mEditorPane.add(getJmbeLibraryLabel(), 0, row, 2, 1);
-
-            Label versionLabel = new Label("Current Version:");
-            GridPane.setHalignment(versionLabel, HPos.RIGHT);
-            mEditorPane.add(versionLabel, 0, ++row);
-
-            mEditorPane.add(getJmbeVersionLabel(), 1, row);
-
-            Label fileLabel = new Label("File:");
-            GridPane.setHalignment(fileLabel, HPos.RIGHT);
-            mEditorPane.add(fileLabel, 0, ++row);
-
-            mEditorPane.add(getPathToJmbeLibraryLabel(), 1, row);
-        }
-
-        return mEditorPane;
-    }
 
     private Button getCreateButton()
     {
@@ -290,15 +278,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
         });
     }
 
-    private Label getJmbeLibraryLabel()
-    {
-        if(mJmbeLibraryLabel == null)
-        {
-            mJmbeLibraryLabel = new Label("JMBE Audio Library");
-        }
 
-        return mJmbeLibraryLabel;
-    }
 
     private Label getJmbeVersionLabel()
     {
