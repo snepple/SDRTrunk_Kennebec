@@ -281,7 +281,7 @@ private JComboBox getVGAGainCombo()
                     mLog.error(getLogPrefix() + "couldn't apply VGA gain setting", e);
                 }
             });
-            mVGAGainCombo.setToolTipText("<html>VGA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>");
+            mVGAGainCombo.setToolTipText("<html><b>VGA Gain (Variable Gain Amplifier):</b> Fine-tunes the signal strength before it's sent to your computer.<br>Adjust this to get a clean, clear signal without distortion.<br><i>Set master gain to MANUAL to adjust.</i></html>");
         }
 
         return mVGAGainCombo;
@@ -318,7 +318,7 @@ private JComboBox getVGAGainCombo()
                     mLog.error(getLogPrefix() + "couldn't apply LNA " + "gain setting - ", e);
                 }
             });
-            mLNAGainCombo.setToolTipText("<html>LNA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>");
+            mLNAGainCombo.setToolTipText("<html><b>LNA Gain (Low Noise Amplifier):</b> Controls the initial signal amplifier.<br>Increase this for distant signals, but lower it if you see a lot of static/noise.<br><i>Set master gain to MANUAL to adjust.</i></html>");
         }
 
         return mLNAGainCombo;
@@ -393,7 +393,7 @@ private JComboBox getVGAGainCombo()
                     }
                 }
             });
-            mMixerGainCombo.setToolTipText("<html>Mixer Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>");
+            mMixerGainCombo.setToolTipText("<html><b>Mixer Gain:</b> Adjusts signal strength early in the tuning process.<br>Higher values can pull in weak signals, but may overload the tuner if strong signals are nearby.<br><i>Set master gain to MANUAL to adjust.</i></html>");
         }
 
         return mMixerGainCombo;

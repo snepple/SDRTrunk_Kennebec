@@ -37,3 +37,9 @@
 ## 2026-05-18 - LNA Gain in HackRF Editor
 **Simplified:**
 - LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+
+## 2024-06-18 - R8x Tuner Gain Settings
+**Simplified:**
+- Mixer Gain: Adjusts signal strength early in the tuning process. Higher values can pull in weak signals, but may overload the tuner if strong signals are nearby.
+- LNA Gain (Low Noise Amplifier): Controls the initial signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+- VGA Gain (Variable Gain Amplifier): Fine-tunes the signal strength before it's sent to your computer. Adjust this to get a clean, clear signal without distortion.
