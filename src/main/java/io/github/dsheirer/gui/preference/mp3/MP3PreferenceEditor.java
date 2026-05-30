@@ -25,6 +25,9 @@ import io.github.dsheirer.gui.preference.layout.SettingsCard;
 import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.mp3.MP3Preference;
+import javafx.scene.paint.Color;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.CheckBox;
@@ -63,9 +66,17 @@ public class MP3PreferenceEditor extends VBox
 
         SettingsCard mainCard = new SettingsCard();
 
-        mainCard.getChildren().add(new SettingsRow("Normalize Audio Before Encoding", getNormalizeAudioCheckBox()));
-        mainCard.getChildren().add(new SettingsRow("(LAME) Encoder Setting", getMP3SettingComboBox()));
-        mainCard.getChildren().add(new SettingsRow("Input Audio Sample Rate", getAudioSampleRateComboBox()));
+        Label normalizeLabel = new Label("Normalize Audio Before Encoding", createHelpIcon("Evens out the volume levels before encoding the audio."));
+        normalizeLabel.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
+        mainCard.getChildren().add(new SettingsRow(normalizeLabel, getNormalizeAudioCheckBox()));
+
+        Label encoderLabel = new Label("(LAME) Encoder Setting", createHelpIcon("Adjusts the MP3 encoding quality and compression level."));
+        encoderLabel.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
+        mainCard.getChildren().add(new SettingsRow(encoderLabel, getMP3SettingComboBox()));
+
+        Label sampleRateLabel = new Label("Input Audio Sample Rate", createHelpIcon("Selects the sampling rate used for generating the MP3 file."));
+        sampleRateLabel.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
+        mainCard.getChildren().add(new SettingsRow(sampleRateLabel, getAudioSampleRateComboBox()));
 
         getChildren().add(mainCard);
 
@@ -157,5 +168,17 @@ public class MP3PreferenceEditor extends VBox
         }
 
         return mNormalizeAudioCheckBox;
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }
