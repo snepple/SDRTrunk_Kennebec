@@ -76,6 +76,10 @@ public class AudioOutputDeviceEditor extends HBox
 
         // Bind the UI selection to our intermediary property
         mDeviceComboBox.valueProperty().bindBidirectional(mUiDeviceProperty);
+
+        mDeviceComboBox.setTooltip(new javafx.scene.control.Tooltip("Selects the audio output device for this alias."));
+        mRecordableCheckBox.setTooltip(new javafx.scene.control.Tooltip("Enable to allow recording audio from this alias."));
+        mPrioritySlider.setTooltip(new javafx.scene.control.Tooltip("Set the priority level for monitoring this alias (1-99)."));
     }
 
     /**
