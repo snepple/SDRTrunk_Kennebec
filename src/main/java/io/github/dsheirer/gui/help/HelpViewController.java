@@ -111,6 +111,7 @@ public class HelpViewController {
         advancedSystemNode.getChildren().add(new TreeItem<>("System Requirements"));
         advancedSystemNode.getChildren().add(new TreeItem<>("User Preferences"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Virtual Audio Cable"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("CTCSS / DCS / NAC Filtering"));
         guidesNode.getChildren().add(advancedSystemNode);
 
         root.getChildren().add(guidesNode);
