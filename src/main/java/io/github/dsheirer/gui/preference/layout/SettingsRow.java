@@ -11,6 +11,18 @@ import javafx.scene.layout.Region;
  * and controls on the right (trailing), pushed by a Region with Priority.ALWAYS.
  */
 public class SettingsRow extends HBox {
+    public SettingsRow(Node leadingNode, Node... trailingControls) {
+        getStyleClass().add("hig-settings-row");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        getChildren().addAll(leadingNode, spacer);
+        if (trailingControls != null) {
+            getChildren().addAll(trailingControls);
+        }
+    }
+
 
     public SettingsRow(String labelText, Node... trailingControls) {
         getStyleClass().add("hig-settings-row");
