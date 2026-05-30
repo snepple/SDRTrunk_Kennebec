@@ -13,3 +13,7 @@
 ## 2026-05-18 - Lazy Buffer Evaluation in Channelizer Views
 **Learning:** Using `FloatNativeBuffer` with eagerly evaluated `toInterleaved()` calls on `ComplexSamples` in GUI channelizer views causes massive memory churn from unused arrays when frames are dropped by the `NativeBufferManager`.
 **Action:** Always use `ComplexSamplesNativeBufferAdapter` to lazily defer array allocations until explicitly pulled by consumers to conserve memory during high-speed spectrum updates.
+
+## 2026-05-24 - DSP Inner Loop Local Accumulation
+**Learning:** Updating array indices directly (e.g., `array[index] += ...`) in tight DSP inner loops (like FIR convolutions) introduces significant array bounds checking and memory store overhead on every iteration.
+**Action:** Always use a local primitive accumulator variable (e.g., `float accumulator = 0.0f;`) within the outer loop and assign the final accumulated value to the array after the inner loop completes to eliminate this overhead.
