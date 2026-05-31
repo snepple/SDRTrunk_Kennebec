@@ -3,6 +3,19 @@
 
 <h1>sdrtrunk - Kennebec Version</h1>
 
+## 🆕 Recent Updates (Week of May 31, 2026)
+* **🚀 New Features:**
+  * **Smart Dropdowns:** Implemented intelligent dropdowns for Radio IDs and Talkgroups to minimize manual entry.
+  * **Modernized UI:** Migrated the Channel Spectrum Panel and Call Management UI to modern, HIG-compliant layouts.
+* **🎨 UI/UX Improvements:**
+  * **Contextual Help & Tooltips:** Added descriptive inline tooltips and help icons to audio preferences, tuner settings, and alias configurations, making complex DSP settings more intuitive.
+  * **HIG Alignment:** Updated styling for the JMBE Library and MP3 Preference editors to align with Apple Human Interface Guidelines.
+* **⚡ Performance & Stability:**
+  * **DSP Optimizations:** Streamlined the inner loops of `RealFIRFilter` with local accumulators, reducing memory overhead and improving audio processing performance.
+* **📚 Documentation:**
+  * **New Guides:** Added comprehensive documentation for CTCSS, DCS, and NAC Tone & Code Filtering.
+  * **Simplified Terminology:** Translated technical jargon in tuner gain settings into beginner-friendly tooltips.
+
 ## 🆕 Recent Updates (Week of May 10, 2026)
 * **🚀 New Features:**
   * **JMBE Support:** Added support for building the bazineta JMBE fork.
@@ -60,6 +73,7 @@
   <li>Ability to set allocated memory directly via the user preferences Ux/GUI</li>
   <li>AI Integration for Audio Monitoring and System Health Notifications</li>
   <li>Automated Geographic ID generation for NBFM channels</li>
+  <li>Smart dropdowns and HIG-compliant configuration panels for improved usability</li>
 </ul>
 
 <h3>In-App Knowledge Base</h3>
