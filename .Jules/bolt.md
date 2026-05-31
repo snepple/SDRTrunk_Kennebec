@@ -13,3 +13,7 @@
 ## 2026-05-18 - Lazy Buffer Evaluation in Channelizer Views
 **Learning:** Using `FloatNativeBuffer` with eagerly evaluated `toInterleaved()` calls on `ComplexSamples` in GUI channelizer views causes massive memory churn from unused arrays when frames are dropped by the `NativeBufferManager`.
 **Action:** Always use `ComplexSamplesNativeBufferAdapter` to lazily defer array allocations until explicitly pulled by consumers to conserve memory during high-speed spectrum updates.
+
+## 2026-05-31 - FloatFIRFilter ArrayList Performance Overhead
+**Learning:** Using `ArrayList<Float>` for DSP circular buffers causes massive performance degradation due to the boxing/unboxing overhead of primitive floats and object memory churn during high-frequency sample processing loops.
+**Action:** Always use primitive arrays like `float[]` instead of Collections for high-frequency numerical DSP operations to eliminate boxing overhead and improve cache locality.

@@ -676,3 +676,12 @@ jmh {
     timeUnit = 'ms'
     jvmArgs = ["-Djava.library.path=${buildDir}/jni"]
 }
+task runRealFIRFilter(type: JavaExec) {
+    mainClass = "io.github.dsheirer.dsp.filter.fir.real.RealFIRFilter"
+    classpath = sourceSets.main.runtimeClasspath
+    jvmArgs += ["--add-modules", "jdk.incubator.vector"]
+}
+task runFloatFIRFilter(type: JavaExec) {
+    mainClass = "io.github.dsheirer.dsp.filter.FloatFIRFilterBenchmark"
+    classpath = sourceSets.test.runtimeClasspath
+}
