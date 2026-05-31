@@ -244,7 +244,7 @@ public class SynthesizerViewer extends Stage
         return mChannel2ControlPanel;
     }
 
-    public class ChannelControlPanel extends JPanel
+    public class ChannelControlPanel extends javafx.embed.swing.JFXPanel
     {
         private static final int MIN_FREQUENCY = -6250;
         private static final int MAX_FREQUENCY = 6250;
@@ -254,23 +254,32 @@ public class SynthesizerViewer extends Stage
 
         public ChannelControlPanel()
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
-            add(new JLabel("Tone:"), "align right");
+            javafx.application.Platform.runLater(() -> {
+                javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(10);
+                box.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+                box.setPadding(new javafx.geometry.Insets(12, 12, 12, 12));
 
-            SpinnerNumberModel model = new SpinnerNumberModel(DEFAULT_FREQUENCY, MIN_FREQUENCY, MAX_FREQUENCY, 100);
-            model.addChangeListener(new ChangeListener()
-            {
-                @Override
-                public void stateChanged(ChangeEvent e)
-                {
-                    long toneFrequency = model.getNumber().longValue();
-                    mOscillator.setFrequency(toneFrequency);
+                javafx.scene.control.Label toneLabel = new javafx.scene.control.Label("Tone:");
+                javafx.scene.control.Spinner<Integer> spinner = new javafx.scene.control.Spinner<>(MIN_FREQUENCY, MAX_FREQUENCY, DEFAULT_FREQUENCY, 100);
+                spinner.setEditable(true);
+
+                spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+                    if (newVal != null) {
+                        mOscillator.setFrequency(newVal.longValue());
+                    }
+                });
+
+                javafx.scene.control.Label hzLabel = new javafx.scene.control.Label("Hz");
+
+                box.getChildren().addAll(toneLabel, spinner, hzLabel);
+
+                javafx.scene.Scene scene = new javafx.scene.Scene(box);
+                java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+                if (cssUrl != null) {
+                    scene.getStylesheets().add(cssUrl.toExternalForm());
                 }
+                setScene(scene);
             });
-
-            JSpinner spinner = new JSpinner(model);
-            add(spinner);
-            add(new JLabel("Hz"));
         }
 
         public IComplexOscillator getOscillator()
