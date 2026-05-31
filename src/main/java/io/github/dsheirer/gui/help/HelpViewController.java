@@ -101,6 +101,7 @@ public class HelpViewController {
         guidesNode.getChildren().add(integrationsStreamingNode);
 
         TreeItem<String> advancedSystemNode = new TreeItem<>("Advanced & System");
+        advancedSystemNode.getChildren().add(new TreeItem<>("CTCSS & DCS Filtering"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Audio Quality & Tuning"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Audio Recordings"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Diagnostics"));
