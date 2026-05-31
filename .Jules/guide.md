@@ -37,3 +37,6 @@
 ## 2026-05-18 - LNA Gain in HackRF Editor
 **Simplified:**
 - LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+## 2026-05-18 - VGA Gain in HackRF Editor
+**Simplified:**
+- VGA Gain: Controls the Variable Gain Amplifier (Baseband Gain). Fine-tunes the signal after the LNA. Increase if the signal is still too weak.

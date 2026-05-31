@@ -112,7 +112,10 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
         add(lnaHelp);
         add(getLnaGainCombo(), "wrap");
 
-        add(new JLabel("VGA:"));
+                add(new JLabel("VGA:"), "split 2");
+        JButton vgaHelp = createHelpIcon("?");
+        vgaHelp.setToolTipText("<html><b>VGA Gain:</b> Controls the Variable Gain Amplifier (Baseband Gain).<br>Fine-tunes the signal after the LNA. Increase if the signal is still too weak.</html>");
+        add(vgaHelp);
         add(getVgaGainCombo(), "wrap");
     }
 
@@ -160,8 +163,7 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
         if(mVgaGainCombo == null)
         {
             mVgaGainCombo = new JComboBox<HackRFVGAGain>(HackRFVGAGain.values());
-            mVgaGainCombo.setToolTipText("<html>VGA Gain.  Adjust to set the baseband gain</html>");
-            mVgaGainCombo.setEnabled(false);
+                        mVgaGainCombo.setEnabled(false);
             mVgaGainCombo.addActionListener(arg0 ->
             {
                 if(!isLoading())
