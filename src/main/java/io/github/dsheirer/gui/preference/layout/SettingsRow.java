@@ -13,9 +13,13 @@ import javafx.scene.layout.Region;
 public class SettingsRow extends HBox {
 
     public SettingsRow(String labelText, Node... trailingControls) {
+        this(new Label(labelText == null ? "" : labelText), trailingControls);
+    }
+
+    public SettingsRow(Node leadingNode, Node... trailingControls) {
         getStyleClass().add("hig-settings-row");
 
-        Label label = new Label(labelText);
+        Node label = leadingNode != null ? leadingNode : new Label("");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
