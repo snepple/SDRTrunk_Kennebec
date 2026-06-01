@@ -106,15 +106,15 @@ public class ScriptAction extends RecurringAction
 
             int exitCode = p.waitFor();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
             String line = "";
-
             StringBuilder sb = new StringBuilder();
 
-            while((line = reader.readLine()) != null)
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream())))
             {
-                sb.append(line + "\n");
+                while((line = reader.readLine()) != null)
+                {
+                    sb.append(line + "\n");
+                }
             }
 
             if(exitCode != 0)

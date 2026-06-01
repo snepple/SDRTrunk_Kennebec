@@ -10,3 +10,6 @@
 ## 2024-05-20 - Global Notification Dispatch Rate-Limiting
 **Learning:** When using an application-wide event bus or hooking into low-level streaming and decoding events (like sync loss or LibUsb hotplug), it's trivial to accidentally flood the user with thousands of notifications for a sustained error condition. A debounce or rate-limiting mechanism is essential.
 **Action:** Always wrap event-driven notifications in a dedicated monitor/manager class (like `SystemHealthMonitor`) that maintains a timestamp map of the last triggered alert to strictly enforce a sensible rate limit (e.g., 1 per hour per type) before dispatching to the UI or remote notification sinks.
+## 2024-05-21 - Process InputStream Readers
+**Finding:** Opening a `BufferedReader` on a `Process.getInputStream()` without a `try-with-resources` block leaves an unmanaged resource that could exhaust file descriptors if a script action is repeated rapidly.
+**Action:** Always wrap `Process.getInputStream()` inside a `try-with-resources` block when reading from it in recurrent tasks like `ScriptAction` or `JmbeCreator`.
