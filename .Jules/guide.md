@@ -37,3 +37,9 @@
 ## 2026-05-18 - LNA Gain in HackRF Editor
 **Simplified:**
 - LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+
+## 2026-05-18 - MP3 Encoder Preferences
+**Simplified:**
+- Normalize Audio Before Encoding: Evens out the volume levels before encoding the audio.
+- (LAME) Encoder Setting: Adjusts the MP3 encoding quality and compression level.
+- Input Audio Sample Rate: Selects the sampling rate used for generating the MP3 file.
