@@ -214,6 +214,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mChangeApplicationRootButton == null)
         {
             mChangeApplicationRootButton = new Button("Change...");
+            mChangeApplicationRootButton.setTooltip(new Tooltip("Select a custom folder for the application root directory."));
             mChangeApplicationRootButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -241,6 +242,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mResetApplicationRootButton == null)
         {
             mResetApplicationRootButton = new Button("Reset");
+            mResetApplicationRootButton.setTooltip(new Tooltip("Restore the application root folder to its default location."));
             mResetApplicationRootButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -271,6 +273,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mChangeApplicationLogsButton == null)
         {
             mChangeApplicationLogsButton = new Button("Change...");
+            mChangeApplicationLogsButton.setTooltip(new Tooltip("Select a custom folder for application logs."));
             mChangeApplicationLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -298,6 +301,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mResetApplicationLogsButton == null)
         {
             mResetApplicationLogsButton = new Button("Reset");
+            mResetApplicationLogsButton.setTooltip(new Tooltip("Restore the application logs folder to its default location."));
             mResetApplicationLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -328,6 +332,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mChangeConfigurationButton == null)
         {
             mChangeConfigurationButton = new Button("Change...");
+            mChangeConfigurationButton.setTooltip(new Tooltip("Select a custom folder for configuration files."));
             mChangeConfigurationButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -355,6 +360,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mResetConfigurationButton == null)
         {
             mResetConfigurationButton = new Button("Reset");
+            mResetConfigurationButton.setTooltip(new Tooltip("Restore the configuration folder to its default location."));
             mResetConfigurationButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -385,6 +391,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mChangeEventLogsButton == null)
         {
             mChangeEventLogsButton = new Button("Change...");
+            mChangeEventLogsButton.setTooltip(new Tooltip("Select a custom folder for event logs."));
             mChangeEventLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -412,6 +419,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mResetEventLogsButton == null)
         {
             mResetEventLogsButton = new Button("Reset");
+            mResetEventLogsButton.setTooltip(new Tooltip("Restore the event logs folder to its default location."));
             mResetEventLogsButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -442,6 +450,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mChangeJmbeButton == null)
         {
             mChangeJmbeButton = new Button("Change...");
+            mChangeJmbeButton.setTooltip(new Tooltip("Select a custom folder for the JMBE audio library."));
             mChangeJmbeButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -469,6 +478,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mResetJmbeButton == null)
         {
             mResetJmbeButton = new Button("Reset");
+            mResetJmbeButton.setTooltip(new Tooltip("Restore the JMBE audio library folder to its default location."));
             mResetJmbeButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -499,6 +509,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mChangePlaylistButton == null)
         {
             mChangePlaylistButton = new Button("Change...");
+            mChangePlaylistButton.setTooltip(new Tooltip("Select a custom folder for playlists."));
             mChangePlaylistButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -526,6 +537,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mResetPlaylistButton == null)
         {
             mResetPlaylistButton = new Button("Reset");
+            mResetPlaylistButton.setTooltip(new Tooltip("Restore the playlists folder to its default location."));
             mResetPlaylistButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -556,6 +568,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mChangeRecordingButton == null)
         {
             mChangeRecordingButton = new Button("Change...");
+            mChangeRecordingButton.setTooltip(new Tooltip("Select a custom folder for audio recordings."));
             mChangeRecordingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -583,6 +596,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mResetRecordingButton == null)
         {
             mResetRecordingButton = new Button("Reset");
+            mResetRecordingButton.setTooltip(new Tooltip("Restore the recordings folder to its default location."));
             mResetRecordingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -613,6 +627,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mChangeScreenCaptureButton == null)
         {
             mChangeScreenCaptureButton = new Button("Change...");
+            mChangeScreenCaptureButton.setTooltip(new Tooltip("Select a custom folder for screen captures."));
             mChangeScreenCaptureButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -640,6 +655,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mResetScreenCaptureButton == null)
         {
             mResetScreenCaptureButton = new Button("Reset");
+            mResetScreenCaptureButton.setTooltip(new Tooltip("Restore the screen captures folder to its default location."));
             mResetScreenCaptureButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -670,6 +686,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mChangeStreamingButton == null)
         {
             mChangeStreamingButton = new Button("Change...");
+            mChangeStreamingButton.setTooltip(new Tooltip("Select a custom folder for streaming audio."));
             mChangeStreamingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
@@ -697,6 +714,7 @@ public class DirectoryPreferenceEditor extends javafx.scene.layout.VBox
         if(mResetStreamingButton == null)
         {
             mResetStreamingButton = new Button("Reset");
+            mResetStreamingButton.setTooltip(new Tooltip("Restore the streaming folder to its default location."));
             mResetStreamingButton.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
