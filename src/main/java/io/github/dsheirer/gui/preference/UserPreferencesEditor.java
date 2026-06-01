@@ -259,7 +259,9 @@ public class UserPreferencesEditor extends BorderPane
         {
             mButtonsBox = new HBox();
             mButtonsBox.setMaxWidth(Double.MAX_VALUE);
-            Button okButton = new Button("Ok");
+            Button okButton = new Button("_Ok");
+            okButton.setMnemonicParsing(true);
+            okButton.setTooltip(new javafx.scene.control.Tooltip("Close the user preferences window"));
             okButton.setOnAction(event -> {
                 Stage stage = (Stage)getButtonsBox().getScene().getWindow();
                 stage.close();
