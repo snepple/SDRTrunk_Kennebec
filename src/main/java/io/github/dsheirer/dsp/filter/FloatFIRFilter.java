@@ -20,12 +20,12 @@ package io.github.dsheirer.dsp.filter;
 import io.github.dsheirer.sample.real.RealSampleListener;
 import org.apache.commons.lang3.Validate;
 
-import java.util.ArrayList;
 
 public class FloatFIRFilter implements RealSampleListener
 {
 	private RealSampleListener mListener;
-	private ArrayList<Float> mBuffer;
+	// Bolt: Changed from ArrayList<Float> to float[] to eliminate boxing/unboxing overhead
+	private float[] mBuffer;
     private int mBufferSize = 1; //Temporary initial value
 	private int mBufferPointer = 0;
 	private float[] mCoefficients;
@@ -37,15 +37,9 @@ public class FloatFIRFilter implements RealSampleListener
 	public FloatFIRFilter( float[] coefficients, float gain )
 	{
 		mCoefficients = coefficients;
-		mBuffer = new ArrayList<Float>();
 		mBufferSize = mCoefficients.length;
+		mBuffer = new float[mBufferSize];
 		mGain = gain;
-		
-		//Fill the buffer with zero valued samples, so we don't have to check for null
-		for( int x = 0; x < mCoefficients.length; x++ )
-		{
-			mBuffer.add( 0.0f );
-		}
 		
 		generateIndexMap( mCoefficients.length );
 	}
@@ -54,7 +48,7 @@ public class FloatFIRFilter implements RealSampleListener
 	{
 		mListener = null;
 		
-		mBuffer.clear();
+		mBuffer = null;
 	}
 	
 	public int getTapCount()
@@ -75,7 +69,7 @@ public class FloatFIRFilter implements RealSampleListener
 	public float get( float newSample )
 	{
 		//Add the new sample to the buffer
-		mBuffer.set( mBufferPointer, newSample );
+		mBuffer[mBufferPointer] = newSample;
 
 		//Increment & Adjust the buffer pointer for circular wrap around
 		mBufferPointer++;
@@ -91,15 +85,15 @@ public class FloatFIRFilter implements RealSampleListener
 
 		//Start with the center tap value
 		accumulator += mCoefficients[ mCenterCoefficient ] * 
-				mBuffer.get( mIndexMap[ mBufferPointer ][ mCenterCoefficientMapIndex ] );
+				mBuffer[mIndexMap[ mBufferPointer ][ mCenterCoefficientMapIndex ]];
 		
 		//For the remaining coefficients, add the symmetric samples, oldest and newest
 		//first, then multiply by the single coefficient
 		for( int x = 0; x < mCenterCoefficient; x++ )
 		{
 			accumulator += mCoefficients[ x ] *
-				( mBuffer.get( mIndexMap[ mBufferPointer ][ x ] ) + 
-				  mBuffer.get( mIndexMap[ mBufferPointer ][ x + mCenterCoefficient ] ) );
+				( mBuffer[mIndexMap[ mBufferPointer ][ x ]] +
+				  mBuffer[mIndexMap[ mBufferPointer ][ x + mCenterCoefficient ]] );
 		}
 
 		//We're almost finished ... apply gain, cast the doubles to shorts and
