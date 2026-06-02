@@ -639,7 +639,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private VBox createLowPassSection()
     {
         VBox section = new VBox(5);
-        Label title = new Label("2. Low-Pass Filter");
+        Label title = new Label("1. Low-Pass Filter");
         title.setFont(Font.font(null, FontWeight.BOLD, 12));
         HBox titleBox = new HBox(5);
         titleBox.setAlignment(Pos.CENTER_LEFT);

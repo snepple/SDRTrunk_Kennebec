@@ -154,15 +154,17 @@ public class DiagnosticMonitor
                 
                 // Fallback: show the dialog only if auto-disable failed (e.g., UAC denied)
                 if (!mHeadless) {
-                    String title = "sdrtrunk: Background Power Throttling Detected";
-                    String message = "Windows 11 EcoQoS (Efficiency Mode) may throttle sdrtrunk when running in the background,\n" +
-                                     "causing dropped audio and processing delays. To ensure optimal performance, please disable\n" +
-                                     "power throttling for sdrtrunk by running one of the following commands in an elevated\n" +
-                                     "(Administrator) Command Prompt:\n\n" +
-                                     "powercfg /powerthrottling disable /path \"C:\\Path\\To\\java.exe\"\n" +
-                                     "or\n" +
-                                     "reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\java.exe\\PerfOptions\" /v \"CpuPriorityClass\" /t REG_DWORD /d 3 /f\n\n" +
-                                     "If you are using the SDRTrunk.exe wrapper, you should replace java.exe with SDRTrunk.exe in the commands above.";
+                    String title = "SDRTrunk Needs Your Permission";
+                    String message = "Windows is slowing down SDRTrunk to save power. " +
+                                     "This can cause audio to cut out or sound choppy.\n\n" +
+                                     "To fix this, click \"Fix It Now\" below. Windows will ask " +
+                                     "for your permission — just click \"Yes\" on the popup that appears.\n\n" +
+                                     "If you'd rather do this later, click \"Remind Me Later\". " +
+                                     "You can also fix this manually:\n\n" +
+                                     "Step 1: Right-click the Start button and choose\n" +
+                                     "             \"Terminal (Admin)\" or \"PowerShell (Admin)\"\n" +
+                                     "Step 2: Type this command and press Enter:\n" +
+                                     "             powercfg /powerthrottling disable /path \"" + processPath + "\"";
                     
                     final String finalProcessPath = processPath;
                     Platform.runLater(() -> {
@@ -171,12 +173,12 @@ public class DiagnosticMonitor
                         alert.setHeaderText(title);
                         alert.setContentText(message);
                         
-                        javafx.scene.control.ButtonType disableBtn = new javafx.scene.control.ButtonType("Disable", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
-                        javafx.scene.control.ButtonType ignoreBtn = new javafx.scene.control.ButtonType("Ignore", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
-                        alert.getButtonTypes().setAll(disableBtn, ignoreBtn);
+                        javafx.scene.control.ButtonType fixBtn = new javafx.scene.control.ButtonType("Fix It Now", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+                        javafx.scene.control.ButtonType laterBtn = new javafx.scene.control.ButtonType("Remind Me Later", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+                        alert.getButtonTypes().setAll(fixBtn, laterBtn);
                         
                         Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
-                        if (result.isPresent() && result.get() == disableBtn) {
+                        if (result.isPresent() && result.get() == fixBtn) {
                             try {
                                 String retryCmd = "Start-Process powercfg -ArgumentList '/powerthrottling disable /path `\"" + finalProcessPath + "`\"' -Verb RunAs -WindowStyle Hidden";
                                 Runtime.getRuntime().exec(new String[]{"powershell.exe", "-Command", retryCmd});
