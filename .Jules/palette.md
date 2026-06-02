@@ -98,3 +98,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-17 - HIG Compliant Tooltips for Editors
 **Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
 **Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
+## 2026-05-18 - Tooltip help icons in SettingsRow
+**Learning:** Legacy SettingsRow elements often have Tooltips placed on the input controls instead of using a help icon next to the leading label. This breaks consistency with other areas of SDRTrunk that use `createHelpIcon()` on the label.
+**Action:** When updating preferences, move `Tooltip`s from trailing controls to the leading label by wrapping the label and a help icon in an `HBox` before passing it to `SettingsRow`.

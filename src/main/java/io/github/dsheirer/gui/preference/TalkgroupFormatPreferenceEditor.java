@@ -25,6 +25,9 @@ import javafx.scene.image.*;
 import javafx.scene.paint.*;
 import javafx.geometry.*;
 
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
+
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.identifier.IntegerFormat;
 import io.github.dsheirer.preference.identifier.TalkgroupFormatPreference;
@@ -73,7 +76,12 @@ public class TalkgroupFormatPreferenceEditor extends VBox
             controlsBox.getChildren().addAll(fixedWidthEditor, formatEditor);
             controlsBox.setAlignment(Pos.CENTER_RIGHT);
 
-            SettingsRow row = new SettingsRow(protocol.toString(), controlsBox);
+            HBox protocolBox = new HBox(5);
+            protocolBox.setAlignment(Pos.CENTER_LEFT);
+            Label protocolLabel = new Label(protocol.toString());
+            protocolBox.getChildren().addAll(protocolLabel, createHelpIcon("Selects the display format (e.g., Hex, Decimal) for " + protocol.toString() + "'s talkgroups and radio IDs.\nFixed Width pads the IDs with leading zeros to maintain a fixed width."));
+
+            SettingsRow row = new SettingsRow(protocolBox, controlsBox);
             mainCard.getChildren().add(row);
         }
 
@@ -95,7 +103,7 @@ public class TalkgroupFormatPreferenceEditor extends VBox
             setMaxWidth(Double.MAX_VALUE);
             getItems().addAll(formats);
             getSelectionModel().select(mTalkgroupFormatPreference.getTalkgroupFormat(mProtocol));
-            setTooltip(new Tooltip("Selects the display format (e.g., Hex, Decimal) for the protocol's talkgroups and radio IDs."));
+
             setOnAction(event -> {
                 IntegerFormat selected = getSelectionModel().getSelectedItem();
                 mTalkgroupFormatPreference.setTalkgroupFormat(mProtocol, selected);
@@ -117,8 +125,20 @@ public class TalkgroupFormatPreferenceEditor extends VBox
             mTalkgroupFormatPreference = preference;
             mProtocol = protocol;
             setSelected(mTalkgroupFormatPreference.isTalkgroupFixedWidth(mProtocol));
-            setTooltip(new Tooltip("Pads the IDs with leading zeros to maintain a fixed width."));
+
             setOnAction(event -> mTalkgroupFormatPreference.setTalkgroupFixedWidth(mProtocol, isSelected()));
         }
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }
