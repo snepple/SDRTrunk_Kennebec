@@ -119,6 +119,8 @@ public class TwoToneDetector
 
         for(TwoToneConfiguration config : configs)
         {
+            if (!config.isEnabled()) continue;
+
             long freqA = Math.round(config.getToneA());
             long freqB = Math.round(config.getToneB());
             double tol = config.getFrequencyTolerance();
@@ -326,7 +328,7 @@ public class TwoToneDetector
             MqttService.getInstance().publish(config.getMqttTopic(), payload);
         }
 
-        MyEventBus.getGlobalEventBus().post(new TwoToneDetectedEvent(channel, text));
+        MyEventBus.getGlobalEventBus().post(new TwoToneDetectedEvent(channel, text, config.isShowNotification()));
 
         if (mAntiFloodFilter != null && !mAntiFloodFilter.checkAndRecord("TWOTONE:" + alias)) {
             mLog.info("Suppressed duplicate Two-Tone Zello alert for alias: {}", alias);
@@ -349,6 +351,33 @@ public class TwoToneDetector
                         broadcaster.injectPreDispatchAudio(config.getZelloAlertFile());
                     }
                 }
+            }
+        }
+
+        if (config.getAlertFilePath() != null && !config.getAlertFilePath().isEmpty()) {
+            try {
+                String path = config.getAlertFilePath();
+                java.io.File file = new java.io.File(path);
+                if (file.exists()) {
+                    if (path.toLowerCase().endsWith(".mp3")) {
+                        javafx.application.Platform.runLater(() -> {
+                            try {
+                                javafx.scene.media.Media media = new javafx.scene.media.Media(file.toURI().toString());
+                                javafx.scene.media.MediaPlayer mediaPlayer = new javafx.scene.media.MediaPlayer(media);
+                                mediaPlayer.play();
+                            } catch (Exception ex) {
+                                mLog.error("Error playing mp3 alert", ex);
+                            }
+                        });
+                    } else {
+                        javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(file);
+                        javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
+                        clip.open(ais);
+                        clip.start();
+                    }
+                }
+            } catch (Exception ex) {
+                mLog.error("Error playing local alert audio: " + config.getAlertFilePath(), ex);
             }
         }
     }

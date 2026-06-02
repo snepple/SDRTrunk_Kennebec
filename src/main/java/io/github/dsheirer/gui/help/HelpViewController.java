@@ -10,6 +10,8 @@ import javafx.scene.web.WebView;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+import org.commonmark.ext.gfm.tables.TablesExtension;
+import java.util.List;
 
 public class HelpViewController {
 
@@ -259,9 +261,9 @@ public class HelpViewController {
 
         String markdown = "# " + topic + "\n\n" + getMarkdownContent(topic);
 
-        Parser parser = Parser.builder().build();
+        Parser parser = Parser.builder().extensions(List.of(TablesExtension.create())).build();
         Node document = parser.parse(markdown);
-        HtmlRenderer renderer = HtmlRenderer.builder().build();
+        HtmlRenderer renderer = HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
         String htmlBody = renderer.render(document);
 
         String html = "<html><head>" + CSS_STYLE + "</head><body>" + htmlBody + "</body></html>";

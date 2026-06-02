@@ -1,8 +1,8 @@
-
-
 package io.github.dsheirer.gui.playlist.twotone;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.playlist.TwoToneConfiguration;
@@ -77,8 +77,17 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             mObservableConfigs.addAll(playlistManager.getCurrentPlaylist().getTwoToneConfigurations());
         }
 
-        mTableView = new TableView<>(mObservableConfigs);
+        FilteredList<TwoToneConfiguration> filteredConfigs = new FilteredList<>(mObservableConfigs, p -> true);
+        SortedList<TwoToneConfiguration> sortedConfigs = new SortedList<>(filteredConfigs);
+        
+        mTableView = new TableView<>(sortedConfigs);
+        sortedConfigs.comparatorProperty().bind(mTableView.comparatorProperty());
         mTableView.setPlaceholder(new Label("Click the New button to create a new Two Tone Detector"));
+
+        TableColumn<TwoToneConfiguration, Boolean> enabledCol = new TableColumn<>("Enabled");
+        enabledCol.setId("enabled");
+        enabledCol.setCellValueFactory(new PropertyValueFactory<>("enabled"));
+
 
         TableColumn<TwoToneConfiguration, String> aliasCol = new TableColumn<>("Name");
         aliasCol.setId("alias");
@@ -93,7 +102,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         mqttCol.setId("mqtt");
         mqttCol.setCellValueFactory(new PropertyValueFactory<>("enableMqttPublish"));
 
-        mTableView.getColumns().addAll(aliasCol, toneACol, toneBCol, mqttCol);
+        mTableView.getColumns().addAll(enabledCol, aliasCol, toneACol, toneBCol, mqttCol);
         mTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         mTableView.setTableMenuButtonVisible(true);
         new io.github.dsheirer.preference.javafx.FxTableColumnMonitor(mPlaylistManager.getUserPreferences(), mTableView, "twoToneTable");
@@ -171,18 +180,34 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         topicField.disableProperty().bind(mqttCheck.selectedProperty().not());
         payloadArea.disableProperty().bind(mqttCheck.selectedProperty().not());
 
+        CheckBox enabledCheck = new CheckBox("Enable Detector");
+        CheckBox showNotificationCheck = new CheckBox("Show Visual Notification");
+        TextField alertFileField = new TextField();
+        Button browseAlertBtn = new Button("Browse...");
+        browseAlertBtn.setOnAction(e -> {
+            javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
+            fc.setTitle("Select Alert Audio File");
+            java.io.File file = fc.showOpenDialog(null);
+            if (file != null) {
+                alertFileField.setText(file.getAbsolutePath());
+            }
+        });
+        HBox alertFileBox = new HBox(5, alertFileField, browseAlertBtn);
+        HBox.setHgrow(alertFileField, Priority.ALWAYS);
+
         GridPane generalGrid = new GridPane();
         generalGrid.setHgap(10);
         generalGrid.setVgap(8);
-        generalGrid.add(new Label("Name:"), 0, 0);
-        generalGrid.add(aliasField, 1, 0);
-        generalGrid.add(new Label("Type:"), 0, 1);
-        generalGrid.add(typeSelector, 1, 1);
-        generalGrid.add(new Label("Tone A:"), 0, 2);
-        generalGrid.add(toneAField, 1, 2);
+        generalGrid.add(enabledCheck, 0, 0, 2, 1);
+        generalGrid.add(new Label("Name:"), 0, 1);
+        generalGrid.add(aliasField, 1, 1);
+        generalGrid.add(new Label("Type:"), 0, 2);
+        generalGrid.add(typeSelector, 1, 2);
+        generalGrid.add(new Label("Tone A:"), 0, 3);
+        generalGrid.add(toneAField, 1, 3);
         Label toneBLabel = new Label("Tone B:");
-        generalGrid.add(toneBLabel, 0, 3);
-        generalGrid.add(toneBField, 1, 3);
+        generalGrid.add(toneBLabel, 0, 4);
+        generalGrid.add(toneBField, 1, 4);
 
         Slider freqTolSlider = new Slider(0, 50, 10);
         freqTolSlider.setShowTickLabels(true);
@@ -200,13 +225,17 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         Label durationValueLabel = new Label("300 ms");
         durationSlider.valueProperty().addListener((obs, oldVal, newVal) -> durationValueLabel.setText(newVal.intValue() + " ms"));
 
-        generalGrid.add(new Label("Freq Tolerance:"), 0, 4);
+        generalGrid.add(new Label("Freq Tolerance:"), 0, 5);
         HBox freqTolBox = new HBox(10, freqTolSlider, freqTolValueLabel);
-        generalGrid.add(freqTolBox, 1, 4);
+        generalGrid.add(freqTolBox, 1, 5);
 
-        generalGrid.add(new Label("Min Duration:"), 0, 5);
+        generalGrid.add(new Label("Min Duration:"), 0, 6);
         HBox durationBox = new HBox(10, durationSlider, durationValueLabel);
-        generalGrid.add(durationBox, 1, 5);
+        generalGrid.add(durationBox, 1, 6);
+
+        generalGrid.add(new Label("Local Alert Audio:"), 0, 7);
+        generalGrid.add(alertFileBox, 1, 7);
+        generalGrid.add(showNotificationCheck, 0, 8, 2, 1);
 
         toneBLabel.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
         toneBField.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
@@ -351,6 +380,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 textMessageCheck.selectedProperty().unbindBidirectional(oldVal.enableZelloTextMessageProperty());
                 freqTolSlider.valueProperty().unbindBidirectional(oldVal.frequencyToleranceProperty());
                 durationSlider.valueProperty().unbindBidirectional(oldVal.toneDurationMsProperty());
+                enabledCheck.selectedProperty().unbindBidirectional(oldVal.enabledProperty());
+                alertFileField.textProperty().unbindBidirectional(oldVal.alertFilePathProperty());
+                showNotificationCheck.selectedProperty().unbindBidirectional(oldVal.showNotificationProperty());
 
                 try {
                     oldVal.setToneA(toneAField.getEditor().getText().isEmpty() ? 0 : Double.parseDouble(toneAField.getEditor().getText()));
@@ -389,6 +421,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 textMessageCheck.selectedProperty().bindBidirectional(newVal.enableZelloTextMessageProperty());
                 freqTolSlider.valueProperty().bindBidirectional(newVal.frequencyToleranceProperty());
                 durationSlider.valueProperty().bindBidirectional(newVal.toneDurationMsProperty());
+                enabledCheck.selectedProperty().bindBidirectional(newVal.enabledProperty());
+                alertFileField.textProperty().bindBidirectional(newVal.alertFilePathProperty());
+                showNotificationCheck.selectedProperty().bindBidirectional(newVal.showNotificationProperty());
                 if (!centerSplitPane.getItems().contains(rightPane)) {
                     centerSplitPane.getItems().add(rightPane);
                     centerSplitPane.setDividerPositions(0.4);
@@ -410,6 +445,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 textMessageCheck.setSelected(false);
                 freqTolSlider.setValue(10);
                 durationSlider.setValue(300);
+                enabledCheck.setSelected(false);
+                alertFileField.clear();
+                showNotificationCheck.setSelected(false);
                 if (centerSplitPane.getItems().contains(rightPane)) {
                     centerSplitPane.getItems().remove(rightPane);
                 }
@@ -479,13 +517,23 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             mObservableConfigs.setAll(mPlaylistManager.getCurrentPlaylist().getTwoToneConfigurations());
         });
 
+        ComboBox<String> filterCombo = new ComboBox<>();
+        filterCombo.getItems().addAll("All", "Enabled Only");
+        filterCombo.getSelectionModel().select("All");
+        filterCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            filteredConfigs.setPredicate(config -> {
+                if ("Enabled Only".equals(newVal)) return config.isEnabled();
+                return true;
+            });
+        });
+
         HBox topToolbar = new HBox(15);
         topToolbar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         topToolbar.getStyleClass().add("context-toolbar");
         topToolbar.setPadding(new Insets(10, 10, 10, 10));
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        topToolbar.getChildren().addAll(spacer, newBtn, cloneBtn, delBtn, refreshBtn);
+        topToolbar.getChildren().addAll(filterCombo, spacer, newBtn, cloneBtn, delBtn, refreshBtn);
         setTop(topToolbar);
 
 

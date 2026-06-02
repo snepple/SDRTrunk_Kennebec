@@ -8,6 +8,7 @@ import java.util.prefs.Preferences;
 public class AIPreference extends Preference {
     public static final String PREFERENCE_NAME = "AI";
     public static final String KEY_GEMINI_API_KEY = "gemini.api.key";
+    public static final String KEY_GEMINI_API_KEY_TESTED = "gemini.api.key.tested";
     public static final String KEY_AI_ENABLED = "ai.enabled";
     public static final String KEY_SYSTEM_HEALTH_ENABLED = "ai.system.health.enabled";
     public static final String KEY_GEMINI_MODEL = "gemini.model";
@@ -48,6 +49,15 @@ public class AIPreference extends Preference {
 
     public void setGeminiApiKey(String apiKey) {
         mPreferences.put(KEY_GEMINI_API_KEY, apiKey);
+        notifyPreferenceUpdated();
+    }
+
+    public boolean isGeminiApiKeyTested() {
+        return mPreferences.getBoolean(KEY_GEMINI_API_KEY_TESTED, false);
+    }
+
+    public void setGeminiApiKeyTested(boolean tested) {
+        mPreferences.putBoolean(KEY_GEMINI_API_KEY_TESTED, tested);
         notifyPreferenceUpdated();
     }
 

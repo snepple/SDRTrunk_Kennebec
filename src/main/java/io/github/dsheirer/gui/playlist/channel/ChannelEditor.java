@@ -130,9 +130,29 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         topToolbar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         topToolbar.getStyleClass().add("context-toolbar");
         topToolbar.setPadding(new Insets(10, 10, 10, 10));
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        topToolbar.getChildren().addAll(getSearchAndViewBox(), spacer, getNewButton(), getCloneButton(), getDeleteButton());
+        
+        HBox viewBox = new HBox();
+        viewBox.setSpacing(5);
+        viewBox.setAlignment(Pos.CENTER);
+        Label viewLabel = new Label("View Channels:");
+        viewLabel.setMinWidth(Region.USE_PREF_SIZE);
+        viewBox.getChildren().addAll(viewLabel, getViewSegmentedButton());
+
+        Region leftSpacer = new Region();
+        HBox.setHgrow(leftSpacer, Priority.ALWAYS);
+
+        HBox searchBox = new HBox();
+        searchBox.setSpacing(5);
+        searchBox.setAlignment(Pos.CENTER);
+        Label searchLabel = new Label("Search:");
+        searchLabel.setMinWidth(Region.USE_PREF_SIZE);
+        searchLabel.setAlignment(Pos.CENTER_RIGHT);
+        searchBox.getChildren().addAll(searchLabel, getSearchField());
+
+        Region rightSpacer = new Region();
+        HBox.setHgrow(rightSpacer, Priority.ALWAYS);
+
+        topToolbar.getChildren().addAll(viewBox, leftSpacer, searchBox, rightSpacer, getNewButton(), getCloneButton(), getDeleteButton());
 
         setTop(topToolbar);
         mSplitPane = new SplitPane();
@@ -349,34 +369,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         return mChannelConfigurationEditor;
     }
 
-    private HBox getSearchAndViewBox()
-    {
-        if(mSearchAndViewBox == null)
-        {
-            mSearchAndViewBox = new HBox();
-            mSearchAndViewBox.setAlignment(Pos.CENTER_LEFT);
-            mSearchAndViewBox.setSpacing(10);
-
-            HBox searchBox = new HBox();
-            searchBox.setSpacing(5);
-            searchBox.setAlignment(Pos.CENTER);
-            Label searchLabel = new Label("Search:");
-            searchLabel.setMinWidth(Region.USE_PREF_SIZE);
-            searchLabel.setAlignment(Pos.CENTER_RIGHT);
-            searchBox.getChildren().addAll(searchLabel, getSearchField());
-
-            HBox viewBox = new HBox();
-            viewBox.setSpacing(5);
-            viewBox.setAlignment(Pos.CENTER);
-            Label viewLabel = new Label("View Channels:");
-            viewLabel.setMinWidth(Region.USE_PREF_SIZE);
-            viewBox.getChildren().addAll(viewLabel, getViewSegmentedButton());
-
-            mSearchAndViewBox.getChildren().addAll(searchBox, viewBox);
-        }
-
-        return mSearchAndViewBox;
-    }
+    // mSearchAndViewBox was removed
 
     private TextField getSearchField()
     {

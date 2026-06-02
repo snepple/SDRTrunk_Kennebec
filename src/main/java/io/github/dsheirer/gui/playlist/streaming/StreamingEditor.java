@@ -75,7 +75,9 @@ import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.controlsfx.control.SegmentedButton;
 import io.github.dsheirer.preference.javafx.FxTableColumnMonitor;
+import org.controlsfx.control.textfield.TextFields;
 
 /**
  * Editor for broadcast audio stream configurations
@@ -105,8 +107,11 @@ public class StreamingEditor extends SplitPane
     private StreamAliasSelectionEditor mStreamAliasSelectionEditor;
     private final StreamConfigurationEditorModificationListener mStreamConfigurationEditorModificationListener =
         new StreamConfigurationEditorModificationListener();
-    private CheckBox mShowEnabledOnlyCheck;
+    private SegmentedButton mViewSegmentedButton;
+    private ToggleButton mAllToggleButton;
+    private ToggleButton mEnabledOnlyToggleButton;
     private javafx.collections.transformation.FilteredList<ConfiguredBroadcast> mFilteredBroadcasts;
+    private TextField mSearchField;
 
 
 
@@ -149,27 +154,46 @@ public class StreamingEditor extends SplitPane
         HBox toolbar = new HBox();
         toolbar.getStyleClass().add("context-toolbar");
         toolbar.setAlignment(Pos.CENTER_LEFT);
-        toolbar.setPadding(new Insets(0, 0, 10, 0));
+        toolbar.setPadding(new Insets(10, 10, 10, 10));
         toolbar.setSpacing(10);
 
-        getNewButton().getStyleClass().add("flat-button");
-        getDeleteButton().getStyleClass().add("flat-button");
-        getCloneButton().getStyleClass().add("flat-button");
-        getRefreshButton().getStyleClass().add("flat-button");
-
-        CheckBox filterCheck = new CheckBox("Show Enabled Only");
-        filterCheck.getStyleClass().add("flat-button");
-        filterCheck.setTextFill(Color.WHITE);
-        filterCheck.selectedProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue) {
-                mFilteredBroadcasts.setPredicate(cb -> cb.getBroadcastConfiguration() != null && cb.getBroadcastConfiguration().isEnabled());
-            } else {
-                mFilteredBroadcasts.setPredicate(cb -> true);
+        mAllToggleButton = new ToggleButton("All");
+        mEnabledOnlyToggleButton = new ToggleButton("Enabled Only");
+        mViewSegmentedButton = new SegmentedButton(mAllToggleButton, mEnabledOnlyToggleButton);
+        mViewSegmentedButton.setMinWidth(Region.USE_PREF_SIZE);
+        mViewSegmentedButton.getStyleClass().add(SegmentedButton.STYLE_CLASS_DARK);
+        mAllToggleButton.setSelected(true);
+        mViewSegmentedButton.getToggleGroup().selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
+            if(newValue == null)
+            {
+                oldValue.setSelected(true);
+            }
+            else
+            {
+                updateFilter();
             }
         });
-        mShowEnabledOnlyCheck = filterCheck;
+        
+        HBox viewBox = new HBox(5);
+        viewBox.setAlignment(Pos.CENTER);
+        Label viewLabel = new Label("View Streams:");
+        viewLabel.setMinWidth(Region.USE_PREF_SIZE);
+        viewBox.getChildren().addAll(viewLabel, mViewSegmentedButton);
 
-        toolbar.getChildren().addAll(getNewButton(), getDeleteButton(), getCloneButton(), getRefreshButton(), filterCheck);
+        Region leftSpacer = new Region();
+        HBox.setHgrow(leftSpacer, Priority.ALWAYS);
+        
+        HBox searchBox = new HBox(5);
+        searchBox.setAlignment(Pos.CENTER);
+        Label searchLabel = new Label("Search:");
+        searchLabel.setMinWidth(Region.USE_PREF_SIZE);
+        searchLabel.setAlignment(Pos.CENTER_RIGHT);
+        searchBox.getChildren().addAll(searchLabel, getSearchField());
+
+        Region rightSpacer = new Region();
+        HBox.setHgrow(rightSpacer, Priority.ALWAYS);
+
+        toolbar.getChildren().addAll(viewBox, leftSpacer, searchBox, rightSpacer, getNewButton(), getCloneButton(), getDeleteButton(), getRefreshButton());
 
         VBox tableAndLabelBox = new VBox();
         VBox.setVgrow(getConfiguredBroadcastTableView(), Priority.ALWAYS);
@@ -183,6 +207,28 @@ public class StreamingEditor extends SplitPane
         setOrientation(Orientation.VERTICAL);
 
         getItems().addAll(masterBox);
+    }
+
+    private TextField getSearchField() {
+        if(mSearchField == null) {
+            mSearchField = TextFields.createClearableTextField();
+            mSearchField.textProperty().addListener((observable, oldValue, newValue) -> updateFilter());
+        }
+        return mSearchField;
+    }
+
+    private void updateFilter() {
+        String searchText = getSearchField().getText();
+        boolean showEnabledOnly = mEnabledOnlyToggleButton != null && mEnabledOnlyToggleButton.isSelected();
+        mFilteredBroadcasts.setPredicate(cb -> {
+            if (cb.getBroadcastConfiguration() == null) return false;
+            if (showEnabledOnly && !cb.getBroadcastConfiguration().isEnabled()) return false;
+            if (searchText != null && !searchText.isEmpty()) {
+                String name = cb.getBroadcastConfiguration().getName();
+                if (name == null || !name.toLowerCase().contains(searchText.toLowerCase())) return false;
+            }
+            return true;
+        });
     }
 
     private void setEditor(AbstractBroadcastEditor<?> editor)

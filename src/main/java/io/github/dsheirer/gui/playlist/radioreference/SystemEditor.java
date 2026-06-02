@@ -63,6 +63,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
+import org.controlsfx.control.SegmentedButton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -169,21 +170,28 @@ public class SystemEditor extends VBox
             mTabPane.setSpacing(10);
 
             HBox segmentedControl = new HBox();
-            segmentedControl.getStyleClass().add("segmented-button-bar");
             segmentedControl.setAlignment(Pos.CENTER);
 
-            ToggleGroup group = new ToggleGroup();
-
             ToggleButton btnSysView = new ToggleButton("System View");
-            btnSysView.setToggleGroup(group);
-            btnSysView.setSelected(true);
             btnSysView.setOnAction(e -> setCenterPane(getSystemSiteSelectionEditor()));
 
             ToggleButton btnTgView = new ToggleButton("Talkgroup View");
-            btnTgView.setToggleGroup(group);
             btnTgView.setOnAction(e -> setCenterPane(getSystemTalkgroupSelectionEditor()));
 
-            segmentedControl.getChildren().addAll(btnSysView, btnTgView);
+            SegmentedButton segmentedButton = new SegmentedButton(btnSysView, btnTgView);
+            segmentedButton.setMinWidth(Region.USE_PREF_SIZE);
+            segmentedButton.getStyleClass().add(SegmentedButton.STYLE_CLASS_DARK);
+            
+            segmentedButton.getToggleGroup().selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
+                // Don't allow toggles to be de-selected
+                if(newValue == null)
+                {
+                    oldValue.setSelected(true);
+                }
+            });
+            btnSysView.setSelected(true);
+
+            segmentedControl.getChildren().add(segmentedButton);
 
             mTabPane.getChildren().add(segmentedControl);
 

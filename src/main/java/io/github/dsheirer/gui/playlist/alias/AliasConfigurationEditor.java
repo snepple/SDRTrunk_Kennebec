@@ -145,10 +145,10 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         mSplitPane.setDividerPositions(0.6); // 60% list, 40% detail
         VBox.setVgrow(mSplitPane, Priority.ALWAYS);
 
-        // Left Pane (List + Actions)
+        // Left Pane (List)
         VBox leftBox = new VBox();
         VBox.setVgrow(getAliasTableView(), Priority.ALWAYS);
-        leftBox.getChildren().addAll(getAliasTableView(), getButtonBox());
+        leftBox.getChildren().addAll(getAliasTableView());
 
         mCurrentEditor = getAliasItemEditor();
         mSplitPane.getItems().addAll(leftBox, mCurrentEditor);
@@ -296,8 +296,13 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             HBox searchBox = new HBox();
             searchBox.setSpacing(8);
             searchBox.getChildren().addAll(searchLabel, getSearchField());
-            HBox.setHgrow(searchBox, Priority.ALWAYS);
-            searchBox.setAlignment(Pos.CENTER_RIGHT);
+            searchBox.setAlignment(Pos.CENTER);
+
+            Region leftSpacer = new Region();
+            HBox.setHgrow(leftSpacer, Priority.ALWAYS);
+            
+            Region rightSpacer = new Region();
+            HBox.setHgrow(rightSpacer, Priority.ALWAYS);
 
             getAliasListNameComboBox().setMinWidth(Region.USE_PREF_SIZE);
             getNewAliasListButton().setMinWidth(Region.USE_PREF_SIZE);
@@ -306,7 +311,9 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             searchBox.setMinWidth(Region.USE_PREF_SIZE);
 
             mSearchAndListSelectionBox.getChildren().addAll(listLabel, getAliasListNameComboBox(),
-                getNewAliasListButton(), getRenameAliasListButton(), getDeleteAliasListButton(), searchBox);
+                getNewAliasListButton(), getRenameAliasListButton(), getDeleteAliasListButton(), 
+                leftSpacer, searchBox, rightSpacer, 
+                getMoveToAliasButton(), getNewAliasButton(), getCloneAliasButton(), getDeleteAliasButton());
         }
 
         return mSearchAndListSelectionBox;

@@ -136,9 +136,6 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
 
         mArtworkContainer = new StackPane(mArtworkView);
         mArtworkContainer.setPadding(new Insets(9, 10, 9, 12));
-        mArtworkContainer.setCursor(javafx.scene.Cursor.HAND);
-        Tooltip.install(mArtworkContainer, new Tooltip("Click to set custom channel artwork"));
-        mArtworkContainer.setOnMouseClicked(e -> openArtworkChooser());
 
         // --- CENTER: Now Playing metadata display ---
         mChannelNameLabel = new Label("");
@@ -182,7 +179,7 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
 
         ToggleButton monoStereoButton = new ToggleButton();
         monoStereoButton.getStyleClass().add("mono-stereo-button");
-        monoStereoButton.setStyle("-fx-background-color: rgba(255,255,255,0.1); -fx-background-radius: 6; -fx-text-fill: #e0e0e0; -fx-font-size: 11px; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 4 8;");
+        monoStereoButton.setStyle("-fx-background-color: rgba(255,255,255,0.25); -fx-background-radius: 4; -fx-text-fill: #ffffff; -fx-font-size: 11px; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 6 10;");
         monoStereoButton.setTooltip(new Tooltip("Toggle between Mono and Stereo playback"));
         
         io.github.dsheirer.audio.playback.AudioPlaybackDeviceDescriptor currDevice = mUserPreferences.getPlaybackPreference().getAudioPlaybackDevice();
@@ -207,43 +204,11 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
         rightControls.setAlignment(Pos.CENTER);
         rightControls.setPadding(new Insets(0, 12, 0, 8));
 
-        Separator sep = new Separator(Orientation.VERTICAL);
-        sep.setStyle("-fx-background-color: rgba(255,255,255,0.1);");
-
         // Assemble the header
-        getChildren().addAll(mArtworkContainer, metaBox, mAudioChannelsScroller, sep, rightControls);
+        getChildren().addAll(mArtworkContainer, metaBox, mAudioChannelsScroller, rightControls);
     }
 
-    /**
-     * Opens a file chooser to select a custom artwork image (in-memory only, no DB write).
-     */
-    private void openArtworkChooser() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Select Channel Artwork");
-        chooser.getExtensionFilters().addAll(
-            new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp")
-        );
 
-        // Need a Stage reference - use the scene's window
-        javafx.stage.Window window = (getScene() != null) ? getScene().getWindow() : null;
-        File file = (window != null) ? chooser.showOpenDialog(window) : null;
-
-        if (file != null) {
-            try {
-                javafx.scene.image.Image img = new javafx.scene.image.Image(file.toURI().toString(), 46, 46, false, true);
-                mCustomArtwork = img;
-                mArtworkView.setImage(img);
-
-                // Fade in the new artwork
-                FadeTransition ft = new FadeTransition(Duration.millis(300), mArtworkView);
-                ft.setFromValue(0.3);
-                ft.setToValue(1.0);
-                ft.play();
-            } catch (Exception ex) {
-                // silently ignore invalid images
-            }
-        }
-    }
 
     public static class ActiveCallUpdateEvent {
         private String mChannelName;
@@ -261,6 +226,29 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
     @com.google.common.eventbus.Subscribe
     public void onActiveCallUpdate(ActiveCallUpdateEvent event) {
         updateNowPlaying(event.getChannelName(), event.getAliasName(), "");
+    }
+
+    @com.google.common.eventbus.Subscribe
+    public void onTwoToneDetected(io.github.dsheirer.dsp.tone.TwoToneDetectedEvent event) {
+        if (event.isShowNotification()) {
+            Platform.runLater(() -> {
+                mChannelNameLabel.setText("🚨 TWO-TONE ALERT 🚨");
+                mChannelNameLabel.setStyle("-fx-text-fill: #FF3B30; -fx-font-size: 13px; -fx-font-weight: bold;");
+                mAliasLabel.setText(event.getMessage());
+                mAliasLabel.setStyle("-fx-text-fill: #FF453A; -fx-font-size: 11px;");
+                mStreamingLabel.setText("Channel: " + event.getChannel());
+
+                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(Duration.seconds(10));
+                pause.setOnFinished(e -> {
+                    mChannelNameLabel.setStyle("-fx-text-fill: #F0F0F5; -fx-font-size: 13px; -fx-font-weight: bold;");
+                    mAliasLabel.setStyle("-fx-text-fill: #A0A0B0; -fx-font-size: 11px;");
+                    mChannelNameLabel.setText("");
+                    mAliasLabel.setText("");
+                    mStreamingLabel.setText("");
+                });
+                pause.play();
+            });
+        }
     }
 
     /**
@@ -289,6 +277,8 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
                         if (file.exists()) {
                             javafx.scene.image.Image img = new javafx.scene.image.Image(file.toURI().toString(), 46, 46, false, true);
                             mArtworkView.setImage(img);
+                            mArtworkContainer.setVisible(true);
+                            mArtworkContainer.setManaged(true);
                         } else {
                             resetArtworkViewPlaceholder();
                         }
@@ -299,29 +289,22 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
                     resetArtworkViewPlaceholder();
                 }
             } else {
-                mChannelNameLabel.setText("");
+                if (!mChannelNameLabel.getText().equals("🚨 TWO-TONE ALERT 🚨")) {
+                    mChannelNameLabel.setText("");
+                }
                 resetArtworkViewPlaceholder();
             }
-            mAliasLabel.setText(aliasName != null && !aliasName.equals("—") ? aliasName : "");
-            mStreamingLabel.setText(streamingInfo != null ? streamingInfo : "");
+            if (!mChannelNameLabel.getText().equals("🚨 TWO-TONE ALERT 🚨")) {
+                mAliasLabel.setText(aliasName != null && !aliasName.equals("—") ? aliasName : "");
+                mStreamingLabel.setText(streamingInfo != null ? streamingInfo : "");
+            }
         });
     }
 
     private void resetArtworkViewPlaceholder() {
-        // Generate a default gradient artwork placeholder
-        javafx.scene.canvas.Canvas artCanvas = new javafx.scene.canvas.Canvas(46, 46);
-        javafx.scene.canvas.GraphicsContext gc = artCanvas.getGraphicsContext2D();
-        LinearGradient artGrad = new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-            new Stop(0, Color.web("#4f8ef7")), new Stop(1, Color.web("#8b5cf6")));
-        gc.setFill(artGrad);
-        gc.fillRoundRect(0, 0, 46, 46, 10, 10);
-        gc.setFill(Color.web("rgba(255,255,255,0.25)"));
-        // Simple waveform lines as placeholder art
-        for (int i = 0; i < 5; i++) {
-            double barH = 8 + (i % 3) * 8;
-            gc.fillRect(6 + i * 8, (46 - barH) / 2.0, 5, barH);
-        }
-        mArtworkView.setImage(artCanvas.snapshot(null, null));
+        mArtworkView.setImage(null);
+        mArtworkContainer.setVisible(false);
+        mArtworkContainer.setManaged(false);
     }
 
     /**
@@ -466,8 +449,8 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
                 }
             } else {
                 setText("🔊");
-                setStyle("-fx-background-color: rgba(255,255,255,0.1); -fx-background-radius: 6; " +
-                         "-fx-cursor: hand; -fx-font-size: 16px; -fx-padding: 4 8 4 8;");
+                setStyle("-fx-background-color: rgba(255,255,255,0.25); -fx-background-radius: 4; " +
+                         "-fx-cursor: hand; -fx-font-size: 16px; -fx-padding: 4 8 4 8; -fx-text-fill: #ffffff;");
                 getStyleClass().remove("muted");
             }
         }

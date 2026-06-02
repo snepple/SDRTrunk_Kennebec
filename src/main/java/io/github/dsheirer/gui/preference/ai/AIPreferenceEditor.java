@@ -86,6 +86,7 @@ public class AIPreferenceEditor extends VBox {
         apiKeyField.setPrefWidth(200);
         apiKeyField.textProperty().addListener((observable, oldValue, newValue) -> {
             mUserPreferences.getAIPreference().setGeminiApiKey(newValue);
+            mUserPreferences.getAIPreference().setGeminiApiKeyTested(false);
         });
 
         Button testButton = new Button("Test");
@@ -152,6 +153,7 @@ public class AIPreferenceEditor extends VBox {
                     .thenAccept(response -> {
                         Platform.runLater(() -> {
                             if (response.statusCode() == 200) {
+                                mUserPreferences.getAIPreference().setGeminiApiKeyTested(true);
                                 testResultLabel.setText("Passed");
                                 testResultLabel.setTextFill(javafx.scene.paint.Color.GREEN);
                                 try {
@@ -172,7 +174,9 @@ public class AIPreferenceEditor extends VBox {
                                     }
                                 } catch (Exception ex) { }
                             } else {
-                                testResultLabel.setText("Failed: " + response.statusCode());
+                                mUserPreferences.getAIPreference().setGeminiApiKeyTested(false);
+                                apiKeyField.setText("");
+                                testResultLabel.setText("Invalid API Key, please retry.");
                                 testResultLabel.setTextFill(javafx.scene.paint.Color.RED);
                             }
                         });
@@ -187,5 +191,14 @@ public class AIPreferenceEditor extends VBox {
 
         settingsBox.getChildren().addAll(featuresLabel, featuresCard, apiHeaderLabel, apiCard, scaffoldingBox);
         getChildren().addAll(headerLabel, mainCard, mainExplanation, settingsBox);
+
+        sceneProperty().addListener((observable, oldScene, newScene) -> {
+            if (newScene == null) {
+                if (mUserPreferences.getAIPreference().isAIEnabled() && !mUserPreferences.getAIPreference().isGeminiApiKeyTested()) {
+                    mUserPreferences.getAIPreference().setAIEnabled(false);
+                    enableAiSwitch.setSelected(false);
+                }
+            }
+        });
     }
 }

@@ -17,11 +17,22 @@ public class SettingsRow extends HBox {
 
         Label label = new Label(labelText);
 
+        label.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         getChildren().addAll(label, spacer);
         if (trailingControls != null) {
+            for (Node n : trailingControls) {
+                if (n instanceof javafx.scene.control.Button) {
+                    ((javafx.scene.control.Button) n).setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+                } else if (n instanceof Label) {
+                    Label l = (Label) n;
+                    l.setWrapText(true);
+                    l.setStyle("-fx-font-size: 0.9em;");
+                }
+            }
             getChildren().addAll(trailingControls);
         }
     }

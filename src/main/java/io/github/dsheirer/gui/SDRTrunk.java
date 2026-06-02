@@ -271,6 +271,13 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         else
         {
             mLog.info("starting main application gui");
+            
+            java.util.prefs.Preferences p = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
+            boolean wizardCompleted = p.getBoolean("sdrtrunk.first.time.wizard.completed", false);
+            if (!wizardCompleted) {
+                io.github.dsheirer.gui.wizard.FirstTimeWizard wizard = new io.github.dsheirer.gui.wizard.FirstTimeWizard(mUserPreferences, mJavaFxWindowManager, primaryStage);
+                wizard.showAndWait();
+            }
 
             //Initialize the GUI
             initGUI();

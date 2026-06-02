@@ -30,6 +30,10 @@ public class TwoToneConfiguration
     private StringProperty mZelloAlertFileProperty = new SimpleStringProperty("");
     private BooleanProperty mEnableZelloTextMessageProperty = new SimpleBooleanProperty(true);
 
+    private BooleanProperty mEnabledProperty = new SimpleBooleanProperty(true);
+    private StringProperty mAlertFilePathProperty = new SimpleStringProperty("");
+    private BooleanProperty mShowNotificationProperty = new SimpleBooleanProperty(true);
+
     private DoubleProperty mFrequencyToleranceProperty = new SimpleDoubleProperty(10.0);
     private DoubleProperty mToneDurationMsProperty = new SimpleDoubleProperty(300.0);
 
@@ -52,6 +56,9 @@ public class TwoToneConfiguration
         copy.setEnableZelloAlert(isEnableZelloAlert());
         copy.setZelloAlertFile(getZelloAlertFile());
         copy.setEnableZelloTextMessage(isEnableZelloTextMessage());
+        copy.setEnabled(isEnabled());
+        copy.setAlertFilePath(getAlertFilePath());
+        copy.setShowNotification(isShowNotification());
         copy.setFrequencyTolerance(getFrequencyTolerance());
         copy.setToneDurationMs(getToneDurationMs());
         return copy;
@@ -296,10 +303,61 @@ public class TwoToneConfiguration
         return mToneDurationMsProperty;
     }
 
+    @JacksonXmlProperty(isAttribute = true, localName = "enabled")
+    public boolean isEnabled()
+    {
+        return mEnabledProperty.get();
+    }
+
+    public void setEnabled(boolean enabled)
+    {
+        mEnabledProperty.set(enabled);
+    }
+
+    @JsonIgnore
+    public BooleanProperty enabledProperty()
+    {
+        return mEnabledProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "alertFilePath")
+    public String getAlertFilePath()
+    {
+        return mAlertFilePathProperty.get();
+    }
+
+    public void setAlertFilePath(String alertFilePath)
+    {
+        mAlertFilePathProperty.set(alertFilePath);
+    }
+
+    @JsonIgnore
+    public StringProperty alertFilePathProperty()
+    {
+        return mAlertFilePathProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "showNotification")
+    public boolean isShowNotification()
+    {
+        return mShowNotificationProperty.get();
+    }
+
+    public void setShowNotification(boolean showNotification)
+    {
+        mShowNotificationProperty.set(showNotification);
+    }
+
+    @JsonIgnore
+    public BooleanProperty showNotificationProperty()
+    {
+        return mShowNotificationProperty;
+    }
+
     public static Callback<TwoToneConfiguration, Observable[]> extractor()
     {
         return (TwoToneConfiguration config) -> new Observable[]{
-            config.aliasProperty(), config.templateProperty(), config.longAToneProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty(), config.enableZelloTextMessageProperty(), config.frequencyToleranceProperty(), config.toneDurationMsProperty(), config.toneAProperty(), config.toneBProperty()
+            config.aliasProperty(), config.templateProperty(), config.longAToneProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty(), config.enableZelloTextMessageProperty(), config.frequencyToleranceProperty(), config.toneDurationMsProperty(), config.toneAProperty(), config.toneBProperty(), config.enabledProperty(), config.alertFilePathProperty(), config.showNotificationProperty()
         };
     }
 }
