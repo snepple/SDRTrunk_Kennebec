@@ -22,3 +22,6 @@
 ## 2024-05-10 - Lift Regex Compilation Out of Predicates
 **Learning:** Compiling regex patterns (`Pattern.compile()`) inside `FilteredList.setPredicate` causes O(N) regex compilations for every single item on every keystroke, leading to significant UI lag for large datasets in JavaFX applications.
 **Action:** Always hoist invariant operations like regex compilation and string lowercasing outside of the lambda/predicate passed to filtering or mapping functions.
+## 2024-05-18 - Primitive Array instead of Boxed Collections for high frequency operations
+**Learning:** Using `ArrayList<Float>` for DSP circular buffers introduces significant boxing/unboxing overhead and memory churn at high sample rates.
+**Action:** Replace boxed collections with primitive arrays (e.g. `float[]`) to eliminate boxing overhead and improve memory locality for mathematical operations.
