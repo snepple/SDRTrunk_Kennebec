@@ -43,3 +43,6 @@
 ## 2024-05-18 - OpenMHz Configuration Tooltips
 **Learning:** Configurations for complex integrations like OpenMHz often use raw text inputs without placeholders or tooltips, increasing the chance of formatting errors (e.g., omitting the 'https://' prefix for the host, or misunderstanding 'System Short Name').
 **Action:** Consistently apply Tooltip and PromptText to OpenMHz and similar API configuration text fields to reduce cognitive load and prevent formatting errors.
+## 2024-05-18 - Standardize Help Icons across Channel Configs
+**Learning:** Older channel configuration editors like MPT1327 lacked the `createHelpIcon` standard, making them inconsistent with DMR/P25 configs.
+**Action:** Systematically audit and add `createHelpIcon` utility methods and apply FontAwesome-based tooltips to complex configuration options like Max Traffic Channels and Channel Maps to improve HIG alignment and reduce cognitive load.
