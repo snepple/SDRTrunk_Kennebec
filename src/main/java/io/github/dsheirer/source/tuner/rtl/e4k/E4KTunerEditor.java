@@ -115,41 +115,41 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 2", "[right][grow,fill]", ""));
+        setLayout(new MigLayout("fill,wrap 2, insets 16 16 16 16, gapy 8", "[right, 100!][grow,fill]", ""));
 
         add(new JLabel("Tuner:"));
-        add(getTunerIdLabel());
+        add(getTunerIdLabel(), "wrap");
 
         add(new JLabel("Status:"));
-        add(getTunerStatusLabel());
+        add(getTunerStatusLabel(), "wrap");
+
+        add(new JLabel("Bias-T:"));
         add(getBiasTButton(), "wrap");
 
-        add(getButtonPanel(), "span,align left");
+        add(getButtonPanel(), "skip 1, align left, wrap");
 
-        add(new JSeparator(), "span,growx,push");
+        add(new JLabel(""), "wrap");
 
         add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel(), "span 2");
+        add(getFrequencyPanel(), "wrap");
 
         add(new JLabel("Sample Rate:"));
         add(getSampleRateCombo(), "wrap");
 
-        add(new JSeparator(), "span,growx,push");
-        add(new JLabel("Mixer/LNA Gain Control"), "wrap");
+        add(new JLabel(""), "wrap");
 
-        add(new JLabel("Master:"));
-        add(getMasterGainCombo(), "wrap");
+        javax.swing.JPanel gainPanel = new javax.swing.JPanel(new MigLayout("insets 0, gap 8 8", "[][grow,fill][][grow,fill]", ""));
+        gainPanel.add(new JLabel("Master:"));
+        gainPanel.add(getMasterGainCombo());
+        gainPanel.add(new JLabel("Mixer:"));
+        gainPanel.add(getMixerGainCombo(), "wrap");
+        gainPanel.add(new JLabel("LNA:"));
+        gainPanel.add(getLNAGainCombo());
+        gainPanel.add(new JLabel("IF Gain:"));
+        gainPanel.add(getIfGainCombo(), "wrap");
 
-        add(new JLabel("Mixer:"));
-        add(getMixerGainCombo(), "wrap");
-
-        add(new JLabel("LNA:"));
-        add(getLNAGainCombo(), "wrap");
-
-        add(new JSeparator(), "span,growx,push");
-
-        add(new JLabel("IF Gain:"));
-        add(getIfGainCombo(), "wrap");
+        add(new JLabel("Gain:"));
+        add(gainPanel, "wrap");
     }
 
     @Override
