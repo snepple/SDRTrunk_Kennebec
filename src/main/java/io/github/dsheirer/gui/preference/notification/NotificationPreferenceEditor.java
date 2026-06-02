@@ -256,6 +256,12 @@ public class NotificationPreferenceEditor extends VBox {
 
         mRecipientsList = FXCollections.observableArrayList(preference.getRecipients());
         mRecipientListView = new ListView<>(mRecipientsList);
+        
+        Label placeholder = new Label("No recipients configured.\nClick 'Add Recipient' to get started.");
+        placeholder.setStyle("-fx-text-alignment: center; -fx-text-fill: #8e8e93; -fx-font-size: 14px;");
+        placeholder.setAlignment(Pos.CENTER);
+        mRecipientListView.setPlaceholder(placeholder);
+        
         mRecipientListView.setCellFactory(param -> new ListCell<NotificationRecipient>() {
             @Override
             protected void updateItem(NotificationRecipient item, boolean empty) {
@@ -288,17 +294,26 @@ public class NotificationPreferenceEditor extends VBox {
         removeBtn.disableProperty().bind(mRecipientListView.getSelectionModel().selectedItemProperty().isNull());
 
         HBox buttonBox = new HBox(10, addBtn, removeBtn);
+        buttonBox.setAlignment(Pos.CENTER_LEFT);
 
         VBox masterBox = new VBox(10, mRecipientListView, buttonBox);
         VBox.setVgrow(mRecipientListView, Priority.ALWAYS);
+        
+        SettingsCard masterCard = new SettingsCard();
+        masterCard.getChildren().add(masterBox);
+        VBox.setVgrow(masterCard, Priority.ALWAYS);
+        
+        // Remove padding from masterBox because SettingsCard provides it
+        masterBox.setPadding(new Insets(0));
 
         mDetailPane = new VBox(15);
         mDetailPane.setPadding(new Insets(15));
         mDetailPane.setStyle("-fx-background-color: white; -fx-border-color: lightgray; -fx-border-radius: 5;");
 
         mSplitPane = new SplitPane();
-        mSplitPane.getItems().add(masterBox);
+        mSplitPane.getItems().add(masterCard);
         VBox.setVgrow(mSplitPane, Priority.ALWAYS);
+        mSplitPane.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
 
         mRecipientListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
@@ -365,8 +380,8 @@ public class NotificationPreferenceEditor extends VBox {
         Label routingHeader = new Label("Alert Routing");
         routingHeader.getStyleClass().add("hig-section-header");
 
-        SettingsCard routingCard = new SettingsCard();
-        routingCard.getChildren().addAll(
+        VBox routingBox = new VBox(5);
+        routingBox.getChildren().addAll(
             createToggleRow("Hardware and Tuner Failures",
                 "Notifies if a USB tuner disconnects, overheats, or fails.",
                 recipient.isHardwareAlertEnabled(),
@@ -398,12 +413,7 @@ public class NotificationPreferenceEditor extends VBox {
                 val -> { recipient.setAiAudioMonitoringEnabled(val); saveRecipients(preference); })
         );
 
-        ScrollPane scrollPane = new ScrollPane(routingCard);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background-color: transparent; -fx-control-inner-background: transparent; -fx-border-color: transparent;");
-        VBox.setVgrow(scrollPane, Priority.ALWAYS);
-
-        mDetailPane.getChildren().addAll(detailHeader, configCard, routingHeader, scrollPane);
+        mDetailPane.getChildren().addAll(detailHeader, configCard, routingHeader, routingBox);
     }
 
     private Node createToggleRow(String title, String description, boolean initialState, java.util.function.Consumer<Boolean> onToggle) {

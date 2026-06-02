@@ -17,3 +17,62 @@
 .menu-item:focused { -fx-background-color: #e94560; }
 .check-box .box { -fx-background-color: #0f3460; -fx-border-color: #e94560; }
 .separator .line { -fx-border-color: #0f3460; }
+
+/* Preferences UI Overrides */
+.preferences-main-area {
+    -fx-background-color: #1a1a2e !important;
+}
+
+.preferences-card {
+    -fx-background-color: #16213e !important;
+    -fx-border-color: #0f3460 !important;
+}
+
+.preferences-sidebar {
+    -fx-background-color: #16213e !important;
+    -fx-border-color: #0f3460 !important;
+}
+
+.preferences-section-header {
+    -fx-text-fill: #a0a0a0 !important;
+}
+
+.preferences-list-item, .hig-sidebar-item {
+    -fx-text-fill: #e0e0e0 !important;
+}
+.preferences-list-item:hover, .hig-sidebar-item:hover {
+    -fx-background-color: #0f3460 !important;
+}
+.preferences-list-item.selected, .hig-sidebar-item.selected {
+    -fx-background-color: #e94560 !important;
+    -fx-text-fill: #ffffff !important;
+}
+
+.preferences-main-area .label,
+.preferences-card .label,
+.preferences-scrollpane .label,
+.hig-section-header {
+    -fx-text-fill: #e0e0e0 !important;
+}
+
+.preferences-main-area .check-box,
+.preferences-card .check-box,
+.preferences-scrollpane .check-box {
+    -fx-text-fill: #e0e0e0 !important;
+}
+
+.preferences-main-area .radio-button,
+.preferences-card .radio-button,
+.preferences-scrollpane .radio-button {
+    -fx-text-fill: #e0e0e0 !important;
+}
+
+.preferences-main-area .text,
+.preferences-card .text,
+.preferences-scrollpane .text {
+    -fx-fill: #e0e0e0 !important;
+}
+
+.preferences-main-area .combo-box .list-cell {
+    -fx-text-fill: #e0e0e0 !important;
+}

@@ -106,7 +106,7 @@ public class PlaylistEditor extends BorderPane
         mTunerManager = tunerManager;
         mUserPreferences = userPreferences;
         
-        setStyle("-fx-background-color: lightgreen;");
+        getStyleClass().add("kennebec-grouped-bg");
 
         //Throw a new runnable back onto the FX thread to lazy load the editor content after the editor has been
         //constructed and shown.

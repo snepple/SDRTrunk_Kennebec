@@ -21,6 +21,8 @@ package io.github.dsheirer.gui.preference.decoder;
 
 import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.eventbus.MyEventBus;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import io.github.dsheirer.jmbe.JmbeCreator;
 import io.github.dsheirer.jmbe.JmbeEditorRequest;
 import io.github.dsheirer.jmbe.github.GitHub;
@@ -32,7 +34,6 @@ import io.github.dsheirer.util.ThreadPool;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -40,7 +41,6 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -67,8 +67,6 @@ public class JmbeLibraryPreferenceEditor extends VBox
     private static final String LIBRARY_NOT_SETUP = "None.  Click Select or Create Library button to setup.";
 
     private UserPreferences mUserPreferences;
-    private GridPane mEditorPane;
-    private Label mJmbeLibraryLabel;
     private Label mJmbeVersionLabel;
     private Label mPathToJmbeLibraryLabel;
     private Button mSelectButton;
@@ -85,9 +83,26 @@ public class JmbeLibraryPreferenceEditor extends VBox
         //Register to receive directory preference update notifications so we can update the path labels
         MyEventBus.getGlobalEventBus().register(this);
 
-        setPadding(new Insets(10,10,10,10));
-        setSpacing(10);
-        getChildren().addAll(getEditorPane(), getButtonsBox(), getAlertUserWhenMissingCheckBox(), getUseBazinetaForkCheckBox());
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
+
+        // Section header
+        Label headerLabel = new Label("JMBE Audio Library");
+        headerLabel.getStyleClass().add("hig-section-header");
+        getChildren().add(headerLabel);
+
+        // Library info card
+        SettingsCard infoCard = new SettingsCard();
+        infoCard.getChildren().add(new SettingsRow("Current Version", getJmbeVersionLabel()));
+        infoCard.getChildren().add(new SettingsRow("File", getPathToJmbeLibraryLabel()));
+        getChildren().add(infoCard);
+
+        // Actions card with buttons and options
+        SettingsCard actionsCard = new SettingsCard();
+        actionsCard.getChildren().add(new SettingsRow("Library Actions", getCreateButton(), getSelectButton(), getResetButton()));
+        actionsCard.getChildren().add(new SettingsRow("Alert When Missing", getAlertUserWhenMissingCheckBox()));
+        actionsCard.getChildren().add(new SettingsRow("Use Bazineta Fork", getUseBazinetaForkCheckBox()));
+        getChildren().add(actionsCard);
     }
 
     public void dispose()
@@ -143,47 +158,6 @@ public class JmbeLibraryPreferenceEditor extends VBox
         return mUseBazinetaForkCheckBox;
     }
 
-
-    private HBox getButtonsBox()
-    {
-        if(mButtonsBox == null)
-        {
-            mButtonsBox = new HBox();
-            mButtonsBox.setSpacing(10);
-            mButtonsBox.getChildren().addAll(getCreateButton(), getSelectButton(), getResetButton());
-        }
-
-        return mButtonsBox;
-    }
-
-    private GridPane getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            mEditorPane = new GridPane();
-            mEditorPane.setVgap(10);
-            mEditorPane.setHgap(10);
-
-            int row = 0;
-
-            mEditorPane.add(getJmbeLibraryLabel(), 0, row, 2, 1);
-
-            Label versionLabel = new Label("Current Version:");
-            GridPane.setHalignment(versionLabel, HPos.RIGHT);
-            mEditorPane.add(versionLabel, 0, ++row);
-
-            mEditorPane.add(getJmbeVersionLabel(), 1, row);
-
-            Label fileLabel = new Label("File:");
-            GridPane.setHalignment(fileLabel, HPos.RIGHT);
-            mEditorPane.add(fileLabel, 0, ++row);
-
-            mEditorPane.add(getPathToJmbeLibraryLabel(), 1, row);
-        }
-
-        return mEditorPane;
-    }
-
     private Button getCreateButton()
     {
         if(mCreateButton == null)
@@ -208,10 +182,45 @@ public class JmbeLibraryPreferenceEditor extends VBox
             {
                 Version current = mUserPreferences.getJmbeLibraryPreference().getCurrentVersion();
                 boolean useFork = mUserPreferences.getJmbeLibraryPreference().getUseBazinetaFork();
-                final Release release = GitHub.getLatestRelease(JmbeCreator.GITHUB_JMBE_RELEASES_URL);
+                String releasesUrl = useFork ? JmbeCreator.GITHUB_BAZINETA_JMBE_RELEASES_URL : JmbeCreator.GITHUB_JMBE_RELEASES_URL;
+                final Release release = GitHub.getLatestRelease(releasesUrl);
 
-                mLog.info("Checking for JMBE Library Updates ...");
+                mLog.info("Checking for JMBE Library Updates (fork={}) ...", useFork);
                 mLog.info("Current: " + (current != null ? current.toString() : "empty"));
+
+                // For bazineta fork: if no release found (repo may not have tagged releases),
+                // allow direct creation from master.zip
+                if(useFork && release == null)
+                {
+                    mLog.info("Bazineta fork has no tagged releases - proceeding with direct build from master");
+                    // Create a synthetic release for the bazineta fork
+                    final Release syntheticRelease = new Release(Version.fromString("v1.0.9"), new com.google.gson.JsonObject());
+
+                    Platform.runLater(() -> {
+                        try
+                        {
+                            String content = "The bazineta JMBE fork will be downloaded and compiled from source. " +
+                                "Would you like to proceed?";
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, content, ButtonType.YES, ButtonType.NO);
+                            alert.setResizable(true);
+                            alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+                            alert.setTitle("JMBE Library - Bazineta Fork");
+                            alert.setHeaderText("Install bazineta JMBE fork");
+                            alert.initOwner(getCreateButton().getScene().getWindow());
+                            alert.showAndWait().ifPresent(buttonType -> {
+                                if(buttonType == ButtonType.YES)
+                                {
+                                    MyEventBus.getGlobalEventBus().post(new JmbeEditorRequest(syntheticRelease, true));
+                                }
+                            });
+                        }
+                        catch(Throwable t)
+                        {
+                            mLog.error("Error during JavaFX portion of create library");
+                        }
+                    });
+                    return;
+                }
 
                 final boolean canUpdate = (release != null) && ((current == null) ||
                     (release.getVersion().compareTo(current) > 0));
@@ -288,16 +297,6 @@ public class JmbeLibraryPreferenceEditor extends VBox
                 mLog.error("Error during create library", t);
             }
         });
-    }
-
-    private Label getJmbeLibraryLabel()
-    {
-        if(mJmbeLibraryLabel == null)
-        {
-            mJmbeLibraryLabel = new Label("JMBE Audio Library");
-        }
-
-        return mJmbeLibraryLabel;
     }
 
     private Label getJmbeVersionLabel()

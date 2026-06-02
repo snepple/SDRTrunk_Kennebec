@@ -41,7 +41,8 @@ import io.github.dsheirer.source.config.SourceConfiguration;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import java.util.ArrayList;
 import java.util.List;
-import javafx.geometry.HPos;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
@@ -51,7 +52,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.paint.Color;
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
-import javafx.scene.layout.GridPane;
+
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import jiconfont.icons.font_awesome.FontAwesome;
@@ -123,69 +124,43 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getDecoderPane(){
         if(mDecoderPane == null)
         {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10,10,10,10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
+            VBox content = new VBox(10);
+            content.setPadding(new Insets(10));
 
-            int row = 0;
+            SettingsCard trafficCard = new SettingsCard();
+            trafficCard.getChildren().addAll(
+                new SettingsRow("Max Traffic Channels",
+                    createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."),
+                    getTrafficChannelPoolSizeSpinner()),
+                new SettingsRow("Ignore Data Calls",
+                    createHelpIcon("Skips processing data packets, focusing only on voice traffic."),
+                    getIgnoreDataCallsButton()),
+                new SettingsRow("Ignore Unaliased TGs",
+                    createHelpIcon("Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list."),
+                    getIgnoreUnaliasedTalkgroupsButton())
+            );
+            content.getChildren().add(trafficCard);
 
-            Label poolSizeLabel = new Label("Max Traffic Channels", createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."));
-            GridPane.setHalignment(poolSizeLabel, HPos.RIGHT);
-            GridPane.setConstraints(poolSizeLabel, 0, row);
-            gridPane.getChildren().add(poolSizeLabel);
-
-            GridPane.setConstraints(getTrafficChannelPoolSizeSpinner(), 1, row);
-            gridPane.getChildren().add(getTrafficChannelPoolSizeSpinner());
-
-            GridPane.setConstraints(getIgnoreDataCallsButton(), 2, row);
-            gridPane.getChildren().add(getIgnoreDataCallsButton());
-
-            Label directionLabel = new Label("Ignore Data Calls", createHelpIcon("Skips processing data packets, focusing only on voice traffic."));
-            GridPane.setHalignment(directionLabel, HPos.LEFT);
-            GridPane.setConstraints(directionLabel, 3, row);
-            gridPane.getChildren().add(directionLabel);
-
-            GridPane.setConstraints(getIgnoreUnaliasedTalkgroupsButton(), 4, row);
-            gridPane.getChildren().add(getIgnoreUnaliasedTalkgroupsButton());
-
-            Label ignoreUnaliasedLabel = new Label("Ignore Unaliased TGs", createHelpIcon("Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list."));
-            GridPane.setHalignment(ignoreUnaliasedLabel, HPos.LEFT);
-            GridPane.setConstraints(ignoreUnaliasedLabel, 5, row);
-            gridPane.getChildren().add(ignoreUnaliasedLabel);
-
-            Label wacnLabel = new Label("WACN", createHelpIcon("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."));
-            GridPane.setHalignment(wacnLabel, HPos.RIGHT);
-            GridPane.setConstraints(wacnLabel, 0, ++row);
-            gridPane.getChildren().add(wacnLabel);
-
-            GridPane.setConstraints(getWacnTextField(), 1, row);
-            gridPane.getChildren().add(getWacnTextField());
-
-            Label systemLabel = new Label("System", createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system."));
-            GridPane.setHalignment(systemLabel, HPos.RIGHT);
-            GridPane.setConstraints(systemLabel, 2, row);
-            gridPane.getChildren().add(systemLabel);
-
-            GridPane.setConstraints(getSystemTextField(), 3, row);
-            gridPane.getChildren().add(getSystemTextField());
-
-            Label nacLabel = new Label("NAC", createHelpIcon("Network Access Code (NAC). A unique code identifying a specific radio system to follow."));
-            GridPane.setHalignment(nacLabel, HPos.RIGHT);
-            GridPane.setConstraints(nacLabel, 4, row);
-            gridPane.getChildren().add(nacLabel);
-
-            GridPane.setConstraints(getNacTextField(), 5, row);
-            gridPane.getChildren().add(getNacTextField());
+            SettingsCard scrambleCard = new SettingsCard();
+            scrambleCard.getChildren().addAll(
+                new SettingsRow("WACN",
+                    createHelpIcon("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."),
+                    getWacnTextField()),
+                new SettingsRow("System",
+                    createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system."),
+                    getSystemTextField()),
+                new SettingsRow("NAC",
+                    createHelpIcon("Network Access Code (NAC). A unique code identifying a specific radio system to follow."),
+                    getNacTextField())
+            );
+            content.getChildren().add(scrambleCard);
 
             Label noteLabel = new Label("Note: WACN/System/NAC values are auto-detected (ie not required) from " +
                     "the control channel and are only required when decoding individual traffic channels");
-            GridPane.setHalignment(noteLabel, HPos.LEFT);
-            GridPane.setConstraints(noteLabel, 1, ++row, 6, 1);
-            gridPane.getChildren().add(noteLabel);
+            noteLabel.setWrapText(true);
+            content.getChildren().add(noteLabel);
 
-
-            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(content);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
             mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");

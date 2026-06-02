@@ -207,7 +207,7 @@ public class TunerViewPanel extends VBox {
         mTunerTable.setMinWidth(0);
         mSplitPane.setOrientation(Orientation.HORIZONTAL);
         mSplitPane.getItems().addAll(tunerTablePanel, editorScroller);
-        mSplitPane.setDividerPositions(0.5);
+        mSplitPane.setDividerPositions(0.3);
 
         VBox.setVgrow(mSplitPane, Priority.ALWAYS);
         getChildren().add(mSplitPane);

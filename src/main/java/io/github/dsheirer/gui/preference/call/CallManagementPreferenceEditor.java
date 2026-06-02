@@ -20,6 +20,8 @@
 package io.github.dsheirer.gui.preference.call;
 
 import io.github.dsheirer.audio.broadcast.PatchGroupStreamingOption;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.duplicate.CallManagementPreference;
 import javafx.beans.binding.Bindings;
@@ -28,10 +30,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import org.controlsfx.control.ToggleSwitch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +38,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Preference settings for audio call management for duplicate calls and patch group streaming.
  */
-public class CallManagementPreferenceEditor extends HBox
+public class CallManagementPreferenceEditor extends VBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(CallManagementPreferenceEditor.class);
     private CallManagementPreference mPreference;
-    private GridPane mEditorPane;
     private ToggleSwitch mDetectDuplicateTalkgroups;
     private ToggleSwitch mDetectDuplicateRadios;
     private ToggleSwitch mSuppressDuplicateListening;
@@ -57,104 +55,68 @@ public class CallManagementPreferenceEditor extends HBox
     public CallManagementPreferenceEditor(UserPreferences userPreferences)
     {
         mPreference = userPreferences.getCallManagementPreference();
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
 
-        HBox.setHgrow(getEditorPane(), Priority.ALWAYS);
-        getChildren().add(getEditorPane());
-    }
+        // Duplicate Call Detection section
+        Label detectionHeader = new Label("Duplicate Call Detection");
+        detectionHeader.getStyleClass().add("hig-section-header");
+        getChildren().add(detectionHeader);
 
-    private GridPane getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            int row = 0;
-            mEditorPane = new GridPane();
-            mEditorPane.setPadding(new Insets(10, 10, 10, 10));
-            mEditorPane.setHgap(10);
-            mEditorPane.setVgap(10);
+        Label detectionDescription = new Label("Detect duplicate calls across channels that share a common " +
+            "System name in each channel configuration.");
+        detectionDescription.setWrapText(true);
+        detectionDescription.getStyleClass().add("kennebec-secondary-text");
+        detectionDescription.setPadding(new Insets(0, 10, 0, 10));
+        getChildren().add(detectionDescription);
 
-            Label detectionLabel = new Label("Duplicate Call Detection.  Detect duplicate" +
-                " calls across channels that share a common System name in each channel configuration.");
-            detectionLabel.setWrapText(true);
-            GridPane.setConstraints(detectionLabel, 0, row, 2, 1);
-            mEditorPane.getChildren().add(detectionLabel);
+        SettingsCard detectionCard = new SettingsCard();
+        detectionCard.getChildren().add(new SettingsRow("Talkgroup", getDetectDuplicateTalkgroups()));
+        detectionCard.getChildren().add(new SettingsRow("Radio ID", getDetectDuplicateRadios()));
+        getChildren().add(detectionCard);
 
-            GridPane.setConstraints(getDetectDuplicateTalkgroups(), 0, ++row);
-            mEditorPane.getChildren().add(getDetectDuplicateTalkgroups());
+        Label warningLabel = new Label("Note: be careful when enabling duplicate call detection by Radio ID " +
+            "because this can produce unintended side-effects.  For example, if you have two talkgroups with " +
+            "talkgroup 1 set to record and talkgroup 2 set to stream and dispatch radio ID 1234 makes a " +
+            "simultaneous call to both talkgroup 1 and talkgroup 2, there is no way to control which call audio " +
+            "(talkgroup 1 or 2) gets flagged as the duplicate call and therefore either the audio for talkgroup 1 " +
+            "doesn't record, or the audio for talkgroup 2 doesn't stream.");
+        warningLabel.setWrapText(true);
+        warningLabel.getStyleClass().add("kennebec-secondary-text");
+        warningLabel.setPadding(new Insets(0, 10, 0, 10));
+        getChildren().add(warningLabel);
 
-            Label talkgroupLabel = new Label("Talkgroup.  Detect duplicate calls by matching talkgroup or " +
-                "patchgroup values");
-            talkgroupLabel.setWrapText(true);
-            GridPane.setConstraints(talkgroupLabel, 1, row);
-            mEditorPane.getChildren().add(talkgroupLabel);
+        // Duplicate Call Suppression section
+        Label suppressionHeader = new Label("Duplicate Call Suppression");
+        suppressionHeader.getStyleClass().add("hig-section-header");
+        getChildren().add(suppressionHeader);
 
-            GridPane.setConstraints(getDetectDuplicateRadios(), 0, ++row);
-            mEditorPane.getChildren().add(getDetectDuplicateRadios());
+        Label suppressionDescription = new Label("When duplicate call audio is detected, suppress the audio during:");
+        suppressionDescription.setWrapText(true);
+        suppressionDescription.getStyleClass().add("kennebec-secondary-text");
+        suppressionDescription.setPadding(new Insets(0, 10, 0, 10));
+        getChildren().add(suppressionDescription);
 
-            Label radioLabel = new Label("Radio ID.  Detect duplicate calls by matching radio identifiers.");
-            radioLabel.setWrapText(true);
-            GridPane.setConstraints(radioLabel, 1, row);
-            mEditorPane.getChildren().add(radioLabel);
+        SettingsCard suppressionCard = new SettingsCard();
+        suppressionCard.getChildren().add(new SettingsRow("Listening", getSuppressDuplicateListening()));
+        suppressionCard.getChildren().add(new SettingsRow("Recording", getSuppressDuplicateRecording()));
+        suppressionCard.getChildren().add(new SettingsRow("Streaming", getSuppressDuplicateStreaming()));
+        getChildren().add(suppressionCard);
 
-            Label warningLabel = new Label("Note: be careful when enabling duplicate call detection by Radio ID " +
-                "because this can produce unintended side-effects.  For example, if you have two talkgroups with " +
-                "talkgroup 1 set to record and talkgroup 2 set to stream and dispatch radio ID 1234 makes a " +
-                "simultaneous call to both talkgroup 1 and talkgroup 2, there is no way to control which call audio " +
-                "(talkgroup 1 or 2) gets flagged as the duplicate call and therefore either the audio for talkgroup 1 " +
-                "doesn't record, or the audio for talkgroup 2 doesn't stream.");
-            warningLabel.setWrapText(true);
-            GridPane.setConstraints(warningLabel, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(warningLabel);
+        // Patch Group Streaming section
+        Label patchGroupHeader = new Label("Patch Group Streaming");
+        patchGroupHeader.getStyleClass().add("hig-section-header");
+        getChildren().add(patchGroupHeader);
 
-            Separator separator = new Separator();
-            GridPane.setHgrow(separator, Priority.ALWAYS);
-            GridPane.setConstraints(separator, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(separator);
+        Label patchGroupDescription = new Label("Stream a patch group call as:");
+        patchGroupDescription.setWrapText(true);
+        patchGroupDescription.getStyleClass().add("kennebec-secondary-text");
+        patchGroupDescription.setPadding(new Insets(0, 10, 0, 10));
+        getChildren().add(patchGroupDescription);
 
-            Label suppressionLabel = new Label("Duplicate Call Suppression.  When duplicate call audio is detected, " +
-                "suppress the audio during:");
-            suppressionLabel.setWrapText(true);
-            GridPane.setConstraints(suppressionLabel, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(suppressionLabel);
-
-            GridPane.setConstraints(getSuppressDuplicateListening(), 0, ++row);
-            mEditorPane.getChildren().add(getSuppressDuplicateListening());
-
-            Label listeningLabel = new Label("Listening");
-            listeningLabel.setWrapText(true);
-            GridPane.setConstraints(listeningLabel, 1, row);
-            mEditorPane.getChildren().add(listeningLabel);
-
-            GridPane.setConstraints(getSuppressDuplicateRecording(), 0, ++row);
-            mEditorPane.getChildren().add(getSuppressDuplicateRecording());
-
-            Label recordingLabel = new Label("Recording");
-            recordingLabel.setWrapText(true);
-            GridPane.setConstraints(recordingLabel, 1, row);
-            mEditorPane.getChildren().add(recordingLabel);
-
-            GridPane.setConstraints(getSuppressDuplicateStreaming(), 0, ++row);
-            mEditorPane.getChildren().add(getSuppressDuplicateStreaming());
-
-            Label streamingLabel = new Label("Streaming");
-            streamingLabel.setWrapText(true);
-            GridPane.setConstraints(streamingLabel, 1, row);
-            mEditorPane.getChildren().add(streamingLabel);
-
-            Separator separator2 = new Separator();
-            GridPane.setHgrow(separator2, Priority.ALWAYS);
-            GridPane.setConstraints(separator2, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(separator2);
-
-            Label patchGroupLabel = new Label("Patch Group Streaming.  Stream a patch group call as:");
-            patchGroupLabel.setWrapText(true);
-            GridPane.setConstraints(patchGroupLabel, 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(patchGroupLabel);
-
-            GridPane.setConstraints(getPatchGroupStreamingOptionComboBox(), 0, ++row, 2, 1);
-            mEditorPane.getChildren().add(getPatchGroupStreamingOptionComboBox());
-        }
-
-        return mEditorPane;
+        SettingsCard patchGroupCard = new SettingsCard();
+        patchGroupCard.getChildren().add(new SettingsRow("Streaming Option", getPatchGroupStreamingOptionComboBox()));
+        getChildren().add(patchGroupCard);
     }
 
     private ToggleSwitch getDetectDuplicateTalkgroups()

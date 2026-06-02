@@ -56,10 +56,12 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.GridPane;
-import javafx.scene.text.TextAlignment;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.control.ToggleSwitch;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.TextAlignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javafx.scene.paint.Color;
@@ -135,47 +137,19 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getDecoderPane(){
         if(mDecoderPane == null)
         {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10,10,10,10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
+            VBox content = new VBox(10);
+            content.setPadding(new Insets(10));
 
-            int row = 0;
+            SettingsCard decoderCard = new SettingsCard();
+            decoderCard.getChildren().addAll(
+                new SettingsRow("Channel Bandwidth", createHelpIcon("Width of the radio frequency spectrum to be decoded."), getBandwidthButton()),
+                new SettingsRow("Squelch Threshold", createHelpIcon("The signal power level required to open the audio output."), getSquelchThresholdField()),
+                new SettingsRow("Squelch Auto-Track", createHelpIcon("Automatically adjusts the squelch threshold based on background noise."), getSquelchAutoTrackSwitch()),
+                new SettingsRow("Talkgroup To Assign", createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."), getTalkgroupField())
+            );
+            content.getChildren().add(decoderCard);
 
-            Label bandwidthLabel = new Label("Channel Bandwidth", createHelpIcon("Width of the radio frequency spectrum to be decoded."));
-            GridPane.setHalignment(bandwidthLabel, HPos.RIGHT);
-            GridPane.setConstraints(bandwidthLabel, 0, row);
-            gridPane.getChildren().add(bandwidthLabel);
-
-            GridPane.setConstraints(getBandwidthButton(), 1, row++, 3, 1);
-            gridPane.getChildren().add(getBandwidthButton());
-
-            Label squelchLabel = new Label("Squelch Threshold", createHelpIcon("The signal power level required to open the audio output."));
-            GridPane.setHalignment(squelchLabel, HPos.RIGHT);
-            GridPane.setConstraints(squelchLabel, 0, row);
-            gridPane.getChildren().add(squelchLabel);
-
-            GridPane.setConstraints(getSquelchThresholdField(), 1, row);
-            gridPane.getChildren().add(getSquelchThresholdField());
-
-            Label autoTrackLabel = new Label("Squelch Auto-Track", createHelpIcon("Automatically adjusts the squelch threshold based on background noise."));
-            GridPane.setHalignment(autoTrackLabel, HPos.RIGHT);
-            GridPane.setConstraints(autoTrackLabel, 2, row);
-            gridPane.getChildren().add(autoTrackLabel);
-
-            GridPane.setConstraints(getSquelchAutoTrackSwitch(), 3, row);
-            GridPane.setHalignment(getSquelchAutoTrackSwitch(), HPos.LEFT);
-            gridPane.getChildren().add(getSquelchAutoTrackSwitch());
-
-            Label talkgroupLabel = new Label("Talkgroup To Assign", createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."));
-            GridPane.setHalignment(talkgroupLabel, HPos.RIGHT);
-            GridPane.setConstraints(talkgroupLabel, 4, row);
-            gridPane.getChildren().add(talkgroupLabel);
-
-            GridPane.setConstraints(getTalkgroupField(), 5, row);
-            gridPane.getChildren().add(getTalkgroupField());
-
-            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(content);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
             mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
@@ -206,20 +180,16 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getRecordPane(){
         if(mRecordPane == null)
         {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10,10,10,10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
+            VBox content = new VBox(10);
+            content.setPadding(new Insets(10));
 
-            GridPane.setConstraints(getBasebandRecordSwitch(), 0, 1);
-            gridPane.getChildren().add(getBasebandRecordSwitch());
+            SettingsCard recordCard = new SettingsCard();
+            recordCard.getChildren().addAll(
+                new SettingsRow("Channel (Baseband I&Q)", getBasebandRecordSwitch())
+            );
+            content.getChildren().add(recordCard);
 
-            Label recordBasebandLabel = new Label("Channel (Baseband I&Q)");
-            GridPane.setHalignment(recordBasebandLabel, HPos.LEFT);
-            GridPane.setConstraints(recordBasebandLabel, 1, 1);
-            gridPane.getChildren().add(recordBasebandLabel);
-
-            javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(content);
             mRecordPaneSp.setFitToWidth(true);
             mRecordPaneSp.setFitToHeight(true);
             mRecordPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");

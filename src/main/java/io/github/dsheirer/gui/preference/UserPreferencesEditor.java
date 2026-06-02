@@ -68,7 +68,6 @@ public class UserPreferencesEditor extends BorderPane
     private Object mEditorSelectionTreeView;
     private VBox mEditorAndButtonsBox;
     private Node mEditor;
-    private HBox mButtonsBox;
 
     /**
      * Constructs an instance
@@ -107,6 +106,12 @@ public class UserPreferencesEditor extends BorderPane
         if (((ListView)mEditorSelectionTreeView).getSelectionModel().getSelectedItem() == null) {
             Platform.runLater(() -> ((ListView)mEditorSelectionTreeView).getSelectionModel().select(PreferenceEditorType.APPLICATION));
         }
+
+        sceneProperty().addListener((observable, oldScene, newScene) -> {
+            if (newScene != null) {
+                io.github.dsheirer.gui.theme.ThemeManager.registerScene(newScene);
+            }
+        });
     }
 
     private UserPreferences getUserPreferences()
@@ -260,27 +265,7 @@ public class UserPreferencesEditor extends BorderPane
         return (Node)mEditorSelectionTreeView;
     }
 
-    /**
-     * Control box with OK button.
-     */
-    private HBox getButtonsBox()
-    {
-        if(mButtonsBox == null)
-        {
-            mButtonsBox = new HBox();
-            mButtonsBox.setMaxWidth(Double.MAX_VALUE);
-            Button okButton = new Button("Ok");
-            okButton.setOnAction(event -> {
-                Stage stage = (Stage)getButtonsBox().getScene().getWindow();
-                stage.close();
-            });
-            HBox.setMargin(okButton, new Insets(5, 5, 5, 5));
-            mButtonsBox.setAlignment(Pos.CENTER_RIGHT);
-            mButtonsBox.getChildren().add(okButton);
-        }
 
-        return mButtonsBox;
-    }
 
     private MenuBar getMenuBar()
     {

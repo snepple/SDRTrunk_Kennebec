@@ -59,7 +59,8 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.Tab;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.GridPane;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -140,86 +141,47 @@ public class DMRConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getDecoderPane(){
         if(mDecoderPane == null)
         {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10,10,10,10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
+            VBox content = new VBox(10);
+            content.setPadding(new Insets(10, 10, 10, 10));
 
-            int row = 0;
+            SettingsCard trafficCard = new SettingsCard();
+            trafficCard.getChildren().addAll(
+                new SettingsRow("Max Traffic Channels", createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."), getTrafficChannelPoolSizeSpinner()),
+                new SettingsRow("Ignore Data Calls", createHelpIcon("Skips processing data packets, focusing only on voice traffic."), getIgnoreDataCallsButton()),
+                new SettingsRow("Ignore Unaliased TGs", createHelpIcon("Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list."), getIgnoreUnaliasedTalkgroupsButton()),
+                new SettingsRow("Ignore CRC Checksums (RAS)", createHelpIcon("Skips CRC checks. Useful for decoding voice on systems using Restricted Access to System (RAS)."), getIgnoreCRCChecksumsButton()),
+                new SettingsRow("Use Compressed Talkgroups", createHelpIcon("Use compressed talkgroup format. This is only for Hytera Tier-III Trunked Systems."), getUseCompressedTalkgroupsToggle())
+            );
+            content.getChildren().add(trafficCard);
 
-            Label poolSizeLabel = new Label("Max Traffic Channels", createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."));
-            GridPane.setHalignment(poolSizeLabel, HPos.RIGHT);
-            GridPane.setConstraints(poolSizeLabel, 0, row);
-            gridPane.getChildren().add(poolSizeLabel);
-
-            GridPane.setConstraints(getTrafficChannelPoolSizeSpinner(), 1, row);
-            gridPane.getChildren().add(getTrafficChannelPoolSizeSpinner());
-
-            GridPane.setConstraints(getIgnoreDataCallsButton(), 2, row);
-            gridPane.getChildren().add(getIgnoreDataCallsButton());
-
-            Label ignoreDataLabel = new Label("Ignore Data Calls", createHelpIcon("Skips processing data packets, focusing only on voice traffic."));
-            GridPane.setHalignment(ignoreDataLabel, HPos.LEFT);
-            GridPane.setConstraints(ignoreDataLabel, 3, row);
-            gridPane.getChildren().add(ignoreDataLabel);
-
-            GridPane.setConstraints(getIgnoreUnaliasedTalkgroupsButton(), 4, row);
-            gridPane.getChildren().add(getIgnoreUnaliasedTalkgroupsButton());
-
-            Label ignoreUnaliasedLabel = new Label("Ignore Unaliased TGs", createHelpIcon("Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list."));
-            GridPane.setHalignment(ignoreUnaliasedLabel, HPos.LEFT);
-            GridPane.setConstraints(ignoreUnaliasedLabel, 5, row);
-            gridPane.getChildren().add(ignoreUnaliasedLabel);
-
-            GridPane.setConstraints(getIgnoreCRCChecksumsButton(), 6, row);
-            gridPane.getChildren().add(getIgnoreCRCChecksumsButton());
-
-            Label ignoreCRCLabel = new Label("Ignore CRC Checksums (RAS)", createHelpIcon("Skips CRC checks. Useful for decoding voice on systems using Restricted Access to System (RAS)."));
-            GridPane.setHalignment(ignoreCRCLabel, HPos.LEFT);
-            GridPane.setConstraints(ignoreCRCLabel, 7, row);
-            gridPane.getChildren().add(ignoreCRCLabel);
-
-            GridPane.setConstraints(getUseCompressedTalkgroupsToggle(), 8, row);
-            gridPane.getChildren().add(getUseCompressedTalkgroupsToggle());
-
-            Label useCompressedTalkgroupsLabel = new Label("Use Compressed Talkgroups", createHelpIcon("Use compressed talkgroup format. This is only for Hytera Tier-III Trunked Systems."));
-            GridPane.setHalignment(useCompressedTalkgroupsLabel, HPos.LEFT);
-            GridPane.setConstraints(useCompressedTalkgroupsLabel, 9, row);
-            gridPane.getChildren().add(useCompressedTalkgroupsLabel);
-
+            SettingsCard mapCard = new SettingsCard();
+            
             Label timeslotTableLabel = new Label("Logical Channel Number (LCN) to Frequency Map. Required for: Connect Plus and Tier-III systems that don't use absolute frequencies.  LSN = Logical Slot Number");
-            GridPane.setHalignment(timeslotTableLabel, HPos.LEFT);
-            GridPane.setConstraints(timeslotTableLabel, 0, ++row, 6, 1);
-            gridPane.getChildren().add(timeslotTableLabel);
+            timeslotTableLabel.setWrapText(true);
+            timeslotTableLabel.setPadding(new Insets(10, 10, 10, 10));
 
-            GridPane.setConstraints(getTimeslotTable(), 0, ++row, 6, 3);
-            gridPane.getChildren().add(getTimeslotTable());
+            VBox mapBox = new VBox(10);
+            mapBox.setPadding(new Insets(10, 10, 10, 10));
 
-            VBox buttonsBox = new VBox();
+            mapBox.getChildren().add(getTimeslotTable());
+
+            HBox buttonsBox = new HBox(10);
             buttonsBox.setAlignment(Pos.CENTER);
-            buttonsBox.setSpacing(10);
             buttonsBox.getChildren().addAll(getAddTimeslotFrequencyButton(), getDeleteTimeslotFrequencyButton());
+            mapBox.getChildren().add(buttonsBox);
 
-            GridPane.setConstraints(buttonsBox, 6, row, 1, 3);
-            gridPane.getChildren().addAll(buttonsBox);
-
-            row += 3;
-
-            HBox editorBox = new HBox();
+            HBox editorBox = new HBox(5);
             editorBox.setAlignment(Pos.CENTER_LEFT);
-            editorBox.setSpacing(5);
-
             Label lcnLabel = new Label("LCN");
-            editorBox.getChildren().addAll(lcnLabel, getLogicalChannelNumberField());
-
             Label downlinkLabel = new Label("Frequency (MHz)");
             downlinkLabel.setPadding(new Insets(0,0,0,5));
-            editorBox.getChildren().addAll(downlinkLabel,getDownlinkFrequencyField());
+            editorBox.getChildren().addAll(lcnLabel, getLogicalChannelNumberField(), downlinkLabel, getDownlinkFrequencyField());
+            mapBox.getChildren().add(editorBox);
 
-            GridPane.setConstraints(editorBox, 0, row, 4, 1);
-            gridPane.getChildren().add(editorBox);
+            mapCard.getChildren().addAll(timeslotTableLabel, mapBox);
+            content.getChildren().add(mapCard);
 
-            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(content);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
             mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");

@@ -176,13 +176,81 @@ public class HelpViewController {
                 markdown.append("Error loading documentation: ").append(e.getMessage());
             }
         }
-        return markdown.toString();
+        return sanitizeMarkdown(markdown.toString());
     }
+
+    /**
+     * Strips JSX/Mintlify components and converts them to clean standard markdown.
+     */
+    private String sanitizeMarkdown(String markdown) {
+        // Remove JSX component tags: <Card ...>, </Card>, <Tabs>, </Tabs>, <Tab title="...">, </Tab>,
+        // <Steps>, </Steps>, <Step title="...">, </Step>, <Accordion>, </Accordion>
+        // Extract the title attribute from Tab/Step tags and convert to heading
+        markdown = markdown.replaceAll("(?s)<Card[^>]*>", "");
+        markdown = markdown.replaceAll("</Card>", "");
+        markdown = markdown.replaceAll("<Tabs>", "");
+        markdown = markdown.replaceAll("</Tabs>", "");
+        markdown = markdown.replaceAll("<Tab\\s+title=\"([^\"]*)\">", "\n**$1:**\n");
+        markdown = markdown.replaceAll("</Tab>", "\n---\n");
+        markdown = markdown.replaceAll("<Steps>", "");
+        markdown = markdown.replaceAll("</Steps>", "");
+        markdown = markdown.replaceAll("<Step\\s+title=\"([^\"]*)\">", "\n#### $1\n");
+        markdown = markdown.replaceAll("</Step>", "");
+        markdown = markdown.replaceAll("<Accordion[^>]*>", "");
+        markdown = markdown.replaceAll("</Accordion>", "");
+
+        // Remove JSX-style HTML tags with className attributes
+        markdown = markdown.replaceAll("<h[1-6]\\s+className=\"[^\"]*\">", "");
+        markdown = markdown.replaceAll("</h[1-6]>", "");
+        markdown = markdown.replaceAll("<p\\s+className=\"[^\"]*\">", "\n");
+        markdown = markdown.replaceAll("</p>", "\n");
+        markdown = markdown.replaceAll("<div\\s+className=\"[^\"]*\">", "");
+        markdown = markdown.replaceAll("</div>", "");
+
+        // Remove mermaid code blocks - render as plaintext description
+        markdown = markdown.replaceAll("(?s)```mermaid\\s*\\n(.*?)```", "*(Diagram omitted — see source documentation)*");
+
+        // Clean up excessive blank lines
+        markdown = markdown.replaceAll("\n{4,}", "\n\n\n");
+
+        return markdown;
+    }
+
+    private static final String CSS_STYLE =
+        "<style>" +
+        "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; " +
+        "  padding: 24px 32px; margin: 0; color: #1a1a2e; background: #fafbfc; line-height: 1.7; font-size: 14px; }" +
+        "h1 { color: #1a1a2e; font-size: 24px; font-weight: 700; margin-top: 0; margin-bottom: 16px; " +
+        "  padding-bottom: 12px; border-bottom: 2px solid #e8e8f0; }" +
+        "h2 { color: #2d2d4e; font-size: 20px; font-weight: 600; margin-top: 28px; margin-bottom: 12px; }" +
+        "h3 { color: #3d3d6e; font-size: 16px; font-weight: 600; margin-top: 24px; margin-bottom: 8px; }" +
+        "h4 { color: #4d4d7e; font-size: 14px; font-weight: 600; margin-top: 20px; margin-bottom: 6px; }" +
+        "p { margin: 8px 0; }" +
+        "a { color: #4a6fa5; text-decoration: none; }" +
+        "a:hover { text-decoration: underline; }" +
+        "ul, ol { padding-left: 24px; margin: 8px 0; }" +
+        "li { margin: 4px 0; }" +
+        "code { background: #e8e8f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Consolas', 'Monaco', monospace; }" +
+        "pre { background: #1e1e2e; color: #cdd6f4; padding: 16px; border-radius: 8px; overflow-x: auto; " +
+        "  font-size: 13px; line-height: 1.5; margin: 12px 0; }" +
+        "pre code { background: none; padding: 0; color: inherit; }" +
+        "blockquote { margin: 16px 0; padding: 12px 16px; border-left: 4px solid #4a6fa5; " +
+        "  background: #eef2f8; border-radius: 0 6px 6px 0; }" +
+        "blockquote p { margin: 4px 0; }" +
+        "blockquote strong { color: #2d4a7a; }" +
+        "table { border-collapse: collapse; width: 100%; margin: 16px 0; }" +
+        "th { background: #eef2f8; font-weight: 600; text-align: left; padding: 10px 14px; " +
+        "  border: 1px solid #d0d5e0; font-size: 13px; }" +
+        "td { padding: 8px 14px; border: 1px solid #d0d5e0; font-size: 13px; }" +
+        "tr:nth-child(even) { background: #f5f7fa; }" +
+        "hr { border: none; border-top: 1px solid #e0e0e8; margin: 20px 0; }" +
+        "img { max-width: 100%; border-radius: 6px; margin: 8px 0; }" +
+        "</style>";
 
     private void updateContent(String topic) {
         if (topic.equals("Knowledge Base") || topic.equals("Guides & Documentation")) {
             contentWebView.getEngine().loadContent(
-                    "<html><body style='font-family: sans-serif; padding: 20px;'>" +
+                    "<html><head>" + CSS_STYLE + "</head><body>" +
                             "<h1>" + topic + "</h1>" +
                             "<p>Select a sub-topic from the left to view details.</p></body></html>"
             );
@@ -196,7 +264,7 @@ public class HelpViewController {
         HtmlRenderer renderer = HtmlRenderer.builder().build();
         String htmlBody = renderer.render(document);
 
-        String html = "<html><body style='font-family: sans-serif; padding: 20px;'>" + htmlBody + "</body></html>";
+        String html = "<html><head>" + CSS_STYLE + "</head><body>" + htmlBody + "</body></html>";
         contentWebView.getEngine().loadContent(html);
     }
 }

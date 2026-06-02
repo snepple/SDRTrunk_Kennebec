@@ -255,10 +255,10 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
                         io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon();
                         icon.setName(name);
                         icon.setPath(selected.getAbsolutePath());
-                        if(icon != null) {
+                        if(icon.getFxImage() == null) {
                             Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to load icon image from selected file.", ButtonType.OK);
                             alert.setHeaderText("Invalid image file");
-                            alert.setTitle("Add io.github.dsheirer.icon.Icon");
+                            alert.setTitle("Add Icon");
                             alert.showAndWait();
                         } else {
                             mIconModel.addIcon(icon);
@@ -376,12 +376,12 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
             icon.setName(name);
             icon.setPath(path);
 
-            if(icon != null)
+            if(icon.getFxImage() == null)
             {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to load icon image from selected " +
                     "file. Please select a valid image file for the icon", ButtonType.OK);
                 alert.setHeaderText("Invalid image file");
-                alert.setTitle("Save io.github.dsheirer.icon.Icon");
+                alert.setTitle("Save Icon");
                 alert.showAndWait();
                 return;
             }
@@ -407,7 +407,7 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
 
         if(item != null)
         {
-            getNameTextField().setText(item != null ? "" : "" /* TODO name */);
+            getNameTextField().setText(item.getName());
             getFilePathTextField().setText("");
         }
         else
@@ -565,7 +565,7 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
                     }
                     else
                     {
-                        if(item != null)
+                        if(item.getFxImage() != null)
                         {
                             ImageView iv = new ImageView(item.getFxImage());
                             iv.setFitHeight(16);

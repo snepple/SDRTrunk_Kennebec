@@ -41,14 +41,15 @@ import io.github.dsheirer.source.config.SourceConfiguration;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import java.util.ArrayList;
 import java.util.List;
-import javafx.geometry.HPos;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.GridPane;
+
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.SegmentedButton;
 import org.slf4j.Logger;
@@ -117,25 +118,20 @@ public class LTRNetConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getDecoderPane(){
         if(mDecoderPane == null)
         {
+            VBox content = new VBox(10);
+            content.setPadding(new Insets(10));
 
-
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10,10,10,10));
-            gridPane.setHgap(10);
-
-            Label directionLabel = new Label("Direction");
-            GridPane.setHalignment(directionLabel, HPos.LEFT);
-            GridPane.setConstraints(directionLabel, 0, 0);
-            gridPane.getChildren().add(directionLabel);
-
-            GridPane.setConstraints(getDirectionButton(), 1, 0);
-            gridPane.getChildren().add(getDirectionButton());
+            SettingsCard directionCard = new SettingsCard();
+            directionCard.getChildren().addAll(
+                new SettingsRow("Direction", getDirectionButton())
+            );
+            content.getChildren().add(directionCard);
 
             Label instructions = new Label("OSW: repeater output signaling (default).  ISW: repeater input signaling");
-            GridPane.setConstraints(instructions, 2, 0);
-            gridPane.getChildren().addAll(instructions);
+            instructions.setWrapText(true);
+            content.getChildren().add(instructions);
 
-            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(content);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
             mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");

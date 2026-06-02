@@ -95,6 +95,26 @@ public class IconModel
 
         mIcons.addAll(iconSet.getIcons());
 
+        // Merge any missing standard icons into the loaded set
+        for(Icon standardIcon : standardIcons.getIcons())
+        {
+            boolean found = false;
+            for(Icon loadedIcon : mIcons)
+            {
+                if(loadedIcon.getName() != null && standardIcon.getName() != null &&
+                   loadedIcon.getName().equals(standardIcon.getName()))
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+            {
+                mLog.info("Adding missing standard icon: " + standardIcon.getName());
+                mIcons.add(standardIcon);
+            }
+        }
+
         for(Icon icon: mIcons)
         {
             if(iconSet.getDefaultIcon() != null && iconSet.getDefaultIcon().matches(icon.getName()))
@@ -103,9 +123,14 @@ public class IconModel
                 mDefaultIcon = icon;
             }
 
-            if(standardIcons.getIcons().contains(icon))
+            // Mark as standard by name match (not object equality)
+            for(Icon stdIcon : standardIcons.getIcons())
             {
-                icon.setStandardIcon(true);
+                if(stdIcon.getName() != null && stdIcon.getName().equals(icon.getName()))
+                {
+                    icon.setStandardIcon(true);
+                    break;
+                }
             }
         }
 

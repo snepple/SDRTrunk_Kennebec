@@ -21,6 +21,8 @@
  */
 
 package io.github.dsheirer.gui.playlist.channel;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.scene.layout.Region;
 import javafx.application.Platform;
 import javafx.scene.control.Button;
@@ -204,23 +206,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getDecoderPane(){
         if(mDecoderPane == null)
         {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10,10,10,10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
-
-            Label bandwidthLabel = new Label("Channel Bandwidth", createHelpIcon("NBFM (Narrow-Band FM) channel width determines how much radio spectrum is decoded.\n\u2022 12.5 kHz = Standard narrow-band (most modern radios)\n\u2022 25 kHz = Wide-band (older or commercial radios)\nIf you hear distorted or chopped audio, try the other setting."));
-            GridPane.setHalignment(bandwidthLabel, HPos.RIGHT);
-            GridPane.setConstraints(bandwidthLabel, 0, 0);
-            gridPane.getChildren().add(bandwidthLabel);
-
-            GridPane.setConstraints(getBandwidthButton(), 1, 0);
-            gridPane.getChildren().add(getBandwidthButton());
-
-            Label talkgroupLabel = new Label("Talkgroup To Assign", createHelpIcon("Talkgroup ID: A numeric address used to identify a specific group of radio users.\nFor NBFM channels without trunking, this manually assigns a talkgroup number\nso that alias rules (listen/record/stream) can be applied to this channel's audio.\nLeave blank to use the auto-detected talkgroup (if available)."));
-            GridPane.setHalignment(talkgroupLabel, HPos.RIGHT);
-            GridPane.setConstraints(talkgroupLabel, 0, 1);
-            gridPane.getChildren().add(talkgroupLabel);
+            VBox content = new VBox(10);
+            content.setPadding(new Insets(10));
 
             HBox talkgroupBox = new HBox(5);
             talkgroupBox.setAlignment(Pos.CENTER_LEFT);
@@ -237,11 +224,14 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             });
             talkgroupBox.getChildren().add(generateIdButton);
 
-            GridPane.setConstraints(talkgroupBox, 1, 1);
-            gridPane.getChildren().add(talkgroupBox);
+            SettingsCard decoderCard = new SettingsCard();
+            decoderCard.getChildren().addAll(
+                new SettingsRow("Channel Bandwidth", createHelpIcon("NBFM (Narrow-Band FM) channel width determines how much radio spectrum is decoded.\n\u2022 12.5 kHz = Standard narrow-band (most modern radios)\n\u2022 25 kHz = Wide-band (older or commercial radios)\nIf you hear distorted or chopped audio, try the other setting."), getBandwidthButton()),
+                new SettingsRow("Talkgroup To Assign", createHelpIcon("Talkgroup ID: A numeric address used to identify a specific group of radio users.\nFor NBFM channels without trunking, this manually assigns a talkgroup number\nso that alias rules (listen/record/stream) can be applied to this channel's audio.\nLeave blank to use the auto-detected talkgroup (if available)."), talkgroupBox)
+            );
+            content.getChildren().add(decoderCard);
 
-
-            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(content);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
             mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
@@ -259,17 +249,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getToneFilterPane(){
         if(mToneFilterPane == null)
         {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10, 10, 10, 10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
-
-            // Enable switch
-            Label enableLabel = new Label("Enable Tone Filter");
-            enableLabel.setTooltip(new Tooltip("When enabled, this channel will only pass audio when the selected tone is detected.\nUse this to reduce false triggering on busy repeaters."));
-            GridPane.setHalignment(enableLabel, HPos.RIGHT);
-            GridPane.setConstraints(enableLabel, 0, 0);
-            gridPane.getChildren().add(enableLabel);
+            VBox content = new VBox(10);
+            content.setPadding(new Insets(10));
 
             mToneFilterEnabledSwitch = new ToggleSwitch();
             mToneFilterEnabledSwitch.selectedProperty().addListener((obs, ov, nv) -> {
@@ -277,19 +258,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                     modifiedProperty().set(true);
                 }
             });
-            GridPane.setConstraints(mToneFilterEnabledSwitch, 1, 0);
-            gridPane.getChildren().add(mToneFilterEnabledSwitch);
-
-            Label helpLabel = new Label("When enabled, audio only passes when the selected tone is detected");
-            GridPane.setConstraints(helpLabel, 2, 0, 3, 1);
-            gridPane.getChildren().add(helpLabel);
-
-            // Tone type selector
-            Label typeLabel = new Label("Type");
-            typeLabel.setTooltip(new Tooltip("CTCSS (Continuous Tone-Coded Squelch System):\n  A sub-audible tone below 300 Hz transmitted alongside voice.\n  Also called PL Tone (Private Line) or Sub-Tone.\n\nDCS (Digital-Coded Squelch):\n  A digital bit pattern used instead of a tone.\n  Also called DPL (Digital Private Line)."));
-            GridPane.setHalignment(typeLabel, HPos.RIGHT);
-            GridPane.setConstraints(typeLabel, 0, 1);
-            gridPane.getChildren().add(typeLabel);
 
             mToneTypeCombo = new ComboBox<>();
             mToneTypeCombo.getItems().addAll(ChannelToneFilter.ToneType.CTCSS, ChannelToneFilter.ToneType.DCS);
@@ -300,8 +268,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                     modifiedProperty().set(true);
                 }
             });
-            GridPane.setConstraints(mToneTypeCombo, 1, 1);
-            gridPane.getChildren().add(mToneTypeCombo);
 
             // CTCSS code selector
             mCtcssCodeCombo = new ComboBox<>();
@@ -313,8 +279,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                     modifiedProperty().set(true);
                 }
             });
-            GridPane.setConstraints(mCtcssCodeCombo, 2, 1);
-            gridPane.getChildren().add(mCtcssCodeCombo);
 
             // DCS code selector (hidden by default)
             mDcsCodeCombo = new ComboBox<>();
@@ -329,10 +293,20 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                     modifiedProperty().set(true);
                 }
             });
-            GridPane.setConstraints(mDcsCodeCombo, 2, 1);
-            gridPane.getChildren().add(mDcsCodeCombo);
 
-            javafx.scene.control.ScrollPane mToneFilterPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            // Code selector box stacks CTCSS and DCS combos (only one visible at a time)
+            HBox codeBox = new HBox(5);
+            codeBox.setAlignment(Pos.CENTER_LEFT);
+            codeBox.getChildren().addAll(mCtcssCodeCombo, mDcsCodeCombo);
+
+            SettingsCard toneCard = new SettingsCard();
+            toneCard.getChildren().addAll(
+                new SettingsRow("Enable Tone Filter", createHelpIcon("When enabled, this channel will only pass audio when the selected tone is detected.\nUse this to reduce false triggering on busy repeaters."), mToneFilterEnabledSwitch),
+                new SettingsRow("Tone Type", createHelpIcon("CTCSS (Continuous Tone-Coded Squelch System):\n  A sub-audible tone below 300 Hz transmitted alongside voice.\n  Also called PL Tone (Private Line) or Sub-Tone.\n\nDCS (Digital-Coded Squelch):\n  A digital bit pattern used instead of a tone.\n  Also called DPL (Digital Private Line)."), mToneTypeCombo, codeBox)
+            );
+            content.getChildren().add(toneCard);
+
+            javafx.scene.control.ScrollPane mToneFilterPaneSp = new javafx.scene.control.ScrollPane(content);
             mToneFilterPaneSp.setFitToWidth(true);
             mToneFilterPaneSp.setFitToHeight(true);
             mToneFilterPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
@@ -475,20 +449,16 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getRecordPane(){
         if(mRecordPane == null)
         {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10,10,10,10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
+            VBox content = new VBox(10);
+            content.setPadding(new Insets(10));
 
-            GridPane.setConstraints(getBasebandRecordSwitch(), 0, 0);
-            gridPane.getChildren().add(getBasebandRecordSwitch());
+            SettingsCard recordCard = new SettingsCard();
+            recordCard.getChildren().addAll(
+                new SettingsRow("Channel (Baseband I&Q)", getBasebandRecordSwitch())
+            );
+            content.getChildren().add(recordCard);
 
-            Label recordBasebandLabel = new Label("Channel (Baseband I&Q)");
-            GridPane.setHalignment(recordBasebandLabel, HPos.LEFT);
-            GridPane.setConstraints(recordBasebandLabel, 1, 0);
-            gridPane.getChildren().add(recordBasebandLabel);
-
-            javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            javafx.scene.control.ScrollPane mRecordPaneSp = new javafx.scene.control.ScrollPane(content);
             mRecordPaneSp.setFitToWidth(true);
             mRecordPaneSp.setFitToHeight(true);
             mRecordPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
@@ -562,22 +532,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         }
     }
 
-    private VBox createInputGainSection()
+    private SettingsCard createInputGainSection()
     {
-        VBox section = new VBox(5);
-        Label title = new Label("7. Output Gain (Applied Last)");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-        HBox titleBox = new HBox(5);
-        titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.getChildren().addAll(title, createHelpIcon("Adjusts the final audio volume level after all filters have been applied. Use this to compensate for volume lost due to filtering or to boost quiet signals."));
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        Label gainLabel = new Label("Gain:");
-        GridPane.setConstraints(gainLabel, 0, 0);
-        controlsPane.getChildren().add(gainLabel);
+        SettingsCard section = new SettingsCard();
 
         mInputGainSlider = new Slider(0.1, 5.0, 2.0);
         mInputGainSlider.setMajorTickUnit(1.0);
@@ -594,8 +551,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mInputGainSlider, 1, 0);
-        controlsPane.getChildren().add(mInputGainSlider);
 
         mInputGainField = new TextField("2.0x (6.0 dB)");
         mInputGainField.setPrefWidth(120);
@@ -603,7 +558,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         mInputGainField.setStyle("-fx-font-size: 11px;");
         mInputGainField.setOnAction(event -> {
             commitTextFieldToSlider(mInputGainField, mInputGainSlider, "x", "%.1f");
-            // Re-format with dB display
             double v = (int) mInputGainSlider.getValue();
             mInputGainField.setText(String.format("%.1fx (%.1f dB)", v, 20.0 * Math.log10(v)));
         });
@@ -615,37 +569,24 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mInputGainField.setText(String.format("%.1fx (%.1f dB)", v, 20.0 * Math.log10(v)));
             }
         });
-        GridPane.setConstraints(mInputGainField, 2, 0);
-        controlsPane.getChildren().add(mInputGainField);
 
-        section.getChildren().addAll(titleBox, controlsPane);
+        section.getChildren().add(new SettingsRow("Output Gain", createHelpIcon("Adjusts the final audio volume level after all filters have been applied. Use this to compensate for volume lost due to filtering or to boost quiet signals."), mInputGainSlider, mInputGainField));
         return section;
     }
 
 
-    private VBox createHighPassSection()
+    private SettingsCard createHighPassSection()
     {
-        VBox section = new VBox(5);
-        Label title = new Label("1. High-Pass Filter");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-        HBox titleBox = new HBox(5);
-        titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.getChildren().addAll(title, createHelpIcon("Removes DC offset and sub-audible signalling."));
-
-        section.getChildren().addAll(titleBox, getAudioFilterEnable());
+        SettingsCard section = new SettingsCard();
+        section.getChildren().add(new SettingsRow("High-Pass Filter", createHelpIcon("Removes DC offset and sub-audible signalling."), getAudioFilterEnable()));
         return section;
     }
 
-    private VBox createLowPassSection()
+    private SettingsCard createLowPassSection()
     {
-        VBox section = new VBox(5);
-        Label title = new Label("1. Low-Pass Filter");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-        HBox titleBox = new HBox(5);
-        titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.getChildren().addAll(title, createHelpIcon("Removes high frequencies above the cutoff. Use this to eliminate harsh high-pitched static and hiss from weak analog FM signals."));
+        SettingsCard section = new SettingsCard();
 
-        mLowPassEnabledSwitch = new ToggleSwitch("Enable Low-Pass Filter");
+        mLowPassEnabledSwitch = new ToggleSwitch("Enable");
         mLowPassEnabledSwitch.setTooltip(new Tooltip("Remove high-frequency hiss/noise"));
         mLowPassEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
             if(!mLoadingConfiguration)
@@ -654,14 +595,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mLowPassCutoffSlider.setDisable(!val);
             }
         });
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        Label cutoffLabel = new Label("Cutoff:");
-        GridPane.setConstraints(cutoffLabel, 0, 0);
-        controlsPane.getChildren().add(cutoffLabel);
 
         mLowPassCutoffSlider = new Slider(2500, 4000, 2800);
         mLowPassCutoffSlider.setMajorTickUnit(500);
@@ -677,27 +610,21 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mLowPassCutoffSlider, 1, 0);
-        controlsPane.getChildren().add(mLowPassCutoffSlider);
 
         mLowPassCutoffField = createSliderTextField(mLowPassCutoffSlider, "2800 Hz", " Hz", "%.0f");
-        GridPane.setConstraints(mLowPassCutoffField, 2, 0);
-        controlsPane.getChildren().add(mLowPassCutoffField);
 
-        section.getChildren().addAll(titleBox, mLowPassEnabledSwitch, controlsPane);
+        section.getChildren().addAll(
+            new SettingsRow("Low-Pass Filter", createHelpIcon("Removes high frequencies above the cutoff. Use this to eliminate harsh high-pitched static and hiss from weak analog FM signals."), mLowPassEnabledSwitch),
+            new SettingsRow("Cutoff", mLowPassCutoffSlider, mLowPassCutoffField)
+        );
         return section;
     }
 
-    private VBox createVoiceEnhanceSection()
+    private SettingsCard createVoiceEnhanceSection()
     {
-        VBox section = new VBox(5);
-        Label title = new Label("4. Voice Enhancement");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-        HBox titleBox = new HBox(5);
-        titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.getChildren().addAll(title, createHelpIcon("Boosts frequencies in the 2-4 kHz range (presence peak). Use this to improve speech intelligibility and make voices stand out, especially in noisy environments."));
+        SettingsCard section = new SettingsCard();
 
-        mVoiceEnhanceEnabledSwitch = new ToggleSwitch("Enable Voice Enhancement");
+        mVoiceEnhanceEnabledSwitch = new ToggleSwitch("Enable");
         mVoiceEnhanceEnabledSwitch.setTooltip(new Tooltip("Boost speech clarity (2-4 kHz presence)"));
         mVoiceEnhanceEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
             if(!mLoadingConfiguration)
@@ -706,14 +633,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mVoiceEnhanceSlider.setDisable(!val);
             }
         });
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        Label amountLabel = new Label("Amount:");
-        GridPane.setConstraints(amountLabel, 0, 0);
-        controlsPane.getChildren().add(amountLabel);
 
         mVoiceEnhanceSlider = new Slider(0, 100, 0);
         mVoiceEnhanceSlider.setMajorTickUnit(25);
@@ -729,27 +648,21 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mVoiceEnhanceSlider, 1, 0);
-        controlsPane.getChildren().add(mVoiceEnhanceSlider);
 
         mVoiceEnhanceField = createSliderTextField(mVoiceEnhanceSlider, "0%", "%", "%.0f");
-        GridPane.setConstraints(mVoiceEnhanceField, 2, 0);
-        controlsPane.getChildren().add(mVoiceEnhanceField);
 
-        section.getChildren().addAll(titleBox, mVoiceEnhanceEnabledSwitch, controlsPane);
+        section.getChildren().addAll(
+            new SettingsRow("Voice Enhancement", createHelpIcon("Boosts frequencies in the 2-4 kHz range (presence peak). Use this to improve speech intelligibility and make voices stand out, especially in noisy environments."), mVoiceEnhanceEnabledSwitch),
+            new SettingsRow("Amount", mVoiceEnhanceSlider, mVoiceEnhanceField)
+        );
         return section;
     }
 
-    private VBox createBassBoostSection()
+    private SettingsCard createBassBoostSection()
     {
-        VBox section = new VBox(5);
-        Label title = new Label("3. Bass Boost");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-        HBox titleBox = new HBox(5);
-        titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.getChildren().addAll(title, createHelpIcon("Boosts low frequencies (low-shelf) below 400 Hz. Use this to add depth and richness to voices that sound thin or \'tinny\'."));
+        SettingsCard section = new SettingsCard();
 
-        mBassBoostEnabledSwitch = new ToggleSwitch("Enable Bass Boost");
+        mBassBoostEnabledSwitch = new ToggleSwitch("Enable");
         mBassBoostEnabledSwitch.setTooltip(new Tooltip("Boost low frequencies below 400 Hz for warmth"));
         mBassBoostEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
             if(!mLoadingConfiguration)
@@ -758,14 +671,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mBassBoostSlider.setDisable(!val);
             }
         });
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        Label amountLabel = new Label("Boost Amount:");
-        GridPane.setConstraints(amountLabel, 0, 0);
-        controlsPane.getChildren().add(amountLabel);
 
         mBassBoostSlider = new Slider(0, 12, 0);
         mBassBoostSlider.setMajorTickUnit(3);
@@ -781,27 +686,21 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mBassBoostSlider, 1, 0);
-        controlsPane.getChildren().add(mBassBoostSlider);
 
         mBassBoostField = createSliderTextField(mBassBoostSlider, "+0.0 dB", " dB", "+%.1f");
-        GridPane.setConstraints(mBassBoostField, 2, 0);
-        controlsPane.getChildren().add(mBassBoostField);
 
-        section.getChildren().addAll(titleBox, mBassBoostEnabledSwitch, controlsPane);
+        section.getChildren().addAll(
+            new SettingsRow("Bass Boost", createHelpIcon("Boosts low frequencies (low-shelf) below 400 Hz. Use this to add depth and richness to voices that sound thin or \'tinny\'."), mBassBoostEnabledSwitch),
+            new SettingsRow("Boost Amount", mBassBoostSlider, mBassBoostField)
+        );
         return section;
     }
 
-    private VBox createHissReductionSection()
+    private SettingsCard createHissReductionSection()
     {
-        VBox section = new VBox(5);
-        Label title = new Label("2. Hiss Reduction");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-        HBox titleBox = new HBox(5);
-        titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.getChildren().addAll(title, createHelpIcon("Attenuates high frequencies (high-shelf cut) above the corner frequency. Use this to soften background hiss while preserving voice clarity better than a hard low-pass filter."));
+        SettingsCard section = new SettingsCard();
 
-        mHissReductionEnabledSwitch = new ToggleSwitch("Enable Hiss Reduction");
+        mHissReductionEnabledSwitch = new ToggleSwitch("Enable");
         mHissReductionEnabledSwitch.setTooltip(new Tooltip(
                 "High-shelf cut above corner frequency to reduce FM hiss.\n" +
                 "Stacks with Low-Pass Filter."));
@@ -813,15 +712,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mHissReductionCornerSlider.setDisable(!val);
             }
         });
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        // Row 0: Shelf cut amount
-        Label dbLabel = new Label("Cut Amount:");
-        GridPane.setConstraints(dbLabel, 0, 0);
-        controlsPane.getChildren().add(dbLabel);
 
         mHissReductionDbSlider = new Slider(-12, 0, -6);
         mHissReductionDbSlider.setMajorTickUnit(3);
@@ -839,17 +729,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mHissReductionDbSlider, 1, 0);
-        controlsPane.getChildren().add(mHissReductionDbSlider);
 
         mHissReductionDbField = createSliderTextField(mHissReductionDbSlider, "-6.0 dB", " dB", "%.1f");
-        GridPane.setConstraints(mHissReductionDbField, 2, 0);
-        controlsPane.getChildren().add(mHissReductionDbField);
-
-        // Row 1: Corner frequency
-        Label cornerLabel = new Label("Corner Freq:");
-        GridPane.setConstraints(cornerLabel, 0, 1);
-        controlsPane.getChildren().add(cornerLabel);
 
         mHissReductionCornerSlider = new Slider(1000, 3500, 2000);
         mHissReductionCornerSlider.setMajorTickUnit(500);
@@ -867,41 +748,28 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mHissReductionCornerSlider, 1, 1);
-        controlsPane.getChildren().add(mHissReductionCornerSlider);
 
         mHissReductionCornerField = createSliderTextField(mHissReductionCornerSlider, "2000 Hz", " Hz", "%.0f");
-        GridPane.setConstraints(mHissReductionCornerField, 2, 1);
-        controlsPane.getChildren().add(mHissReductionCornerField);
 
-        section.getChildren().addAll(titleBox, mHissReductionEnabledSwitch, controlsPane);
+        section.getChildren().addAll(
+            new SettingsRow("Hiss Reduction", createHelpIcon("Attenuates high frequencies (high-shelf cut) above the corner frequency. Use this to soften background hiss while preserving voice clarity better than a hard low-pass filter."), mHissReductionEnabledSwitch),
+            new SettingsRow("Cut Amount", mHissReductionDbSlider, mHissReductionDbField),
+            new SettingsRow("Corner Freq", mHissReductionCornerSlider, mHissReductionCornerField)
+        );
         return section;
     }
 
-    private VBox createSquelchTailSection()
+    private SettingsCard createSquelchTailSection()
     {
-        VBox section = new VBox(5);
-        Label title = new Label("5. Squelch Tail Removal");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-        HBox titleBox = new HBox(5);
-        titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.getChildren().addAll(title, createHelpIcon("Trims the beginning or end of transmissions to remove noise bursts or tone ramp-ups. Hangtime adds a delay before closing audio."));
+        SettingsCard section = new SettingsCard();
 
-        mSquelchTailEnabledSwitch = new ToggleSwitch("Enable Squelch Tail Removal");
+        mSquelchTailEnabledSwitch = new ToggleSwitch("Enable");
         mSquelchTailEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
             if(!mLoadingConfiguration)
             {
                 modifiedProperty().set(true);
             }
         });
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        Label headLabel = new Label("Head Trim (ms):");
-        GridPane.setConstraints(headLabel, 0, 0);
-        controlsPane.getChildren().add(headLabel);
 
         mHeadRemovalSpinner = new Spinner<>(0, 150, 0, 10);
         mHeadRemovalSpinner.setEditable(true);
@@ -912,12 +780,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mHeadRemovalSpinner, 1, 0);
-        controlsPane.getChildren().add(mHeadRemovalSpinner);
-
-        Label tailLabel = new Label("Tail Trim (ms):");
-        GridPane.setConstraints(tailLabel, 2, 0);
-        controlsPane.getChildren().add(tailLabel);
 
         mTailRemovalSpinner = new Spinner<>(0, 300, 100, 10);
         mTailRemovalSpinner.setEditable(true);
@@ -928,12 +790,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mTailRemovalSpinner, 3, 0);
-        controlsPane.getChildren().add(mTailRemovalSpinner);
-
-        Label hangtimeLabel = new Label("Hangtime (ms):");
-        GridPane.setConstraints(hangtimeLabel, 0, 1);
-        controlsPane.getChildren().add(hangtimeLabel);
 
         mAudioHangtimeSpinner = new Spinner<>(0, 1000, 0, 50);
         mAudioHangtimeSpinner.setEditable(true);
@@ -944,23 +800,21 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mAudioHangtimeSpinner, 1, 1);
-        controlsPane.getChildren().add(mAudioHangtimeSpinner);
 
-        section.getChildren().addAll(titleBox, mSquelchTailEnabledSwitch, controlsPane);
+        section.getChildren().addAll(
+            new SettingsRow("Squelch Tail Removal", createHelpIcon("Trims the beginning or end of transmissions to remove noise bursts or tone ramp-ups. Hangtime adds a delay before closing audio."), mSquelchTailEnabledSwitch),
+            new SettingsRow("Head Trim (ms)", mHeadRemovalSpinner),
+            new SettingsRow("Tail Trim (ms)", mTailRemovalSpinner),
+            new SettingsRow("Hangtime (ms)", mAudioHangtimeSpinner)
+        );
         return section;
     }
 
-    private VBox createSquelchSection()
+    private SettingsCard createSquelchSection()
     {
-        VBox section = new VBox(5);
-        Label title = new Label("6. Squelch / Noise Gate");
-        title.setFont(Font.font(null, FontWeight.BOLD, 12));
-        HBox titleBox = new HBox(5);
-        titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.getChildren().addAll(title, createHelpIcon("Mutes the audio when the signal level drops below the threshold. Use this to silence background static and noise between active voice transmissions."));
+        SettingsCard section = new SettingsCard();
 
-        mSquelchEnabledSwitch = new ToggleSwitch("Enable Squelch/Noise Gate");
+        mSquelchEnabledSwitch = new ToggleSwitch("Enable");
         mSquelchEnabledSwitch.setTooltip(new Tooltip("Silence carrier/static between voice"));
         mSquelchEnabledSwitch.selectedProperty().addListener((obs, old, val) -> {
             if(!mLoadingConfiguration)
@@ -971,15 +825,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mHoldTimeSlider.setDisable(!val);
             }
         });
-
-        GridPane controlsPane = new GridPane();
-        controlsPane.setHgap(10);
-        controlsPane.setVgap(5);
-
-        // Threshold: 0-100%
-        Label threshLabel = new Label("Threshold:");
-        GridPane.setConstraints(threshLabel, 0, 0);
-        controlsPane.getChildren().add(threshLabel);
 
         mSquelchThresholdSlider = new Slider(0, 100, 4.0);
         mSquelchThresholdSlider.setMajorTickUnit(25);
@@ -995,17 +840,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mSquelchThresholdSlider, 1, 0);
-        controlsPane.getChildren().add(mSquelchThresholdSlider);
 
         mSquelchThresholdField = createSliderTextField(mSquelchThresholdSlider, "4.0%", "%", "%.1f");
-        GridPane.setConstraints(mSquelchThresholdField, 2, 0);
-        controlsPane.getChildren().add(mSquelchThresholdField);
-
-        // Reduction: 0-100%
-        Label reductionLabel = new Label("Reduction:");
-        GridPane.setConstraints(reductionLabel, 0, 1);
-        controlsPane.getChildren().add(reductionLabel);
 
         mSquelchReductionSlider = new Slider(0, 100, 80);
         mSquelchReductionSlider.setMajorTickUnit(25);
@@ -1021,17 +857,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mSquelchReductionSlider, 1, 1);
-        controlsPane.getChildren().add(mSquelchReductionSlider);
 
         mSquelchReductionField = createSliderTextField(mSquelchReductionSlider, "80%", "%", "%.0f");
-        GridPane.setConstraints(mSquelchReductionField, 2, 1);
-        controlsPane.getChildren().add(mSquelchReductionField);
-
-        // Hold Time (Delay): 0-1000ms
-        Label holdLabel = new Label("Delay (Hold Time):");
-        GridPane.setConstraints(holdLabel, 0, 2);
-        controlsPane.getChildren().add(holdLabel);
 
         mHoldTimeSlider = new Slider(0, 1000, 500);
         mHoldTimeSlider.setMajorTickUnit(250);
@@ -1047,14 +874,15 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 modifiedProperty().set(true);
             }
         });
-        GridPane.setConstraints(mHoldTimeSlider, 1, 2);
-        controlsPane.getChildren().add(mHoldTimeSlider);
 
         mHoldTimeField = createSliderTextField(mHoldTimeSlider, "500 ms", " ms", "%.0f");
-        GridPane.setConstraints(mHoldTimeField, 2, 2);
-        controlsPane.getChildren().add(mHoldTimeField);
 
-        section.getChildren().addAll(titleBox, mSquelchEnabledSwitch, controlsPane);
+        section.getChildren().addAll(
+            new SettingsRow("Squelch / Noise Gate", createHelpIcon("Mutes the audio when the signal level drops below the threshold. Use this to silence background static and noise between active voice transmissions."), mSquelchEnabledSwitch),
+            new SettingsRow("Threshold", mSquelchThresholdSlider, mSquelchThresholdField),
+            new SettingsRow("Reduction", mSquelchReductionSlider, mSquelchReductionField),
+            new SettingsRow("Delay (Hold Time)", mHoldTimeSlider, mHoldTimeField)
+        );
         return section;
     }
 

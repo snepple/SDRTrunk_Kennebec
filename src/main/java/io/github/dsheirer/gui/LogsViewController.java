@@ -101,13 +101,13 @@ public class LogsViewController {
                 }
                 setText(item);
                 if (item.contains(" ERROR ") || item.contains(" FATAL ")) {
-                    setStyle("-fx-text-fill: #ff4444; -fx-font-weight: bold;");
+                    setStyle("-fx-text-fill: #ff6b6b; -fx-font-weight: bold;");
                 } else if (item.contains(" WARN ")) {
-                    setStyle("-fx-text-fill: #ff8800;");
+                    setStyle("-fx-text-fill: #fca311;");
                 } else if (item.contains(" DEBUG ")) {
-                    setStyle("-fx-text-fill: #888888;");
+                    setStyle("-fx-text-fill: #a0a0a0;");
                 } else {
-                    setStyle("-fx-text-fill: #e0e0e0;");
+                    setStyle("");
                 }
             }
         });

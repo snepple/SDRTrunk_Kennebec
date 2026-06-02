@@ -42,9 +42,9 @@ import java.util.ArrayList;
 import java.util.List;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.geometry.VPos;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -52,8 +52,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tab;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
+
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,40 +122,23 @@ public class MPT1327ConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getDecoderPane(){
         if(mDecoderPane == null)
         {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10,10,10,10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
+            VBox content = new VBox(10);
+            content.setPadding(new Insets(10));
 
-            Label channelMapLabel = new Label("Channel Map");
-            GridPane.setHalignment(channelMapLabel, HPos.RIGHT);
-            GridPane.setConstraints(channelMapLabel, 0, 0);
-            gridPane.getChildren().add(channelMapLabel);
+            SettingsCard channelMapCard = new SettingsCard();
+            channelMapCard.getChildren().addAll(
+                new SettingsRow("Channel Map", getChannelMapComboBox(), getChannelMapEditButton())
+            );
+            content.getChildren().add(channelMapCard);
 
-            GridPane.setConstraints(getChannelMapComboBox(), 1, 0, 2, 1,
-                HPos.LEFT, VPos.CENTER, Priority.ALWAYS, Priority.SOMETIMES);
-            gridPane.getChildren().add(getChannelMapComboBox());
+            SettingsCard trafficCard = new SettingsCard();
+            trafficCard.getChildren().addAll(
+                new SettingsRow("Max Traffic Channels", getTrafficChannelPoolSizeSpinner()),
+                new SettingsRow("Call Timeout Seconds", getCallTimeoutSpinner())
+            );
+            content.getChildren().add(trafficCard);
 
-            GridPane.setConstraints(getChannelMapEditButton(), 3, 0);
-            gridPane.getChildren().add(getChannelMapEditButton());
-
-            Label poolSizeLabel = new Label("Max Traffic Channels");
-            GridPane.setHalignment(poolSizeLabel, HPos.RIGHT);
-            GridPane.setConstraints(poolSizeLabel, 0, 1);
-            gridPane.getChildren().add(poolSizeLabel);
-
-            GridPane.setConstraints(getTrafficChannelPoolSizeSpinner(), 1, 1);
-            gridPane.getChildren().add(getTrafficChannelPoolSizeSpinner());
-
-            Label callTimeoutLabel = new Label("Call Timeout Seconds");
-            GridPane.setHalignment(callTimeoutLabel, HPos.RIGHT);
-            GridPane.setConstraints(callTimeoutLabel, 2, 1);
-            gridPane.getChildren().add(callTimeoutLabel);
-
-            GridPane.setConstraints(getCallTimeoutSpinner(), 3, 1);
-            gridPane.getChildren().add(getCallTimeoutSpinner());
-
-            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(content);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
             mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");

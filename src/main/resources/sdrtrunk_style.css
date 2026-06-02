@@ -35,9 +35,218 @@
     -fx-font-weight: bold;
 }
 
-/* Global Application Typeface */
+/* Global Application Typeface & Design Token System */
 .root {
     -fx-font-family: "SansSerif", "Helvetica", "Arial", sans-serif;
+    -fx-font-size: 13px;
+}
+
+/* ============================================================
+   PAGE-LEVEL TYPOGRAPHY
+   ============================================================ */
+
+/* Large page title — 22px bold, for the top of major views */
+.hig-page-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1C1C1E;
+    -fx-padding: 20 16 4 16;
+}
+
+/* Page subtitle / description text below page title */
+.hig-page-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #8E8E93;
+    -fx-padding: 0 16 16 16;
+}
+
+/* Section header within a page — compact uppercase-ish bold caption */
+.hig-section-footer {
+    -fx-font-size: 11px;
+    -fx-text-fill: #8E8E93;
+    -fx-padding: 4 16 0 16;
+    -fx-wrap-text: true;
+}
+
+/* ============================================================
+   ACTION BAR — Fixed bottom bar for Save/Cancel/Apply
+   ============================================================ */
+.hig-action-bar {
+    -fx-padding: 12 16 12 16;
+    -fx-spacing: 8;
+    -fx-alignment: center-right;
+    -fx-border-color: #E5E5EA transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-background-color: #F2F2F7;
+}
+
+.hig-action-bar .button {
+    -fx-min-width: 80;
+    -fx-padding: 6 16 6 16;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+}
+
+/* Primary action button (Save, Apply) */
+.hig-primary-action {
+    -fx-background-color: #007AFF;
+    -fx-text-fill: #FFFFFF;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 6 16 6 16;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+.hig-primary-action:hover {
+    -fx-background-color: #0066DD;
+}
+.hig-primary-action:pressed {
+    -fx-background-color: #0055BB;
+}
+.hig-primary-action:disabled {
+    -fx-opacity: 0.4;
+}
+
+/* Destructive action button (Delete) */
+.hig-destructive-action {
+    -fx-background-color: transparent;
+    -fx-text-fill: #FF3B30;
+    -fx-background-radius: 6;
+    -fx-border-color: #FF3B30;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 6 16 6 16;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+}
+.hig-destructive-action:hover {
+    -fx-background-color: #FFF0EF;
+}
+.hig-destructive-action:pressed {
+    -fx-background-color: #FFE0DE;
+}
+
+/* ============================================================
+   DATA TABLES — Unified table styling
+   ============================================================ */
+.hig-data-table {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E5E5EA;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-border-width: 1;
+}
+
+.hig-data-table .column-header {
+    -fx-background-color: #F9F9FB;
+    -fx-border-color: transparent transparent #E5E5EA transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 8 12 8 12;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8E8E93;
+}
+
+.hig-data-table .column-header .label {
+    -fx-text-fill: #8E8E93;
+    -fx-font-weight: bold;
+}
+
+.hig-data-table .table-row-cell {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: transparent transparent #F2F2F7 transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-min-height: 34;
+}
+
+.hig-data-table .table-row-cell:odd {
+    -fx-background-color: #FAFAFA;
+}
+
+.hig-data-table .table-row-cell:selected {
+    -fx-background-color: #007AFF;
+}
+.hig-data-table .table-row-cell:selected .text {
+    -fx-fill: #FFFFFF;
+}
+.hig-data-table .table-row-cell:selected .label {
+    -fx-text-fill: #FFFFFF;
+}
+
+.hig-data-table .table-row-cell:empty {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.hig-data-table .table-cell {
+    -fx-padding: 6 12 6 12;
+    -fx-border-color: transparent;
+    -fx-font-size: 13px;
+}
+
+/* ============================================================
+   STATUS BADGES
+   ============================================================ */
+.hig-badge {
+    -fx-padding: 2 8 2 8;
+    -fx-background-radius: 10;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.hig-badge-success {
+    -fx-background-color: #E8F5E9;
+    -fx-text-fill: #2E7D32;
+}
+
+.hig-badge-warning {
+    -fx-background-color: #FFF3E0;
+    -fx-text-fill: #E65100;
+}
+
+.hig-badge-error {
+    -fx-background-color: #FFEBEE;
+    -fx-text-fill: #C62828;
+}
+
+.hig-badge-info {
+    -fx-background-color: #E3F2FD;
+    -fx-text-fill: #1565C0;
+}
+
+/* ============================================================
+   INLINE VALIDATION
+   ============================================================ */
+.hig-inline-error {
+    -fx-text-fill: #FF3B30;
+    -fx-font-size: 11px;
+    -fx-padding: 2 16 0 16;
+}
+
+.hig-inline-help {
+    -fx-text-fill: #8E8E93;
+    -fx-font-size: 11px;
+    -fx-padding: 2 16 0 16;
+}
+
+/* ============================================================
+   FOCUS & ACCESSIBILITY
+   ============================================================ */
+.button:focused, .text-field:focused, .combo-box:focused,
+.check-box:focused, .toggle-button:focused, .list-view:focused,
+.table-view:focused, .text-area:focused {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,122,255,0.35), 4, 0, 0, 0);
+}
+
+/* ============================================================
+   TRANSITION ANIMATIONS
+   ============================================================ */
+.flat-button, .hig-primary-action, .hig-destructive-action,
+.hig-sidebar-item, .preferences-list-item {
+    -fx-transition: -fx-background-color 0.15s ease;
 }
 
 /* Sidebar and Headers */
@@ -148,7 +357,6 @@
 }
 
 .preferences-main-area {
-    -fx-background-color: #F2F2F7;
     -fx-background-color: #F2F2F7;
 }
 

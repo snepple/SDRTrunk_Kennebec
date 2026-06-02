@@ -21,6 +21,8 @@ package io.github.dsheirer.gui.preference.directory;
 
 import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.eventbus.MyEventBus;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import io.github.dsheirer.preference.PreferenceType;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.directory.DirectoryPreference;
@@ -28,15 +30,11 @@ import java.io.File;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -46,12 +44,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Preference settings for channel event view
  */
-public class DirectoryPreferenceEditor extends HBox
+public class DirectoryPreferenceEditor extends VBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(DirectoryPreferenceEditor.class);
 
     private DirectoryPreference mDirectoryPreference;
-    private GridPane mEditorPane;
 
     private Label mApplicationRootLabel;
     private Button mChangeApplicationRootButton;
@@ -108,165 +105,54 @@ public class DirectoryPreferenceEditor extends HBox
         //Register to receive directory preference update notifications so we can update the path labels
         MyEventBus.getGlobalEventBus().register(this);
 
-        HBox.setHgrow(getEditorPane(), Priority.ALWAYS);
-        getChildren().add(getEditorPane());
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
+
+        // Directory Paths section
+        Label directoriesHeader = new Label("Directory Paths");
+        directoriesHeader.getStyleClass().add("hig-section-header");
+        getChildren().add(directoriesHeader);
+
+        SettingsCard directoriesCard = new SettingsCard();
+        directoriesCard.getChildren().add(new SettingsRow("Application Root", getApplicationRootPathLabel(),
+            getChangeApplicationRootButton(), getResetApplicationRootButton()));
+        directoriesCard.getChildren().add(new SettingsRow("Application Logs", getApplicationLogsPathLabel(),
+            getChangeApplicationLogsButton(), getResetApplicationLogsButton()));
+        directoriesCard.getChildren().add(new SettingsRow("Configuration", getConfigurationPathLabel(),
+            getChangeConfigurationButton(), getResetConfigurationButton()));
+        directoriesCard.getChildren().add(new SettingsRow("Event Logs", getEventLogsPathLabel(),
+            getChangeEventLogsButton(), getResetEventLogsButton()));
+        directoriesCard.getChildren().add(new SettingsRow("JMBE Libraries", getJmbePathLabel(),
+            getChangeJmbeButton(), getResetJmbeButton()));
+        directoriesCard.getChildren().add(new SettingsRow("Playlists", getPlaylistPathLabel(),
+            getChangePlaylistButton(), getResetPlaylistButton()));
+        directoriesCard.getChildren().add(new SettingsRow("Recordings", getRecordingPathLabel(),
+            getChangeRecordingButton(), getResetRecordingButton()));
+        directoriesCard.getChildren().add(new SettingsRow("Screen Captures", getScreenCapturePathLabel(),
+            getChangeScreenCaptureButton(), getResetScreenCaptureButton()));
+        directoriesCard.getChildren().add(new SettingsRow("Streaming", getStreamingPathLabel(),
+            getChangeStreamingButton(), getResetStreamingButton()));
+        getChildren().add(directoriesCard);
+
+        // Storage Usage Monitoring section
+        Label storageHeader = new Label("Storage Usage Monitoring");
+        storageHeader.getStyleClass().add("hig-section-header");
+        getChildren().add(storageHeader);
+
+        Label storageDescription = new Label("Maximum size thresholds (MB)");
+        storageDescription.getStyleClass().add("kennebec-secondary-text");
+        storageDescription.setPadding(new Insets(0, 10, 0, 10));
+        getChildren().add(storageDescription);
+
+        SettingsCard storageCard = new SettingsCard();
+        storageCard.getChildren().add(new SettingsRow("Event Logs", getEventLogSpinner()));
+        storageCard.getChildren().add(new SettingsRow("Recordings", getRecordingSpinner()));
+        getChildren().add(storageCard);
     }
 
     public void dispose()
     {
         MyEventBus.getGlobalEventBus().unregister(this);
-    }
-
-    private GridPane getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            mEditorPane = new GridPane();
-            mEditorPane.setPadding(new Insets(10, 10, 10, 10));
-
-            int row = 0;
-
-            Label itemLabel = new Label("Item");
-            GridPane.setMargin(itemLabel, new Insets(0, 10, 0, 0));
-            mEditorPane.add(itemLabel, 0, row);
-
-            Label directoryLabel = new Label("Directory");
-            GridPane.setMargin(directoryLabel, new Insets(0, 10, 0, 0));
-            mEditorPane.add(directoryLabel, 1, row++);
-
-            mEditorPane.add(new Separator(Orientation.HORIZONTAL), 0, row++, 4, 1);
-
-            GridPane.setMargin(getApplicationRootLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getApplicationRootLabel(), 0, row);
-
-            GridPane.setMargin(getApplicationRootPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getApplicationRootPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeApplicationRootButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeApplicationRootButton(), 2, row);
-
-            GridPane.setMargin(getResetApplicationRootButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetApplicationRootButton(), 3, row++);
-
-
-            GridPane.setMargin(getApplicationLogsLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getApplicationLogsLabel(), 0, row);
-
-            GridPane.setMargin(getApplicationLogsPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getApplicationLogsPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeApplicationLogsButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeApplicationLogsButton(), 2, row);
-
-            GridPane.setMargin(getResetApplicationLogsButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetApplicationLogsButton(), 3, row++);
-
-
-            GridPane.setMargin(getConfigurationLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getConfigurationLabel(), 0, row);
-
-            GridPane.setMargin(getConfigurationPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getConfigurationPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeConfigurationButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeConfigurationButton(), 2, row);
-
-            GridPane.setMargin(getResetConfigurationButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetConfigurationButton(), 3, row++);
-
-
-            GridPane.setMargin(getEventLogsLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getEventLogsLabel(), 0, row);
-
-            GridPane.setMargin(getEventLogsPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getEventLogsPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeEventLogsButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeEventLogsButton(), 2, row);
-
-            GridPane.setMargin(getResetEventLogsButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetEventLogsButton(), 3, row++);
-
-
-            GridPane.setMargin(getJmbeLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getJmbeLabel(), 0, row);
-
-            GridPane.setMargin(getJmbePathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getJmbePathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeJmbeButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeJmbeButton(), 2, row);
-
-            GridPane.setMargin(getResetJmbeButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetJmbeButton(), 3, row++);
-
-
-            GridPane.setMargin(getPlaylistLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getPlaylistLabel(), 0, row);
-
-            GridPane.setMargin(getPlaylistPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getPlaylistPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangePlaylistButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangePlaylistButton(), 2, row);
-
-            GridPane.setMargin(getResetPlaylistButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetPlaylistButton(), 3, row++);
-
-
-            GridPane.setMargin(getRecordingLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getRecordingLabel(), 0, row);
-
-            GridPane.setMargin(getRecordingPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getRecordingPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeRecordingButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeRecordingButton(), 2, row);
-
-            GridPane.setMargin(getResetRecordingButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetRecordingButton(), 3, row++);
-
-
-            GridPane.setMargin(getScreenCaptureLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getScreenCaptureLabel(), 0, row);
-
-            GridPane.setMargin(getScreenCapturePathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getScreenCapturePathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeScreenCaptureButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeScreenCaptureButton(), 2, row);
-
-            GridPane.setMargin(getResetScreenCaptureButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetScreenCaptureButton(), 3, row++);
-
-
-            GridPane.setMargin(getStreamingLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getStreamingLabel(), 0, row);
-
-            GridPane.setMargin(getStreamingPathLabel(), new Insets(0, 10, 0, 0));
-            mEditorPane.add(getStreamingPathLabel(), 1, row);
-
-            GridPane.setMargin(getChangeStreamingButton(), new Insets(2, 10, 2, 0));
-            mEditorPane.add(getChangeStreamingButton(), 2, row);
-
-            GridPane.setMargin(getResetStreamingButton(), new Insets(2, 0, 2, 0));
-            mEditorPane.add(getResetStreamingButton(), 3, row++);
-
-            Label monitorLabel = new Label("File storage usage monitoring - maximum size thresholds (MB)");
-            GridPane.setMargin(monitorLabel, new Insets(15, 0, 2, 0));
-            mEditorPane.add(monitorLabel, 0, row++, 4, 1);
-            mEditorPane.add(new Separator(Orientation.HORIZONTAL), 0, row++, 4, 1);
-
-            mEditorPane.add(new Label("Event Logs"), 0, row);
-            GridPane.setMargin(getEventLogSpinner(), new Insets(2, 2, 2, 0));
-            mEditorPane.add(getEventLogSpinner(), 1, row++);
-
-            mEditorPane.add(new Label("Recordings"), 0, row);
-            GridPane.setMargin(getRecordingSpinner(), new Insets(2, 2, 2, 0));
-            mEditorPane.add(getRecordingSpinner(), 1, row);
-        }
-
-        return mEditorPane;
     }
 
     /**

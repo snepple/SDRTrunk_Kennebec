@@ -15,6 +15,7 @@ public class ThemeManager {
     private static final String NIGHT_MODE_CSS = "/css/night-mode.css";
     
     private static boolean mNightModeEnabled = false;
+    private static final java.util.Set<Scene> mActiveScenes = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
     private boolean mIsWindows11;
     private Thread mRegistryMonitorThread;
 
@@ -96,31 +97,42 @@ public class ThemeManager {
         mRegistryMonitorThread.start();
     }
 
-    /**
-     * Toggles night mode on/off for the given scene by adding or removing the night-mode.css stylesheet.
-     * @param scene the JavaFX Scene to apply night mode to
-     */
-    public static void toggleNightMode(Scene scene) {
-        if (scene == null) {
-            mLog.warn("Cannot toggle night mode - scene is null");
-            return;
+    public static void registerScene(Scene scene) {
+        if (scene != null) {
+            mActiveScenes.add(scene);
+            String cssUrl = ThemeManager.class.getResource(NIGHT_MODE_CSS) != null
+                ? ThemeManager.class.getResource(NIGHT_MODE_CSS).toExternalForm()
+                : NIGHT_MODE_CSS;
+            if (mNightModeEnabled && !scene.getStylesheets().contains(cssUrl)) {
+                scene.getStylesheets().add(cssUrl);
+            } else if (!mNightModeEnabled && scene.getStylesheets().contains(cssUrl)) {
+                scene.getStylesheets().remove(cssUrl);
+            }
         }
+    }
 
+    /**
+     * Toggles night mode on/off for all registered scenes by adding or removing the night-mode.css stylesheet.
+     */
+    public static void toggleNightMode() {
         String cssUrl = ThemeManager.class.getResource(NIGHT_MODE_CSS) != null
             ? ThemeManager.class.getResource(NIGHT_MODE_CSS).toExternalForm()
             : NIGHT_MODE_CSS;
 
-        if (mNightModeEnabled) {
-            scene.getStylesheets().remove(cssUrl);
-            mNightModeEnabled = false;
-            mLog.info("Night mode disabled");
-        } else {
-            if (!scene.getStylesheets().contains(cssUrl)) {
-                scene.getStylesheets().add(cssUrl);
+        mNightModeEnabled = !mNightModeEnabled;
+        
+        for (Scene scene : mActiveScenes) {
+            if (scene != null) {
+                if (mNightModeEnabled) {
+                    if (!scene.getStylesheets().contains(cssUrl)) {
+                        scene.getStylesheets().add(cssUrl);
+                    }
+                } else {
+                    scene.getStylesheets().remove(cssUrl);
+                }
             }
-            mNightModeEnabled = true;
-            mLog.info("Night mode enabled");
         }
+        mLog.info("Night mode " + (mNightModeEnabled ? "enabled" : "disabled"));
     }
 
     /**

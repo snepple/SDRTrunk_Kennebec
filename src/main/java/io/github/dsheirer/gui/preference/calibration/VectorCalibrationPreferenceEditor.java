@@ -18,17 +18,14 @@
  */
 
 package io.github.dsheirer.gui.preference.calibration;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.scene.image.*;
-import javafx.scene.paint.*;
-import javafx.geometry.*;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.preference.CalibrateRequest;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import io.github.dsheirer.log.TextAreaLogAppender;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.calibration.VectorCalibrationPreference;
@@ -37,7 +34,6 @@ import io.github.dsheirer.vector.calibrate.Calibration;
 import io.github.dsheirer.vector.calibrate.CalibrationException;
 import io.github.dsheirer.vector.calibrate.CalibrationManager;
 import javafx.application.Platform;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -45,7 +41,6 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -58,11 +53,10 @@ import java.util.List;
 /**
  * Preference settings for duplicate call audio handling
  */
-public class VectorCalibrationPreferenceEditor extends HBox
+public class VectorCalibrationPreferenceEditor extends VBox
 {
     private final static Logger mLog = LoggerFactory.getLogger(VectorCalibrationPreferenceEditor.class);
     private VectorCalibrationPreference mPreference;
-    private GridPane mEditorPane;
     private ToggleSwitch mHideDialogSwitch;
     private ToggleSwitch mVectorEnabled;
     private Label mCalibrationsPendingValue;
@@ -80,86 +74,46 @@ public class VectorCalibrationPreferenceEditor extends HBox
     {
         MyEventBus.getGlobalEventBus().register(this);
         mPreference = userPreferences.getVectorCalibrationPreference();
+
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
         setMaxHeight(Double.MAX_VALUE);
         setMaxWidth(Double.MAX_VALUE);
 
-        VBox vbox = new VBox();
-        vbox.setMaxHeight(Double.MAX_VALUE);
-        vbox.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(vbox, Priority.ALWAYS);
+        // Section header
+        Label headerLabel = new Label("CPU Vector SIMD Preferences");
+        headerLabel.getStyleClass().add("hig-section-header");
+        getChildren().add(headerLabel);
 
-        VBox.setVgrow(getEditorPane(), Priority.NEVER);
-        vbox.getChildren().add(getEditorPane());
+        // Settings card with toggle switches and status
+        SettingsCard settingsCard = new SettingsCard();
+        settingsCard.getChildren().add(new SettingsRow("Enable SIMD Vector Operations", getVectorEnabledToggleSwitch()));
+        settingsCard.getChildren().add(new SettingsRow("Don't Show Calibration Dialog When New Calibrations Are Available", getHideDialogSwitch()));
+        settingsCard.getChildren().add(new SettingsRow("Calibrations To Perform", getCalibrationsPendingValue()));
+        getChildren().add(settingsCard);
 
+        updateControls();
+
+        // Calibration progress card
+        SettingsCard progressCard = new SettingsCard();
+        HBox progressRow = new HBox(10);
+        progressRow.getChildren().addAll(getCalibratingLabel(), getProgressBar());
+        progressCard.getChildren().add(progressRow);
+        progressCard.getChildren().add(new SettingsRow("Actions", getCalibrateButton(), getResetAllButton()));
+        getChildren().add(progressCard);
+
+        // Console output area
         ScrollPane scrollPane = new ScrollPane(getConsoleTextArea());
         scrollPane.setFitToHeight(true);
         scrollPane.setFitToWidth(true);
-
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
-        vbox.getChildren().add(scrollPane);
-        getChildren().add(vbox);
+        getChildren().add(scrollPane);
     }
 
     @Subscribe
     public void process(CalibrateRequest request)
     {
         getCalibrateButton().fire();
-    }
-
-    private GridPane getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            int row = 0;
-            mEditorPane = new GridPane();
-            mEditorPane.setPadding(new Insets(10));
-            mEditorPane.setHgap(10);
-            mEditorPane.setVgap(10);
-
-            Label titleLabel = new Label("CPU Vector SIMD Preferences");
-            GridPane.setConstraints(titleLabel, 0, row++, 2, 1);
-            mEditorPane.getChildren().add(titleLabel);
-
-            GridPane.setConstraints(getVectorEnabledToggleSwitch(), 0, row);
-            GridPane.setHalignment(getVectorEnabledToggleSwitch(), HPos.RIGHT);
-            mEditorPane.getChildren().add(getVectorEnabledToggleSwitch());
-
-            Label enableSimdLabel = new Label("Enable SIMD Vector Operations");
-            GridPane.setConstraints(enableSimdLabel, 1, row++);
-            mEditorPane.getChildren().add((enableSimdLabel));
-
-            GridPane.setConstraints(getHideDialogSwitch(), 0, row);
-            GridPane.setHalignment(getHideDialogSwitch(), HPos.RIGHT);
-            mEditorPane.getChildren().add(getHideDialogSwitch());
-
-            Label hideDialogLabel = new Label("Don't Show Calibration Dialog When New Calibrations Are Available");
-            GridPane.setConstraints(hideDialogLabel, 1, row++);
-            mEditorPane.getChildren().add((hideDialogLabel));
-
-            GridPane.setConstraints(getCalibrationsPendingValue(), 0, row);
-            mEditorPane.getChildren().add(getCalibrationsPendingValue());
-
-            Label calibrationsPendingLabel = new Label("Calibrations To Perform");
-            GridPane.setHalignment(getCalibrationsPendingValue(), HPos.RIGHT);
-            GridPane.setConstraints(calibrationsPendingLabel, 1, row++);
-            mEditorPane.getChildren().add(calibrationsPendingLabel);
-            updateControls();
-
-            GridPane.setConstraints(getCalibratingLabel(), 0, row);
-            mEditorPane.getChildren().add(getCalibratingLabel());
-
-            GridPane.setConstraints(getProgressBar(), 1, row++);
-            mEditorPane.getChildren().add(getProgressBar());
-
-            HBox buttonsBox = new HBox();
-            buttonsBox.setSpacing(10);
-            buttonsBox.getChildren().addAll(getCalibrateButton(), getResetAllButton());
-            GridPane.setHalignment(buttonsBox, HPos.CENTER);
-            GridPane.setConstraints(buttonsBox, 0, row, 2, 1);
-            mEditorPane.getChildren().add(buttonsBox);
-        }
-
-        return mEditorPane;
     }
 
     private void enableConsoleLogging()

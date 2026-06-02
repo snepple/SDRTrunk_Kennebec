@@ -180,7 +180,30 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
         mAudioChannelsScroller.setVisible(false);
         mAudioChannelsScroller.setManaged(false);
 
-        HBox rightControls = new HBox(6, mMuteButton, volIcon, masterVolSlider);
+        ToggleButton monoStereoButton = new ToggleButton();
+        monoStereoButton.getStyleClass().add("mono-stereo-button");
+        monoStereoButton.setStyle("-fx-background-color: rgba(255,255,255,0.1); -fx-background-radius: 6; -fx-text-fill: #e0e0e0; -fx-font-size: 11px; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 4 8;");
+        monoStereoButton.setTooltip(new Tooltip("Toggle between Mono and Stereo playback"));
+        
+        io.github.dsheirer.audio.playback.AudioPlaybackDeviceDescriptor currDevice = mUserPreferences.getPlaybackPreference().getAudioPlaybackDevice();
+        boolean isStereo = (currDevice != null && currDevice.getAudioFormat().getChannels() == 2);
+        monoStereoButton.setSelected(isStereo);
+        monoStereoButton.setText(isStereo ? "STEREO" : "MONO");
+        
+        monoStereoButton.setOnAction(e -> {
+            boolean stereo = monoStereoButton.isSelected();
+            monoStereoButton.setText(stereo ? "STEREO" : "MONO");
+            io.github.dsheirer.audio.playback.AudioPlaybackDeviceDescriptor dev = mUserPreferences.getPlaybackPreference().getAudioPlaybackDevice();
+            if (dev != null) {
+                int newChannelCount = stereo ? 2 : 1;
+                io.github.dsheirer.audio.playback.AudioPlaybackDeviceDescriptor newDev = io.github.dsheirer.audio.playback.AudioPlaybackDeviceManager.getAudioPlaybackDevice(dev.getMixerInfo().getName(), newChannelCount);
+                if (newDev != null) {
+                    mUserPreferences.getPlaybackPreference().setAudioPlaybackDevice(newDev);
+                }
+            }
+        });
+
+        HBox rightControls = new HBox(6, monoStereoButton, mMuteButton, volIcon, masterVolSlider);
         rightControls.setAlignment(Pos.CENTER);
         rightControls.setPadding(new Insets(0, 12, 0, 8));
 

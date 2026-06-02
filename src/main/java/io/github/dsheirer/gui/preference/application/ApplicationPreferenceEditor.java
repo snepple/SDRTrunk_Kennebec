@@ -90,6 +90,18 @@ public class ApplicationPreferenceEditor extends HBox
             io.github.dsheirer.gui.preference.layout.SettingsCard diagCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
             diagCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Enable Diagnostic Monitoring", getAutomaticDiagnosticMonitoringToggle()));
 
+            // Card 1.5: Theme
+            Label themeLabel = new Label("Application Theme");
+            themeLabel.getStyleClass().add("hig-section-header");
+            io.github.dsheirer.gui.preference.layout.SettingsCard themeCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
+            ToggleSwitch themeToggle = new ToggleSwitch();
+            themeToggle.setTooltip(new Tooltip("Enable Night Mode (Dark Theme)"));
+            themeToggle.setSelected(io.github.dsheirer.gui.theme.ThemeManager.isNightModeEnabled());
+            themeToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                io.github.dsheirer.gui.theme.ThemeManager.toggleNightMode();
+            });
+            themeCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Enable Dark Mode", themeToggle));
+
             // Card 2: Auto Start
             Label autoStartLabel = new Label("Channel Auto-start Disable Timeout");
             autoStartLabel.getStyleClass().add("hig-section-header");
@@ -154,7 +166,7 @@ public class ApplicationPreferenceEditor extends HBox
                 );
             }
 
-            mEditorPane.getChildren().addAll(monitoringLabel, diagCard, autoStartLabel, autoStartCard, memoryLabel, memoryCard, getMemoryWarningLabel());
+            mEditorPane.getChildren().addAll(monitoringLabel, diagCard, themeLabel, themeCard, autoStartLabel, autoStartCard, memoryLabel, memoryCard, getMemoryWarningLabel());
             if (usbMonitorCard != null) {
                 mEditorPane.getChildren().addAll(usbLabel, usbMonitorCard, usbDesc);
             }
@@ -231,23 +243,31 @@ public class ApplicationPreferenceEditor extends HBox
             mUsbMonitorToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
                 if (mUpdatingUsbMonitor) return;
 
-                if(newValue) {
-                    // Trigger installation
-                    boolean success = UsbMonitorManager.install(mUserPreferences);
-                    if(!success) {
-                        mUpdatingUsbMonitor = true;
-                        mUsbMonitorToggle.setSelected(false);
-                        mUpdatingUsbMonitor = false;
+                mUsbMonitorToggle.setDisable(true);
+                
+                java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    if(newValue) {
+                        boolean success = UsbMonitorManager.install(mUserPreferences);
+                        javafx.application.Platform.runLater(() -> {
+                            if(!success) {
+                                mUpdatingUsbMonitor = true;
+                                mUsbMonitorToggle.setSelected(false);
+                                mUpdatingUsbMonitor = false;
+                            }
+                            mUsbMonitorToggle.setDisable(false);
+                        });
+                    } else {
+                        boolean success = UsbMonitorManager.uninstall(mUserPreferences);
+                        javafx.application.Platform.runLater(() -> {
+                            if(!success) {
+                                mUpdatingUsbMonitor = true;
+                                mUsbMonitorToggle.setSelected(true);
+                                mUpdatingUsbMonitor = false;
+                            }
+                            mUsbMonitorToggle.setDisable(false);
+                        });
                     }
-                } else {
-                    // Trigger uninstallation
-                    boolean success = UsbMonitorManager.uninstall(mUserPreferences);
-                    if(!success) {
-                        mUpdatingUsbMonitor = true;
-                        mUsbMonitorToggle.setSelected(true);
-                        mUpdatingUsbMonitor = false;
-                    }
-                }
+                });
             });
         }
         return mUsbMonitorToggle;

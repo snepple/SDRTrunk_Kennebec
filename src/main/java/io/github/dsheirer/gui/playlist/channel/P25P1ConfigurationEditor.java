@@ -27,6 +27,8 @@ import javafx.geometry.*;
 import javafx.scene.control.Button;
 
 import io.github.dsheirer.dsp.filter.equalizer.GraphicEqualizer;
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import io.github.dsheirer.gui.playlist.eventlog.EventLogConfigurationEditor;
 import io.github.dsheirer.gui.playlist.record.RecordConfigurationEditor;
 import io.github.dsheirer.gui.playlist.source.FrequencyEditor;
@@ -49,7 +51,7 @@ import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import io.github.dsheirer.gui.control.IntegerTextField;
-import javafx.geometry.HPos;
+
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
@@ -64,7 +66,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.control.ToggleSwitch;
@@ -144,67 +146,47 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getDecoderPane(){
         if(mDecoderPane == null)
         {
-            GridPane gridPane = new GridPane();
-            gridPane.setPadding(new Insets(10,10,10,10));
-            gridPane.setHgap(10);
-            gridPane.setVgap(10);
+            VBox content = new VBox(10);
+            content.setPadding(new Insets(10));
 
-            Label modulationLabel = new Label("Modulation");
-            GridPane.setHalignment(modulationLabel, HPos.RIGHT);
-            GridPane.setConstraints(modulationLabel, 0, 0);
-            gridPane.getChildren().add(modulationLabel);
-
-            GridPane.setConstraints(getModulationSegmentedButton(), 1, 0);
-            gridPane.getChildren().addAll(getModulationSegmentedButton());
-
-            Label poolSizeLabel = new Label("Max Traffic Channels", createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."));
-            GridPane.setHalignment(poolSizeLabel, HPos.RIGHT);
-            GridPane.setConstraints(poolSizeLabel, 2, 0);
-            gridPane.getChildren().add(poolSizeLabel);
-
-            GridPane.setConstraints(getTrafficChannelPoolSizeSpinner(), 3, 0);
-            gridPane.getChildren().add(getTrafficChannelPoolSizeSpinner());
-
-            GridPane.setConstraints(getIgnoreDataCallsButton(), 4, 0);
-            gridPane.getChildren().add(getIgnoreDataCallsButton());
-
-            Label directionLabel = new Label("Ignore Data Calls", createHelpIcon("Skips processing data packets, focusing only on voice traffic."));
-            GridPane.setHalignment(directionLabel, HPos.LEFT);
-            GridPane.setConstraints(directionLabel, 5, 0);
-            gridPane.getChildren().add(directionLabel);
-
+            // Card 1: Modulation
             Label modulationHelpLabel = new Label("C4FM: repeaters and non-simulcast trunked systems.  LSM: simulcast trunked systems.");
-            GridPane.setConstraints(modulationHelpLabel, 0, 1, 6, 1);
-            gridPane.getChildren().add(modulationHelpLabel);
+            modulationHelpLabel.setWrapText(true);
 
-            //NAC Filter row
-            GridPane.setConstraints(getNacFilterButton(), 0, 2);
-            gridPane.getChildren().add(getNacFilterButton());
+            SettingsCard modulationCard = new SettingsCard();
+            modulationCard.getChildren().addAll(
+                new SettingsRow("Modulation", getModulationSegmentedButton()),
+                modulationHelpLabel
+            );
 
-            Label nacLabel = new Label("NAC Filter (hex):", createHelpIcon("A unique code identifying a specific radio system. This is usually provided by RadioReference and tells the software which network to follow."));
-            javafx.scene.layout.HBox nacBox = new javafx.scene.layout.HBox(5, nacLabel, getNacTextField());
-            nacBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            GridPane.setConstraints(nacBox, 1, 2);
-            gridPane.getChildren().add(nacBox);
+            // Card 2: Traffic & Filtering
+            SettingsCard trafficCard = new SettingsCard();
+            trafficCard.getChildren().addAll(
+                new SettingsRow("Max Traffic Channels",
+                    createHelpIcon("Limits how many audio conversations can be processed at the same time. Higher numbers decode more calls simultaneously but require more CPU."),
+                    getTrafficChannelPoolSizeSpinner()),
+                new SettingsRow("Ignore Data Calls",
+                    createHelpIcon("Skips processing data packets, focusing only on voice traffic."),
+                    getIgnoreDataCallsButton()),
+                new SettingsRow("Ignore Unaliased TGs",
+                    createHelpIcon("Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list."),
+                    getIgnoreUnaliasedTalkgroupsButton())
+            );
 
-            //Talkgroup Override - same row as NAC
-            Label tgLabel = new Label("Talkgroup To Assign:", createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."));
-            GridPane.setHalignment(tgLabel, HPos.RIGHT);
-            GridPane.setConstraints(tgLabel, 2, 2);
-            gridPane.getChildren().add(tgLabel);
+            // Card 3: Network Access Code
+            SettingsCard nacCard = new SettingsCard();
+            nacCard.getChildren().addAll(
+                new SettingsRow("NAC Filter",
+                    createHelpIcon("A unique code identifying a specific radio system. This is usually provided by RadioReference and tells the software which network to follow."),
+                    getNacFilterButton(), getNacTextField()),
+                new SettingsRow("Talkgroup To Assign",
+                    createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."),
+                    getTalkgroupTextField())
+            );
 
-            GridPane.setConstraints(getTalkgroupTextField(), 3, 2);
-            gridPane.getChildren().add(getTalkgroupTextField());
+            content.getChildren().addAll(modulationCard, trafficCard, nacCard);
 
-            GridPane.setConstraints(getIgnoreUnaliasedTalkgroupsButton(), 4, 2);
-            gridPane.getChildren().add(getIgnoreUnaliasedTalkgroupsButton());
-
-            Label ignoreUnaliasedLabel = new Label("Ignore Unaliased TGs", createHelpIcon("Skips processing calls from talkgroups that have not been explicitly defined and named in your alias list."));
-            GridPane.setHalignment(ignoreUnaliasedLabel, HPos.LEFT);
-            GridPane.setConstraints(ignoreUnaliasedLabel, 5, 2);
-            gridPane.getChildren().add(ignoreUnaliasedLabel);
-
-            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(gridPane);
+            javafx.scene.control.ScrollPane mDecoderPaneSp = new javafx.scene.control.ScrollPane(content);
             mDecoderPaneSp.setFitToWidth(true);
             mDecoderPaneSp.setFitToHeight(true);
             mDecoderPaneSp.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
@@ -251,7 +233,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         if(mGraphicEQPane == null)
         {
             VBox content = new VBox(10);
-            content.setPadding(new Insets(10, 10, 10, 10));
+            content.setPadding(new Insets(10));
 
             mGraphicEQEnabledSwitch = new ToggleSwitch("Enable Graphic Equalizer");
             mGraphicEQEnabledSwitch.setTooltip(new Tooltip("Apply a 5-band graphic EQ to decoded P25 audio"));
@@ -263,20 +245,13 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
                     mEQBandFields[i].setDisable(!val);
                 }
             });
-            content.getChildren().add(mGraphicEQEnabledSwitch);
 
-            GridPane gridPane = new GridPane();
-            gridPane.setHgap(10);
-            gridPane.setVgap(8);
+            SettingsCard eqCard = new SettingsCard();
+            eqCard.getChildren().add(new SettingsRow("Enable Graphic Equalizer", mGraphicEQEnabledSwitch));
 
             for(int i = 0; i < GraphicEqualizer.BAND_COUNT; i++)
             {
                 final int band = i;
-
-                Label bandLabel = new Label(GraphicEqualizer.BAND_LABELS[i]);
-                GridPane.setHalignment(bandLabel, HPos.RIGHT);
-                GridPane.setConstraints(bandLabel, 0, i);
-                gridPane.getChildren().add(bandLabel);
 
                 mEQBandSliders[i] = new Slider(-12, 12, 0);
                 mEQBandSliders[i].setMajorTickUnit(6);
@@ -291,8 +266,6 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
                     mEQBandFields[band].setText(String.format("%+.1f dB", val.doubleValue()));
                     modifiedProperty().set(true);
                 });
-                GridPane.setConstraints(mEQBandSliders[i], 1, i);
-                gridPane.getChildren().add(mEQBandSliders[i]);
 
                 mEQBandFields[i] = new TextField("+0.0 dB");
                 mEQBandFields[i].setPrefWidth(80);
@@ -302,11 +275,13 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
                 mEQBandFields[i].focusedProperty().addListener((obs, wasFocused, isFocused) -> {
                     if(!isFocused) commitEQBandField(band);
                 });
-                GridPane.setConstraints(mEQBandFields[i], 2, i);
-                gridPane.getChildren().add(mEQBandFields[i]);
+
+                eqCard.getChildren().add(
+                    new SettingsRow(GraphicEqualizer.BAND_LABELS[i], mEQBandSliders[i], mEQBandFields[i])
+                );
             }
 
-            content.getChildren().add(gridPane);
+            content.getChildren().add(eqCard);
             javafx.scene.control.ScrollPane mGraphicEQPaneSp = new javafx.scene.control.ScrollPane(content);
             mGraphicEQPaneSp.setFitToWidth(true);
             mGraphicEQPaneSp.setFitToHeight(true);

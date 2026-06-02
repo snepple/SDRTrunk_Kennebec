@@ -20,6 +20,8 @@
 
 package io.github.dsheirer.gui.preference.diagnostics;
 
+import io.github.dsheirer.gui.preference.layout.SettingsCard;
+import io.github.dsheirer.gui.preference.layout.SettingsRow;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.diagnostics.DiagnosticsCategory;
 import io.github.dsheirer.preference.diagnostics.DiagnosticsPreference;
@@ -27,16 +29,12 @@ import io.github.dsheirer.preference.diagnostics.LogLevelController;
 import java.util.EnumMap;
 import java.util.Map;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 
 /**
  * Runtime diagnostics preference panel. Lets the user toggle DEBUG logging for selected
@@ -44,143 +42,150 @@ import javafx.scene.paint.Color;
  *
  * Introduced in ap-14.6.
  */
-public class DiagnosticsPreferenceEditor extends HBox
+public class DiagnosticsPreferenceEditor extends VBox
 {
     private final DiagnosticsPreference mDiagnosticsPreference;
     private final Map<DiagnosticsCategory, CheckBox> mCategoryCheckBoxes = new EnumMap<>(DiagnosticsCategory.class);
-    private VBox mEditorPane;
     private CheckBox mMasterAllToggle;
 
     public DiagnosticsPreferenceEditor(UserPreferences userPreferences)
     {
         mDiagnosticsPreference = userPreferences.getDiagnosticsPreference();
+        setPadding(new Insets(10, 10, 10, 10));
+        setSpacing(20);
         setMaxWidth(Double.MAX_VALUE);
 
-        VBox vbox = new VBox();
-        vbox.setMaxHeight(Double.MAX_VALUE);
-        vbox.setMaxWidth(Double.MAX_VALUE);
-        vbox.getChildren().add(getEditorPane());
-        HBox.setHgrow(vbox, Priority.ALWAYS);
-        getChildren().add(vbox);
-    }
+        // Section header
+        Label header = new Label("Runtime Diagnostics");
+        header.getStyleClass().add("hig-section-header");
+        getChildren().add(header);
 
-    private VBox getEditorPane()
-    {
-        if(mEditorPane == null)
-        {
-            mEditorPane = new VBox();
-            mEditorPane.setPadding(new Insets(10, 10, 10, 10));
-            mEditorPane.setSpacing(8);
-            mEditorPane.setMaxWidth(Double.MAX_VALUE);
+        // Description
+        Label description = new Label(
+            "Enable DEBUG logging for individual subsystems without editing logback.xml. "
+          + "Changes take effect immediately.");
+        description.setWrapText(true);
+        description.getStyleClass().add("kennebec-secondary-text");
+        description.setPadding(new Insets(0, 10, 0, 10));
+        getChildren().add(description);
 
-            Label header = new Label("Runtime Diagnostics");
-            header.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-            mEditorPane.getChildren().add(header);
+        // Warning
+        Label warning = new Label(
+            "Warning: enabling everything at once generates extremely large log files "
+          + "(hundreds of megabytes per day with P25 traffic). Only turn on the categories "
+          + "you are actively debugging.");
+        warning.setWrapText(true);
+        warning.setStyle("-fx-text-fill: darkred;");
+        warning.setPadding(new Insets(0, 10, 0, 10));
+        getChildren().add(warning);
 
-            Label description = new Label(
-                "Enable DEBUG logging for individual subsystems without editing logback.xml. "
-              + "Changes take effect immediately.");
-            description.setWrapText(true);
-            mEditorPane.getChildren().add(description);
-
-            Label warning = new Label(
-                "Warning: enabling everything at once generates extremely large log files "
-              + "(hundreds of megabytes per day with P25 traffic). Only turn on the categories "
-              + "you are actively debugging.");
-            warning.setWrapText(true);
-            warning.setTextFill(Color.DARKRED);
-            mEditorPane.getChildren().add(warning);
-
-            mEditorPane.getChildren().add(new Separator(Orientation.HORIZONTAL));
-
-            mMasterAllToggle = new CheckBox("Enable ALL diagnostics categories");
-            mMasterAllToggle.setOnAction(event -> {
-                boolean enable = mMasterAllToggle.isSelected();
-                for(DiagnosticsCategory category : DiagnosticsCategory.values())
-                {
-                    CheckBox box = mCategoryCheckBoxes.get(category);
-                    if(box != null)
-                    {
-                        box.setSelected(enable);
-                    }
-                    mDiagnosticsPreference.setEnabled(category, enable);
-                    LogLevelController.apply(category, enable);
-                }
-            });
-            mEditorPane.getChildren().add(mMasterAllToggle);
-
-            mEditorPane.getChildren().add(new Separator(Orientation.HORIZONTAL));
-
-            GridPane grid = new GridPane();
-            grid.setHgap(10);
-            grid.setVgap(6);
-            grid.setPadding(new Insets(4, 0, 4, 10));
-
-            ColumnConstraints c1 = new ColumnConstraints();
-            c1.setPercentWidth(40);
-            ColumnConstraints c2 = new ColumnConstraints();
-            c2.setHgrow(Priority.ALWAYS);
-            grid.getColumnConstraints().addAll(c1, c2);
-
-            int row = 0;
+        // Master toggle card
+        mMasterAllToggle = new CheckBox("Enable ALL diagnostics categories");
+        mMasterAllToggle.setOnAction(event -> {
+            boolean enable = mMasterAllToggle.isSelected();
             for(DiagnosticsCategory category : DiagnosticsCategory.values())
             {
-                CheckBox box = new CheckBox(category.getDisplayName());
-                box.setSelected(mDiagnosticsPreference.isEnabled(category));
-                box.selectedProperty().addListener((obs, oldVal, newVal) -> {
-                    mDiagnosticsPreference.setEnabled(category, newVal);
-                    LogLevelController.apply(category, newVal);
-                    syncMasterToggle();
-                });
-                mCategoryCheckBoxes.put(category, box);
-                grid.add(box, 0, row);
-                Label loggerLabel = new Label(category.getLoggerName());
-                loggerLabel.setStyle("-fx-text-fill: gray; -fx-font-family: monospace;");
-                grid.add(loggerLabel, 1, row);
-                row++;
+                CheckBox box = mCategoryCheckBoxes.get(category);
+                if(box != null)
+                {
+                    box.setSelected(enable);
+                }
+                mDiagnosticsPreference.setEnabled(category, enable);
+                LogLevelController.apply(category, enable);
             }
+        });
 
-            mEditorPane.getChildren().add(grid);
+        SettingsCard masterCard = new SettingsCard();
+        masterCard.getChildren().add(new SettingsRow("Master Toggle", mMasterAllToggle));
+        getChildren().add(masterCard);
 
-            mEditorPane.getChildren().add(new Separator(Orientation.HORIZONTAL));
+        // Category checkboxes card
+        SettingsCard categoriesCard = new SettingsCard();
+        for(DiagnosticsCategory category : DiagnosticsCategory.values())
+        {
+            CheckBox box = new CheckBox();
+            box.setSelected(mDiagnosticsPreference.isEnabled(category));
+            box.selectedProperty().addListener((obs, oldVal, newVal) -> {
+                mDiagnosticsPreference.setEnabled(category, newVal);
+                LogLevelController.apply(category, newVal);
+                syncMasterToggle();
+            });
+            mCategoryCheckBoxes.put(category, box);
 
-            Label optimizeHeader = new Label("Windows Host Optimization");
-            optimizeHeader.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-            mEditorPane.getChildren().add(optimizeHeader);
+            categoriesCard.getChildren().add(new SettingsRow(category.getDisplayName(), box));
+        }
+        getChildren().add(categoriesCard);
 
-            Label optimizeDesc = new Label("Disables USB Selective Suspend, adds Windows Defender exclusions, and disables DPTF throttling to prevent dropped packets.");
-            optimizeDesc.setWrapText(true);
-            mEditorPane.getChildren().add(optimizeDesc);
+        // Windows Host Optimization section
+        Label optimizeHeader = new Label("Windows Host Optimization");
+        optimizeHeader.getStyleClass().add("hig-section-header");
+        getChildren().add(optimizeHeader);
 
-            HBox optimizeBox = new HBox(10);
-            javafx.scene.control.Button checkBtn = new javafx.scene.control.Button("Check Host Settings");
-            javafx.scene.control.Button applyBtn = new javafx.scene.control.Button("Apply Optimizations (Requires Admin)");
-            javafx.scene.control.TextArea outputArea = new javafx.scene.control.TextArea();
-            outputArea.setPrefRowCount(4);
-            outputArea.setEditable(false);
+        Label optimizeDesc = new Label("Disables USB Selective Suspend, adds Windows Defender exclusions, and disables DPTF throttling to prevent dropped packets.");
+        optimizeDesc.setWrapText(true);
+        optimizeDesc.getStyleClass().add("kennebec-secondary-text");
+        optimizeDesc.setPadding(new Insets(0, 10, 0, 10));
+        getChildren().add(optimizeDesc);
 
-            checkBtn.setOnAction(e -> {
-                checkBtn.setDisable(true);
-                outputArea.setText("Checking...");
-                WindowsHostOptimizer.checkDiagnostics().thenAccept(result -> {
-                    javafx.application.Platform.runLater(() -> {
-                        outputArea.setText(result);
-                        checkBtn.setDisable(false);
-                    });
+        Button checkBtn = new Button("Check Host Settings");
+        Button applyBtn = new Button("Apply Optimizations (Requires Admin)");
+        
+        TextArea outputArea = new TextArea();
+        outputArea.setPrefRowCount(8);
+        outputArea.setEditable(false);
+        outputArea.setPromptText("Click 'Check Host Settings' to view the current status of Windows power plans and Defender exclusions...");
+        outputArea.setStyle("-fx-font-family: monospace;");
+        outputArea.setWrapText(true);
+
+        checkBtn.setOnAction(e -> {
+            checkBtn.setDisable(true);
+            applyBtn.setDisable(true);
+            outputArea.setText("Checking host settings, please wait...");
+            WindowsHostOptimizer.checkDiagnostics().thenAccept(result -> {
+                javafx.application.Platform.runLater(() -> {
+                    outputArea.setText(result);
+                    checkBtn.setDisable(false);
+                    applyBtn.setDisable(false);
                 });
             });
+        });
 
-            applyBtn.setOnAction(e -> {
-                WindowsHostOptimizer.runOptimizationScript();
+        applyBtn.setOnAction(e -> {
+            checkBtn.setDisable(true);
+            applyBtn.setDisable(true);
+            String originalApplyText = applyBtn.getText();
+            applyBtn.setText("Applying... Please approve UAC");
+            
+            WindowsHostOptimizer.runOptimizationScript().thenAccept(success -> {
+                javafx.application.Platform.runLater(() -> {
+                    checkBtn.setDisable(false);
+                    applyBtn.setDisable(false);
+                    applyBtn.setText(originalApplyText);
+                    
+                    javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        success ? javafx.scene.control.Alert.AlertType.INFORMATION : javafx.scene.control.Alert.AlertType.ERROR
+                    );
+                    alert.setTitle("Windows Host Optimization");
+                    alert.setHeaderText(null);
+                    alert.setContentText(success ? "Optimizations applied successfully!" : "Failed to apply optimizations. Please ensure you clicked 'Yes' on the Admin prompt.");
+                    alert.showAndWait();
+                    
+                    if (success) {
+                        checkBtn.fire(); // Refresh the output
+                    }
+                });
             });
+        });
 
-            optimizeBox.getChildren().addAll(checkBtn, applyBtn);
-            mEditorPane.getChildren().addAll(optimizeBox, outputArea);
+        SettingsCard optimizeCard = new SettingsCard();
+        optimizeCard.getChildren().add(new SettingsRow("Actions", new HBox(10, checkBtn, applyBtn)));
+        getChildren().add(optimizeCard);
 
-            syncMasterToggle();
-        }
+        SettingsCard outputCard = new SettingsCard();
+        outputCard.getChildren().add(outputArea);
+        getChildren().add(outputCard);
 
-        return mEditorPane;
+        syncMasterToggle();
     }
 
     private void syncMasterToggle()

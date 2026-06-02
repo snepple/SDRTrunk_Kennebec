@@ -338,13 +338,15 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
             // Wire up global hotkeys
             try {
-                new HotkeyManager(scene, new HotkeyManager.HotkeyListener() {
-                    @Override public void onToggleSpectrum() { SDRTrunk.this.onToggleSpectrum(); }
-                    @Override public void onToggleMute() { /* mute handled by AudioPanel */ }
-                    @Override public void onToggleNightMode() { toggleNightMode(); }
-                });
-                mLog.info("HotkeyManager initialized");
-            } catch (Exception e) {
+                  new HotkeyManager(scene, new HotkeyManager.HotkeyListener() {
+                      @Override public void onToggleSpectrum() { SDRTrunk.this.onToggleSpectrum(); }
+                      @Override public void onToggleMute() { /* mute handled by AudioPanel */ }
+                      @Override public void onToggleNightMode() { ThemeManager.toggleNightMode(); }
+                  });
+                  mLog.info("HotkeyManager initialized");
+                  
+                  io.github.dsheirer.gui.theme.ThemeManager.registerScene(scene);
+              } catch (Exception e) {
                 mLog.error("Failed to initialize HotkeyManager", e);
             }
 
@@ -1149,8 +1151,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private void toggleNightMode() {
         mLog.info("Toggle night mode requested");
         try {
-            // Re-instantiate ThemeManager to pick up or toggle the current theme
-            new ThemeManager();
+            io.github.dsheirer.gui.theme.ThemeManager.toggleNightMode();
             mLog.info("Night mode toggled via ThemeManager");
         } catch (Exception e) {
             mLog.error("Error toggling night mode", e);
