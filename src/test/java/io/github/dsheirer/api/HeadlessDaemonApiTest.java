@@ -20,15 +20,16 @@ import java.time.Duration;
 
 public class HeadlessDaemonApiTest {
     private static HttpServer mServer;
-    private static final int PORT = 8080;
+    private static int PORT;
 
     @BeforeAll
     public static void setup() throws IOException {
         System.setProperty("java.awt.headless", "true");
         assertTrue(java.awt.GraphicsEnvironment.isHeadless(), "Environment must be headless");
 
-        // Spin up a mock REST server on port 8080 to satisfy the headless API validation
-        mServer = HttpServer.create(new InetSocketAddress("localhost", PORT), 0);
+        // Use port 0 to let OS assign a free port — avoids conflicts with RestApiWatchdog
+        mServer = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        PORT = mServer.getAddress().getPort();
         mServer.createContext("/api/tuner/assign", new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
