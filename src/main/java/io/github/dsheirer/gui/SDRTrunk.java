@@ -749,7 +749,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mBroadcastStatusPanel = new BroadcastStatusPanel(mPlaylistManager.getBroadcastModel(), mUserPreferences,
                 "application.broadcast.status.panel");
             mBroadcastStatusPanel.setPrefSize((double)(double)880, 70);
-            mBroadcastStatusPanel.setDisablePanel(true);
+            mBroadcastStatusPanel.setDisablePanel(false);
         }
 
         return mBroadcastStatusPanel;

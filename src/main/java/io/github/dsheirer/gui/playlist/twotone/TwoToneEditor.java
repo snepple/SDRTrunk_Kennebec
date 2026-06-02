@@ -24,6 +24,7 @@ import javafx.scene.control.TabPane;
 import io.github.dsheirer.audio.broadcast.BroadcastConfiguration;
 import io.github.dsheirer.audio.broadcast.BroadcastServerType;
 import javafx.collections.ListChangeListener;
+import org.controlsfx.control.SegmentedButton;
 
 
 import javax.sound.sampled.AudioInputStream;
@@ -517,23 +518,31 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             mObservableConfigs.setAll(mPlaylistManager.getCurrentPlaylist().getTwoToneConfigurations());
         });
 
-        ComboBox<String> filterCombo = new ComboBox<>();
-        filterCombo.getItems().addAll("All", "Enabled Only");
-        filterCombo.getSelectionModel().select("All");
-        filterCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
-            filteredConfigs.setPredicate(config -> {
-                if ("Enabled Only".equals(newVal)) return config.isEnabled();
-                return true;
-            });
+        ToggleButton allBtn = new ToggleButton("All");
+        ToggleButton enabledBtn = new ToggleButton("Enabled Only");
+        SegmentedButton filterSegmentedBtn = new SegmentedButton(allBtn, enabledBtn);
+        filterSegmentedBtn.getStyleClass().add(SegmentedButton.STYLE_CLASS_DARK);
+        
+        ToggleGroup group = filterSegmentedBtn.getToggleGroup();
+        allBtn.setSelected(true);
+        group.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) {
+                oldVal.setSelected(true); // Don't allow deselection
+            } else {
+                filteredConfigs.setPredicate(config -> {
+                    if (newVal == enabledBtn) return config.isEnabled();
+                    return true; // All
+                });
+            }
         });
 
-        HBox topToolbar = new HBox(15);
+        HBox topToolbar = new HBox(10);
         topToolbar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         topToolbar.getStyleClass().add("context-toolbar");
         topToolbar.setPadding(new Insets(10, 10, 10, 10));
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        topToolbar.getChildren().addAll(filterCombo, spacer, newBtn, cloneBtn, delBtn, refreshBtn);
+        topToolbar.getChildren().addAll(filterSegmentedBtn, spacer, newBtn, cloneBtn, delBtn, refreshBtn);
         setTop(topToolbar);
 
 

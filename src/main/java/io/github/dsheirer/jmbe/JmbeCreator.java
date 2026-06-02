@@ -167,9 +167,9 @@ public class JmbeCreator
                             for (String gradleFile : gradleFiles) {
                                 Path buildGradle = extractDir.resolve(gradleFile);
                                 if (Files.exists(buildGradle)) {
-                                    String content = new String(Files.readAllBytes(buildGradle));
+                                    String content = Files.readString(buildGradle, java.nio.charset.StandardCharsets.UTF_8);
                                     content = content.replace("JavaVersion.VERSION_26", "JavaVersion.VERSION_21");
-                                    Files.write(buildGradle, content.getBytes());
+                                    Files.writeString(buildGradle, content, java.nio.charset.StandardCharsets.UTF_8);
                                 }
                             }
 
