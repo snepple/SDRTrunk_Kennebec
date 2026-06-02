@@ -52,3 +52,7 @@
 **Topic:** Audio Quality & Tuning
 **Learning:** The "Audio Quality & Tuning" section from "What's New" didn't have a specific overarching guide. This guide connects features like Analog Hiss Reduction, Anti-Clipping, P25 Audio Enhancements, and VAC Routing.
 **Action:** Created `src/main/resources/docs/audio-quality-&-tuning.md` with a visual audio processing pipeline and integrated it into the navigation tree of `HelpViewer.java` under "Advanced & System".
+## 2024-05-21 - Topic Selection
+**Topic:** CTCSS / DCS / NAC Filtering
+**Learning:** The "CTCSS / DCS / NAC Filtering" feature was listed in the "What's New" section but lacked a dedicated Markdown guide explaining how to configure it.
+**Action:** Created `src/main/resources/docs/ctcss-dcs-nac-filtering.md` and integrated it into the navigation tree of `HelpViewController.java` under "Advanced & System".
