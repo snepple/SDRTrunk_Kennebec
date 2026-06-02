@@ -1,3 +1,5 @@
+
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2026 Dennis Sheirer
@@ -17,6 +19,13 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.audio.playback;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 
 import com.google.common.base.Joiner;
 import com.google.common.eventbus.Subscribe;
@@ -44,31 +53,30 @@ import io.github.dsheirer.settings.ColorSetting;
 import io.github.dsheirer.settings.Setting;
 import io.github.dsheirer.settings.SettingChangeListener;
 import io.github.dsheirer.settings.SettingsManager;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Font;
+
+import javafx.application.Platform;
+import javafx.scene.text.Font;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.UIManager;
+
+
+
+
 
 import io.github.dsheirer.dsp.tone.TwoToneDetectedEvent;
-import javax.swing.Timer;
-import java.awt.event.ActionEvent;
+
+import javafx.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
  * UI to wrap an audio channel and provide display of metadata and playback state information.
  */
-public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, SettingChangeListener
+public class AudioChannelPanel extends VBox implements Listener<AudioEvent>, SettingChangeListener
 {
     private static final long serialVersionUID = 1L;
     private static final Logger mLog = LoggerFactory.getLogger(AudioChannelPanel.class);
@@ -90,21 +98,21 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
     private List<Alias> mAliases = Collections.EMPTY_LIST;
     private final Lock mLock = new ReentrantLock();
 
-    private final Font mFont = UIManager.getFont("Label.font") != null ? UIManager.getFont("Label.font").deriveFont(13f) : new Font(Font.SANS_SERIF, Font.PLAIN, 13);
+    private final javafx.scene.text.Font mFont = javafx.scene.text.Font.font("SansSerif", 13);
     private final Color mBackgroundColor;
     private final Color mLabelColor;
     private final Color mMutedColor;
     private final Color mValueColor;
-    private final JLabel mMutedLabel = new JLabel("M");
-    private JLabel mChannelName = new JLabel(" ");
-    private final JLabel mIconLabel = new JLabel(" ");
+    private final Label mMutedLabel = new Label("M");
+    private Label mChannelName = new Label(" ");
+    private final Label mIconLabel = new Label(" ");
 
-    private final JLabel mIdentifierLabel = new JLabel("-----");
+    private final Label mIdentifierLabel = new Label("-----");
 
-    private final JLabel mTwoToneAlertLabel = new JLabel("");
-    private final JPanel mStreamIconsPanel = new JPanel(new MigLayout("insets 0, gap 2", "", ""));
+    private final Label mTwoToneAlertLabel = new Label("");
+    private final VBox mStreamIconsPanel = new VBox(new javafx.scene.layout.HBox(4));
 
-    private Timer mTwoToneClearTimer;
+    private javafx.animation.PauseTransition mTwoToneClearTimer;
 
 
     /**
@@ -133,10 +141,10 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
             mAudioChannel.setIdentifierCollectionListener(new AudioMetadataProcessor());
         }
 
-        mBackgroundColor = SystemProperties.getInstance().get(PROPERTY_COLOR_BACKGROUND, UIManager.getColor("Panel.background"));
-        mLabelColor = SystemProperties.getInstance().get(PROPERTY_COLOR_LABEL, UIManager.getColor("Label.foreground"));
+        mBackgroundColor = SystemProperties.getInstance().get(PROPERTY_COLOR_BACKGROUND, javafx.scene.paint.Color.GRAY);
+        mLabelColor = SystemProperties.getInstance().get(PROPERTY_COLOR_LABEL, javafx.scene.paint.Color.GRAY);
         mMutedColor = SystemProperties.getInstance().get(PROPERTY_COLOR_MUTED, Color.RED);
-        mValueColor = SystemProperties.getInstance().get(PROPERTY_COLOR_VALUE, UIManager.getColor("Label.foreground"));
+        mValueColor = SystemProperties.getInstance().get(PROPERTY_COLOR_VALUE, javafx.scene.paint.Color.GRAY);
 
         init();
     }
@@ -158,25 +166,22 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
     @Subscribe
     public void onTwoToneDetected(TwoToneDetectedEvent event) {
         if (mAudioChannel != null && event.getChannel() != null && event.getChannel().equals(mAudioChannel.getChannelName())) {
-            EventQueue.invokeLater(() -> {
+            Platform.runLater(() -> {
                 mTwoToneAlertLabel.setText(event.getMessage());
                 mTwoToneAlertLabel.setVisible(true);
                 mIdentifierLabel.setVisible(false);
                 mIconLabel.setVisible(false);
 
-                if (mTwoToneClearTimer != null && mTwoToneClearTimer.isRunning()) {
-                    mTwoToneClearTimer.restart();
+                if (mTwoToneClearTimer != null && mTwoToneClearTimer.getStatus() == javafx.animation.Animation.Status.RUNNING) {
+                    mTwoToneClearTimer.playFromStart();
                 } else {
-                    mTwoToneClearTimer = new Timer(10000, new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            mTwoToneAlertLabel.setVisible(false);
-                            mIdentifierLabel.setVisible(true);
-                            mIconLabel.setVisible(true);
-                        }
+                    mTwoToneClearTimer = new javafx.animation.PauseTransition(javafx.util.Duration.millis(10000));
+                    mTwoToneClearTimer.setOnFinished(e -> {
+                        mTwoToneAlertLabel.setVisible(false);
+                        mIdentifierLabel.setVisible(true);
+                        mIconLabel.setVisible(true);
                     });
-                    mTwoToneClearTimer.setRepeats(false);
-                    mTwoToneClearTimer.start();
+                    mTwoToneClearTimer.play();
                 }
             });
         }
@@ -204,37 +209,36 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         //Register to receive preference updates
         MyEventBus.getGlobalEventBus().register(this);
 
-        setLayout(new MigLayout("align center center, insets 0 2 0 2",
-            "[][][align right]5[grow,fill]", ""));
-        setBackground(mBackgroundColor);
+        getStyleClass().add("audio-channel-panel");
 
         mMutedLabel.setFont(mFont);
-        mMutedLabel.setForeground(mMutedColor);
+        mMutedLabel.setTextFill(mMutedColor);
         mMutedLabel.setVisible(false);
-        add(mMutedLabel);
 
-        mChannelName = new JLabel(mAudioChannel != null ? mAudioChannel.getChannelName() : " ");
-        mChannelName.setFont(mFont.deriveFont(Font.BOLD));
-        mChannelName.setForeground(mLabelColor);
-        add(mChannelName);
+        mChannelName = new Label(mAudioChannel != null ? mAudioChannel.getChannelName() : " ");
+        mChannelName.getStyleClass().add("audio-channel-name");
+        mChannelName.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
+        mChannelName.setTextFill(mLabelColor);
+        getChildren().add(mChannelName);
 
         mIconLabel.setFont(mFont);
-        mIconLabel.setForeground(mValueColor);
-        add(mIconLabel);
+        mIconLabel.setTextFill(mValueColor);
+        getChildren().add(mIconLabel);
 
 
-        mIdentifierLabel.setFont(mFont.deriveFont(Font.BOLD));
-        mIdentifierLabel.setForeground(mValueColor);
-        add(mIdentifierLabel, "wmin 10lp");
+        mIdentifierLabel.getStyleClass().add("audio-channel-identifier");
+        mIdentifierLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
+        mIdentifierLabel.setTextFill(mValueColor);
+        getChildren().add(mIdentifierLabel);
 
-        mStreamIconsPanel.setOpaque(false);
-        add(mStreamIconsPanel, "wmin 10lp, hidemode 3");
+        mStreamIconsPanel.setBackground(javafx.scene.layout.Background.EMPTY);
+        getChildren().add(mStreamIconsPanel);
 
 
-        mTwoToneAlertLabel.setFont(mFont.deriveFont(Font.BOLD));
-        mTwoToneAlertLabel.setForeground(Color.RED);
+        mTwoToneAlertLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
+        mTwoToneAlertLabel.setTextFill(javafx.scene.paint.Color.RED);
         mTwoToneAlertLabel.setVisible(false);
-        add(mTwoToneAlertLabel, "hidemode 3");
+        getChildren().add(mTwoToneAlertLabel);
 
     }
 
@@ -244,11 +248,10 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         switch(audioEvent.getType())
         {
             case AUDIO_STOPPED:
-                EventQueue.invokeLater(this::resetLabels);
+                Platform.runLater(this::resetLabels);
                 break;
             case AUDIO_MUTED:
             case AUDIO_UNMUTED:
-                EventQueue.invokeLater(() -> mMutedLabel.setVisible(mAudioChannel.isMuted()));
                 break;
             default:
                 break;
@@ -353,7 +356,7 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
         String iconName = null;
 
         //Protect access to mIdentifier and mAliases
-        mLock.lock();
+        // mLock.lock();
 
         try
         {
@@ -377,14 +380,14 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
                 identifier = "-----";
             }
 
-            final ImageIcon icon = iconName != null ? mIconModel.getIcon(iconName, 18) : null;
+            final javafx.scene.image.Image icon = iconName != null ? mIconModel.getIcon(iconName, 18) : null;
             final String identifierText = identifier;
 
-            EventQueue.invokeLater(() -> {
+            Platform.runLater(() -> {
                 mIdentifierLabel.setText(identifierText);
-                mIconLabel.setIcon(icon);
+                if (icon != null) { mIconLabel.setGraphic(new javafx.scene.image.ImageView(icon)); } else { mIconLabel.setGraphic(null); }
 
-                mStreamIconsPanel.removeAll();
+                mStreamIconsPanel.getChildren().clear();
                 if (mAliases != null) {
                     java.util.Set<String> activeStreams = new java.util.HashSet<>();
                     for (Alias alias : mAliases) {
@@ -393,17 +396,24 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
                             if (broadcaster != null && broadcaster.getBroadcastConfiguration().isEnabled()) {
                                 if (!activeStreams.contains(bc.getChannelName())) {
                                     activeStreams.add(bc.getChannelName());
-                                    JLabel streamLabel = new JLabel(mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath(), 14));
-                                    streamLabel.setToolTipText(broadcaster.getBroadcastConfiguration().getName());
-                                    mStreamIconsPanel.add(streamLabel);
+                                    Label streamLabel = new Label("", new javafx.scene.image.ImageView(mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath(), 14)));
+                                    streamLabel.setTooltip(new javafx.scene.control.Tooltip(broadcaster.getBroadcastConfiguration().getName()));
+                                    mStreamIconsPanel.getChildren().add(streamLabel);
                                 }
                             }
                         }
                     }
                 }
-                mStreamIconsPanel.revalidate();
-                mStreamIconsPanel.repaint();
+                mStreamIconsPanel.requestLayout();
+                mStreamIconsPanel.requestLayout();
             });
+
+            // Post active call metadata to the global event bus so the main AudioPanel displays it on the left!
+            if (mAudioChannel != null && mAudioChannel.getChannelName() != null) {
+                String displayChannel = identifierText.equals("-----") ? "" : mAudioChannel.getChannelName();
+                String displayAlias = identifierText.equals("-----") ? "" : identifierText;
+                MyEventBus.getGlobalEventBus().post(new AudioPanel.ActiveCallUpdateEvent(displayChannel, displayAlias));
+            }
         }
         finally
         {
@@ -433,14 +443,14 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
             switch(colorSetting.getColorSettingName())
             {
                 case CHANNEL_STATE_LABEL_DECODER:
-                    EventQueue.invokeLater(() -> {
+                    Platform.runLater(() -> {
                         if(mIdentifierLabel != null)
                         {
-                            mIdentifierLabel.setForeground(mLabelColor);
+                            mIdentifierLabel.setTextFill(mLabelColor);
                         }
                         if(mIconLabel != null)
                         {
-                            mIconLabel.setForeground(mLabelColor);
+                            mIconLabel.setTextFill(mLabelColor);
                         }
                     });
                     break;
@@ -454,4 +464,5 @@ public class AudioChannelPanel extends JPanel implements Listener<AudioEvent>, S
     public void settingDeleted(Setting setting)
     {
     }
+
 }

@@ -181,6 +181,7 @@
     -fx-background-color: #FFFFFF;
     -fx-background-radius: 10;
     -fx-padding: 0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5, 0, 0, 2);
 }
 
 .hig-settings-row {
@@ -192,7 +193,7 @@
 .hig-section-header {
     -fx-font-size: 12px;
     -fx-font-weight: bold;
-    -fx-text-fill: #8E8E93;
+    -fx-text-fill: #555559;
     -fx-padding: 24 16 6 16;
 }
 
@@ -214,6 +215,7 @@
     -fx-padding: 6 10 6 10;
     -fx-background-radius: 6;
     -fx-font-size: 14px;
+    -fx-text-fill: #1C1C1E;
 }
 
 .hig-sidebar-item:selected {
@@ -223,10 +225,12 @@
 
 .hig-sidebar-item:hover {
     -fx-background-color: #E5E5EA;
+    -fx-text-fill: #1C1C1E;
 }
 
 .hig-sidebar-item:selected:hover {
     -fx-background-color: #007AFF;
+    -fx-text-fill: #FFFFFF;
 }
 
 .hig-separator {
@@ -255,6 +259,20 @@
 }
 
 /* Kennebec Design System - Apple HIG Harmonization */
+.hig-squircle {
+    -fx-background-radius: 20;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 10, 0, 0, 4);
+    -fx-background-color: white;
+}
+
+.hig-avatar {
+    -fx-background-radius: 1000;
+    -fx-border-radius: 1000;
+    -fx-border-color: white;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);
+}
+
 .kennebec-grouped-bg {
     -fx-background-color: #F2F2F7;
 }
@@ -304,4 +322,67 @@
 .kennebec-search-field {
     -fx-background-radius: 10;
     -fx-padding: 5 10 5 10;
+}
+
+/* Dynamic Audio Channel Panel Transparency & Apple HIG Styles */
+.audio-channels-scroller {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+.audio-channels-scroller > .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+.audio-channels-scroller .scroll-bar:horizontal {
+    -fx-opacity: 0;
+}
+.audio-channel-panel {
+    -fx-background-color: rgba(255,255,255,0.06);
+    -fx-background-radius: 8px;
+    -fx-border-color: rgba(255,255,255,0.1);
+    -fx-border-radius: 8px;
+    -fx-border-width: 1px;
+    -fx-padding: 6 10 6 10;
+    -fx-alignment: center;
+    -fx-spacing: 2;
+}
+.audio-channel-name {
+    -fx-text-fill: #FFFFFF !important;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+.audio-channel-identifier {
+    -fx-text-fill: #007AFF !important;
+    -fx-font-size: 11px;
+    -fx-font-family: monospace;
+}
+
+/* Enforce high-contrast dark text inside preferences main area & cards */
+.preferences-main-area .label,
+.preferences-card .label,
+.preferences-scrollpane .label {
+    -fx-text-fill: #1C1C1E !important;
+}
+
+.preferences-main-area .check-box,
+.preferences-card .check-box,
+.preferences-scrollpane .check-box {
+    -fx-text-fill: #1C1C1E !important;
+}
+
+.preferences-main-area .radio-button,
+.preferences-card .radio-button,
+.preferences-scrollpane .radio-button {
+    -fx-text-fill: #1C1C1E !important;
+}
+
+.preferences-main-area .text,
+.preferences-card .text,
+.preferences-scrollpane .text {
+    -fx-fill: #1C1C1E !important;
+}
+
+.preferences-main-area .combo-box .list-cell {
+    -fx-text-fill: #1C1C1E !important;
 }

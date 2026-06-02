@@ -1,4 +1,11 @@
+
 package io.github.dsheirer.audio.broadcast;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Button;
 
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.audio.broadcast.BroadcastState;
@@ -21,8 +28,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.input.MouseButton;
 
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,33 +75,15 @@ public class BroadcastStatusPanelController {
             rowData.add(new BroadcastModelRow(name));
         }
 
-        mBroadcastModel.addTableModelListener(new TableModelListener() {
-            @Override
-            public void tableChanged(TableModelEvent e) {
-                Platform.runLater(() -> {
-                    if (e.getType() == TableModelEvent.INSERT) {
-                        for (int i = e.getFirstRow(); i <= e.getLastRow(); i++) {
-                            String name = (String) mBroadcastModel.getValueAt(i, BroadcastModel.COLUMN_STREAM_NAME);
-                            rowData.add(i, new BroadcastModelRow(name));
-                        }
-                    } else if (e.getType() == TableModelEvent.DELETE) {
-                        for (int i = e.getLastRow(); i >= e.getFirstRow(); i--) {
-                            if (i < rowData.size()) {
-                                rowData.remove(i);
-                            }
-                        }
-                    } else if (e.getType() == TableModelEvent.UPDATE) {
-                        if (e.getFirstRow() == 0 && e.getLastRow() == Integer.MAX_VALUE) {
-                            rowData.clear();
-                            for (int i = 0; i < mBroadcastModel.getRowCount(); i++) {
-                                String name = (String) mBroadcastModel.getValueAt(i, BroadcastModel.COLUMN_STREAM_NAME);
-                                rowData.add(new BroadcastModelRow(name));
-                            }
-                        }
-                        tableView.refresh();
-                    }
-                });
-            }
+        mBroadcastModel.getConfiguredBroadcasts().addListener((javafx.collections.ListChangeListener<ConfiguredBroadcast>) c -> {
+            Platform.runLater(() -> {
+                rowData.clear();
+                for (int i = 0; i < mBroadcastModel.getRowCount(); i++) {
+                    String name = (String) mBroadcastModel.getValueAt(i, BroadcastModel.COLUMN_STREAM_NAME);
+                    rowData.add(new BroadcastModelRow(name));
+                }
+                tableView.refresh();
+            });
         });
 
         filteredData = new FilteredList<>(rowData, p -> true);

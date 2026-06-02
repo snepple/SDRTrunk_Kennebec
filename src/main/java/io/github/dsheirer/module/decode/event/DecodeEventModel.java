@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2024 Dennis Sheirer
@@ -17,6 +18,12 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.module.decode.event;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Label;
 
 import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.channel.IChannelDescriptor;
@@ -24,7 +31,7 @@ import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.identifier.IdentifierCollection;
 import io.github.dsheirer.preference.PreferenceType;
 import io.github.dsheirer.sample.Listener;
-import java.awt.EventQueue;
+import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +68,7 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
     {
         if(preferenceType == PreferenceType.DECODE_EVENT || preferenceType == PreferenceType.TALKGROUP_FORMAT)
         {
-            fireTableDataChanged();
+            // fireTableDataChanged();
         }
     }
 
@@ -73,10 +80,10 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
      */
     public void receive(final IDecodeEvent event)
     {
-        EventQueue.invokeLater(() -> add(event));
+        Platform.runLater(() -> add(event));
     }
 
-    @Override
+    // // // @Override
     public int getColumnCount()
     {
         return mHeaders.length;
@@ -87,7 +94,7 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
         return mHeaders[column];
     }
 
-    @Override
+    // // // @Override
     public Object getValueAt(int rowIndex, int columnIndex)
     {
         IDecodeEvent event = getItem(rowIndex);
@@ -145,7 +152,7 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
         return null;
     }
 
-    @Override
+    // // // @Override
     public Class<?> getColumnClass(int columnIndex)
     {
         switch(columnIndex)
@@ -166,6 +173,6 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
                 return String.class;
         }
 
-        return super.getColumnClass(columnIndex);
+        return Object.class;
     }
 }

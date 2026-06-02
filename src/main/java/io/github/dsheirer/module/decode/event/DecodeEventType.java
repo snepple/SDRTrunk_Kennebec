@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2025 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.module.decode.event;
+import javafx.scene.control.Label;
 
 import java.util.Arrays;
 import java.util.EnumSet;

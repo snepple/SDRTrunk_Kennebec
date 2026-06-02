@@ -6,11 +6,11 @@ import javafx.stage.Stage;
 
 public class FilterViewerLauncher
 {
-    private JFXPanel mJFXPanel;
+    private javafx.scene.layout.Pane mJFXPanel;
 
     public FilterViewerLauncher()
     {
-        mJFXPanel = new JFXPanel();
+        mJFXPanel = new javafx.scene.layout.Pane();
 
         Platform.runLater(() ->
         {

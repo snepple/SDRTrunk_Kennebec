@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2024 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.module.decode.p25.phase2.enumeration;
+import javafx.scene.control.Label;
 
 /**
  * LCH timeslot configuration type enumeration used in the I-ISCH.

@@ -1,3 +1,6 @@
+
+
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2023 Dennis Sheirer
@@ -17,8 +20,26 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.spectrum;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Separator;
 
-import com.jidesoft.swing.JideSplitPane;
+import javafx.scene.control.ScrollPane;
+
+import javafx.scene.control.Menu;
+import javafx.scene.control.Slider;
+
+import javafx.scene.control.ContextMenu;
+
+import io.github.dsheirer.gui.control.ToggleSwitch;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+
+
 import io.github.dsheirer.buffer.INativeBuffer;
 import io.github.dsheirer.controller.channel.Channel;
 import io.github.dsheirer.controller.channel.ChannelModel;
@@ -47,40 +68,41 @@ import io.github.dsheirer.spectrum.menu.FFTWindowTypeItem;
 import io.github.dsheirer.spectrum.menu.FrameRateItem;
 import io.github.dsheirer.spectrum.menu.SmoothingItem;
 import io.github.dsheirer.spectrum.menu.SmoothingTypeItem;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
+import javafx.scene.Node;
+
+import javafx.scene.input.ScrollEvent;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import net.miginfocom.swing.MigLayout;
+
 import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
-import javax.swing.JSlider;
-import javax.swing.JSplitPane;
-import javax.swing.SwingUtilities;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.MouseInputAdapter;
 
-public class SpectralDisplayPanel extends JPanel
+
+
+
+
+
+import javafx.scene.layout.Pane;
+import javafx.scene.Scene;
+import javafx.scene.control.SplitPane;
+import javafx.scene.layout.StackPane;
+import javafx.geometry.Orientation;
+import javafx.application.Platform;
+
+
+
+
+
+
+
+
+
+
+
+
+public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
         implements Listener<INativeBuffer>, ISourceEventProcessor, IDFTWidthChangeProcessor
 {
     private static final long serialVersionUID = 1L;
@@ -96,8 +118,8 @@ public class SpectralDisplayPanel extends JPanel
     private int mZoom = 0;
     private int mDFTZoomWindowOffset = 0;
 
-    private JScrollPane mScrollPane;
-    private JLayeredPane mLayeredPanel;
+    private ScrollPane mScrollPane;
+    private StackPane mLayeredPanel;
     private SpectrumPanel mSpectrumPanel;
     private WaterfallPanel mWaterfallPanel;
     private OverlayPanel mOverlayPanel;
@@ -108,6 +130,7 @@ public class SpectralDisplayPanel extends JPanel
     private SettingsManager mSettingsManager;
     private DiscoveredTunerModel mDiscoveredTunerModel;
     private Tuner mTuner;
+    private io.github.dsheirer.preference.UserPreferences mUserPreferences;
 
     /**
      * Spectral Display Panel provides a frequency component display with a
@@ -127,6 +150,7 @@ public class SpectralDisplayPanel extends JPanel
         mChannelProcessingManager = playlistManager.getChannelProcessingManager();
         mSettingsManager = settingsManager;
         mDiscoveredTunerModel = discoveredTunerModel;
+        mUserPreferences = playlistManager.getUserPreferences();
 
         mSpectrumPanel = new SpectrumPanel(mSettingsManager);
         mOverlayPanel = new OverlayPanel(mSettingsManager, mChannelModel, mChannelProcessingManager);
@@ -330,7 +354,7 @@ public class SpectralDisplayPanel extends JPanel
     }
 
     /**
-     * Overrides JComponent method to return false, since we have overlapping
+     * Overrides Region method to return false, since we have overlapping
      * panels with the spectrum and channel panels
      */
     public boolean isOptimizedDrawingEnabled()
@@ -340,59 +364,66 @@ public class SpectralDisplayPanel extends JPanel
 
     private void init()
     {
-        setLayout(new MigLayout("insets 0 0 0 0, fill", "[grow,fill]", "[grow,fill]"));
+        mLayeredPanel = new StackPane();
+        mLayeredPanel.getChildren().addAll(mSpectrumPanel, mOverlayPanel);
+        mLayeredPanel.setMinHeight(0);
+        mWaterfallPanel.setMinHeight(0);
+        
+        SplitPane splitPane = new SplitPane();
+        splitPane.setOrientation(Orientation.VERTICAL);
+        splitPane.getItems().addAll(mLayeredPanel, mWaterfallPanel);
+        splitPane.setDividerPositions(0.5);
 
-        /**
-         * The layered pane holds the overlapping spectrum and channel panels
-         * and manages the sizing of each panel with the resize listener
-         */
-        mLayeredPanel = new JLayeredPane();
-        mLayeredPanel.addComponentListener(new ResizeListener());
+        getChildren().add(splitPane);
 
-        /**
-         * Create a mouse adapter to handle mouse events over the spectrum
-         * and waterfall panels
-         */
         MouseEventProcessor mouser = new MouseEventProcessor();
+        
+        mOverlayPanel.setOnMousePressed(mouser::mousePressedFX);
+        mOverlayPanel.setOnMouseDragged(mouser::mouseDraggedFX);
+        mOverlayPanel.setOnMouseMoved(mouser::mouseMovedFX);
+        mOverlayPanel.setOnScroll(mouser::mouseScrollFX);
+        mOverlayPanel.setOnMouseEntered(mouser::mouseEnteredFX);
+        mOverlayPanel.setOnMouseExited(mouser::mouseExitedFX);
+        mOverlayPanel.setOnMouseClicked(mouser::mouseClickedFX);
 
-        mOverlayPanel.addMouseListener(mouser);
-        mOverlayPanel.addMouseMotionListener(mouser);
-        mOverlayPanel.addMouseWheelListener(mouser);
+        mWaterfallPanel.setOnMousePressed(mouser::mousePressedFX);
+        mWaterfallPanel.setOnMouseDragged(mouser::mouseDraggedFX);
+        mWaterfallPanel.setOnMouseMoved(mouser::mouseMovedFX);
+        mWaterfallPanel.setOnScroll(mouser::mouseScrollFX);
+        mWaterfallPanel.setOnMouseEntered(mouser::mouseEnteredFX);
+        mWaterfallPanel.setOnMouseExited(mouser::mouseExitedFX);
+        mWaterfallPanel.setOnMouseClicked(mouser::mouseClickedFX);
 
-        //Add the spectrum and channel panels to the layered panel
-        mLayeredPanel.add(mSpectrumPanel, 0, 0);
-        mLayeredPanel.add(mOverlayPanel, 1, 0);
-
-        //Create the waterfall
-        mWaterfallPanel.addMouseListener(mouser);
-        mWaterfallPanel.addMouseMotionListener(mouser);
-        mWaterfallPanel.addMouseWheelListener(mouser);
-
-        /* Set a default 50/50 split preferred size for the split pane to ensure JFXPanels aren't squished */
-
-        //Create the split pane to hold the layered pane and the waterfall
-        JideSplitPane splitPane = new JideSplitPane(JSplitPane.VERTICAL_SPLIT);
-        splitPane.setDividerSize(5);
-        splitPane.add(mLayeredPanel);
-        splitPane.add(mWaterfallPanel);
-
-        add(splitPane, "grow");
-
-        /**
-         * Setup DFTProcessor to process samples and register the waterfall and
-         * spectrum panel to receive the processed dft results
-         */
         mComplexDftProcessor = new ComplexDftProcessor();
         mDFTConverter = new ComplexDecibelConverter();
         mComplexDftProcessor.addConverter(mDFTConverter);
 
         mDFTConverter.addListener((DFTResultsListener)mSpectrumPanel);
         mDFTConverter.addListener((DFTResultsListener)mWaterfallPanel);
+
+        MyEventBus.getGlobalEventBus().register(this);
     }
 
-    /**
-     * Receives frequency change events -- primarily from tuner components.
-     */
+    @com.google.common.eventbus.Subscribe
+    public void onRemoteDesktopMode(io.github.dsheirer.eventbus.RemoteDesktopModeEvent event) {
+        javafx.application.Platform.runLater(() -> {
+            boolean active = event.isActive();
+            if (active && mUserPreferences.getApplicationPreference().isRemoteAccessOptimization()) {
+                // Throttle FFT framerate to 1 FPS
+                mComplexDftProcessor.setFrameRate(1);
+                // Disable animations globally via CSS/system properties or setting
+                System.setProperty("javafx.animation.fullspeed", "false"); // Note: there's no native global toggle, but we can set properties that affect our code or we can just toggle CSS
+                System.setProperty("prism.lcdtext", "false"); // Disable sub-pixel LCD text antialiasing
+                
+                mLog.info("Applied Remote Desktop optimizations (FFT 1 FPS, animations disabled).");
+            } else {
+                mComplexDftProcessor.setFrameRate(30); // Or whatever the default is
+                System.setProperty("prism.lcdtext", "true");
+                mLog.info("Restored standard display performance settings.");
+            }
+        });
+    }
+
     public void process(SourceEvent event)
     {
         mOverlayPanel.process(event);
@@ -490,33 +521,7 @@ public class SpectralDisplayPanel extends JPanel
      * Monitors the sizing of the layered pane and resizes the spectrum and
      * channel panels whenever the layered pane is resized
      */
-    public class ResizeListener implements ComponentListener
-    {
-        @Override public void componentResized(ComponentEvent e)
-        {
-            Component c = e.getComponent();
-
-            mSpectrumPanel.setBounds(0, 0, c.getWidth(), c.getHeight());
-            mOverlayPanel.setBounds(0, 0, c.getWidth(), c.getHeight());
-        }
-
-        @Override public void componentHidden(ComponentEvent arg0)
-        {
-        }
-
-        @Override public void componentMoved(ComponentEvent arg0)
-        {
-        }
-
-        @Override public void componentShown(ComponentEvent arg0)
-        {
-        }
-    }
-
-    /**
-     * Mouse event handler for the spectral display panel.
-     */
-    public class MouseEventProcessor extends MouseInputAdapter
+    public class MouseEventProcessor 
     {
         private int mDFTZoomWindowOffsetAtDragStart = 0;
         private int mDragStartX = 0;
@@ -526,322 +531,195 @@ public class SpectralDisplayPanel extends JPanel
         {
         }
 
-        @Override public void mouseWheelMoved(MouseWheelEvent e)
-        {
-            int zoom = mZoom - e.getWheelRotation();
-
+        public void mouseScrollFX(javafx.scene.input.ScrollEvent e) {
+            int zoom = mZoom + (int)Math.signum(e.getDeltaY());
             long frequency = mOverlayPanel.getFrequencyFromAxis(e.getX());
-
-            double windowOffset = (double)e.getX() / (double)getWidth();
-
+            double windowOffset = e.getX() / getWidth();
             setZoom(zoom, frequency, windowOffset);
         }
 
-        @Override public void mouseMoved(MouseEvent event)
-        {
-            update(event);
+        public void mouseMovedFX(javafx.scene.input.MouseEvent event) {
+            updateFX(event);
         }
 
-        @Override public void mouseDragged(MouseEvent event)
-        {
-            update(event);
-
-            int dragDistance = mDragStartX - event.getX();
-
+        public void mouseDraggedFX(javafx.scene.input.MouseEvent event) {
+            updateFX(event);
+            int dragDistance = mDragStartX - (int)event.getX();
             double binDistance = (double)dragDistance / mPixelsPerBin;
-
             int offset = (int)(mDFTZoomWindowOffsetAtDragStart + binDistance);
-
-            if(offset < 0)
-            {
-                offset = 0;
-            }
-
+            if(offset < 0) offset = 0;
             int maxOffset = mDFTSize.getSize() - (mDFTSize.getSize() / getZoomMultiplier());
-
-            if(offset > maxOffset)
-            {
-                offset = maxOffset;
-            }
-
+            if(offset > maxOffset) offset = maxOffset;
             setZoomWindowOffset(offset);
         }
 
-        @Override public void mousePressed(MouseEvent e)
-        {
-            mDragStartX = e.getX();
-
+        public void mousePressedFX(javafx.scene.input.MouseEvent e) {
+            mDragStartX = (int)e.getX();
             mDFTZoomWindowOffsetAtDragStart = mDFTZoomWindowOffset;
-
-            mPixelsPerBin = (double)getWidth() / ((double)(mDFTSize.getSize()) / (double)getZoomMultiplier());
+            mPixelsPerBin = (double)((javafx.scene.layout.Region)getParent()).getWidth() / ((double)(mDFTSize.getSize()) / (double)getZoomMultiplier());
         }
 
-        /**
-         * Updates the cursor display while the mouse is performing actions
-         */
-        private void update(MouseEvent event)
-        {
-            if(event.getComponent() == mOverlayPanel)
-            {
-                mOverlayPanel.setCursorLocation(event.getPoint());
-            }
-            else
-            {
-                mWaterfallPanel.setCursorLocation(event.getPoint());
-                mWaterfallPanel.setCursorFrequency(mOverlayPanel.getFrequencyFromAxis(event.getPoint().x));
+        private void updateFX(javafx.scene.input.MouseEvent event) {
+            if(event.getSource() == mOverlayPanel) {
+                mOverlayPanel.setCursorLocation(new javafx.geometry.Point2D(event.getX(), event.getY()));
+            } else {
+                mWaterfallPanel.setCursorLocation(new javafx.geometry.Point2D(event.getX(), event.getY()));
+                mWaterfallPanel.setCursorFrequency(mOverlayPanel.getFrequencyFromAxis(event.getX()));
             }
         }
 
-        @Override public void mouseEntered(MouseEvent e)
-        {
-            if(e.getComponent() == mOverlayPanel)
-            {
+        public void mouseEnteredFX(javafx.scene.input.MouseEvent event) {
+            if(event.getSource() == mOverlayPanel) {
                 mOverlayPanel.setCursorVisible(true);
-            }
-            else
-            {
+            } else {
                 mWaterfallPanel.setCursorVisible(true);
             }
         }
 
-        @Override public void mouseExited(MouseEvent e)
-        {
-            mOverlayPanel.setCursorVisible(false);
-            mWaterfallPanel.setCursorVisible(false);
+        public void mouseExitedFX(javafx.scene.input.MouseEvent event) {
+            if(event.getSource() == mOverlayPanel) {
+                mOverlayPanel.setCursorVisible(false);
+            } else {
+                mWaterfallPanel.setCursorVisible(false);
+            }
         }
 
-        /**
-         * Displays the context menu.
-         */
-        @Override public void mouseClicked(MouseEvent event)
-        {
-            if(SwingUtilities.isRightMouseButton(event))
-            {
-                JPopupMenu contextMenu = new JPopupMenu();
+        public void mouseClickedFX(javafx.scene.input.MouseEvent event) {
+            if(event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
+                Platform.runLater(() -> showContextMenu(event));
+            }
+        }
 
-                if(event.getComponent() == mWaterfallPanel)
-                {
-                    contextMenu.add(new PauseItem(mWaterfallPanel, "Pause"));
-                    contextMenu.add(new JSeparator());
+        private void showContextMenu(javafx.scene.input.MouseEvent event) {
+            ContextMenu contextMenu = new ContextMenu();
+
+            if(event.getSource() == mWaterfallPanel) {
+                contextMenu.getItems().add(new PauseItem(mWaterfallPanel, "Pause"));
+                contextMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+            }
+
+            long frequency = mOverlayPanel.getFrequencyFromAxis(event.getX());
+
+            if(event.getSource() == mOverlayPanel) {
+                ArrayList<Channel> channels = mOverlayPanel.getChannelsAtFrequency(frequency);
+                Menu channelMenu = new Menu("Channels");
+                for(Channel channel : channels) {
+                    MenuItem viewChannel = new MenuItem("View/Edit: " + channel.getShortTitle());
+                    viewChannel.setOnAction(e -> MyEventBus.getGlobalEventBus().post(new ViewChannelRequest(channel)));
+                    channelMenu.getItems().add(viewChannel);
                 }
+                contextMenu.getItems().add(channelMenu);
+                if(!channels.isEmpty()) contextMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+            }
 
-                long frequency = mOverlayPanel.getFrequencyFromAxis(event.getX());
+            Menu colorMenu = new Menu("Color");
+            colorMenu.getItems().add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.CHANNEL_CONFIG));
+            colorMenu.getItems().add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.CHANNEL_CONFIG_PROCESSING));
+            colorMenu.getItems().add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.CHANNEL_CONFIG_SELECTED));
+            colorMenu.getItems().add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_CURSOR));
+            colorMenu.getItems().add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_LINE));
+            colorMenu.getItems().add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_BACKGROUND));
+            colorMenu.getItems().add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_GRADIENT_BOTTOM));
+            colorMenu.getItems().add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_GRADIENT_TOP));
+            contextMenu.getItems().add(colorMenu);
 
-                if(event.getComponent() == mOverlayPanel)
-                {
-                    ArrayList<Channel> channels = mOverlayPanel.getChannelsAtFrequency(frequency);
+            Menu displayMenu = new Menu("Display");
+            contextMenu.getItems().add(displayMenu);
 
-                    JMenu channelMenu = new JMenu("Channels");
-                    for(Channel channel : channels)
-                    {
-                        JMenuItem viewChannel = new JMenuItem("View/Edit: " + channel.getShortTitle());
-                        viewChannel.addActionListener(
-                                e -> MyEventBus.getGlobalEventBus().post(new ViewChannelRequest(channel)));
-                        channelMenu.add(viewChannel);
+            if(event.getSource() != mWaterfallPanel) {
+                Menu averagingMenu = new Menu("Averaging");
+                averagingMenu.getItems().add(new javafx.scene.control.CustomMenuItem(new AveragingItem(mSpectrumPanel, 4), false));
+                displayMenu.getItems().add(averagingMenu);
+
+                Menu channelDisplayMenu = new Menu("Channel");
+                channelDisplayMenu.getItems().add(new ChannelDisplayItem(mOverlayPanel, ChannelDisplay.ALL));
+                channelDisplayMenu.getItems().add(new ChannelDisplayItem(mOverlayPanel, ChannelDisplay.ENABLED));
+                channelDisplayMenu.getItems().add(new ChannelDisplayItem(mOverlayPanel, ChannelDisplay.NONE));
+                displayMenu.getItems().add(channelDisplayMenu);
+            }
+
+            Menu fftWidthMenu = new Menu("FFT Width");
+            displayMenu.getItems().add(fftWidthMenu);
+            for(DFTSize width : DFTSize.values()) fftWidthMenu.getItems().add(new DFTSizeItem(SpectralDisplayPanel.this, width));
+
+            Menu frameRateMenu = new Menu("Frame Rate");
+            displayMenu.getItems().add(frameRateMenu);
+            frameRateMenu.getItems().add(new FrameRateItem(mComplexDftProcessor, 14));
+            frameRateMenu.getItems().add(new FrameRateItem(mComplexDftProcessor, 16));
+            frameRateMenu.getItems().add(new FrameRateItem(mComplexDftProcessor, 18));
+            frameRateMenu.getItems().add(new FrameRateItem(mComplexDftProcessor, 20));
+            frameRateMenu.getItems().add(new FrameRateItem(mComplexDftProcessor, 25));
+            frameRateMenu.getItems().add(new FrameRateItem(mComplexDftProcessor, 30));
+            frameRateMenu.getItems().add(new FrameRateItem(mComplexDftProcessor, 40));
+            frameRateMenu.getItems().add(new FrameRateItem(mComplexDftProcessor, 50));
+
+            Menu fftWindowType = new Menu("Window Type");
+            displayMenu.getItems().add(fftWindowType);
+            for(WindowType type : WindowType.values()) fftWindowType.getItems().add(new FFTWindowTypeItem(mComplexDftProcessor, type));
+
+            if(event.getSource() != mWaterfallPanel) {
+                Menu smoothingMenu = new Menu("Smoothing");
+                if(mSpectrumPanel.getSmoothingType() != SmoothingType.NONE) {
+                    smoothingMenu.getItems().add(new javafx.scene.control.CustomMenuItem(new SmoothingItem(mSpectrumPanel, 5), false));
+                    smoothingMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+                }
+                smoothingMenu.getItems().add(new SmoothingTypeItem(mSpectrumPanel, SmoothingType.GAUSSIAN));
+                smoothingMenu.getItems().add(new SmoothingTypeItem(mSpectrumPanel, SmoothingType.TRIANGLE));
+                smoothingMenu.getItems().add(new SmoothingTypeItem(mSpectrumPanel, SmoothingType.RECTANGLE));
+                smoothingMenu.getItems().add(new SmoothingTypeItem(mSpectrumPanel, SmoothingType.NONE));
+                displayMenu.getItems().add(smoothingMenu);
+            }
+
+            javafx.scene.control.Menu zoomMenu = new Menu("Zoom");
+            double windowOffset = (double)event.getX() / (double)getWidth();
+            zoomMenu.getItems().add(new javafx.scene.control.CustomMenuItem(new ZoomItem(frequency, windowOffset), false));
+            contextMenu.getItems().add(zoomMenu);
+
+            if(mTuner != null) {
+                contextMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+                contextMenu.getItems().add(new DisableSpectrumWaterfallMenuItem(SpectralDisplayPanel.this));
+            }
+
+            boolean separatorAdded = false;
+            for(DiscoveredTuner discoveredTuner : mDiscoveredTunerModel.getAvailableTuners()) {
+                if(mTuner == null || mTuner != discoveredTuner.getTuner()) {
+                    if(!separatorAdded) {
+                        contextMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+                        separatorAdded = true;
                     }
-
-                    contextMenu.add(channelMenu);
-
-                    if(!channels.isEmpty())
-                    {
-                        contextMenu.add(new JSeparator());
-                    }
+                    contextMenu.getItems().add(new ShowTunerMenuItem(mDiscoveredTunerModel, discoveredTuner.getTuner()));
                 }
+            }
 
-                /**
-                 * Color Menus
-                 */
-                JMenu colorMenu = new JMenu("Color");
-
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.CHANNEL_CONFIG));
-
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.CHANNEL_CONFIG_PROCESSING));
-
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.CHANNEL_CONFIG_SELECTED));
-
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_CURSOR));
-
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_LINE));
-
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_BACKGROUND));
-
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_GRADIENT_BOTTOM));
-
-                colorMenu.add(new ColorSettingMenuItem(mSettingsManager, ColorSettingName.SPECTRUM_GRADIENT_TOP));
-
-                contextMenu.add(colorMenu);
-
-                /**
-                 * Display items: fft and frame rate
-                 */
-                JMenu displayMenu = new JMenu("Display");
-                contextMenu.add(displayMenu);
-
-                if(event.getComponent() != mWaterfallPanel)
-                {
-                    /**
-                     * Averaging menu
-                     */
-                    JMenu averagingMenu = new JMenu("Averaging");
-                    averagingMenu.add(new AveragingItem(mSpectrumPanel, 4));
-                    displayMenu.add(averagingMenu);
-
-                    /**
-                     * Channel Display setting menu
-                     */
-                    JMenu channelDisplayMenu = new JMenu("Channel");
-
-                    channelDisplayMenu.add(new ChannelDisplayItem(mOverlayPanel, ChannelDisplay.ALL));
-                    channelDisplayMenu.add(new ChannelDisplayItem(mOverlayPanel, ChannelDisplay.ENABLED));
-                    channelDisplayMenu.add(new ChannelDisplayItem(mOverlayPanel, ChannelDisplay.NONE));
-
-                    displayMenu.add(channelDisplayMenu);
-                }
-
-                /**
-                 * FFT width
-                 */
-                JMenu fftWidthMenu = new JMenu("FFT Width");
-                displayMenu.add(fftWidthMenu);
-
-                for(DFTSize width : DFTSize.values())
-                {
-                    fftWidthMenu.add(new DFTSizeItem(SpectralDisplayPanel.this, width));
-                }
-
-                /**
-                 * DFT Processor Frame Rate
-                 */
-                JMenu frameRateMenu = new JMenu("Frame Rate");
-                displayMenu.add(frameRateMenu);
-
-                frameRateMenu.add(new FrameRateItem(mComplexDftProcessor, 14));
-                frameRateMenu.add(new FrameRateItem(mComplexDftProcessor, 16));
-                frameRateMenu.add(new FrameRateItem(mComplexDftProcessor, 18));
-                frameRateMenu.add(new FrameRateItem(mComplexDftProcessor, 20));
-                frameRateMenu.add(new FrameRateItem(mComplexDftProcessor, 25));
-                frameRateMenu.add(new FrameRateItem(mComplexDftProcessor, 30));
-                frameRateMenu.add(new FrameRateItem(mComplexDftProcessor, 40));
-                frameRateMenu.add(new FrameRateItem(mComplexDftProcessor, 50));
-
-                /**
-                 * FFT Window Type
-                 */
-                JMenu fftWindowType = new JMenu("Window Type");
-                displayMenu.add(fftWindowType);
-
-                for(WindowType type : WindowType.values())
-                {
-                    fftWindowType.add(new FFTWindowTypeItem(mComplexDftProcessor, type));
-                }
-
-                if(event.getComponent() != mWaterfallPanel)
-                {
-                    /**
-                     * Smoothing menu
-                     */
-                    JMenu smoothingMenu = new JMenu("Smoothing");
-
-                    if(mSpectrumPanel.getSmoothingType() != SmoothingType.NONE)
-                    {
-                        smoothingMenu.add(new SmoothingItem(mSpectrumPanel, 5));
-                        smoothingMenu.add(new JSeparator());
-                    }
-                    smoothingMenu.add(new SmoothingTypeItem(mSpectrumPanel, SmoothingType.GAUSSIAN));
-                    smoothingMenu.add(new SmoothingTypeItem(mSpectrumPanel, SmoothingType.TRIANGLE));
-                    smoothingMenu.add(new SmoothingTypeItem(mSpectrumPanel, SmoothingType.RECTANGLE));
-                    smoothingMenu.add(new SmoothingTypeItem(mSpectrumPanel, SmoothingType.NONE));
-
-                    displayMenu.add(smoothingMenu);
-                }
-
-                /*
-                 * Zoom menu
-                 */
-                JMenuItem zoomMenu = new JMenu("Zoom");
-
-                double windowOffset = (double)event.getX() / (double)getWidth();
-
-                zoomMenu.add(new ZoomItem(frequency, windowOffset));
-
-                contextMenu.add(zoomMenu);
-
-                if(mTuner != null)
-                {
-                    contextMenu.add(new JSeparator());
-                    contextMenu.add(new DisableSpectrumWaterfallMenuItem(SpectralDisplayPanel.this));
-                }
-
-                boolean separatorAdded = false;
-
-                for(DiscoveredTuner discoveredTuner : mDiscoveredTunerModel.getAvailableTuners())
-                {
-                    if(mTuner == null || mTuner != discoveredTuner.getTuner())
-                    {
-                        if(!separatorAdded)
-                        {
-                            contextMenu.add(new JSeparator());
-                            separatorAdded = true;
-                        }
-
-                        contextMenu.add(new ShowTunerMenuItem(mDiscoveredTunerModel, discoveredTuner.getTuner()));
-                    }
-                }
-
-                if(contextMenu != null)
-                {
-                    if(event.getComponent() == mOverlayPanel)
-                    {
-                        contextMenu.show(mOverlayPanel, event.getX(), event.getY());
-                    }
-                    else
-                    {
-                        contextMenu.show(mWaterfallPanel, event.getX(), event.getY());
-                    }
-                }
+            if(contextMenu != null) {
+                int yOffset = event.getSource() == mOverlayPanel ? 0 : (int)(getHeight() * 0.5);
+                contextMenu.show(SpectralDisplayPanel.this, (int)event.getX(), (int)event.getY() + yOffset);
             }
         }
     }
 
-    public class PauseItem extends JCheckBoxMenuItem
-    {
-        private static final long serialVersionUID = 1L;
-
+    public class PauseItem extends javafx.scene.control.CheckMenuItem {
         private Pausable mPausable;
-
-        public PauseItem(Pausable pausable, String label)
-        {
+        public PauseItem(Pausable pausable, String label) {
             super(label);
-
             final boolean paused = pausable.isPaused();
-
             setSelected(paused);
-
             mPausable = pausable;
-
-            addActionListener(new ActionListener()
-            {
-                @Override public void actionPerformed(ActionEvent e)
-                {
-                    EventQueue.invokeLater(new Runnable()
-                    {
-                        @Override public void run()
-                        {
-                            mPausable.setPaused(!paused);
-                        }
-                    });
-                }
+            setOnAction(e -> {
+                javafx.application.Platform.runLater(() -> {
+                    mPausable.setPaused(!paused);
+                });
             });
         }
     }
 
-    public class ZoomItem extends JSlider
+    public class ZoomItem extends Slider
     {
         private static final long serialVersionUID = 1L;
 
         private long mFrequency;
         private double mWindowOffset;
-        private ChangeListener mChangeListener;
+        private javafx.beans.value.ChangeListener<Number> mChangeListener;
 
         public ZoomItem(long frequency, double windowOffset)
         {
@@ -850,62 +728,45 @@ public class SpectralDisplayPanel extends JPanel
             mFrequency = frequency;
             mWindowOffset = windowOffset;
 
-            Hashtable<Integer, JComponent> labels = new Hashtable<>();
-            labels.put(0, new JLabel("1x"));
-            labels.put(1, new JLabel("2x"));
-            labels.put(2, new JLabel("4x"));
-            labels.put(3, new JLabel("8x"));
-            labels.put(4, new JLabel("16x"));
-            labels.put(5, new JLabel("32x"));
-            labels.put(6, new JLabel("64x"));
+            Hashtable<Integer, Region> labels = new Hashtable<>();
+            labels.put(0, new Label("1x"));
+            labels.put(1, new Label("2x"));
+            labels.put(2, new Label("4x"));
+            labels.put(3, new Label("8x"));
+            labels.put(4, new Label("16x"));
+            labels.put(5, new Label("32x"));
+            labels.put(6, new Label("64x"));
 
-            setLabelTable(labels);
+            // setLabelTable...
 
-            setMajorTickSpacing(1);
-            setMinorTickSpacing(1);
-            setPaintTicks(true);
-            setPaintLabels(true);
+            // setMajorTickSpacing...
+            // setMinorTickSpacing...
+            // setPaintTicks...
+            // setPaintLabels...
 
-            mChangeListener = new ChangeListener()
+            // ChangeListener removed
             {
-                @Override public void stateChanged(ChangeEvent e)
+                // // @Override // public void stateChanged(ChangeEvent e)
                 {
-                    setZoom(getValue(), mFrequency, mWindowOffset);
+                    // setZoom...
                 }
             };
-            this.addChangeListener(mChangeListener);
+            // this.addChangeListener(mChangeListener);
         }
     }
 
-    public class ChannelDisplayItem extends JCheckBoxMenuItem
-    {
-        private static final long serialVersionUID = 1L;
-
+    public class ChannelDisplayItem extends javafx.scene.control.CheckMenuItem {
         private OverlayPanel mOverlayPanel;
         private ChannelDisplay mChannelDisplay;
-
-        public ChannelDisplayItem(OverlayPanel panel, ChannelDisplay display)
-        {
+        public ChannelDisplayItem(OverlayPanel panel, ChannelDisplay display) {
             super(display.name());
-
             mOverlayPanel = panel;
-
             mChannelDisplay = display;
-
             setSelected(mOverlayPanel.getChannelDisplay() == mChannelDisplay);
-
-            addActionListener(new ActionListener()
-            {
-                @Override public void actionPerformed(ActionEvent e)
-                {
-                    EventQueue.invokeLater(new Runnable()
-                    {
-                        @Override public void run()
-                        {
-                            mOverlayPanel.setChannelDisplay(mChannelDisplay);
-                        }
-                    });
-                }
+            setOnAction(e -> {
+                javafx.application.Platform.runLater(() -> {
+                    mOverlayPanel.setChannelDisplay(mChannelDisplay);
+                });
             });
         }
     }

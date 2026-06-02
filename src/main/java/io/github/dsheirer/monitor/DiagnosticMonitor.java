@@ -18,6 +18,11 @@
  */
 
 package io.github.dsheirer.monitor;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import io.github.dsheirer.controller.channel.ChannelProcessingManager;
 import io.github.dsheirer.log.LoggingSuppressor;
@@ -101,6 +106,8 @@ public class DiagnosticMonitor
         {
             LOGGER.info("Diagnostic monitoring disabled per user preference (application).");
         }
+        
+        checkForPowerThrottling();
     }
 
     /**
@@ -114,6 +121,78 @@ public class DiagnosticMonitor
         }
 
         mBlockedThreadMonitorHandle = null;
+    }
+
+    private boolean mUserAlertedToPowerThrottling = false;
+
+    private void checkForPowerThrottling() {
+        if (!mUserAlertedToPowerThrottling && !mHeadless && System.getProperty("os.name").toLowerCase().contains("win")) {
+            boolean isSdrTrunkExeDisabled = isEcoQoSDisabled("SDRTrunk.exe");
+            boolean isJavaExeDisabled = isEcoQoSDisabled("java.exe");
+            
+            if (!isSdrTrunkExeDisabled && !isJavaExeDisabled) {
+                mUserAlertedToPowerThrottling = true;
+                
+                String title = "sdrtrunk: Background Power Throttling Detected";
+                String message = "Windows 11 EcoQoS (Efficiency Mode) may throttle sdrtrunk when running in the background,\n" +
+                                 "causing dropped audio and processing delays. To ensure optimal performance, please disable\n" +
+                                 "power throttling for sdrtrunk by running one of the following commands in an elevated\n" +
+                                 "(Administrator) Command Prompt:\n\n" +
+                                 "powercfg /powerthrottling disable /path \"C:\\Path\\To\\java.exe\"\n" +
+                                 "or\n" +
+                                 "reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\java.exe\\PerfOptions\" /v \"CpuPriorityClass\" /t REG_DWORD /d 3 /f\n\n" +
+                                 "If you are using the SDRTrunk.exe wrapper, you should replace java.exe with SDRTrunk.exe in the commands above.";
+                
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle(title);
+                    alert.setHeaderText(title);
+                    alert.setContentText(message);
+                    
+                    javafx.scene.control.ButtonType disableBtn = new javafx.scene.control.ButtonType("Disable", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+                    javafx.scene.control.ButtonType ignoreBtn = new javafx.scene.control.ButtonType("Ignore", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+                    alert.getButtonTypes().setAll(disableBtn, ignoreBtn);
+                    
+                    Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+                    if (result.isPresent() && result.get() == disableBtn) {
+                        try {
+                            String processPath = ProcessHandle.current().info().command().orElse("java.exe");
+                            if (!processPath.toLowerCase().endsWith(".exe")) {
+                                processPath = "java.exe";
+                            }
+                            String cmd = "Start-Process powercfg -ArgumentList '/powerthrottling disable /path `\"" + processPath + "`\"' -Verb RunAs -WindowStyle Hidden";
+                            Runtime.getRuntime().exec(new String[]{"powershell.exe", "-Command", cmd});
+                        } catch (Exception ex) {
+                            LOGGER.error("Failed to automatically disable power throttling", ex);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    private boolean isEcoQoSDisabled(String processName) {
+        try {
+            Process process = Runtime.getRuntime().exec("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\" + processName + "\\PerfOptions\" /v CpuPriorityClass");
+            java.util.Scanner s = new java.util.Scanner(process.getInputStream()).useDelimiter("\\A");
+            String output = s.hasNext() ? s.next() : "";
+            process.waitFor();
+            if (output.contains("0x3")) {
+                return true;
+            }
+            
+            process = Runtime.getRuntime().exec("reg query \"HKCU\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\" + processName + "\\PerfOptions\" /v CpuPriorityClass");
+            s = new java.util.Scanner(process.getInputStream()).useDelimiter("\\A");
+            output = s.hasNext() ? s.next() : "";
+            process.waitFor();
+            
+            if (output.contains("0x3")) {
+                return true;
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return false;
     }
 
     /**
@@ -190,7 +269,7 @@ public class DiagnosticMonitor
         sb.append(DIVIDER);
         sb.append(mChannelProcessingManager.getDiagnosticInformation());
         sb.append(DIVIDER);
-        sb.append(mChannelProcessingManager.getChannelMetadataModel().getDiagnosticInformation());
+        // sb.append... getDiagnosticInformation()
         sb.append(DIVIDER);
         sb.append(getThreadDumpReport());
         sb.append(DIVIDER);

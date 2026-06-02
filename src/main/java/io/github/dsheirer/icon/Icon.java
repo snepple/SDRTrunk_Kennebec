@@ -180,7 +180,7 @@ public class Icon implements Comparable<Icon>
     }
 
     @JsonIgnore
-        public ImageIcon getIcon()
+    ImageIcon getIcon()
     {
         if(mImageIcon == null && getPath() != null && !getPath().isEmpty())
         {
@@ -243,10 +243,6 @@ URL exactURL = Icon.class.getResource(resourcePath);
         return mImageIcon;
     }
 
-    /**
-     * Lazy loads an FX image for the icon and retains it in memory.
-     * @return loaded image or null if the image can't be loaded
-     */
     @JsonIgnore
     public Image getFxImage()
     {
@@ -262,42 +258,54 @@ URL exactURL = Icon.class.getResource(resourcePath);
             }
             else
             {
-                try {
-                    // Fetch the scaled icon at 2x resolution to look crisp on high-DPI displays
-                    int renderHeight = ICON_HEIGHT_JAVAFX * 2;
-                    ImageIcon icon = io.github.dsheirer.icon.IconModel.getScaledIcon(getIcon(), renderHeight);
-if (icon != null && icon.getIconWidth() > 0 && icon.getIconHeight() > 0) {
-                        if (icon instanceof FlatSVGIcon) {
-                            BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-                            Graphics2D cg = bImg.createGraphics();
-                            cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                            cg.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-                            cg.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
-                            icon.paintIcon(null, cg, 0, 0);
-                            cg.dispose();
-                            mFxImage = SwingFXUtils.toFXImage(bImg, null);
-                        } else {
-                            if (getIcon() != null && getIcon().getDescription() != null && getIcon().getDescription().startsWith("file:")) {
-                                mFxImage = new javafx.scene.image.Image(getIcon().getDescription(), renderHeight, renderHeight, true, true);
-                            } else {
-                                BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-                                Graphics2D cg = bImg.createGraphics();
-                                cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                                cg.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-                                cg.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
-                                icon.paintIcon(null, cg, 0, 0);
-                                cg.dispose();
-                                mFxImage = SwingFXUtils.toFXImage(bImg, null);
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    mLog.error("Error converting icon to FX image [" + getName() + "]", e);
-                }
+                mFxImage = getFxImage(ICON_HEIGHT_JAVAFX * 2);
             }
         }
 
         return mFxImage;
+    }
+
+    /**
+     * Lazy loads an FX image for the icon scaled to the specified height.
+     * @return loaded image or null if the image can't be loaded
+     */
+    @JsonIgnore
+    public Image getFxImage(int renderHeight)
+    {
+        ImageIcon original = getIcon();
+        if (original == null) return null;
+
+        ImageIcon icon = io.github.dsheirer.icon.IconModel.getScaledIcon(original, renderHeight);
+        if (icon != null && icon.getIconWidth() > 0 && icon.getIconHeight() > 0) {
+            try {
+                if (icon instanceof FlatSVGIcon) {
+                    BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+                    Graphics2D cg = bImg.createGraphics();
+                    cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                    cg.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                    cg.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
+                    icon.paintIcon(null, cg, 0, 0);
+                    cg.dispose();
+                    return SwingFXUtils.toFXImage(bImg, null);
+                } else {
+                    if (original != null && original.getDescription() != null && original.getDescription().startsWith("file:")) {
+                        return new javafx.scene.image.Image(original.getDescription(), renderHeight, renderHeight, true, true);
+                    } else {
+                        BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+                        Graphics2D cg = bImg.createGraphics();
+                        cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                        cg.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                        cg.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
+                        icon.paintIcon(null, cg, 0, 0);
+                        cg.dispose();
+                        return SwingFXUtils.toFXImage(bImg, null);
+                    }
+                }
+            } catch (Exception e) {
+                mLog.error("Error converting icon to FX image [" + getName() + "]", e);
+            }
+        }
+        return null;
     }
 
     @Override

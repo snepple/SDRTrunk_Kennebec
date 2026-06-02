@@ -29,7 +29,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.awt.Component;
+import javafx.scene.Node;
 
 public class ActivitySummaryFrame
 {
@@ -38,7 +38,7 @@ public class ActivitySummaryFrame
     	this( summary, null );
     }
     
-	public ActivitySummaryFrame( String summary, Component displayOver )
+	public ActivitySummaryFrame( String summary, javafx.scene.Node displayOver )
 	{
 		Platform.runLater(() -> {
             Stage stage = new Stage();

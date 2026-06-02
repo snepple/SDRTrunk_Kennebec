@@ -9,12 +9,13 @@
 
 package org.jdesktop.swingx.mapviewer.empty;
 
+import javafx.scene.image.Image;
+import javafx.scene.image.WritableImage;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.paint.Color;
 import org.jdesktop.swingx.mapviewer.Tile;
 import org.jdesktop.swingx.mapviewer.TileFactory;
 import org.jdesktop.swingx.mapviewer.TileFactoryInfo;
-
-import java.awt.*;
-import java.awt.image.BufferedImage;
 
 /**
  * A null implementation of TileFactory. Draws empty areas.
@@ -25,7 +26,7 @@ public class EmptyTileFactory extends TileFactory
 	/** 
 	 * The empty tile image. 
 	 */
-	private BufferedImage emptyTile;
+	private Image emptyTile;
 
 	/** 
 	 * Creates a new instance of EmptyTileFactory 
@@ -43,17 +44,15 @@ public class EmptyTileFactory extends TileFactory
 	{
 		super(info);
 		int tileSize = info.getTileSize(info.getMinimumZoomLevel());
-		emptyTile = new BufferedImage(tileSize, tileSize, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g = emptyTile.createGraphics();
-		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g.setColor(Color.GRAY);
-		g.fillRect(0, 0, tileSize, tileSize);
-		g.setColor(Color.WHITE);
-		g.drawOval(10, 10, tileSize - 20, tileSize - 20);
-		g.fillOval(70, 50, 20, 20);
-		g.fillOval(tileSize - 90, 50, 20, 20);
-		g.fillOval(tileSize / 2 - 10, tileSize / 2 - 10, 20, 20);
-		g.dispose();
+		WritableImage wImg = new WritableImage(tileSize, tileSize);
+		PixelWriter writer = wImg.getPixelWriter();
+		Color gray = Color.GRAY;
+		for (int x = 0; x < tileSize; x++) {
+			for (int y = 0; y < tileSize; y++) {
+				writer.setColor(x, y, gray);
+			}
+		}
+		emptyTile = wImg;
 	}
 
 	/**
@@ -74,7 +73,7 @@ public class EmptyTileFactory extends TileFactory
 			}
 
 			@Override
-			public BufferedImage getImage()
+			public Image getImage()
 			{
 				return emptyTile;
 			}

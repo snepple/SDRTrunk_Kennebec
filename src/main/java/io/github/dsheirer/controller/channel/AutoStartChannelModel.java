@@ -14,14 +14,19 @@
  *
  ******************************************************************************/
 package io.github.dsheirer.controller.channel;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
-import javax.swing.table.AbstractTableModel;
+
 import java.util.List;
 
 /**
  * Auto-Start Channel Model
  */
-public class AutoStartChannelModel extends AbstractTableModel
+public class AutoStartChannelModel
 {
     private static final long serialVersionUID = 1L;
 
@@ -40,19 +45,19 @@ public class AutoStartChannelModel extends AbstractTableModel
         mChannels = autoStartChannels;
     }
 
-    @Override
+    // // @Override
     public int getRowCount()
     {
         return mChannels.size();
     }
 
-    @Override
+    // // @Override
     public int getColumnCount()
     {
         return COLUMN_NAMES.length;
     }
 
-    @Override
+    // // @Override
     public String getColumnName(int columnIndex)
     {
         if(columnIndex < COLUMN_NAMES.length)
@@ -63,19 +68,19 @@ public class AutoStartChannelModel extends AbstractTableModel
         return null;
     }
 
-    @Override
+    // // @Override
     public Class<?> getColumnClass(int columnIndex)
     {
         return String.class;
     }
 
-    @Override
+    // // @Override
     public boolean isCellEditable(int rowIndex, int columnIndex)
     {
         return false;
     }
 
-    @Override
+    // // @Override
     public Object getValueAt(int rowIndex, int columnIndex)
     {
         Channel channel = mChannels.get(rowIndex);
@@ -97,7 +102,7 @@ public class AutoStartChannelModel extends AbstractTableModel
         return null;
     }
 
-    @Override
+    // // @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex)
     {
         throw new IllegalArgumentException("Not yet implemented");

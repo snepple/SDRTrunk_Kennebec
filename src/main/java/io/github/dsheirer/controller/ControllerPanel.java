@@ -1,4 +1,13 @@
+
+
 package io.github.dsheirer.controller;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.layout.Region;
+import javafx.scene.control.Button;
 
 import io.github.dsheirer.gui.VisibilityListener;
 import io.github.dsheirer.audio.playback.AudioPanel;
@@ -7,7 +16,7 @@ import io.github.dsheirer.channel.metadata.NowPlayingPanel;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.map.MapPanel;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+import javafx.scene.layout.Pane;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
 import javafx.scene.Parent;
@@ -22,10 +31,10 @@ import io.github.dsheirer.gui.recordings.AudioRecordingsPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.SwingUtilities;
+
 import java.io.IOException;
 
-public class ControllerPanel extends JFXPanel {
+public class ControllerPanel extends javafx.scene.layout.StackPane {
     private final static Logger mLog = LoggerFactory.getLogger(ControllerPanel.class);
 
     private AudioPanel mAudioPanel;
@@ -40,8 +49,7 @@ public class ControllerPanel extends JFXPanel {
                            IconModel iconModel, MapService mapService, SettingsManager settingsManager,
                            TunerManager tunerManager, UserPreferences userPreferences, boolean detailTabsVisible, VisibilityListener visibilityListener) {
 
-        mAudioPanel = new AudioPanel(iconModel, userPreferences, settingsManager, audioPlaybackManager,
-            playlistManager.getAliasModel(), playlistManager.getBroadcastModel());
+        mAudioPanel = new AudioPanel(iconModel, userPreferences, settingsManager, audioPlaybackManager, playlistManager);
         mNowPlayingPanel = new NowPlayingPanel(playlistManager, iconModel, userPreferences, settingsManager, tunerManager, detailTabsVisible, visibilityListener);
         mMapPanel = new MapPanel(mapService, playlistManager.getAliasModel(), iconModel, settingsManager);
         mTunerManagerPanel = new TunerViewPanel(tunerManager, userPreferences, visibilityListener);
@@ -56,26 +64,26 @@ public class ControllerPanel extends JFXPanel {
                 mController = loader.getController();
 
                 // Add Swing views by wrapping them in SwingNodes
-                mController.addView("now_playing", wrapSwingComponent(mNowPlayingPanel));
-                mController.addView("map", wrapSwingComponent(mMapPanel));
-                mController.addView("tuners", wrapSwingComponent(mTunerManagerPanel));
-                mController.addView("audio_recordings", wrapSwingComponent(mAudioRecordingsPanel));
+                mController.addView("now_playing", mNowPlayingPanel);
+                mController.addView("map", mMapPanel);
+                mController.addView("tuners", mTunerManagerPanel);
+                mController.addView("audio_recordings", mAudioRecordingsPanel);
 
                 // Add HelpViewer natively without SwingNode
                 mController.addView("help_viewer", new io.github.dsheirer.gui.help.HelpViewer());
 
-                setScene(new Scene(root));
+                getChildren().add(root);
             } catch (IOException e) {
                 mLog.error("Error loading ControllerPanel.fxml", e);
             }
         });
     }
 
-    private SwingNode wrapSwingComponent(javax.swing.JComponent component) {
-        SwingNode swingNode = new SwingNode();
-        SwingUtilities.invokeLater(() -> swingNode.setContent(component));
-        return swingNode;
-    }
+
+
+
+
+
 
     public AudioPanel getAudioPanel() {
         return mAudioPanel;
@@ -85,16 +93,16 @@ public class ControllerPanel extends JFXPanel {
         return mNowPlayingPanel;
     }
 
-    public void addView(String id, java.awt.Component view) {
+    public void addView(String id, javafx.scene.Node view) {
         Platform.runLater(() -> {
             if (mController != null) {
-                mController.addView(id, wrapSwingComponent((javax.swing.JComponent) view));
+                mController.addView(id, (javafx.scene.Node) view);
             }
         });
     }
 
     public void showView(String id) {
-        SwingUtilities.invokeLater(() -> mNowPlayingPanel.getManageWidgetsButton().setVisible("now_playing".equals(id)));
+        Platform.runLater(() -> mNowPlayingPanel.getManageWidgetsButton().setVisible("now_playing".equals(id)));
 
         Platform.runLater(() -> {
             if (mController != null) {
@@ -103,10 +111,10 @@ public class ControllerPanel extends JFXPanel {
         });
     }
 
-    public void setResourcePanel(javax.swing.JComponent resourcePanel) {
+    public void setResourcePanel(javafx.scene.Node resourcePanel) {
         Platform.runLater(() -> {
             if (mController != null) {
-                mController.setResourceNode(wrapSwingComponent(resourcePanel));
+                mController.setResourceNode(resourcePanel);
                 mController.setResourcePanelVisible(false);
             }
         });

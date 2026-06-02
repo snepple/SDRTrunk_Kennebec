@@ -1,3 +1,4 @@
+
 /*
  *
  *  * ******************************************************************************
@@ -21,6 +22,7 @@
  */
 
 package io.github.dsheirer.gui.playlist.streaming;
+import javafx.scene.layout.VBox;
 
 
 import io.github.dsheirer.audio.broadcast.icecast.IcecastConfiguration;

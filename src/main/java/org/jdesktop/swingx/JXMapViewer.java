@@ -27,23 +27,31 @@
  */
 
 package org.jdesktop.swingx;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.geometry.Rectangle2D;
+import javafx.geometry.Dimension2D;
+import javafx.geometry.Point2D;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
+
+
+import javafx.geometry.Dimension2D;
+
+import javafx.scene.canvas.GraphicsContext;
 import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Insets;
-import java.awt.Rectangle;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
-import java.beans.DesignMode;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Bounds;
+import javafx.scene.image.Image;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Set;
 import jiconfont.icons.font_awesome.FontAwesome;
-import jiconfont.swing.IconFontSwing;
+import jiconfont.javafx.IconFontFX;
 import org.apache.commons.math3.util.FastMath;
 import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.jdesktop.swingx.mapviewer.Tile;
@@ -56,7 +64,7 @@ import org.jdesktop.swingx.painter.Painter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JPanel;
+import javafx.scene.layout.Pane;
 
 /**
  * A tile oriented map component that can easily be used with tile sources
@@ -80,8 +88,9 @@ import javax.swing.JPanel;
  * @author Joshua.Marinacci@sun.com
  * @see org.jdesktop.swingx.mapviewer.bmng.SLMapServerInfo
  */
-public class JXMapViewer extends JPanel implements DesignMode
+public class JXMapViewer extends Pane
 {
+	private javafx.scene.canvas.Canvas canvas;
 	private static final long serialVersionUID = -3530746298586937321L;
 
 	private final static Logger mLog = LoggerFactory.getLogger(JXMapViewer.class);
@@ -99,7 +108,7 @@ public class JXMapViewer extends JPanel implements DesignMode
 	 * left edges of the map in pixels. Dragging the map component will change the center position. Zooming in/out will
 	 * cause the center to be recalculated so as to remain in the center of the new "map".
 	 */
-	private Point2D mCenter = new Point2D.Double(0, 0);
+	private Point2D mCenter = new Point2D(0, 0);
 
 	/**
 	 * Indicates whether or not to draw the borders between tiles. Defaults to false. TODO Generally not very nice
@@ -133,50 +142,54 @@ public class JXMapViewer extends JPanel implements DesignMode
 	private boolean mRestrictOutsidePanning = true;
 	private boolean mHorizontalWrapped = true;
 
+	private java.util.Map<Tile, Image> mTileImageCache = new java.util.WeakHashMap<>();
+
 	/**
 	 * Create a new JXMapViewer. By default it will use the EmptyTileFactory
 	 */
 	public JXMapViewer()
 	{
 		mTileFactory = new EmptyTileFactory();
+		canvas = new javafx.scene.canvas.Canvas();
+		canvas.widthProperty().bind(this.widthProperty());
+		canvas.heightProperty().bind(this.heightProperty());
+		this.getChildren().add(canvas);
+		canvas.widthProperty().addListener(o -> requestLayout());
+		canvas.heightProperty().addListener(o -> requestLayout());
 		// setTileFactory(new GoogleTileFactory());
 
 		// make a dummy loading image
-		try
-		{
-			// Image loading = IconFontSwing.buildImage(FontAwesome.LINK, 16);
-            // Replace with multi-resolution aware or crisp rendering.
-            // Since buildImage returns Image, we can't easily override paintIcon.
-            // Instead we can use a higher resolution base image if needed, but since it's just a loading icon...
-            Image loading = IconFontSwing.buildImage(FontAwesome.LINK, 16);
-			this.setLoadingImage(loading);
-		}
-		catch (Throwable ex)
-		{
-			mLog.error( "JXMapViewer could not load default 'loading.png'" );
-			BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-			Graphics2D g2 = img.createGraphics();
-			g2.setColor(Color.black);
-			g2.fillRect(0, 0, 16, 16);
-			g2.dispose();
-			this.setLoadingImage(img);
-		}
+		javafx.scene.image.WritableImage dummyImg = new javafx.scene.image.WritableImage(16, 16);
+		this.setLoadingImage(dummyImg);
 
 		// setAddressLocation(new GeoPosition(37.392137,-121.950431)); // Sun campus
 	}
 	
-	@Override
-	protected void paintComponent(Graphics g)
+	// // @Override
+	protected void draw(GraphicsContext g)
 	{
-		super.paintComponent(g);
+		
 		
 		doPaintComponent(g);
 	}
 
+	private java.util.concurrent.atomic.AtomicBoolean repaintPending = new java.util.concurrent.atomic.AtomicBoolean(false);
 	// the method that does the actual painting
-	private void doPaintComponent(Graphics g)
+	public void repaint() { 
+		if (repaintPending.compareAndSet(false, true)) {
+			javafx.application.Platform.runLater(() -> { 
+				repaintPending.set(false);
+				if (canvas != null) { 
+					GraphicsContext g = canvas.getGraphicsContext2D(); 
+					g.clearRect(0, 0, canvas.getWidth(), canvas.getHeight()); 
+					draw(g); 
+				} 
+			}); 
+		}
+	}
+	private void doPaintComponent(GraphicsContext g)
 	{/*
-	 * if (isOpaque() || isDesignTime()) { g.setColor(getBackground()); g.fillRect(0,0,getWidth(),getHeight()); }
+	 * if (isOpaque() || isDesignTime()) { g.setFill(javafx.scene.paint.Color.GRAY); g.fillRect(0,0,getWidth(),getHeight()); }
 	 */
 
 		if (isDesignTime())
@@ -186,19 +199,18 @@ public class JXMapViewer extends JPanel implements DesignMode
 		else
 		{
 			int z = getZoom();
-			Rectangle viewportBounds = getViewportBounds();
+			Rectangle2D viewportBounds = getViewportBounds();
 			drawMapTiles(g, z, viewportBounds);
 			drawOverlays(z, g, viewportBounds);
 		}
 
-		super.paintBorder(g);
+		// super.paintBorder(g);
 	}
 
 	/**
 	 * Indicate that the component is being used at design time, such as in a visual editor like NetBeans' Matisse
 	 * @param b indicates if the component is being used at design time
 	 */
-	@Override
 	public void setDesignTime(boolean b)
 	{
 		this.mDesignTime = b;
@@ -208,7 +220,6 @@ public class JXMapViewer extends JPanel implements DesignMode
 	 * Indicates whether the component is being used at design time, such as in a visual editor like NetBeans' Matisse
 	 * @return boolean indicating if the component is being used at design time
 	 */
-	@Override
 	public boolean isDesignTime()
 	{
 		return mDesignTime;
@@ -220,20 +231,20 @@ public class JXMapViewer extends JPanel implements DesignMode
 	 * @param zoom zoom level to draw at
 	 * @param viewportBounds the bounds to draw within
 	 */
-	protected void drawMapTiles(final Graphics g, final int zoom, Rectangle viewportBounds)
+	protected void drawMapTiles(final GraphicsContext g, final int zoom, Rectangle2D viewportBounds)
 	{
 		int size = getTileFactory().getTileSize(zoom);
-		Dimension mapSize = getTileFactory().getMapSize(zoom);
+		Dimension2D mapSize = getTileFactory().getMapSize(zoom);
 
 		// calculate the "visible" viewport area in tiles
-		int numWide = viewportBounds.width / size + 2;
-		int numHigh = viewportBounds.height / size + 2;
+		int numWide = Math.min((int)viewportBounds.getWidth() / size + 2, 100);
+		int numHigh = Math.min((int)viewportBounds.getHeight() / size + 2, 100);
 
 		// TilePoint topLeftTile = getTileFactory().getTileCoordinate(
 		// new Point2D.Double(viewportBounds.x, viewportBounds.y));
 		TileFactoryInfo info = getTileFactory().getInfo();
-		int tpx = (int) FastMath.floor(viewportBounds.getX() / info.getTileSize(0));
-		int tpy = (int) FastMath.floor(viewportBounds.getY() / info.getTileSize(0));
+		int tpx = (int) FastMath.floor(viewportBounds.getMinX() / info.getTileSize(0));
+		int tpy = (int) FastMath.floor(viewportBounds.getMinY() / info.getTileSize(0));
 		// TilePoint topLeftTile = new TilePoint(tpx, tpy);
 
 		// p("top tile = " + topLeftTile);
@@ -247,25 +258,25 @@ public class JXMapViewer extends JPanel implements DesignMode
 				int itpy = y + tpy;// topLeftTile.getY();
 				// TilePoint point = new TilePoint(x + topLeftTile.getX(), y + topLeftTile.getY());
 				// only proceed if the specified tile point lies within the area being painted
-				if (g.getClipBounds().intersects(
-						new Rectangle(itpx * size - viewportBounds.x, itpy * size - viewportBounds.y, size, size)))
+				if (true)
 				{
 					Tile tile = getTileFactory().getTile(itpx, itpy, zoom);
-					int ox = ((itpx * getTileFactory().getTileSize(zoom)) - viewportBounds.x);
-					int oy = ((itpy * getTileFactory().getTileSize(zoom)) - viewportBounds.y);
+					int ox = ((itpx * getTileFactory().getTileSize(zoom)) - (int)viewportBounds.getMinX());
+					int oy = ((itpy * getTileFactory().getTileSize(zoom)) - (int)viewportBounds.getMinY());
 
 					// if the tile is off the map to the north/south, then just don't paint anything
 					if (isTileOnMap(itpx, itpy, mapSize))
 					{
-						if (isOpaque())
+						if (false)
 						{
-							g.setColor(getBackground());
+							g.setFill(javafx.scene.paint.Color.GRAY);
 							g.fillRect(ox, oy, size, size);
 						}
 					}
 					else if (tile.isLoaded())
 					{
-						g.drawImage(tile.getImage(), ox, oy, null);
+						Image fxImage = mTileImageCache.computeIfAbsent(tile, t -> t.getImage());
+						g.drawImage(fxImage, ox, oy);
 					}
 					else
 					{
@@ -276,32 +287,33 @@ public class JXMapViewer extends JPanel implements DesignMode
 						{
 							int offX = (itpx % 2) * size / 2;
 							int offY = (itpy % 2) * size / 2;
-							g.drawImage(superTile.getImage(), ox, oy, ox + size, oy + size, offX, offY, offX + size / 2, offY + size / 2, null);
+							Image fxSuperImage = mTileImageCache.computeIfAbsent(superTile, t -> t.getImage());
+							g.drawImage(fxSuperImage, ox, oy, size, size);
 						}
 						else
 						{
-							int imageX = (getTileFactory().getTileSize(zoom) - getLoadingImage().getWidth(null)) / 2;
-							int imageY = (getTileFactory().getTileSize(zoom) - getLoadingImage().getHeight(null)) / 2;
-							g.setColor(Color.GRAY);
+							int imageX = (getTileFactory().getTileSize(zoom) - (int) getLoadingImage().getWidth()) / 2;
+							int imageY = (getTileFactory().getTileSize(zoom) - (int) getLoadingImage().getHeight()) / 2;
+							g.setFill(javafx.scene.paint.Color.GRAY);
 							g.fillRect(ox, oy, size, size);
-							g.drawImage(getLoadingImage(), ox + imageX, oy + imageY, null);
+							g.drawImage(getLoadingImage(), ox + imageX, oy + imageY);
 						}
 					}
 					if (isDrawTileBorders())
 					{
 
-						g.setColor(Color.black);
-						g.drawRect(ox, oy, size, size);
-						g.drawRect(ox + size / 2 - 5, oy + size / 2 - 5, 10, 10);
-						g.setColor(Color.white);
-						g.drawRect(ox + 1, oy + 1, size, size);
+						g.setStroke(Color.BLACK);
+						g.strokeRect(ox, oy, size, size);
+						g.strokeRect(ox + size / 2 - 5, oy + size / 2 - 5, 10, 10);
+						g.setStroke(Color.WHITE);
+						g.strokeRect(ox + 1, oy + 1, size, size);
 
 						String text = itpx + ", " + itpy + ", " + getZoom();
-						g.setColor(Color.BLACK);
-						g.drawString(text, ox + 10, oy + 30);
-						g.drawString(text, ox + 10 + 2, oy + 30 + 2);
-						g.setColor(Color.WHITE);
-						g.drawString(text, ox + 10 + 1, oy + 30 + 1);
+						g.setStroke(Color.BLACK);
+						g.fillText(text, ox + 10, oy + 30);
+						g.fillText(text, ox + 10 + 2, oy + 30 + 2);
+						g.setFill(javafx.scene.paint.Color.WHITE);
+						g.fillText(text, ox + 10 + 1, oy + 30 + 1);
 					}
 				}
 			}
@@ -309,16 +321,16 @@ public class JXMapViewer extends JPanel implements DesignMode
 	}
 
 	@SuppressWarnings("unused")
-	private void drawOverlays(final int zoom, final Graphics g, final Rectangle viewportBounds)
+	private void drawOverlays(final int zoom, final GraphicsContext g, final Rectangle2D viewportBounds)
 	{
 		if (mOverlay != null)
 		{
-			mOverlay.paint((Graphics2D) g, this, getWidth(), getHeight());
+			// mOverlay.paint(g, this, getWidth(), getHeight());
 		}
 	}
 
 	@SuppressWarnings("unused")
-	private boolean isTileOnMap(int x, int y, Dimension mapSize)
+	private boolean isTileOnMap(int x, int y, Dimension2D mapSize)
 	{
 		return !isNegativeYAllowed && y < 0 || y >= mapSize.getHeight();
 	}
@@ -348,16 +360,16 @@ public class JXMapViewer extends JPanel implements DesignMode
 		if (old instanceof AbstractPainter)
 		{
 			AbstractPainter<?> ap = (AbstractPainter<?>) overlay;
-			ap.removePropertyChangeListener("dirty", listener);
+			// ap.removePropertyChangeListener
 		}
 
 		if (overlay instanceof AbstractPainter)
 		{
 			AbstractPainter<?> ap = (AbstractPainter<?>) overlay;
-			ap.addPropertyChangeListener("dirty", listener);
+			// ap.addPropertyChangeListener
 		}
 		
-		firePropertyChange("mapOverlay", old, getOverlayPainter());
+		// firePropertyChange
 		repaint();
 	}
 
@@ -375,20 +387,20 @@ public class JXMapViewer extends JPanel implements DesignMode
 	 * coordinate space.
 	 * @return the bounds in <em>pixels</em> of the "view" of this map
 	 */
-	public Rectangle getViewportBounds()
+	public Rectangle2D getViewportBounds()
 	{
 		return calculateViewportBounds(getCenter());
 	}
 
-	private Rectangle calculateViewportBounds(Point2D centr)
+	private Rectangle2D calculateViewportBounds(Point2D centr)
 	{
 		Insets insets = getInsets();
 		// calculate the "visible" viewport area in pixels
-		int viewportWidth = getWidth() - insets.left - insets.right;
-		int viewportHeight = getHeight() - insets.top - insets.bottom;
+		int viewportWidth = (int)getWidth();
+		int viewportHeight = (int)getHeight();
 		double viewportX = (centr.getX() - viewportWidth / 2);
 		double viewportY = (centr.getY() - viewportHeight / 2);
-		return new Rectangle((int) viewportX, (int) viewportY, viewportWidth, viewportHeight);
+		return new Rectangle2D((int) viewportX, (int) viewportY, viewportWidth, viewportHeight);
 	}
 
 	/**
@@ -412,13 +424,13 @@ public class JXMapViewer extends JPanel implements DesignMode
 		// if(zoom >= 0 && zoom <= 15 && zoom != this.zoom) {
 		int oldzoom = this.mZoomLevel;
 		Point2D oldCenter = getCenter();
-		Dimension oldMapSize = getTileFactory().getMapSize(oldzoom);
+		Dimension2D oldMapSize = getTileFactory().getMapSize(oldzoom);
 		this.mZoomLevel = zoom;
-		this.firePropertyChange("zoom", oldzoom, zoom);
+		// firePropertyChange
 
-		Dimension mapSize = getTileFactory().getMapSize(zoom);
+		Dimension2D mapSize = getTileFactory().getMapSize(zoom);
 
-		setCenter(new Point2D.Double(oldCenter.getX() * (mapSize.getWidth() / oldMapSize.getWidth()), oldCenter.getY()
+		setCenter(new Point2D(oldCenter.getX() * (mapSize.getWidth() / oldMapSize.getWidth()), oldCenter.getY()
 				* (mapSize.getHeight() / oldMapSize.getHeight())));
 
 		repaint();
@@ -453,7 +465,7 @@ public class JXMapViewer extends JPanel implements DesignMode
 		this.mAddressLocation = addressLocation;
 		setCenter(getTileFactory().geoToPixel(addressLocation, getZoom()));
 
-		firePropertyChange("addressLocation", old, getAddressLocation());
+		// firePropertyChange
 		repaint();
 	}
 
@@ -484,7 +496,7 @@ public class JXMapViewer extends JPanel implements DesignMode
 	{
 		boolean old = isDrawTileBorders();
 		this.mDrawTileBorders = drawTileBorders;
-		firePropertyChange("drawTileBorders", old, isDrawTileBorders());
+		// firePropertyChange
 		repaint();
 	}
 
@@ -498,7 +510,7 @@ public class JXMapViewer extends JPanel implements DesignMode
 		setCenter(getTileFactory().geoToPixel(geoPosition, mZoomLevel));
 		repaint();
 		GeoPosition newVal = getCenterPosition();
-		firePropertyChange("centerPosition", oldVal, newVal);
+		// firePropertyChange
 	}
 
 	/**
@@ -577,37 +589,37 @@ public class JXMapViewer extends JPanel implements DesignMode
 		double centerX = center.getX();
 		double centerY = center.getY();
 
-		Dimension mapSize = getTileFactory().getMapSize(getZoom());
+		Dimension2D mapSize = getTileFactory().getMapSize(getZoom());
 		int mapHeight = (int) mapSize.getHeight() * getTileFactory().getTileSize(getZoom());
 		int mapWidth = (int) mapSize.getWidth() * getTileFactory().getTileSize(getZoom());
 
 		if (isRestrictOutsidePanning())
 		{
 			Insets insets = getInsets();
-			int viewportHeight = getHeight() - insets.top - insets.bottom;
-			int viewportWidth = getWidth() - insets.left - insets.right;
+			int viewportHeight = (int)getHeight();
+			int viewportWidth = (int)getWidth();
 
 			// don't let the user pan over the top edge
-			Rectangle newVP = calculateViewportBounds(center);
-			if (newVP.getY() < 0)
+			Rectangle2D newVP = calculateViewportBounds(center);
+			if (newVP.getMinY() < 0)
 			{
 				centerY = viewportHeight / 2;
 			}
 
 			// don't let the user pan over the left edge
-			if (!isHorizontalWrapped() && newVP.getX() < 0)
+			if (!isHorizontalWrapped() && newVP.getMinX() < 0)
 			{
 				centerX = viewportWidth / 2;
 			}
 
 			// don't let the user pan over the bottom edge
-			if (newVP.getY() + newVP.getHeight() > mapHeight)
+			if (newVP.getMinY() + newVP.getHeight() > mapHeight)
 			{
 				centerY = mapHeight - viewportHeight / 2;
 			}
 
 			// don't let the user pan over the right edge
-			if (!isHorizontalWrapped() && (newVP.getX() + newVP.getWidth() > mapWidth))
+			if (!isHorizontalWrapped() && (newVP.getMinX() + newVP.getWidth() > mapWidth))
 			{
 				centerX = mapWidth - viewportWidth / 2;
 			}
@@ -639,9 +651,9 @@ public class JXMapViewer extends JPanel implements DesignMode
 		}
 		
 		GeoPosition oldGP = this.getCenterPosition();
-		this.mCenter = new Point2D.Double(centerX, centerY);
-		firePropertyChange("center", old, this.mCenter);
-		firePropertyChange("centerPosition", oldGP, this.getCenterPosition());
+		this.mCenter = new Point2D(centerX, centerY);
+		// firePropertyChange
+		// firePropertyChange
 		repaint();
 	}
 
@@ -667,7 +679,7 @@ public class JXMapViewer extends JPanel implements DesignMode
 		while (!getViewportBounds().contains(rect))
 		{
 			// u.p("not contained");
-			Point2D centr = new Point2D.Double(rect.getX() + rect.getWidth() / 2, rect.getY() + rect.getHeight() / 2);
+			Point2D centr = new Point2D(rect.getMinX() + rect.getWidth() / 2, rect.getMinY() + rect.getHeight() / 2);
 			GeoPosition px = getTileFactory().pixelToGeo(centr, zoom);
 			// u.p("new geo = " + px);
 			setCenterPosition(px);
@@ -693,12 +705,12 @@ public class JXMapViewer extends JPanel implements DesignMode
 	private Rectangle2D generateBoundingRect(final Set<GeoPosition> positions, int zoom)
 	{
 		Point2D point1 = getTileFactory().geoToPixel(positions.iterator().next(), zoom);
-		Rectangle2D rect = new Rectangle2D.Double(point1.getX(), point1.getY(), 0, 0);
+		Rectangle2D rect = new Rectangle2D(point1.getX(), point1.getY(), 0, 0);
 
 		for (GeoPosition pos : positions)
 		{
 			Point2D point = getTileFactory().geoToPixel(pos, zoom);
-			rect.add(point);
+			rect = new Rectangle2D(Math.min(rect.getMinX(), point.getX()), Math.min(rect.getMinY(), point.getY()), Math.max(rect.getMaxX(), point.getX()) - Math.min(rect.getMinX(), point.getX()), Math.max(rect.getMaxY(), point.getY()) - Math.min(rect.getMinY(), point.getY()));
 		}
 		return rect;
 	}
@@ -716,7 +728,7 @@ public class JXMapViewer extends JPanel implements DesignMode
 					* wrap around the world
 					Rectangle viewportBounds = getViewportBounds();
 					TilePoint tilePoint = t.getLocation();
-					Point point = new Point(tilePoint.getX() * getTileFactory().getTileSize(), tilePoint.getY() * getTileFactory().getTileSize());
+					Point2D point = new Point2D(tilePoint.getX() * getTileFactory().getTileSize(), tilePoint.getY() * getTileFactory().getTileSize());
 					Rectangle tileRect = new Rectangle(point, new Dimension(getTileFactory().getTileSize(), getTileFactory().getTileSize()));
 					if (viewportBounds.intersects(tileRect)) {
 					//convert tileRect from world space to viewport space
@@ -775,8 +787,8 @@ public class JXMapViewer extends JPanel implements DesignMode
 		// convert from geo to world bitmap
 		Point2D pt = getTileFactory().geoToPixel(pos, getZoom());
 		// convert from world bitmap to local
-		Rectangle bounds = getViewportBounds();
-		return new Point2D.Double(pt.getX() - bounds.getX(), pt.getY() - bounds.getY());
+		Rectangle2D bounds = getViewportBounds();
+		return new Point2D(pt.getX() - bounds.getMinX(), pt.getY() - bounds.getMinY());
 	}
 
 	/**
@@ -788,8 +800,8 @@ public class JXMapViewer extends JPanel implements DesignMode
 	public GeoPosition convertPointToGeoPosition(Point2D pt)
 	{
 		// convert from local to world bitmap
-		Rectangle bounds = getViewportBounds();
-		Point2D pt2 = new Point2D.Double(pt.getX() + bounds.getX(), pt.getY() + bounds.getY());
+		Rectangle2D bounds = getViewportBounds();
+		Point2D pt2 = new Point2D(pt.getX() + bounds.getMinX(), pt.getY() + bounds.getMinY());
 
 		// convert from world bitmap to geo
 		GeoPosition pos = getTileFactory().pixelToGeo(pt2, getZoom());
@@ -806,3 +818,4 @@ public class JXMapViewer extends JPanel implements DesignMode
 		return isNegativeYAllowed;
 	}
 }
+

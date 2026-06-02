@@ -22,6 +22,7 @@ package io.github.dsheirer.gui.preference;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.playlist.ViewPlaylistRequest;
 import io.github.dsheirer.preference.UserPreferences;
+import javafx.scene.control.ScrollPane;
 import java.util.EnumMap;
 import java.util.Map;
 import javafx.beans.value.ChangeListener;
@@ -85,11 +86,16 @@ public class UserPreferencesEditor extends BorderPane
     {
         mUserPreferences = userPreferences;
         mIconModel = iconModel;
+        setMinSize(0, 0);
 
-        getStylesheets().add(getClass().getResource("/sdrtrunk_style.css").toExternalForm());
+        java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
+        if (cssUrl != null) {
+            getStylesheets().add(cssUrl.toExternalForm());
+        }
         getStyleClass().add("preferences-main-area");
 
         HBox contentBox = new HBox();
+        contentBox.setMinHeight(0);
         HBox.setHgrow(getEditorAndButtonsBox(), Priority.ALWAYS);
 
         Node sidebar = getEditorSelectionTreeView(); // We will rename the inner method but keep variable reference
@@ -136,6 +142,8 @@ public class UserPreferencesEditor extends BorderPane
             mEditorAndButtonsBox = new VBox();
             mEditorAndButtonsBox.getStyleClass().add("preferences-main-area");
             mEditorAndButtonsBox.setPadding(new Insets(20, 20, 20, 20));
+            mEditorAndButtonsBox.setMinWidth(0);
+            mEditorAndButtonsBox.setMinHeight(0);
             mEditor = getDefaultEditor();
             VBox.setVgrow(getDefaultEditor(), Priority.ALWAYS);
             mEditorAndButtonsBox.getChildren().addAll(getDefaultEditor());
@@ -171,6 +179,8 @@ public class UserPreferencesEditor extends BorderPane
             ListView<Object> listView = new ListView<>();
             listView.getStyleClass().addAll("preferences-sidebar", "hig-sidebar-list");
             listView.setMinWidth(250);
+            listView.setMaxWidth(250);
+            listView.setMinHeight(0);
 
             listView.getItems().addAll(
                 "Application",
@@ -309,7 +319,21 @@ public class UserPreferencesEditor extends BorderPane
             }
             else
             {
-                editor = PreferenceEditorFactory.getEditor(type, getUserPreferences(), mIconModel);
+                Node rawEditor = PreferenceEditorFactory.getEditor(type, getUserPreferences(), mIconModel);
+                
+                // Wrap form-based editors in transparent ScrollPane, except default panel and table-based ICON_MANAGER
+                if (type != PreferenceEditorType.ICON_MANAGER) {
+                    ScrollPane scrollPane = new ScrollPane(rawEditor);
+                    scrollPane.setFitToWidth(true);
+                    scrollPane.setFitToHeight(true);
+                    scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+                    scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+                    scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-padding: 0;");
+                    editor = scrollPane;
+                } else {
+                    editor = rawEditor;
+                }
+                
                 mEditors.put(type, editor);
             }
         }

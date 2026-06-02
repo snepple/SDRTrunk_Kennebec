@@ -21,14 +21,10 @@ package io.github.dsheirer.spectrum.menu;
 
 import io.github.dsheirer.spectrum.ComplexDftProcessor;
 
-import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javafx.scene.control.CheckMenuItem;
 
-public class FrameRateItem extends JCheckBoxMenuItem
+public class FrameRateItem extends CheckMenuItem
 {
-    private static final long serialVersionUID = 1L;
-
     private ComplexDftProcessor mComplexDftProcessor;
     private int mFrameRate;
     
@@ -44,13 +40,8 @@ public class FrameRateItem extends JCheckBoxMenuItem
     		setSelected( true );
     	}
     	
-    	addActionListener( new ActionListener() 
-    	{
-			@Override
-            public void actionPerformed( ActionEvent arg0 )
-            {
-				mComplexDftProcessor.setFrameRate( mFrameRate );
-            }
+    	setOnAction( event -> {
+			mComplexDftProcessor.setFrameRate( mFrameRate );
 		} );
     }
 }

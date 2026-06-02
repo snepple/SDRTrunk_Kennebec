@@ -1,3 +1,6 @@
+
+
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2026 Dennis Sheirer
@@ -17,6 +20,20 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.audio.playback;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Separator;
+
+import io.github.dsheirer.module.ProcessingChain;
+
+import javafx.application.Platform;
+
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.audio.broadcast.BroadcastModel;
@@ -28,57 +45,59 @@ import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.settings.SettingsManager;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import javax.swing.UIManager;
+
+import javafx.animation.FadeTransition;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.FileChooser;
+import javafx.util.Duration;
+
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.swing.IconFontSwing;
-import net.miginfocom.swing.MigLayout;
 
 import javax.sound.sampled.FloatControl;
-import javax.swing.Icon;
-import javax.swing.JButton;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JSlider;
-import javax.swing.SwingUtilities;
-import javax.swing.BorderFactory;
+import java.io.File;
+
 
 /**
- * Audio playback panel
+ * Audio playback panel - iTunes-style sticky header
  */
-public class AudioPanel extends JPanel implements Listener<AudioEvent>
+public class AudioPanel extends HBox implements Listener<AudioEvent>
 {
+    private final io.github.dsheirer.playlist.PlaylistManager mPlaylistManager;
     private final AliasModel mAliasModel;
     private final AudioPlaybackManager mAudioPlaybackManager;
     private final IconModel mIconModel;
     private final SettingsManager mSettingsManager;
     private final UserPreferences mUserPreferences;
     private AudioChannelsPanel mAudioChannelsPanel;
+    private javafx.scene.control.ScrollPane mAudioChannelsScroller;
     private final BroadcastModel mBroadcastModel;
-    private JButton mMuteButton;
+    private Button mMuteButton;
+
+    // Now Playing display components
+    private Label mChannelNameLabel;
+    private Label mAliasLabel;
+    private Label mStreamingLabel;
+    private ImageView mArtworkView;
+    private StackPane mArtworkContainer;
+    private javafx.scene.image.Image mCustomArtwork = null;
 
     /**
      * Constructs an instance
-     * @param iconModel for icon lookup
-     * @param userPreferences for preference lookup
-     * @param settingsManager to monitor for changes
-     * @param audioPlaybackManager for accessing the audio output
-     * @param aliasModel for alias lookup
      */
     public AudioPanel(IconModel iconModel, UserPreferences userPreferences, SettingsManager settingsManager,
-                      AudioPlaybackManager audioPlaybackManager, AliasModel aliasModel, BroadcastModel broadcastModel)
+                      AudioPlaybackManager audioPlaybackManager, io.github.dsheirer.playlist.PlaylistManager playlistManager)
     {
         mIconModel = iconModel;
         mSettingsManager = settingsManager;
         mAudioPlaybackManager = audioPlaybackManager;
-        mAliasModel = aliasModel;
+        mPlaylistManager = playlistManager;
+        mAliasModel = playlistManager.getAliasModel();
+        mBroadcastModel = playlistManager.getBroadcastModel();
         mUserPreferences = userPreferences;
-        mBroadcastModel = broadcastModel;
         mAudioPlaybackManager.addAudioEventListener(this);
+        MyEventBus.getGlobalEventBus().register(this);
         init();
     }
 
@@ -87,15 +106,200 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
      */
     private void init()
     {
-        setLayout(new MigLayout("insets 2 5 2 5", "[]5[grow,fill]5[]", "[fill]0[]"));
-        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor") != null ? UIManager.getColor("Component.borderColor") : Color.LIGHT_GRAY));
-        setBackground(UIManager.getColor("Panel.background"));
+        setAlignment(Pos.CENTER_LEFT);
+        setSpacing(0);
+        setMinHeight(64);
+        setPrefHeight(64);
+        setMaxHeight(64);
+        setStyle("-fx-background-color: rgba(30,30,36,0.97); -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 0 0 1 0;");
+
+        // --- LEFT: Artwork + Upload ---
+        mArtworkView = new ImageView();
+        mArtworkView.setFitWidth(46);
+        mArtworkView.setFitHeight(46);
+        mArtworkView.setPreserveRatio(false);
+        mArtworkView.setSmooth(true);
+
+        resetArtworkViewPlaceholder();
+
+        // Clip to squircle (rounded rect ~20px radius)
+        Rectangle artClip = new Rectangle(46, 46);
+        artClip.setArcWidth(12);
+        artClip.setArcHeight(12);
+        mArtworkView.setClip(artClip);
+
+        DropShadow artShadow = new DropShadow();
+        artShadow.setRadius(8);
+        artShadow.setColor(Color.rgb(0, 0, 0, 0.5));
+        artShadow.setOffsetY(2);
+        mArtworkView.setEffect(artShadow);
+
+        mArtworkContainer = new StackPane(mArtworkView);
+        mArtworkContainer.setPadding(new Insets(9, 10, 9, 12));
+        mArtworkContainer.setCursor(javafx.scene.Cursor.HAND);
+        Tooltip.install(mArtworkContainer, new Tooltip("Click to set custom channel artwork"));
+        mArtworkContainer.setOnMouseClicked(e -> openArtworkChooser());
+
+        // --- CENTER: Now Playing metadata display ---
+        mChannelNameLabel = new Label("");
+        mChannelNameLabel.setStyle("-fx-text-fill: #F0F0F5; -fx-font-size: 13px; -fx-font-weight: bold;");
+        mChannelNameLabel.setMaxWidth(Double.MAX_VALUE);
+        mChannelNameLabel.setEllipsisString("…");
+
+        mAliasLabel = new Label("");
+        mAliasLabel.setStyle("-fx-text-fill: #A0A0B0; -fx-font-size: 11px;");
+        mAliasLabel.setMaxWidth(Double.MAX_VALUE);
+
+        mStreamingLabel = new Label("");
+        mStreamingLabel.setStyle("-fx-text-fill: #6060A0; -fx-font-size: 10px;");
+        mStreamingLabel.setMaxWidth(Double.MAX_VALUE);
+
+        VBox metaBox = new VBox(1, mChannelNameLabel, mAliasLabel, mStreamingLabel);
+        metaBox.setAlignment(Pos.CENTER_LEFT);
+        metaBox.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(metaBox, Priority.ALWAYS);
+
+        // --- RIGHT: Mute + Volume Slider + Audio Channels ---
         mMuteButton = new MuteButton();
-        mMuteButton.setBackground(getBackground());
-        add(mMuteButton, "cell 0 0");
+        mMuteButton.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+
+        Label volIcon = new Label("🔊");
+        volIcon.setStyle("-fx-text-fill: #808090; -fx-font-size: 11px;");
+
+        Slider masterVolSlider = new MasterVolumeSlider();
+        masterVolSlider.setPrefWidth(90);
+        masterVolSlider.setTooltip(new Tooltip("Master Volume"));
+
         mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel, mBroadcastModel);
-        add(mAudioChannelsPanel, "cell 1 0, growx");
-        addMouseListener(new MouseSelectionListener());
+        mAudioChannelsScroller = new javafx.scene.control.ScrollPane(mAudioChannelsPanel);
+        mAudioChannelsScroller.getStyleClass().add("audio-channels-scroller");
+        mAudioChannelsScroller.setStyle("-fx-background-color: transparent;");
+        mAudioChannelsScroller.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
+        mAudioChannelsScroller.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        mAudioChannelsScroller.setFitToHeight(true);
+        mAudioChannelsScroller.setPrefWidth(200);
+        mAudioChannelsScroller.setVisible(false);
+        mAudioChannelsScroller.setManaged(false);
+
+        HBox rightControls = new HBox(6, mMuteButton, volIcon, masterVolSlider);
+        rightControls.setAlignment(Pos.CENTER);
+        rightControls.setPadding(new Insets(0, 12, 0, 8));
+
+        Separator sep = new Separator(Orientation.VERTICAL);
+        sep.setStyle("-fx-background-color: rgba(255,255,255,0.1);");
+
+        // Assemble the header
+        getChildren().addAll(mArtworkContainer, metaBox, mAudioChannelsScroller, sep, rightControls);
+    }
+
+    /**
+     * Opens a file chooser to select a custom artwork image (in-memory only, no DB write).
+     */
+    private void openArtworkChooser() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Select Channel Artwork");
+        chooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp")
+        );
+
+        // Need a Stage reference - use the scene's window
+        javafx.stage.Window window = (getScene() != null) ? getScene().getWindow() : null;
+        File file = (window != null) ? chooser.showOpenDialog(window) : null;
+
+        if (file != null) {
+            try {
+                javafx.scene.image.Image img = new javafx.scene.image.Image(file.toURI().toString(), 46, 46, false, true);
+                mCustomArtwork = img;
+                mArtworkView.setImage(img);
+
+                // Fade in the new artwork
+                FadeTransition ft = new FadeTransition(Duration.millis(300), mArtworkView);
+                ft.setFromValue(0.3);
+                ft.setToValue(1.0);
+                ft.play();
+            } catch (Exception ex) {
+                // silently ignore invalid images
+            }
+        }
+    }
+
+    public static class ActiveCallUpdateEvent {
+        private String mChannelName;
+        private String mAliasName;
+        
+        public ActiveCallUpdateEvent(String channelName, String aliasName) {
+            mChannelName = channelName;
+            mAliasName = aliasName;
+        }
+        
+        public String getChannelName() { return mChannelName; }
+        public String getAliasName() { return mAliasName; }
+    }
+
+    @com.google.common.eventbus.Subscribe
+    public void onActiveCallUpdate(ActiveCallUpdateEvent event) {
+        updateNowPlaying(event.getChannelName(), event.getAliasName(), "");
+    }
+
+    /**
+     * Updates the Now Playing display with channel information.
+     * Called from the audio playback manager or channel metadata updates.
+     */
+    public void updateNowPlaying(String channelName, String aliasName, String streamingInfo) {
+        Platform.runLater(() -> {
+            if (channelName != null && !channelName.isEmpty() && !channelName.equals("No Active Channel")) {
+                mChannelNameLabel.setText(channelName);
+                
+                // Lookup channel and load artwork
+                io.github.dsheirer.controller.channel.Channel chan = null;
+                if (mPlaylistManager != null && mPlaylistManager.getChannelModel() != null) {
+                    for (io.github.dsheirer.controller.channel.Channel c : mPlaylistManager.getChannelModel().getChannels()) {
+                        if (channelName.equals(c.getName())) {
+                            chan = c;
+                            break;
+                        }
+                    }
+                }
+                
+                if (chan != null && chan.getImagePath() != null && !chan.getImagePath().isEmpty()) {
+                    try {
+                        java.io.File file = new java.io.File(chan.getImagePath());
+                        if (file.exists()) {
+                            javafx.scene.image.Image img = new javafx.scene.image.Image(file.toURI().toString(), 46, 46, false, true);
+                            mArtworkView.setImage(img);
+                        } else {
+                            resetArtworkViewPlaceholder();
+                        }
+                    } catch (Exception ex) {
+                        resetArtworkViewPlaceholder();
+                    }
+                } else {
+                    resetArtworkViewPlaceholder();
+                }
+            } else {
+                mChannelNameLabel.setText("");
+                resetArtworkViewPlaceholder();
+            }
+            mAliasLabel.setText(aliasName != null && !aliasName.equals("—") ? aliasName : "");
+            mStreamingLabel.setText(streamingInfo != null ? streamingInfo : "");
+        });
+    }
+
+    private void resetArtworkViewPlaceholder() {
+        // Generate a default gradient artwork placeholder
+        javafx.scene.canvas.Canvas artCanvas = new javafx.scene.canvas.Canvas(46, 46);
+        javafx.scene.canvas.GraphicsContext gc = artCanvas.getGraphicsContext2D();
+        LinearGradient artGrad = new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+            new Stop(0, Color.web("#4f8ef7")), new Stop(1, Color.web("#8b5cf6")));
+        gc.setFill(artGrad);
+        gc.fillRoundRect(0, 0, 46, 46, 10, 10);
+        gc.setFill(Color.web("rgba(255,255,255,0.25)"));
+        // Simple waveform lines as placeholder art
+        for (int i = 0; i < 5; i++) {
+            double barH = 8 + (i % 3) * 8;
+            gc.fillRect(6 + i * 8, (46 - barH) / 2.0, 5, barH);
+        }
+        mArtworkView.setImage(artCanvas.snapshot(null, null));
     }
 
     /**
@@ -109,14 +313,23 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
             case AUDIO_CONFIGURATION_CHANGE_STARTED:
                 break;
             case AUDIO_CONFIGURATION_CHANGE_COMPLETE:
-                EventQueue.invokeLater(() -> {
-                    remove(mAudioChannelsPanel);
+                Platform.runLater(() -> {
+                    getChildren().remove(mAudioChannelsScroller);
                     mAudioChannelsPanel.dispose();
                     mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel, mBroadcastModel);
-                    add(mAudioChannelsPanel, "cell 1 0, growx");
-                    mAudioChannelsPanel.repaint();
-                    revalidate();
-                    repaint();
+                    mAudioChannelsScroller = new javafx.scene.control.ScrollPane(mAudioChannelsPanel);
+                    mAudioChannelsScroller.getStyleClass().add("audio-channels-scroller");
+                    mAudioChannelsScroller.setStyle("-fx-background-color: transparent;");
+                    mAudioChannelsScroller.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
+                    mAudioChannelsScroller.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
+                    mAudioChannelsScroller.setFitToHeight(true);
+                    mAudioChannelsScroller.setPrefWidth(200);
+                    mAudioChannelsScroller.setVisible(false);
+                    mAudioChannelsScroller.setManaged(false);
+                    // Re-insert before the separator
+                    int sepIndex = getChildren().size() - 2;
+                    getChildren().add(Math.max(0, sepIndex), mAudioChannelsScroller);
+                    requestLayout();
                 });
                 break;
             default:
@@ -127,201 +340,105 @@ public class AudioPanel extends JPanel implements Listener<AudioEvent>
     /**
      * Audio output mute control menu item.
      */
-    public static class AudioOutputMuteItem extends JMenuItem
+    public static class AudioOutputMuteItem extends javafx.scene.control.MenuItem
     {
         private final AudioOutput mAudioOutput;
 
-        /**
-         * Constructs an instance
-         * @param audioOutput to mute/unmute
-         */
         public AudioOutputMuteItem(AudioOutput audioOutput)
         {
             super(audioOutput.isMuted() ? "Unmute" : "Mute");
             mAudioOutput = audioOutput;
-            addActionListener(e -> mAudioOutput.setMuted(!mAudioOutput.isMuted()));
+            setOnAction(e -> mAudioOutput.setMuted(!mAudioOutput.isMuted()));
         }
     }
 
     /**
-     * Mouse listener
+     * Master volume slider tied to the primary audio output gain control.
+     * Uses a 0-100 range where 50 = 0 dB (unity gain).
      */
-    public class MouseSelectionListener implements MouseListener
-    {
-        @Override
-        public void mouseClicked(MouseEvent event)
-        {
-            if(SwingUtilities.isRightMouseButton(event))
-            {
-                JPopupMenu popup = new JPopupMenu();
-                JMenuItem outputMenu = new JMenuItem("Audio Playback Device ...");
-                Icon icon = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.COG, 14, null);
-                outputMenu.setIcon(icon);
-                outputMenu.addActionListener(e -> MyEventBus.getGlobalEventBus()
-                        .post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.AUDIO_OUTPUT)));
-                popup.add(outputMenu);
-
-                //Add optional gain controller for th eaudio output
-                if(mAudioPlaybackManager.getAudioOutput() != null && mAudioPlaybackManager.getAudioOutput().hasGainControl())
-                {
-                    popup.add(new JPopupMenu.Separator());
-                    JMenuItem volume = new JMenuItem("Audio Volume");
-                    volume.setEnabled(false);
-                    Icon volumeIcon = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.VOLUME_UP, 14, null);
-                    volume.setIcon(volumeIcon);
-                    popup.add(volume);
-                    popup.add(new VolumeSlider(mAudioPlaybackManager.getAudioOutput().getGainControl()));
-                }
-
-                popup.show(event.getComponent(), event.getX(), event.getY());
-            }
-        }
-
-        @Override
-        public void mousePressed(MouseEvent e)
-        {
-        }
-
-        @Override
-        public void mouseReleased(MouseEvent e)
-        {
-        }
-
-        @Override
-        public void mouseEntered(MouseEvent e)
-        {
-        }
-
-        @Override
-        public void mouseExited(MouseEvent e)
-        {
-        }
-    }
-
-    /**
-     * Audio volume (gain) adjustment slider control
-     */
-    public static class VolumeSlider extends JSlider
+    public static class VolumeSlider extends javafx.scene.control.Slider
     {
         private final FloatControl mFloatControl;
 
-        /**
-         * Constructs an instance
-         * @param control to be controlled
-         */
         public VolumeSlider(FloatControl control)
         {
             super(0, 100, 0);
-
-            setMajorTickSpacing(25);
-            setMinorTickSpacing(5);
-            setPaintTicks(true);
-            setPaintLabels(true);
+            setMajorTickUnit(25);
+            setMinorTickCount(4);
+            setShowTickMarks(true);
+            setShowTickLabels(true);
             mFloatControl = control;
             setValue(getIntegerValue(mFloatControl.getValue()));
-            addChangeListener(event -> mFloatControl.shift(mFloatControl.getValue(),
-                getFloatValue(VolumeSlider.this.getValue()),
-                1000));
 
-            addMouseListener(new MouseListener()
-            {
-                @Override
-                public void mouseClicked(MouseEvent event)
-                {
-                    if(event.getClickCount() == 2)
-                    {
-                        VolumeSlider.this.setValue(50);
-                    }
-                }
-                public void mouseReleased(MouseEvent arg0) {}
-                public void mousePressed(MouseEvent arg0) {}
-                public void mouseExited(MouseEvent arg0) {}
-                public void mouseEntered(MouseEvent arg0) {}
+            valueProperty().addListener((obs, oldVal, newVal) -> {
+                mFloatControl.shift(mFloatControl.getValue(), getFloatValue(newVal.intValue()), 1000);
+            });
+            setOnMouseClicked(event -> {
+                if(event.getClickCount() == 2) VolumeSlider.this.setValue(50);
             });
         }
 
-        /**
-         * Converts the integer value to a floating point value to use in the
-         * float control.  Assumes an integer value of 50 is the 0.0 dB mid
-         * point (ie no gain ) value.
-         */
-        private int getIntegerValue(float value)
-        {
-            if(value == 0.0f)
-            {
-                return 50;
-            }
-            else if(value < 0.0f)
-            {
-                float ratio = value / mFloatControl.getMinimum();
-
-                return 50 - (int) (ratio * 50.0f);
-            }
-            else
-            {
-                float ratio = value / mFloatControl.getMaximum();
-
-                return 50 + (int) (ratio * 50.0f);
-            }
+        private int getIntegerValue(float value) {
+            if(value == 0.0f) return 50;
+            else if(value < 0.0f) return 50 - (int)((value / mFloatControl.getMinimum()) * 50.0f);
+            else return 50 + (int)((value / mFloatControl.getMaximum()) * 50.0f);
         }
 
-        private float getFloatValue(int value)
-        {
-            if(value == 50)
-            {
-                return 0.0f;
-            }
-            else if(value < 50)
-            {
-                return (float) (50 - value) / 50.0f * mFloatControl.getMinimum();
-            }
-            else
-            {
-                return (float) (value - 50) / 50.0f * mFloatControl.getMaximum();
-            }
+        private float getFloatValue(int value) {
+            if(value == 50) return 0.0f;
+            else if(value < 50) return (float)(50 - value) / 50.0f * mFloatControl.getMinimum();
+            else return (float)(value - 50) / 50.0f * mFloatControl.getMaximum();
         }
     }
 
     /**
-     * Mute button to mute all audio output channels exposed by the audio
-     * controller
+     * Master volume slider that controls overall gain (not tied to a specific FloatControl).
+     * Displays as a compact horizontal slider in the Now Playing header.
      */
-    public void setManageWidgetsButton(JButton button)
-    {
-        add(button, "cell 2 0, aligny center");
-        revalidate();
-        repaint();
+    public static class MasterVolumeSlider extends Slider {
+        public MasterVolumeSlider() {
+            super(0, 100, 75);
+            setOrientation(Orientation.HORIZONTAL);
+            setStyle("-fx-control-inner-background: #3a3a4a;");
+        }
     }
 
-    public class MuteButton extends JButton
+    public void setManageWidgetsButton(Button button)
+    {
+        getChildren().add(button);
+        requestLayout();
+    }
+
+    public class MuteButton extends Button
     {
         private boolean mMuted = false;
 
         public MuteButton()
         {
+            getStyleClass().add("mute-button");
             updateIcons();
-            setBorderPainted(false);
-            setToolTipText("Mute");
-            getAccessibleContext().setAccessibleName("Mute");
-            addActionListener(e -> {
+            setTooltip(new javafx.scene.control.Tooltip("Mute All"));
+            accessibleTextProperty().set("Mute");
+            setOnAction(e -> {
                 mMuted = !mMuted;
                 mAudioPlaybackManager.getAudioOutput().setMuted(mMuted);
-                EventQueue.invokeLater(() -> {
+                Platform.runLater(() -> {
                     updateIcons();
-                    setToolTipText(mMuted ? "Unmute" : "Mute");
-                    getAccessibleContext().setAccessibleName(mMuted ? "Unmute" : "Mute");
+                    setTooltip(new javafx.scene.control.Tooltip(mMuted ? "Unmute All" : "Mute All"));
+                    accessibleTextProperty().set(mMuted ? "Unmute" : "Mute");
                 });
             });
         }
 
         private void updateIcons() {
-            Color fg = UIManager.getColor("Label.foreground");
-            if (fg == null) fg = Color.BLACK;
-
-            Icon muted = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.VOLUME_OFF, 20, fg);
-            Icon unmuted = new io.github.dsheirer.icon.MyFontIcon(FontAwesome.VOLUME_UP, 20, fg);
-
-            setIcon(mMuted ? muted : unmuted);
+            setText(mMuted ? "🔇 Muted" : "🔊 Mute");
+            if (mMuted) {
+                if (!getStyleClass().contains("muted")) {
+                    getStyleClass().add("muted");
+                }
+            } else {
+                getStyleClass().remove("muted");
+            }
         }
     }
 }

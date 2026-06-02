@@ -18,16 +18,23 @@
  */
 
 package io.github.dsheirer.gui.viewer.sync;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.stage.Stage;
+
 
 import io.github.dsheirer.util.SwingUtils;
 import java.util.concurrent.CountDownLatch;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+import javafx.scene.layout.Pane;
 import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JFrame;
+
 
 /**
  * Utility for viewing sync detection results
@@ -77,7 +84,7 @@ public class SyncResultsViewer implements ISyncResultsListener
     {
         CountDownLatch latch = new CountDownLatch(1);
 
-        final JFXPanel fxPanel = new JFXPanel();
+        final javafx.scene.layout.Pane fxPanel = new javafx.scene.layout.Pane();
         Platform.runLater(() -> {
             Platform.setImplicitExit(false);
             SyncVisualizer syncVisualizer = new SyncVisualizer();
@@ -96,17 +103,15 @@ public class SyncResultsViewer implements ISyncResultsListener
 //                LOGGER.warn("Can't find stylesheet resource for sdrtrunk");
 //            }
 
-            fxPanel.setScene(scene);
-            fxPanel.setVisible(true);
-
-            JFrame frame = new JFrame();
+            Stage frame = new Stage();
+            frame.setScene(scene);
             frame.setTitle("Sync Results Viewer");
-            frame.setContentPane(fxPanel);
-            frame.setSize(1400, 1400);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setLocationRelativeTo(null);
+            // frame.setContentPane
+            frame.setWidth(1400); frame.setHeight(1400);
+            // frame.setDefaultCloseOperation
+            frame.centerOnScreen();
             SwingUtils.run(() -> {
-                frame.setVisible(true);
+                frame.show();
                 latch.countDown();
             });
         });

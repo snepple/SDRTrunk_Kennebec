@@ -17,6 +17,11 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.source.tuner.ui;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import io.github.dsheirer.gui.control.FrequencyTextField;
 import io.github.dsheirer.gui.control.JFrequencyControl;
@@ -37,40 +42,46 @@ import io.github.dsheirer.source.tuner.manager.TunerStatus;
 import io.github.dsheirer.spectrum.SpectralDisplayPanel;
 import io.github.dsheirer.util.SwingUtils;
 import io.github.dsheirer.util.ThreadPool;
-import java.awt.EventQueue;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
+import javafx.application.Platform;
+
+
 import java.text.CharacterIterator;
 import java.text.DecimalFormat;
 import java.text.StringCharacterIterator;
-import net.miginfocom.swing.MigLayout;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import io.github.dsheirer.gui.control.ToggleSwitch;
+import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
 import java.util.Optional;
-import javax.swing.JPanel;
-import javax.swing.JSpinner;
-import javax.swing.JToggleButton;
-import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.SpinnerModel;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.TextField;
+
+
+
+
+
+
+
 
 /**
  * Base tuner configuration editor.
  */
-public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> extends JPanel
+public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> extends VBox
         implements IDiscoveredTunerStatusListener, Listener<TunerEvent>
 {
     private Logger mLog = LoggerFactory.getLogger(TunerEditor.class);
@@ -83,29 +94,29 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     private TunerManager mTunerManager;
     private DiscoveredTuner mDiscoveredTuner;
     private C mTunerConfiguration;
-    private FrequencyAndCorrectionChangeListener mFrequencyAndCorrectionChangeListener = new FrequencyAndCorrectionChangeListener();
+    // private FrequencyAndCorrectionChangeListener...
     private JFrequencyControl mFrequencyControl;
-    private JSpinner mFrequencyCorrectionSpinner;
-    private JButton mEnabledButton;
-    private JButton mViewSpectrumButton;
-    private JButton mNewSpectrumButton;
-    private JButton mRestartTunerButton;
-    private JToggleButton mRecordButton;
+    private Spinner mFrequencyCorrectionSpinner;
+    private Button mEnabledButton;
+    private Button mViewSpectrumButton;
+    private Button mNewSpectrumButton;
+    private Button mRestartTunerButton;
+    private ToggleButton mRecordButton;
     private ButtonPanel mButtonsPanel;
     private FrequencyPanel mFrequencyPanel;
-    private JLabel mTunerIdLabel;
-    private JCheckBox mAutoPPMCheckBox;
-    private JCheckBox mAutoOptimizeSampleRateCheckBox;
-    private JLabel mMeasuredPPMLabel;
-    private JLabel mRecordingStatusLabel;
-    private JLabel mTunerStatusLabel;
-    private JLabel mTunerLockedStatusLabel;
+    private Label mTunerIdLabel;
+    private CheckBox mAutoPPMCheckBox;
+    private CheckBox mAutoOptimizeSampleRateCheckBox;
+    private Label mMeasuredPPMLabel;
+    private Label mRecordingStatusLabel;
+    private Label mTunerStatusLabel;
+    private Label mTunerLockedStatusLabel;
     private FrequencyTextField mMinimumFrequencyTextField;
     private FrequencyTextField mMaximumFrequencyTextField;
-    private JButton mResetFrequenciesButton;
+    private Button mResetFrequenciesButton;
     private boolean mLoading = false;
-    private JTextField mFriendlyNameTextField;
-    private JButton mInfoConfigButton;
+    private TextField mFriendlyNameTextField;
+    private Button mInfoConfigButton;
 
     /**
      * Constructs an instance
@@ -183,12 +194,12 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Measured PPM value received from any decoders that may be running.
      */
-    protected JLabel getMeasuredPPMLabel()
+    protected Label getMeasuredPPMLabel()
     {
         if(mMeasuredPPMLabel == null)
         {
-            mMeasuredPPMLabel = new JLabel("");
-            mMeasuredPPMLabel.setToolTipText("Displays the measured frequency error and PPM when provided by compatible channel decoders");
+            mMeasuredPPMLabel = new Label("");
+            mMeasuredPPMLabel.setTooltip(new javafx.scene.control.Tooltip("Displays the measured frequency error and PPM when provided by compatible channel decoders"));
         }
 
         return mMeasuredPPMLabel;
@@ -197,13 +208,12 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Tuner locked status label that can be turned on/off depending on tuner lock state.
      */
-    protected JLabel getTunerLockedStatusLabel()
+    protected Label getTunerLockedStatusLabel()
     {
         if(mTunerLockedStatusLabel == null)
         {
-            mTunerLockedStatusLabel = new JLabel("Channel(s) active - frequency and sample rate controls are locked");
-            mTunerLockedStatusLabel.setToolTipText("Indicates that the tuner is providing channel(s) and you can't " +
-                    "change the tuner frequency or sample rate");
+            mTunerLockedStatusLabel = new Label("Channel(s) active - frequency and sample rate controls are locked");
+            mTunerLockedStatusLabel.setTooltip(new javafx.scene.control.Tooltip("Indicates that the tuner is providing channel(s) and you can't change the tuner frequency or sample rate"));
             mTunerLockedStatusLabel.setVisible(false);
         }
 
@@ -213,11 +223,11 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Tuner status label
      */
-    protected JLabel getTunerStatusLabel()
+    protected Label getTunerStatusLabel()
     {
         if(mTunerStatusLabel == null)
         {
-            mTunerStatusLabel = new JLabel(" ");
+            mTunerStatusLabel = new Label(" ");
         }
 
         return mTunerStatusLabel;
@@ -227,12 +237,12 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Label to display current file size for a wide-band recording
      */
-    protected JLabel getRecordingStatusLabel()
+    protected Label getRecordingStatusLabel()
     {
         if(mRecordingStatusLabel == null)
         {
-            mRecordingStatusLabel = new JLabel(" ");
-            mRecordingStatusLabel.setToolTipText("Shows the status of the latest baseband recording when active");
+            mRecordingStatusLabel = new Label(" ");
+            mRecordingStatusLabel.setTooltip(new javafx.scene.control.Tooltip("Shows the status of the latest baseband recording when active"));
             mRecordingStatusLabel.setVisible(false);
         }
 
@@ -245,13 +255,13 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Check box for enable/disable auto optimizing sample rate.
      */
-    protected JCheckBox getAutoOptimizeSampleRateCheckBox()
+    protected CheckBox getAutoOptimizeSampleRateCheckBox()
     {
         if(mAutoOptimizeSampleRateCheckBox == null)
         {
-            mAutoOptimizeSampleRateCheckBox = new JCheckBox("Auto-Optimize Sample Rate");
-            mAutoOptimizeSampleRateCheckBox.setToolTipText("Automatically adjust the tuner sample rate and center frequency to fit active channels");
-            mAutoOptimizeSampleRateCheckBox.addActionListener(e ->
+            mAutoOptimizeSampleRateCheckBox = new CheckBox("Auto-Optimize Sample Rate");
+            mAutoOptimizeSampleRateCheckBox.setTooltip(new javafx.scene.control.Tooltip("Automatically adjust the tuner sample rate and center frequency to fit active channels"));
+            mAutoOptimizeSampleRateCheckBox.setOnAction(e ->
             {
                 if(!isLoading())
                 {
@@ -269,13 +279,13 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         return mAutoOptimizeSampleRateCheckBox;
     }
 
-    protected JCheckBox getAutoPPMCheckBox()
+    protected CheckBox getAutoPPMCheckBox()
     {
         if(mAutoPPMCheckBox == null)
         {
-            mAutoPPMCheckBox = new JCheckBox("Enable decoder(s) to auto-adjust PPM");
-            mAutoPPMCheckBox.setToolTipText("Allow decoders to measure channel frequency error and correct tuner PPM");
-            mAutoPPMCheckBox.addActionListener(e ->
+            mAutoPPMCheckBox = new CheckBox("Enable decoder(s) to auto-adjust PPM");
+            mAutoPPMCheckBox.setTooltip(new javafx.scene.control.Tooltip("Allow decoders to measure channel frequency error and correct tuner PPM"));
+            mAutoPPMCheckBox.setOnAction(e ->
             {
                 if(!isLoading())
                 {
@@ -308,48 +318,30 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         return "";
     }
 
-    protected JLabel getTunerIdLabel()
+    protected Label getTunerIdLabel()
     {
         if(mTunerIdLabel == null)
         {
-            mTunerIdLabel = new JLabel(" ");
+            mTunerIdLabel = new Label(" ");
         }
 
         return mTunerIdLabel;
     }
 
 
-    protected JTextField getFriendlyNameTextField()
+    protected TextField getFriendlyNameTextField()
     {
         if(mFriendlyNameTextField == null)
         {
-            mFriendlyNameTextField = new JTextField(20);
-            mFriendlyNameTextField.setToolTipText("Enter a friendly name for this tuner");
+            mFriendlyNameTextField = new TextField();
+            mFriendlyNameTextField.setTooltip(new javafx.scene.control.Tooltip("Enter a friendly name for this tuner"));
 
             if(getConfiguration() != null && getConfiguration().getFriendlyName() != null)
             {
                 mFriendlyNameTextField.setText(getConfiguration().getFriendlyName());
             }
 
-            mFriendlyNameTextField.getDocument().addDocumentListener(new DocumentListener() {
-                @Override
-                public void insertUpdate(DocumentEvent e) { updateName(); }
-                @Override
-                public void removeUpdate(DocumentEvent e) { updateName(); }
-                @Override
-                public void changedUpdate(DocumentEvent e) { updateName(); }
-
-                private void updateName() {
-                    if(!mLoading && getConfiguration() != null) {
-                        getConfiguration().setFriendlyName(mFriendlyNameTextField.getText());
-                        mTunerManager.getTunerConfigurationManager().saveConfigurations();
-                        // Trigger UI update
-                        if (getDiscoveredTuner() != null) {
-                            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.source.tuner.configuration.TunerConfigurationEvent(getConfiguration(), io.github.dsheirer.source.tuner.configuration.TunerConfigurationEvent.Event.CHANGE));
-                        }
-                    }
-                }
-            });
+            mFriendlyNameTextField.textProperty().addListener((obs, oldV, newV) -> { if (getConfiguration() != null) getConfiguration().setFriendlyName(newV); });
         }
 
         return mFriendlyNameTextField;
@@ -360,44 +352,44 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         if(mFrequencyPanel == null)
         {
             mFrequencyPanel = new FrequencyPanel();
-            mFrequencyPanel.setToolTipText("Tuner frequency and PPM controls");
+            // mFrequencyPanel.setTooltip(new javafx.scene.control.Tooltip("Tuner frequency and PPM controls"));
         }
 
         return mFrequencyPanel;
     }
 
-    protected JSpinner getFrequencyCorrectionSpinner()
+    protected Spinner getFrequencyCorrectionSpinner()
     {
         if(mFrequencyCorrectionSpinner == null)
         {
-            SpinnerModel model = new SpinnerNumberModel(0.0, -1000.0, 1000.0, 0.1);
-            mFrequencyCorrectionSpinner = new JSpinner(model);
-            mFrequencyCorrectionSpinner.setToolTipText("Adjust the PPM value to compensate for tuner frequency error");
-            mFrequencyCorrectionSpinner.setEnabled(false);
-            JSpinner.NumberEditor editor = (JSpinner.NumberEditor) mFrequencyCorrectionSpinner.getEditor();
-            DecimalFormat format = editor.getFormat();
-            format.setMinimumFractionDigits(1);
-            editor.getTextField().setHorizontalAlignment(SwingConstants.CENTER);
-            mFrequencyCorrectionSpinner.addChangeListener(mFrequencyAndCorrectionChangeListener);
+            SpinnerValueFactory model = new javafx.scene.control.SpinnerValueFactory.DoubleSpinnerValueFactory(-1000.0, 1000.0, 0.0, 0.1);
+            mFrequencyCorrectionSpinner = new Spinner(model);
+            mFrequencyCorrectionSpinner.setTooltip(new javafx.scene.control.Tooltip("Adjust the PPM value to compensate for tuner frequency error"));
+            mFrequencyCorrectionSpinner.setDisable(!(false));
+            // Spinner.NumberEditor editor = ...
+            // DecimalFormat format = editor.getFormat();
+            // format.setMinimumFractionDigits(1);
+            // editor.getTextField().setHorizontalAlignment...
+            // mFrequencyCorrectionSpinner.valueProperty().addListener(mFrequencyAndCorrectionChangeListener);
         }
 
         return mFrequencyCorrectionSpinner;
     }
 
 
-    protected JButton getInfoConfigButton()
+    protected Button getInfoConfigButton()
     {
         if(mInfoConfigButton == null)
         {
-            mInfoConfigButton = new JButton("Info/Config");
-            mInfoConfigButton.addActionListener(e -> {
-                JPanel panel = new JPanel(new MigLayout("insets 0", "[][grow,fill]", ""));
+            mInfoConfigButton = new Button("Info/Config");
+            mInfoConfigButton.setOnAction(e -> {
+                VBox panel = new VBox(new javafx.scene.layout.HBox(4));
                 String info = getTunerInfo();
                 if(info != null && !info.isEmpty()) {
-                    panel.add(new JLabel(info), "span, wrap");
+                    panel.getChildren().add(new Label(info));
                 }
-                panel.add(new JLabel("Friendly Name:"));
-                panel.add(getFriendlyNameTextField());
+                panel.getChildren().add(new Label("Friendly Name:"));
+                panel.getChildren().add(getFriendlyNameTextField());
                 Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(panel)); alert.showAndWait(); });
             });
         }
@@ -413,7 +405,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         if(mButtonsPanel == null)
         {
             mButtonsPanel = new ButtonPanel();
-            mButtonsPanel.setToolTipText("Button controls for the selected tuner");
+            // mButtonsPanel.setTooltip(new javafx.scene.control.Tooltip("Button controls for the selected tuner"));
         }
 
         return mButtonsPanel;
@@ -438,20 +430,12 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         {
             mMinimumFrequencyTextField = new FrequencyTextField(DEFAULT_MINIMUM_FREQUENCY, DEFAULT_MAXIMUM_FREQUENCY,
                     getMinimumTunableFrequency());
-            mMinimumFrequencyTextField.setToolTipText("Sets or changes the minimum frequency value that this tuner will support.");
-            mMinimumFrequencyTextField.addFocusListener(new FocusListener()
-            {
-                private long mExistingFrequency;
-
-                @Override
-                public void focusGained(FocusEvent e)
-                {
-                    mExistingFrequency = getMinimumFrequencyTextField().getFrequency();
-                }
-
-                @Override
-                public void focusLost(FocusEvent e)
-                {
+            // mMinimumFrequencyTextField.setTooltip(new javafx.scene.control.Tooltip("Sets or changes the minimum frequency value that this tuner will support."));
+            final long[] minExisting = new long[1];
+            mMinimumFrequencyTextField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal) {
+                    minExisting[0] = getMinimumFrequencyTextField().getFrequency();
+                } else {
                     if(!isLoading())
                     {
                         setLoading(true);
@@ -463,7 +447,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                         {
                             Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Frequency value [" +
                                             getMinimumFrequencyTextField().getText() + "] is below the supported frequency range for this tuner")); alert.showAndWait(); });
-                            getMinimumFrequencyTextField().setFrequency(mExistingFrequency);
+                            getMinimumFrequencyTextField().setFrequency(minExisting[0]);
                             return;
                         }
 
@@ -481,7 +465,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                                 Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Frequency value [" +
                                                 getMinimumFrequencyTextField().getText() + "] is invalid for current sample rate " +
                                                 "and maximum supported frequency for this tuner")); alert.showAndWait(); });
-                                getMinimumFrequencyTextField().setFrequency(mExistingFrequency);
+                                getMinimumFrequencyTextField().setFrequency(minExisting[0]);
                                 return;
                             }
                         }
@@ -572,20 +556,12 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         {
             mMaximumFrequencyTextField = new FrequencyTextField(DEFAULT_MINIMUM_FREQUENCY, DEFAULT_MAXIMUM_FREQUENCY,
                     getMaximumTunableFrequency());
-            mMaximumFrequencyTextField.setToolTipText("Sets or changes the maximum frequency value that this tuner will support.");
-            mMaximumFrequencyTextField.addFocusListener(new FocusListener()
-            {
-                private long mExistingFrequency;
-
-                @Override
-                public void focusGained(FocusEvent e)
-                {
-                    mExistingFrequency = getMaximumFrequencyTextField().getFrequency();
-                }
-
-                @Override
-                public void focusLost(FocusEvent e)
-                {
+            // mMaximumFrequencyTextField.setTooltip(new javafx.scene.control.Tooltip("Sets or changes the maximum frequency value that this tuner will support."));
+            final long[] maxExisting = new long[1];
+            mMaximumFrequencyTextField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal) {
+                    maxExisting[0] = getMaximumFrequencyTextField().getFrequency();
+                } else {
                     if(!isLoading())
                     {
 
@@ -598,7 +574,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                             Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Frequency value [" +
                                     getMaximumFrequencyTextField().getText() + "] is above the supported frequency " +
                                     "range for this tuner")); alert.showAndWait(); });
-                            getMaximumFrequencyTextField().setFrequency(mExistingFrequency);
+                            getMaximumFrequencyTextField().setFrequency(maxExisting[0]);
                             return;
                         }
 
@@ -616,7 +592,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                                 Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Frequency value [" +
                                                 getMaximumFrequencyTextField().getText() + "] is invalid for current sample rate " +
                                                 "and minimum supported frequency for this tuner")); alert.showAndWait(); });
-                                getMaximumFrequencyTextField().setFrequency(mExistingFrequency);
+                                getMaximumFrequencyTextField().setFrequency(maxExisting[0]);
                                 return;
                             }
                         }
@@ -640,12 +616,12 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Resets the minimum and maximum frequency values.
      */
-    protected JButton getResetFrequenciesButton()
+    protected Button getResetFrequenciesButton()
     {
         if(mResetFrequenciesButton == null)
         {
-            mResetFrequenciesButton = new JButton("Reset");
-            mResetFrequenciesButton.addActionListener(e -> {
+            mResetFrequenciesButton = new Button("Reset");
+            mResetFrequenciesButton.setOnAction(e -> {
 
                 long min = getMinimumTunableFrequency();
                 long max = getMaximumTunableFrequency();
@@ -662,13 +638,13 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Button requesting to show tuner in new spectral display
      */
-    protected JButton getNewSpectrumButton()
+    protected Button getNewSpectrumButton()
     {
         if(mNewSpectrumButton == null)
         {
-            mNewSpectrumButton = new JButton("New Spectrum Display");
-            mNewSpectrumButton.setToolTipText("Show this tuner in a new (separate) spectral display window");
-            mNewSpectrumButton.addActionListener(e ->
+            mNewSpectrumButton = new Button("New Spectrum Display");
+            mNewSpectrumButton.setTooltip(new javafx.scene.control.Tooltip("Show this tuner in a new (separate) spectral display window"));
+            mNewSpectrumButton.setOnAction(e ->
             {
                 Tuner tuner = getTuner();
 
@@ -686,13 +662,13 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Button requesting to show tuner in main spectral display
      */
-    protected JButton getViewSpectrumButton()
+    protected Button getViewSpectrumButton()
     {
         if(mViewSpectrumButton == null)
         {
-            mViewSpectrumButton = new JButton("View Spectrum");
-            mViewSpectrumButton.setToolTipText("Show this tuner in the spectral display");
-            mViewSpectrumButton.addActionListener(e ->
+            mViewSpectrumButton = new Button("View Spectrum");
+            mViewSpectrumButton.setTooltip(new javafx.scene.control.Tooltip("Show this tuner in the spectral display"));
+            mViewSpectrumButton.setOnAction(e ->
             {
                 Tuner tuner = getTuner();
 
@@ -712,13 +688,13 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Button to change enable, disable, or error restart status.
      */
-    protected JButton getEnabledButton()
+    protected Button getEnabledButton()
     {
         if(mEnabledButton == null)
         {
-            mEnabledButton = new JButton(BUTTON_STATUS_ENABLE);
-            mEnabledButton.setToolTipText("Enable or disable the tuner for use by sdrtrunk");
-            mEnabledButton.addActionListener(e ->
+            mEnabledButton = new Button(BUTTON_STATUS_ENABLE);
+            mEnabledButton.setTooltip(new javafx.scene.control.Tooltip("Enable or disable the tuner for use by sdrtrunk"));
+            mEnabledButton.setOnAction(e ->
             {
                 switch(getEnabledButton().getText())
                 {
@@ -751,14 +727,14 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         return mEnabledButton;
     }
 
-    protected JButton getRestartTunerButton()
+    protected Button getRestartTunerButton()
     {
         if(mRestartTunerButton == null)
         {
-            mRestartTunerButton = new JButton("Restart Tuner");
+            mRestartTunerButton = new Button("Restart Tuner");
             mRestartTunerButton.setVisible(false);
-            mRestartTunerButton.setToolTipText("Attempt to restart this tuner to recover from error condition");
-            mRestartTunerButton.addActionListener(e ->
+            mRestartTunerButton.setTooltip(new javafx.scene.control.Tooltip("Attempt to restart this tuner to recover from error condition"));
+            mRestartTunerButton.setOnAction(e ->
             {
                 if(!hasTuner() && getDiscoveredTuner().getTunerStatus() == TunerStatus.ERROR)
                 {
@@ -785,14 +761,14 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Records the tuner's wide-band sample stream.
      */
-    protected JToggleButton getRecordButton()
+    protected ToggleButton getRecordButton()
     {
         if(mRecordButton == null)
         {
-            mRecordButton = new JToggleButton("Record");
-            mRecordButton.setToolTipText("Create a baseband recording for this tuner");
-            mRecordButton.setEnabled(false);
-            mRecordButton.addActionListener(e ->
+            mRecordButton = new ToggleButton("Record");
+            mRecordButton.setTooltip(new javafx.scene.control.Tooltip("Create a baseband recording for this tuner"));
+            mRecordButton.setDisable(!(false));
+            mRecordButton.setOnAction(e ->
             {
                 if(hasTuner())
                 {
@@ -889,7 +865,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         turnOffRecorder();
 
         getFrequencyControl().clearListeners();
-        getFrequencyCorrectionSpinner().removeChangeListener(mFrequencyAndCorrectionChangeListener);
+        // getFrequencyCorrectionSpinner().removeChangeListener(mFrequencyAndCorrectionChangeListener);
 
         if(mDiscoveredTuner != null)
         {
@@ -945,27 +921,27 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Tuner buttons panel
      */
-    public class ButtonPanel extends JPanel
+    public class ButtonPanel extends VBox
     {
         /**
          * Constructs an instance
          */
                 public ButtonPanel()
         {
-            setLayout(new MigLayout("insets 0,fill", "", ""));
-            JPanel row1 = new JPanel(new MigLayout("insets 0", "[][][][]", ""));
-            row1.add(getEnabledButton());
-            row1.add(getRecordButton());
-            row1.add(getViewSpectrumButton());
-            row1.add(getNewSpectrumButton());
+            
+            VBox row1 = new VBox(new javafx.scene.layout.HBox(4));
+            row1.getChildren().add(getEnabledButton());
+            row1.getChildren().add(getRecordButton());
+            row1.getChildren().add(getViewSpectrumButton());
+            row1.getChildren().add(getNewSpectrumButton());
 
-            JPanel row2 = new JPanel(new MigLayout("insets 0", "[][]", ""));
-            row2.add(getInfoConfigButton());
-            row2.add(getRestartTunerButton());
+            VBox row2 = new VBox(new javafx.scene.layout.HBox(4));
+            row2.getChildren().add(getInfoConfigButton());
+            row2.getChildren().add(getRestartTunerButton());
 
-            add(row1, "wrap");
-            add(row2, "wrap");
-            add(getRecordingStatusLabel(), "span");
+            getChildren().add(row1);
+            getChildren().add(row2);
+            getChildren().add(getRecordingStatusLabel());
         }
 
         /**
@@ -975,10 +951,10 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         {
             TunerStatus tunerStatus = getDiscoveredTuner().getTunerStatus();
 
-            getRecordButton().setEnabled(tunerStatus.isAvailable() && getDiscoveredTuner().hasTuner());
+            getRecordButton().setDisable(!(tunerStatus.isAvailable()) && getDiscoveredTuner().hasTuner());
             getRecordingStatusLabel().setText(" ");
-            getViewSpectrumButton().setEnabled(tunerStatus.isAvailable() && getDiscoveredTuner().hasTuner());
-            getNewSpectrumButton().setEnabled(tunerStatus.isAvailable() && getDiscoveredTuner().hasTuner());
+            getViewSpectrumButton().setDisable(!(tunerStatus.isAvailable()) && getDiscoveredTuner().hasTuner());
+            getNewSpectrumButton().setDisable(!(tunerStatus.isAvailable()) && getDiscoveredTuner().hasTuner());
             getRestartTunerButton().setVisible(tunerStatus == TunerStatus.ERROR);
 
             if(getDiscoveredTuner().isEnabled())
@@ -995,31 +971,30 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     /**
      * Sub panel that displays frequency control, ppm spinner and control, and tuner locked status label.
      */
-    public class FrequencyPanel extends JPanel
+    public class FrequencyPanel extends VBox
     {
         public FrequencyPanel()
         {
-            setLayout(new MigLayout("insets 0,fill", "[][][][][grow,fill]", ""));
-            add(getFrequencyControl(), "spany 2");
-            add(new JLabel("PPM:"));
-            JButton helpButton = createHelpIcon("?");
-            helpButton.setToolTipText("<html><b>PPM (Parts Per Million):</b> Adjusts your tuner to match the exact frequency.<br>If your hardware gets warm and signals shift, adjust this until the signal is centered.</html>");
-            add(helpButton);
-            add(getFrequencyCorrectionSpinner());
-            add(getMeasuredPPMLabel(), "wrap");
-            add(getAutoPPMCheckBox(), "span");
-            add(getAutoOptimizeSampleRateCheckBox(), "span");
+            
+            getChildren().add(getFrequencyControl());
+            getChildren().add(new Label("PPM:"));
+            Button helpButton = createHelpIcon("?");
+            helpButton.setTooltip(new javafx.scene.control.Tooltip("<html><b>PPM (Parts Per Million):</b> Adjusts your tuner to match the exact frequency.<br>If your hardware gets warm and signals shift, adjust this until the signal is centered.</html>"));
+            getChildren().add(helpButton);
+            getChildren().add(getFrequencyCorrectionSpinner());
+            getChildren().add(getMeasuredPPMLabel());
+            getChildren().add(getAutoPPMCheckBox());
+            getChildren().add(getAutoOptimizeSampleRateCheckBox());
 
-            JPanel minMaxPanel = new JPanel();
-            minMaxPanel.setLayout(new MigLayout("insets 0", "[][][][][][grow,fill]", ""));
-            minMaxPanel.add(new JLabel("Min:"));
-            minMaxPanel.add(getMinimumFrequencyTextField());
-            minMaxPanel.add(new JLabel("Max:"));
-            minMaxPanel.add(getMaximumFrequencyTextField());
-            minMaxPanel.add(getResetFrequenciesButton());
-            add(minMaxPanel, "span");
+            VBox minMaxPanel = new VBox();
+            minMaxPanel.getChildren().add(new Label("Min:"));
+            minMaxPanel.getChildren().add(getMinimumFrequencyTextField());
+            minMaxPanel.getChildren().add(new Label("Max:"));
+            minMaxPanel.getChildren().add(getMaximumFrequencyTextField());
+            minMaxPanel.getChildren().add(getResetFrequenciesButton());
+            getChildren().add(minMaxPanel);
 
-            add(getTunerLockedStatusLabel(), "span");
+            getChildren().add(getTunerLockedStatusLabel());
 
 
         }
@@ -1030,16 +1005,16 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         public void updateControls()
         {
             getFrequencyControl().clearListeners();
-            getFrequencyControl().addListener(mFrequencyAndCorrectionChangeListener);
+            // getFrequencyControl().addListener(mFrequencyAndCorrectionChangeListener);
             boolean hasTunerUnlocked = hasTuner() && !getTuner().getTunerController().isLockedSampleRate();
-            getFrequencyControl().setEnabled(hasTunerUnlocked);
-            getMinimumFrequencyTextField().setEnabled(hasTunerUnlocked);
-            getMaximumFrequencyTextField().setEnabled(hasTunerUnlocked);
-            getResetFrequenciesButton().setEnabled(hasTunerUnlocked);
+            getFrequencyControl().setDisable(!(hasTunerUnlocked));
+            getMinimumFrequencyTextField().setDisable(!(hasTunerUnlocked));
+            getMaximumFrequencyTextField().setDisable(!(hasTunerUnlocked));
+            getResetFrequenciesButton().setDisable(!(hasTunerUnlocked));
             getTunerLockedStatusLabel().setVisible(hasTuner() && getTuner().getTunerController().isLockedSampleRate());
-            getFrequencyCorrectionSpinner().setEnabled(hasTuner());
-            getAutoPPMCheckBox().setEnabled(hasTuner());
-            getAutoOptimizeSampleRateCheckBox().setEnabled(hasTuner() && getTuner().getTunerController() instanceof io.github.dsheirer.source.tuner.ISampleRateConfigurable);
+            getFrequencyCorrectionSpinner().setDisable(!(hasTuner()));
+            getAutoPPMCheckBox().setDisable(!(hasTuner()));
+            getAutoOptimizeSampleRateCheckBox().setDisable(!(hasTuner()) && getTuner().getTunerController() instanceof io.github.dsheirer.source.tuner.ISampleRateConfigurable);
 
             Tuner tuner = getTuner();
 
@@ -1048,7 +1023,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                 getFrequencyControl().setFrequency(tuner.getTunerController().getFrequency(), false);
                 getMinimumFrequencyTextField().setFrequency(tuner.getTunerController().getMinimumFrequency());
                 getMaximumFrequencyTextField().setFrequency(tuner.getTunerController().getMaximumFrequency());
-                getFrequencyCorrectionSpinner().setValue(tuner.getTunerController().getFrequencyCorrection());
+                getFrequencyCorrectionSpinner().getValueFactory().setValue(tuner.getTunerController().getFrequencyCorrection());
                 getAutoPPMCheckBox().setSelected(tuner.getTunerController().getFrequencyErrorCorrectionManager().isEnabled());
                 getAutoOptimizeSampleRateCheckBox().setSelected(getConfiguration().isAutoOptimizeSampleRate());
                 getFrequencyControl().addListener(getTuner().getTunerController());
@@ -1058,7 +1033,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             else
             {
                 getFrequencyControl().setFrequency(0, false);
-                getFrequencyCorrectionSpinner().setValue(0);
+                getFrequencyCorrectionSpinner().getValueFactory().setValue(0);
                 getAutoPPMCheckBox().setSelected(false);
                 getAutoOptimizeSampleRateCheckBox().setSelected(false);
                 getMeasuredPPMLabel().setText("");
@@ -1090,7 +1065,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         {
             SwingUtils.run(() -> {
                 setLoading(true);
-                getFrequencyCorrectionSpinner().setValue(getTuner().getTunerController().getFrequencyCorrection());
+                getFrequencyCorrectionSpinner().getValueFactory().setValue(getTuner().getTunerController().getFrequencyCorrection());
                 setLoading(false);
             });
         }
@@ -1110,7 +1085,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             sb.append("Recording Size: ").append(humanReadableByteCount(size));
             sb.append(" File #").append(fileCount).append(": ").append(file);
             final String status = sb.toString();
-            EventQueue.invokeLater(() -> getRecordingStatusLabel().setText(status));
+            Platform.runLater(() -> getRecordingStatusLabel().setText(status));
         }
 
         public static String humanReadableByteCount(long bytes) {
@@ -1130,48 +1105,50 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     }
 
     /**
-     * Monitors the frequency correction spinner for changed value.
-     */
-    private class FrequencyAndCorrectionChangeListener implements ChangeListener, ISourceEventProcessor
-    {
-        //This monitors the frequency correction spinner, applies the changes to the tuner, and saves configuration.
-        @Override
-        public void stateChanged(ChangeEvent e)
-        {
-            final double value = ((SpinnerNumberModel) getFrequencyCorrectionSpinner().getModel()).getNumber().doubleValue();
-
-            if(hasTuner() && !isLoading())
-            {
-                try
-                {
-                    getTuner().getTunerController().setFrequencyCorrection(value);
-                }
-                catch(SourceException e1)
-                {
-                    mLog.error("Error setting frequency correction value", e1);
-                }
-
-                save();
-            }
-        }
-
-        //This monitors the frequency control and saves configuration.
-        @Override
-        public void process(SourceEvent event) throws SourceException
-        {
-            if(hasTuner() && !isLoading())
-            {
-                save();
-            }
-        }
-    }
-
-    private JButton createHelpIcon(String text) {
-        JButton button = new JButton(text);
-        button.setMargin(new java.awt.Insets(0, 2, 0, 2));
-        button.setFocusPainted(false);
-        button.setContentAreaFilled(false);
-        button.setOpaque(false);
+//      * Monitors the frequency correction spinner for changed value.
+//      */
+//     private class FrequencyAndCorrectionChangeListener implements ChangeListener, ISourceEventProcessor
+//     {
+//         //This monitors the frequency correction spinner, applies the changes to the tuner, and saves configuration.
+//         // // @Override
+//         public void stateChanged(ChangeEvent e)
+//         {
+//             final double value = (Double) getFrequencyCorrectionSpinner().getValue();
+// 
+//             if(hasTuner() && !isLoading())
+//             {
+//                 try
+//                 {
+//                     getTuner().getTunerController().setFrequencyCorrection(value);
+//                 }
+//                 catch(SourceException e1)
+//                 {
+//                     mLog.error("Error setting frequency correction value", e1);
+//                 }
+// 
+//                 save();
+//             }
+//         }
+// 
+//         //This monitors the frequency control and saves configuration.
+//         // @Override
+//         // public void process(SourceEvent event) throws SourceException
+//         // {
+//             // if(hasTuner() && !isLoading())
+//             // {
+//                 save();
+//             }
+//         }
+//     }
+// 
+    private Button createHelpIcon(String text) {
+        Button button = new Button(text);
+        button.setPadding(new javafx.geometry.Insets(0, 2, 0, 2));
+        // button.setFocusPainted(false);
+        // button.setContentAreaFilled(false);
+        button.setBackground(javafx.scene.layout.Background.EMPTY);
         return button;
     }
 }
+
+// }

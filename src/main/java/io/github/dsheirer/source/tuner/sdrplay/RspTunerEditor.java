@@ -18,6 +18,13 @@
  */
 
 package io.github.dsheirer.source.tuner.sdrplay;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.geometry.Orientation;
+
 
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
@@ -26,24 +33,28 @@ import io.github.dsheirer.source.tuner.sdrplay.api.device.TunerSelect;
 import io.github.dsheirer.source.tuner.sdrplay.api.parameter.control.AgcMode;
 import io.github.dsheirer.source.tuner.ui.TunerEditor;
 import io.github.dsheirer.util.ThreadPool;
-import java.awt.Color;
-import java.awt.EventQueue;
+
+import javafx.application.Platform;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.miginfocom.swing.MigLayout;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JButton;
-import javax.swing.JLabel;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
 import java.util.Optional;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.JToggleButton;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.control.Slider;
+import javafx.scene.control.ToggleButton;
 
 /**
  * Abstract RSP tuner editor
@@ -53,12 +64,12 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
     private Logger mLog = LoggerFactory.getLogger(RspTunerEditor.class);
     protected static final String MANUAL = "Manual";
     protected static final String AUTOMATIC = "Automatic";
-    private JToggleButton mAgcButton;
-    private JLabel mGainValueLabel;
+    private ToggleButton mAgcButton;
+    private Label mGainValueLabel;
     private LnaSlider mLNASlider;
     private IfGainSlider mIfGainSlider;
-    private JButton mGainOverloadButton;
-    private JPanel mGainPanel;
+    private Button mGainOverloadButton;
+    private VBox mGainPanel;
     private AtomicBoolean mGainOverloadAlert = new AtomicBoolean();
 
     /**
@@ -93,17 +104,16 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
      * Gain controls panel
      * @return gain panel
      */
-    protected JPanel getGainPanel()
+    protected VBox getGainPanel()
     {
         if(mGainPanel == null)
         {
-            mGainPanel = new JPanel();
-            mGainPanel.setLayout(new MigLayout("insets 0","[][][grow,fill][][]",""));
-            mGainPanel.add(getGainValueLabel());
-            mGainPanel.add(getGainOverloadButton());
-            mGainPanel.add(new JLabel()); //empty label to grow to fill space
-            mGainPanel.add(new JLabel("IF Gain Mode:"));
-            mGainPanel.add(getAgcButton());
+            mGainPanel = new VBox();
+            mGainPanel.getChildren().add(getGainValueLabel());
+            mGainPanel.getChildren().add(getGainOverloadButton());
+            mGainPanel.getChildren().add(new Label()); //empty label to grow to fill space
+            mGainPanel.getChildren().add(new Label("IF Gain Mode:"));
+            mGainPanel.getChildren().add(getAgcButton());
         }
 
         return mGainPanel;
@@ -112,12 +122,12 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
     /**
      * Label for displaying current gain index value
      */
-    protected JLabel getGainValueLabel()
+    protected Label getGainValueLabel()
     {
         if(mGainValueLabel == null)
         {
-            mGainValueLabel = new JLabel("0");
-            mGainValueLabel.setEnabled(false);
+            mGainValueLabel = new Label("0");
+            mGainValueLabel.setDisable(!(false));
         }
 
         return mGainValueLabel;
@@ -126,13 +136,13 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
     /**
      * IF AGC mode (enable/disable) toggle button
      */
-    protected JToggleButton getAgcButton()
+    protected ToggleButton getAgcButton()
     {
         if(mAgcButton == null)
         {
-            mAgcButton = new JToggleButton(MANUAL);
-            mAgcButton.setEnabled(false);
-            mAgcButton.addActionListener(e -> {
+            mAgcButton = new ToggleButton(MANUAL);
+            mAgcButton.setDisable(!(false));
+            mAgcButton.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
                     try
@@ -147,7 +157,7 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
                     save();
                 }
 
-                getIfGainSlider().setEnabled(!getAgcButton().isSelected());
+                getIfGainSlider().setDisable(!getAgcButton().isSelected());
 
                 if(mAgcButton.isSelected())
                 {
@@ -166,13 +176,13 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
     /**
      * Gain overload button.  Used in a disabled state to indicate (e.g. flashing color) that gain overload is detected.
      */
-    protected JButton getGainOverloadButton()
+    protected Button getGainOverloadButton()
     {
         if(mGainOverloadButton == null)
         {
-            mGainOverloadButton = new JButton("Gain Overload");
-            mGainOverloadButton.setToolTipText("Notification that manual gain is set too high and causing power overload.  Reduce manual gain when this flashes.");
-            mGainOverloadButton.setEnabled(false);
+            mGainOverloadButton = new Button("Gain Overload");
+            mGainOverloadButton.setTooltip(new javafx.scene.control.Tooltip("Notification that manual gain is set too high and causing power overload.  Reduce manual gain when this flashes."));
+            mGainOverloadButton.setDisable(!(false));
         }
 
         return mGainOverloadButton;
@@ -184,10 +194,10 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
         if(hasTuner() && getTuner().getRspTunerController().getTunerSelect() == tunerSelect)
         {
             //Set overload alert
-            EventQueue.invokeLater(() -> setGainOverloadAlert(true));
+            // Platform.runLater(() -> setGainOverloadAlert(true));
 
             //Schedule a reset to happen 1 second later
-            ThreadPool.SCHEDULED.schedule((Runnable) () -> setGainOverloadAlert(false), 600, TimeUnit.MILLISECONDS);
+            // ThreadPool.SCHEDULED.schedule((Runnable) () -> setGainOverloadAlert(false), 600, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -202,22 +212,22 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
      * operating condition.
      * @param alert true to apply alert styling or false to reset.
      */
-    private void setGainOverloadAlert(boolean alert)
-    {
-        if(alert && mGainOverloadAlert.compareAndSet(false, true))
-        {
-            getGainOverloadButton().setEnabled(true);
-            getGainOverloadButton().setForeground(Color.YELLOW);
-            getGainOverloadButton().setBackground(Color.RED);
-        }
-        else if(!alert && mGainOverloadAlert.compareAndSet(true, false))
-        {
-            getGainOverloadButton().setEnabled(false);
-            getGainOverloadButton().setForeground(getForeground());
-            getGainOverloadButton().setBackground(getBackground());
-        }
-    }
-
+    // private void // setGainOverloadAlert(boolean alert)
+//     // {
+//         if(alert && mGainOverloadAlert.compareAndSet(false, true))
+//         {
+//             getGainOverloadButton().setDisable(!(true));
+//             getGainOverloadButton().setForeground(Color.YELLOW);
+//             getGainOverloadButton().setBackground(Color.RED);
+//         }
+//         else if(!alert && mGainOverloadAlert.compareAndSet(true, false))
+//         {
+//             getGainOverloadButton().setDisable(!(false));
+//             getGainOverloadButton().setForeground(getForeground());
+//             getGainOverloadButton().setBackground(getBackground());
+//         }
+//     }
+// 
     /**
      * Updates the LNA slider with the number of LNA states available for the current frequency.
      */
@@ -226,13 +236,13 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
         if(hasTuner())
         {
             int max = getTunerController().getControlRsp().getMaximumLNASetting();
-            if(max != getLNASlider().getMaximum())
+            if(max != getLNASlider().getMax())
             {
-                EventQueue.invokeLater(() -> {
+                Platform.runLater(() -> {
                     setLoading(true);
                     //Adjust the value if it's less than max
                     getLNASlider().setValue(Math.min(getLNASlider().getValue(), max));
-                    getLNASlider().setMaximum(max);
+                    getLNASlider().setMax(max);
                     setLoading(false);
                 });
             }
@@ -247,14 +257,13 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
         if(mLNASlider == null)
         {
             mLNASlider = new LnaSlider();
-            mLNASlider.setEnabled(true);
-            mLNASlider.setMajorTickSpacing(1);
-            mLNASlider.setPaintTicks(true);
-            mLNASlider.addChangeListener(event ->
-            {
-                JSlider source = (JSlider)event.getSource();
+            mLNASlider.setDisable(!(true));
+            mLNASlider.setMajorTickUnit(1);
+            mLNASlider.setShowTickMarks(true);
+            mLNASlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+                Slider source = (Slider) ((javafx.beans.property.ReadOnlyProperty)obs).getBean();
 
-                if(!source.getValueIsAdjusting())
+                if(!source.isValueChanging())
                 {
                     updateGain();
                 }
@@ -304,13 +313,13 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
     /**
      * Creates a standardized help icon button with the provided tooltip text.
      */
-    protected JButton createHelpIcon(String text) {
-        JButton button = new JButton(text);
+    protected Button createHelpIcon(String text) {
+        Button button = new Button(text);
         // Style as a subtle flat button
-        button.setMargin(new java.awt.Insets(0, 4, 0, 4));
-        button.setFocusPainted(false);
-        button.setContentAreaFilled(false);
-        button.setOpaque(false);
+        // button.setPadding(new javafx.geometry.Insets(0, 4, 0, 4));
+        // button.setFocusPainted(false);
+        // button.setContentAreaFilled(false);
+        button.setBackground(javafx.scene.layout.Background.EMPTY);
         return button;
     }
 
@@ -322,14 +331,13 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
         if(mIfGainSlider == null)
         {
             mIfGainSlider = new IfGainSlider();
-            mIfGainSlider.setEnabled(true);
-            mIfGainSlider.setMajorTickSpacing(1);
-            mIfGainSlider.setPaintTicks(true);
-            mIfGainSlider.addChangeListener(event ->
-            {
-                JSlider source = (JSlider)event.getSource();
+            mIfGainSlider.setDisable(!(true));
+            mIfGainSlider.setMajorTickUnit(1);
+            mIfGainSlider.setShowTickMarks(true);
+            mIfGainSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+                Slider source = (Slider) ((javafx.beans.property.ReadOnlyProperty)obs).getBean();
 
-                if(!source.getValueIsAdjusting())
+                if(!source.isValueChanging())
                 {
                     updateGain();
                 }
@@ -340,16 +348,16 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
     }
 
     /**
-     * JSlider implementation that inverts the scale to support LNA values.
+     * Slider implementation that inverts the scale to support LNA values.
      */
-    public class LnaSlider extends JSlider
+    public class LnaSlider extends Slider
     {
         /**
          * Constructs an instance
          */
         public LnaSlider()
         {
-            super(JSlider.HORIZONTAL, 0,9,9);
+            super( 0,9,9);
         }
 
         /**
@@ -358,7 +366,7 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
          */
         public int getLNA()
         {
-             return getMaximum() - getValue();
+             return (int)((int)(getMax() - getValue()));
         }
 
         /**
@@ -367,21 +375,21 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
          */
         public void setLNA(int lna)
         {
-            setValue(getMaximum() - lna);
+            setValue(getMax() - lna);
         }
     }
 
     /**
-     * JSlider implementation that inverts the scale to support IF Gain (aka Gain Reduction) values.
+     * Slider implementation that inverts the scale to support IF Gain (aka Gain Reduction) values.
      */
-    public class IfGainSlider extends JSlider
+    public class IfGainSlider extends Slider
     {
         /**
          * Constructs an instance
          */
         public IfGainSlider()
         {
-            super(JSlider.HORIZONTAL, 0, 39, 30);
+            super( 0, 39, 30);
         }
 
         /**
@@ -390,7 +398,7 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
          */
         public int getGR()
         {
-            return getIfGainSlider().getMaximum() - getIfGainSlider().getValue() + 20;
+            return (int)((int)getIfGainSlider().getMax() - (int)getIfGainSlider().getValue() + 20);
         }
 
         /**
@@ -399,7 +407,7 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
          */
         public void setGR(int gainReduction)
         {
-            setValue(getMaximum() - (gainReduction - 20));
+            setValue(getMax() - (gainReduction - 20));
         }
     }
 }

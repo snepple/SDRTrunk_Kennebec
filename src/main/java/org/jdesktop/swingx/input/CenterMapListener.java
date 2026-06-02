@@ -16,14 +16,23 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package org.jdesktop.swingx.input;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.application.Platform;
+import javafx.geometry.Rectangle2D;
+
 
 import org.jdesktop.swingx.JXMapViewer;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.geom.Point2D;
+
+
+import javafx.event.EventHandler;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.geometry.Point2D;
 
 /**
  * Centers the map on the mouse cursor
@@ -32,7 +41,7 @@ import java.awt.geom.Point2D;
  * @author Martin Steiger
  * @author joshy
  */
-public class CenterMapListener extends MouseAdapter
+public class CenterMapListener implements EventHandler<MouseEvent>
 {
 	private JXMapViewer viewer;
 	
@@ -44,11 +53,11 @@ public class CenterMapListener extends MouseAdapter
 		this.viewer = viewer;
 	}
 
-	@Override
-	public void mousePressed(MouseEvent evt)
+	// // @Override
+	public void handle(MouseEvent evt)
 	{
-		boolean left = SwingUtilities.isLeftMouseButton(evt);
-		boolean middle = SwingUtilities.isMiddleMouseButton(evt);
+		boolean left = evt.isPrimaryButtonDown() /* TODO */ /* TODO */;
+		boolean middle = evt.isMiddleButtonDown();
 		boolean doubleClick = (evt.getClickCount() == 2);
 
 		if (middle || (left && doubleClick))
@@ -59,12 +68,12 @@ public class CenterMapListener extends MouseAdapter
 	
 	private void recenterMap(MouseEvent evt)
 	{
-		Rectangle bounds = viewer.getViewportBounds();
-		double x = bounds.getX() + evt.getX();
-		double y = bounds.getY() + evt.getY();
-		viewer.setCenter(new Point2D.Double(x, y));
+		Rectangle2D bounds = viewer.getViewportBounds();
+		double x = bounds.getMinX() + evt.getX();
+		double y = bounds.getMinY() + evt.getY();
+		viewer.setCenter(new Point2D(x, y));
                 viewer.setZoom(viewer.getZoom() - 1);
-		viewer.repaint();
+		viewer.requestLayout();
 	}
 }
 

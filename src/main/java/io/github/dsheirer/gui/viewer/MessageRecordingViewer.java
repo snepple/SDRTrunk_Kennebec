@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2024 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.gui.viewer;
+import javafx.scene.control.Button;
 
 import io.github.dsheirer.preference.UserPreferences;
 import javafx.application.Application;

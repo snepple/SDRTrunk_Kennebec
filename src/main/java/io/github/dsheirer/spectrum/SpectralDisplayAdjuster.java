@@ -19,6 +19,7 @@
 
 package io.github.dsheirer.spectrum;
 
+
 import io.github.dsheirer.dsp.filter.smoothing.SmoothingFilter.SmoothingType;
 
 public interface SpectralDisplayAdjuster

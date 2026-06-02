@@ -157,6 +157,9 @@ public class AudioStreamingManager implements Listener<AudioSegment>
     private void processAudioSegments()
     {
         mNewAudioSegments.drainTo(mAudioSegments);
+        if (!mAudioSegments.isEmpty()) {
+            mLog.info("AudioStreamingManager processing " + mAudioSegments.size() + " segments...");
+        }
 
         Iterator<AudioSegment> it = mAudioSegments.iterator();
         AudioSegment audioSegment;

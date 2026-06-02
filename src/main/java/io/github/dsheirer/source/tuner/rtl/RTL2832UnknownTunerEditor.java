@@ -18,8 +18,16 @@
  */
 
 package io.github.dsheirer.source.tuner.rtl;
-import javax.swing.ProgressMonitor;
-import javax.swing.SwingUtilities;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ProgressBar;
+
+
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javafx.scene.control.Alert;
@@ -34,10 +42,10 @@ import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.rtl.r8x.R8xEmbeddedTuner;
 import io.github.dsheirer.source.tuner.ui.TunerEditor;
-import net.miginfocom.swing.MigLayout;
 
-import javax.swing.JLabel;
-import javax.swing.JSeparator;
+
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
 
 /**
  * Tuner editor for RTL2832 tuner that has not been started, or for an unknown tuner type
@@ -61,18 +69,17 @@ public class RTL2832UnknownTunerEditor extends TunerEditor<RTL2832Tuner, RTL2832
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 3", "[right][grow,fill][fill]",
-                "[][][][][][][][][][][][][][][][grow]"));
+        // setLayout(new javafx.scene.layout.HBox(4));
 
-        add(new JLabel("Tuner:"));
-        add(getTunerIdLabel(), "wrap");
+        getChildren().add(new Label("Tuner:"));
+        getChildren().add(getTunerIdLabel());
 
-        add(new JLabel("Status:"));
-        add(getTunerStatusLabel(), "wrap");
+        getChildren().add(new Label("Status:"));
+        getChildren().add(getTunerStatusLabel());
 
-        add(getButtonPanel(), "span,align left");
+        getChildren().add(getButtonPanel());
 
-        add(new JSeparator(), "span,growx,push");
+        getChildren().add(new Separator());
 
     }
 
@@ -118,9 +125,9 @@ public class RTL2832UnknownTunerEditor extends TunerEditor<RTL2832Tuner, RTL2832
         getFrequencyPanel().updateControls();
     }
 
-    private javax.swing.JButton getChangeSerialButton() {
-        javax.swing.JButton btn = new javax.swing.JButton("Change Serial Number");
-        btn.addActionListener(e -> {
+    private Button getChangeSerialButton() {
+        Button btn = new Button("Change Serial Number");
+        btn.setOnAction(e -> {
             if (!hasTuner()) return;
 TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Change RTL-SDR Serial Number");
@@ -136,22 +143,22 @@ TextInputDialog dialog = new TextInputDialog();
                 }
 
                 final String serialToSet = newSerial;
-                ProgressMonitor progressMonitor = new ProgressMonitor(this, "Writing EEPROM...", "", 0, 100);
-                progressMonitor.setMillisToDecideToPopup(0);
-                progressMonitor.setMillisToPopup(0);
+                javafx.scene.control.ProgressBar progressMonitor = new javafx.scene.control.ProgressBar();
+                // progressMonitor.setMillisToDecideToPopup...
+                // progressMonitor.setMillisToPopup...
                 progressMonitor.setProgress(10);
 
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 executor.submit(() -> {
                     try {
                         ((io.github.dsheirer.source.tuner.rtl.RTL2832TunerController)getTuner().getTunerController()).setSerialNumber(serialToSet);
-                        SwingUtilities.invokeLater(() -> {
+                        javafx.application.Platform.runLater(() -> {
                             progressMonitor.setProgress(100);
                             Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Serial number updated successfully.\nPlease disconnect and reconnect the tuner.")); alert.showAndWait(); });
                         });
                     } catch (Exception ex) {
-                        SwingUtilities.invokeLater(() -> {
-                            progressMonitor.close();
+                        javafx.application.Platform.runLater(() -> {
+                            // progressMonitor.close();
                             Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Failed to update serial number: " + ex.getMessage())); alert.showAndWait(); });
                         });
                     }

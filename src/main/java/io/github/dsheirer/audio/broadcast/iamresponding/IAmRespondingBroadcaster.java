@@ -145,14 +145,28 @@ public class IAmRespondingBroadcaster extends AbstractAudioBroadcaster<IAmRespon
         try
         {
             ByteBuffer pcmBuffer = ConversionUtils.convertToSigned16BitSamples(mAccumulator);
+            if (pcmBuffer != null) {
+                pcmBuffer.flip();
+            }
+            if (pcmBuffer == null || pcmBuffer.remaining() == 0) {
+                mLog.warn("IAmResponding UDP transmission aborted: empty PCM buffer");
+                return;
+            }
+            
             byte[] pcmBytes = new byte[pcmBuffer.remaining()];
             pcmBuffer.get(pcmBytes);
+
+            // Validate expected payload length (400 floats = 800 bytes)
+            if (pcmBytes.length != SAMPLES_PER_CHUNK * 2) {
+                mLog.warn("IAmResponding UDP payload length mismatch. Expected: {}, Actual: {}", SAMPLES_PER_CHUNK * 2, pcmBytes.length);
+                return; // Drop invalid sized packets to prevent backend issues
+            }
 
             InetAddress address = InetAddress.getByName(getBroadcastConfiguration().getHost());
             DatagramPacket packet = new DatagramPacket(pcmBytes, pcmBytes.length, address, getBroadcastConfiguration().getPort());
             mSocket.send(packet);
         }
-        catch(IOException e)
+        catch(IOException | IndexOutOfBoundsException e)
         {
             mLog.error("Error sending UDP packet for IAmResponding", e);
         }

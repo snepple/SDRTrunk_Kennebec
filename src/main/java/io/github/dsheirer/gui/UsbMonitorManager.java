@@ -1,4 +1,11 @@
+
 package io.github.dsheirer.gui;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Button;
 
 import io.github.dsheirer.preference.UserPreferences;
 import org.slf4j.Logger;
@@ -32,7 +39,7 @@ public class UsbMonitorManager {
         boolean prompted = userPreferences.getApplicationPreference().isUsbMonitorPrompted();
 
         if (!prompted && !installed) {
-            javax.swing.SwingUtilities.invokeLater(() -> {
+            javafx.application.Platform.runLater(() -> {
                 CheckBox dontShowAgain = new CheckBox("Do not show this again");
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                 alert.setTitle("Install USB Monitor Script?");

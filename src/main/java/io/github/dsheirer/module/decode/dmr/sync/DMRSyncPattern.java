@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2024 Dennis Sheirer
@@ -17,6 +18,7 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.module.decode.dmr.sync;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.dsp.symbol.Dibit;
 import java.util.EnumSet;

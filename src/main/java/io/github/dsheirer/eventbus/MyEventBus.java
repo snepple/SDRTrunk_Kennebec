@@ -22,7 +22,7 @@ package io.github.dsheirer.eventbus;
 
 import com.google.common.eventbus.EventBus;
 import javafx.application.Platform;
-import javax.swing.SwingUtilities;
+
 
 
 /**
@@ -49,10 +49,10 @@ public class MyEventBus
     }
 
     public static void postToSwing(Object event) {
-        if (SwingUtilities.isEventDispatchThread()) {
+        if (javafx.application.Platform.isFxApplicationThread()) {
             GLOBAL_EVENT_BUS.post(event);
         } else {
-            SwingUtilities.invokeLater(() -> GLOBAL_EVENT_BUS.post(event));
+            javafx.application.Platform.runLater(() -> GLOBAL_EVENT_BUS.post(event));
         }
     }
 }

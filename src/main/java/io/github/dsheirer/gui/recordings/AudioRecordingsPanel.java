@@ -1,4 +1,15 @@
+
+
+
 package io.github.dsheirer.gui.recordings;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 
 import io.github.dsheirer.gui.JavaFxWindowManager;
 import io.github.dsheirer.preference.UserPreferences;
@@ -8,7 +19,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.embed.swing.JFXPanel;
+import javafx.scene.layout.Pane;
 import javafx.scene.control.SelectionMode;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -24,8 +35,8 @@ import javafx.scene.media.MediaPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import java.awt.BorderLayout;
+
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,10 +48,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AudioRecordingsPanel extends JPanel {
+public class AudioRecordingsPanel extends VBox {
     private final static Logger mLog = LoggerFactory.getLogger(AudioRecordingsPanel.class);
     private UserPreferences mUserPreferences;
-    private JFXPanel mJfxPanel;
+
 
     private ObservableList<RecordingItem> mRecordings;
     private FilteredList<RecordingItem> mFilteredRecordings;
@@ -64,10 +75,7 @@ public class AudioRecordingsPanel extends JPanel {
     public AudioRecordingsPanel(UserPreferences userPreferences, io.github.dsheirer.playlist.PlaylistManager playlistManager) {
         mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
-        setLayout(new net.miginfocom.swing.MigLayout("insets 0, hidemode 3, fill", "[grow,fill]", "[grow,fill]"));
-
-        mJfxPanel = new JFXPanel();
-        add(mJfxPanel, "grow, push");
+        setMinSize(0, 0);
 
         Platform.runLater(this::initFx);
     }
@@ -274,9 +282,12 @@ public class AudioRecordingsPanel extends JPanel {
 
         root.setCenter(mTableView);
 
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/sdrtrunk_style.css").toExternalForm());
-        mJfxPanel.setScene(scene);
+        root.setMinSize(0, 0);
+        mTableView.setMinSize(0, 0);
+        VBox.setVgrow(root, Priority.ALWAYS);
+
+        root.getStylesheets().add(getClass().getResource("/sdrtrunk_style.css").toExternalForm());
+        getChildren().add(root);
 
         loadRecordings();
         populateFilterOptions();
@@ -443,3 +454,4 @@ public class AudioRecordingsPanel extends JPanel {
         mStopButton.setDisable(true);
     }
 }
+

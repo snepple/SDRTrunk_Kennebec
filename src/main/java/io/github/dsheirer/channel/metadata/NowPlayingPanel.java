@@ -18,7 +18,7 @@
  */
 package io.github.dsheirer.channel.metadata;
 
-import com.jidesoft.swing.JideTabbedPane;
+
 import io.github.dsheirer.channel.details.ChannelDetailPanel;
 import io.github.dsheirer.gui.channel.ChannelSpectrumPanel;
 import io.github.dsheirer.icon.IconModel;
@@ -31,49 +31,43 @@ import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.settings.SettingsManager;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
-import java.awt.Color;
-import net.miginfocom.swing.MigLayout;
+import javafx.scene.paint.Color;
 
-import javax.swing.JPanel;
-import java.awt.Cursor;
-import java.awt.Insets;
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JToolBar;
-import javax.swing.JScrollPane;
-import javax.swing.JPopupMenu;
-import javax.swing.JCheckBoxMenuItem;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.Region;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CheckMenuItem;
+import javafx.scene.Node;
+import javafx.beans.value.ChangeListener;
 import io.github.dsheirer.gui.VisibilityListener;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.module.ProcessingChain;
-import java.awt.EventQueue;
-
-import javax.swing.event.ChangeListener;
-import jiconfont.icons.font_awesome.FontAwesome;
-import jiconfont.swing.IconFontSwing;
-import javax.swing.JLabel;
+import javafx.application.Platform;
 
 /**
  * Swing panel for Now Playing channels table and channel details tab set.
  */
-public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
+public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 {
     private final ChannelMetadataPanel mChannelMetadataPanel;
     private final ChannelDetailPanel mChannelDetailPanel;
     private final DecodeEventPanel mDecodeEventPanel;
     private final MessageActivityPanel mMessageActivityPanel;
     private final ChannelSpectrumPanel mChannelSpectrumSquelchPanel;
-    private JideTabbedPane mTabbedPane;
-    private javax.swing.JComponent mBroadcastStatusPanel;
-    private javax.swing.JComponent mResourceStatusPanel;
-    private javax.swing.JComponent mSpectralPanel;
+    private TabPane mTabbedPane;
+    private javafx.scene.Node mBroadcastStatusPanel;
+    private javafx.scene.Node mResourceStatusPanel;
+    private javafx.scene.Node mSpectralPanel;
 
     private VisibilityListener mVisibilityListener;
-    private ChangeListener mTabbedPaneChangeListener;
+    private ChangeListener<Tab> mTabbedPaneChangeListener;
     private WidgetContainer mWidgetContainer;
-    private JScrollPane mScrollPane;
+    private javafx.scene.control.ScrollPane mScrollPane;
     private NowPlayingPreference mNowPlayingPreference;
-    private JButton mManageWidgetsBtn;
+    private Button mManageWidgetsBtn;
 
     /**
      * GUI panel that combines the currently decoding channels metadata table and viewers for channel details,
@@ -86,7 +80,7 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         mChannelDetailPanel = new ChannelDetailPanel(playlistManager.getChannelProcessingManager());
         mDecodeEventPanel = new DecodeEventPanel(iconModel, userPreferences, playlistManager.getAliasModel(), playlistManager.getChannelProcessingManager());
         mMessageActivityPanel = new MessageActivityPanel(userPreferences);
-        mChannelMetadataPanel = new ChannelMetadataPanel(playlistManager, iconModel, userPreferences, tunerManager);
+        mChannelMetadataPanel = new ChannelMetadataPanel(playlistManager.getChannelProcessingManager(), playlistManager, settingsManager, tunerManager.getDiscoveredTunerModel(), mNowPlayingPreference);
         mChannelSpectrumSquelchPanel = new ChannelSpectrumPanel(playlistManager, settingsManager);
         mNowPlayingPreference = new NowPlayingPreference();
 
@@ -98,29 +92,23 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
      */
         @Override
     public void receive(ProcessingChain processingChain) {
-        EventQueue.invokeLater(() -> {
-            JideTabbedPane pane = getTabbedPane();
+        Platform.runLater(() -> {
+            TabPane pane = getTabbedPane();
 
             if (processingChain == null) {
                 // Remove all tabs except Events
-                if (pane.indexOfComponent(mChannelDetailPanel) >= 0) {
-                    pane.remove(mChannelDetailPanel);
-                }
-                if (pane.indexOfComponent(mMessageActivityPanel) >= 0) {
-                    pane.remove(mMessageActivityPanel);
-                }
-                if (pane.indexOfComponent(mChannelSpectrumSquelchPanel) >= 0) {
-                    pane.remove(mChannelSpectrumSquelchPanel);
-                }
+                pane.getTabs().removeIf(tab -> tab.getContent() == mChannelDetailPanel);
+                pane.getTabs().removeIf(tab -> tab.getContent() == mMessageActivityPanel);
+                pane.getTabs().removeIf(tab -> tab.getContent() == mChannelSpectrumSquelchPanel);
                 mChannelSpectrumSquelchPanel.setPanelVisible(false);
             } else {
                 // Restore all tabs in correct order: Details, Events, Messages, Channel
-                pane.removeAll();
-                pane.addTab("Details", mChannelDetailPanel);
-                pane.addTab("Events", mDecodeEventPanel);
-                pane.addTab("Messages", mMessageActivityPanel);
-                pane.addTab("Channel", mChannelSpectrumSquelchPanel);
-                mChannelSpectrumSquelchPanel.setPanelVisible(pane.getSelectedIndex() == pane.indexOfComponent(mChannelSpectrumSquelchPanel));
+                pane.getTabs().clear();
+                pane.getTabs().add(new javafx.scene.control.Tab("Details", mChannelDetailPanel));
+                pane.getTabs().add(new javafx.scene.control.Tab("Events", mDecodeEventPanel));
+                pane.getTabs().add(new javafx.scene.control.Tab("Messages", mMessageActivityPanel));
+                pane.getTabs().add(new javafx.scene.control.Tab("Channel", mChannelSpectrumSquelchPanel));
+                // visibility managed elsewhere
             }
         });
     }
@@ -129,11 +117,11 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
     {
         if(mTabbedPane != null && mTabbedPaneChangeListener != null)
         {
-            mTabbedPane.removeChangeListener(mTabbedPaneChangeListener);
+            mTabbedPane.getSelectionModel().selectedItemProperty().removeListener(mTabbedPaneChangeListener);
         }
     }
 
-    public void setComponents(javax.swing.JComponent spectralPanel, javax.swing.JComponent broadcastStatusPanel, javax.swing.JComponent resourceStatusPanel) {
+    public void setNodes(javafx.scene.Node spectralPanel, javafx.scene.Node broadcastStatusPanel, javafx.scene.Node resourceStatusPanel) {
         boolean initialized = (mSpectralPanel != null);
         mSpectralPanel = spectralPanel;
         mBroadcastStatusPanel = broadcastStatusPanel;
@@ -176,50 +164,39 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         }
     }
 
-    public void setBroadcastStatusPanel(javax.swing.JComponent panel) {
-        // Kept for backward compatibility if called elsewhere, actual injection happens in setComponents
+    public void setBroadcastStatusPanel(javafx.scene.Node panel) {
+        // Kept for backward compatibility if called elsewhere, actual injection happens in setNodes
         mBroadcastStatusPanel = panel;
     }
 
-    private JideTabbedPane getTabbedPane()
-    {
-        if(mTabbedPane == null)
-        {
-            mTabbedPane = new JideTabbedPane();
-            mTabbedPane.addTab("Details", mChannelDetailPanel);
-            mTabbedPane.addTab("Events", mDecodeEventPanel);
-            mTabbedPane.addTab("Messages", mMessageActivityPanel);
-            mTabbedPane.addTab("Channel", mChannelSpectrumSquelchPanel);
-            mTabbedPane.setFont(this.getFont());
-            mTabbedPane.setForeground(Color.BLACK);
-            //Register state change listener to toggle visibility state for channel tab to turn-on/off FFT processing
-            mTabbedPaneChangeListener = e -> mChannelSpectrumSquelchPanel.setPanelVisible(getTabbedPane().getSelectedIndex() == getTabbedPane()
-                    .indexOfComponent(mChannelSpectrumSquelchPanel));
-            mTabbedPane.addChangeListener(mTabbedPaneChangeListener);
-        }
-
-        return mTabbedPane;
+    private TabPane getTabbedPane() {
+    if (mTabbedPane == null) {
+        mTabbedPane = new TabPane();
+        mTabbedPane.getTabs().add(new Tab("Details", mChannelDetailPanel));
+        mTabbedPane.getTabs().add(new Tab("Events", mDecodeEventPanel));
+        mTabbedPane.getTabs().add(new Tab("Messages", mMessageActivityPanel));
+        mTabbedPane.getTabs().add(new Tab("Channel", mChannelSpectrumSquelchPanel));
     }
+    return mTabbedPane;
+}
 
-    public JButton getManageWidgetsButton() {
+    public Button getManageWidgetsButton() {
         if (mManageWidgetsBtn == null) {
-            mManageWidgetsBtn = new JButton(IconFontSwing.buildIcon(FontAwesome.COG, 14, Color.BLACK));
-            mManageWidgetsBtn.setToolTipText("Manage Widgets");
-            mManageWidgetsBtn.getAccessibleContext().setAccessibleName("Manage Widgets");
-            mManageWidgetsBtn.getAccessibleContext().setAccessibleDescription("Opens a menu to manage visible widgets");
-            mManageWidgetsBtn.addActionListener(e -> showManageWidgetsPopup(mManageWidgetsBtn));
-            mManageWidgetsBtn.setFocusPainted(false);
-            mManageWidgetsBtn.setContentAreaFilled(false);
-            mManageWidgetsBtn.setBorderPainted(false);
-            mManageWidgetsBtn.setMargin(new Insets(0, 4, 0, 4));
-            mManageWidgetsBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            mManageWidgetsBtn = new Button("Manage Widgets");
+            mManageWidgetsBtn.setTooltip(new javafx.scene.control.Tooltip("Manage Widgets"));
+            
+            
+            mManageWidgetsBtn.setOnAction(e -> showManageWidgetsPopup());
+            mManageWidgetsBtn.setStyle("-fx-background-color: transparent; -fx-border-color: transparent;");
+            mManageWidgetsBtn.setPadding(new javafx.geometry.Insets(0, 4, 0, 4));
+            mManageWidgetsBtn.setCursor(javafx.scene.Cursor.HAND);
         }
         return mManageWidgetsBtn;
     }
 
     private void init()
     {
-        setLayout( new MigLayout( "insets 0 0 0 0", "[grow,fill]", "[grow,fill][]") );
+        
 
         mChannelMetadataPanel.addProcessingChainSelectionListener(mChannelDetailPanel);
         mChannelMetadataPanel.addProcessingChainSelectionListener(mDecodeEventPanel);
@@ -228,24 +205,22 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         mChannelMetadataPanel.addProcessingChainSelectionListener(this);
 
         mWidgetContainer = new WidgetContainer(mNowPlayingPreference);
-        mScrollPane = new JScrollPane(mWidgetContainer);
-        mScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        mScrollPane.setBorder(null);
-        mScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        mScrollPane.addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                mWidgetContainer.revalidate();
-            }
-        });
-        add(mScrollPane, "grow, wrap, w 100%");
+        mScrollPane = new javafx.scene.control.ScrollPane(mWidgetContainer);
+        
+        mScrollPane.setStyle("-fx-background-color: transparent;");
+        mScrollPane.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
+        mScrollPane.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        mScrollPane.setFitToWidth(true);
+        javafx.scene.layout.VBox.setVgrow(mScrollPane, javafx.scene.layout.Priority.ALWAYS);
+        
+        getChildren().addAll(mScrollPane);
     }
 
     private void setupWidgets() {
         mWidgetContainer.removeAll();
 
         if (mSpectralPanel != null) {
-            Widget spectrumWidget = new Widget("spectrum", "Spectrum/Waterfall", mSpectralPanel, mWidgetContainer, 150);
+            Widget spectrumWidget = new Widget("spectrum", "Spectrum/Waterfall", (Region) mSpectralPanel, mWidgetContainer, 300);
             mWidgetContainer.addWidget(spectrumWidget, false);
         }
 
@@ -260,12 +235,12 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         }
 
         if (mBroadcastStatusPanel != null) {
-            Widget streamingWidget = new Widget("streaming", "Streaming Status", mBroadcastStatusPanel, mWidgetContainer, 70);
+            Widget streamingWidget = new Widget("streaming", "Streaming Status", (Region) mBroadcastStatusPanel, mWidgetContainer, 70);
             mWidgetContainer.addWidget(streamingWidget, false);
         }
 
         if (mResourceStatusPanel != null) {
-            Widget resourceWidget = new Widget("resource", "Resource Status", mResourceStatusPanel, mWidgetContainer, 30);
+            Widget resourceWidget = new Widget("resource", "Resource Status", (Region) mResourceStatusPanel, mWidgetContainer, 30);
             resourceWidget.setMinimizeButtonVisible(false);
             mWidgetContainer.addWidget(resourceWidget, true); // Pinned to bottom
         }
@@ -273,8 +248,8 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         mWidgetContainer.layoutWidgets("resource");
     }
 
-    private void showManageWidgetsPopup(JButton source) {
-        JPopupMenu popup = new JPopupMenu();
+    private void showManageWidgetsPopup() {
+        javafx.scene.control.ContextMenu popup = new javafx.scene.control.ContextMenu();
 
         if (mSpectralPanel != null) addPopupItem(popup, "Spectrum/Waterfall", "spectrum");
         if (mChannelMetadataPanel != null) addPopupItem(popup, "Channel Table", "channel_table");
@@ -282,13 +257,13 @@ public class NowPlayingPanel extends JPanel implements Listener<ProcessingChain>
         if (mBroadcastStatusPanel != null) addPopupItem(popup, "Streaming Status", "streaming");
         if (mResourceStatusPanel != null) addPopupItem(popup, "Resource Status", "resource");
 
-        popup.show(source, 0, source.getHeight());
+        popup.show(mManageWidgetsBtn, javafx.geometry.Side.BOTTOM, 0, 0);
     }
 
-    private void addPopupItem(JPopupMenu popup, String label, String widgetId) {
-        JCheckBoxMenuItem item = new JCheckBoxMenuItem(label);
+    private void addPopupItem(ContextMenu popup, String label, String widgetId) {
+        CheckMenuItem item = new CheckMenuItem(label);
         item.setSelected(mNowPlayingPreference.isWidgetVisible(widgetId, true));
-        item.addActionListener(e -> mWidgetContainer.setWidgetVisible(widgetId, item.isSelected()));
-        popup.add(item);
+        item.setOnAction(e -> mWidgetContainer.setWidgetVisible(widgetId, item.isSelected()));
+        popup.getItems().add(item);
     }
 }

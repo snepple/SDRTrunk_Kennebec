@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Empty tuner editor panel
  */
-public class EmptyTunerEditor extends JFXPanel
+public class EmptyTunerEditor extends javafx.scene.layout.Pane
 {
     private static final long serialVersionUID = 1L;
 
@@ -49,10 +49,11 @@ public class EmptyTunerEditor extends JFXPanel
                 if (cssUrl != null) {
                     scene.getStylesheets().add(cssUrl.toExternalForm());
                 }
-                setScene(scene);
+                getChildren().add(root);
             } catch (Exception e) {
                 LoggerFactory.getLogger(EmptyTunerEditor.class).error("Error loading EmptyTunerEditor FXML", e);
             }
         });
     }
 }
+

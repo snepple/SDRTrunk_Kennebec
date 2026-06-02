@@ -18,6 +18,13 @@
  */
 
 package io.github.dsheirer.source.tuner.ui;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.ScrollPane;
+
 
 import io.github.dsheirer.gui.editor.Editor;
 import io.github.dsheirer.preference.UserPreferences;
@@ -26,13 +33,17 @@ import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.IDiscoveredTunerStatusListener;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.manager.TunerStatus;
-import net.miginfocom.swing.MigLayout;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
+
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+
 
 /**
  * Editor for Discovered Tuners that displays custom tuner editor for the selected discovered tuner
@@ -43,9 +54,9 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
     private static final Logger mLog = LoggerFactory.getLogger(DiscoveredTunerEditor.class);
     private UserPreferences mUserPreferences;
     private TunerManager mTunerManager;
-    private JComponent mEmptyEditor = new EmptyTunerEditor();
-    private JComponent mEditor = mEmptyEditor;
-    private JScrollPane mEditorScroller;
+    private javafx.scene.layout.Region mEmptyEditor = new EmptyTunerEditor();
+    private javafx.scene.layout.Region mEditor = mEmptyEditor;
+    private javafx.scene.control.ScrollPane mEditorScroller;
 
     /**
      * Constructs an instance
@@ -73,9 +84,9 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
 
     public void init()
     {
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
-        mEditorScroller = new JScrollPane(mEditor);
-        add(mEditorScroller);
+        
+        mEditorScroller = new javafx.scene.control.ScrollPane(mEditor);
+        getChildren().add(mEditorScroller);
     }
 
     @Override
@@ -100,7 +111,7 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
 
         super.setItem(tuner);
 
-        mEditorScroller.remove(mEditor);
+        mEditorScroller.setContent(null);
 
         if(hasItem())
         {
@@ -112,11 +123,11 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
             mEditor = mEmptyEditor;
         }
 
-        remove(mEditorScroller);
-        mEditorScroller = new JScrollPane(mEditor);
-        add(mEditorScroller);
-        revalidate();
-        repaint();
+        getChildren().remove(mEditorScroller);
+        mEditorScroller = new javafx.scene.control.ScrollPane(mEditor);
+        getChildren().add(mEditorScroller);
+        requestLayout();
+        requestLayout();
     }
 
     @Override

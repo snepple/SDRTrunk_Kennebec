@@ -20,7 +20,7 @@ package io.github.dsheirer.properties;
 
 import io.github.dsheirer.gui.SDRTrunk;
 import io.github.dsheirer.util.ThreadPool;
-import java.awt.Color;
+import javafx.scene.paint.Color;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -353,7 +353,15 @@ public class SystemProperties
      */
     public Color get(String key, Color defaultColor)
     {
-        return new Color(get(key, defaultColor.getRGB()), true);
+        String colorStr = get(key);
+        if (colorStr != null) {
+            try {
+                return Color.valueOf(colorStr);
+            } catch (Exception e) {
+            }
+        }
+        set(key, defaultColor.toString());
+        return defaultColor;
     }
 
     /**
@@ -364,7 +372,7 @@ public class SystemProperties
      */
     public static Color getTranslucent(Color color, int alpha)
     {
-        return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
+        return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha / 255.0);
     }
 
     public class SavePropertiesTask implements Runnable

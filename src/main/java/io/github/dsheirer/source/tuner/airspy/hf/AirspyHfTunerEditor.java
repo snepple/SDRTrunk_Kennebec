@@ -18,6 +18,11 @@
  */
 
 package io.github.dsheirer.source.tuner.airspy.hf;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.SourceException;
@@ -25,21 +30,25 @@ import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.ui.TunerEditor;
 import java.io.IOException;
-import net.miginfocom.swing.MigLayout;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
 import java.util.Optional;
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
-import javax.swing.JToggleButton;
-import javax.swing.SpinnerNumberModel;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.control.Separator;
+import javafx.scene.control.ToggleButton;
+
 
 /**
  * Tuner editor for Airspy HF+/Discovery tuners
@@ -47,10 +56,10 @@ import javax.swing.SpinnerNumberModel;
 public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTunerConfiguration>
 {
     private static final Logger mLog = LoggerFactory.getLogger(AirspyHfTunerEditor.class);
-    private JComboBox<AirspyHfSampleRate> mSampleRateCombo;
-    private JComboBox<Attenuation> mAttenuationCombo;
-    private JToggleButton mAgcToggleButton;
-    private JToggleButton mLnaToggleButton;
+    private ComboBox<AirspyHfSampleRate> mSampleRateCombo;
+    private ComboBox<Attenuation> mAttenuationCombo;
+    private ToggleButton mAgcToggleButton;
+    private ToggleButton mLnaToggleButton;
 
     /**
      * Constructs an instance
@@ -80,36 +89,34 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 3", "[right][grow,fill][fill]",
-                "[][][][][][][][][][][][][grow]"));
+        // setLayout(new javafx.scene.layout.HBox(4));
 
-        add(new JLabel("Tuner:"));
-        add(getTunerIdLabel(), "wrap");
+        getChildren().add(new Label("Tuner:"));
+        getChildren().add(getTunerIdLabel());
 
-        add(new JLabel("Status:"));
-        add(getTunerStatusLabel(), "wrap");
+        getChildren().add(new Label("Status:"));
+        getChildren().add(getTunerStatusLabel());
 
-        add(getButtonPanel(), "span,align left");
+        getChildren().add(getButtonPanel());
 
-        add(new JSeparator(), "span,growx,push");
+        getChildren().add(new Separator());
 
-        add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel(), "wrap");
+        getChildren().add(new Label("Frequency (MHz):"));
+        getChildren().add(getFrequencyPanel());
 
-        add(new JLabel("Sample Rate:"));
-        add(getSampleRateCombo(), "wrap");
+        getChildren().add(new Label("Sample Rate:"));
+        getChildren().add(getSampleRateCombo());
 
-        add(new JSeparator(), "span");
+        getChildren().add(new Separator());
 
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new MigLayout("insets 0", "[left]", ""));
-        buttonPanel.add(getAgcToggleButton());
-        buttonPanel.add(getLnaToggleButton());
-        add(new JLabel(" "));
-        add(buttonPanel, "wrap");
+        VBox buttonPanel = new VBox();
+        buttonPanel.getChildren().add(getAgcToggleButton());
+        buttonPanel.getChildren().add(getLnaToggleButton());
+        getChildren().add(new Label(" "));
+        getChildren().add(buttonPanel);
 
-        add(new JLabel("Attenuation:"));
-        add(getAttenuationCombo(), "wrap");
+        getChildren().add(new Label("Attenuation:"));
+        getChildren().add(getAttenuationCombo());
     }
 
     @Override
@@ -120,12 +127,12 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
             getConfiguration().setFrequency(getFrequencyControl().getFrequency());
             getConfiguration().setMinimumFrequency(getMinimumFrequencyTextField().getFrequency());
             getConfiguration().setMaximumFrequency(getMaximumFrequencyTextField().getFrequency());
-            double value = ((SpinnerNumberModel) getFrequencyCorrectionSpinner().getModel()).getNumber().doubleValue();
+            double value = (Double) getFrequencyCorrectionSpinner().getValue();
             getConfiguration().setFrequencyCorrection(value);
             getConfiguration().setAutoPPMCorrectionEnabled(getAutoPPMCheckBox().isSelected());
             getConfiguration().setSampleRate((int)getTuner().getController().getSampleRate());
 
-            Attenuation attenuation = (Attenuation)getAttenuationCombo().getSelectedItem();
+            Attenuation attenuation = (Attenuation)getAttenuationCombo().getValue();
             getConfiguration().setAttenuation(attenuation);
             getConfiguration().setAgc(getAgcToggleButton().isSelected());
             getConfiguration().setLna(getLnaToggleButton().isSelected());
@@ -155,30 +162,30 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
 
             //Permanently disable the sample rates combo and force 912kHz usage - during dev testing, attempts to use
             //the other sample rates produced inconsistent results.
-            getSampleRateCombo().setEnabled(false);
-            getSampleRateCombo().removeAllItems();
+            getSampleRateCombo().setDisable(!(false));
+            getSampleRateCombo().getItems().clear();
             for(AirspyHfSampleRate sampleRate: getTuner().getController().getAvailableSampleRates())
             {
-                getSampleRateCombo().addItem(sampleRate);
+                getSampleRateCombo().getItems().add(sampleRate);
             }
-            getAgcToggleButton().setEnabled(true);
+            getAgcToggleButton().setDisable(!(true));
             getAgcToggleButton().setSelected(getTuner().getController().getAgc());
-            getLnaToggleButton().setEnabled(true);
+            getLnaToggleButton().setDisable(!(true));
             getLnaToggleButton().setSelected(getTuner().getController().getLna());
-            getSampleRateCombo().setSelectedItem(getTuner().getController().getCurrentAirspySampleRate());
-            getAttenuationCombo().setEnabled(true);
-            getAttenuationCombo().setSelectedItem(getTuner().getController().getAttenuation());
+            getSampleRateCombo().setValue(getTuner().getController().getCurrentAirspySampleRate());
+            getAttenuationCombo().setDisable(!(true));
+            getAttenuationCombo().setValue(getTuner().getController().getAttenuation());
         }
         else
         {
             getTunerIdLabel().setText("Airspy HF+" + getUsbInfo());
-            getAgcToggleButton().setEnabled(false);
+            getAgcToggleButton().setDisable(!(false));
             getAgcToggleButton().setSelected(false);
-            getLnaToggleButton().setEnabled(false);
+            getLnaToggleButton().setDisable(!(false));
             getLnaToggleButton().setSelected(false);
-            getSampleRateCombo().setEnabled(false);
-            getAttenuationCombo().setEnabled(false);
-            getAttenuationCombo().setSelectedItem(Attenuation.A0);
+            getSampleRateCombo().setDisable(!(false));
+            getAttenuationCombo().setDisable(!(false));
+            getAttenuationCombo().setValue(Attenuation.A0);
         }
 
         updateSampleRateToolTip();
@@ -193,15 +200,15 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
     {
         if(hasTuner() && getTuner().getTunerController().isLockedSampleRate())
         {
-            getSampleRateCombo().setToolTipText("Sample Rate is locked.  Disable decoding channels to unlock.");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("Sample Rate is locked.  Disable decoding channels to unlock."));
         }
         else if(hasTuner())
         {
-            getSampleRateCombo().setToolTipText("Select a sample rate for the tuner");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("Select a sample rate for the tuner"));
         }
         else
         {
-            getSampleRateCombo().setToolTipText("No tuner available");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("No tuner available"));
         }
     }
 
@@ -209,7 +216,7 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
     public void setTunerLockState(boolean locked)
     {
         getFrequencyPanel().updateControls();
-        getSampleRateCombo().setEnabled(!locked);
+        getSampleRateCombo().setDisable(!(!locked));
         updateSampleRateToolTip();
     }
 
@@ -217,17 +224,17 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
      * Sample rate combo for selecting among available sample rates.
      * @return sample rate combo
      */
-    private JComboBox<AirspyHfSampleRate> getSampleRateCombo()
+    private ComboBox<AirspyHfSampleRate> getSampleRateCombo()
     {
         if(mSampleRateCombo == null)
         {
-            mSampleRateCombo = new JComboBox<>();
-            mSampleRateCombo.setEnabled(false);
-            mSampleRateCombo.addActionListener(e ->
+            mSampleRateCombo = new ComboBox<>();
+            mSampleRateCombo.setDisable(!(false));
+            mSampleRateCombo.setOnAction(e ->
             {
                 if(!isLoading())
                 {
-                    AirspyHfSampleRate sampleRate = (AirspyHfSampleRate)mSampleRateCombo.getSelectedItem();
+                    AirspyHfSampleRate sampleRate = (AirspyHfSampleRate)mSampleRateCombo.getValue();
 
                     if(sampleRate != null)
                     {
@@ -258,16 +265,16 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
      * Combobox with available attenuation items
      * @return combo box
      */
-    private JComboBox<Attenuation> getAttenuationCombo()
+    private ComboBox<Attenuation> getAttenuationCombo()
     {
         if(mAttenuationCombo == null)
         {
-            mAttenuationCombo = new JComboBox<>(Attenuation.values());
-            mAttenuationCombo.setEnabled(false);
-            mAttenuationCombo.addActionListener(e -> {
+            mAttenuationCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(Attenuation.values())))));
+            mAttenuationCombo.setDisable(!(false));
+            mAttenuationCombo.setOnAction(e -> {
                 if(!isLoading())
                 {
-                    Attenuation selected = (Attenuation)mAttenuationCombo.getSelectedItem();
+                    Attenuation selected = (Attenuation)mAttenuationCombo.getValue();
                     try
                     {
                         getTuner().getController().setAttenuation(selected);
@@ -289,14 +296,14 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
     /**
      * Automatic Gain Control (AGC) toggle button
      */
-    private JToggleButton getAgcToggleButton()
+    private ToggleButton getAgcToggleButton()
     {
         if(mAgcToggleButton == null)
         {
-            mAgcToggleButton = new JToggleButton("AGC");
-            mAgcToggleButton.setToolTipText("Automatic Gain Control");
-            mAgcToggleButton.setEnabled(false);
-            mAgcToggleButton.addActionListener(e -> {
+            mAgcToggleButton = new ToggleButton("AGC");
+            mAgcToggleButton.setTooltip(new javafx.scene.control.Tooltip("Automatic Gain Control"));
+            mAgcToggleButton.setDisable(!(false));
+            mAgcToggleButton.setOnAction(e -> {
                 if(!isLoading())
                 {
                     try
@@ -319,14 +326,14 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
     /**
      * Low Noise Amplifier (LNA) toggle button
      */
-    private JToggleButton getLnaToggleButton()
+    private ToggleButton getLnaToggleButton()
     {
         if(mLnaToggleButton == null)
         {
-            mLnaToggleButton = new JToggleButton("LNA");
-            mLnaToggleButton.setToolTipText("Low Noise Amplifier");
-            mLnaToggleButton.setEnabled(false);
-            mLnaToggleButton.addActionListener(e -> {
+            mLnaToggleButton = new ToggleButton("LNA");
+            mLnaToggleButton.setTooltip(new javafx.scene.control.Tooltip("Low Noise Amplifier"));
+            mLnaToggleButton.setDisable(!(false));
+            mLnaToggleButton.setOnAction(e -> {
                 if(!isLoading())
                 {
                     try

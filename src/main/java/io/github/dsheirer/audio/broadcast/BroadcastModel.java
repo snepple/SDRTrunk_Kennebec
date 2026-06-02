@@ -17,6 +17,11 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.audio.broadcast;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.alias.id.broadcast.BroadcastChannel;
@@ -46,9 +51,9 @@ import javafx.collections.ObservableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.table.AbstractTableModel;
 
-public class BroadcastModel extends AbstractTableModel implements Listener<AudioRecording>
+
+public class BroadcastModel implements Listener<AudioRecording>
 {
     private final static Logger mLog = LoggerFactory.getLogger(BroadcastModel.class);
 
@@ -172,7 +177,7 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
                 configuredBroadcast = new ConfiguredBroadcast(configuration);
                 mConfiguredBroadcasts.add(configuredBroadcast);
                 int index = mConfiguredBroadcasts.indexOf(configuredBroadcast);
-                fireTableRowsInserted(index, index);
+                // fireTableRowsInserted();
                 process(new BroadcastEvent(configuration, BroadcastEvent.Event.CONFIGURATION_ADD));
                 return configuredBroadcast;
             }
@@ -280,7 +285,7 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
 
             process(new BroadcastEvent(broadcastConfiguration, BroadcastEvent.Event.CONFIGURATION_DELETE));
 
-            fireTableRowsDeleted(index, index);
+            // fireTableRowsDeleted();
         }
     }
 
@@ -351,7 +356,7 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
 
                 if(index >= 0)
                 {
-                    fireTableRowsUpdated(index, index);
+                    // fireTableRowsUpdated();
                 }
 
                 broadcast(new BroadcastEvent(audioBroadcaster, BroadcastEvent.Event.BROADCASTER_ADD));
@@ -380,7 +385,7 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
 
             if(index >= 0)
             {
-                fireTableRowsUpdated(index, index);
+                // fireTableRowsUpdated();
             }
 
             broadcast(new BroadcastEvent(broadcaster, BroadcastEvent.Event.BROADCASTER_DELETE));
@@ -493,7 +498,7 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
                     }
 
                     int index = mConfiguredBroadcasts.indexOf(configuredBroadcast);
-                    fireTableRowsUpdated(index, index);
+                    // fireTableRowsUpdated();
                     break;
                 case CONFIGURATION_DELETE:
                     deleteBroadcaster(getConfiguredBroadcast(broadcastEvent.getBroadcastConfiguration()));
@@ -510,30 +515,30 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
                 case BROADCASTER_QUEUE_CHANGE:
                     if(row >= 0)
                     {
-                        fireTableCellUpdated(row, COLUMN_BROADCASTER_QUEUE_SIZE);
+                        // // fireTableCellUpdated(row, COLUMN_BROADCASTER_QUEUE_SIZE);
                     }
                     break;
                 case BROADCASTER_STATE_CHANGE:
                     if(row >= 0)
                     {
-                        fireTableCellUpdated(row, COLUMN_BROADCASTER_STATUS);
+                        // // fireTableCellUpdated(row, COLUMN_BROADCASTER_STATUS);
                     }
                     break;
                 case BROADCASTER_STREAMED_COUNT_CHANGE:
                     if(row >= 0)
                     {
-                        fireTableCellUpdated(row, COLUMN_BROADCASTER_STREAMED_COUNT);
+                        // // fireTableCellUpdated(row, COLUMN_BROADCASTER_STREAMED_COUNT);
                     }
                     break;
                 case BROADCASTER_AGED_OFF_COUNT_CHANGE:
                     if(row >= 0)
                     {
-                        fireTableCellUpdated(row, COLUMN_BROADCASTER_AGED_OFF_COUNT);
+                        // // fireTableCellUpdated(row, COLUMN_BROADCASTER_AGED_OFF_COUNT);
                     }
                 case BROADCASTER_ERROR_COUNT_CHANGE:
                     if(row >= 0)
                     {
-                        fireTableCellUpdated(row, COLUMN_BROADCASTER_ERROR_COUNT);
+                        // // fireTableCellUpdated(row, COLUMN_BROADCASTER_ERROR_COUNT);
                     }
                     break;
             }
@@ -543,19 +548,19 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
         broadcast(broadcastEvent);
     }
 
-    @Override
+    // // @Override
     public int getRowCount()
     {
         return mConfiguredBroadcasts.size();
     }
 
-    @Override
+    // // @Override
     public int getColumnCount()
     {
         return COLUMN_NAMES.length;
     }
 
-    @Override
+    // // @Override
     public Object getValueAt(int rowIndex, int columnIndex)
     {
         try
@@ -627,7 +632,7 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
         return null;
     }
 
-    @Override
+    // // @Override
     public Class<?> getColumnClass(int columnIndex)
     {
         switch(columnIndex)
@@ -647,7 +652,7 @@ public class BroadcastModel extends AbstractTableModel implements Listener<Audio
         }
     }
 
-    @Override
+    // // @Override
     public String getColumnName(int column)
     {
         if(0 <= column && column < COLUMN_NAMES.length)

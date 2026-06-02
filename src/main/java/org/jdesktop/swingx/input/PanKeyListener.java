@@ -16,19 +16,24 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package org.jdesktop.swingx.input;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import org.jdesktop.swingx.JXMapViewer;
 
-import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.geom.Point2D;
+import javafx.event.EventHandler;
+import javafx.scene.input.KeyEvent;
+import javafx.geometry.Point2D;
+import javafx.geometry.Bounds;
 
 /**
  * used to pan using the arrow keys
  * @author joshy
  */
-public class PanKeyListener extends KeyAdapter
+public class PanKeyListener implements EventHandler<KeyEvent>
 {
 	private static final int OFFSET = 10;
 
@@ -43,48 +48,49 @@ public class PanKeyListener extends KeyAdapter
 	}
 
 	@Override
-	public void keyPressed(KeyEvent e)
+	public void handle(KeyEvent e)
 	{
 		int delta_x = 0;
 		int delta_y = 0;
 		int requestedZoom = 0;
 
-		switch ( e.getKeyCode() )
+		switch ( e.getCode() )
 		{
-			
-			case KeyEvent.VK_LEFT:
-			case KeyEvent.VK_NUMPAD4:
+			case LEFT:
+			case NUMPAD4:
 				delta_x = -OFFSET;
 				break;
-			case KeyEvent.VK_RIGHT:
-			case KeyEvent.VK_NUMPAD6:
+			case RIGHT:
+			case NUMPAD6:
 				delta_x = OFFSET;
 				break;
-			case KeyEvent.VK_UP:
-			case KeyEvent.VK_NUMPAD8:
+			case UP:
+			case NUMPAD8:
 				delta_y = -OFFSET;
 				break;
-			case KeyEvent.VK_DOWN:
-			case KeyEvent.VK_NUMPAD2:
+			case DOWN:
+			case NUMPAD2:
 				delta_y = OFFSET;
 				break;
-			case KeyEvent.VK_MINUS:
-			case KeyEvent.VK_SUBTRACT:
+			case MINUS:
+			case SUBTRACT:
 				requestedZoom = 1;
 				break;
-			case KeyEvent.VK_ADD:
-			case KeyEvent.VK_EQUALS:
+			case ADD:
+			case EQUALS:
 				requestedZoom = -1;
+				break;
+			default:
 				break;
 		}
 
 		if (delta_x != 0 || delta_y != 0)
 		{
-			Rectangle bounds = viewer.getViewportBounds();
-			double x = bounds.getCenterX() + delta_x;
-			double y = bounds.getCenterY() + delta_y;
-			viewer.setCenter(new Point2D.Double(x, y));
-			viewer.repaint();
+			javafx.geometry.Rectangle2D bounds = viewer.getViewportBounds();
+			double x = bounds.getMinX() + bounds.getWidth() / 2 + delta_x;
+			double y = bounds.getMinY() + bounds.getHeight() / 2 + delta_y;
+			viewer.setCenter(new javafx.geometry.Point2D(x, y));
+			viewer.requestLayout();
 		}
 		
 		if( requestedZoom != 0 )

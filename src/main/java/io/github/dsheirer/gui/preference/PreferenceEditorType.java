@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2026 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.gui.preference;
+import javafx.scene.control.Label;
 
 /**
  * Preference editor tree node enumeration.

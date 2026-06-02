@@ -1,3 +1,5 @@
+
+
 /*******************************************************************************
  *     SDR Trunk 
  *     Copyright (C) 2014 Dennis Sheirer
@@ -16,26 +18,33 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package io.github.dsheirer.map;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.application.Platform;
+import javafx.scene.control.ContextMenu;
+
+import javafx.application.Platform;
+import javafx.scene.control.Button;
 
 import io.github.dsheirer.settings.SettingsManager;
 import org.jdesktop.swingx.JXMapViewer;
 import org.jdesktop.swingx.mapviewer.GeoPosition;
 
-import javax.swing.*;
-import javax.swing.event.MouseInputAdapter;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.geom.Point2D;
 
-public class MapMouseListener extends MouseInputAdapter implements MouseWheelListener
+
+import javafx.geometry.Rectangle2D;
+import javafx.geometry.Point2D;
+import javafx.scene.input.MouseEvent;
+
+public class MapMouseListener 
 {
 	private JXMapViewer mJXMapViewer;
 	private SettingsManager mSettingsManager;
-	private Point mPreviousPoint;
-	private Point mCurrentPoint;
+	private Point2D mPreviousPoint;
+	private Point2D mCurrentPoint;
 
 	public MapMouseListener( JXMapViewer viewer, SettingsManager settingsManager )
 	{
@@ -43,15 +52,15 @@ public class MapMouseListener extends MouseInputAdapter implements MouseWheelLis
 		mSettingsManager = settingsManager;
 	}
 	
-	@Override
+	// // @Override
 	public void mouseDragged( MouseEvent event )
 	{
-		if ( !SwingUtilities.isLeftMouseButton( event ) )
+		if ( !event.isPrimaryButtonDown() )
 		{
 			return;
 		}
 
-		Point current = event.getPoint();
+		Point2D current = new Point2D(event.getX(), event.getY());
 		
 		double x = mJXMapViewer.getCenter().getX() - 
 				   ( current.getX() - mPreviousPoint.getX() );
@@ -79,18 +88,18 @@ public class MapMouseListener extends MouseInputAdapter implements MouseWheelLis
 
 		mPreviousPoint = current;
 		
-		mJXMapViewer.setCenter( new Point2D.Double( x, y ) );
+		mJXMapViewer.setCenter( new Point2D( x, y ) );
 		
 		mJXMapViewer.repaint();
 
 		/* Set cursor to dragging */
-		mJXMapViewer.setCursor( Cursor.getPredefinedCursor( Cursor.MOVE_CURSOR ) );
+		mJXMapViewer.setCursor( javafx.scene.Cursor.MOVE );
 	}
 
-	@Override
+	// // @Override
 	public void mouseReleased( MouseEvent event )
 	{
-		if ( !SwingUtilities.isLeftMouseButton( event ) )
+		if ( !event.isPrimaryButtonDown() )
 		{
 			return;
 		}
@@ -99,33 +108,33 @@ public class MapMouseListener extends MouseInputAdapter implements MouseWheelLis
 		
 		/* Reset the curson */
 		mJXMapViewer.setCursor( 
-				Cursor.getPredefinedCursor( Cursor.DEFAULT_CURSOR ) );
+				javafx.scene.Cursor.DEFAULT );
 	}
 
-	@Override
+	// // @Override
 	public void mouseEntered( MouseEvent event )
 	{
-		SwingUtilities.invokeLater( new Runnable()
+		Platform.runLater( new Runnable()
 		{
 			@Override
 			public void run()
 			{
-				mJXMapViewer.requestFocusInWindow();
+				mJXMapViewer.requestFocus();
 			}
 		});
 	}
 
-	@Override
+	// // @Override
 	public void mousePressed( MouseEvent event )
 	{
-		mCurrentPoint = event.getPoint();
-		mPreviousPoint = event.getPoint();
+		mCurrentPoint = new Point2D(event.getX(), event.getY());
+		mPreviousPoint = new Point2D(event.getX(), event.getY());
 
-		boolean left = SwingUtilities.isLeftMouseButton( event );
+		boolean left = event.isPrimaryButtonDown();
 		
-		boolean middle = SwingUtilities.isMiddleMouseButton( event );
+		boolean middle = event.isMiddleButtonDown();
 		
-		boolean right = SwingUtilities.isRightMouseButton( event );
+		boolean right = event.isSecondaryButtonDown();
 
 		boolean doubleClick = ( event.getClickCount() == 2 );
 
@@ -135,39 +144,30 @@ public class MapMouseListener extends MouseInputAdapter implements MouseWheelLis
 		}
 		else if( right )
 		{
-			JPopupMenu popup = new JPopupMenu();
-			
-			JMenuItem mapViewItem = new JMenuItem( "Set Default Location & Zoom" );
-			mapViewItem.addActionListener( new ActionListener() 
-			{
-				@Override
-                public void actionPerformed( ActionEvent arg0 )
-                {
-					GeoPosition position = mJXMapViewer
-							.convertPointToGeoPosition( mCurrentPoint );
-					
-					mSettingsManager.getSettingsModel().setMapViewSetting( "Default", position,
-							mJXMapViewer.getZoom() );
-                }
-			} );
-			popup.add( mapViewItem );
-			
-			popup.show( mJXMapViewer, event.getX(), event.getY() );
+			ContextMenu popup = new ContextMenu();
+			javafx.scene.control.MenuItem mapViewItem = new javafx.scene.control.MenuItem( "Set Default Location & Zoom" );
+			mapViewItem.setOnAction(arg0 -> {
+				GeoPosition position = mJXMapViewer.convertPointToGeoPosition( mCurrentPoint );
+				mSettingsManager.getSettingsModel().setMapViewSetting( "Default", position, mJXMapViewer.getZoom() );
+			});
+			popup.getItems().add(mapViewItem);
+			popup.show( mJXMapViewer, event.getScreenX(), event.getScreenY() );
 		}
 	}
 	
 	private void recenterMap( MouseEvent event )
 	{
-		Rectangle bounds = mJXMapViewer.getViewportBounds();
+		Rectangle2D bounds = mJXMapViewer.getViewportBounds();
 		
-		double x = bounds.getX() + event.getX();
+		double x = bounds.getMinX() + event.getX();
 		
-		double y = bounds.getY() + event.getY();
+		double y = bounds.getMinY() + event.getY();
 		
-		mJXMapViewer.setCenter( new Point2D.Double( x, y ) );
+		mJXMapViewer.setCenter( new Point2D( x, y ) );
 
 		mJXMapViewer.setZoom( mJXMapViewer.getZoom() - 1 );
 
 		mJXMapViewer.repaint();
 	}
 }
+

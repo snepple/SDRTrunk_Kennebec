@@ -1,4 +1,8 @@
+
+
 package io.github.dsheirer.gui.playlist.channel;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.id.AliasID;

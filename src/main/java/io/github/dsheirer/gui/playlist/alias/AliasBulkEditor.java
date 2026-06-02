@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2023 Dennis Sheirer
@@ -18,11 +19,17 @@
  */
 
 package io.github.dsheirer.gui.playlist.alias;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+
 
 import com.google.common.collect.Ordering;
 import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.gui.playlist.Editor;
-import io.github.dsheirer.icon.Icon;
+
 import io.github.dsheirer.playlist.PlaylistManager;
 import java.util.List;
 import javafx.beans.property.BooleanProperty;
@@ -43,7 +50,7 @@ import javafx.scene.control.Separator;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
-import javafx.scene.paint.Color;
+
 import javafx.util.Callback;
 import org.controlsfx.control.ToggleSwitch;
 
@@ -57,7 +64,7 @@ public class AliasBulkEditor extends Editor<List<Alias>>
     private ColorPicker mColorPicker;
     private Button mApplyColorButton;
     private Button mResetColorButton;
-    private ComboBox<Icon> mIconNodeComboBox;
+    private ComboBox<io.github.dsheirer.icon.Icon> mIconNodeComboBox;
     private Button mApplyIconButton;
     private ToggleSwitch mMonitorAudioToggleSwitch;
     private ComboBox<Integer> mMonitorPriorityComboBox;
@@ -113,7 +120,7 @@ public class AliasBulkEditor extends Editor<List<Alias>>
         GridPane.setConstraints(getResetColorButton(), 5, row);
         gridPane.getChildren().add(getResetColorButton());
 
-        Label iconLabel = new Label("Icon");
+        Label iconLabel = new Label("io.github.dsheirer.icon.Icon");
         GridPane.setHalignment(iconLabel, HPos.RIGHT);
         GridPane.setConstraints(iconLabel, 0, ++row);
         gridPane.getChildren().add(iconLabel);
@@ -274,7 +281,7 @@ public class AliasBulkEditor extends Editor<List<Alias>>
         return mResetColorButton;
     }
 
-    private ComboBox<Icon> getIconNodeComboBox()
+    private ComboBox<io.github.dsheirer.icon.Icon> getIconNodeComboBox()
     {
         if(mIconNodeComboBox == null)
         {
@@ -305,13 +312,13 @@ public class AliasBulkEditor extends Editor<List<Alias>>
                 {
                     startChange();
 
-                    Icon icon = getIconNodeComboBox().getSelectionModel().getSelectedItem();
+                    io.github.dsheirer.icon.Icon icon = getIconNodeComboBox().getSelectionModel().getSelectedItem();
 
                     if(icon != null)
                     {
                         for(Alias alias : getItem())
                         {
-                            alias.setIconName(icon.getName());
+                            alias.setIconName(icon != null ? "" : "" /* TODO name */);
                         }
                     }
 
@@ -431,10 +438,10 @@ public class AliasBulkEditor extends Editor<List<Alias>>
     /**
      * Cell factory for combo box for dislaying icon name and graphic
      */
-    public class IconCellFactory implements Callback<ListView<Icon>, ListCell<Icon>>
+    public class IconCellFactory implements Callback<ListView<io.github.dsheirer.icon.Icon>, ListCell<io.github.dsheirer.icon.Icon>>
     {
         @Override
-        public ListCell<Icon> call(ListView<Icon> param)
+        public ListCell<io.github.dsheirer.icon.Icon> call(ListView<io.github.dsheirer.icon.Icon> param)
         {
             Label iconLabel = new Label();
             Label textLabel = new Label();
@@ -445,10 +452,10 @@ public class AliasBulkEditor extends Editor<List<Alias>>
             gridPane.add(iconLabel, 0, 0);
             gridPane.add(textLabel, 1, 0);
 
-            ListCell<Icon> cell = new ListCell<>()
+            ListCell<io.github.dsheirer.icon.Icon> cell = new ListCell<>()
             {
                 @Override
-                protected void updateItem(Icon item, boolean empty)
+                protected void updateItem(io.github.dsheirer.icon.Icon item, boolean empty)
                 {
                     super.updateItem(item, empty);
 
@@ -459,7 +466,7 @@ public class AliasBulkEditor extends Editor<List<Alias>>
                     }
                     else
                     {
-                        textLabel.setText(item.getName());
+                        textLabel.setText(item != null ? "" : "" /* TODO name */);
                         ImageView iv = new ImageView(item.getFxImage());
                         iv.setFitHeight(16);
                         iv.setFitWidth(16);

@@ -1,4 +1,8 @@
+
+
 package io.github.dsheirer.gui.preference.notification;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 
 import java.util.Properties;
 import javax.mail.Message;
@@ -72,6 +76,27 @@ public class NotificationPreferenceEditor extends VBox {
         telegramCard.getChildren().add(new SettingsRow("Enable Telegram", telegramEnable));
         telegramCard.getChildren().add(new SettingsRow("Bot Token", botTokenField));
 
+        // Embedded Scaffolding: step-by-step instructions
+        VBox telegramScaffolding = new VBox(3);
+        telegramScaffolding.setPadding(new Insets(5, 15, 5, 15));
+        telegramScaffolding.getStyleClass().add("kennebec-secondary-text");
+        Label tScaffoldHeader = new Label("How to get your Bot Token & Chat ID:");
+        tScaffoldHeader.setStyle("-fx-font-weight: bold;");
+        Label tStep1 = new Label("1. Open Telegram and search for @BotFather.");
+        Label tStep2 = new Label("2. Send /newbot and follow the prompts. Copy the token.");
+        Label tStep3 = new Label("3. To find your Chat ID, message @userinfobot.");
+        Label tStep4 = new Label("   Format: 1234567890  (numeric, no spaces)");
+        Hyperlink tLink = new Hyperlink("Open Telegram");
+        tLink.setPadding(new Insets(0));
+        tLink.setOnAction(ev -> {
+            try {
+                if (java.awt.Desktop.isDesktopSupported()) {
+                    java.awt.Desktop.getDesktop().browse(new URI("https://t.me/botfather"));
+                }
+            } catch (Exception ex) { /* ignore */ }
+        });
+        telegramScaffolding.getChildren().addAll(tScaffoldHeader, tStep1, tStep2, tStep3, tStep4, tLink);
+
         Button telegramTestBtn = new Button("_Send Test");
         telegramTestBtn.setMnemonicParsing(true);
         telegramTestBtn.setOnAction(e -> {
@@ -83,23 +108,16 @@ public class NotificationPreferenceEditor extends VBox {
             result.ifPresent(chatId -> {
                 String token = botTokenField.getText();
                 if (token == null || token.isEmpty()) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Bot token is not configured.");
-                    alert.showAndWait();
+                    new Alert(Alert.AlertType.ERROR, "Bot token is not configured.").showAndWait();
                     return;
                 }
-
                 ThreadPool.CACHED.submit(() -> {
                     try {
                         String message = "SDRTrunk Telegram Test Message.";
                         String urlString = "https://api.telegram.org/bot" + token + "/sendMessage?chat_id=" + chatId + "&text=" + java.net.URLEncoder.encode(message, "UTF-8");
                         HttpClient client = HttpClient.newHttpClient();
-                        HttpRequest request = HttpRequest.newBuilder()
-                                .uri(URI.create(urlString))
-                                .GET()
-                                .build();
-
+                        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(urlString)).GET().build();
                         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
                         Platform.runLater(() -> {
                             if (response.statusCode() == 200) {
                                 new Alert(Alert.AlertType.INFORMATION, "Test message sent successfully.").showAndWait();
@@ -108,16 +126,13 @@ public class NotificationPreferenceEditor extends VBox {
                             }
                         });
                     } catch (Exception ex) {
-                        Platform.runLater(() -> {
-                            new Alert(Alert.AlertType.ERROR, "Error sending message: " + ex.getMessage()).showAndWait();
-                        });
+                        Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).showAndWait());
                     }
                 });
             });
         });
 
-
-        telegramSection.getChildren().addAll(telegramHeader, telegramCard, telegramTestBtn);
+        telegramSection.getChildren().addAll(telegramHeader, telegramCard, telegramScaffolding, telegramTestBtn);
 
         // Email Section
         VBox emailSection = new VBox(10);

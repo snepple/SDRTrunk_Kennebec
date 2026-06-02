@@ -2,56 +2,36 @@ package io.github.dsheirer.spectrum.menu;
 
 import io.github.dsheirer.spectrum.SpectralDisplayAdjuster;
 
-import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import javafx.scene.control.Slider;
+import javafx.scene.input.MouseButton;
 
-public class AveragingItem extends JSlider implements ChangeListener
+public class AveragingItem extends Slider
 {
-    private static final long serialVersionUID = 1L;
-
     private SpectralDisplayAdjuster mAdjuster;
     private int mDefaultValue;
     
     public AveragingItem( SpectralDisplayAdjuster adjuster, int defaultValue )
     {
-    	super( JSlider.HORIZONTAL, 1, 20, adjuster.getAveraging() );
+    	super( 1, 20, adjuster.getAveraging() );
     	mDefaultValue = defaultValue;
     	
     	mAdjuster = adjuster;
     	
-    	setMajorTickSpacing( 5 );
-    	setMinorTickSpacing( 1 );
-    	setPaintTicks( true );
-    	setPaintLabels( true );
+    	setMajorTickUnit( 5 );
+    	setMinorTickCount( 4 ); // Minor ticks between major ticks
+    	setShowTickMarks( true );
+    	setShowTickLabels( true );
+    	setSnapToTicks(true);
     	
-    	addChangeListener( this );
+    	valueProperty().addListener( (obs, oldVal, newVal) -> {
+    		mAdjuster.setAveraging( newVal.intValue() );
+    	} );
 
-    	addMouseListener( new MouseListener()
-		{
-			@Override
-			public void mouseClicked( MouseEvent event )
+    	setOnMouseClicked( event -> {
+			if( event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2 )
 			{
-				if( event.getClickCount() == 2 )
-				{
-					AveragingItem.this.setValue( mDefaultValue );
-				}
+				setValue( mDefaultValue );
 			}
-			
-			public void mouseReleased( MouseEvent arg0 ) {}
-			public void mousePressed( MouseEvent arg0 ) {}
-			public void mouseExited( MouseEvent arg0 ) {}
-			public void mouseEntered( MouseEvent arg0 ) {}
 		} );
-    }
-
-	@Override
-    public void stateChanged( ChangeEvent event )
-    {
-		int value = ((JSlider)event.getSource()).getValue();
-		
-		mAdjuster.setAveraging( value );
     }
 }

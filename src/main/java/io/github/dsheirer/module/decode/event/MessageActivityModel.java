@@ -21,7 +21,7 @@ package io.github.dsheirer.module.decode.event;
 import io.github.dsheirer.message.IMessage;
 import io.github.dsheirer.message.StuffBitsMessage;
 import io.github.dsheirer.sample.Listener;
-import java.awt.EventQueue;
+import javafx.application.Platform;
 import java.text.SimpleDateFormat;
 
 /**
@@ -57,10 +57,10 @@ public class MessageActivityModel extends ClearableHistoryModel<MessageItem> imp
             return;
         }
 
-        EventQueue.invokeLater(() -> add(new MessageItem(message)));
+        Platform.runLater(() -> add(new MessageItem(message)));
     }
 
-    @Override
+    // // // @Override
     public int getColumnCount()
     {
         return mHeaders.length;
@@ -71,7 +71,7 @@ public class MessageActivityModel extends ClearableHistoryModel<MessageItem> imp
         return mHeaders[column];
     }
 
-    @Override
+    // // // @Override
     public Object getValueAt(int rowIndex, int columnIndex)
     {
         MessageItem item = getItem(rowIndex);

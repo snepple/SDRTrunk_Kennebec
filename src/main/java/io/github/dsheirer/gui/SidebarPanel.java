@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.awt.Dimension;
 import java.io.IOException;
 
-public class SidebarPanel extends JFXPanel {
+public class SidebarPanel extends javafx.scene.layout.StackPane {
     private static final Logger mLog = LoggerFactory.getLogger(SidebarPanel.class);
     private SidebarController controller;
 
@@ -22,7 +22,7 @@ public class SidebarPanel extends JFXPanel {
     }
 
     public SidebarPanel(SidebarListener listener) {
-        setPreferredSize(new Dimension(250, 0));
+        // setPrefSize(100, 100); // new Dimension(250, 0));
 
         Platform.runLater(() -> {
             try {
@@ -30,8 +30,7 @@ public class SidebarPanel extends JFXPanel {
                 VBox root = loader.load();
                 controller = loader.getController();
                 controller.setListener(listener);
-                Scene scene = new Scene(root);
-                setScene(scene);
+                getChildren().add(root);
             } catch (IOException e) {
                 mLog.error("Error loading Sidebar.fxml", e);
             }

@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  *  Copyright (C) 2014-2020 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.gui.playlist.alias;
+import javafx.scene.control.Button;
 
 import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.id.AliasID;

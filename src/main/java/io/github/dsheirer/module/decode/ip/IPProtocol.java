@@ -1,3 +1,4 @@
+
 /*
  * ******************************************************************************
  * sdrtrunk
@@ -19,6 +20,7 @@
  */
 
 package io.github.dsheirer.module.decode.ip;
+import javafx.scene.control.Label;
 
 public enum IPProtocol
 {

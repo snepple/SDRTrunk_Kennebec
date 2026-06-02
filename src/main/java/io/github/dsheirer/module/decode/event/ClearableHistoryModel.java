@@ -18,17 +18,26 @@
  */
 
 package io.github.dsheirer.module.decode.event;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.ScrollPane;
 
-import java.awt.EventQueue;
+import javafx.scene.control.TableView;
+
+
+import javafx.application.Platform;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.swing.table.AbstractTableModel;
+
 
 /**
  * AbstractTableModel implementation supporting clearable method options.
  */
-public abstract class ClearableHistoryModel<T> extends AbstractTableModel
+public abstract class ClearableHistoryModel<T> 
 {
     public static final int DEFAULT_HISTORY_SIZE = 200;
     private LinkedList<T> mItems = new LinkedList<>();
@@ -59,17 +68,17 @@ public abstract class ClearableHistoryModel<T> extends AbstractTableModel
         if(mItems.contains(item))
         {
             int itemRow = mItems.indexOf(item);
-            fireTableRowsUpdated(itemRow, itemRow);
+            // fireTableRowsUpdated();
         }
         else
         {
             mItems.addFirst(item);
-            fireTableRowsInserted(0, 0);
+            // fireTableRowsInserted();
 
             while(mItems.size() > mHistorySize)
             {
                 mItems.removeLast();
-                fireTableRowsDeleted(mItems.size() - 1, mItems.size() - 1);
+                // fireTableRowsDeleted();
             }
         }
     }
@@ -79,9 +88,9 @@ public abstract class ClearableHistoryModel<T> extends AbstractTableModel
      */
     public void clear()
     {
-        EventQueue.invokeLater(() -> {
+        Platform.runLater(() -> {
             mItems.clear();
-            fireTableDataChanged();
+            // fireTableDataChanged();
         });
     }
 
@@ -90,9 +99,9 @@ public abstract class ClearableHistoryModel<T> extends AbstractTableModel
      */
     public void clearAndSet(List<T> items)
     {
-        EventQueue.invokeLater(() -> {
+        Platform.runLater(() -> {
             mItems.clear();
-            fireTableDataChanged();
+            // fireTableDataChanged();
             for(T item: items)
             {
                 add(item);
@@ -118,7 +127,7 @@ public abstract class ClearableHistoryModel<T> extends AbstractTableModel
         mHistorySize = historySize;
     }
 
-    @Override
+    // // @Override
     public int getRowCount()
     {
         return mItems.size();

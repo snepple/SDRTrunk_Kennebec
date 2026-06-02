@@ -11,7 +11,7 @@ package org.jdesktop.swingx.mapviewer;
 
 import org.jdesktop.beans.AbstractBean;
 
-import java.awt.image.BufferedImage;
+import javafx.scene.image.Image;
 import java.lang.ref.SoftReference;
 
 /**
@@ -59,7 +59,7 @@ public class Tile extends AbstractBean
 	/**
 	 * The image loaded for this Tile
 	 */
-	SoftReference<BufferedImage> image = new SoftReference<BufferedImage>(null);
+	SoftReference<Image> image = new SoftReference<Image>(null);
 
 	/**
 	 * Create a new Tile at the specified tile point and zoom level
@@ -120,9 +120,9 @@ public class Tile extends AbstractBean
 	 * @return the Image associated with this Tile. This is a read only property This may return null at any time,
 	 * however if this returns null, a load operation will automatically be started for it.
 	 */
-	public BufferedImage getImage()
+	public Image getImage()
 	{
-		BufferedImage img = image.get();
+		Image img = image.get();
 		if (img == null)
 		{
 			setLoaded(false);

@@ -1,7 +1,7 @@
 package io.github.dsheirer.settings;
 
 import org.junit.jupiter.api.Test;
-import java.awt.Color;
+import javafx.scene.paint.Color;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SettingsModelTest {
@@ -11,13 +11,15 @@ public class SettingsModelTest {
         SettingsModel model = new SettingsModel();
         ColorSetting.ColorSettingName name = ColorSetting.ColorSettingName.SPECTRUM_LINE;
 
+        Color expectedInitial = new Color(name.getDefaultColor().getRed(), name.getDefaultColor().getGreen(), name.getDefaultColor().getBlue(), name.getTranslucency() / 255.0);
         Color initialColor = model.getColorSetting(name).getColor();
-        assertEquals(new Color(name.getDefaultColor().getRed(), name.getDefaultColor().getGreen(), name.getDefaultColor().getBlue(), name.getTranslucency()), initialColor);
+        assertEquals(expectedInitial, initialColor);
 
         Color newColor = Color.RED;
         model.setColorSetting(name, newColor);
 
-        assertEquals(new Color(newColor.getRed(), newColor.getGreen(), newColor.getBlue(), name.getTranslucency()), model.getColorSetting(name).getColor());
+        Color expectedNew = new Color(newColor.getRed(), newColor.getGreen(), newColor.getBlue(), name.getTranslucency() / 255.0);
+        assertEquals(expectedNew, model.getColorSetting(name).getColor());
     }
 
     @Test

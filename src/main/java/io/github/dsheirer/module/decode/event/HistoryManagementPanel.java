@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2025 Dennis Sheirer
@@ -18,26 +19,32 @@
  */
 
 package io.github.dsheirer.module.decode.event;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.layout.VBox;
 
 import io.github.dsheirer.filter.FilterEditor;
 import io.github.dsheirer.filter.FilterSet;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+import javafx.scene.layout.Pane;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import java.awt.BorderLayout;
+
+
+
 import java.awt.Dimension;
 import java.util.function.Consumer;
 
 /**
  * History management panel with controls for managing item histories.
  */
-public class HistoryManagementPanel<T> extends JFXPanel
+public class HistoryManagementPanel<T> extends javafx.scene.layout.StackPane
 {
     private ClearableHistoryModel mModel;
     private FilterSet<T> mFilterSet;
@@ -53,7 +60,7 @@ public class HistoryManagementPanel<T> extends JFXPanel
     private HistoryManagementPanelController mController;
 
     // For Swing interoperability when showing the filter editor
-    private JPanel mDummyAnchor;
+    private VBox mDummyAnchor;
 
     /**
      * Constructs an instance using the model's current history size as the
@@ -89,11 +96,11 @@ public class HistoryManagementPanel<T> extends JFXPanel
             model.setHistorySize(initialHistorySize);
         }
 
-        mDummyAnchor = new JPanel();
-        // Since we are now a JFXPanel, we don't add the dummy anchor directly.
+        mDummyAnchor = new VBox();
+        // Since we are now a javafx.scene.layout.Pane, we don't add the dummy anchor directly.
         // It's just used as a component reference for the FilterEditor dialog location.
 
-        setPreferredSize(new Dimension(300, 38));
+        setPrefSize(300, 38);
 
         Platform.runLater(this::initJavaFX);
 
@@ -101,38 +108,52 @@ public class HistoryManagementPanel<T> extends JFXPanel
     }
 
     private void initJavaFX() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/module/decode/event/HistoryManagementPanel.fxml"));
-            Parent root = loader.load();
-
-            mController = loader.getController();
-            mController.setCallbacks(this::handleFilterClick, this::handleClearClick, this::handleHistorySizeChanged);
-            mController.setInitialHistorySize(mModel.getHistorySize());
-            mController.setDisable(!isEnabled());
-
-            Scene scene = new Scene(root);
-
-            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
-            if (cssUrl != null) {
-                scene.getStylesheets().add(cssUrl.toExternalForm());
+        HBox root = new HBox(5);
+        root.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        root.setPadding(new javafx.geometry.Insets(2, 5, 2, 5));
+        
+        Button filterButton = new Button("Filter");
+        filterButton.setOnAction(e -> handleFilterClick());
+        
+        Button clearButton = new Button("Clear");
+        clearButton.setOnAction(e -> handleClearClick());
+        
+        Label historyLabel = new Label("History:");
+        
+        Slider historySlider = new Slider(0, 5000, mModel.getHistorySize());
+        historySlider.setShowTickMarks(true);
+        historySlider.setBlockIncrement(10);
+        
+        Label historyValueLabel = new Label(String.valueOf(mModel.getHistorySize()));
+        historyValueLabel.setPrefWidth(40);
+        
+        historySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            int size = newVal.intValue();
+            historyValueLabel.setText(String.valueOf(size));
+            handleHistorySizeChanged(size);
+        });
+        
+        historySlider.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                historySlider.setValue(ClearableHistoryModel.DEFAULT_HISTORY_SIZE);
             }
-
-            setScene(scene);
-        } catch (Exception e) {
-            LoggerFactory.getLogger(HistoryManagementPanel.class).error("Error loading HistoryManagementPanel FXML", e);
-        }
+        });
+        
+        root.getChildren().addAll(filterButton, clearButton, historyLabel, historySlider, historyValueLabel);
+        
+        getChildren().add(root);
     }
 
     private void handleFilterClick() {
-        SwingUtilities.invokeLater(() -> javafx.application.Platform.runLater(() -> getFilterEditor().show()));
+        Platform.runLater(() -> javafx.application.Platform.runLater(() -> getFilterEditor().show()));
     }
 
     private void handleClearClick() {
-        SwingUtilities.invokeLater(() -> mModel.clear());
+        Platform.runLater(() -> mModel.clear());
     }
 
     private void handleHistorySizeChanged(int size) {
-        SwingUtilities.invokeLater(() -> {
+        Platform.runLater(() -> {
             mModel.setHistorySize(size);
             if (mHistorySizeChangedCallback != null) {
                 mHistorySizeChangedCallback.accept(size);
@@ -158,20 +179,10 @@ public class HistoryManagementPanel<T> extends JFXPanel
      * Overrides the panel method to also set the enabled state for the child controls.
      * @param enabled true if this component should be enabled, false otherwise
      */
-    @Override
+    // @Override
     public void setEnabled(boolean enabled)
     {
-        super.setEnabled(enabled);
-        if (mController != null) {
-            Platform.runLater(() -> mController.setDisable(!enabled));
-        } else {
-            // If view is not yet initialized, enqueue the disable update
-            Platform.runLater(() -> {
-                if (mController != null) {
-                    mController.setDisable(!enabled);
-                }
-            });
-        }
+        super.setDisable(!enabled);
     }
 
     /**
@@ -182,9 +193,10 @@ public class HistoryManagementPanel<T> extends JFXPanel
     {
         if(mFilterEditor == null)
         {
-            mFilterEditor = new FilterEditor<>(mFilterEditorTitle, mDummyAnchor, mFilterSet);
+            mFilterEditor = new FilterEditor(mFilterEditorTitle, mFilterSet);
         }
 
         return mFilterEditor;
     }
 }
+

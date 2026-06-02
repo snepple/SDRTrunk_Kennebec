@@ -8,15 +8,19 @@
  */
 
 package org.jdesktop.swingx.mapviewer;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import org.jdesktop.swingx.JXMapViewer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
+import javafx.geometry.Point2D;
+import javafx.scene.image.Image;
 
 /**
  * This is a standard waypoint renderer.
@@ -27,7 +31,7 @@ public class DefaultWaypointRenderer implements WaypointRenderer<Waypoint>
 	private final static Logger mLog = 
 			LoggerFactory.getLogger( DefaultWaypointRenderer.class );
 
-	private BufferedImage img = null;
+	private Image img = null;
 
 	/**
 	 * Uses a default waypoint image
@@ -36,7 +40,7 @@ public class DefaultWaypointRenderer implements WaypointRenderer<Waypoint>
 	{
 		try
 		{
-			img = ImageIO.read(getClass().getResource("resources/standard_waypoint.png"));
+			img = new Image(getClass().getResource("resources/standard_waypoint.png").toExternalForm());
 		}
 		catch (Exception ex)
 		{
@@ -45,16 +49,16 @@ public class DefaultWaypointRenderer implements WaypointRenderer<Waypoint>
 	}
 
 	@Override
-	public void paintWaypoint(Graphics2D g, JXMapViewer map, Waypoint w)
+	public void paintWaypoint(GraphicsContext g, JXMapViewer map, Waypoint w)
 	{
 		if (img == null)
 			return;
 
 		Point2D point = map.getTileFactory().geoToPixel(w.getPosition(), map.getZoom());
 		
-		int x = (int)point.getX() -img.getWidth() / 2;
-		int y = (int)point.getY() -img.getHeight();
+		int x = (int)point.getX() - (int)img.getWidth() / 2;
+		int y = (int)point.getY() - (int)img.getHeight();
 		
-		g.drawImage(img, x, y, null);
+		g.drawImage(img, x, y);
 	}
 }

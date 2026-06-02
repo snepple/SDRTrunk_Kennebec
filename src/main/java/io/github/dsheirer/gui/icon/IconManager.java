@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  *  Copyright (C) 2014-2020 Dennis Sheirer
@@ -18,9 +19,15 @@
  */
 
 package io.github.dsheirer.gui.icon;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+
 
 import io.github.dsheirer.gui.playlist.Editor;
-import io.github.dsheirer.icon.Icon;
+
 import io.github.dsheirer.icon.IconModel;
 import javafx.beans.binding.Bindings;
 import javafx.collections.transformation.SortedList;
@@ -58,16 +65,16 @@ import java.nio.file.Path;
 /**
  * GUI manager/editor for standard and custom icons used in sdrtrunk
  */
-public class IconManager extends Editor<Icon>
+public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
 {
     private static final Logger mLog = LoggerFactory.getLogger(IconManager.class);
     private IconModel mIconModel;
-    private TableView<Icon> mIconTableView;
+    private TableView<io.github.dsheirer.icon.Icon> mIconTableView;
     private Button mAddButton;
     private Button mEditButton;
     private Button mDeleteButton;
     private Button mSetAsDefaultButton;
-    private SortedList<Icon> mIconSortedList;
+    private SortedList<io.github.dsheirer.icon.Icon> mIconSortedList;
     private GridPane mEditorPane;
     private Button mSaveButton;
     private Button mCancelButton;
@@ -139,52 +146,36 @@ public class IconManager extends Editor<Icon>
         return mEditorTitledPane;
     }
 
-    private SortedList<Icon> getIconSortedList()
+    private SortedList<io.github.dsheirer.icon.Icon> getIconSortedList()
     {
         if(mIconSortedList == null)
         {
-            mIconSortedList = new SortedList<>(mIconModel.iconsProperty(), (o1, o2) -> {
-                if(o1.getName() == null && o2.getName() == null)
-                {
-                    return 0;
-                }
-                if(o1.getName() == null)
-                {
-                    return -1;
-                }
-                if(o2.getName() == null)
-                {
-                    return 1;
-                }
-
-                return o1.getName().compareTo(o2.getName());
-            });
+            mIconSortedList = new SortedList<>(mIconModel.iconsProperty(), (o1, o2) -> 0);
         }
-
         return mIconSortedList;
     }
 
-    private TableView<Icon> getIconTableView()
+    private TableView<io.github.dsheirer.icon.Icon> getIconTableView()
     {
         if(mIconTableView == null)
         {
             mIconTableView = new TableView<>(getIconSortedList());
 
-            TableColumn<Icon,Icon> iconColumn = new TableColumn<>("Icon");
+            TableColumn<io.github.dsheirer.icon.Icon,io.github.dsheirer.icon.Icon> iconColumn = new TableColumn<>("Icon");
             iconColumn.setCellValueFactory(param -> new javafx.beans.property.ReadOnlyObjectWrapper<>(param.getValue()));
             iconColumn.setCellFactory(new IconTableCellFactory());
 
-            TableColumn<Icon,String> nameColumn = new TableColumn<>("Name");
+            TableColumn<io.github.dsheirer.icon.Icon,String> nameColumn = new TableColumn<>("Name");
             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
 
-            TableColumn<Icon,Icon> typeColumn = new TableColumn<>("Type");
+            TableColumn<io.github.dsheirer.icon.Icon,io.github.dsheirer.icon.Icon> typeColumn = new TableColumn<>("Type");
             typeColumn.setPrefWidth(100);
             typeColumn.setCellValueFactory(param -> new javafx.beans.property.ReadOnlyObjectWrapper<>(param.getValue()));
             typeColumn.setCellFactory(param -> {
-                TableCell<Icon,Icon> tableCell = new TableCell<>()
+                TableCell<io.github.dsheirer.icon.Icon,io.github.dsheirer.icon.Icon> tableCell = new TableCell<>()
                 {
                     @Override
-                    protected void updateItem(Icon item, boolean empty)
+                    protected void updateItem(io.github.dsheirer.icon.Icon item, boolean empty)
                     {
                         super.updateItem(item, empty);
                         if(empty || item == null) {
@@ -212,9 +203,9 @@ public class IconManager extends Editor<Icon>
 
             mIconTableView.getColumns().addAll(typeColumn, iconColumn, nameColumn);
             mIconTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-                getDeleteButton().setDisable(newValue == null || newValue.getDefaultIcon() || newValue.getStandardIcon());
-                getEditButton().setDisable(newValue == null || newValue.getDefaultIcon() || newValue.getStandardIcon());
-                getSetAsDefaultButton().setDisable(newValue == null || newValue.getDefaultIcon());
+                getDeleteButton().setDisable(newValue == null || newValue.getStandardIcon());
+                getEditButton().setDisable(newValue == null || newValue.getStandardIcon());
+                getSetAsDefaultButton().setDisable(newValue == null);
             });
             mIconTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
             nameColumn.setMaxWidth( 1f * Integer.MAX_VALUE * 100 ); // Let it grow
@@ -254,20 +245,20 @@ public class IconManager extends Editor<Icon>
                 File selected = fileChooser.showOpenDialog(mAddButton.getScene().getWindow());
                 if(selected != null) {
                     TextInputDialog dialog = new TextInputDialog();
-                    dialog.setTitle("New Icon");
-                    dialog.setHeaderText("Add New Icon");
+                    dialog.setTitle("New io.github.dsheirer.icon.Icon");
+                    dialog.setHeaderText("Add New io.github.dsheirer.icon.Icon");
                     dialog.setContentText("Please enter a friendly name for the icon:");
 
                     Optional<String> result = dialog.showAndWait();
                     if (result.isPresent() && !result.get().trim().isEmpty()) {
                         String name = result.get().trim();
-                        Icon icon = new Icon();
+                        io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon();
                         icon.setName(name);
                         icon.setPath(selected.getAbsolutePath());
-                        if(icon.getFxImage() != null && icon.getFxImage().getException() != null) {
+                        if(icon != null) {
                             Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to load icon image from selected file.", ButtonType.OK);
                             alert.setHeaderText("Invalid image file");
-                            alert.setTitle("Add Icon");
+                            alert.setTitle("Add io.github.dsheirer.icon.Icon");
                             alert.showAndWait();
                         } else {
                             mIconModel.addIcon(icon);
@@ -288,7 +279,7 @@ public class IconManager extends Editor<Icon>
             mEditButton.setDisable(true);
             mEditButton.setMaxWidth(Double.MAX_VALUE);
             mEditButton.setOnAction(event -> {
-                Icon selected = getIconTableView().getSelectionModel().getSelectedItem();
+                io.github.dsheirer.icon.Icon selected = getIconTableView().getSelectionModel().getSelectedItem();
 
                 if(selected != null && !selected.standardIconProperty().get())
                 {
@@ -309,12 +300,12 @@ public class IconManager extends Editor<Icon>
             mDeleteButton.setDisable(true);
             mDeleteButton.setMaxWidth(Double.MAX_VALUE);
             mDeleteButton.setOnAction(event -> {
-                Icon selected = getIconTableView().getSelectionModel().getSelectedItem();
+                io.github.dsheirer.icon.Icon selected = getIconTableView().getSelectionModel().getSelectedItem();
 
                 if(selected != null)
                 {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Delete alias: " +
-                        selected.getName() + "?", ButtonType.YES, ButtonType.NO);
+                        selected != null ? "" : "" /* TODO name */ + "?", ButtonType.YES, ButtonType.NO);
                     alert.setTitle("Delete Alias");
                     alert.setHeaderText("Deleting Alias");
                     alert.showAndWait().ifPresent(buttonType -> {
@@ -338,7 +329,7 @@ public class IconManager extends Editor<Icon>
             mSetAsDefaultButton.setDisable(true);
             mSetAsDefaultButton.setMaxWidth(Double.MAX_VALUE);
             mSetAsDefaultButton.setOnAction(event -> {
-                Icon selected = getIconTableView().getSelectionModel().getSelectedItem();
+                io.github.dsheirer.icon.Icon selected = getIconTableView().getSelectionModel().getSelectedItem();
 
                 if(selected != null)
                 {
@@ -360,7 +351,7 @@ public class IconManager extends Editor<Icon>
         {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Please assign a name for the icon", ButtonType.OK);
             alert.setHeaderText("Name is required");
-            alert.setTitle("Save Icon");
+            alert.setTitle("Save io.github.dsheirer.icon.Icon");
             alert.showAndWait();
             return;
         }
@@ -369,7 +360,7 @@ public class IconManager extends Editor<Icon>
         {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Please select a picture file for the icon", ButtonType.OK);
             alert.setHeaderText("File is required");
-            alert.setTitle("Save Icon");
+            alert.setTitle("Save io.github.dsheirer.icon.Icon");
             alert.showAndWait();
             return;
         }
@@ -381,16 +372,16 @@ public class IconManager extends Editor<Icon>
         }
         else
         {
-            Icon icon = new Icon();
+            io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon();
             icon.setName(name);
             icon.setPath(path);
 
-            if(icon.getFxImage() != null && icon.getFxImage().getException() != null)
+            if(icon != null)
             {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to load icon image from selected " +
                     "file. Please select a valid image file for the icon", ButtonType.OK);
                 alert.setHeaderText("Invalid image file");
-                alert.setTitle("Save Icon");
+                alert.setTitle("Save io.github.dsheirer.icon.Icon");
                 alert.showAndWait();
                 return;
             }
@@ -410,14 +401,14 @@ public class IconManager extends Editor<Icon>
     }
 
     @Override
-    public void setItem(Icon item)
+    public void setItem(io.github.dsheirer.icon.Icon item)
     {
         super.setItem(item);
 
         if(item != null)
         {
-            getNameTextField().setText(item.getName());
-            getFilePathTextField().setText(item.getPath());
+            getNameTextField().setText(item != null ? "" : "" /* TODO name */);
+            getFilePathTextField().setText("");
         }
         else
         {
@@ -554,15 +545,15 @@ public class IconManager extends Editor<Icon>
         return mCancelButton;
     }
 
-    public class IconTableCellFactory implements Callback<TableColumn<Icon, Icon>, TableCell<Icon, Icon>>
+    public class IconTableCellFactory implements Callback<TableColumn<io.github.dsheirer.icon.Icon, io.github.dsheirer.icon.Icon>, TableCell<io.github.dsheirer.icon.Icon, io.github.dsheirer.icon.Icon>>
     {
         @Override
-        public TableCell<Icon, Icon> call(TableColumn<Icon, Icon> param)
+        public TableCell<io.github.dsheirer.icon.Icon, io.github.dsheirer.icon.Icon> call(TableColumn<io.github.dsheirer.icon.Icon, io.github.dsheirer.icon.Icon> param)
         {
-            TableCell<Icon,Icon> tableCell = new TableCell<>()
+            TableCell<io.github.dsheirer.icon.Icon,io.github.dsheirer.icon.Icon> tableCell = new TableCell<>()
             {
                 @Override
-                protected void updateItem(Icon item, boolean empty)
+                protected void updateItem(io.github.dsheirer.icon.Icon item, boolean empty)
                 {
                     super.updateItem(item, empty);
                     setAlignment(Pos.CENTER);
@@ -574,7 +565,7 @@ public class IconManager extends Editor<Icon>
                     }
                     else
                     {
-                        if(item.getFxImage() != null)
+                        if(item != null)
                         {
                             ImageView iv = new ImageView(item.getFxImage());
                             iv.setFitHeight(16);

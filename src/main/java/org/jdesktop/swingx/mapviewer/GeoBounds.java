@@ -16,10 +16,12 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package org.jdesktop.swingx.mapviewer;
+import javafx.geometry.Rectangle2D;
+
 
 import org.apache.commons.math3.util.FastMath;
 
-import java.awt.geom.Rectangle2D;
+import javafx.geometry.BoundingBox;
 import java.util.Set;
 
 /**
@@ -90,12 +92,12 @@ public class GeoBounds
 				rects = new Rectangle2D[] {
 						// split into two rects e.g. 176.8793 to 180 and -180 to
 						// -175.0104
-						new Rectangle2D.Double(minLng, minLat, 180 - minLng, maxLat - minLat),
-						new Rectangle2D.Double(-180, minLat, maxLng + 180, maxLat - minLat) };
+						new Rectangle2D(minLng, minLat, 180 - minLng, maxLat - minLat),
+						new Rectangle2D(-180, minLat, maxLng + 180, maxLat - minLat) };
 			}
 			else
 			{
-				rects = new Rectangle2D[] { new Rectangle2D.Double(minLng, minLat, maxLng - minLng, maxLat - minLat) };
+				rects = new Rectangle2D[] { new Rectangle2D(minLng, minLat, maxLng - minLng, maxLat - minLat) };
 
 				throw new IllegalArgumentException("GeoBounds is not valid - minLng must be less that maxLng or "
 						+ "minLng must be greater than 0 and maxLng must be less than 0.");
@@ -103,7 +105,7 @@ public class GeoBounds
 		}
 		else
 		{
-			rects = new Rectangle2D[] { new Rectangle2D.Double(minLng, minLat, maxLng - minLng, maxLat - minLat) };
+			rects = new Rectangle2D[] { new Rectangle2D(minLng, minLat, maxLng - minLng, maxLat - minLat) };
 		}
 	}
 
@@ -140,7 +142,7 @@ public class GeoBounds
 	 */
 	public GeoPosition getNorthWest()
 	{
-		return new GeoPosition(rects[0].getX(), rects[0].getMaxY());
+		return new GeoPosition(rects[0].getMinX(), rects[0].getMaxY());
 	}
 
 	/**
@@ -154,7 +156,7 @@ public class GeoBounds
 		{
 			r = rects[1];
 		}
-		return new GeoPosition(r.getMaxX(), r.getY());
+		return new GeoPosition(r.getMaxX(), r.getMinY());
 	}
 
 }

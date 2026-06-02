@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2024 Dennis Sheirer
@@ -18,6 +19,12 @@
  */
 
 package io.github.dsheirer.gui.playlist.alias;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+
 
 import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.AliasFactory;
@@ -26,7 +33,7 @@ import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.gui.control.MaxLengthUnaryOperator;
 import io.github.dsheirer.gui.playlist.Editor;
 import io.github.dsheirer.gui.playlist.IAliasListRefreshListener;
-import io.github.dsheirer.icon.Icon;
+
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
 import java.util.ArrayList;
@@ -76,7 +83,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
+
 import javafx.scene.shape.Rectangle;
 import javafx.util.Callback;
 import javafx.scene.layout.Region;
@@ -1341,7 +1348,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                         Alias alias = getTableRow().getItem();
                         if (alias != null) {
                             io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(alias.getIconName());
-                            comboBox.getSelectionModel().select(icon);
+// //                             comboBox.getSelectionModel().select(icon);
                         }
                         setGraphic(comboBox);
                         comboBox.requestFocus();
@@ -1359,7 +1366,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                 private void createComboBox()
                 {
                     comboBox = new ComboBox<>();
-                    comboBox.setItems(new javafx.collections.transformation.SortedList<>(mPlaylistManager.getIconModel().iconsProperty(), com.google.common.collect.Ordering.natural()));
+// //                     comboBox.setItems(new javafx.collections.transformation.SortedList<>(mPlaylistManager.getIconModel().iconsProperty(), com.google.common.collect.Ordering.natural()));
                     Callback<ListView<io.github.dsheirer.icon.Icon>, ListCell<io.github.dsheirer.icon.Icon>> cellFactory = new Callback<>() {
                         @Override
                         public ListCell<io.github.dsheirer.icon.Icon> call(ListView<io.github.dsheirer.icon.Icon> param) {
@@ -1377,7 +1384,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                                         setGraphic(null);
                                     } else {
                                         setText(item.getName());
-                                        iv.setImage(item.getFxImage());
+                                        iv.setImage(null);
                                         setGraphic(iv);
                                     }
                                 }
@@ -1415,7 +1422,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                         {
                             io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(alias.getIconName());
 
-                            if(icon != null && icon.getFxImage() != null)
+                            if(icon != null && icon != null)
                             {
                                 imageView.setImage(icon.getFxImage());
                                 setGraphic(imageView);

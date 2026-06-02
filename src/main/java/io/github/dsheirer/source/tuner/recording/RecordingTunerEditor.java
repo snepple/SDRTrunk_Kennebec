@@ -22,12 +22,12 @@ import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.ui.TunerEditor;
-import net.miginfocom.swing.MigLayout;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JLabel;
-import javax.swing.JSeparator;
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
 
 /**
  * Recording tuner configuration editor
@@ -36,7 +36,7 @@ public class RecordingTunerEditor extends TunerEditor<RecordingTuner,RecordingTu
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(RecordingTunerEditor.class);
-    private JLabel mRecordingPath;
+    private Label mRecordingPath;
 
     /**
      * Constructs an instance
@@ -102,31 +102,30 @@ public class RecordingTunerEditor extends TunerEditor<RecordingTuner,RecordingTu
     private void init()
     {
         // HIG inspired layout: standardized 8pt grid with gaps
-        setLayout(new MigLayout("fill,wrap 2, insets 16 16 16 16, gapy 8", "[right, 100!][grow,fill]",
-            "[][][][][24!][][grow]"));
+        // setLayout(new javafx.scene.layout.HBox(4));
 
-        add(new JLabel("Tuner:"));
-        add(getTunerIdLabel(), "wrap");
+        getChildren().add(new Label("Tuner:"));
+        getChildren().add(getTunerIdLabel());
 
-        add(new JLabel("Status:"));
-        add(getTunerStatusLabel(), "wrap");
+        getChildren().add(new Label("Status:"));
+        getChildren().add(getTunerStatusLabel());
 
-        add(new JLabel("File:"));
-        add(getRecordingPath(), "wrap");
+        getChildren().add(new Label("File:"));
+        getChildren().add(getRecordingPath());
 
-        add(getButtonPanel(), "skip 1, align left, wrap");
+        getChildren().add(getButtonPanel());
 
         // Use empty space instead of a separator for HIG deference
-        add(new JLabel(""), "wrap");
+        getChildren().add(new Label(""));
 
-        add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel(), "wrap");
+        getChildren().add(new Label("Frequency (MHz):"));
+        getChildren().add(getFrequencyPanel());
     }
-    private JLabel getRecordingPath()
+    private Label getRecordingPath()
     {
         if(mRecordingPath == null)
         {
-            mRecordingPath = new JLabel();
+            mRecordingPath = new Label();
         }
 
         return mRecordingPath;

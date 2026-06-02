@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2023 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.module.decode.dmr.message.data.csbk.motorola;
+import javafx.scene.control.Label;
 
 /**
  * Used by Cap+ channel status message to indicate if the channel status payload is a single fragment, or a

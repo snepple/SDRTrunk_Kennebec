@@ -9,8 +9,7 @@
 
 package org.jdesktop.swingx.mapviewer;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import javafx.scene.image.Image;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -24,7 +23,7 @@ import java.util.Map;
  */
 public class TileCache
 {
-	private Map<URI, BufferedImage> imgmap = new HashMap<URI, BufferedImage>();
+	private Map<URI, Image> imgmap = new HashMap<URI, Image>();
 	private LinkedList<URI> imgmapAccessQueue = new LinkedList<URI>();
 	private int imagesize = 0;
 	private Map<URI, byte[]> bytemap = new HashMap<URI, byte[]>();
@@ -45,7 +44,7 @@ public class TileCache
 	 * @param bimg bytes of the compressed image, ie: the image file that was loaded over the network
 	 * @param img image to store in the cache
 	 */
-	public void put(URI uri, byte[] bimg, BufferedImage img)
+	public void put(URI uri, byte[] bimg, Image img)
 	{
 		synchronized (bytemap)
 		{
@@ -72,7 +71,7 @@ public class TileCache
 	 * @return the image matching the requested URI, or null if not available
 	 * @throws IOException if retrieval fails 
 	 */
-	public BufferedImage get(URI uri) throws IOException
+	public Image get(URI uri) throws IOException
 	{
 		synchronized (imgmap)
 		{
@@ -90,7 +89,7 @@ public class TileCache
 				log("retrieving from bytes");
 				bytemapAccessQueue.remove(uri);
 				bytemapAccessQueue.addLast(uri);
-				BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytemap.get(uri)));
+				Image img = new Image(new ByteArrayInputStream(bytemap.get(uri)));
 				addToImageCache(uri, img);
 				return img;
 			}
@@ -109,7 +108,7 @@ public class TileCache
 		log("HACK! need more memory: freeing up memory");
 	}
 
-	private void addToImageCache(final URI uri, final BufferedImage img)
+	private void addToImageCache(final URI uri, final Image img)
 	{
 		synchronized (imgmap)
 		{
@@ -117,7 +116,7 @@ public class TileCache
                             while (imagesize > 1000 * 1000 * 50)
                             {
                                     URI olduri = imgmapAccessQueue.removeFirst();
-                                    BufferedImage oldimg = imgmap.remove(olduri);
+                                    Image oldimg = imgmap.remove(olduri);
                                     imagesize -= oldimg.getWidth() * oldimg.getHeight() * 4;
                                     log("removed 1 img from image cache");
                             }

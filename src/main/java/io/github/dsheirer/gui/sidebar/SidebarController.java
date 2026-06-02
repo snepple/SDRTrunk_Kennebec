@@ -20,7 +20,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
-import javax.swing.SwingUtilities;
+
 
 public class SidebarController implements Initializable {
     @FXML private VBox root;
@@ -67,8 +67,19 @@ public class SidebarController implements Initializable {
     @FXML
     private void handleToggle() {
         collapsed = !collapsed;
-        root.setPrefWidth(collapsed ? 60 : 250);
-        render();
+        
+        javafx.animation.Timeline timeline = new javafx.animation.Timeline();
+        javafx.animation.KeyValue kv = new javafx.animation.KeyValue(root.prefWidthProperty(), collapsed ? 60 : 250, javafx.animation.Interpolator.EASE_BOTH);
+        javafx.animation.KeyFrame kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(200), kv);
+        timeline.getKeyFrames().add(kf);
+        
+        if (!collapsed) {
+            render();
+            timeline.play();
+        } else {
+            timeline.setOnFinished(e -> render());
+            timeline.play();
+        }
     }
 
     public void setActive(String id) {
@@ -101,12 +112,12 @@ public class SidebarController implements Initializable {
 
         boolean isActive = item.id.equals(activeId) || item.subItems.stream().anyMatch(s -> s.id.equals(activeId));
 
-        String baseStyle = isActive ? "-fx-background-color: #c8c8c8;" : "-fx-background-color: transparent;";
+        String baseStyle = isActive ? "-fx-background-color: #007AFF; -fx-background-radius: 6;" : "-fx-background-color: transparent; -fx-background-radius: 6;";
         box.setStyle(baseStyle);
 
         SVGPath icon = new SVGPath();
         icon.setContent(item.iconPath);
-        icon.setFill(Color.BLACK);
+        icon.setFill(isActive ? Color.WHITE : Color.BLACK);
 
         // Scale icon slightly down to match font size
         icon.setScaleX(0.8);
@@ -121,14 +132,16 @@ public class SidebarController implements Initializable {
         if (!collapsed) {
             Label label = new Label(item.label);
             label.setFont(Font.font("System", FontWeight.BOLD, 12));
-            label.setTextFill(Color.BLACK);
+            label.setTextFill(isActive ? Color.WHITE : Color.BLACK);
             box.getChildren().add(label);
         } else {
-            Tooltip.install(box, new Tooltip(item.label));
+            Tooltip tooltip = new Tooltip(item.label);
+            tooltip.setShowDelay(javafx.util.Duration.millis(200));
+            Tooltip.install(box, tooltip);
         }
 
         box.setOnMouseEntered(e -> {
-            if (!isActive) box.setStyle("-fx-background-color: #dcdcdc;");
+            if (!isActive) box.setStyle("-fx-background-color: #E5E5EA; -fx-background-radius: 6;");
         });
         box.setOnMouseExited(e -> {
             if (!isActive) box.setStyle(baseStyle);
@@ -137,7 +150,7 @@ public class SidebarController implements Initializable {
         box.setOnMouseClicked(e -> {
             if (item.selectable) {
                 if (listener != null) {
-                    SwingUtilities.invokeLater(() -> listener.onItemSelected(item.id));
+                    Platform.runLater(() -> listener.onItemSelected(item.id));
                 }
             } else if (!item.subItems.isEmpty()) {
                 if (collapsed) {
@@ -146,13 +159,13 @@ public class SidebarController implements Initializable {
                 } else {
                     item.expanded = !item.expanded;
                     if (item.expanded && !item.subItems.isEmpty() && listener != null) {
-                        SwingUtilities.invokeLater(() -> listener.onItemSelected(item.subItems.get(0).id));
+                        Platform.runLater(() -> listener.onItemSelected(item.subItems.get(0).id));
                     }
                     render();
                 }
             } else {
                 if (listener != null) {
-                    SwingUtilities.invokeLater(() -> listener.onActionRequested(item.id));
+                    Platform.runLater(() -> listener.onActionRequested(item.id));
                 }
             }
         });
@@ -168,19 +181,21 @@ public class SidebarController implements Initializable {
         box.setCursor(Cursor.HAND);
 
         boolean isActive = sub.id.equals(activeId);
-        String baseStyle = isActive ? "-fx-background-color: #c8c8c8;" : "-fx-background-color: transparent;";
+        String baseStyle = isActive ? "-fx-background-color: #007AFF; -fx-background-radius: 6;" : "-fx-background-color: transparent; -fx-background-radius: 6;";
         box.setStyle(baseStyle);
 
         if (!collapsed) {
             Label label = new Label(sub.label);
-            label.setTextFill(Color.BLACK);
+            label.setTextFill(isActive ? Color.WHITE : Color.BLACK);
             box.getChildren().add(label);
         } else {
-            Tooltip.install(box, new Tooltip(sub.label));
+            Tooltip tooltip = new Tooltip(sub.label);
+            tooltip.setShowDelay(javafx.util.Duration.millis(200));
+            Tooltip.install(box, tooltip);
         }
 
         box.setOnMouseEntered(e -> {
-            if (!isActive) box.setStyle("-fx-background-color: #dcdcdc;");
+            if (!isActive) box.setStyle("-fx-background-color: #E5E5EA; -fx-background-radius: 6;");
         });
         box.setOnMouseExited(e -> {
             if (!isActive) box.setStyle(baseStyle);
@@ -189,11 +204,11 @@ public class SidebarController implements Initializable {
         box.setOnMouseClicked(e -> {
             if (sub.id.startsWith("vis_")) {
                 if (listener != null) {
-                    SwingUtilities.invokeLater(() -> listener.onActionRequested(sub.id));
+                    Platform.runLater(() -> listener.onActionRequested(sub.id));
                 }
             } else {
                 if (listener != null) {
-                    SwingUtilities.invokeLater(() -> listener.onItemSelected(sub.id));
+                    Platform.runLater(() -> listener.onItemSelected(sub.id));
                 }
             }
         });

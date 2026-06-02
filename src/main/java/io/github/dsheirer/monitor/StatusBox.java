@@ -99,5 +99,34 @@ public class StatusBox extends HBox
         recordingsSizeLabel.textProperty().bind(mResourceMonitor.fileSizeRecordingsProperty());
         recordingsSizeLabel.setAlignment(Pos.CENTER_RIGHT);
         getChildren().add(recordingsSizeLabel);
+
+        jiconfont.javafx.IconNode remoteIcon = new jiconfont.javafx.IconNode(jiconfont.icons.font_awesome.FontAwesome.DESKTOP);
+        remoteIcon.setIconSize(14);
+        Label remoteLabel = new Label("", remoteIcon);
+        remoteLabel.setTooltip(new Tooltip("Remote Desktop Mode Active (Animations/FFT throttled)"));
+        remoteLabel.setVisible(false);
+        remoteLabel.setManaged(false);
+        getChildren().add(remoteLabel);
+
+        io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().register(this);
+
+        this.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null) {
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().unregister(this);
+            }
+        });
+    }
+
+    @com.google.common.eventbus.Subscribe
+    public void onRemoteDesktopMode(io.github.dsheirer.eventbus.RemoteDesktopModeEvent event) {
+        javafx.application.Platform.runLater(() -> {
+            boolean active = event.isActive();
+            getChildren().stream()
+                .filter(node -> node instanceof Label && ((Label) node).getTooltip() != null && ((Label) node).getTooltip().getText().contains("Remote Desktop"))
+                .forEach(node -> {
+                    node.setVisible(active);
+                    node.setManaged(active);
+                });
+        });
     }
 }

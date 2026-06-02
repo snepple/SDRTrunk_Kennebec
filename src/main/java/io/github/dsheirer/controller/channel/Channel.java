@@ -87,6 +87,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     private StringProperty mCounty = new SimpleStringProperty();
     private StringProperty mAgency = new SimpleStringProperty();
     private StringProperty mName = new SimpleStringProperty();
+    private StringProperty mImagePath = new SimpleStringProperty();
     private ObservableList<Long> mFrequencyList;
 
     private BooleanProperty mProcessing = new SimpleBooleanProperty();
@@ -145,6 +146,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
         channel.setAgency(mAgency.get());
         channel.setAliasListName(mAliasListName.get());
         channel.setAutoStart(mAutoStart.get());
+        channel.setImagePath(getImagePath());
         channel.setAutoStartOrder(mAutoStartOrder.get());
 
         AuxDecodeConfiguration auxCopy = new AuxDecodeConfiguration();
@@ -662,6 +664,25 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     public void setAliasListName(String name)
     {
         mAliasListName.set(name);
+    }
+
+    /**
+     * Custom channel artwork image path.
+     */
+    @JacksonXmlProperty(isAttribute = false, localName = "image_path")
+    public String getImagePath()
+    {
+        return mImagePath.get();
+    }
+
+    public void setImagePath(String path)
+    {
+        mImagePath.set(path);
+    }
+
+    public StringProperty imagePathProperty()
+    {
+        return mImagePath;
     }
 
     /**

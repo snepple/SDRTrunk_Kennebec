@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2025 Dennis Sheirer
@@ -18,6 +19,12 @@
  */
 
 package io.github.dsheirer.gui.playlist.channel;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Button;
 
 import io.github.dsheirer.dsp.filter.equalizer.GraphicEqualizer;
 import io.github.dsheirer.gui.playlist.eventlog.EventLogConfigurationEditor;
@@ -48,7 +55,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
-import javafx.scene.paint.Color;
+
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;

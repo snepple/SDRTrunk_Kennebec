@@ -1,4 +1,8 @@
+
+
 package io.github.dsheirer.gui.playlist.twotone;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.playlist.TwoToneConfiguration;
@@ -107,7 +111,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         toneBField.getItems().addAll(STANDARD_FREQUENCIES);
 
         javafx.beans.value.ChangeListener<String> filterListenerA = (obs, oldValue, newValue) -> {
-            if (newValue == null) return;
+            if (newValue == null || !toneAField.isFocused()) return;
             List<String> filtered = STANDARD_FREQUENCIES.stream()
                     .filter(f -> f.startsWith(newValue))
                     .collect(Collectors.toList());
@@ -122,9 +126,14 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             });
         };
         toneAField.getEditor().textProperty().addListener(filterListenerA);
+        toneAField.focusedProperty().addListener((obs, o, n) -> {
+            if (n) {
+                toneAField.getItems().setAll(STANDARD_FREQUENCIES);
+            }
+        });
 
         javafx.beans.value.ChangeListener<String> filterListenerB = (obs, oldValue, newValue) -> {
-            if (newValue == null) return;
+            if (newValue == null || !toneBField.isFocused()) return;
             List<String> filtered = STANDARD_FREQUENCIES.stream()
                     .filter(f -> f.startsWith(newValue))
                     .collect(Collectors.toList());
@@ -139,6 +148,11 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             });
         };
         toneBField.getEditor().textProperty().addListener(filterListenerB);
+        toneBField.focusedProperty().addListener((obs, o, n) -> {
+            if (n) {
+                toneBField.getItems().setAll(STANDARD_FREQUENCIES);
+            }
+        });
 
         ComboBox<String> zelloField = new ComboBox<>();
         for (BroadcastConfiguration bc : mPlaylistManager.getBroadcastModel().getBroadcastConfigurations()) {
@@ -169,6 +183,30 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         Label toneBLabel = new Label("Tone B:");
         generalGrid.add(toneBLabel, 0, 3);
         generalGrid.add(toneBField, 1, 3);
+
+        Slider freqTolSlider = new Slider(0, 50, 10);
+        freqTolSlider.setShowTickLabels(true);
+        freqTolSlider.setShowTickMarks(true);
+        freqTolSlider.setMajorTickUnit(10);
+        freqTolSlider.setBlockIncrement(1);
+        Label freqTolValueLabel = new Label("10 Hz");
+        freqTolSlider.valueProperty().addListener((obs, oldVal, newVal) -> freqTolValueLabel.setText(newVal.intValue() + " Hz"));
+
+        Slider durationSlider = new Slider(100, 2000, 300);
+        durationSlider.setShowTickLabels(true);
+        durationSlider.setShowTickMarks(true);
+        durationSlider.setMajorTickUnit(500);
+        durationSlider.setBlockIncrement(50);
+        Label durationValueLabel = new Label("300 ms");
+        durationSlider.valueProperty().addListener((obs, oldVal, newVal) -> durationValueLabel.setText(newVal.intValue() + " ms"));
+
+        generalGrid.add(new Label("Freq Tolerance:"), 0, 4);
+        HBox freqTolBox = new HBox(10, freqTolSlider, freqTolValueLabel);
+        generalGrid.add(freqTolBox, 1, 4);
+
+        generalGrid.add(new Label("Min Duration:"), 0, 5);
+        HBox durationBox = new HBox(10, durationSlider, durationValueLabel);
+        generalGrid.add(durationBox, 1, 5);
 
         toneBLabel.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
         toneBField.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
@@ -311,6 +349,8 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.valueProperty().unbindBidirectional(oldVal.zelloAlertFileProperty());
                 templateField.textProperty().unbindBidirectional(oldVal.templateProperty());
                 textMessageCheck.selectedProperty().unbindBidirectional(oldVal.enableZelloTextMessageProperty());
+                freqTolSlider.valueProperty().unbindBidirectional(oldVal.frequencyToleranceProperty());
+                durationSlider.valueProperty().unbindBidirectional(oldVal.toneDurationMsProperty());
 
                 try {
                     oldVal.setToneA(toneAField.getEditor().getText().isEmpty() ? 0 : Double.parseDouble(toneAField.getEditor().getText()));
@@ -347,6 +387,8 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.valueProperty().bindBidirectional(newVal.zelloAlertFileProperty());
                 templateField.textProperty().bindBidirectional(newVal.templateProperty());
                 textMessageCheck.selectedProperty().bindBidirectional(newVal.enableZelloTextMessageProperty());
+                freqTolSlider.valueProperty().bindBidirectional(newVal.frequencyToleranceProperty());
+                durationSlider.valueProperty().bindBidirectional(newVal.toneDurationMsProperty());
                 if (!centerSplitPane.getItems().contains(rightPane)) {
                     centerSplitPane.getItems().add(rightPane);
                     centerSplitPane.setDividerPositions(0.4);
@@ -366,6 +408,8 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.getSelectionModel().clearSelection();
                 templateField.clear();
                 textMessageCheck.setSelected(false);
+                freqTolSlider.setValue(10);
+                durationSlider.setValue(300);
                 if (centerSplitPane.getItems().contains(rightPane)) {
                     centerSplitPane.getItems().remove(rightPane);
                 }
@@ -451,46 +495,58 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
 
         mAliasEditor = new TwoToneAliasSelectionEditor(mPlaylistManager);
 
-        TabPane tabPane = new TabPane();
-        Tab configTab = new Tab("Configuration");
-        configTab.setClosable(false);
+        // Header bar with persistent Save button
+        HBox detailHeader = new HBox(10);
+        detailHeader.setPadding(new Insets(5, 5, 10, 5));
+        detailHeader.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
-        Label generalLabel = new Label("General Setup");
-        generalLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10 0 5 0;");
-        Label zelloLabel = new Label("Zello Integration");
-        zelloLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10 0 5 0;");
-        Label mqttLabel = new Label("MQTT Integration");
-        mqttLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10 0 5 0;");
+        Label detailTitle = new Label("Detector Settings");
+        detailTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #3A3A3C;");
 
-        VBox configBox = new VBox(10, generalLabel, generalGrid, zelloLabel, zelloGrid, mqttLabel, mqttGrid);
-        configBox.setPadding(new Insets(10));
+        Region headerSpacer = new Region();
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
 
-        ScrollPane configScrollPane = new ScrollPane(configBox);
-        configScrollPane.setFitToWidth(true);
-        configScrollPane.setStyle("-fx-background-color: transparent;");
-
-        // Save button for the configuration tab
-        HBox configBtnBox = new HBox(10);
-        configBtnBox.setPadding(new Insets(10));
-        Button saveBtn = new Button("Save");
+        Button saveBtn = new Button("Save Settings");
+        saveBtn.getStyleClass().add("kennebec-primary-button");
         saveBtn.setOnAction(e -> {
             mPlaylistManager.schedulePlaylistSave();
+            mTableView.refresh();
         });
-        configBtnBox.getChildren().addAll(saveBtn);
 
-        VBox rightConfigLayout = new VBox(configScrollPane, configBtnBox);
-        VBox.setVgrow(configScrollPane, Priority.ALWAYS);
+        detailHeader.getChildren().addAll(detailTitle, headerSpacer, saveBtn);
 
-        configTab.setContent(rightConfigLayout);
+        TabPane tabPane = new TabPane();
+        tabPane.setStyle("-fx-tab-channel-bg: transparent;");
+        VBox.setVgrow(tabPane, Priority.ALWAYS);
+
+        Tab generalTab = new Tab("General Setup");
+        generalTab.setClosable(false);
+        ScrollPane generalScroll = new ScrollPane(generalGrid);
+        generalScroll.setFitToWidth(true);
+        generalScroll.setStyle("-fx-background-color: transparent; -fx-padding: 10;");
+        generalTab.setContent(generalScroll);
+
+        Tab zelloTab = new Tab("Zello Integration");
+        zelloTab.setClosable(false);
+        ScrollPane zelloScroll = new ScrollPane(zelloGrid);
+        zelloScroll.setFitToWidth(true);
+        zelloScroll.setStyle("-fx-background-color: transparent; -fx-padding: 10;");
+        zelloTab.setContent(zelloScroll);
+
+        Tab mqttTab = new Tab("MQTT Integration");
+        mqttTab.setClosable(false);
+        ScrollPane mqttScroll = new ScrollPane(mqttGrid);
+        mqttScroll.setFitToWidth(true);
+        mqttScroll.setStyle("-fx-background-color: transparent; -fx-padding: 10;");
+        mqttTab.setContent(mqttScroll);
 
         Tab aliasTab = new Tab("Aliases");
         aliasTab.setClosable(false);
         aliasTab.setContent(mAliasEditor);
 
-        tabPane.getTabs().addAll(configTab, aliasTab);
-        VBox.setVgrow(tabPane, Priority.ALWAYS);
+        tabPane.getTabs().addAll(generalTab, zelloTab, mqttTab, aliasTab);
 
-        rightPane.getChildren().add(tabPane);
+        rightPane.getChildren().addAll(detailHeader, tabPane);
 
         // Add to SplitPane
         centerSplitPane.getItems().add(leftPane);

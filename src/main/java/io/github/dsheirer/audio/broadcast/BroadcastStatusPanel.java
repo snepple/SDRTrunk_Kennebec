@@ -33,7 +33,7 @@ import java.io.IOException;
 /**
  * Table of broadcast streams and statuses.
  */
-public class BroadcastStatusPanel extends JFXPanel
+public class BroadcastStatusPanel extends javafx.scene.layout.StackPane
 {
     private static final Logger mLog = LoggerFactory.getLogger(BroadcastStatusPanel.class);
     private BroadcastStatusPanelController mController;
@@ -53,12 +53,11 @@ public class BroadcastStatusPanel extends JFXPanel
                 mController = loader.getController();
                 mController.init(broadcastModel, userPreferences, preferenceKey);
 
-                Scene scene = new Scene(root);
                 java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
                 if (cssUrl != null) {
-                    scene.getStylesheets().add(cssUrl.toExternalForm());
+                    root.getStylesheets().add(cssUrl.toExternalForm());
                 }
-                setScene(scene);
+                getChildren().add(root);
             } catch (IOException e) {
                 mLog.error("Error loading BroadcastStatusPanel.fxml", e);
             }
@@ -70,7 +69,7 @@ public class BroadcastStatusPanel extends JFXPanel
         return mController != null ? mController.getTable() : null;
     }
 
-    public void setDisable(boolean disable) {
+    public void setDisablePanel(boolean disable) {
         if (mController != null && mController.getTable() != null) {
             Platform.runLater(() -> mController.getTable().setDisable(disable));
         } else {

@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2022 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.gui.playlist;
+import javafx.scene.image.Image;
 
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.icon.ViewIconManagerRequest;
@@ -103,6 +105,8 @@ public class PlaylistEditor extends BorderPane
         mPlaylistManager = playlistManager;
         mTunerManager = tunerManager;
         mUserPreferences = userPreferences;
+        
+        setStyle("-fx-background-color: lightgreen;");
 
         //Throw a new runnable back onto the FX thread to lazy load the editor content after the editor has been
         //constructed and shown.

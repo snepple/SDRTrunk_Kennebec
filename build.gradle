@@ -81,6 +81,7 @@ sourceSets {
 
 test {
     useJUnitPlatform()
+    jvmArgs '-XX:+EnableDynamicAgentLoading'
 }
 
 dependencies {
@@ -97,6 +98,11 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.1")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:6.0.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    
+    testImplementation 'org.testfx:testfx-core:4.0.16-alpha'
+    testImplementation 'org.testfx:testfx-junit5:4.0.16-alpha'
+    testImplementation 'org.testfx:openjfx-monocle:jdk-12.0.1+2'
+    testImplementation 'org.mockito:mockito-core:5.11.0'
 
     //Jitpack imports
     implementation 'com.github.dnault:libresample4j:master'
@@ -161,10 +167,9 @@ def jvmArgsWindows =
          '--add-modules=jdk.incubator.vector',   //Project Panama Vector API is still in incubator
          '--enable-preview', //Project Panama Vector API is still in incubator
          '--enable-native-access=ALL-UNNAMED', //Suppress unsafe warnings for FFM API Foreign Memory calls
-         '--enable-native-access=javafx.graphics', //JDK24 - suppress restricted java.lang.System calls
-
-         // '-XX:+UseCompactObjectHeaders',   //JDK25 - use compact object headers
+         '-XX:+EnableDynamicAgentLoading',
          '-Xmx6g',                         //Set max heap size to 6GB
+         '-Dnet.bytebuddy.experimental=true', // Allow Mockito/ByteBuddy on Java 23
          '-Dcom.github.weisj.jsvg.disableStax=true', // Disable StAX parser for SVG due to large attribute size limits
          '-Dcom.ctc.wstx.maxAttributeSize=10000000', // Increase StAX attribute size limit if not disabled
          '-Djdk.xml.maxAttributeSize=10000000', // Increase XML attribute size limit
@@ -186,6 +191,7 @@ def jvmArgsLinux =
          '--enable-native-access=javafx.graphics', //JDK24 - suppress restricted java.lang.System calls
          '--enable-native-access=ALL-UNNAMED', //SDRPlay API library path
          '-Xmx6g',                         //Set max heap size to 6GB
+         '-Dnet.bytebuddy.experimental=true', // Allow Mockito/ByteBuddy on Java 23
          '-Dcom.github.weisj.jsvg.disableStax=true', // Disable StAX parser for SVG due to large attribute size limits
          '-Dcom.ctc.wstx.maxAttributeSize=10000000', // Increase StAX attribute size limit if not disabled
          '-Djdk.xml.maxAttributeSize=10000000'] // Increase XML attribute size limit

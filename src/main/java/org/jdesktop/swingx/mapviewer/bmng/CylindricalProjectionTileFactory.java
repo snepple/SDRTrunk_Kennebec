@@ -16,13 +16,15 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package org.jdesktop.swingx.mapviewer.bmng;
+import javafx.geometry.Dimension2D;
+
 
 import org.apache.commons.math3.util.FastMath;
 import org.jdesktop.swingx.mapviewer.DefaultTileFactory;
 import org.jdesktop.swingx.mapviewer.GeoPosition;
 
-import java.awt.*;
-import java.awt.geom.Point2D;
+
+import javafx.geometry.Point2D;
 
 /**
  * @author joshy
@@ -46,23 +48,23 @@ public class CylindricalProjectionTileFactory extends DefaultTileFactory
 	}
 
 	@Override
-	public Dimension getMapSize(int zoom)
+	public Dimension2D getMapSize(int zoom)
 	{
 		int midpoint = ((SLMapServerInfo) getInfo()).getMidpoint();
 		if (zoom < midpoint)
 		{
 			int w = (int) FastMath.pow(2, midpoint - zoom);
-			return new Dimension(w, w / 2);
+			return new Dimension2D(w, w / 2);
 			// return super.getMapSize(zoom);
 		}
-		return new Dimension(2, 1);
+		return new Dimension2D(2, 1);
 	}
 
 	@Override
 	public Point2D geoToPixel(GeoPosition c, int zoom)
 	{
 		// calc the pixels per degree
-		Dimension mapSizeInTiles = getMapSize(zoom);
+		Dimension2D mapSizeInTiles = getMapSize(zoom);
 		// double size_in_tiles = (double)getInfo().getMapWidthInTilesAtZoom(zoom);
 		// double size_in_tiles = Math.pow(2, getInfo().getTotalMapZoom() - zoom);
 		double size_in_pixels = mapSizeInTiles.getWidth() * getInfo().getTileSize(zoom);
@@ -75,14 +77,14 @@ public class CylindricalProjectionTileFactory extends DefaultTileFactory
 		double x = c.getLongitude() * ppd + centerX;
 		double y = -c.getLatitude() * ppd + centerY;
 
-		return new Point2D.Double(x, y);
+		return new Point2D(x, y);
 	}
 
 	@Override
 	public GeoPosition pixelToGeo(Point2D pix, int zoom)
 	{
 		// calc the pixels per degree
-		Dimension mapSizeInTiles = getMapSize(zoom);
+		Dimension2D mapSizeInTiles = getMapSize(zoom);
 		double size_in_pixels = mapSizeInTiles.getWidth() * getInfo().getTileSize(zoom);
 		double ppd = size_in_pixels / 360;
 

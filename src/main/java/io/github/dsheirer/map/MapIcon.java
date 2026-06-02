@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  *     SDR Trunk 
  *     Copyright (C) 2014 Dennis Sheirer
@@ -16,17 +17,23 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package io.github.dsheirer.map;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.image.Image;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import io.github.dsheirer.icon.Icon;
+import javafx.scene.image.Image;
 import io.github.dsheirer.settings.Setting;
 import io.github.dsheirer.settings.SettingType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.ImageIcon;
-import java.awt.Image;
+
+
 import java.net.URL;
 
 public class MapIcon extends Setting implements Comparable<MapIcon>
@@ -35,7 +42,7 @@ public class MapIcon extends Setting implements Comparable<MapIcon>
 
     private static final int sMAX_IMAGE_DIMENSION = 48;
     private String mPath;
-    private ImageIcon mImageIcon;
+    private Image mImage;
 
     @JacksonXmlProperty(isAttribute = true, localName = "type", namespace = "http://www.w3.org/2001/XMLSchema-instance")
     @Override
@@ -62,7 +69,7 @@ public class MapIcon extends Setting implements Comparable<MapIcon>
      * @param editable - defines if the map icon or details can be edited
      *
      * Note: the default icons are constructed with editable = false, so that
-     * they cannot be deleted from the Icon Manager editor window
+     * they cannot be deleted from the javafx.scene.image.Image Manager editor window
      */
     public MapIcon(String name, String path, boolean editable)
     {
@@ -104,76 +111,31 @@ public class MapIcon extends Setting implements Comparable<MapIcon>
     }
 
     @JsonIgnore
-    public ImageIcon getImageIcon()
+    public Image getImage()
     {
-        if(mImageIcon == null && mPath != null)
+        if(mImage == null && mPath != null)
         {
             try
             {
-                URL imageURL = Icon.class.getResource(mPath);
+                URL imageURL = javafx.scene.image.Image.class.getResource(mPath);
 
                 if(imageURL == null && !mPath.startsWith("/"))
                 {
-                    imageURL = (Icon.class.getResource("/" + mPath));
+                    imageURL = (javafx.scene.image.Image.class.getResource("/" + mPath));
                 }
 
                 if(imageURL != null)
                 {
-                    mImageIcon = new ImageIcon(imageURL);
-
-                    /**
-                     * If the image is too big, scale it down to max pixel size squared
-                     */
-                    if(mImageIcon.getIconWidth() > sMAX_IMAGE_DIMENSION ||
-                        mImageIcon.getIconHeight() > sMAX_IMAGE_DIMENSION)
-                    {
-                        /**
-                         * getScaled instance will correct any negative value to the
-                         * correct value, maintaining original aspect ratio.  So, we
-                         * only scale the larger value, and allow the image class to
-                         * determine the correct value for the other measurement
-                         */
-                        int height = -1;
-                        int width = -1;
-
-                        /**
-                         * Use the larger width or height value to determine the
-                         * scaling factor
-                         */
-                        if(mImageIcon.getIconHeight() > mImageIcon.getIconWidth())
-                        {
-                            height = sMAX_IMAGE_DIMENSION;
-                        }
-                        else
-                        {
-                            width = sMAX_IMAGE_DIMENSION;
-                        }
-
-                        final int finalWidth = width;
-                        final int finalHeight = height;
-                        mImageIcon = new ImageIcon(mImageIcon.getImage()) {
-                            @Override
-                            public synchronized void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {
-                                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
-                                g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                                g2.drawImage(getImage(), x, y, finalWidth, finalHeight, c);
-                                g2.dispose();
-                            }
-                            @Override
-                            public int getIconWidth() { return finalWidth; }
-                            @Override
-                            public int getIconHeight() { return finalHeight; }
-                        };
-                    }
+                    mImage = new Image(imageURL.toString(), sMAX_IMAGE_DIMENSION, sMAX_IMAGE_DIMENSION, true, true);
                 }
             }
             catch(Exception e)
             {
-                mLog.error("Error loading Icon [" + mPath + "]", e);
+                mLog.error("Error loading javafx.scene.image.Image [" + mPath + "]", e);
             }
         }
 
-        return mImageIcon;
+        return mImage;
     }
 
     @JacksonXmlProperty(isAttribute = true, localName = "path")

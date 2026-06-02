@@ -19,6 +19,11 @@
  */
 
 package io.github.dsheirer.gui.preference;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.identifier.IntegerFormat;

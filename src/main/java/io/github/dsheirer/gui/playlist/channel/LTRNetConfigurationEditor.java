@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2023 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.gui.playlist.channel;
+import javafx.scene.control.Button;
 
 import io.github.dsheirer.gui.playlist.decoder.AuxDecoderConfigurationEditor;
 import io.github.dsheirer.gui.playlist.eventlog.EventLogConfigurationEditor;

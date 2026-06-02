@@ -1,22 +1,16 @@
-/*
- * *****************************************************************************
- * Copyright (C) 2014-2025 Dennis Sheirer
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- * ****************************************************************************
- */
+
+
+
 package io.github.dsheirer.map;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.icon.IconModel;
@@ -26,11 +20,18 @@ import io.github.dsheirer.identifier.IdentifierClass;
 import io.github.dsheirer.identifier.Role;
 import io.github.dsheirer.settings.MapViewSetting;
 import io.github.dsheirer.settings.SettingsManager;
-import java.awt.EventQueue;
-import java.util.ArrayList;
-import java.util.List;
-import net.miginfocom.swing.MigLayout;
-import java.awt.BorderLayout;
+import io.github.dsheirer.gui.control.ToggleSwitch;
+import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.canvas.Canvas;
+
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+
+import javafx.embed.swing.SwingNode;
 import org.jdesktop.swingx.JXMapViewer;
 import org.jdesktop.swingx.OSMTileFactoryInfo;
 import org.jdesktop.swingx.input.PanKeyListener;
@@ -38,32 +39,18 @@ import org.jdesktop.swingx.input.ZoomMouseWheelListenerCursor;
 import org.jdesktop.swingx.mapviewer.DefaultTileFactory;
 import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.jdesktop.swingx.mapviewer.TileFactoryInfo;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.KeyEvent;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.application.Platform;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.JSplitPane;
-import javax.swing.JTable;
-import javax.swing.JToggleButton;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
-/**
- * Swing map panel.
- */
-public class MapPanel extends JPanel implements IPlottableUpdateListener
-{
-    private static final long serialVersionUID = 1L;
+public class MapPanel extends BorderPane implements IPlottableUpdateListener {
 
     private static final int ZOOM_MINIMUM = 1;
     private static final int ZOOM_MAXIMUM = 16;
@@ -75,32 +62,26 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
     private SettingsManager mSettingsManager;
     private MapService mMapService;
     private JXMapViewer mMapViewer;
+    private Canvas mMapCanvas;
     private PlottableEntityPainter mMapPainter;
+    private SelectionAdapter mSelectionAdapter;
+    private SelectionPainter mSelectionPainter;
     private TrackGenerator mTrackGenerator;
-    private JToggleButton mTrackGeneratorToggle;
-    private JTable mPlottedTracksTable;
-    private JButton mClearMapButton;
-    private JButton mReplotAllTracksButton;
-    private JButton mDeleteAllTracksButton;
-    private JButton mDeleteTrackButton;
-    private JButton mFollowButton;
-    private JLabel mFollowedEntityLabel;
-    private JCheckBox mCenterOnSelectedCheckBox;
+    private ToggleSwitch mTrackGeneratorToggle;
+    private TableView<PlottableEntityHistory> mPlottedTracksTable;
+    private Button mClearMapButton;
+    private Button mReplotAllTracksButton;
+    private Button mDeleteAllTracksButton;
+    private Button mDeleteTrackButton;
+    private Button mFollowButton;
+    private Label mFollowedEntityLabel;
+    private CheckBox mCenterOnSelectedCheckBox;
     private PlottableEntityHistory mFollowedTrack;
-    private JComboBox<Integer> mTrackHistoryLengthComboBox;
-    private JTable mTrackHistoryTable;
-    private JLabel mSelectedTrackSystemLabel;
-    private final TrackHistoryModel EMPTY_HISTORY = new TrackHistoryModel();
+    private ComboBox<Integer> mTrackHistoryLengthComboBox;
+    private TableView<TimestampedGeoPosition> mTrackHistoryTable;
+    private Label mSelectedTrackSystemLabel;
 
-    /**
-     * Constructs an instance
-     * @param mapService for accessing entities to plot
-     * @param aliasModel for alias lookup
-     * @param iconModel for icon lookup
-     * @param settingsManager for user specified options/settings.
-     */
-    public MapPanel(MapService mapService, AliasModel aliasModel, IconModel iconModel, SettingsManager settingsManager)
-    {
+    public MapPanel(MapService mapService, AliasModel aliasModel, IconModel iconModel, SettingsManager settingsManager) {
         mSettingsManager = settingsManager;
         mMapService = mapService;
         mMapPainter = new PlottableEntityPainter(aliasModel, iconModel);
@@ -108,614 +89,442 @@ public class MapPanel extends JPanel implements IPlottableUpdateListener
         init();
     }
 
-    private void init()
-    {
-        setLayout(new BorderLayout());
+    private void init() {
         mMapService.addListener(this);
 
-        // Sidebar (Master-Detail)
-        JPanel sidebar = new JPanel(new MigLayout("insets 0, gap 0", "[grow,fill]", "[][grow,fill][][grow,fill][]"));
-        sidebar.setBackground(new java.awt.Color(242, 242, 247)); // Apple grouped background
+        // Sidebar
+        VBox sidebar = new VBox(0);
+        sidebar.setStyle("-fx-background-color: #f2f2f7;");
 
-        JLabel header1 = new JLabel("Plotted Tracks");
-        header1.setFont(header1.getFont().deriveFont(java.awt.Font.BOLD, 11f));
-        header1.setForeground(new java.awt.Color(142, 142, 147));
-        header1.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 10, 5, 5));
-        sidebar.add(header1, "wrap");
+        Label header1 = new Label("Plotted Tracks");
+        header1.setStyle("-fx-font-weight: bold; -fx-text-fill: #8e8e93; -fx-padding: 10 10 5 5;");
+        sidebar.getChildren().add(header1);
 
-        JTable tracksTable = getPlottedTracksTable();
-        tracksTable.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-        JScrollPane tracksScroll = new JScrollPane(tracksTable);
-        tracksScroll.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-        sidebar.add(tracksScroll, "wrap");
+        TableView<PlottableEntityHistory> tracksTable = getPlottedTracksTable();
+        VBox.setVgrow(tracksTable, Priority.ALWAYS);
+        sidebar.getChildren().add(tracksTable);
 
-        JPanel detailPanel = new JPanel(new MigLayout("insets 10, gap 5", "[grow,fill]", "[][][grow,fill][]"));
-        detailPanel.setBackground(java.awt.Color.WHITE);
-        detailPanel.setBorder(javax.swing.BorderFactory.createMatteBorder(1, 0, 0, 0, new java.awt.Color(200, 200, 200)));
+        VBox detailPanel = new VBox(5);
+        detailPanel.setStyle("-fx-background-color: white; -fx-border-color: #c8c8c8 transparent transparent transparent; -fx-padding: 10;");
 
-        detailPanel.add(new JLabel("Selected System:"), "split 2");
-        detailPanel.add(getSelectedTrackSystemLabel(), "wrap");
+        HBox systemBox = new HBox(5, new Label("Selected System:"), getSelectedTrackSystemLabel());
+        detailPanel.getChildren().add(systemBox);
 
-        JLabel header2 = new JLabel("Track History");
-        header2.setFont(header2.getFont().deriveFont(java.awt.Font.BOLD, 11f));
-        header2.setForeground(new java.awt.Color(142, 142, 147));
-        header2.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
-        detailPanel.add(header2, "wrap");
+        Label header2 = new Label("Track History");
+        header2.setStyle("-fx-font-weight: bold; -fx-text-fill: #8e8e93;");
+        detailPanel.getChildren().add(header2);
 
-        JTable historyTable = getTrackHistoryTable();
-        historyTable.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-        JScrollPane historyScroll = new JScrollPane(historyTable);
-        historyScroll.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(230, 230, 230)));
-        detailPanel.add(historyScroll, "wrap");
+        TableView<TimestampedGeoPosition> historyTable = getTrackHistoryTable();
+        VBox.setVgrow(historyTable, Priority.ALWAYS);
+        detailPanel.getChildren().add(historyTable);
 
-        JPanel settingsPanel = new JPanel(new MigLayout("insets 0, gap 5", "[]10[]", ""));
-        settingsPanel.setOpaque(false);
-        settingsPanel.add(new JLabel("History Length:"));
-        settingsPanel.add(getTrackHistoryLengthComboBox(), "wrap");
-        settingsPanel.add(getCenterOnSelectedCheckBox(), "wrap");
-        settingsPanel.add(getTrackGeneratorToggle(), "span 2");
-        detailPanel.add(settingsPanel);
+        GridPane settingsPanel = new GridPane();
+        settingsPanel.setHgap(10);
+        settingsPanel.setVgap(5);
+        settingsPanel.add(new Label("History Length:"), 0, 0);
+        settingsPanel.add(getTrackHistoryLengthComboBox(), 1, 0);
+        settingsPanel.add(getCenterOnSelectedCheckBox(), 0, 1, 2, 1);
+        settingsPanel.add(getTrackGeneratorToggle(), 0, 2, 2, 1);
+        detailPanel.getChildren().add(settingsPanel);
 
-        sidebar.add(detailPanel, "growx");
+        sidebar.getChildren().add(detailPanel);
 
         // Map Area
-        JXMapViewer map = getMapViewer();
-        map.setLayout(new MigLayout("insets 20", "[grow,right]", "[grow,bottom]"));
+        StackPane mapArea = new StackPane();
+        
+        
+        
+        mMapCanvas = new Canvas();
+        // Bind canvas size to map area size
+        mMapCanvas.widthProperty().bind(mapArea.widthProperty());
+        mMapCanvas.heightProperty().bind(mapArea.heightProperty());
+        mMapCanvas.setMouseTransparent(true);
+        mMapCanvas.widthProperty().addListener(e -> repaintCanvas());
+        mMapCanvas.heightProperty().addListener(e -> repaintCanvas());
 
-        JPanel floatingControls = new JPanel(new MigLayout("insets 8, gap 8", "[center]", "[][][][][]")) {
-            @Override
-            protected void paintComponent(java.awt.Graphics g) {
-                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
-                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new java.awt.Color(255, 255, 255, 220)); // Translucent white
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-                g2.setColor(new java.awt.Color(0, 0, 0, 40)); // Subtle shadow/border
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 16, 16);
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-        floatingControls.setOpaque(false);
+        mapArea.getChildren().addAll(getMapViewer(), mMapCanvas);
 
-        JButton btnZoomIn = createFloatingButton(jiconfont.icons.font_awesome.FontAwesome.PLUS, "Zoom In");
-        btnZoomIn.addActionListener(e -> adjustZoom(-1));
+        VBox floatingControls = new VBox(8);
+        floatingControls.setPadding(new Insets(8));
+        floatingControls.setStyle("-fx-background-color: rgba(255, 255, 255, 0.86); -fx-background-radius: 16; -fx-border-color: rgba(0,0,0,0.15); -fx-border-radius: 16;");
+        floatingControls.setMaxWidth(40);
+        floatingControls.setMaxHeight(180);
+        StackPane.setAlignment(floatingControls, Pos.TOP_RIGHT);
+        StackPane.setMargin(floatingControls, new Insets(20));
 
-        JButton btnZoomOut = createFloatingButton(jiconfont.icons.font_awesome.FontAwesome.MINUS, "Zoom Out");
-        btnZoomOut.addActionListener(e -> adjustZoom(1));
+        Button btnZoomIn = createFloatingButton("+", "Zoom In");
+        btnZoomIn.setOnAction(e -> adjustZoom(-1));
 
-        JButton btnFollow = createFloatingButton(jiconfont.icons.font_awesome.FontAwesome.LOCATION_ARROW, "Follow Selected");
-        btnFollow.addActionListener(e -> {
-            if(mFollowedTrack == null) {
+        Button btnZoomOut = createFloatingButton("-", "Zoom Out");
+        btnZoomOut.setOnAction(e -> adjustZoom(1));
+
+        Button btnFollow = createFloatingButton("F", "Follow Selected");
+        btnFollow.setOnAction(e -> {
+            if (mFollowedTrack == null) {
                 follow(getSelected());
             } else {
                 follow(null);
             }
         });
 
-        JButton btnOptions = createFloatingButton(jiconfont.icons.font_awesome.FontAwesome.COG, "Map Options");
-        javax.swing.JPopupMenu optionsMenu = new javax.swing.JPopupMenu();
+        MenuButton btnOptions = new MenuButton("Opts");
+        btnOptions.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: #007aff;");
+        MenuItem clearItem = new MenuItem("Clear Map");
+        clearItem.setOnAction(e -> getClearMapButton().fire());
+        MenuItem deleteItem = new MenuItem("Delete Selected");
+        deleteItem.setOnAction(e -> getDeleteTrackButton().fire());
+        MenuItem deleteAllItem = new MenuItem("Delete All");
+        deleteAllItem.setOnAction(e -> getDeleteAllTracksButton().fire());
+        MenuItem replotItem = new MenuItem("Replot All");
+        replotItem.setOnAction(e -> getReplotAllTracksButton().fire());
 
-        javax.swing.JMenuItem clearItem = new javax.swing.JMenuItem("Clear Map");
-        clearItem.addActionListener(e -> getClearMapButton().doClick());
+        btnOptions.getItems().addAll(clearItem, deleteItem, deleteAllItem, new SeparatorMenuItem(), replotItem);
 
-        javax.swing.JMenuItem deleteItem = new javax.swing.JMenuItem("Delete Selected");
-        deleteItem.addActionListener(e -> getDeleteTrackButton().doClick());
+        floatingControls.getChildren().addAll(btnZoomIn, btnZoomOut, new Separator(), btnFollow, btnOptions);
+        mapArea.getChildren().add(floatingControls);
 
-        javax.swing.JMenuItem deleteAllItem = new javax.swing.JMenuItem("Delete All");
-        deleteAllItem.addActionListener(e -> getDeleteAllTracksButton().doClick());
+        SplitPane splitPane = new SplitPane();
+        splitPane.getItems().addAll(sidebar, mapArea);
+        splitPane.setDividerPositions(0.3);
 
-        javax.swing.JMenuItem replotItem = new javax.swing.JMenuItem("Replot All");
-        replotItem.addActionListener(e -> getReplotAllTracksButton().doClick());
+        this.setCenter(splitPane);
 
-        optionsMenu.add(clearItem);
-        optionsMenu.add(deleteItem);
-        optionsMenu.add(deleteAllItem);
-        optionsMenu.addSeparator();
-        optionsMenu.add(replotItem);
-
-        btnOptions.addActionListener(e -> optionsMenu.show(btnOptions, 0, btnOptions.getHeight()));
-
-        floatingControls.add(btnZoomIn, "wrap");
-        floatingControls.add(btnZoomOut, "wrap");
-
-        javax.swing.JSeparator sep = new javax.swing.JSeparator();
-        sep.setForeground(new java.awt.Color(200, 200, 200));
-        floatingControls.add(sep, "growx, wrap");
-
-        floatingControls.add(btnFollow, "wrap");
-        floatingControls.add(btnOptions, "wrap");
-
-        map.add(floatingControls, "");
-
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        splitPane.setDividerLocation(300);
-        splitPane.setLeftComponent(sidebar);
-        splitPane.setRightComponent(map);
-        splitPane.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-
-        add(splitPane, BorderLayout.CENTER);
-
-        // Hide legacy UI components but keep them initialized for background state changes
         getFollowButton();
         getFollowedEntityLabel();
         getDeleteTrackButton();
     }
 
-    private JButton createFloatingButton(jiconfont.icons.font_awesome.FontAwesome icon, String tooltip) {
-        JButton btn = new JButton(jiconfont.swing.IconFontSwing.buildIcon(icon, 16, new java.awt.Color(0, 122, 255)));
-        btn.setToolTipText(tooltip);
-        btn.getAccessibleContext().setAccessibleName(tooltip);
-        btn.getAccessibleContext().setAccessibleDescription(tooltip);
-        btn.setContentAreaFilled(false);
-        btn.setBorderPainted(false);
-        btn.setFocusPainted(false);
-        btn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+    private Button createFloatingButton(String text, String tooltip) {
+        Button btn = new Button(text);
+        btn.setTooltip(new Tooltip(tooltip));
+        btn.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: #007aff; -fx-font-weight: bold;");
         return btn;
     }
 
+    private void repaintCanvas() {
+        if (mMapCanvas == null || mMapViewer == null) return;
+        GraphicsContext gc = mMapCanvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, mMapCanvas.getWidth(), mMapCanvas.getHeight());
+        mMapPainter.paint(gc, mMapViewer, (int)mMapCanvas.getWidth(), (int)mMapCanvas.getHeight());
+        if (mSelectionPainter != null) {
+            mSelectionPainter.paint(gc, mMapViewer, (int)mMapCanvas.getWidth(), (int)mMapCanvas.getHeight());
+        }
+    }
 
-
-        private void setSelected(PlottableEntityHistory selected)
-    {
-        if(selected != null)
-        {
-            getTrackHistoryTable().setModel(selected.getTrackHistoryModel());
+    private void setSelected(PlottableEntityHistory selected) {
+        if (selected != null) {
+            getTrackHistoryTable().setItems(selected.getTrackHistoryModel().getTrackHistory());
 
             Identifier system = selected.getIdentifierCollection().getIdentifier(IdentifierClass.CONFIGURATION, Form.SYSTEM, Role.ANY);
 
-            if(system != null)
-            {
+            if (system != null) {
                 getSelectedTrackSystemLabel().setText(system.toString());
-            }
-            else
-            {
+            } else {
                 getSelectedTrackSystemLabel().setText(NO_SYSTEM_NAME);
             }
 
-            if(mMapPainter.addEntity(getSelected()))
-            {
-                getMapViewer().repaint();
+            if (mMapPainter.addEntity(getSelected())) {
+                repaintCanvas();
             }
-        }
-        else
-        {
-            getTrackHistoryTable().setModel(EMPTY_HISTORY);
+        } else {
+            getTrackHistoryTable().setItems(FXCollections.emptyObservableList());
             getSelectedTrackSystemLabel().setText(SELECT_A_TRACK);
         }
 
-        if(getCenterOnSelectedCheckBox().isSelected())
-        {
+        if (getCenterOnSelectedCheckBox().isSelected()) {
             centerOn(selected);
         }
     }
 
-    /**
-     * Replots all tracks to the map (after a clear operation).
-     * @return button
-     */
-    private JButton getReplotAllTracksButton()
-    {
-        if(mReplotAllTracksButton == null)
-        {
-            mReplotAllTracksButton = new JButton("Replot All");
-            mReplotAllTracksButton.addActionListener(e ->
-            {
-                boolean added = mMapPainter.addAll(mMapService.getPlottableEntityModel().getAll());
-
-                if(added)
-                {
-                    getMapViewer().repaint();
+    private Button getReplotAllTracksButton() {
+        if (mReplotAllTracksButton == null) {
+            mReplotAllTracksButton = new Button("Replot All");
+            mReplotAllTracksButton.setOnAction(e -> {
+                boolean added = mMapPainter.addAll(mMapService.getPlottableEntityModel().getItems());
+                if (added) {
+                    repaintCanvas();
                 }
             });
         }
-
         return mReplotAllTracksButton;
     }
 
-    private JLabel getSelectedTrackSystemLabel()
-    {
-        if(mSelectedTrackSystemLabel == null)
-        {
-            mSelectedTrackSystemLabel = new JLabel(SELECT_A_TRACK);
+    private Label getSelectedTrackSystemLabel() {
+        if (mSelectedTrackSystemLabel == null) {
+            mSelectedTrackSystemLabel = new Label(SELECT_A_TRACK);
         }
-
         return mSelectedTrackSystemLabel;
     }
 
-    private JTable getTrackHistoryTable()
-    {
-        if(mTrackHistoryTable == null)
-        {
-            mTrackHistoryTable = new JTable(EMPTY_HISTORY);
-            mTrackHistoryTable.setFillsViewportHeight(true);
-            mTrackHistoryTable.getSelectionModel().addListSelectionListener(e ->
-            {
-                if(getCenterOnSelectedCheckBox().isSelected())
-                {
-                    int modelIndex = getTrackHistoryTable().convertRowIndexToModel(getTrackHistoryTable().getSelectedRow());
-                    TimestampedGeoPosition geo = ((TrackHistoryModel)(getTrackHistoryTable().getModel())).get(modelIndex);
+    private TableView<TimestampedGeoPosition> getTrackHistoryTable() {
+        if (mTrackHistoryTable == null) {
+            mTrackHistoryTable = new TableView<>();
+            
+            TableColumn<TimestampedGeoPosition, String> timeCol = new TableColumn<>("Time");
+            timeCol.setCellValueFactory(data -> new SimpleStringProperty(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(data.getValue().getTimestamp())));
+            
+            TableColumn<TimestampedGeoPosition, String> latCol = new TableColumn<>("Latitude");
+            latCol.setCellValueFactory(data -> new SimpleStringProperty(String.format("%.5f", data.getValue().getLatitude())));
+            
+            TableColumn<TimestampedGeoPosition, String> lonCol = new TableColumn<>("Longitude");
+            lonCol.setCellValueFactory(data -> new SimpleStringProperty(String.format("%.5f", data.getValue().getLongitude())));
 
-                    if(geo != null)
-                    {
-                        mMapViewer.setCenterPosition(geo);
-                    }
+            mTrackHistoryTable.getColumns().addAll(timeCol, latCol, lonCol);
+            
+            mTrackHistoryTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && getCenterOnSelectedCheckBox().isSelected()) {
+                    Platform.runLater(() -> {
+                        mMapViewer.setCenterPosition(newVal);
+                    });
                 }
             });
         }
-
         return mTrackHistoryTable;
     }
 
-    /**
-     * Plotted track history trail length selection combo box.
-     */
-    private JComboBox<Integer> getTrackHistoryLengthComboBox()
-    {
-        if(mTrackHistoryLengthComboBox == null)
-        {
-            List<Integer> lengths = new ArrayList<>();
-            for(int length = 1; length <= 10; length++)
-            {
-                lengths.add(length);
-            }
+    private ComboBox<Integer> getTrackHistoryLengthComboBox() {
+        if (mTrackHistoryLengthComboBox == null) {
+            mTrackHistoryLengthComboBox = new ComboBox<>(FXCollections.observableArrayList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+            mTrackHistoryLengthComboBox.getSelectionModel().select(Integer.valueOf(mMapPainter.getTrackHistoryLength()));
 
-            mTrackHistoryLengthComboBox = new JComboBox<>(lengths.toArray(new Integer[]{lengths.size()}));
-            mTrackHistoryLengthComboBox.setSelectedItem(mMapPainter.getTrackHistoryLength());
-
-            mTrackHistoryLengthComboBox.addActionListener(e ->
-            {
-                int length = (int)getTrackHistoryLengthComboBox().getSelectedItem();
-                mMapPainter.setTrackHistoryLength(length);
+            mTrackHistoryLengthComboBox.setOnAction(e -> {
+                Integer length = mTrackHistoryLengthComboBox.getSelectionModel().getSelectedItem();
+                if (length != null) {
+                    mMapPainter.setTrackHistoryLength(length);
+                }
             });
         }
-
         return mTrackHistoryLengthComboBox;
     }
 
-    /**
-     * Label to show the followed entity
-     */
-    private JLabel getFollowedEntityLabel()
-    {
-        if(mFollowedEntityLabel == null)
-        {
-            mFollowedEntityLabel = new JLabel(" ");
+    private Label getFollowedEntityLabel() {
+        if (mFollowedEntityLabel == null) {
+            mFollowedEntityLabel = new Label(" ");
         }
-
         return mFollowedEntityLabel;
     }
 
-    /**
-     * Toggles the following state for an entity.
-     */
-    private JButton getFollowButton()
-    {
-        if(mFollowButton == null)
-        {
-            mFollowButton = new JButton(FOLLOW);
-            mFollowButton.setEnabled(false);
-            mFollowButton.addActionListener(e ->
-            {
-                if(getFollowButton().getText().equals(FOLLOW))
-                {
+    private Button getFollowButton() {
+        if (mFollowButton == null) {
+            mFollowButton = new Button(FOLLOW);
+            mFollowButton.setDisable(true);
+            mFollowButton.setOnAction(e -> {
+                if (FOLLOW.equals(mFollowButton.getText())) {
                     follow(getSelected());
-                }
-                else
-                {
+                } else {
                     follow(null);
                 }
             });
         }
-
         return mFollowButton;
     }
 
-    private JButton getClearMapButton()
-    {
-        if(mClearMapButton == null)
-        {
-            mClearMapButton = new JButton("Clear Map");
-            mClearMapButton.addActionListener(e ->
-            {
+    private Button getClearMapButton() {
+        if (mClearMapButton == null) {
+            mClearMapButton = new Button("Clear Map");
+            mClearMapButton.setOnAction(e -> {
                 mMapPainter.clearAllEntities();
-                repaint();
+                repaintCanvas();
             });
         }
-
         return mClearMapButton;
     }
 
-    /**
-     * Toggles the behavior of centering on the selected track when a user selects a track in the table.
-     * @return check box.
-     */
-    private JToggleButton getCenterOnSelectedCheckBox()
-    {
-        if(mCenterOnSelectedCheckBox == null)
-        {
-            mCenterOnSelectedCheckBox = new JCheckBox("Center on Selection");
+    private CheckBox getCenterOnSelectedCheckBox() {
+        if (mCenterOnSelectedCheckBox == null) {
+            mCenterOnSelectedCheckBox = new CheckBox("Center on Selection");
             mCenterOnSelectedCheckBox.setSelected(true);
         }
-
         return mCenterOnSelectedCheckBox;
     }
 
-    private JButton getDeleteAllTracksButton()
-    {
-        if(mDeleteAllTracksButton == null)
-        {
-            mDeleteAllTracksButton = new JButton("Delete All");
-            mDeleteAllTracksButton.addActionListener(e -> {
+    private Button getDeleteAllTracksButton() {
+        if (mDeleteAllTracksButton == null) {
+            mDeleteAllTracksButton = new Button("Delete All");
+            mDeleteAllTracksButton.setOnAction(e -> {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Are you sure you want to delete all tracks?", ButtonType.YES, ButtonType.NO);
                 alert.setTitle("Delete All Tracks");
                 Optional<ButtonType> confirmation = alert.showAndWait();
                 if (confirmation.isPresent() && confirmation.get() == ButtonType.YES) {
                     mMapService.getPlottableEntityModel().deleteAllTracks();
                     mMapPainter.clearAllEntities();
-                    //Clear followed entity
                     follow(null);
-                    getMapViewer().repaint();
+                    repaintCanvas();
                 }
             });
         }
-
         return mDeleteAllTracksButton;
     }
 
-    private JButton getDeleteTrackButton()
-    {
-        if(mDeleteTrackButton == null)
-        {
-            mDeleteTrackButton = new JButton("Delete");
-            mDeleteTrackButton.setEnabled(false);
-            mDeleteTrackButton.addActionListener(e -> {
+    private Button getDeleteTrackButton() {
+        if (mDeleteTrackButton == null) {
+            mDeleteTrackButton = new Button("Delete");
+            mDeleteTrackButton.setDisable(true);
+            mDeleteTrackButton.setOnAction(e -> {
+                List<PlottableEntityHistory> selected = getPlottedTracksTable().getSelectionModel().getSelectedItems();
+                if (selected.isEmpty()) return;
 
-                int[] selectedIndices = getPlottedTracksTable().getSelectionModel().getSelectedIndices();
-                if (selectedIndices.length == 0) {
-                    return;
-                }
-
-                String message = selectedIndices.length == 1
+                String message = selected.size() == 1
                         ? "Are you sure you want to delete the selected track?"
-                        : "Are you sure you want to delete the " + selectedIndices.length + " selected tracks?";
+                        : "Are you sure you want to delete the " + selected.size() + " selected tracks?";
 
                 Alert alert = new Alert(Alert.AlertType.WARNING, message, ButtonType.YES, ButtonType.NO);
                 alert.setTitle("Delete Tracks");
                 Optional<ButtonType> confirmation = alert.showAndWait();
 
                 if (confirmation.isPresent() && confirmation.get() == ButtonType.YES) {
-                    List<PlottableEntityHistory> toDelete = new ArrayList<>();
-
-                    for(int selectedIndex : selectedIndices)
-                    {
-                        int modelIndex = getPlottedTracksTable().convertRowIndexToModel(selectedIndex);
-                        PlottableEntityHistory entity = mMapService.getPlottableEntityModel().get(modelIndex);
-                        if(entity != null)
-                        {
-                            toDelete.add(entity);
-
-                            //Clear followed entity if it's being deleted
-                            if(entity.equals(mFollowedTrack))
-                            {
-                                follow(null);
-                            }
-                        }
-                    }
+                    List<PlottableEntityHistory> toDelete = new ArrayList<>(selected);
                     mMapService.getPlottableEntityModel().delete(toDelete);
                     mMapPainter.clearEntities(toDelete);
-                    getMapViewer().repaint();
+
+                    if (toDelete.contains(mFollowedTrack)) {
+                        follow(null);
+                    }
+                    repaintCanvas();
                 }
             });
         }
-
         return mDeleteTrackButton;
     }
 
-    /**
-     * Access the selected entity history.
-     * @return selected entity or null of one is not selected.
-     */
-    private PlottableEntityHistory getSelected()
-    {
-        if(getPlottedTracksTable().getSelectedRow() >= 0)
-        {
-            int modelIndex = getPlottedTracksTable().convertRowIndexToModel(getPlottedTracksTable().getSelectedRow());
-            return mMapService.getPlottableEntityModel().get(modelIndex);
-        }
-
-        return null;
+    private PlottableEntityHistory getSelected() {
+        return getPlottedTracksTable().getSelectionModel().getSelectedItem();
     }
 
-    /**
-     * Centers on the plottable entity.
-     * @param entityHistory to center on
-     */
-    private void centerOn(PlottableEntityHistory entityHistory)
-    {
-        if(entityHistory != null)
-        {
+    private void centerOn(PlottableEntityHistory entityHistory) {
+        if (entityHistory != null) {
             GeoPosition geoPosition = entityHistory.getLatestPosition();
-
-            if(geoPosition != null)
-            {
-                mMapViewer.setCenterPosition(geoPosition);
+            if (geoPosition != null) {
+                Platform.runLater(() -> mMapViewer.setCenterPosition(geoPosition));
             }
         }
     }
 
-    /**
-     * Follow or unfollow an entity.
-     * @param entityHistory to follow or null to unfollow.
-     */
-    private void follow(PlottableEntityHistory entityHistory)
-    {
+    private void follow(PlottableEntityHistory entityHistory) {
         mFollowedTrack = entityHistory;
-
-        if(mFollowedTrack != null)
-        {
+        if (mFollowedTrack != null) {
             centerOn(mFollowedTrack);
             getFollowButton().setText(UNFOLLOW);
-            getFollowButton().setEnabled(true);
+            getFollowButton().setDisable(false);
             getFollowedEntityLabel().setText("Following: " + mFollowedTrack.getIdentifier());
-            getCenterOnSelectedCheckBox().setEnabled(false); //Disabled while we're following
-        }
-        else
-        {
+            getCenterOnSelectedCheckBox().setDisable(true);
+        } else {
             getFollowButton().setText(FOLLOW);
-            getFollowButton().setEnabled(getSelected() != null);
-            getFollowedEntityLabel().setText(null);
-            getCenterOnSelectedCheckBox().setEnabled(true);
+            getFollowButton().setDisable(getSelected() == null);
+            getFollowedEntityLabel().setText("");
+            getCenterOnSelectedCheckBox().setDisable(false);
         }
     }
 
-    private JTable getPlottedTracksTable()
-    {
-        if(mPlottedTracksTable == null)
-        {
-            mPlottedTracksTable = new JTable(mMapService.getPlottableEntityModel());
-            mPlottedTracksTable.setFillsViewportHeight(true);
-            mPlottedTracksTable.setAutoCreateRowSorter(true);
+    private TableView<PlottableEntityHistory> getPlottedTracksTable() {
+        if (mPlottedTracksTable == null) {
+            mPlottedTracksTable = new TableView<>();
+            mPlottedTracksTable.setItems(mMapService.getPlottableEntityModel().getItems());
 
-            //Register selection listener to update button/label states
-            mPlottedTracksTable.getSelectionModel().addListSelectionListener(e ->
-            {
-                //Toggle the enabled state of the delete (single) track button
-                int count = mPlottedTracksTable.getSelectionModel().getSelectedItemsCount();
-                getDeleteTrackButton().setEnabled(count > 0);
+            TableColumn<PlottableEntityHistory, String> idCol = new TableColumn<>("ID");
+            idCol.setCellValueFactory(data -> {
+                Identifier id = data.getValue().getIdentifier();
+                return new SimpleStringProperty(id != null ? id.toString() : "(no ID)");
+            });
 
-                PlottableEntityHistory selected = getSelected();
-                setSelected(selected);
+            mPlottedTracksTable.getColumns().add(idCol);
 
-                //Refresh the followed entity button/label states
+            mPlottedTracksTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                getDeleteTrackButton().setDisable(newVal == null);
+                setSelected(newVal);
                 follow(mFollowedTrack);
             });
         }
-
         return mPlottedTracksTable;
     }
 
-    private JToggleButton getTrackGeneratorToggle()
-    {
-        if(mTrackGeneratorToggle == null)
-        {
-            mTrackGeneratorToggle = new JToggleButton("Track Generator");
-            mTrackGeneratorToggle.addActionListener(e -> {
-                if(mTrackGeneratorToggle.isSelected())
-                {
+    private ToggleSwitch getTrackGeneratorToggle() {
+        if (mTrackGeneratorToggle == null) {
+            mTrackGeneratorToggle = new ToggleSwitch();
+            mTrackGeneratorToggle.switchedOnProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal) {
                     getTrackGenerator().start();
-                }
-                else
-                {
+                } else {
                     getTrackGenerator().stop();
                 }
             });
         }
-
         return mTrackGeneratorToggle;
     }
 
-    /**
-     * Optional test track generator
-     */
-    private TrackGenerator getTrackGenerator()
-    {
-        if(mTrackGenerator == null)
-        {
+    private TrackGenerator getTrackGenerator() {
+        if (mTrackGenerator == null) {
             mTrackGenerator = new TrackGenerator(mMapService);
         }
-
         return mTrackGenerator;
     }
 
-    public JXMapViewer getMapViewer()
-    {
-        if(mMapViewer == null)
-        {
+    public JXMapViewer getMapViewer() {
+        if (mMapViewer == null) {
             mMapViewer = new JXMapViewer();
-
-            /**
-             * Set the entity painter as the overlay painter and register this panel to receive new messages (plots)
-             */
-            mMapViewer.setOverlayPainter(mMapPainter);
-
-            /**
-             * Map image source
-             */
+            
+            // JXMapViewer map image source
             TileFactoryInfo info = new OSMTileFactoryInfo();
             DefaultTileFactory tileFactory = new DefaultTileFactory(info);
             mMapViewer.setTileFactory(tileFactory);
-
-            /**
-             * Defines how many threads will be used to fetch the background map tiles (graphics)
-             */
             tileFactory.setThreadPoolSize(8);
 
-            /**
-             * Set initial location and zoom for the map upon display
-             */
             GeoPosition syracuse = new GeoPosition(43.048, -76.147);
             int zoom = 7;
 
             MapViewSetting view = mSettingsManager.getSettingsModel().getMapViewSetting("Default", syracuse, zoom);
-
             mMapViewer.setAddressLocation(view.getGeoPosition());
             mMapViewer.setZoom(view.getZoom());
 
-            /**
-             * Add a mouse adapter for panning and scrolling
-             */
             MapMouseListener listener = new MapMouseListener(mMapViewer, mSettingsManager);
-            mMapViewer.addMouseListener(listener);
-            mMapViewer.addMouseMotionListener(listener);
+            mMapViewer.addEventHandler(MouseEvent.MOUSE_PRESSED, listener::mousePressed);
+            mMapViewer.addEventHandler(MouseEvent.MOUSE_DRAGGED, listener::mouseDragged);
+            mMapViewer.addEventHandler(MouseEvent.MOUSE_RELEASED, listener::mouseReleased);
+            mMapViewer.addEventHandler(MouseEvent.MOUSE_ENTERED, listener::mouseEntered);
+            
+            ZoomMouseWheelListenerCursor zoomListener = new ZoomMouseWheelListenerCursor(this);
+            mMapViewer.addEventHandler(ScrollEvent.SCROLL, zoomListener);
+            
+            PanKeyListener panListener = new PanKeyListener(mMapViewer);
+            mMapViewer.addEventHandler(KeyEvent.KEY_PRESSED, panListener);
+            mMapViewer.setFocusTraversable(true);
 
-            /* Map zoom listener */
-            mMapViewer.addMouseWheelListener(new ZoomMouseWheelListenerCursor(this));
+            mSelectionAdapter = new SelectionAdapter(mMapViewer);
+            mMapViewer.addEventHandler(MouseEvent.MOUSE_PRESSED, mSelectionAdapter::mousePressed);
+            mMapViewer.addEventHandler(MouseEvent.MOUSE_DRAGGED, mSelectionAdapter::mouseDragged);
+            mMapViewer.addEventHandler(MouseEvent.MOUSE_RELEASED, mSelectionAdapter::mouseReleased);
 
-            /* Keyboard panning listener */
-            mMapViewer.addKeyListener(new PanKeyListener(mMapViewer));
+            mSelectionPainter = new SelectionPainter(mSelectionAdapter);
 
-            /**
-             * Add a selection listener
-             */
-            SelectionAdapter sa = new SelectionAdapter(mMapViewer);
-            mMapViewer.addMouseListener(sa);
-            mMapViewer.addMouseMotionListener(sa);
+            // Add property change listener to repaint the JavaFX canvas whenever the map updates
+            
         }
-
         return mMapViewer;
     }
 
-    /**
-     * Changes the zoom level by the specified value.
-     * @param adjustment zoom value.
-     */
-    public void adjustZoom(int adjustment)
-    {
-        int currentZoom = getMapViewer().getZoom();
-        int updatedZoom = currentZoom + adjustment;
-
-        if(ZOOM_MINIMUM <= updatedZoom && updatedZoom <= ZOOM_MAXIMUM)
-        {
-            getMapViewer().setZoom(updatedZoom);
-        }
+    public void adjustZoom(int adjustment) {
+        Platform.runLater(() -> {
+            int currentZoom = getMapViewer().getZoom();
+            int updatedZoom = currentZoom + adjustment;
+            if (ZOOM_MINIMUM <= updatedZoom && updatedZoom <= ZOOM_MAXIMUM) {
+                getMapViewer().setZoom(updatedZoom);
+            }
+        });
     }
 
     @Override
-    public void entitiesUpdated()
-    {
-        EventQueue.invokeLater(() -> mMapViewer.repaint());
+    public void entitiesUpdated() {
+        Platform.runLater(this::repaintCanvas);
     }
 
     @Override
-    public void addPlottableEntity(PlottableEntityHistory entity)
-    {
+    public void addPlottableEntity(PlottableEntityHistory entity) {
         mMapPainter.addEntity(entity);
         entitiesUpdated();
     }
 
     @Override
-    public void removePlottableEntity(PlottableEntityHistory entity)
-    {
+    public void removePlottableEntity(PlottableEntityHistory entity) {
         mMapPainter.removeEntity(entity);
         entitiesUpdated();
     }

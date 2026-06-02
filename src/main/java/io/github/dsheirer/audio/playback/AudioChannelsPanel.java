@@ -38,7 +38,7 @@ import java.io.IOException;
 /**
  * Displays one or more audio channel panels.
  */
-public class AudioChannelsPanel extends JFXPanel
+public class AudioChannelsPanel extends javafx.scene.layout.StackPane
 {
     private static final Logger mLog = LoggerFactory.getLogger(AudioChannelsPanel.class);
     private AudioChannelsPanelController mController;
@@ -61,12 +61,11 @@ public class AudioChannelsPanel extends JFXPanel
                 mController = loader.getController();
                 mController.init(iconModel, userPreferences, settingsManager, controller, aliasModel, broadcastModel);
 
-                Scene scene = new Scene(root);
                 java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
                 if (cssUrl != null) {
-                    scene.getStylesheets().add(cssUrl.toExternalForm());
+                    root.getStylesheets().add(cssUrl.toExternalForm());
                 }
-                setScene(scene);
+                getChildren().add(root);
             } catch (IOException e) {
                 mLog.error("Error loading AudioChannelsPanel.fxml", e);
             }

@@ -18,6 +18,11 @@
  */
 
 package io.github.dsheirer.gui;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 import java.util.function.Consumer;
 
 import com.google.common.eventbus.Subscribe;
@@ -52,7 +57,7 @@ import io.github.dsheirer.health.SystemHealthMonitor;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+import javafx.scene.layout.Pane;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import jiconfont.javafx.IconFontFX;
@@ -79,7 +84,7 @@ public class JavaFxWindowManager extends Application
     public static final String STAGE_MONITOR_KEY_PLAYLIST_EDITOR = "playlist";
     public static final String STAGE_MONITOR_KEY_USER_PREFERENCES_EDITOR = "user.preferences";
 
-    private JFXPanel mJFXPanel;
+    private javafx.scene.layout.Pane mContainer;
     private ChannelMapEditor mChannelMapEditor;
     private IconManager mIconManager;
     private JmbeEditor mJmbeEditor;
@@ -99,7 +104,7 @@ public class JavaFxWindowManager extends Application
     private Stage mUserPreferencesStage;
     private Stage mRecordingViewerStage;
     private Consumer<String> mViewChangedListener;
-    private JFXPanel mStatusPanel;
+    private javafx.scene.layout.Pane mStatusPanel;
 
     /**
      * Constructs an instance.  Note: this constructor is used for Swing applications.
@@ -135,19 +140,19 @@ public class JavaFxWindowManager extends Application
     /**
      * Creates or accesses the JavaFX status panel, used by the main application GUI.
      * @param resourceMonitor for statistics
-     * @return JFXPanel accessible on Swing thread that delegates JavaFX scene creation to the FX event thread.
+     * @return Container accessible on Swing thread that delegates JavaFX scene creation to the FX event thread.
      */
-    public JFXPanel createStatusPanel(ResourceMonitor resourceMonitor)
+    public javafx.scene.layout.Pane createStatusPanel(ResourceMonitor resourceMonitor)
     {
-        JFXPanel panel = new JFXPanel();
-            panel.setPreferredSize(new java.awt.Dimension(0, 30));
+        javafx.scene.layout.Pane panel = new javafx.scene.layout.Pane();
+            panel.setPrefSize(100, 100); // new java.awt.Dimension(0, 30));
 
-            //JFXPanel has to be populated on the FX event thread
+            //Container has to be populated on the FX event thread
             Platform.runLater(() -> {
-                Scene scene = new Scene(new StatusBox(resourceMonitor));
-                panel.setScene(scene);
+                StatusBox statusBox = new StatusBox(resourceMonitor);
+                panel.getChildren().add(statusBox);
             });
-return panel;
+        return panel;
     }
 
     private void setup()
@@ -158,7 +163,7 @@ return panel;
         //Register JavaFX icon fonts
         IconFontFX.register(jiconfont.icons.font_awesome.FontAwesome.getIconFont());
 
-        createJFXPanel();
+        createContainer();
     }
 
     /**
@@ -166,7 +171,7 @@ return panel;
      */
     private void execute(Runnable runnable)
     {
-        createJFXPanel();
+        createContainer();
 
         if(Platform.isFxApplicationThread())
         {
@@ -181,11 +186,11 @@ return panel;
     /**
      * Creates a JavaFX panel for Swing application compatibility
      */
-    private void createJFXPanel()
+    private void createContainer()
     {
-        if(mJFXPanel == null)
+        if(mContainer == null)
         {
-            mJFXPanel = new JFXPanel();
+            mContainer = new javafx.scene.layout.Pane();
             Platform.setImplicitExit(false);
         }
     }
@@ -202,7 +207,7 @@ return panel;
 
     public CalibrationDialog getCalibrationDialog(UserPreferences userPreferences)
     {
-        createJFXPanel();
+        createContainer();
         return new CalibrationDialog(userPreferences);
     }
 
@@ -213,7 +218,7 @@ return panel;
     {
         if(mRecordingViewerStage == null)
         {
-            createJFXPanel();
+            createContainer();
             Scene scene = new Scene(getRecordingViewer(), 1100, 800);
             mRecordingViewerStage = new Stage();
             mRecordingViewerStage.setTitle("sdrtrunk - .bits Viewer");
@@ -238,10 +243,10 @@ return panel;
     {
         if(mIconManagerStage == null)
         {
-            createJFXPanel();
+            createContainer();
             Scene scene = new Scene(getIconManager(), 500, 500);
             mIconManagerStage = new Stage();
-            mIconManagerStage.setTitle("sdrtrunk - Icon Manager");
+            mIconManagerStage.setTitle("sdrtrunk - javafx.scene.image.Image Manager");
             mIconManagerStage.setScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mIconManagerStage, STAGE_MONITOR_KEY_ICON_MANAGER_EDITOR);
         }
@@ -286,7 +291,7 @@ return panel;
     {
         if(mJmbeEditorStage == null)
         {
-            createJFXPanel();
+            createContainer();
             Scene scene = new Scene(getJmbeEditor(), 650, 650);
             mJmbeEditorStage = new Stage();
             mJmbeEditorStage.setTitle("sdrtrunk - JMBE Library Updater");
@@ -327,7 +332,7 @@ return panel;
     {
         if(mPlaylistStage == null)
         {
-            createJFXPanel();
+            createContainer();
             Scene scene = new Scene(getPlaylistEditor(), 1000, 750);
             mPlaylistStage = new Stage();
             mPlaylistStage.setTitle("sdrtrunk - Playlist Editor");
@@ -357,7 +362,7 @@ return panel;
                     case PLAYLIST: id = "playlist_playlists"; break;
                 }
                 final String finalId = id;
-                javax.swing.SwingUtilities.invokeLater(() -> mViewChangedListener.accept(finalId));
+                javafx.application.Platform.runLater(() -> mViewChangedListener.accept(finalId));
                 getPlaylistEditor().process(request);
             }
             catch(Throwable t)
@@ -387,7 +392,7 @@ return panel;
     {
         if(mUserPreferencesStage == null)
         {
-            createJFXPanel();
+            createContainer();
             Scene scene = new Scene(getUserPreferencesEditor(), 900, 500);
             mUserPreferencesStage = new Stage();
             mUserPreferencesStage.setTitle("sdrtrunk - User Preferences");
@@ -405,7 +410,7 @@ return panel;
     public void process(final ViewUserPreferenceEditorRequest request)
     {
         execute(() -> {
-            javax.swing.SwingUtilities.invokeLater(() -> mViewChangedListener.accept("user_prefs"));
+            javafx.application.Platform.runLater(() -> mViewChangedListener.accept("user_prefs"));
             getUserPreferencesEditor().process(request);
         });
     }
@@ -430,7 +435,7 @@ return panel;
     {
         if(mChannelMapStage == null)
         {
-            createJFXPanel();
+            createContainer();
             Scene scene = new Scene(getChannelMapEditor(), 500, 500);
             mChannelMapStage = new Stage();
             mChannelMapStage.setTitle("sdrtrunk - Channel Map Editor");
@@ -465,7 +470,7 @@ return panel;
     @Subscribe
     public void process(final ViewRecordingViewerRequest request)
     {
-        javax.swing.SwingUtilities.invokeLater(() -> mViewChangedListener.accept("msg_viewer"));
+        javafx.application.Platform.runLater(() -> mViewChangedListener.accept("msg_viewer"));
     }
 
     /**
@@ -552,35 +557,35 @@ return panel;
     }
 
 
-    private java.util.Map<ViewIdentifier, JFXPanel> mViewMap = new java.util.HashMap<>();
+    private java.util.Map<ViewIdentifier, javafx.scene.layout.Pane> mViewMap = new java.util.HashMap<>();
 
-    public JFXPanel getView(ViewIdentifier viewIdentifier) {
+    public javafx.scene.layout.Pane getView(ViewIdentifier viewIdentifier) {
         if (mViewMap.containsKey(viewIdentifier)) {
             return mViewMap.get(viewIdentifier);
         }
-        JFXPanel panel = new JFXPanel();
+        javafx.scene.layout.StackPane panel = new javafx.scene.layout.StackPane();
         mViewMap.put(viewIdentifier, panel);
         Platform.runLater(() -> {
-            Scene scene = null;
+            javafx.scene.Node content = null;
             switch(viewIdentifier) {
                 case PLAYLIST_EDITOR:
-                    scene = new Scene(getPlaylistEditor(), 1000, 750);
+                    content = getPlaylistEditor();
                     break;
                 case ICON_MANAGER:
-                    scene = new Scene(getIconManager(), 500, 500);
+                    content = getIconManager();
                     break;
                 case USER_PREFERENCES_EDITOR:
-                    scene = new Scene(getUserPreferencesEditor(), 900, 500);
+                    content = getUserPreferencesEditor();
                     break;
                 case LOGS:
-                    scene = new Scene(new LogsPanel(mUserPreferences), 1000, 750);
+                    content = new LogsPanel(mUserPreferences);
                     break;
                 case RECORDING_VIEWER:
-                    scene = new Scene(getRecordingViewer(), 1100, 800);
+                    content = getRecordingViewer();
                     break;
             }
-            if (scene != null) {
-                panel.setScene(scene);
+            if (content != null) {
+                panel.getChildren().add(content);
             }
         });
         return panel;

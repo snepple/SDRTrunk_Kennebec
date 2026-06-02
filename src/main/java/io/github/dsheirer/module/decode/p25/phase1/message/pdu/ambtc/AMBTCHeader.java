@@ -1,3 +1,4 @@
+
 /*
  * ******************************************************************************
  * sdrtrunk
@@ -18,6 +19,7 @@
  * *****************************************************************************
  */
 package io.github.dsheirer.module.decode.p25.phase1.message.pdu.ambtc;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.bits.CorrectedBinaryMessage;
 import io.github.dsheirer.module.decode.p25.P25Utils;

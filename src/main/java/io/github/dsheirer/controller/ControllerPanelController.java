@@ -23,18 +23,23 @@ public class ControllerPanelController {
 
     @FXML
     public void initialize() {
-        // Initialization if needed
+        rootPane.setMinSize(0, 0);
+        cardPane.setMinSize(0, 0);
+        resourcePaneContainer.setMinSize(0, 0);
     }
 
     public void addView(String id, Node view) {
         view.setVisible(false);
+        view.setManaged(false);
         cardPane.getChildren().add(view);
         views.put(id, view);
     }
 
     public void showView(String id) {
         for (Map.Entry<String, Node> entry : views.entrySet()) {
-            entry.getValue().setVisible(entry.getKey().equals(id));
+            boolean visible = entry.getKey().equals(id);
+            entry.getValue().setVisible(visible);
+            entry.getValue().setManaged(visible);
         }
     }
 

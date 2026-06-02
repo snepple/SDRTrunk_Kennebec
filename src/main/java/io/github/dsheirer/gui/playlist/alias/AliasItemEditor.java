@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2025 Dennis Sheirer
@@ -18,6 +19,12 @@
  */
 
 package io.github.dsheirer.gui.playlist.alias;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+
 
 import com.google.common.collect.Ordering;
 import com.google.common.eventbus.Subscribe;
@@ -61,7 +68,7 @@ import io.github.dsheirer.gui.playlist.alias.action.EmptyActionEditor;
 import io.github.dsheirer.gui.playlist.alias.identifier.EmptyIdentifierEditor;
 import io.github.dsheirer.gui.playlist.alias.identifier.IdentifierEditor;
 import io.github.dsheirer.gui.playlist.alias.identifier.IdentifierEditorFactory;
-import io.github.dsheirer.icon.Icon;
+
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.PreferenceType;
 import io.github.dsheirer.preference.UserPreferences;
@@ -114,7 +121,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Region;
-import javafx.scene.paint.Color;
+
 import javafx.scene.text.TextAlignment;
 import javafx.util.Callback;
 import jiconfont.icons.font_awesome.FontAwesome;
@@ -150,7 +157,7 @@ public class AliasItemEditor extends Editor<Alias>
     private ComboBox<Integer> mMonitorPriorityComboBox;
     private ToggleSwitch mRecordAudioToggleSwitch;
     private ColorPicker mColorPicker;
-    private ComboBox<Icon> mIconNodeComboBox;
+    private ComboBox<io.github.dsheirer.icon.Icon> mIconNodeComboBox;
     private SuggestionProvider<String> mGroupSuggestionProvider;
     private TabPane mTabPane;
     private HBox mIdentifierPane;
@@ -337,8 +344,8 @@ public class AliasItemEditor extends Editor<Alias>
 
             mAliasNameLabel.graphicProperty().bind(Bindings.createObjectBinding(() -> {
                 if (alias.getIconName() != null) {
-                    Icon icon = mPlaylistManager.getIconModel().getIcon(alias.getIconName());
-                    if (icon != null && icon.getFxImage() != null) {
+                    io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(alias.getIconName());
+                    if (icon != null && icon != null) {
                         ImageView iv = new ImageView(icon.getFxImage());
                         iv.setFitHeight(24);
                         iv.setFitWidth(24);
@@ -377,7 +384,7 @@ public class AliasItemEditor extends Editor<Alias>
             getNameField().setText(alias.getName());
             getRecordAudioToggleSwitch().setSelected(alias.isRecordable());
 
-            Icon icon = null;
+            io.github.dsheirer.icon.Icon icon = null;
             String iconName = alias.getIconName();
             if(iconName != null)
             {
@@ -463,7 +470,7 @@ public class AliasItemEditor extends Editor<Alias>
                 alias.setRecordable(getRecordAudioToggleSwitch().isSelected());
                 alias.setColor(ColorUtil.toInteger(getColorPicker().getValue()));
 
-                Icon icon = getIconNodeComboBox().getSelectionModel().getSelectedItem();
+                io.github.dsheirer.icon.Icon icon = getIconNodeComboBox().getSelectionModel().getSelectedItem();
                 alias.setIconName(icon != null ? icon.getName() : null);
 
                 boolean canMonitor = getMonitorAudioToggleSwitch().isSelected();
@@ -694,7 +701,7 @@ public class AliasItemEditor extends Editor<Alias>
 
             if(editor == null)
             {
-                editor = ActionEditorFactory.getEditor(aliasAction.getType(), mUserPreferences);
+                editor = ActionEditorFactory.getEditor(aliasAction.getType(), mUserPreferences, mPlaylistManager);
                 mActionEditorMap.put(aliasAction.getType(), editor);
             }
         }
@@ -1108,9 +1115,9 @@ public class AliasItemEditor extends Editor<Alias>
                         io.github.dsheirer.audio.broadcast.BroadcastConfiguration config = mPlaylistManager.getBroadcastModel().getBroadcastConfiguration(streamName);
                         if (config != null && config.getBroadcastServerType().getIconPath() != null) {
                             io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon("empty", config.getBroadcastServerType().getIconPath());
-                            javafx.scene.image.Image fxImage = icon.getFxImage();
+                            io.github.dsheirer.icon.Icon fxImage = null;
                             if (fxImage != null) {
-                                imageView.setImage(fxImage);
+                                imageView.setImage(fxImage.getFxImage());
                                 setGraphic(imageView);
                             } else {
                                 setGraphic(null);
@@ -1151,9 +1158,9 @@ public class AliasItemEditor extends Editor<Alias>
                         io.github.dsheirer.audio.broadcast.BroadcastConfiguration config = mPlaylistManager.getBroadcastModel().getBroadcastConfiguration(streamName);
                         if (config != null && config.getBroadcastServerType().getIconPath() != null) {
                             io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon("empty", config.getBroadcastServerType().getIconPath());
-                            javafx.scene.image.Image fxImage = icon.getFxImage();
+                            io.github.dsheirer.icon.Icon fxImage = null;
                             if (fxImage != null) {
-                                imageView.setImage(fxImage);
+                                imageView.setImage(fxImage.getFxImage());
                                 setGraphic(imageView);
                             } else {
                                 setGraphic(null);
@@ -1278,6 +1285,7 @@ public class AliasItemEditor extends Editor<Alias>
             // Alias Name
             Label nameLabel = new Label("Alias");
             nameLabel.setMinWidth(Region.USE_PREF_SIZE);
+            Tooltip.install(nameLabel, new Tooltip("A short, human-readable name for this talkgroup, radio ID, or entity.\nExample: 'FD Dispatch', 'Patrol Car 12', 'FIRE 1'"));
             GridPane.setHalignment(nameLabel, HPos.RIGHT);
             GridPane.setConstraints(nameLabel, 0, row);
             mTextFieldPane.getChildren().add(nameLabel);
@@ -1289,6 +1297,7 @@ public class AliasItemEditor extends Editor<Alias>
             // Group
             Label groupLabel = new Label("Group");
             groupLabel.setMinWidth(Region.USE_PREF_SIZE);
+            Tooltip.install(groupLabel, new Tooltip("An optional organizational grouping for this alias.\nAliases in the same group are shown together in the playlist view.\nExample: 'Fire', 'Police', 'EMS'"));
             GridPane.setHalignment(groupLabel, HPos.RIGHT);
             GridPane.setConstraints(groupLabel, 0, ++row);
             mTextFieldPane.getChildren().add(groupLabel);
@@ -1300,6 +1309,7 @@ public class AliasItemEditor extends Editor<Alias>
             // Listen Toggle
             Label monitorAudioLabel = new Label("Listen");
             monitorAudioLabel.setMinWidth(Region.USE_PREF_SIZE);
+            Tooltip.install(monitorAudioLabel, new Tooltip("When enabled, audio from this alias will play through\nyour speakers when it is active. Disable to silence this alias.\nAlso known as: Monitor, Unmute, Priority Scan."));
             GridPane.setHalignment(monitorAudioLabel, HPos.RIGHT);
             GridPane.setConstraints(monitorAudioLabel, 0, ++row);
             mTextFieldPane.getChildren().add(monitorAudioLabel);
@@ -1312,6 +1322,7 @@ public class AliasItemEditor extends Editor<Alias>
             // Record Toggle
             Label recordAudioLabel = new Label("Record");
             recordAudioLabel.setMinWidth(Region.USE_PREF_SIZE);
+            Tooltip.install(recordAudioLabel, new Tooltip("When enabled, audio from this alias will be saved\nto disk as a WAV or MP3 file whenever it is active."));
             GridPane.setHalignment(recordAudioLabel, HPos.RIGHT);
             GridPane.setConstraints(recordAudioLabel, 0, ++row);
             mTextFieldPane.getChildren().add(recordAudioLabel);
@@ -1324,6 +1335,7 @@ public class AliasItemEditor extends Editor<Alias>
             // Priority
             Label monitorPriorityLabel = new Label("Priority");
             monitorPriorityLabel.setMinWidth(Region.USE_PREF_SIZE);
+            Tooltip.install(monitorPriorityLabel, new Tooltip("Sets the playback priority when multiple aliases are active simultaneously.\n'1' = highest priority (plays first). 'Default' = normal priority.\nLower numbers interrupt higher numbers (Priority Scan)."));
             GridPane.setHalignment(monitorPriorityLabel, HPos.RIGHT);
             GridPane.setConstraints(monitorPriorityLabel, 0, ++row);
             mTextFieldPane.getChildren().add(monitorPriorityLabel);
@@ -1336,6 +1348,7 @@ public class AliasItemEditor extends Editor<Alias>
             // Color
             Label colorLabel = new Label("Color");
             colorLabel.setMinWidth(Region.USE_PREF_SIZE);
+            Tooltip.install(colorLabel, new Tooltip("Assign a highlight color to this alias.\nThe color appears in the Now Playing display and the alias table."));
             GridPane.setHalignment(colorLabel, HPos.RIGHT);
             GridPane.setConstraints(colorLabel, 0, ++row);
             mTextFieldPane.getChildren().add(colorLabel);
@@ -1348,6 +1361,7 @@ public class AliasItemEditor extends Editor<Alias>
             // Icon
             Label iconLabel = new Label("Icon");
             iconLabel.setMinWidth(Region.USE_PREF_SIZE);
+            Tooltip.install(iconLabel, new Tooltip("Select an icon to visually identify this alias in the interface.\nIcons appear in the Now Playing header and the alias table.\nManage icons in the Icon Manager (Tools menu)."));
             GridPane.setHalignment(iconLabel, HPos.RIGHT);
             GridPane.setConstraints(iconLabel, 0, ++row);
             mTextFieldPane.getChildren().add(iconLabel);
@@ -1356,6 +1370,9 @@ public class AliasItemEditor extends Editor<Alias>
             GridPane.setConstraints(getIconNodeComboBox(), 1, row);
             GridPane.setHalignment(getIconNodeComboBox(), HPos.LEFT);
             mTextFieldPane.getChildren().add(getIconNodeComboBox());
+
+            // Artwork upload removed from aliases section
+
         }
 
         return mTextFieldPane;
@@ -1445,7 +1462,7 @@ public class AliasItemEditor extends Editor<Alias>
         return mColorPicker;
     }
 
-    private ComboBox<Icon> getIconNodeComboBox()
+    private ComboBox<io.github.dsheirer.icon.Icon> getIconNodeComboBox()
     {
         if(mIconNodeComboBox == null)
         {
@@ -2089,10 +2106,10 @@ public class AliasItemEditor extends Editor<Alias>
     /**
      * Cell factory for combo box for dislaying icon name and graphic
      */
-    public class IconCellFactory implements Callback<ListView<Icon>, ListCell<Icon>>
+    public class IconCellFactory implements Callback<ListView<io.github.dsheirer.icon.Icon>, ListCell<io.github.dsheirer.icon.Icon>>
     {
         @Override
-        public ListCell<Icon> call(ListView<Icon> param)
+        public ListCell<io.github.dsheirer.icon.Icon> call(ListView<io.github.dsheirer.icon.Icon> param)
         {
             Label iconLabel = new Label();
             Label textLabel = new Label();
@@ -2103,10 +2120,10 @@ public class AliasItemEditor extends Editor<Alias>
             gridPane.add(iconLabel, 0, 0);
             gridPane.add(textLabel,1,0);
 
-            ListCell<Icon> cell = new ListCell<>()
+            ListCell<io.github.dsheirer.icon.Icon> cell = new ListCell<>()
             {
                 @Override
-                protected void updateItem(Icon item, boolean empty)
+                protected void updateItem(io.github.dsheirer.icon.Icon item, boolean empty)
                 {
                     super.updateItem(item, empty);
 
@@ -2117,7 +2134,7 @@ public class AliasItemEditor extends Editor<Alias>
                     }
                     else
                     {
-                        textLabel.setText(item.getName());
+                        textLabel.setText(item != null ? "" : "" /* TODO name */);
                         ImageView iv = new ImageView(item.getFxImage());
                         iv.setFitHeight(16);
                         iv.setFitWidth(16);

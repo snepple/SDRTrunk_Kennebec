@@ -163,11 +163,14 @@ public class JmbeCreator
                         if(script != null && Files.exists(script))
                         {
                             // Fix java 26 compatibility error inside build.gradle if present
-                            Path buildGradle = extractDir.resolve("build.gradle");
-                            if (Files.exists(buildGradle)) {
-                                String content = new String(Files.readAllBytes(buildGradle));
-                                content = content.replace("JavaVersion.VERSION_26", "JavaVersion.VERSION_21");
-                                Files.write(buildGradle, content.getBytes());
+                            String[] gradleFiles = {"build.gradle", "creator/build.gradle", "api/build.gradle", "codec/build.gradle"};
+                            for (String gradleFile : gradleFiles) {
+                                Path buildGradle = extractDir.resolve(gradleFile);
+                                if (Files.exists(buildGradle)) {
+                                    String content = new String(Files.readAllBytes(buildGradle));
+                                    content = content.replace("JavaVersion.VERSION_26", "JavaVersion.VERSION_21");
+                                    Files.write(buildGradle, content.getBytes());
+                                }
                             }
 
                             if (!osType.isWindows()) {

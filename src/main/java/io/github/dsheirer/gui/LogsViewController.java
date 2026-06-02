@@ -1,4 +1,8 @@
+
+
 package io.github.dsheirer.gui;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;

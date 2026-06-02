@@ -1,30 +1,39 @@
+
+
 package io.github.dsheirer.gui.control;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Slider;
+
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.buffer.CircularBuffer;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.sample.complex.Complex;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+import javafx.scene.layout.Pane;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
+
 import org.apache.commons.math3.util.FastMath;
 
-import javax.swing.JPopupMenu;
-import javax.swing.JSlider;
-import javax.swing.SwingUtilities;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.awt.Dimension;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+
+
+
+
+
+
 import java.util.List;
 import javafx.animation.AnimationTimer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ConstellationViewer extends JFXPanel implements Listener<Complex> {
+public class ConstellationViewer extends javafx.scene.layout.Pane implements Listener<Complex> {
     private static final long serialVersionUID = 1L;
 
     private int mSampleRate;
@@ -47,7 +56,7 @@ public class ConstellationViewer extends JFXPanel implements Listener<Complex> {
     }
 
     private void initGui() {
-        setPreferredSize(new Dimension(200, 200));
+        setPrefSize(100, 100); // new Dimension(200, 200));
 
         Platform.runLater(() -> {
             try {
@@ -66,8 +75,8 @@ public class ConstellationViewer extends JFXPanel implements Listener<Complex> {
 
                 Scene scene = new Scene(root);
                 scene.setFill(null);
-                setScene(scene);
-                setBackground(new java.awt.Color(0, 0, 0, 0));
+                // setScene(scene);
+                setBackground(javafx.scene.layout.Background.EMPTY);
 
                 AnimationTimer timer = new AnimationTimer() {
                     @Override
@@ -83,14 +92,11 @@ public class ConstellationViewer extends JFXPanel implements Listener<Complex> {
             }
         });
 
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (SwingUtilities.isRightMouseButton(e)) {
-                    JPopupMenu menu = new JPopupMenu();
-                    menu.add(new TimingOffsetItem((int) (mSamplesPerSymbol * 10), (int) (mOffset * 10)));
-                    menu.show(ConstellationViewer.this, e.getX(), e.getY());
-                }
+        setOnMouseClicked(e -> {
+            if (e.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
+                ContextMenu menu = new ContextMenu();
+                menu.getItems().add(new javafx.scene.control.CustomMenuItem(new TimingOffsetItem((int) (mSamplesPerSymbol * 10), (int) (mOffset * 10))));
+                menu.show(ConstellationViewer.this, e.getScreenX(), e.getScreenY());
             }
         });
     }
@@ -151,23 +157,22 @@ public class ConstellationViewer extends JFXPanel implements Listener<Complex> {
         }
     }
 
-    public class TimingOffsetItem extends JSlider implements ChangeListener {
+    public class TimingOffsetItem extends Slider {
         private static final long serialVersionUID = 1L;
 
         public TimingOffsetItem(int maxValue, int currentValue) {
-            super(JSlider.HORIZONTAL, 0, maxValue, currentValue);
+            super(0, maxValue, currentValue);
 
-            setMajorTickSpacing(10);
-            setMinorTickSpacing(5);
-            setPaintTicks(true);
-            setPaintLabels(true);
+            setMajorTickUnit(10);
+            setMinorTickCount(2);
+            setShowTickMarks(true);
+            setShowTickLabels(true);
 
-            addChangeListener(this);
+            valueProperty().addListener((obs, oldVal, newVal) -> stateChanged(newVal));
         }
 
-        @Override
-        public void stateChanged(ChangeEvent event) {
-            int value = ((JSlider) event.getSource()).getValue();
+        private void stateChanged(Number newVal) {
+            int value = newVal.intValue();
             setOffset((float) value / 10.0f);
         }
     }

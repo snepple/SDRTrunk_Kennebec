@@ -43,6 +43,9 @@ public class SampleGenerator
     private int mSamplesPerInterval = 65536;
     private ScheduledFuture<?> mScheduledFuture;
 
+    private float[] mRingBuffer;
+    private int mRingBufferIndex = 0;
+
     /**
      * Generates complex sample buffers at the specified sample rate with a unity gain tone at the specified
      * frequency.  This generator runs via a scheduled thread pool and generates samples at the specified time
@@ -174,6 +177,16 @@ public class SampleGenerator
     }
 
     /**
+     * Sets a synthetic waveform to be played back in a loop.
+     * @param waveform complex baseband float array (interleaved I/Q)
+     */
+    public void setSyntheticWaveform(float[] waveform)
+    {
+        mRingBuffer = waveform;
+        mRingBufferIndex = 0;
+    }
+
+    /**
      * Generates a complex sample buffer and distributes the buffer to a registered listener
      */
     public class Generator implements Runnable
@@ -187,7 +200,16 @@ public class SampleGenerator
             {
                 if(mNativeBufferBroadcaster.hasListeners())
                 {
-                    float[] samples = mComplexOscillator.generate(mSamplesPerInterval);
+                    float[] samples;
+                    if (mRingBuffer != null && mRingBuffer.length > 0) {
+                        samples = new float[mSamplesPerInterval];
+                        for (int i = 0; i < mSamplesPerInterval; i++) {
+                            samples[i] = mRingBuffer[mRingBufferIndex];
+                            mRingBufferIndex = (mRingBufferIndex + 1) % mRingBuffer.length;
+                        }
+                    } else {
+                        samples = mComplexOscillator.generate(mSamplesPerInterval);
+                    }
 
                     long now = System.currentTimeMillis();
 

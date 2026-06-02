@@ -1,18 +1,17 @@
 package io.github.dsheirer.gui.control;
 
-import javax.swing.BorderFactory;
-import javax.swing.JComponent;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
+import javafx.scene.paint.Color;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.layout.Region;
 
 /**
  * Power meter for displaying signal power levels in dB scale with optional peak value and squelch threshold lines.
  */
-public class DbPowerMeter extends JComponent
+public class DbPowerMeter extends Region
 {
     public static final double DEFAULT_MINIMUM_POWER = -110.0d;
     public static final double DEFAULT_MAXIMUM_POWER = 0.0d;
@@ -20,7 +19,7 @@ public class DbPowerMeter extends JComponent
     private static final int PADDING = 3;
     private static final int DOUBLE_PADDING = PADDING * 2;
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.0");
-    private static final Color COLOR_BAR = Color.LIGHT_GRAY;
+    private static final Color COLOR_BAR = Color.LIGHTGRAY;
     private static final Color COLOR_THRESHOLD = Color.BLUE;
     private static final Color COLOR_PEAK = Color.PINK;
 
@@ -34,13 +33,22 @@ public class DbPowerMeter extends JComponent
     private boolean mPeakVisible = false;
     private boolean mSquelchThresholdVisible = false;
 
+    private Canvas mCanvas;
+
     /**
      * Constructs an instance.
      */
     public DbPowerMeter()
     {
-        setPreferredSize(new Dimension(90, 100));
-        setBorder(BorderFactory.createTitledBorder("Power (dB)"));
+        setPrefSize(90, 100);
+        setStyle("-fx-border-color: black; -fx-border-width: 1; -fx-padding: 3;");
+
+        mCanvas = new Canvas();
+        getChildren().add(mCanvas);
+        mCanvas.widthProperty().bind(widthProperty());
+        mCanvas.heightProperty().bind(heightProperty());
+        mCanvas.widthProperty().addListener(e -> repaint());
+        mCanvas.heightProperty().addListener(e -> repaint());
     }
 
     /**
@@ -54,41 +62,51 @@ public class DbPowerMeter extends JComponent
         repaint();
     }
 
+    private void repaint()
+    {
+        draw();
+    }
+
     /**
      * Primary method for rendering the control
      */
-    @Override
-    protected void paintComponent(Graphics g)
+    protected void draw()
     {
-        super.paintComponent(g);
+        GraphicsContext g = mCanvas.getGraphicsContext2D();
+        g.clearRect(0, 0, mCanvas.getWidth(), mCanvas.getHeight());
+
+        double leftInset = getPadding().getLeft();
+        double topInset = getPadding().getTop();
+        double bottomInset = getPadding().getBottom();
+        double height = getHeight() - topInset - bottomInset;
 
         //Draw meter border
-        g.setColor(getForeground());
-        g.drawRect(getInsets().left, getInsets().top, BAR_WIDTH, getHeight() - getInsets().top - getInsets().bottom);
+        g.setStroke(Color.BLACK);
+        g.strokeRect(leftInset, topInset, BAR_WIDTH, height);
 
         //Draw filled bar
-        g.setColor(COLOR_BAR);
-        int fillHeight = getHeight() - getInsets().top - getInsets().bottom - DOUBLE_PADDING;
-        int height = (int) (fillHeight * getPowerPercent() - PADDING);
-        int top = (fillHeight - height) + getInsets().top + PADDING;
-        g.fillRect(getInsets().left + PADDING, top, BAR_WIDTH - DOUBLE_PADDING, height);
+        g.setFill(COLOR_BAR);
+        double fillHeight = height - DOUBLE_PADDING;
+        double barHeight = fillHeight * getPowerPercent() - PADDING;
+        double top = (fillHeight - barHeight) + topInset + PADDING;
+        g.fillRect(leftInset + PADDING, top, BAR_WIDTH - DOUBLE_PADDING, barHeight);
 
         //Draw threshold
         if(isSquelchThresholdVisible())
         {
-            g.setColor(COLOR_THRESHOLD);
+            g.setStroke(COLOR_THRESHOLD);
             drawPercentLine(g, getSquelchThresholdPercent());
         }
 
         //Draw peak line
         if(isPeakVisible())
         {
-            g.setColor(COLOR_PEAK);
+            g.setStroke(COLOR_PEAK);
             drawPercentLine(g, getPeakPercent());
         }
 
         //Draw legend/scale
-        g.setColor(getForeground());
+        g.setFill(Color.BLACK);
         for(double legendValue: getScaleValues())
         {
             drawScaleText(g, legendValue);
@@ -98,13 +116,16 @@ public class DbPowerMeter extends JComponent
     /**
      * Draws a line as a percentage of the value range (extent) using the current graphics color.
      */
-    private void drawPercentLine(Graphics g, double percentValue)
+    private void drawPercentLine(GraphicsContext g, double percentValue)
     {
-        int totalHeight = getHeight() - getInsets().top - getInsets().bottom - DOUBLE_PADDING;
-        int height = (int) (totalHeight * percentValue - PADDING);
-        int top = (totalHeight - height) + getInsets().top + PADDING;
-        int left = getInsets().left;
-        g.drawLine(left, top, left + BAR_WIDTH, top);
+        double topInset = getPadding().getTop();
+        double bottomInset = getPadding().getBottom();
+        double leftInset = getPadding().getLeft();
+
+        double totalHeight = getHeight() - topInset - bottomInset - DOUBLE_PADDING;
+        double height = totalHeight * percentValue - PADDING;
+        double top = (totalHeight - height) + topInset + PADDING;
+        g.strokeLine(leftInset, top, leftInset + BAR_WIDTH, top);
     }
 
     /**
@@ -112,16 +133,20 @@ public class DbPowerMeter extends JComponent
      * @param g graphics object
      * @param value to draw
      */
-    private void drawScaleText(Graphics g, double value)
+    private void drawScaleText(GraphicsContext g, double value)
     {
         double percent = getPercent(value);
-        int totalHeight = getHeight() - getInsets().top - getInsets().bottom - DOUBLE_PADDING;
-        int height = (int) (totalHeight * percent - PADDING);
-        int top = (totalHeight - height) + getInsets().top + PADDING;
-        int left = getInsets().left + BAR_WIDTH - PADDING;
-        int textOffset = getFontMetrics(getFont()).getMaxAscent() / 2 - 2;
+        double topInset = getPadding().getTop();
+        double bottomInset = getPadding().getBottom();
+        double leftInset = getPadding().getLeft();
+
+        double totalHeight = getHeight() - topInset - bottomInset - DOUBLE_PADDING;
+        double height = totalHeight * percent - PADDING;
+        double top = (totalHeight - height) + topInset + PADDING;
+        double left = leftInset + BAR_WIDTH - PADDING;
+        double textOffset = 4;
         String label = DECIMAL_FORMAT.format(value);
-        g.drawString(label, left + DOUBLE_PADDING, top + textOffset);
+        g.fillText(label, left + DOUBLE_PADDING, top + textOffset);
     }
 
     /**
@@ -129,7 +154,7 @@ public class DbPowerMeter extends JComponent
      */
     private List<Double> getScaleValues()
     {
-        double ascent = getFontMetrics(getFont()).getMaxAscent() * 2;
+        double ascent = 14;
         double labelCount = getHeight() / ascent;
         double interval = getExtent() / labelCount;
         List<Double> values = new ArrayList<>();

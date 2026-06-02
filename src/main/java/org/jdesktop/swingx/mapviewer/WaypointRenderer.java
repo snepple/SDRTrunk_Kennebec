@@ -30,7 +30,7 @@ package org.jdesktop.swingx.mapviewer;
 
 import org.jdesktop.swingx.JXMapViewer;
 
-import java.awt.Graphics2D;
+import javafx.scene.canvas.GraphicsContext;
 
 /**
  * A interface that draws waypoints. Implementations of WaypointRenderer can
@@ -46,6 +46,6 @@ public interface WaypointRenderer<W>
      * @param map the map
      * @param waypoint the waypoint
      */
-    public void paintWaypoint(Graphics2D g, JXMapViewer map, W waypoint);
+    public void paintWaypoint(GraphicsContext g, JXMapViewer map, W waypoint);
     
 }

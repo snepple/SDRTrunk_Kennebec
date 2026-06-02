@@ -11,7 +11,7 @@ import io.github.dsheirer.playlist.TwoToneDiscoveryLog;
 import io.github.dsheirer.audio.broadcast.zello.ZelloBroadcaster;
 import io.github.dsheirer.audio.broadcast.BroadcastConfiguration;
 import io.github.dsheirer.audio.broadcast.zello.ZelloConfiguration;
-
+import io.github.dsheirer.preference.notification.AntiFloodFilter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,12 +121,13 @@ public class TwoToneDetector
         {
             long freqA = Math.round(config.getToneA());
             long freqB = Math.round(config.getToneB());
+            double tol = config.getFrequencyTolerance();
+            int minToneBlocks = Math.max(1, (int)(config.getToneDurationMs() / 20));
 
             if (freqA <= 0) continue;
             if (!config.isLongATone() && freqB <= 0) continue;
 
-            GoertzelFilter filterA = new GoertzelFilter(SAMPLE_RATE, freqA, BLOCK_SIZE, WindowType.BLACKMAN);
-            int powerA = filterA.getPower(buffer.clone());
+            int powerA = getTolerancePower(buffer, freqA, tol);
 
             if (config.isLongATone())
             {
@@ -159,8 +160,7 @@ public class TwoToneDetector
                 continue;
             }
 
-            GoertzelFilter filterB = new GoertzelFilter(SAMPLE_RATE, freqB, BLOCK_SIZE, WindowType.BLACKMAN);
-            int powerB = filterB.getPower(buffer.clone());
+            int powerB = getTolerancePower(buffer, freqB, tol);
 
             // Tone A detection
             if (powerA > POWER_THRESHOLD_DB)
@@ -179,7 +179,7 @@ public class TwoToneDetector
                 }
             }
             // Tone B detection (only valid if Tone A was previously detected and held)
-            else if (powerB > POWER_THRESHOLD_DB && mCurrentToneABlocks >= MIN_TONE_BLOCKS && mCurrentToneA == config.getToneA())
+            else if (powerB > POWER_THRESHOLD_DB && mCurrentToneABlocks >= minToneBlocks && mCurrentToneA == config.getToneA())
             {
                 matchedToneBThisBlock = true;
                 if(mCurrentToneB == config.getToneB())
@@ -194,7 +194,7 @@ public class TwoToneDetector
 
 
                 // If B is held long enough, it's a confirmed sequence
-                if(mCurrentToneBBlocks >= MIN_TONE_BLOCKS)
+                if(mCurrentToneBBlocks >= minToneBlocks)
                 {
                     triggerAlertIfMatched(config, segment);
 
@@ -216,6 +216,16 @@ public class TwoToneDetector
             // E.g. finding a 600Hz tone that isn't mapped
             // logDiscovery(600.0, 700.0, segment);
         }
+    }
+
+    private int getTolerancePower(float[] buffer, long freq, double tol) {
+        if (tol <= 0) {
+            return new GoertzelFilter(SAMPLE_RATE, freq, BLOCK_SIZE, WindowType.BLACKMAN).getPower(buffer.clone());
+        }
+        int p1 = new GoertzelFilter(SAMPLE_RATE, freq, BLOCK_SIZE, WindowType.BLACKMAN).getPower(buffer.clone());
+        int p2 = new GoertzelFilter(SAMPLE_RATE, (long)(freq - tol), BLOCK_SIZE, WindowType.BLACKMAN).getPower(buffer.clone());
+        int p3 = new GoertzelFilter(SAMPLE_RATE, (long)(freq + tol), BLOCK_SIZE, WindowType.BLACKMAN).getPower(buffer.clone());
+        return Math.max(p1, Math.max(p2, p3));
     }
 
 
@@ -273,6 +283,12 @@ public class TwoToneDetector
         }
     }
 
+    private AntiFloodFilter mAntiFloodFilter;
+
+    public void setAntiFloodFilter(AntiFloodFilter filter) {
+        this.mAntiFloodFilter = filter;
+    }
+
     private void triggerAlert(TwoToneConfiguration config, AudioSegment segment)
     {
         String template = (config.getTemplate() != null && !config.getTemplate().isEmpty()) ? config.getTemplate() : "Dispatch Received: {Alias}";
@@ -312,6 +328,11 @@ public class TwoToneDetector
 
         MyEventBus.getGlobalEventBus().post(new TwoToneDetectedEvent(channel, text));
 
+        if (mAntiFloodFilter != null && !mAntiFloodFilter.checkAndRecord("TWOTONE:" + alias)) {
+            mLog.info("Suppressed duplicate Two-Tone Zello alert for alias: {}", alias);
+            return;
+        }
+
         for(ZelloBroadcaster broadcaster : mZelloBroadcasters)
         {
             BroadcastConfiguration bc = broadcaster.getBroadcastConfiguration();
@@ -322,10 +343,10 @@ public class TwoToneDetector
                 {
                     mLog.info("Sending Zello Alert to {}: {}", zc.getChannel(), text);
                     if (config.isEnableZelloTextMessage()) {
-                        // broadcaster.sendTextMessage(text);
+                        broadcaster.sendTextMessage(text);
                     }
                     if (config.isEnableZelloAlert() && config.getZelloAlertFile() != null && !config.getZelloAlertFile().isEmpty()) {
-                        // broadcaster.playAlertTone("/audio/" + config.getZelloAlertFile());
+                        broadcaster.injectPreDispatchAudio(config.getZelloAlertFile());
                     }
                 }
             }

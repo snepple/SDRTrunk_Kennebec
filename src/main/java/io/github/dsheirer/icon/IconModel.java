@@ -62,7 +62,7 @@ public class IconModel
     private AtomicBoolean mSavingIcons = new AtomicBoolean();
     private ObservableList<Icon> mIcons = FXCollections.observableArrayList(Icon.extractor());
     private StringProperty mDefaultIconName = new SimpleStringProperty();
-    private Map<String,ImageIcon> mResizedIcons = new HashMap<>();
+    private Map<String, javafx.scene.image.Image> mResizedIcons = new HashMap<>();
     private Icon mDefaultIcon;
     private IconSet mStandardIcons;
     private Map<String, Icon> mSystemIcons = new HashMap<>();
@@ -214,7 +214,7 @@ public class IconModel
      * @param height - height of icon in pixels
      * @return - scaled named icon (if it exists) or a scaled version of the default icon
      */
-    public ImageIcon getIcon(String name, int height)
+    public javafx.scene.image.Image getIcon(String name, int height)
     {
         if(name == null)
         {
@@ -223,7 +223,7 @@ public class IconModel
 
         String scaledIconName = name + height;
 
-        ImageIcon mapValue = mResizedIcons.get(scaledIconName);
+        javafx.scene.image.Image mapValue = mResizedIcons.get(scaledIconName);
         if (mapValue != null)
         {
             return mapValue;
@@ -231,7 +231,7 @@ public class IconModel
 
         Icon icon = getIcon(name);
 
-        ImageIcon scaledIcon = getScaledIcon(icon.getIcon(), height);
+        javafx.scene.image.Image scaledIcon = icon.getFxImage(height);
 
         if(scaledIcon != null)
         {
@@ -248,7 +248,7 @@ public class IconModel
      * @param height new height to scale the image (width will be scaled accordingly)
      * @return
      */
-        public static ImageIcon getScaledIcon(ImageIcon original, int height)
+        static ImageIcon getScaledIcon(ImageIcon original, int height)
     {
         if(original != null)
         {

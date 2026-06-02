@@ -19,14 +19,14 @@ package org.jdesktop.swingx.input;
 
 import org.jdesktop.swingx.JXMapViewer;
 
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
+import javafx.scene.input.ScrollEvent;
+import javafx.event.EventHandler;
 
 /**
  * zooms using the mouse wheel on the view center
  * @author joshy
  */
-public class ZoomMouseWheelListenerCenter implements MouseWheelListener
+public class ZoomMouseWheelListenerCenter implements EventHandler<ScrollEvent>
 {
 	private JXMapViewer viewer;
 	
@@ -39,8 +39,8 @@ public class ZoomMouseWheelListenerCenter implements MouseWheelListener
 	}
 
 	@Override
-	public void mouseWheelMoved(MouseWheelEvent e)
+	public void handle(ScrollEvent e)
 	{
-		viewer.setZoom(viewer.getZoom() + e.getWheelRotation());
+		viewer.setZoom(viewer.getZoom() + (int)(-e.getDeltaY() / 40.0));
 	}
 }

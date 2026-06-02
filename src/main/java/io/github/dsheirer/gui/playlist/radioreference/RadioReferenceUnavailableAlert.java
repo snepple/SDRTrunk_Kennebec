@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  *  Copyright (C) 2014-2020 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.gui.playlist.radioreference;
+import javafx.scene.control.Button;
 
 import javafx.scene.Node;
 import javafx.scene.control.Alert;

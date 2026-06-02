@@ -39,8 +39,7 @@ public class ColorIcon implements Icon
         g.setColor( mColor );
 
         g.fillRoundRect( x, y, sSIZE, sSIZE, sARC_SIZE, sARC_SIZE );
-        
-        g.setColor( temp );
+// //         g.setColor( temp );
     }
 
 	@Override

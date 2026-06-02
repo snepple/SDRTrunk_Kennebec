@@ -18,40 +18,37 @@
  */
 
 package io.github.dsheirer.filter;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
-import java.awt.Component;
-import io.github.dsheirer.gui.help.HelpIconLabel;
-import javax.swing.JPanel;
-import java.awt.FlowLayout;
-import javax.swing.JLabel;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.Node;
+
 import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.EventObject;
 import java.util.List;
-import net.miginfocom.swing.MigLayout;
 
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTree;
-import javax.swing.event.CellEditorListener;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeCellEditor;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreeSelectionModel;
+import io.github.dsheirer.gui.help.HelpIconLabel;
 
 /**
  * Editor panel for managing the state of a filter set.
  *
  * @param <T> element type for the filter set.
  */
-public class FilterEditorPanel<T> extends JPanel
+public class FilterEditorPanel<T> extends VBox
 {
-    private static final long serialVersionUID = 1L;
-    private JTree mTree;
-    private DefaultTreeModel mModel;
+    private TreeView<Object> mTree;
+    private TreeItem<Object> mRootItem;
     private FilterSet<T> mFilterSet;
 
     /**
@@ -60,7 +57,6 @@ public class FilterEditorPanel<T> extends JPanel
      */
     public FilterEditorPanel(FilterSet<T> filterSet)
     {
-        setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
         mFilterSet = filterSet;
         init();
     }
@@ -70,53 +66,16 @@ public class FilterEditorPanel<T> extends JPanel
      */
     private void init()
     {
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode(mFilterSet);
-        mModel = new DefaultTreeModel(root);
-        addFilterSet(mFilterSet, root);
+        mRootItem = new TreeItem<>(mFilterSet);
+        mRootItem.setExpanded(true);
+        addFilterSet(mFilterSet, mRootItem);
 
-        mTree = new JTree(mModel) {
-            @Override
-            public String getToolTipText(java.awt.event.MouseEvent e) {
-                javax.swing.tree.TreePath path = getPathForLocation(e.getX(), e.getY());
-                if (path != null) {
-                    Object lastComponent = path.getLastPathComponent();
-                    if (lastComponent instanceof javax.swing.tree.DefaultMutableTreeNode) {
-                        Object userObject = ((javax.swing.tree.DefaultMutableTreeNode) lastComponent).getUserObject();
-                        if (userObject instanceof IFilter filter) {
-                            String filterName = filter.getName();
-                            String tooltipContent = "Controls the enabling of elements for this specific filter set.<br>Benefit: Instantly toggle related DSP components.";
-                            if (filterName.equals("De-emphasis Filter")) {
-                                tooltipContent = "Restores natural voice balance by reversing the pre-emphasis applied at the transmitter.<br>Benefit: Significantly reduces harsh high-frequency hiss.";
-                            } else if (filterName.equals("Decimation Filter")) {
-                                tooltipContent = "Reduces the sample rate of the signal to lower processing requirements.<br>Benefit: Vastly improves efficiency.";
-                            } else if (filterName.equals("Squaring Filter")) {
-                                tooltipContent = "Squares the input signal values.<br>Benefit: Useful in energy detection algorithms.";
-                            }
-                            return "<html><b>" + filterName + "</b><br>" + tooltipContent + "</html>";
-                        } else if (userObject instanceof FilterElement element) {
-                            String elementName = element.getName();
-                            String tooltipContent = "Filter configuration element.<br>Check documentation for specific DSP effect.";
-                            if (elementName.equals("De-emphasis Filter")) {
-                                tooltipContent = "Restores natural voice balance by reversing the pre-emphasis applied at the transmitter.<br>Benefit: Significantly reduces harsh high-frequency hiss.";
-                            } else if (elementName.equals("Decimation Filter")) {
-                                tooltipContent = "Reduces the sample rate of the signal to lower processing requirements.<br>Benefit: Vastly improves efficiency.";
-                            } else if (elementName.equals("Squaring Filter")) {
-                                tooltipContent = "Squares the input signal values.<br>Benefit: Useful in energy detection algorithms.";
-                            }
-                            return "<html><b>" + elementName + "</b><br>" + tooltipContent + "</html>";
-                        }
-                    }
-                }
-                return null;
-            }
-        };
-        javax.swing.ToolTipManager.sharedInstance().registerComponent(mTree);
-        mTree.setShowsRootHandles(true);
-        mTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        mTree.setCellRenderer(new EditorTreeCellRenderer());
-        mTree.setCellEditor(new FilterTreeCellEditor());
-        mTree.setEditable(true);
-        add(mTree);
+        mTree = new TreeView<>(mRootItem);
+        mTree.setShowRoot(true);
+        mTree.setCellFactory(treeView -> new FilterTreeCell());
+        
+        VBox.setVgrow(mTree, Priority.ALWAYS);
+        getChildren().add(mTree);
     }
 
     /**
@@ -125,10 +84,9 @@ public class FilterEditorPanel<T> extends JPanel
      */
     public void updateFilterSet(FilterSet<T> filterSet)
     {
-        remove(mTree);
+        getChildren().remove(mTree);
         mFilterSet = filterSet;
         init();
-        revalidate();
     }
 
     /**
@@ -136,14 +94,15 @@ public class FilterEditorPanel<T> extends JPanel
      * @param filterSet to add to the tree
      * @param parent node for the filter set child tree node.
      */
-    private void addFilterSet(FilterSet<T> filterSet, DefaultMutableTreeNode parent)
+    private void addFilterSet(FilterSet<T> filterSet, TreeItem<Object> parent)
     {
         List<IFilter<T>> filters = filterSet.getFilters();
 
         for(IFilter<T> filter : filters)
         {
-            DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(filter);
-            mModel.insertNodeInto(childNode, parent, parent.getChildCount());
+            TreeItem<Object> childNode = new TreeItem<>(filter);
+            childNode.setExpanded(true);
+            parent.getChildren().add(childNode);
 
             if(filter instanceof FilterSet childFilterSet)
             {
@@ -162,7 +121,7 @@ public class FilterEditorPanel<T> extends JPanel
      * @param filter to add
      * @param parent tree node
      */
-    private void addFilter(Filter filter, DefaultMutableTreeNode parent)
+    private void addFilter(Filter filter, TreeItem<Object> parent)
     {
         List<FilterElement<?>> elements = filter.getFilterElements();
 
@@ -170,35 +129,20 @@ public class FilterEditorPanel<T> extends JPanel
 
         for(FilterElement<?> element : elements)
         {
-            DefaultMutableTreeNode child = new DefaultMutableTreeNode(element);
-            mModel.insertNodeInto(child, parent, parent.getChildCount());
+            TreeItem<Object> child = new TreeItem<>(element);
+            parent.getChildren().add(child);
         }
-    }
-
-    /**
-     * Accesses the tree's root tree node.
-     * @return root node.
-     */
-    private DefaultMutableTreeNode getRoot()
-    {
-        if(mTree.getModel().getRoot() instanceof DefaultMutableTreeNode root)
-        {
-            return root;
-        }
-
-        return null;
     }
 
     /**
      * Recursively sets the enabled state on all filter node children below the specified parent node.
      *
-     * @param model - model containing the tree nodes
      * @param node - parent node
      * @param enabled - true or false to enable or disable the filters
      */
-    private void setFilterEnabled(DefaultTreeModel model, DefaultMutableTreeNode node, boolean enabled)
+    private void setFilterEnabled(TreeItem<Object> node, boolean enabled)
     {
-        Object obj = node.getUserObject();
+        Object obj = node.getValue();
 
         if(obj instanceof FilterElement filterElement)
         {
@@ -206,318 +150,95 @@ public class FilterEditorPanel<T> extends JPanel
         }
 
         /* Recursively set the children of this node */
-        Enumeration<?> children = node.children();
-
-        while(children.hasMoreElements())
+        for(TreeItem<Object> child : node.getChildren())
         {
-            Object child = children.nextElement();
-
-            if(child instanceof DefaultMutableTreeNode childNode)
-            {
-                setFilterEnabled(model, childNode, enabled);
-            }
+            setFilterEnabled(child, enabled);
         }
-
-        model.nodeChanged(node);
     }
 
     /**
-     * Recursively searches the tree to find the tree node containing the specified filter element.
-     *
-     * @param node to start search
-     * @param element to find
+     * Custom cell factory
      */
-    private DefaultMutableTreeNode findFilterElementNode(DefaultMutableTreeNode node, FilterElement<?> element)
+    private class FilterTreeCell extends TreeCell<Object>
     {
-        if(node != null)
+        private HBox graphicContainer = new HBox(5);
+        private CheckBox checkBox = new CheckBox();
+        private HelpIconLabel helpIcon = new HelpIconLabel("");
+        private Label fallbackLabel = new Label();
+
+        public FilterTreeCell()
         {
-            if(node.getUserObject() instanceof FilterElement<?> selfFilterElement && selfFilterElement.equals(element))
-            {
-                return node;
-            }
-
-            for(int x = 0; x < node.getChildCount(); x++)
-            {
-                if(node.getChildAt(x) instanceof DefaultMutableTreeNode child)
-                {
-                    DefaultMutableTreeNode found = findFilterElementNode(child, element);
-
-                    if(found != null)
-                    {
-                        return found;
-                    }
+            checkBox.setOnAction(e -> {
+                Object item = getItem();
+                if (item instanceof IFilter filter) {
+                    setFilterEnabled(getTreeItem(), checkBox.isSelected());
+                    mTree.refresh();
+                } else if (item instanceof FilterElement element) {
+                    element.setEnabled(checkBox.isSelected());
+                    mTree.refresh();
                 }
-            }
+            });
         }
 
-        return null;
-    }
-
-    /**
-     * Updates the display value for the specified node and all parents in the nodes parentage.
-     * @param node to update
-     */
-    private void updateParentage(DefaultMutableTreeNode node)
-    {
-        mModel.nodeChanged(node);
-
-        TreeNode parent = node.getParent();
-
-        while(parent != null)
+        @Override
+        protected void updateItem(Object item, boolean empty)
         {
-            mModel.nodeChanged(parent);
-            parent = parent.getParent();
-        }
-    }
+            super.updateItem(item, empty);
 
-    /**
-     * Recursively searches the tree to find the tree node containing the specified filter.
-     *
-     * @param node to start search
-     * @param filter to find
-     */
-    private DefaultMutableTreeNode findFilterNode(DefaultMutableTreeNode node, IFilter<?> filter)
-    {
-        if(node != null)
-        {
-            if(node.getUserObject() instanceof IFilter<?> selfFilter && selfFilter.equals(filter))
-            {
-                return node;
-            }
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                graphicContainer.getChildren().clear();
 
-            for(int x = 0; x < node.getChildCount(); x++)
-            {
-                if(node.getChildAt(x) instanceof DefaultMutableTreeNode child)
-                {
-                    DefaultMutableTreeNode found = findFilterNode(child, filter);
-
-                    if(found != null)
-                    {
-                        return found;
-                    }
-                }
-            }
-        }
-        else
-        {
-            System.out.println("Can't evaluate - node is null");
-        }
-
-        return null;
-    }
-
-    /**
-     * Custom cell renderer
-     */
-    public class EditorTreeCellRenderer extends DefaultTreeCellRenderer
-    {
-        private static final long serialVersionUID = 1L;
-
-        public Component getTreeCellRendererComponent(JTree tree, Object treeNode, boolean selected, boolean expanded,
-                                                      boolean leaf, int row, boolean hasFocus)
-        {
-            if(treeNode instanceof DefaultMutableTreeNode)
-            {
-                Object userObject = ((DefaultMutableTreeNode) treeNode).getUserObject();
-                JCheckBox checkBox = null;
-
-                if(userObject instanceof IFilter filter)
-                {
-                    checkBox = new FilterCheckBox(filter);
+                if (item instanceof IFilter filter) {
                     checkBox.setSelected(filter.isEnabled());
-                }
-                else if(userObject instanceof FilterElement element)
-                {
-                    checkBox = new FilterElementCheckBox(element);
+                    checkBox.setText(filter.getName() + " (" + filter.getEnabledCount() + "/" + filter.getElementCount() + ")");
+                    graphicContainer.getChildren().add(checkBox);
+                    
+                    String tooltipText = getTooltipForFilter(filter.getName(), true);
+                    if (tooltipText != null) {
+                        helpIcon.setHelpText(tooltipText);
+                        graphicContainer.getChildren().add(helpIcon);
+                    }
+                    
+                    setText(null);
+                    setGraphic(graphicContainer);
+                } else if (item instanceof FilterElement element) {
                     checkBox.setSelected(element.isEnabled());
-                }
+                    checkBox.setText(element.getName());
+                    graphicContainer.getChildren().add(checkBox);
 
-                if(checkBox != null)
-                {
-                    if(selected)
-                    {
-                        checkBox.setForeground(getTextSelectionColor());
-                        checkBox.setBackground(getBackgroundSelectionColor());
-                    }
-                    else
-                    {
-                        checkBox.setForeground(getTextNonSelectionColor());
-                        checkBox.setBackground(getBackgroundNonSelectionColor());
+                    String tooltipText = getTooltipForFilter(element.getName(), false);
+                    if (tooltipText != null) {
+                        helpIcon.setHelpText(tooltipText);
+                        graphicContainer.getChildren().add(helpIcon);
                     }
 
-                    JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-                    panel.setBackground(checkBox.getBackground());
-                    panel.add(checkBox);
-
-                    String tooltipText = null;
-                    if(userObject instanceof IFilter filter) {
-                         String filterName = filter.getName();
-                         String tooltipContent = "Controls the enabling of elements for this specific filter set.<br>Benefit: Instantly toggle related DSP components.";
-
-                         if(filterName.equals("De-emphasis Filter")) {
-                             tooltipContent = "Restores natural voice balance by reversing the pre-emphasis applied at the transmitter.<br>Benefit: Significantly reduces harsh high-frequency hiss.";
-                         } else if(filterName.equals("Decimation Filter")) {
-                             tooltipContent = "Reduces the sample rate of the signal to lower processing requirements.<br>Benefit: Vastly improves efficiency.";
-                         } else if(filterName.equals("Squaring Filter")) {
-                             tooltipContent = "Squares the input signal values.<br>Benefit: Useful in energy detection algorithms.";
-                         }
-
-                         tooltipText = "<html><b>" + filterName + "</b><br>" + tooltipContent + "</html>";
-                    } else if(userObject instanceof FilterElement element) {
-                         String elementName = element.getName();
-                         String tooltipContent = "Filter configuration element.<br>Check documentation for specific DSP effect.";
-
-                         if(elementName.equals("De-emphasis Filter")) {
-                             tooltipContent = "Restores natural voice balance by reversing the pre-emphasis applied at the transmitter.<br>Benefit: Significantly reduces harsh high-frequency hiss.";
-                         } else if(elementName.equals("Decimation Filter")) {
-                             tooltipContent = "Reduces the sample rate of the signal to lower processing requirements.<br>Benefit: Vastly improves efficiency.";
-                         } else if(elementName.equals("Squaring Filter")) {
-                             tooltipContent = "Squares the input signal values.<br>Benefit: Useful in energy detection algorithms.";
-                         }
-
-                         tooltipText = "<html><b>" + elementName + "</b><br>" + tooltipContent + "</html>";
-                    }
-
-                    if(tooltipText != null) {
-                        HelpIconLabel helpIcon = new HelpIconLabel(tooltipText);
-                        helpIcon.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
-                        panel.add(helpIcon);
-                    }
-
-                    return panel;
+                    setText(null);
+                    setGraphic(graphicContainer);
+                } else {
+                    fallbackLabel.setText(item.toString());
+                    setText(null);
+                    setGraphic(fallbackLabel);
                 }
             }
-
-            return super.getTreeCellRendererComponent(tree, treeNode, selected, expanded, leaf, row, hasFocus);
         }
-    }
+        
+        private String getTooltipForFilter(String name, boolean isFilterSet) {
+            String tooltipContent = isFilterSet ? 
+                "Controls the enabling of elements for this specific filter set.<br>Benefit: Instantly toggle related DSP components." :
+                "Filter configuration element.<br>Check documentation for specific DSP effect.";
 
-    /**
-     * Check box used in filter tree nodes
-     */
-    public class FilterCheckBox extends JCheckBox
-    {
-        private static final long serialVersionUID = 1L;
-        private IFilter<?> mFilter;
-
-        /**
-         * Constructs an instance
-         *
-         * @param filter
-         */
-        public FilterCheckBox(IFilter<?> filter)
-        {
-            mFilter = filter;
-            setSelected(mFilter.isEnabled());
-            addItemListener(e -> {
-                DefaultMutableTreeNode selfNode = findFilterNode(getRoot(), mFilter);
-
-                if(selfNode != null)
-                {
-                    setFilterEnabled(mModel, selfNode, FilterCheckBox.this.isSelected());
-                    updateLabel();
-                    updateParentage(selfNode);
-                }
-            });
-        }
-
-        @Override
-        public void setSelected(boolean b)
-        {
-            super.setSelected(b);
-            updateLabel();
-        }
-
-        public void updateLabel()
-        {
-            setText(mFilter.getName() + " (" + mFilter.getEnabledCount() + "/" + mFilter.getElementCount() + ")");
-        }
-    }
-
-    /**
-     * Check box used in filter element tree nodes
-     */
-    public class FilterElementCheckBox extends JCheckBox
-    {
-        private static final long serialVersionUID = 1L;
-        private FilterElement<?> mFilter;
-
-        /**
-         * Constructs an instance
-         *
-         * @param filter element
-         */
-        public FilterElementCheckBox(FilterElement<?> filter)
-        {
-            super(filter.getName());
-            mFilter = filter;
-            setSelected(mFilter.isEnabled());
-            addItemListener(arg0 -> {
-                mFilter.setEnabled(FilterElementCheckBox.this.isSelected());
-                DefaultMutableTreeNode self = findFilterElementNode(getRoot(), mFilter);
-                if(self != null)
-                {
-                    updateParentage(self);
-                }
-            });
-        }
-    }
-
-    /**
-     * Editor for filter tree nodes
-     */
-    public class FilterTreeCellEditor implements TreeCellEditor
-    {
-        @Override
-        public Component getTreeCellEditorComponent(JTree tree, Object node, boolean isSelected, boolean expanded, boolean leaf, int row)
-        {
-            if(node instanceof DefaultMutableTreeNode mutableTreeNode)
-            {
-                Object userObject = mutableTreeNode.getUserObject();
-
-                if(userObject instanceof IFilter filter)
-                {
-                    return new FilterCheckBox(filter);
-                }
-                else if(userObject instanceof FilterElement filterElement)
-                {
-                    return new FilterElementCheckBox(filterElement);
-                }
+            if(name.equals("De-emphasis Filter")) {
+                 tooltipContent = "Restores natural voice balance by reversing the pre-emphasis applied at the transmitter.<br>Benefit: Significantly reduces harsh high-frequency hiss.";
+            } else if(name.equals("Decimation Filter")) {
+                 tooltipContent = "Reduces the sample rate of the signal to lower processing requirements.<br>Benefit: Vastly improves efficiency.";
+            } else if(name.equals("Squaring Filter")) {
+                 tooltipContent = "Squares the input signal values.<br>Benefit: Useful in energy detection algorithms.";
             }
-            return new JLabel(node.toString());
-        }
 
-        @Override
-        public void addCellEditorListener(CellEditorListener l) {}
-
-        @Override
-        public void cancelCellEditing() {}
-
-        @Override
-        public Object getCellEditorValue()
-        {
-            return null;
-        }
-
-        @Override
-        public boolean isCellEditable(EventObject anEvent)
-        {
-            return true;
-        }
-
-        @Override
-        public void removeCellEditorListener(CellEditorListener l) {}
-
-        @Override
-        public boolean shouldSelectCell(EventObject anEvent)
-        {
-            return false;
-        }
-
-        @Override
-        public boolean stopCellEditing()
-        {
-            return false;
+            return "<b>" + name + "</b><br>" + tooltipContent;
         }
     }
 }

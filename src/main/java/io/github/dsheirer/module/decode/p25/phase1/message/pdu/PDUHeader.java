@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2025 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.module.decode.p25.phase1.message.pdu;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.bits.BinaryMessage;
 import io.github.dsheirer.bits.CorrectedBinaryMessage;

@@ -7,7 +7,7 @@ import io.github.dsheirer.settings.SettingChangeListener;
 import io.github.dsheirer.settings.SettingsManager;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+import javafx.scene.layout.StackPane;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -20,11 +20,11 @@ import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.Point;
+import javafx.geometry.Point2D;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 
-public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Pausable, SettingChangeListener {
+public class WaterfallPanel extends StackPane implements DFTResultsListener, Pausable, SettingChangeListener {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(WaterfallPanel.class);
     private static DecimalFormat CURSOR_FORMAT = new DecimalFormat("0.00000");
@@ -43,7 +43,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
     private int mImageHeight = 700;
 
     private Color mColorSpectrumCursor;
-    private Point mCursorLocation = new Point(0, 0);
+    private Point2D mCursorLocation = new Point2D(0, 0);
     private boolean mCursorVisible = false;
     private long mCursorFrequency = 0;
     private boolean mPaused = false;
@@ -63,36 +63,30 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
         mColorSpectrumCursor = getColor(ColorSettingName.SPECTRUM_CURSOR);
         mColorMap = WaterfallColorModel.getARGBColorMap();
 
-        Platform.runLater(() -> {
-            mCanvas = new Canvas(mDFTSize, mImageHeight);
-            mGraphicsContext = mCanvas.getGraphicsContext2D();
+        mCanvas = new Canvas(mDFTSize, mImageHeight);
+        mGraphicsContext = mCanvas.getGraphicsContext2D();
 
-            StackPane root = new StackPane();
-            root.getChildren().add(mCanvas);
+        this.getChildren().add(mCanvas);
 
-            // Bind canvas size to parent size so it resizes
-            mCanvas.widthProperty().bind(root.widthProperty());
-            mCanvas.heightProperty().bind(root.heightProperty());
+        // Bind canvas size to parent size so it resizes
+        mCanvas.widthProperty().bind(this.widthProperty());
+        mCanvas.heightProperty().bind(this.heightProperty());
 
-            mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
-            mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
+        mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
+        mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
 
-            Scene scene = new Scene(root);
-            setScene(scene);
+        reset();
 
-            reset();
-
-            mAnimationTimer = new AnimationTimer() {
-                @Override
-                public void handle(long now) {
-                    if (mNeedsRedraw) {
-                        mNeedsRedraw = false;
-                        draw();
-                    }
+        mAnimationTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (mNeedsRedraw) {
+                    mNeedsRedraw = false;
+                    draw();
                 }
-            };
-            mAnimationTimer.start();
-        });
+            }
+        };
+        mAnimationTimer.start();
     }
 
     public void dispose() {
@@ -125,7 +119,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
         return mPaused;
     }
 
-    public boolean isDisabled() {
+    public boolean isWaterfallDisabled() {
         return mDisabled;
     }
 
@@ -145,16 +139,16 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
 
     private Color getColor(ColorSettingName name) {
         ColorSetting setting = mSettingsManager.getSettingsModel().getColorSetting(name);
-        java.awt.Color awtColor = setting.getColor();
-        return Color.rgb(awtColor.getRed(), awtColor.getGreen(), awtColor.getBlue(), awtColor.getAlpha() / 255.0);
+        javafx.scene.paint.Color awtColor = setting.getColor();
+        return Color.rgb((int)(awtColor.getRed() * 255), (int)(awtColor.getGreen() * 255), (int)(awtColor.getBlue() * 255), awtColor.getOpacity());
     }
 
     @Override
     public void settingChanged(Setting setting) {
         if (setting instanceof ColorSetting colorSetting) {
             if (colorSetting.getColorSettingName() == ColorSettingName.SPECTRUM_CURSOR) {
-                java.awt.Color awtColor = colorSetting.getColor();
-                mColorSpectrumCursor = Color.rgb(awtColor.getRed(), awtColor.getGreen(), awtColor.getBlue(), awtColor.getAlpha() / 255.0);
+                javafx.scene.paint.Color awtColor = colorSetting.getColor();
+                mColorSpectrumCursor = Color.rgb((int)(awtColor.getRed() * 255), (int)(awtColor.getGreen() * 255), (int)(awtColor.getBlue() * 255), awtColor.getOpacity());
                 mNeedsRedraw = true;
             }
         }
@@ -163,7 +157,7 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
     @Override
     public void settingDeleted(Setting setting) {}
 
-    public void setCursorLocation(Point point) {
+    public void setCursorLocation(Point2D point) {
         mCursorLocation = point;
         mNeedsRedraw = true;
     }
@@ -239,9 +233,9 @@ public class WaterfallPanel extends JFXPanel implements DFTResultsListener, Paus
         mGraphicsContext.setFill(mColorSpectrumCursor);
 
         if (mCursorVisible) {
-            mGraphicsContext.strokeLine(mCursorLocation.x, 0, mCursorLocation.x, height);
+            mGraphicsContext.strokeLine(mCursorLocation.getX(), 0, mCursorLocation.getX(), height);
             String frequency = CURSOR_FORMAT.format(mCursorFrequency / 1000000.0D);
-            mGraphicsContext.fillText(frequency, mCursorLocation.x + 5, mCursorLocation.y);
+            mGraphicsContext.fillText(frequency, mCursorLocation.getX() + 5, mCursorLocation.getY());
         }
 
         if (mDisabled) {

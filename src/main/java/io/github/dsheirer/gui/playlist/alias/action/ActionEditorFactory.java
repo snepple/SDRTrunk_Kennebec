@@ -21,6 +21,7 @@ package io.github.dsheirer.gui.playlist.alias.action;
 
 import io.github.dsheirer.alias.action.AliasActionType;
 import io.github.dsheirer.preference.UserPreferences;
+import io.github.dsheirer.playlist.PlaylistManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ public class ActionEditorFactory
 {
     private static final Logger mLog = LoggerFactory.getLogger(ActionEditorFactory.class);
 
-    public static ActionEditor getEditor(AliasActionType type, UserPreferences userPreferences)
+    public static ActionEditor getEditor(AliasActionType type, UserPreferences userPreferences, PlaylistManager playlistManager)
     {
         switch(type)
         {
@@ -41,6 +42,8 @@ public class ActionEditorFactory
                 return new ClipEditor();
             case SCRIPT:
                 return new ScriptEditor();
+            case TWO_TONE:
+                return new TwoToneActionEditor(playlistManager);
             default:
                 return new UnrecognizedActionEditor();
         }

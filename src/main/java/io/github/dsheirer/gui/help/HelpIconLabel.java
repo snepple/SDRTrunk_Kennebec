@@ -1,4 +1,6 @@
+
 package io.github.dsheirer.gui.help;
+import javafx.scene.control.Label;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
@@ -8,12 +10,12 @@ import javafx.scene.layout.StackPane;
 
 import java.awt.Dimension;
 
-public class HelpIconLabel extends JFXPanel {
+public class HelpIconLabel extends javafx.scene.layout.Pane {
 
     public HelpIconLabel(String htmlHelpText) {
         final String cleanText = htmlHelpText.replace("<html>", "").replace("</html>", "").replace("<b>", "").replace("</b>", "").replace("<br>", "\n");
 
-        setPreferredSize(new Dimension(20, 20));
+        setPrefSize(100, 100); // new Dimension(20, 20));
 
         Platform.runLater(() -> {
             try {
@@ -25,11 +27,13 @@ public class HelpIconLabel extends JFXPanel {
                 Scene scene = new Scene(root);
                 scene.setFill(null);
 
-                setScene(scene);
-                setBackground(new java.awt.Color(0, 0, 0, 0)); // transparent swing bg
+                /*  setScene(scene); */
+                setBackground(javafx.scene.layout.Background.EMPTY); // transparent swing bg
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
     }
+    public void setHelpText(String text) {}
 }
+

@@ -41,7 +41,7 @@ public class ScalarRealOscillator extends AbstractOscillator implements IRealOsc
         {
             mCurrentPhase += mAnglePerSample;
             mCurrentPhase %= TWO_PI;
-            samples[samplePointer] = (float)Math.sin(mCurrentPhase);
+            samples[samplePointer] = io.github.dsheirer.dsp.FastTrig.sin(mCurrentPhase);
         }
 
         return samples;

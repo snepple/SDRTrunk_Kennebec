@@ -20,6 +20,14 @@
 package io.github.dsheirer.gui.playlist.channel;
 
 import io.github.dsheirer.alias.AliasModel;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.embed.swing.SwingFXUtils;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Files;
 import io.github.dsheirer.controller.channel.Channel;
 import io.github.dsheirer.controller.channel.ChannelException;
 import io.github.dsheirer.controller.channel.ChannelAlertConfiguration;
@@ -121,6 +129,11 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     private IconNode mStopGraphicNode;
     private ChannelProcessingMonitor mChannelProcessingMonitor = new ChannelProcessingMonitor();
     private IFilterProcessor mFilterProcessor;
+
+    private javafx.scene.image.ImageView mChannelImageView;
+    private Button mChooseImageBtn;
+    private Button mClearImageBtn;
+    private String mPendingImagePath = null;
 
     /**
      * Constructs an instance
@@ -247,6 +260,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         getAliasListComboBox().setDisable(disable);
         getNewAliasListButton().setDisable(disable);
         getAutoStartSwitch().setDisable(disable);
+        if (mChooseImageBtn != null) mChooseImageBtn.setDisable(disable);
 
         if(channel != null)
         {
@@ -330,6 +344,8 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                 channel.setAlertConfiguration(alertConfiguration);
             }
             setAlertConfiguration(alertConfiguration);
+            mPendingImagePath = channel.getImagePath();
+            updateChannelImagePreview();
         }
         else
         {
@@ -348,6 +364,8 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             setRecordConfiguration(null);
             setSourceConfiguration(null);
             setAlertConfiguration(null);
+            mPendingImagePath = null;
+            updateChannelImagePreview();
         }
 
         modifiedProperty().setValue(false);
@@ -365,6 +383,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             getItem().setName(" ");
             getItem().setName(getNameField().getText());
             getItem().setAliasListName(getAliasListComboBox().getSelectionModel().getSelectedItem());
+            getItem().setImagePath(mPendingImagePath);
 
             Integer order = getAutoStartOrderSpinner().getValue();
 
@@ -864,9 +883,128 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
             GridPane.setConstraints(getNewAliasListButton(), 4, row);
             mTextFieldPane.getChildren().add(getNewAliasListButton());
+
+            // Channel Image Row
+            Label imageLabel = new Label("Channel Image");
+            GridPane.setHalignment(imageLabel, HPos.RIGHT);
+            GridPane.setConstraints(imageLabel, 0, ++row);
+            mTextFieldPane.getChildren().add(imageLabel);
+
+            HBox imageBox = new HBox(10);
+            imageBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+            mChannelImageView = new javafx.scene.image.ImageView();
+            mChannelImageView.setFitWidth(48);
+            mChannelImageView.setFitHeight(48);
+            mChannelImageView.setPreserveRatio(true);
+            javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(48, 48);
+            clip.setArcWidth(10);
+            clip.setArcHeight(10);
+            mChannelImageView.setClip(clip);
+            mChannelImageView.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 5, 0, 0, 2);");
+
+            mChooseImageBtn = new Button("Choose Image…");
+            mChooseImageBtn.setDisable(true); // enabled when channel is set
+            mChooseImageBtn.setOnAction(ev -> {
+                javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
+                fc.setTitle("Choose Channel Image");
+                fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp"));
+                javafx.stage.Window win = mChooseImageBtn.getScene() != null ? mChooseImageBtn.getScene().getWindow() : null;
+                java.io.File chosen = win != null ? fc.showOpenDialog(win) : null;
+                if (chosen != null) {
+                    try {
+                        javafx.scene.image.Image testImg = new javafx.scene.image.Image(chosen.toURI().toString());
+                        if (testImg.getWidth() < 64 || testImg.getHeight() < 64) {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Invalid Resolution");
+                            alert.setHeaderText("Image resolution is too low");
+                            alert.setContentText("Selected image resolution is " + (int)testImg.getWidth() + "x" + (int)testImg.getHeight() + 
+                                ".\nChannel images must be at least 64x64 pixels for optimal display.");
+                            alert.initOwner(mChooseImageBtn.getScene().getWindow());
+                            alert.showAndWait();
+                            return;
+                        }
+
+                        String optimizedPath = saveAndOptimizeImage(chosen, getItem().getName());
+                        if (optimizedPath != null) {
+                            mPendingImagePath = optimizedPath;
+                            updateChannelImagePreview();
+                            modifiedProperty().set(true);
+                        }
+                    } catch (Exception e) {
+                        mLog.error("Error uploading channel image", e);
+                    }
+                }
+            });
+
+            mClearImageBtn = new Button("Clear");
+            mClearImageBtn.setVisible(false);
+            mClearImageBtn.setOnAction(ev -> {
+                mPendingImagePath = null;
+                updateChannelImagePreview();
+                modifiedProperty().set(true);
+            });
+
+            imageBox.getChildren().addAll(mChannelImageView, mChooseImageBtn, mClearImageBtn);
+            GridPane.setConstraints(imageBox, 1, row, 3, 1);
+            mTextFieldPane.getChildren().add(imageBox);
         }
 
         return mTextFieldPane;
+    }
+
+    private void updateChannelImagePreview() {
+        if (mChannelImageView != null) {
+            if (mPendingImagePath != null && !mPendingImagePath.isEmpty()) {
+                try {
+                    java.io.File file = new java.io.File(mPendingImagePath);
+                    if (file.exists()) {
+                        mChannelImageView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
+                        mClearImageBtn.setVisible(true);
+                        return;
+                    }
+                } catch (Exception e) {
+                    mLog.error("Error displaying channel image preview", e);
+                }
+            }
+            mChannelImageView.setImage(null);
+            mClearImageBtn.setVisible(false);
+        }
+    }
+
+    private String saveAndOptimizeImage(java.io.File sourceFile, String channelName) {
+        try {
+            javafx.scene.image.Image fxImg = new javafx.scene.image.Image(sourceFile.toURI().toString());
+            if (fxImg.getWidth() < 64 || fxImg.getHeight() < 64) {
+                throw new IllegalArgumentException("Resolution " + (int)fxImg.getWidth() + "x" + (int)fxImg.getHeight() + " is too low. Must be at least 64x64.");
+            }
+            
+            double width = fxImg.getWidth();
+            double height = fxImg.getHeight();
+            double scale = Math.min(128.0 / width, 128.0 / height);
+            if (scale > 1.0) scale = 1.0;
+            
+            int targetW = (int)(width * scale);
+            int targetH = (int)(height * scale);
+            
+            javafx.scene.image.Image resizedImg = new javafx.scene.image.Image(
+                sourceFile.toURI().toString(), targetW, targetH, true, true
+            );
+            
+            java.awt.image.BufferedImage bufImg = javafx.embed.swing.SwingFXUtils.fromFXImage(resizedImg, null);
+            
+            java.nio.file.Path destDir = mUserPreferences.getDirectoryPreference().getDirectoryApplicationRoot().resolve("channel_images");
+            java.nio.file.Files.createDirectories(destDir);
+            
+            String safeName = (channelName != null ? channelName : "channel").replaceAll("[^a-zA-Z0-9-_]", "_");
+            java.nio.file.Path destPath = destDir.resolve(safeName + "_" + System.currentTimeMillis() + ".png");
+            
+            javax.imageio.ImageIO.write(bufImg, "png", destPath.toFile());
+            return destPath.toAbsolutePath().toString();
+        } catch (Exception e) {
+            mLog.error("Error saving optimized image", e);
+            return null;
+        }
     }
 
     protected TextField getSystemField()

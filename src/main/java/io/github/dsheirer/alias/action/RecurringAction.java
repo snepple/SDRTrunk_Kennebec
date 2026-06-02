@@ -31,7 +31,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
 import java.util.Optional;
-import java.awt.*;
+import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -76,8 +76,10 @@ public abstract class RecurringAction extends AliasAction
 
                     final String text = sb.toString();
 
-                    EventQueue.invokeLater(() -> {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(text)); alert.showAndWait(); });
+                    Platform.runLater(() -> { 
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+                        alert.setContentText(String.valueOf(text)); 
+                        alert.showAndWait(); 
 
                         dismiss(false);
 

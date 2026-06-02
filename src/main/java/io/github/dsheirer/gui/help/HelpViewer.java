@@ -1,4 +1,6 @@
+
 package io.github.dsheirer.gui.help;
+import javafx.scene.layout.VBox;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;

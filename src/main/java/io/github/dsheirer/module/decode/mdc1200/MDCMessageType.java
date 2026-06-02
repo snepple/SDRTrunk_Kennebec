@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  *     SDR Trunk 
  *     Copyright (C) 2014 Dennis Sheirer
@@ -16,6 +17,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package io.github.dsheirer.module.decode.mdc1200;
+import javafx.scene.control.Label;
 
 public enum MDCMessageType
 {

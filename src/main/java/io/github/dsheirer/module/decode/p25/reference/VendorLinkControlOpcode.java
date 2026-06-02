@@ -1,4 +1,6 @@
+
 package io.github.dsheirer.module.decode.p25.reference;
+import javafx.scene.control.Label;
 
 public enum VendorLinkControlOpcode
 {

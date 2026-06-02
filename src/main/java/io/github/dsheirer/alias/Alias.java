@@ -29,7 +29,7 @@ import io.github.dsheirer.alias.id.twotone.TwoToneDetectorID;
 import io.github.dsheirer.alias.id.priority.Priority;
 import io.github.dsheirer.alias.id.record.Record;
 import io.github.dsheirer.alias.id.talkgroup.StreamAsTalkgroup;
-import java.awt.Color;
+import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -189,7 +189,7 @@ public class Alias
     }
 
     /**
-     * Icon name property
+     * javafx.scene.image.Image name property
      */
     @JsonIgnore
     public StringProperty iconNameProperty()
@@ -380,11 +380,11 @@ public class Alias
     @JsonIgnore
     public Color getDisplayColor()
     {
-        return new Color(getColor());
+        int c = getColor(); return javafx.scene.paint.Color.rgb((c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF);
     }
 
     /**
-     * Icon name of the icon to use for this alias.
+     * javafx.scene.image.Image name of the icon to use for this alias.
      */
     @JacksonXmlProperty(isAttribute = true, localName = "iconName")
     public String getIconName()
@@ -765,6 +765,11 @@ public class Alias
      */
     public boolean hasTwoToneDetector(String detectorName)
     {
+        if(detectorName == null)
+        {
+            return false;
+        }
+
         for(AliasID id : mAliasIDs)
         {
             if(id instanceof TwoToneDetectorID)

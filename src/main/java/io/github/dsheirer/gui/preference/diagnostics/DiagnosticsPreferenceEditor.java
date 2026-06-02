@@ -141,6 +141,42 @@ public class DiagnosticsPreferenceEditor extends HBox
             }
 
             mEditorPane.getChildren().add(grid);
+
+            mEditorPane.getChildren().add(new Separator(Orientation.HORIZONTAL));
+
+            Label optimizeHeader = new Label("Windows Host Optimization");
+            optimizeHeader.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+            mEditorPane.getChildren().add(optimizeHeader);
+
+            Label optimizeDesc = new Label("Disables USB Selective Suspend, adds Windows Defender exclusions, and disables DPTF throttling to prevent dropped packets.");
+            optimizeDesc.setWrapText(true);
+            mEditorPane.getChildren().add(optimizeDesc);
+
+            HBox optimizeBox = new HBox(10);
+            javafx.scene.control.Button checkBtn = new javafx.scene.control.Button("Check Host Settings");
+            javafx.scene.control.Button applyBtn = new javafx.scene.control.Button("Apply Optimizations (Requires Admin)");
+            javafx.scene.control.TextArea outputArea = new javafx.scene.control.TextArea();
+            outputArea.setPrefRowCount(4);
+            outputArea.setEditable(false);
+
+            checkBtn.setOnAction(e -> {
+                checkBtn.setDisable(true);
+                outputArea.setText("Checking...");
+                WindowsHostOptimizer.checkDiagnostics().thenAccept(result -> {
+                    javafx.application.Platform.runLater(() -> {
+                        outputArea.setText(result);
+                        checkBtn.setDisable(false);
+                    });
+                });
+            });
+
+            applyBtn.setOnAction(e -> {
+                WindowsHostOptimizer.runOptimizationScript();
+            });
+
+            optimizeBox.getChildren().addAll(checkBtn, applyBtn);
+            mEditorPane.getChildren().addAll(optimizeBox, outputArea);
+
             syncMasterToggle();
         }
 

@@ -18,6 +18,11 @@
  */
 
 package io.github.dsheirer.gui.playlist.alias.identifier;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import io.github.dsheirer.alias.id.nac.Nac;
 import io.github.dsheirer.playlist.PlaylistManager;

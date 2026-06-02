@@ -2,6 +2,7 @@ package io.github.dsheirer.module.decode.nbfm.ai;
 
 import io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM;
 import io.github.dsheirer.preference.UserPreferences;
+import io.github.dsheirer.module.decode.nbfm.ai.WavUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.List;
@@ -24,6 +25,32 @@ public class AIAudioOptimizer {
     private final UserPreferences mUserPreferences;
     private final HttpClient mHttpClient;
 
+    private static final java.util.Map<String, AIAnalysisResult> mAnalysisCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Map<String, AIAnalysisResult> mRawAnalysisCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private String getCacheKey(List<Path> audioFiles) {
+        StringBuilder sb = new StringBuilder();
+        for (Path path : audioFiles) {
+            sb.append(path.toAbsolutePath().toString())
+              .append(":")
+              .append(path.toFile().lastModified())
+              .append(";");
+        }
+        return sb.toString();
+    }
+
+    private String getRawCacheKey(List<List<float[]>> audioEvents) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(audioEvents.size()).append("-");
+        for (List<float[]> event : audioEvents) {
+            sb.append(event.size()).append("-");
+            if (!event.isEmpty() && event.get(0).length > 0) {
+                sb.append(event.get(0)[0]).append(";");
+            }
+        }
+        return sb.toString();
+    }
+
     public AIAudioOptimizer(UserPreferences userPreferences) {
         mUserPreferences = userPreferences;
         mHttpClient = HttpClient.newBuilder()
@@ -38,11 +65,18 @@ public class AIAudioOptimizer {
             throw new Exception("Gemini API Key is missing. Cannot optimize audio.");
         }
 
+        String cacheKey = getCacheKey(audioFiles);
+        if (mAnalysisCache.containsKey(cacheKey)) {
+            mLog.info("Returning cached audio analysis result.");
+            return mAnalysisCache.get(cacheKey);
+        }
+
         mLog.info("Analyzing audio with Gemini...");
 
         try {
             String model = mUserPreferences.getAIPreference().getGeminiModel();
-            String url = "https://generativelanguage.googleapis.com/v1beta/" + model + ":generateContent?key=" + apiKey;
+            String baseUrl = System.getProperty("gemini.api.url", "https://generativelanguage.googleapis.com");
+            String url = baseUrl + "/v1beta/" + model + ":generateContent?key=" + apiKey;
 
             String promptText = "Role & Objective\n" +
                 "You are an expert audio engineer specializing in LMR (Land Mobile Radio) and NBFM communication systems. Your task is to analyze an array of the 5 most recent audio recordings from a specific radio channel and determine the optimal DSP (Digital Signal Processing) filter settings to maximize human vocal clarity and eliminate background noise.\n\n" +
@@ -109,6 +143,7 @@ public class AIAudioOptimizer {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(10))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
 
@@ -139,6 +174,131 @@ public class AIAudioOptimizer {
 
             // Parse the result JSON into AIAnalysisResult
             AIAnalysisResult result = gson.fromJson(resultText, AIAnalysisResult.class);
+            mAnalysisCache.put(cacheKey, result);
+            if (mAnalysisCache.size() > 100) {
+                mAnalysisCache.clear();
+            }
+            return result;
+
+        } catch (Exception e) {
+            mLog.error("Error calling Gemini API: " + e.getMessage(), e);
+            throw new Exception("Error calling Gemini API: " + e.getMessage(), e);
+        }
+    }
+
+    public AIAnalysisResult analyzeRawAudio(DecodeConfigNBFM config, List<List<float[]>> audioEvents) throws Exception {
+        String apiKey = mUserPreferences.getAIPreference().getGeminiApiKey();
+        if (apiKey == null || apiKey.isEmpty()) {
+            throw new Exception("Gemini API key is not configured in settings");
+        }
+
+        String cacheKey = getRawCacheKey(audioEvents);
+        if (mRawAnalysisCache.containsKey(cacheKey)) {
+            mLog.info("Returning cached raw audio analysis result.");
+            return mRawAnalysisCache.get(cacheKey);
+        }
+
+        String model = mUserPreferences.getAIPreference().getGeminiModel();
+        if (model == null || model.isEmpty()) {
+            model = "gemini-2.5-pro";
+        }
+        String baseUrl = System.getProperty("gemini.api.url", "https://generativelanguage.googleapis.com");
+        String url = baseUrl + "/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+
+        try {
+            String promptText = "You are an expert RF DSP engineer and Audio DSP specialist configuring settings for an SDRTrunk Narrow-Band FM channel.\n" +
+                "You are provided with up to 5 of the most recent raw audio recordings from this channel. These recordings contain the current DSP state applied by the user (which you must analyze) AND the intrinsic characteristics of the radio signal itself.\n" +
+                "Analyze the audio across all clips and suggest an optimal set of filters and settings to maximize human vocal intelligibility and minimize noise/hiss.\n\n" +
+                "Here is the context of the user's current settings:\n" +
+                "hissReductionEnabled: " + config.isHissReductionEnabled() + "\n" +
+                "hissReductionDb: " + config.getHissReductionDb() + "\n" +
+                "hissReductionCornerHz: " + config.getHissReductionCornerHz() + "\n" +
+                "lowPassEnabled: " + config.isLowPassEnabled() + "\n" +
+                "lowPassCutoff: " + config.getLowPassCutoff() + "\n" +
+                "deemphasisEnabled: " + config.isDeemphasisEnabled() + "\n" +
+                "bassBoostEnabled: " + config.isBassBoostEnabled() + "\n" +
+                "bassBoostDb: " + config.getBassBoostDb() + "\n" +
+                "agcEnabled: " + config.isAgcEnabled() + "\n" +
+                "agcTargetLevel: " + config.getAgcTargetLevel() + "\n" +
+                "noiseGateEnabled: " + config.isNoiseGateEnabled() + "\n" +
+                "noiseGateThreshold: " + config.getNoiseGateThreshold() + "\n" +
+                "noiseGateReduction: " + config.getNoiseGateReduction() + "\n" +
+                "agcMaxGain: " + config.getAgcMaxGain() + "\n" +
+                "squelchTailRemovalEnabled: " + config.isSquelchTailRemovalEnabled() + "\n" +
+                "squelchTailRemovalMs: " + config.getSquelchTailRemovalMs() + "\n" +
+                "squelchHeadRemovalMs: " + config.getSquelchHeadRemovalMs() + "\n" +
+                "noiseGateHoldTime: " + config.getNoiseGateHoldTime() + "\n\n" +
+                "Return JSON with these exact fields: hissReductionEnabled (boolean), hissReductionDb (float), hissReductionCorner (double), lowPassEnabled (boolean), lowPassCutoff (double), deemphasisEnabled (boolean), bassBoostEnabled (boolean), bassBoostDb (float), agcEnabled (boolean), agcTargetLevel (float), noiseGateEnabled (boolean), noiseGateThreshold (float), noiseGateReduction (float), agcMaxGain (float), squelchTailRemovalEnabled (boolean), squelchTailRemovalMs (int), squelchHeadRemovalMs (int), noiseGateHoldTime (int), issuesFound (string), improvements (string), explanation (string).";
+
+            Gson gson = new Gson();
+            JsonObject payload = new JsonObject();
+            JsonArray contents = new JsonArray();
+            JsonObject contentObj = new JsonObject();
+            JsonArray parts = new JsonArray();
+
+            JsonObject textPart = new JsonObject();
+            textPart.addProperty("text", promptText);
+            parts.add(textPart);
+
+            for (List<float[]> event : audioEvents) {
+                byte[] wavBytes = WavUtil.floatsToWav(event, 48000);
+                String base64Data = Base64.getEncoder().encodeToString(wavBytes);
+                
+                JsonObject inlineDataObj = new JsonObject();
+                JsonObject inlineData = new JsonObject();
+                inlineData.addProperty("mimeType", "audio/wav");
+                inlineData.addProperty("data", base64Data);
+                inlineDataObj.add("inlineData", inlineData);
+                parts.add(inlineDataObj);
+            }
+
+            contentObj.add("parts", parts);
+            contents.add(contentObj);
+            payload.add("contents", contents);
+
+            JsonObject generationConfig = new JsonObject();
+            generationConfig.addProperty("responseMimeType", "application/json");
+            payload.add("generationConfig", generationConfig);
+
+            String jsonPayload = gson.toJson(payload);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(10))
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .build();
+
+            HttpResponse<String> response = mHttpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                if (response.statusCode() == 429 || response.body().contains("RESOURCE_EXHAUSTED")) {
+                    String fallbackModel = getFallbackModel(model);
+                    if (fallbackModel != null) {
+                        mUserPreferences.getAIPreference().setGeminiModel(fallbackModel);
+                        throw new Exception("Gemini API quota exhausted for " + model + ". The system has automatically downgraded to " + fallbackModel + " for the next request. Please retry.");
+                    } else {
+                        throw new Exception("Gemini API quota exhausted for " + model + " and no further fallback models are available. Please check your API quotas.");
+                    }
+                }
+                throw new Exception("Gemini API error: " + response.statusCode() + " " + response.body());
+            }
+
+            JsonObject responseJson = gson.fromJson(response.body(), JsonObject.class);
+            JsonArray candidates = responseJson.getAsJsonArray("candidates");
+            if (candidates == null || candidates.size() == 0) {
+                throw new Exception("No candidates returned from Gemini");
+            }
+            JsonObject firstCandidate = candidates.get(0).getAsJsonObject();
+            JsonObject content = firstCandidate.getAsJsonObject("content");
+            JsonArray responseParts = content.getAsJsonArray("parts");
+            String resultText = responseParts.get(0).getAsJsonObject().get("text").getAsString();
+
+            AIAnalysisResult result = gson.fromJson(resultText, AIAnalysisResult.class);
+            mRawAnalysisCache.put(cacheKey, result);
+            if (mRawAnalysisCache.size() > 100) {
+                mRawAnalysisCache.clear();
+            }
             return result;
 
         } catch (Exception e) {

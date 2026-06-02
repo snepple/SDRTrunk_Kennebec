@@ -133,6 +133,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     private ScheduledFuture<?> mEncoderFuture;
     private ScheduledFuture<?> mRelaxationFuture; // delayed stop for relaxation_time hold-over
     private volatile long mLastAudioReceivedTime = 0;
+    private final AtomicBoolean mInjectingPreDispatch = new AtomicBoolean(false);
 
     private OpusEncoder mOpusEncoder;
     private short[] mResampleBuffer = new short[ZELLO_FRAME_SIZE_SAMPLES];
@@ -274,7 +275,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     @Override
     public void receiveRealTimeAudio(float[] audioBuffer)
     {
-        if(mStreamActive.get())
+        if(mStreamActive.get() && !mInjectingPreDispatch.get())
         {
             mLastAudioReceivedTime = System.currentTimeMillis();
             mAudioQueue.offer(audioBuffer);
@@ -368,6 +369,82 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     // ========================================================================
     // Audio Processing
     // ========================================================================
+
+    public void sendTextMessage(String text)
+    {
+        if(mWebSocket == null || !mConnected.get()) return;
+        try
+        {
+            JsonObject cmd = new JsonObject();
+            cmd.addProperty("command", "send_text_message");
+            int seq = mSequence.getAndIncrement();
+            cmd.addProperty("seq", seq);
+            mPendingCommands.put(seq, "send_text_message");
+            cmd.addProperty("channel", getBroadcastConfiguration().getChannel());
+            cmd.addProperty("text", text);
+            mWebSocket.sendText(mGson.toJson(cmd), true);
+            mLog.info("{}Sent Zello text message", ch());
+        }
+        catch(Exception e)
+        {
+            mLog.error("{}Error sending Zello text message", ch(), e);
+        }
+    }
+
+    public void injectPreDispatchAudio(String filename)
+    {
+        if (filename == null || filename.isEmpty()) return;
+
+        ThreadPool.CACHED.submit(() -> {
+            if (!mStreamActive.get()) {
+                startRealTimeStream(null);
+            }
+
+            mInjectingPreDispatch.set(true);
+            try {
+                java.net.URL resource = ZelloBroadcaster.class.getResource("/audio/" + filename);
+                if (resource == null) {
+                    mLog.error("{}Could not find audio resource: /audio/{}", ch(), filename);
+                    return;
+                }
+
+                javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(resource);
+                javax.sound.sampled.AudioFormat targetFormat = new javax.sound.sampled.AudioFormat(
+                    javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED,
+                    8000.0f,
+                    16,
+                    1,
+                    2,
+                    8000.0f,
+                    false
+                );
+
+                javax.sound.sampled.AudioInputStream convertedAis = javax.sound.sampled.AudioSystem.getAudioInputStream(targetFormat, ais);
+
+                byte[] buffer = new byte[160]; // 10ms at 8kHz 16-bit
+                int bytesRead;
+                while ((bytesRead = convertedAis.read(buffer)) != -1) {
+                    float[] floatBuf = new float[bytesRead / 2];
+                    for (int i = 0; i < floatBuf.length; i++) {
+                        short sample = (short) ((buffer[i * 2 + 1] << 8) | (buffer[i * 2] & 0xFF));
+                        floatBuf[i] = sample / 32768.0f;
+                    }
+                    mAudioQueue.offer(floatBuf);
+                }
+                convertedAis.close();
+                ais.close();
+
+                while(!mAudioQueue.isEmpty() && mStreamActive.get()) {
+                    Thread.sleep(10);
+                }
+                mLog.info("{}Injected pre-dispatch audio: {}", ch(), filename);
+            } catch (Exception e) {
+                mLog.error("{}Error injecting pre-dispatch audio: {}", ch(), filename, e.getMessage());
+            } finally {
+                mInjectingPreDispatch.set(false);
+            }
+        });
+    }
 
     private synchronized void processAudioQueue()
     {

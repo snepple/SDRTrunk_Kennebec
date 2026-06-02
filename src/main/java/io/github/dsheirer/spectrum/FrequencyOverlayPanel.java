@@ -1,3 +1,5 @@
+
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2025 Dennis Sheirer
@@ -17,6 +19,13 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.spectrum;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Label;
+import javafx.scene.layout.Pane;
 
 import io.github.dsheirer.settings.ColorSetting;
 import io.github.dsheirer.settings.ColorSetting.ColorSettingName;
@@ -25,34 +34,30 @@ import io.github.dsheirer.settings.SettingChangeListener;
 import io.github.dsheirer.settings.SettingsManager;
 import io.github.dsheirer.source.ISourceEventProcessor;
 import io.github.dsheirer.source.SourceEvent;
-import java.awt.Color;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.RenderingHints;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.geom.Line2D;
-import java.awt.geom.Rectangle2D;
+
+
+import javafx.scene.canvas.Canvas; import javafx.scene.canvas.GraphicsContext;
+
+import javafx.geometry.Point2D;
+
+
+
+
+
 import java.text.DecimalFormat;
 import org.apache.commons.math3.util.FastMath;
 
-import javax.swing.JPanel;
+
 
 /**
  * Frequency overlay panel.
  */
-public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcessor, SettingChangeListener
+public class FrequencyOverlayPanel extends Pane implements ISourceEventProcessor, SettingChangeListener
 {
+    private Canvas mCanvas = new Canvas();
     private static final long serialVersionUID = 1L;
     private final DecimalFormat PPM_FORMATTER = new DecimalFormat( "#.0" );
-    private final static RenderingHints RENDERING_HINTS = new RenderingHints(RenderingHints.KEY_ANTIALIASING,
-        RenderingHints.VALUE_ANTIALIAS_ON);
-    static
-    {
-        RENDERING_HINTS.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-    }
+    
 
     private static DecimalFormat CURSOR_FORMAT = new DecimalFormat("000.00000");
     private long mFrequency = 0;
@@ -60,7 +65,7 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
     private int mChannelBandwidth = 0;
 
     private long mEstimatedCarrierOffsetFrequency = 0;
-    private Point mCursorLocation = new Point(0, 0);
+    private Point2D mCursorLocation = new Point2D(0, 0);
     private boolean mCursorVisible = false;
 
     private DFTSize mDFTSize = DFTSize.FFT04096;
@@ -93,10 +98,14 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
             mSettingsManager.getSettingsModel().addListener(this);
         }
 
-        addComponentListener(mLabelSizeMonitor);
-
-        //Set the background transparent, so the spectrum display can be seen
-        setOpaque(false);
+        // addComponentListener(mLabelSizeMonitor);
+        
+        getChildren().add(mCanvas);
+        mCanvas.widthProperty().bind(widthProperty());
+        mCanvas.heightProperty().bind(heightProperty());
+        mCanvas.widthProperty().addListener((obs, oldVal, newVal) -> requestRedraw());
+        mCanvas.heightProperty().addListener((obs, oldVal, newVal) -> requestRedraw());
+        setBackground(javafx.scene.layout.Background.EMPTY);
 
         //Fetch color settings from settings manager
         setColors();
@@ -138,17 +147,22 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
         mDFTSize = size;
     }
 
-    public void setCursorLocation(Point point)
+
+    private void requestRedraw() {
+        javafx.application.Platform.runLater(() -> draw(mCanvas.getGraphicsContext2D()));
+    }
+
+    public void setCursorLocation(Point2D point)
     {
         mCursorLocation = point;
 
-        repaint();
+        requestRedraw();
     }
 
     public void setCursorVisible(boolean visible)
     {
         mCursorVisible = visible;
-        repaint();
+        requestRedraw();
     }
 
     /**
@@ -202,14 +216,14 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
     /**
      * Renders the channel configs, lines, labels, and cursor
      */
-    @Override
-    public void paintComponent(Graphics g)
-    {
-        super.paintComponent(g);
+    public void draw(GraphicsContext graphics) {
+// // // // // //         graphics.clearRect(0, 0, getWidth(), getHeight());
 
-        Graphics2D graphics = (Graphics2D)g;
-        graphics.setBackground(mColorSpectrumBackground);
-        graphics.setRenderingHints(RENDERING_HINTS);
+        
+
+        
+// //         graphics.setBackground(mColorSpectrumBackground);
+        
         drawFrequencies(graphics);
         drawCursor(graphics);
         drawEstimatedCarrierOffset(graphics);
@@ -220,18 +234,18 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
      * Draws a cursor on the panel, whenever the mouse is hovering over the
      * panel
      */
-    private void drawCursor(Graphics2D graphics)
+    private void drawCursor(GraphicsContext graphics)
     {
         if(mCursorVisible)
         {
-            drawFrequencyLine(graphics, mCursorLocation.x, mColorSpectrumCursor);
+            drawFrequencyLine(graphics, mCursorLocation.getX(), mColorSpectrumCursor);
             String frequency = CURSOR_FORMAT.format(getFrequencyFromAxis(mCursorLocation.getX()) / 1E6D);
-            FontMetrics fontMetrics = graphics.getFontMetrics(this.getFont());
-            Rectangle2D rect = fontMetrics.getStringBounds(frequency, graphics);
+            double stringWidth = 50; double stringHeight = 12;
+            
 
-            if(mCursorLocation.y > rect.getHeight())
+            if(mCursorLocation.getY() > stringHeight)
             {
-                graphics.drawString(frequency, mCursorLocation.x + 5, mCursorLocation.y);
+                graphics.fillText(frequency, mCursorLocation.getX() + 5, mCursorLocation.getY());
             }
         }
     }
@@ -239,7 +253,7 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
     /**
      * Draws the frequency lines and labels every 10kHz
      */
-    private void drawFrequencies(Graphics2D graphics)
+    private void drawFrequencies(GraphicsContext graphics)
     {
         long minFrequency = getMinDisplayFrequency();
         long maxFrequency = getMaxDisplayFrequency();
@@ -284,51 +298,51 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
     /**
      * Draws a vertical line and a corresponding frequency label at the bottom
      */
-    private void drawFrequencyLineAndLabel(Graphics2D graphics, long frequency)
+    private void drawFrequencyLineAndLabel(GraphicsContext graphics, long frequency)
     {
         double xAxis = getAxisFromFrequency(frequency);
         drawFrequencyLine(graphics, xAxis, mColorSpectrumLine);
         drawTickLine(graphics, frequency, false);
-        graphics.setColor(mColorSpectrumLine);
+graphics.setStroke(mColorSpectrumLine);
         drawFrequencyLabel(graphics, xAxis, frequency);
     }
 
     /**
      * Draws a vertical line at the xaxis
      */
-    private void drawTickLine(Graphics2D graphics, long frequency, boolean major)
+    private void drawTickLine(GraphicsContext graphics, long frequency, boolean major)
     {
-        graphics.setColor(mColorSpectrumLine);
+graphics.setStroke(mColorSpectrumLine);
         double xAxis = getAxisFromFrequency(frequency);
-        double start = getSize().getHeight() - mSpectrumInset;
+        double start = getHeight() - mSpectrumInset;
         double end = start + (major ? 9.0d : 3.0d);
-        graphics.draw(new Line2D.Double(xAxis, start, xAxis, end));
+        graphics.strokeLine(xAxis, start, xAxis, end);
     }
 
 
     /**
      * Draws a vertical line at the xaxis
      */
-    private void drawFrequencyLine(Graphics2D graphics, double xaxis, Color color)
+    private void drawFrequencyLine(GraphicsContext graphics, double xaxis, Color color)
     {
-        graphics.setColor(color);
-        graphics.draw(new Line2D.Double(xaxis, 0.0d, xaxis, getSize().getHeight() - mSpectrumInset));
+graphics.setStroke(color);
+        graphics.strokeLine(xaxis, 0.0d, xaxis, getHeight() - mSpectrumInset);
     }
 
     /**
      * Draws a vertical line at the xaxis
      */
-    private void drawChannelCenterLine(Graphics2D graphics, double xaxis)
+    private void drawChannelCenterLine(GraphicsContext graphics, double xaxis)
     {
-        double height = getSize().getHeight() - mSpectrumInset;
-        graphics.setColor(Color.LIGHT_GRAY);
-        graphics.draw(new Line2D.Double(xaxis, height * 0.65d, xaxis, height - 1.0d));
+        double height = getHeight() - mSpectrumInset;
+        graphics.setStroke(Color.LIGHTGRAY);
+        graphics.strokeLine(xaxis, height * 0.65d, xaxis, height - 1.0d);
     }
 
     /**
      * Draws the estimated carrier offset measured by the CarrierOffsetProcessor
      */
-    private void drawEstimatedCarrierOffset(Graphics2D graphics)
+    private void drawEstimatedCarrierOffset(GraphicsContext graphics)
     {
         if(mEstimatedCarrierOffsetFrequency == 0)
         {
@@ -337,21 +351,21 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
 
         long frequency = mFrequency + mEstimatedCarrierOffsetFrequency;
         double xAxis = getAxisFromFrequency(frequency);
-
-        double height = getSize().getHeight() - mSpectrumInset;
+// // // // // // 
+        double height = getHeight() - mSpectrumInset;
         double verticalAxisTop = height * 0.02d;
         double verticalAxisBottom = height * 0.98d;
 
-        graphics.setColor(Color.YELLOW);
+graphics.setStroke(Color.YELLOW);
 
         //Vertical band edge lines
-        graphics.draw(new Line2D.Double(xAxis, verticalAxisTop, xAxis, verticalAxisBottom));
+        graphics.strokeLine(xAxis, verticalAxisTop, xAxis, verticalAxisBottom);
     }
 
     /**
      * Draws the channel bandwidth indicators
      */
-    private void drawChannelBandwidth(Graphics2D graphics)
+    private void drawChannelBandwidth(GraphicsContext graphics)
     {
         if(mChannelBandwidth == 0)
         {
@@ -361,17 +375,17 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
         long minFrequency = mFrequency - (mChannelBandwidth / 2);
         long maxFrequency = mFrequency + (mChannelBandwidth / 2);
 
-        double height = getSize().getHeight() - mSpectrumInset;
+        double height = getHeight() - mSpectrumInset;
         double verticalAxisTop = height * 0.8d;
-        double verticalAxisBottom = height * 0.98d;
+// // // // // //         double verticalAxisBottom = height * 0.98d;
 
         double minXAxis = getAxisFromFrequency(minFrequency);
         double maxXAxis = getAxisFromFrequency(maxFrequency);
 
-        graphics.setColor(Color.GREEN);
+graphics.setStroke(Color.GREEN);
 
-        graphics.draw(new Line2D.Double(minXAxis, verticalAxisTop, minXAxis, verticalAxisBottom));
-        graphics.draw(new Line2D.Double(maxXAxis, verticalAxisTop, maxXAxis, verticalAxisBottom));
+        graphics.strokeLine(minXAxis, verticalAxisTop, minXAxis, getHeight());
+        graphics.strokeLine(maxXAxis, verticalAxisTop, maxXAxis, getHeight());
     }
 
     /**
@@ -379,7 +393,7 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
      */
     private double getAxisFromFrequency(long frequency)
     {
-        double screenWidth = (double)getSize().getWidth();
+        double screenWidth = (double)getWidth();
         double pixelsPerBin = screenWidth / (double)mDFTSize.getSize();
         double pixelOffsetToMinDisplayFrequency = pixelsPerBin * 2.0d;
 
@@ -400,7 +414,7 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
      */
     public long getFrequencyFromAxis(double xAxis)
     {
-        double width = getSize().getWidth();
+        double width = getWidth();
         double offset = xAxis / width;
         long frequency = getMinDisplayFrequency() + FastMath.round((double)getDisplayBandwidth() * offset);
         if(frequency > (getMaxFrequency()))
@@ -413,13 +427,13 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
     /**
      * Draws a frequency label at the x-axis position, at the bottom of the panel
      */
-    private void drawFrequencyLabel(Graphics2D graphics, double xaxis, long frequency)
+    private void drawFrequencyLabel(GraphicsContext graphics, double xaxis, long frequency)
     {
         String label = mLabelSizeMonitor.format(frequency);
-        FontMetrics fontMetrics = graphics.getFontMetrics(this.getFont());
-        Rectangle2D rect = fontMetrics.getStringBounds(label, graphics);
-        float xOffset = (float)rect.getWidth() / 2;
-        graphics.drawString(label, (float)(xaxis - xOffset), (float)(getSize().getHeight() - 2.0f));
+        double stringWidth = 50; double stringHeight = 12;
+        
+        float xOffset = (float)stringWidth / 2;
+        graphics.fillText(label, (float)(xaxis - xOffset), (float)(getHeight() - 2.0f));
     }
 
     /**
@@ -494,7 +508,7 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
      * Calculates correct spacing and format for frequency labels and major/minor
      * tick lines based on current frequency, bandwidth, zoom and screen size.
      */
-    public class LabelSizeManager implements ComponentListener
+    public class LabelSizeManager 
     {
         private static final double LABEL_FILL_THRESHOLD = 0.5d;
 
@@ -526,17 +540,16 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
             mFrequencyFormat.setMaximumFractionDigits(precision);
         }
 
-        private void update(Graphics2D graphics)
+        private void recalculate()
         {
             if(mUpdateRequired)
             {
                 //Set maximum precision as a starting point
                 setPrecision(5);
 
-                FontMetrics fontMetrics =
-                    graphics.getFontMetrics(FrequencyOverlayPanel.this.getFont());
+                double stringWidth = 50;
 
-                int maxLabelWidth = fontMetrics.stringWidth(format(getMaxDisplayFrequency()));
+                int maxLabelWidth = 50;
 
                 double maxLabels = ((double) FrequencyOverlayPanel.this.getWidth() * LABEL_FILL_THRESHOLD) / (double)maxLabelWidth;
 
@@ -582,32 +595,28 @@ public class FrequencyOverlayPanel extends JPanel implements ISourceEventProcess
             mUpdateRequired = true;
         }
 
-        public int getMajorTickIncrement(Graphics2D graphics)
+        public int getMajorTickIncrement(GraphicsContext graphics)
         {
             //Check to see if a calculation update is scheduled
-            update(graphics);
+            recalculate();
 
             return mMajorTickIncrement;
         }
 
-        public int getMinorTickIncrement(Graphics2D graphics)
+        public int getMinorTickIncrement(GraphicsContext graphics)
         {
             return mMinorTickIncrement;
         }
 
-        public int getLabelIncrement(Graphics2D graphics)
+        public int getLabelIncrement(GraphicsContext graphics)
         {
             return mLabelIncrement;
         }
 
-        @Override
-        public void componentResized(ComponentEvent arg0)
-        {
-            update();
-        }
+        
 
-        public void componentHidden(ComponentEvent arg0) {}
-        public void componentMoved(ComponentEvent arg0) {}
-        public void componentShown(ComponentEvent arg0) {}
+        
+        
+        
     }
 }

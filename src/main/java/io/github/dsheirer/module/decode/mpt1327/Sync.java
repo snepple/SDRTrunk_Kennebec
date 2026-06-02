@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  * sdr-trunk
  * Copyright (C) 2014-2018 Dennis Sheirer
@@ -14,6 +15,7 @@
  *
  ******************************************************************************/
 package io.github.dsheirer.module.decode.mpt1327;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.bits.SyncPattern;
 

@@ -22,7 +22,7 @@ package io.github.dsheirer.gui.icon;
 import io.github.dsheirer.gui.JavaFxWindowRequest;
 
 /**
- * Request to view/show the Icon Manager
+ * Request to view/show the javafx.scene.image.Image Manager
  */
 public class ViewIconManagerRequest extends JavaFxWindowRequest
 {

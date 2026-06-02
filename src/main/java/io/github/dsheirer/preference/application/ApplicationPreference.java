@@ -38,6 +38,7 @@ public class ApplicationPreference extends Preference
     private static final String PREFERENCE_KEY_USB_MONITOR_PROMPTED = "usb.monitor.prompted";
     private static final String PREFERENCE_KEY_AUTO_START = "auto.start.enabled";
     private static final String PREFERENCE_KEY_WATCHDOG_ENABLED = "watchdog.enabled";
+    private static final String PREFERENCE_KEY_REMOTE_ACCESS_OPTIMIZATION = "remote.access.optimization";
 
     private final static Logger mLog = LoggerFactory.getLogger(ApplicationPreference.class);
     private Preferences mPreferences = Preferences.userNodeForPackage(ApplicationPreference.class);
@@ -48,6 +49,7 @@ public class ApplicationPreference extends Preference
     private Boolean mUsbMonitorPrompted;
     private Boolean mAutoStartEnabled;
     private Boolean mWatchdogEnabled;
+    private Boolean mRemoteAccessOptimization;
 
     /**
      * Constructs an instance
@@ -144,6 +146,9 @@ public class ApplicationPreference extends Preference
                 java.nio.file.Files.createDirectories(memoryFile.getParent());
             }
             java.nio.file.Files.writeString(memoryFile, String.valueOf(gb));
+            
+            // Also directly update scripts
+            MemoryScriptUpdater.updateMemoryLimit(gb);
         }
         catch(java.io.IOException e)
         {
@@ -226,6 +231,22 @@ public class ApplicationPreference extends Preference
     {
         mWatchdogEnabled = enabled;
         mPreferences.putBoolean(PREFERENCE_KEY_WATCHDOG_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public boolean isRemoteAccessOptimization()
+    {
+        if(mRemoteAccessOptimization == null)
+        {
+            mRemoteAccessOptimization = mPreferences.getBoolean(PREFERENCE_KEY_REMOTE_ACCESS_OPTIMIZATION, true);
+        }
+        return mRemoteAccessOptimization;
+    }
+
+    public void setRemoteAccessOptimization(boolean enabled)
+    {
+        mRemoteAccessOptimization = enabled;
+        mPreferences.putBoolean(PREFERENCE_KEY_REMOTE_ACCESS_OPTIMIZATION, enabled);
         notifyPreferenceUpdated();
     }
 }

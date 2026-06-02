@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2022 Dennis Sheirer
@@ -17,6 +18,12 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.gui.channelizer;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Button;
 
 import io.github.dsheirer.buffer.FloatNativeBuffer;
 import io.github.dsheirer.buffer.INativeBuffer;
@@ -34,27 +41,25 @@ import io.github.dsheirer.spectrum.DFTSize;
 import io.github.dsheirer.spectrum.SpectrumPanel;
 import io.github.dsheirer.spectrum.converter.ComplexDecibelConverter;
 import io.github.dsheirer.util.ThreadPool;
-import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.util.concurrent.TimeUnit;
-import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javafx.application.Platform;
-import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.scene.control.Label;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 
-import javax.swing.SwingUtilities;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+
 
 public class SynthesizerViewer extends Stage
 {
@@ -66,7 +71,7 @@ public class SynthesizerViewer extends Stage
     private static final int DATA_GENERATOR_FRAME_RATE = 50; //frames per second
 
     private SettingsManager mSettingsManager = new SettingsManager();
-    private JPanel mPrimaryPanel;
+    private VBox mPrimaryPanel;
     private PrimarySpectrumPanel mPrimarySpectrumPanel;
     private ChannelPanel mChannel1Panel;
     private ChannelPanel mChannel2Panel;
@@ -95,27 +100,21 @@ public class SynthesizerViewer extends Stage
         setHeight(400);
         setOnCloseRequest(event -> System.exit(0));
 
-        SwingNode swingNode = new SwingNode();
-        SwingUtilities.invokeLater(() -> {
-            swingNode.setContent(getPrimaryPanel());
-        });
-
-        VBox vbox = new VBox(swingNode);
-        VBox.setVgrow(swingNode, Priority.ALWAYS);
+        VBox vbox = new VBox(getPrimaryPanel());
+VBox.setVgrow(vbox, Priority.ALWAYS);
 
         Scene scene = new Scene(vbox);
-        setScene(scene);
+        // setScene(scene);
     }
 
-    private JPanel getPrimaryPanel()
+    private VBox getPrimaryPanel()
     {
         if(mPrimaryPanel == null)
         {
-            mPrimaryPanel = new JPanel();
-            mPrimaryPanel.setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill][grow,fill]", "[grow,fill][grow,fill]"));
-            mPrimaryPanel.add(getSpectrumPanel(), "span");
-            mPrimaryPanel.add(getChannel1Panel());
-            mPrimaryPanel.add(getChannel2Panel());
+            mPrimaryPanel = new VBox();
+                        mPrimaryPanel.getChildren().add(getSpectrumPanel());
+            mPrimaryPanel.getChildren().add(getChannel1Panel());
+            mPrimaryPanel.getChildren().add(getChannel2Panel());
         }
 
         return mPrimaryPanel;
@@ -126,7 +125,7 @@ public class SynthesizerViewer extends Stage
         if(mPrimarySpectrumPanel == null)
         {
             mPrimarySpectrumPanel = new PrimarySpectrumPanel(mSettingsManager);
-            mPrimarySpectrumPanel.setPreferredSize(new Dimension(500, 200));
+            mPrimarySpectrumPanel.setPrefSize(500, 200);
             mPrimarySpectrumPanel.setDFTSize(mMainPanelDFTSize);
         }
 
@@ -138,7 +137,7 @@ public class SynthesizerViewer extends Stage
         if(mChannel1Panel == null)
         {
             mChannel1Panel = new ChannelPanel(mSettingsManager, getChannel1ControlPanel());
-            mChannel1Panel.setPreferredSize(new Dimension(250, 200));
+            mChannel1Panel.setPrefSize(250, 200);
             mChannel1Panel.setDFTSize(mChannelPanelDFTSize);
         }
 
@@ -150,14 +149,14 @@ public class SynthesizerViewer extends Stage
         if(mChannel2Panel == null)
         {
             mChannel2Panel = new ChannelPanel(mSettingsManager, getChannel2ControlPanel());
-            mChannel2Panel.setPreferredSize(new Dimension(250, 200));
+            mChannel2Panel.setPrefSize(250, 200);
             mChannel2Panel.setDFTSize(mChannelPanelDFTSize);
         }
 
         return mChannel2Panel;
     }
 
-    public class PrimarySpectrumPanel extends JPanel implements Listener<INativeBuffer>
+    public class PrimarySpectrumPanel extends VBox implements Listener<INativeBuffer>
     {
         private ComplexDftProcessor mComplexDftProcessor = new ComplexDftProcessor();
         private ComplexDecibelConverter mComplexDecibelConverter = new ComplexDecibelConverter();
@@ -165,10 +164,10 @@ public class SynthesizerViewer extends Stage
 
         public PrimarySpectrumPanel(SettingsManager settingsManager)
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
+            
             mSpectrumPanel = new SpectrumPanel(settingsManager);
             mSpectrumPanel.setSampleSize(16);
-            add(mSpectrumPanel);
+        getChildren().add(mSpectrumPanel);
 
             mComplexDftProcessor.addConverter(mComplexDecibelConverter);
             mComplexDftProcessor.setFrameRate(CHANNEL_FFT_FRAME_RATE);
@@ -187,7 +186,7 @@ public class SynthesizerViewer extends Stage
         }
     }
 
-    public class ChannelPanel extends JPanel implements Listener<INativeBuffer>
+    public class ChannelPanel extends VBox implements Listener<INativeBuffer>
     {
         private ComplexDftProcessor mComplexDftProcessor = new ComplexDftProcessor();
         private ComplexDecibelConverter mComplexDecibelConverter = new ComplexDecibelConverter();
@@ -196,11 +195,11 @@ public class SynthesizerViewer extends Stage
 
         public ChannelPanel(SettingsManager settingsManager, ChannelControlPanel channelControlPanel)
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill][]"));
+            
             mSpectrumPanel = new SpectrumPanel(settingsManager);
             mSpectrumPanel.setSampleSize(16);
-            add(mSpectrumPanel, "wrap");
-            add(channelControlPanel);
+        getChildren().add(mSpectrumPanel);
+        getChildren().add(channelControlPanel);
 
             mComplexDftProcessor.addConverter(mComplexDecibelConverter);
             mComplexDftProcessor.setFrameRate(CHANNEL_FFT_FRAME_RATE);
@@ -240,7 +239,7 @@ public class SynthesizerViewer extends Stage
         return mChannel2ControlPanel;
     }
 
-    public class ChannelControlPanel extends JPanel
+    public class ChannelControlPanel extends VBox
     {
         private static final int MIN_FREQUENCY = -6250;
         private static final int MAX_FREQUENCY = 6250;
@@ -250,23 +249,17 @@ public class SynthesizerViewer extends Stage
 
         public ChannelControlPanel()
         {
-            setLayout(new MigLayout("insets 0 0 0 0", "[grow,fill]", "[grow,fill]"));
-            add(new JLabel("Tone:"), "align right");
+        getChildren().add(new Label("Tone:"));
 
-            SpinnerNumberModel model = new SpinnerNumberModel(DEFAULT_FREQUENCY, MIN_FREQUENCY, MAX_FREQUENCY, 100);
-            model.addChangeListener(new ChangeListener()
-            {
-                @Override
-                public void stateChanged(ChangeEvent e)
-                {
-                    long toneFrequency = model.getNumber().longValue();
+            SpinnerValueFactory.DoubleSpinnerValueFactory model = new SpinnerValueFactory.DoubleSpinnerValueFactory(MIN_FREQUENCY, MAX_FREQUENCY, DEFAULT_FREQUENCY, 100);
+            model.valueProperty().addListener((obs, oldVal, newVal) -> {
+                    long toneFrequency = model.getValue().longValue();
                     mOscillator.setFrequency(toneFrequency);
-                }
-            });
+                });
 
-            JSpinner spinner = new JSpinner(model);
-            add(spinner);
-            add(new JLabel("Hz"));
+            Spinner<Double> spinner = new Spinner<Double>(model);
+        getChildren().add(spinner);
+        getChildren().add(new Label("Hz"));
         }
 
         public IComplexOscillator getOscillator()
@@ -313,7 +306,7 @@ public class SynthesizerViewer extends Stage
     {
         final SynthesizerViewer frame = new SynthesizerViewer();
 
-        EventQueue.invokeLater(() -> {
+        javafx.application.Platform.runLater(() -> {
             frame.show();
             frame.start();
         });

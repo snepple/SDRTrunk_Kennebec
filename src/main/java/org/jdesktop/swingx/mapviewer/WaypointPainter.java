@@ -27,12 +27,14 @@
  */
 
 package org.jdesktop.swingx.mapviewer;
+import javafx.geometry.Rectangle2D;
+
 
 import org.jdesktop.swingx.JXMapViewer;
 import org.jdesktop.swingx.painter.AbstractPainter;
 
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.geometry.Bounds;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -86,23 +88,23 @@ public class WaypointPainter<W extends Waypoint> extends AbstractPainter<JXMapVi
 	}
 
 	@Override
-	protected void doPaint(Graphics2D g, JXMapViewer map, int width, int height)
+	protected void doPaint(GraphicsContext g, JXMapViewer map, int width, int height)
 	{
 		if (renderer == null)
 		{
 			return;
 		}
 
-		Rectangle viewportBounds = map.getViewportBounds();
+		Rectangle2D viewportBounds = map.getViewportBounds();
 
-		g.translate(-viewportBounds.getX(), -viewportBounds.getY());
+		g.translate(-viewportBounds.getMinX(), -viewportBounds.getMinY());
 
 		for (W w : getWaypoints())
 		{
 			renderer.paintWaypoint(g, map, w);
 		}
 
-		g.translate(viewportBounds.getX(), viewportBounds.getY());
+		g.translate(viewportBounds.getMinX(), viewportBounds.getMinY());
 
 	}
 

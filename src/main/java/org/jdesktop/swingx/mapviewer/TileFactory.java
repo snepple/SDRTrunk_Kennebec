@@ -8,11 +8,13 @@
  */
 
 package org.jdesktop.swingx.mapviewer;
+import javafx.geometry.Dimension2D;
+
 
 import org.jdesktop.swingx.mapviewer.util.GeoUtil;
 
-import java.awt.*;
-import java.awt.geom.Point2D;
+
+import javafx.geometry.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +53,7 @@ public abstract class TileFactory
 	 * @return the size of the world bitmap in tiles
 	 * @param zoom the current zoom level
 	 */
-	public Dimension getMapSize(int zoom)
+	public Dimension2D getMapSize(int zoom)
 	{
 		return GeoUtil.getMapSize(zoom, getInfo());
 	}

@@ -1,13 +1,10 @@
 package io.github.dsheirer.gui.theme;
 
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatLightLaf;
+import javafx.application.Platform;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
 import java.util.Locale;
 
 public class ThemeManager {
@@ -20,7 +17,6 @@ public class ThemeManager {
 
     public ThemeManager() {
         String osName = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
-        // Basic check for Windows 11 - usually reported as Windows 11 or Windows 10 with build >= 22000
         mIsWindows11 = osName.contains("windows 11") || (osName.contains("windows 10") && getWindowsBuildNumber() >= 22000);
         
         applyTheme();
@@ -63,40 +59,14 @@ public class ThemeManager {
                 }
             }
 
-            // Set system properties for FlatLaf BEFORE initializing LookAndFeel
-            if (mIsWindows11) {
-                System.setProperty("flatlaf.window.backdrop", "mica");
-                System.setProperty("flatlaf.useWindowDecorations", "true");
-            }
-
             if (useLightTheme) {
-                UIManager.setLookAndFeel(new FlatLightLaf());
+                // Application.setUserAgentStylesheet(new Modena().getUserAgentStylesheet());
             } else {
-                UIManager.setLookAndFeel(new FlatDarkLaf());
+                // Application.setUserAgentStylesheet(new Caspian().getUserAgentStylesheet());
             }
             
-            // Apply Mica if Windows 11
-            if (mIsWindows11) {
-                UIManager.put("TitlePane.useWindowDecorations", true);
-                UIManager.put("TitlePane.menuBarEmbedded", false);
-                JFrame.setDefaultLookAndFeelDecorated(true);
-                JDialog.setDefaultLookAndFeelDecorated(true);
-            }
-
-
-            if (isWindows()) {
-                UIManager.put("ScrollBar.showButtons", true);
-                UIManager.put("ScrollBar.width", 16);
-                UIManager.put("ScrollBar.thumbArc", 0);
-                UIManager.put("ScrollBar.thumbInsets", new java.awt.Insets(0, 0, 0, 0));
-            }
-
-            // Update UI tree if running
-            for (java.awt.Window window : java.awt.Window.getWindows()) {
-                SwingUtilities.updateComponentTreeUI(window);
-            }
         } catch (Exception e) {
-            mLog.error("Failed to initialize FlatLaf theme", e);
+            mLog.error("Failed to initialize JavaFX theme", e);
         }
     }
 
@@ -109,10 +79,9 @@ public class ThemeManager {
                         int currentValue = Advapi32Util.registryGetIntValue(WinReg.HKEY_CURRENT_USER, REGISTRY_PATH, REGISTRY_KEY);
                         if (currentValue != lastValue) {
                             lastValue = currentValue;
-                            SwingUtilities.invokeLater(this::applyTheme);
+                            Platform.runLater(this::applyTheme);
                         }
                     } catch (Exception ex) {
-                        // Key might not exist temporarily
                     }
                     Thread.sleep(2000); // Poll every 2 seconds
                 }

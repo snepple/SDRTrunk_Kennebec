@@ -18,16 +18,21 @@
  */
 
 package io.github.dsheirer.gui.power;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import io.github.dsheirer.controller.channel.Channel;
 import io.github.dsheirer.dsp.squelch.ISquelchConfiguration;
 import io.github.dsheirer.gui.control.DbPowerMeterJFX;
-import io.github.dsheirer.gui.control.DbPowerMeter;
+
 import io.github.dsheirer.module.ProcessingChain;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.source.SourceEvent;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+import javafx.scene.layout.Pane;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -42,21 +47,21 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
+
+
 import java.text.DecimalFormat;
 
 /**
  * Swing view for displaying signal power measurements with integrated squelch control.
  */
-public class SignalPowerView extends JPanel
+public class SignalPowerView extends VBox
 {
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.0");
     private static final String NOT_AVAILABLE = "Not Available";
 
     // We keep mPowerMeter as DbPowerMeterJFX
     private final DbPowerMeterJFX mPowerMeter = new DbPowerMeterJFX();
-    private final PeakMonitor mPeakMonitor = new PeakMonitor(DbPowerMeter.DEFAULT_MINIMUM_POWER);
+    private final PeakMonitor mPeakMonitor = new PeakMonitor(DbPowerMeterJFX.DEFAULT_MINIMUM_POWER);
     private Label mPowerLabel;
     private Label mPeakLabel;
     private Label mSquelchLabel;
@@ -72,11 +77,11 @@ public class SignalPowerView extends JPanel
     {
         mPlaylistManager = playlistManager;
 
-        setLayout(new BorderLayout());
-        JFXPanel jfxPanel = new JFXPanel();
-        add(jfxPanel, BorderLayout.CENTER);
+        
+        
+        
 
-        Platform.runLater(() -> {
+        
             HBox root = new HBox(8);
             root.setPadding(new Insets(16));
 
@@ -134,20 +139,16 @@ public class SignalPowerView extends JPanel
             mSquelchAutoTrackCheckBox.setOnAction(e -> {
                 broadcast(SourceEvent.requestSquelchAutoTrack(mSquelchAutoTrackCheckBox.isSelected()));
             });
+    
             valuePanel.add(mSquelchAutoTrackCheckBox, 0, 3, 4, 1);
 
             HBox.setHgrow(valuePanel, Priority.ALWAYS);
             root.getChildren().add(valuePanel);
+        this.getChildren().add(root);
 
-            Scene scene = new Scene(root);
-            java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
-            if (cssUrl != null) {
-                scene.getStylesheets().add(cssUrl.toExternalForm());
-            }
+            
 
-            jfxPanel.setScene(scene);
 
-        });
     }
 
     /**
@@ -196,7 +197,7 @@ public class SignalPowerView extends JPanel
     private void reset()
     {
         mPeakMonitor.reset();
-        Platform.runLater(() -> {
+        
             mPowerMeter.reset();
             mPeakLabel.setText("0");
             mPowerLabel.setText("0");
@@ -207,7 +208,7 @@ public class SignalPowerView extends JPanel
             mSquelchDownButton.setDisable(true);
             mSquelchAutoTrackCheckBox.setDisable(true);
             mSquelchAutoTrackCheckBox.setSelected(false);
-        });
+
     }
 
     public void receive(SourceEvent sourceEvent)
@@ -219,13 +220,13 @@ public class SignalPowerView extends JPanel
                 final double power = sourceEvent.getValue().doubleValue();
                 final double peak = mPeakMonitor.process(power);
 
-                Platform.runLater(() -> {
+                
                     mPowerMeter.setPower(power);
                     mPowerLabel.setText(DECIMAL_FORMAT.format(power));
 
                     mPowerMeter.setPeak(peak);
                     mPeakLabel.setText(DECIMAL_FORMAT.format(peak));
-                });
+        
             }
             case NOTIFICATION_SQUELCH_THRESHOLD ->
             {
@@ -233,23 +234,23 @@ public class SignalPowerView extends JPanel
                 mSquelchThreshold = threshold;
                 setConfigSquelchThreshold((int)threshold);
 
-                Platform.runLater(() -> {
+                
                     mPowerMeter.setSquelchThreshold(threshold);
                     mSquelchLabel.setDisable(false);
                     mSquelchValueLabel.setDisable(false);
                     mSquelchValueLabel.setText(DECIMAL_FORMAT.format(threshold));
                     mSquelchDownButton.setDisable(false);
                     mSquelchUpButton.setDisable(false);
-                });
+        
             }
             case NOTIFICATION_SQUELCH_AUTO_TRACK ->
             {
                 boolean autoTrack = sourceEvent.getValue().intValue() == 1;
                 setConfigSquelchAutoTrack(autoTrack);
-                Platform.runLater(() -> {
+                
                     mSquelchAutoTrackCheckBox.setSelected(autoTrack);
                     mSquelchAutoTrackCheckBox.setDisable(false);
-                });
+        
             }
         }
     }

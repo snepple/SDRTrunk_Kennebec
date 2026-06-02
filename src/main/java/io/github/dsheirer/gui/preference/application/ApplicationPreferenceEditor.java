@@ -161,6 +161,21 @@ public class ApplicationPreferenceEditor extends HBox
             if (systemReliabilityCard != null) {
                 mEditorPane.getChildren().addAll(srLabel, systemReliabilityCard);
             }
+
+            // Card 6: Remote Access Optimization
+            Label remoteLabel = new Label("Remote Access Optimization");
+            remoteLabel.getStyleClass().add("hig-section-header");
+            io.github.dsheirer.gui.preference.layout.SettingsCard remoteCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
+            
+            ToggleSwitch remoteToggle = new ToggleSwitch();
+            remoteToggle.setTooltip(new Tooltip("Automatically throttles UI animations and FFT framerate when a remote desktop connection is detected (e.g. RustDesk)"));
+            remoteToggle.setSelected(mApplicationPreference.isRemoteAccessOptimization());
+            remoteToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                mApplicationPreference.setRemoteAccessOptimization(newValue);
+            });
+            remoteCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Enable Remote Desktop Optimizations", remoteToggle));
+
+            mEditorPane.getChildren().addAll(remoteLabel, remoteCard);
         }
 
         return mEditorPane;
@@ -340,7 +355,16 @@ public class ApplicationPreferenceEditor extends HBox
             mMemoryComboBox.getSelectionModel().select(currentOption);
 
             mMemoryComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-                if (newValue != null) {
+                if (newValue != null && oldValue != null && !newValue.equals(oldValue)) {
+                    mApplicationPreference.setAllocatedMemory(newValue.getValue());
+                    javafx.application.Platform.runLater(() -> {
+                        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+                        alert.setTitle("Restart Required");
+                        alert.setHeaderText("Memory Allocation Changed");
+                        alert.setContentText("A restart of SDRTrunk is required for the new memory allocation to take effect.");
+                        alert.showAndWait();
+                    });
+                } else if (newValue != null && oldValue == null) {
                     mApplicationPreference.setAllocatedMemory(newValue.getValue());
                 }
             });

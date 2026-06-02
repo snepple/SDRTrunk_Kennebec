@@ -19,7 +19,7 @@
 
 package io.github.dsheirer.util;
 
-import java.awt.EventQueue;
+import javafx.application.Platform;
 
 /**
  * Swing utilities
@@ -27,17 +27,17 @@ import java.awt.EventQueue;
 public class SwingUtils
 {
     /**
-     * Runs the runnable on the swing dispatch thread
+     * Runs the runnable on the JavaFX application thread
      */
     public static void run(Runnable r)
     {
-        if(EventQueue.isDispatchThread())
+        if(Platform.isFxApplicationThread())
         {
             r.run();
         }
         else
         {
-            EventQueue.invokeLater(r);
+            Platform.runLater(r);
         }
     }
 }

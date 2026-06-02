@@ -17,6 +17,13 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.source.tuner.rtl.fc0013;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.ProgressBar;
+
 
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.SourceException;
@@ -26,27 +33,31 @@ import io.github.dsheirer.source.tuner.rtl.RTL2832Tuner;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController;
 import io.github.dsheirer.source.tuner.rtl.RTL2832TunerController.SampleRate;
 import io.github.dsheirer.source.tuner.ui.TunerEditor;
-import net.miginfocom.swing.MigLayout;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.usb4java.LibUsbException;
 
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
 import java.util.Optional;
-import javax.swing.JPanel;
-import javax.swing.ProgressMonitor;
-import javax.swing.SwingUtilities;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.swing.JSeparator;
-import javax.swing.JToggleButton;
-import javax.swing.SpinnerNumberModel;
+import javafx.scene.control.Separator;
+import javafx.scene.control.ToggleButton;
+
 
 /**
  * FC0013 Tuner Editor
@@ -56,11 +67,11 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
     private final static Logger mLog = LoggerFactory.getLogger(FC0013TunerEditor.class);
     private static final long serialVersionUID = 1L;
     private static final FC0013EmbeddedTuner.LNAGain DEFAULT_LNA_GAIN = FC0013EmbeddedTuner.LNAGain.G14;
-    private JToggleButton mBiasTButton;
-    private JComboBox<SampleRate> mSampleRateCombo;
+    private ToggleButton mBiasTButton;
+    private ComboBox<SampleRate> mSampleRateCombo;
 
-    private JToggleButton mAgcToggleButton;
-    private JComboBox<FC0013EmbeddedTuner.LNAGain> mLNAGainCombo;
+    private ToggleButton mAgcToggleButton;
+    private ComboBox<FC0013EmbeddedTuner.LNAGain> mLNAGainCombo;
 
     /**
      * Constructs an instance
@@ -108,35 +119,34 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 2", "[right][grow,fill][fill]",
-                "[][][][][][][][][][][][][][][][grow]"));
+        // setLayout(new javafx.scene.layout.HBox(4));
 
-        add(new JLabel("Tuner:"));
-        add(getTunerIdLabel());
+        getChildren().add(new Label("Tuner:"));
+        getChildren().add(getTunerIdLabel());
 
 
-        add(new JLabel("Status:"));
-        add(getTunerStatusLabel());
-        add(getBiasTButton(), "wrap");
+        getChildren().add(new Label("Status:"));
+        getChildren().add(getTunerStatusLabel());
+        getChildren().add(getBiasTButton());
 
-        add(getButtonPanel(), "span,align left");
+        getChildren().add(getButtonPanel());
 
-        add(new JSeparator(), "span,growx,push");
+        getChildren().add(new Separator());
 
-        add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel(), "wrap");
+        getChildren().add(new Label("Frequency (MHz):"));
+        getChildren().add(getFrequencyPanel());
 
-        add(new JLabel("Sample Rate:"));
-        add(getSampleRateCombo(), "wrap");
+        getChildren().add(new Label("Sample Rate:"));
+        getChildren().add(getSampleRateCombo());
 
-        add(new JSeparator(), "span,growx,push");
+        getChildren().add(new Separator());
 
-        JPanel gainPanel = new JPanel();
-        gainPanel.add(new JLabel("Gain"));
-        gainPanel.add(getAgcToggleButton());
-        gainPanel.add(new JLabel("LNA:"));
-        add(gainPanel);
-        add(getLNAGainCombo(), "wrap");
+        VBox gainPanel = new VBox();
+        gainPanel.getChildren().add(new Label("Gain"));
+        gainPanel.getChildren().add(getAgcToggleButton());
+        gainPanel.getChildren().add(new Label("LNA:"));
+        getChildren().add(gainPanel);
+        getChildren().add(getLNAGainCombo());
     }
 
     @Override
@@ -164,22 +174,22 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
 
         if(hasTuner())
         {
-            getBiasTButton().setEnabled(true);
+            getBiasTButton().setDisable(!(true));
             getBiasTButton().setSelected(getConfiguration().isBiasT());
-            getSampleRateCombo().setEnabled(true);
-            getSampleRateCombo().setSelectedItem(getConfiguration().getSampleRate());
-            getAgcToggleButton().setEnabled(true);
+            getSampleRateCombo().setDisable(!(true));
+            getSampleRateCombo().setValue(getConfiguration().getSampleRate());
+            getAgcToggleButton().setDisable(!(true));
             getAgcToggleButton().setSelected(getConfiguration().getAGC());
-            getLNAGainCombo().setEnabled(!getConfiguration().getAGC());
-            getLNAGainCombo().setSelectedItem(getConfiguration().getLnaGain());
+            getLNAGainCombo().setDisable(!getConfiguration().getAGC());
+            getLNAGainCombo().setValue(getConfiguration().getLnaGain());
         }
         else
         {
-            getBiasTButton().setEnabled(false);
+            getBiasTButton().setDisable(!(false));
             getBiasTButton().setSelected(false);
-            getSampleRateCombo().setEnabled(false);
-            getAgcToggleButton().setEnabled(false);
-            getLNAGainCombo().setEnabled(false);
+            getSampleRateCombo().setDisable(!(false));
+            getAgcToggleButton().setDisable(!(false));
+            getLNAGainCombo().setDisable(!(false));
         }
 
         updateSampleRateToolTip();
@@ -191,13 +201,13 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
      * Bias-T toggle button
      * @return bias-t button
      */
-    private JToggleButton getBiasTButton()
+    private ToggleButton getBiasTButton()
     {
         if(mBiasTButton == null)
         {
-            mBiasTButton = new JToggleButton("Bias-T");
-            mBiasTButton.setEnabled(false);
-            mBiasTButton.addActionListener(e -> {
+            mBiasTButton = new ToggleButton("Bias-T");
+            mBiasTButton.setDisable(!(false));
+            mBiasTButton.setOnAction(e -> {
                 if(!isLoading())
                 {
                     getTuner().getController().setBiasT(mBiasTButton.isSelected());
@@ -212,26 +222,26 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
     /**
      * Hyperlink button that provides tuner information
      */
-private JComboBox getLNAGainCombo()
+private ComboBox getLNAGainCombo()
     {
         if(mLNAGainCombo == null)
         {
-            mLNAGainCombo = new JComboBox<>(FC0013EmbeddedTuner.LNAGain.values());
-            mLNAGainCombo.setEnabled(false);
-            mLNAGainCombo.addActionListener(arg0 ->
+            mLNAGainCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(FC0013EmbeddedTuner.LNAGain.values())))));
+            mLNAGainCombo.setDisable(!(false));
+            mLNAGainCombo.setOnAction(arg0 ->
             {
                 if(!isLoading())
                 {
                     try
                     {
-                        FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain) mLNAGainCombo.getSelectedItem();
+                        FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain) mLNAGainCombo.getValue();
 
                         if(lnaGain == null)
                         {
                             lnaGain = DEFAULT_LNA_GAIN;
                         }
 
-                        if(mLNAGainCombo.isEnabled())
+                        if(!mLNAGainCombo.isDisabled())
                         {
                             getEmbeddedTuner().setGain(getAgcToggleButton().isSelected(), lnaGain);
                         }
@@ -246,23 +256,23 @@ private JComboBox getLNAGainCombo()
                     }
                 }
             });
-            mLNAGainCombo.setToolTipText("<html>LNA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>");
+            mLNAGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>LNA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>"));
         }
 
         return mLNAGainCombo;
     }
 
-    private JComboBox getSampleRateCombo()
+    private ComboBox getSampleRateCombo()
     {
         if(mSampleRateCombo == null)
         {
-            mSampleRateCombo = new JComboBox<>(SampleRate.values());
-            mSampleRateCombo.setEnabled(false);
-            mSampleRateCombo.addActionListener(e ->
+            mSampleRateCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(SampleRate.values())))));
+            mSampleRateCombo.setDisable(!(false));
+            mSampleRateCombo.setOnAction(e ->
             {
                 if(!isLoading())
                 {
-                    SampleRate sampleRate = (SampleRate) mSampleRateCombo.getSelectedItem();
+                    SampleRate sampleRate = (SampleRate) mSampleRateCombo.getValue();
 
                     try
                     {
@@ -286,22 +296,22 @@ private JComboBox getLNAGainCombo()
         return mSampleRateCombo;
     }
 
-    private JToggleButton getAgcToggleButton()
+    private ToggleButton getAgcToggleButton()
     {
         if(mAgcToggleButton == null)
         {
-            mAgcToggleButton = new JToggleButton("AGC");
-            mAgcToggleButton.setEnabled(false);
-            mAgcToggleButton.addActionListener(arg0 ->
+            mAgcToggleButton = new ToggleButton("AGC");
+            mAgcToggleButton.setDisable(!(false));
+            mAgcToggleButton.setOnAction(arg0 ->
             {
                 if(!isLoading())
                 {
                     try
                     {
                         boolean agc = getAgcToggleButton().isSelected();
-                        FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain)getLNAGainCombo().getSelectedItem();
+                        FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain)getLNAGainCombo().getValue();
                         getEmbeddedTuner().setGain(agc, lnaGain);
-                        getLNAGainCombo().setEnabled(!agc);
+                        getLNAGainCombo().setDisable(!(!agc));
                         save();
                     }
                     catch(Exception e)
@@ -312,7 +322,7 @@ private JComboBox getLNAGainCombo()
                     }
                 }
             });
-            mAgcToggleButton.setToolTipText("<html>Automatic Gain Control (AGC). </html>");
+            mAgcToggleButton.setTooltip(new javafx.scene.control.Tooltip("<html>Automatic Gain Control (AGC). </html>"));
         }
 
         return mAgcToggleButton;
@@ -325,15 +335,15 @@ private JComboBox getLNAGainCombo()
     {
         if(hasTuner() && getTuner().getTunerController().isLockedSampleRate())
         {
-            getSampleRateCombo().setToolTipText("Sample Rate is locked.  Disable decoding channels to unlock.");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("Sample Rate is locked.  Disable decoding channels to unlock."));
         }
         else if(hasTuner())
         {
-            getSampleRateCombo().setToolTipText("Select a sample rate for the tuner");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("Select a sample rate for the tuner"));
         }
         else
         {
-            getSampleRateCombo().setToolTipText("No tuner available");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("No tuner available"));
         }
     }
 
@@ -341,7 +351,7 @@ private JComboBox getLNAGainCombo()
     public void setTunerLockState(boolean locked)
     {
         getFrequencyPanel().updateControls();
-        getSampleRateCombo().setEnabled(!locked);
+        getSampleRateCombo().setDisable(!(!locked));
         updateSampleRateToolTip();
     }
 
@@ -397,21 +407,21 @@ private JComboBox getLNAGainCombo()
             config.setFrequency(getFrequencyControl().getFrequency());
             getConfiguration().setMinimumFrequency(getMinimumFrequencyTextField().getFrequency());
             getConfiguration().setMaximumFrequency(getMaximumFrequencyTextField().getFrequency());
-            double value = ((SpinnerNumberModel)getFrequencyCorrectionSpinner().getModel()).getNumber().doubleValue();
+            double value = (Double)getFrequencyCorrectionSpinner().getValue();
             config.setFrequencyCorrection(value);
             config.setAutoPPMCorrectionEnabled(getAutoPPMCheckBox().isSelected());
 
-            config.setSampleRate((SampleRate)getSampleRateCombo().getSelectedItem());
+            config.setSampleRate((SampleRate)getSampleRateCombo().getValue());
             config.setAGC(getAgcToggleButton().isSelected());
-            FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain)getLNAGainCombo().getSelectedItem();
+            FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain)getLNAGainCombo().getValue();
             config.setLnaGain(lnaGain);
             saveConfiguration();
         }
     }
 
-    private javax.swing.JButton getChangeSerialButton() {
-        javax.swing.JButton btn = new javax.swing.JButton("Change Serial Number");
-        btn.addActionListener(e -> {
+    private Button getChangeSerialButton() {
+        Button btn = new Button("Change Serial Number");
+        btn.setOnAction(e -> {
             if (!hasTuner()) return;
 TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Change RTL-SDR Serial Number");
@@ -427,22 +437,22 @@ TextInputDialog dialog = new TextInputDialog();
                 }
 
                 final String serialToSet = newSerial;
-                ProgressMonitor progressMonitor = new ProgressMonitor(this, "Writing EEPROM...", "", 0, 100);
-                progressMonitor.setMillisToDecideToPopup(0);
-                progressMonitor.setMillisToPopup(0);
+                javafx.scene.control.ProgressBar progressMonitor = new javafx.scene.control.ProgressBar();
+                // progressMonitor.setMillisToDecideToPopup...
+                // progressMonitor.setMillisToPopup...
                 progressMonitor.setProgress(10);
 
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 executor.submit(() -> {
                     try {
                         ((io.github.dsheirer.source.tuner.rtl.RTL2832TunerController)getTuner().getTunerController()).setSerialNumber(serialToSet);
-                        SwingUtilities.invokeLater(() -> {
+                        javafx.application.Platform.runLater(() -> {
                             progressMonitor.setProgress(100);
                             Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Serial number updated successfully.\nPlease disconnect and reconnect the tuner.")); alert.showAndWait(); });
                         });
                     } catch (Exception ex) {
-                        SwingUtilities.invokeLater(() -> {
-                            progressMonitor.close();
+                        javafx.application.Platform.runLater(() -> {
+                            // progressMonitor.close();
                             Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Failed to update serial number: " + ex.getMessage())); alert.showAndWait(); });
                         });
                     }

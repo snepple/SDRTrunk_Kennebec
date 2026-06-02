@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2022 Dennis Sheirer
@@ -17,6 +18,7 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.module.decode.mpt1327;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.bits.BinaryMessage;
 import io.github.dsheirer.edac.CRC;

@@ -14,7 +14,7 @@ import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.jdesktop.swingx.mapviewer.TileFactoryInfo;
 import org.jdesktop.swingx.mapviewer.util.GeoUtil;
 
-import java.awt.geom.Point2D;
+import javafx.geometry.Point2D;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -66,7 +66,7 @@ public class ESRITileFactory extends DefaultTileFactory
 			int pixelX = tileX * factory.getTileSize(zoom) + (factory.getTileSize(zoom) / 2);
 			int pixelY = tileY * factory.getTileSize(zoom) + (factory.getTileSize(zoom) / 2);
 
-			GeoPosition latlong = GeoUtil.getPosition(new Point2D.Double(pixelX, pixelY), zoom, this);
+			GeoPosition latlong = GeoUtil.getPosition(new Point2D(pixelX, pixelY), zoom, this);
 
 			// Chris is going to hate me for this (relying on 72dpi!), but:
 			// 72 pixels per inch. The earth is 24,859.82 miles in circumference, at the equator.

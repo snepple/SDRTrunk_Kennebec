@@ -3,14 +3,10 @@ package io.github.dsheirer.spectrum.menu;
 import io.github.dsheirer.spectrum.DFTSize;
 import io.github.dsheirer.spectrum.IDFTWidthChangeProcessor;
 
-import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javafx.scene.control.CheckMenuItem;
 
-public class DFTSizeItem extends JCheckBoxMenuItem
+public class DFTSizeItem extends CheckMenuItem
 {
-    private static final long serialVersionUID = 1L;
-
     private IDFTWidthChangeProcessor mDFTProcessor;
     private DFTSize mDFTSize;
     
@@ -26,13 +22,8 @@ public class DFTSizeItem extends JCheckBoxMenuItem
     		setSelected( true );
     	}
     	
-    	addActionListener( new ActionListener() 
-    	{
-			@Override
-            public void actionPerformed( ActionEvent arg0 )
-            {
-				mDFTProcessor.setDFTSize( mDFTSize );
-            }
+    	setOnAction( event -> {
+			mDFTProcessor.setDFTSize( mDFTSize );
 		} );
     }
 }

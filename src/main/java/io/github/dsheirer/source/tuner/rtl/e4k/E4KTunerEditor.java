@@ -17,9 +17,16 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.source.tuner.rtl.e4k;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.ProgressBar;
 
-import javax.swing.ProgressMonitor;
-import javax.swing.SwingUtilities;
+
+
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javafx.scene.control.Alert;
@@ -40,24 +47,25 @@ import io.github.dsheirer.source.tuner.rtl.e4k.E4KEmbeddedTuner.E4KGain;
 import io.github.dsheirer.source.tuner.rtl.e4k.E4KEmbeddedTuner.E4KLNAGain;
 import io.github.dsheirer.source.tuner.rtl.e4k.E4KEmbeddedTuner.E4KMixerGain;
 import io.github.dsheirer.source.tuner.ui.TunerEditor;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import net.miginfocom.swing.MigLayout;
+
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.usb4java.LibUsbException;
 
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
 import java.util.Optional;
-import javax.swing.JSeparator;
-import javax.swing.JToggleButton;
-import javax.swing.SpinnerNumberModel;
+import javafx.scene.control.Separator;
+import javafx.scene.control.ToggleButton;
+
 import javax.usb.UsbException;
 
 /**
@@ -67,12 +75,12 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
 {
     private final static Logger mLog = LoggerFactory.getLogger(E4KTunerEditor.class);
     private static final long serialVersionUID = 1L;
-    private JToggleButton mBiasTButton;
-    private JComboBox<SampleRate> mSampleRateCombo;
-    private JComboBox<E4KGain> mMasterGainCombo;
-    private JComboBox<E4KMixerGain> mMixerGainCombo;
-    private JComboBox<E4KLNAGain> mLNAGainCombo;
-    private JComboBox<E4KEmbeddedTuner.IFGain> mIfGainCombo;
+    private ToggleButton mBiasTButton;
+    private ComboBox<SampleRate> mSampleRateCombo;
+    private ComboBox<E4KGain> mMasterGainCombo;
+    private ComboBox<E4KMixerGain> mMixerGainCombo;
+    private ComboBox<E4KLNAGain> mLNAGainCombo;
+    private ComboBox<E4KEmbeddedTuner.IFGain> mIfGainCombo;
 
     /**
      * Constructs an instance
@@ -115,41 +123,41 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 2", "[right][grow,fill]", ""));
+        
 
-        add(new JLabel("Tuner:"));
-        add(getTunerIdLabel());
+        getChildren().add(new Label("Tuner:"));
+        getChildren().add(getTunerIdLabel());
 
-        add(new JLabel("Status:"));
-        add(getTunerStatusLabel());
-        add(getBiasTButton(), "wrap");
+        getChildren().add(new Label("Status:"));
+        getChildren().add(getTunerStatusLabel());
+        getChildren().add(getBiasTButton());
 
-        add(getButtonPanel(), "span,align left");
+        getChildren().add(getButtonPanel());
 
-        add(new JSeparator(), "span,growx,push");
+        getChildren().add(new Separator());
 
-        add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel(), "span 2");
+        getChildren().add(new Label("Frequency (MHz):"));
+        getChildren().add(getFrequencyPanel());
 
-        add(new JLabel("Sample Rate:"));
-        add(getSampleRateCombo(), "wrap");
+        getChildren().add(new Label("Sample Rate:"));
+        getChildren().add(getSampleRateCombo());
 
-        add(new JSeparator(), "span,growx,push");
-        add(new JLabel("Mixer/LNA Gain Control"), "wrap");
+        getChildren().add(new Separator());
+        getChildren().add(new Label("Mixer/LNA Gain Control"));
 
-        add(new JLabel("Master:"));
-        add(getMasterGainCombo(), "wrap");
+        getChildren().add(new Label("Master:"));
+        getChildren().add(getMasterGainCombo());
 
-        add(new JLabel("Mixer:"));
-        add(getMixerGainCombo(), "wrap");
+        getChildren().add(new Label("Mixer:"));
+        getChildren().add(getMixerGainCombo());
 
-        add(new JLabel("LNA:"));
-        add(getLNAGainCombo(), "wrap");
+        getChildren().add(new Label("LNA:"));
+        getChildren().add(getLNAGainCombo());
 
-        add(new JSeparator(), "span,growx,push");
+        getChildren().add(new Separator());
 
-        add(new JLabel("IF Gain:"));
-        add(getIfGainCombo(), "wrap");
+        getChildren().add(new Label("IF Gain:"));
+        getChildren().add(getIfGainCombo());
     }
 
     @Override
@@ -171,44 +179,44 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
 
         if(hasTuner())
         {
-            getBiasTButton().setEnabled(true);
+            getBiasTButton().setDisable(!(true));
             getBiasTButton().setSelected(getConfiguration().isBiasT());
-            getSampleRateCombo().setEnabled(true);
-            getSampleRateCombo().setSelectedItem(getConfiguration().getSampleRate());
-            getMasterGainCombo().setEnabled(true);
-            getIfGainCombo().setEnabled(true);
-            getIfGainCombo().setSelectedItem(getConfiguration().getIFGain());
+            getSampleRateCombo().setDisable(!(true));
+            getSampleRateCombo().setValue(getConfiguration().getSampleRate());
+            getMasterGainCombo().setDisable(!(true));
+            getIfGainCombo().setDisable(!(true));
+            getIfGainCombo().setValue(getConfiguration().getIFGain());
 
             E4KGain gain = getConfiguration().getMasterGain();
-            getMasterGainCombo().setEnabled(true);
-            getMasterGainCombo().setSelectedItem(gain);
+            getMasterGainCombo().setDisable(!(true));
+            getMasterGainCombo().setValue(gain);
 
             if(gain == E4KGain.MANUAL)
             {
-                getMixerGainCombo().setSelectedItem(getConfiguration().getMixerGain());
-                getMixerGainCombo().setEnabled(true);
+                getMixerGainCombo().setValue(getConfiguration().getMixerGain());
+                getMixerGainCombo().setDisable(!(true));
 
-                getLNAGainCombo().setSelectedItem(getConfiguration().getLNAGain());
-                getLNAGainCombo().setEnabled(true);
+                getLNAGainCombo().setValue(getConfiguration().getLNAGain());
+                getLNAGainCombo().setDisable(!(true));
             }
             else
             {
-                getMixerGainCombo().setEnabled(false);
-                getMixerGainCombo().setSelectedItem(gain.getMixerGain());
+                getMixerGainCombo().setDisable(!(false));
+                getMixerGainCombo().setValue(gain.getMixerGain());
 
-                getLNAGainCombo().setEnabled(false);
-                getLNAGainCombo().setSelectedItem(gain.getLNAGain());
+                getLNAGainCombo().setDisable(!(false));
+                getLNAGainCombo().setValue(gain.getLNAGain());
             }
         }
         else
         {
-            getBiasTButton().setEnabled(false);
+            getBiasTButton().setDisable(!(false));
             getBiasTButton().setSelected(false);
-            getSampleRateCombo().setEnabled(false);
-            getMasterGainCombo().setEnabled(false);
-            getMixerGainCombo().setEnabled(false);
-            getLNAGainCombo().setEnabled(false);
-            getIfGainCombo().setEnabled(false);
+            getSampleRateCombo().setDisable(!(false));
+            getMasterGainCombo().setDisable(!(false));
+            getMixerGainCombo().setDisable(!(false));
+            getLNAGainCombo().setDisable(!(false));
+            getIfGainCombo().setDisable(!(false));
         }
 
         updateSampleRateToolTip();
@@ -220,13 +228,13 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
      * Bias-T toggle button
      * @return
      */
-    private JToggleButton getBiasTButton()
+    private ToggleButton getBiasTButton()
     {
         if(mBiasTButton == null)
         {
-            mBiasTButton = new JToggleButton("Bias-T");
-            mBiasTButton.setEnabled(false);
-            mBiasTButton.addActionListener(e -> {
+            mBiasTButton = new ToggleButton("Bias-T");
+            mBiasTButton.setDisable(!(false));
+            mBiasTButton.setOnAction(e -> {
                 if(!isLoading())
                 {
                     getTuner().getController().setBiasT(mBiasTButton.isSelected());
@@ -238,21 +246,21 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
         return mBiasTButton;
     }
 
-    private JComboBox getIfGainCombo()
+    private ComboBox getIfGainCombo()
     {
         if(mIfGainCombo == null)
         {
-            mIfGainCombo = new JComboBox<>(E4KEmbeddedTuner.IFGain.values());
-            mIfGainCombo.addActionListener(new ActionListener()
+            mIfGainCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(E4KEmbeddedTuner.IFGain.values())))));
+            mIfGainCombo.setOnAction(new EventHandler<ActionEvent>()
             {
                 @Override
-                public void actionPerformed(ActionEvent e)
+                public void handle(ActionEvent e)
                 {
                     if(!isLoading())
                     {
                         try
                         {
-                            E4KEmbeddedTuner.IFGain selected = (E4KEmbeddedTuner.IFGain) getIfGainCombo().getSelectedItem();
+                            E4KEmbeddedTuner.IFGain selected = (E4KEmbeddedTuner.IFGain) getIfGainCombo().getValue();
                             getEmbeddedTuner().setIFGain(selected, true);
                             save();
                         }
@@ -265,25 +273,25 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
                     }
                 }
             });
-            mIfGainCombo.setToolTipText("Linear IF Gain");
-            mIfGainCombo.setEnabled(true);
+            mIfGainCombo.setTooltip(new javafx.scene.control.Tooltip("Linear IF Gain"));
+            mIfGainCombo.setDisable(!(true));
         }
 
         return mIfGainCombo;
     }
 
-    private JComboBox getLNAGainCombo()
+    private ComboBox getLNAGainCombo()
     {
         if(mLNAGainCombo == null)
         {
-            mLNAGainCombo = new JComboBox<>(E4KLNAGain.values());
-            mLNAGainCombo.addActionListener(arg0 ->
+            mLNAGainCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(E4KLNAGain.values())))));
+            mLNAGainCombo.setOnAction(arg0 ->
             {
                 if(!isLoading())
                 {
                     try
                     {
-                        E4KLNAGain lnaGain = (E4KLNAGain) mLNAGainCombo.getSelectedItem();
+                        E4KLNAGain lnaGain = (E4KLNAGain) mLNAGainCombo.getValue();
                         getEmbeddedTuner().setLNAGain(lnaGain, true);
                         save();
                     }
@@ -295,25 +303,25 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
                     }
                 }
             });
-            mLNAGainCombo.setToolTipText("<html>LNA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>");
-            mLNAGainCombo.setEnabled(false);
+            mLNAGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>LNA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>"));
+            mLNAGainCombo.setDisable(!(false));
         }
 
         return mLNAGainCombo;
     }
 
-    private JComboBox getMixerGainCombo()
+    private ComboBox getMixerGainCombo()
     {
         if(mMixerGainCombo == null)
         {
-            mMixerGainCombo = new JComboBox<>(E4KMixerGain.values());
-            mMixerGainCombo.addActionListener(arg0 ->
+            mMixerGainCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(E4KMixerGain.values())))));
+            mMixerGainCombo.setOnAction(arg0 ->
             {
                 if(!isLoading())
                 {
                     try
                     {
-                        E4KMixerGain mixerGain = (E4KMixerGain) mMixerGainCombo.getSelectedItem();
+                        E4KMixerGain mixerGain = (E4KMixerGain) mMixerGainCombo.getValue();
                         getEmbeddedTuner().setMixerGain(mixerGain, true);
                         save();
                     }
@@ -325,40 +333,40 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
                     }
                 }
             });
-            mMixerGainCombo.setToolTipText("<html>Mixer Gain.  Set master gain to <b>MASTER</b> to enable adjustment</html>");
-            mMixerGainCombo.setEnabled(false);
+            mMixerGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>Mixer Gain.  Set master gain to <b>MASTER</b> to enable adjustment</html>"));
+            mMixerGainCombo.setDisable(!(false));
         }
 
         return mMixerGainCombo;
     }
 
-    private JComboBox getMasterGainCombo()
+    private ComboBox getMasterGainCombo()
     {
         if(mMasterGainCombo == null)
         {
-            mMasterGainCombo = new JComboBox<>(E4KGain.values());
-            mMasterGainCombo.setEnabled(false);
-            mMasterGainCombo.addActionListener(arg0 ->
+            mMasterGainCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(E4KGain.values())))));
+            mMasterGainCombo.setDisable(!(false));
+            mMasterGainCombo.setOnAction(arg0 ->
             {
                 if(!isLoading())
                 {
                     try
                     {
-                        E4KGain gain = (E4KGain) mMasterGainCombo.getSelectedItem();
-                        getEmbeddedTuner().setGain((E4KGain) mMasterGainCombo.getSelectedItem(), true);
+                        E4KGain gain = (E4KGain) mMasterGainCombo.getValue();
+                        getEmbeddedTuner().setGain((E4KGain) mMasterGainCombo.getValue(), true);
                         if(gain == E4KGain.MANUAL)
                         {
-                            getMixerGainCombo().setSelectedItem(getEmbeddedTuner().getMixerGain(true));
-                            getMixerGainCombo().setEnabled(true);
-                            getLNAGainCombo().setSelectedItem(getEmbeddedTuner().getLNAGain(true));
-                            getLNAGainCombo().setEnabled(true);
+                            getMixerGainCombo().setValue(getEmbeddedTuner().getMixerGain(true));
+                            getMixerGainCombo().setDisable(!(true));
+                            getLNAGainCombo().setValue(getEmbeddedTuner().getLNAGain(true));
+                            getLNAGainCombo().setDisable(!(true));
                         }
                         else
                         {
-                            getMixerGainCombo().setEnabled(false);
-                            getMixerGainCombo().setSelectedItem(gain.getMixerGain());
-                            getLNAGainCombo().setEnabled(false);
-                            getLNAGainCombo().setSelectedItem(gain.getLNAGain());
+                            getMixerGainCombo().setDisable(!(false));
+                            getMixerGainCombo().setValue(gain.getMixerGain());
+                            getLNAGainCombo().setDisable(!(false));
+                            getLNAGainCombo().setValue(gain.getLNAGain());
                         }
 
                         save();
@@ -372,25 +380,25 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
                 }
             });
 
-            mMasterGainCombo.setToolTipText("<html>Select <b>AUTOMATIC</b> for auto gain, <b>MANUAL</b> to enable<br> " +
+            mMasterGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>Select <b>AUTOMATIC</b> for auto gain, <b>MANUAL</b> to enable<br> " +
                     "independent control of <i>Mixer</i>, <i>LNA</i> and <i>Enhance</i> gain<br>settings, or one of the " +
-                    "individual gain settings for<br>semi-manual gain control</html>");
+                    "individual gain settings for<br>semi-manual gain control</html>"));
         }
 
         return mMasterGainCombo;
     }
 
-    private JComboBox getSampleRateCombo()
+    private ComboBox getSampleRateCombo()
     {
         if(mSampleRateCombo == null)
         {
-            mSampleRateCombo = new JComboBox<>(SampleRate.values());
-            mSampleRateCombo.setEnabled(false);
-            mSampleRateCombo.addActionListener(e ->
+            mSampleRateCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(SampleRate.values())))));
+            mSampleRateCombo.setDisable(!(false));
+            mSampleRateCombo.setOnAction(e ->
             {
                 if(!isLoading())
                 {
-                    SampleRate sampleRate = (SampleRate) mSampleRateCombo.getSelectedItem();
+                    SampleRate sampleRate = (SampleRate) mSampleRateCombo.getValue();
 
                     try
                     {
@@ -424,15 +432,15 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
     {
         if(hasTuner() && getTuner().getTunerController().isLockedSampleRate())
         {
-            getSampleRateCombo().setToolTipText("Sample Rate is locked.  Disable decoding channels to unlock.");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("Sample Rate is locked.  Disable decoding channels to unlock."));
         }
         else if(hasTuner())
         {
-            getSampleRateCombo().setToolTipText("Select a sample rate for the tuner");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("Select a sample rate for the tuner"));
         }
         else
         {
-            getSampleRateCombo().setToolTipText("No tuner available");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("No tuner available"));
         }
     }
 
@@ -440,7 +448,7 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
     public void setTunerLockState(boolean locked)
     {
         getFrequencyPanel().updateControls();
-        getSampleRateCombo().setEnabled(!locked);
+        getSampleRateCombo().setDisable(!(!locked));
         updateSampleRateToolTip();
     }
 
@@ -497,22 +505,22 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
             config.setFrequency(getFrequencyControl().getFrequency());
             getConfiguration().setMinimumFrequency(getMinimumFrequencyTextField().getFrequency());
             getConfiguration().setMaximumFrequency(getMaximumFrequencyTextField().getFrequency());
-            double value = ((SpinnerNumberModel)getFrequencyCorrectionSpinner().getModel()).getNumber().doubleValue();
+            double value = (Double)getFrequencyCorrectionSpinner().getValue();
             config.setFrequencyCorrection(value);
             config.setAutoPPMCorrectionEnabled(getAutoPPMCheckBox().isSelected());
             config.setBiasT(getTuner().getController().isBiasT());
-            config.setSampleRate((SampleRate)getSampleRateCombo().getSelectedItem());
-            config.setMasterGain((E4KGain)getMasterGainCombo().getSelectedItem());
-            config.setMixerGain((E4KMixerGain)getMixerGainCombo().getSelectedItem());
-            config.setLNAGain((E4KLNAGain)getLNAGainCombo().getSelectedItem());
-            config.setIFGain((E4KEmbeddedTuner.IFGain)getIfGainCombo().getSelectedItem());
+            config.setSampleRate((SampleRate)getSampleRateCombo().getValue());
+            config.setMasterGain((E4KGain)getMasterGainCombo().getValue());
+            config.setMixerGain((E4KMixerGain)getMixerGainCombo().getValue());
+            config.setLNAGain((E4KLNAGain)getLNAGainCombo().getValue());
+            config.setIFGain((E4KEmbeddedTuner.IFGain)getIfGainCombo().getValue());
             saveConfiguration();
         }
     }
 
-    private javax.swing.JButton getChangeSerialButton() {
-        javax.swing.JButton btn = new javax.swing.JButton("Change Serial Number");
-        btn.addActionListener(e -> {
+    private Button getChangeSerialButton() {
+        Button btn = new Button("Change Serial Number");
+        btn.setOnAction(e -> {
             if (!hasTuner()) return;
 TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Change RTL-SDR Serial Number");
@@ -528,22 +536,22 @@ TextInputDialog dialog = new TextInputDialog();
                 }
 
                 final String serialToSet = newSerial;
-                ProgressMonitor progressMonitor = new ProgressMonitor(this, "Writing EEPROM...", "", 0, 100);
-                progressMonitor.setMillisToDecideToPopup(0);
-                progressMonitor.setMillisToPopup(0);
+                javafx.scene.control.ProgressBar progressMonitor = new javafx.scene.control.ProgressBar();
+                // progressMonitor.setMillisToDecideToPopup...
+                // progressMonitor.setMillisToPopup...
                 progressMonitor.setProgress(10);
 
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 executor.submit(() -> {
                     try {
                         ((io.github.dsheirer.source.tuner.rtl.RTL2832TunerController)getTuner().getTunerController()).setSerialNumber(serialToSet);
-                        SwingUtilities.invokeLater(() -> {
+                        javafx.application.Platform.runLater(() -> {
                             progressMonitor.setProgress(100);
                             Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Serial number updated successfully.\nPlease disconnect and reconnect the tuner.")); alert.showAndWait(); });
                         });
                     } catch (Exception ex) {
-                        SwingUtilities.invokeLater(() -> {
-                            progressMonitor.close();
+                        javafx.application.Platform.runLater(() -> {
+                            // progressMonitor.close();
                             Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Failed to update serial number: " + ex.getMessage())); alert.showAndWait(); });
                         });
                     }

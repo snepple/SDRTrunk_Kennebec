@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  *     SDR Trunk 
  *     Copyright (C) 2014,2015 Dennis Sheirer
@@ -16,6 +17,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package io.github.dsheirer.module.decode.lj1200;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.bits.BinaryMessage;
 import io.github.dsheirer.edac.CRC;

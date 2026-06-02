@@ -21,7 +21,8 @@ public enum AliasActionType
 {
 	BEEP( "Beep" ),
 	CLIP( "Play Clip" ),
-	SCRIPT( "Run Script" );
+	SCRIPT( "Run Script" ),
+	TWO_TONE( "Two-Tone Decoder" );
 	
 	private String mLabel;
 	

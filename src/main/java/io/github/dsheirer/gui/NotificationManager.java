@@ -1,9 +1,18 @@
+
+
 package io.github.dsheirer.gui;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+
+import javafx.scene.control.Button;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
+
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
@@ -23,7 +32,7 @@ public class NotificationManager {
             try {
                 SystemTray tray = SystemTray.getSystemTray();
                 // We need a dummy image for the tray icon
-                Image image = Toolkit.getDefaultToolkit().createImage(new byte[0]); 
+                java.awt.Image image = java.awt.Toolkit.getDefaultToolkit().createImage(new byte[0]); 
                 trayIcon = new TrayIcon(image, "SDRTrunk");
                 trayIcon.setImageAutoSize(true);
                 tray.add(trayIcon);

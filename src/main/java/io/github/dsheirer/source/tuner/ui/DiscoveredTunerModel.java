@@ -28,7 +28,7 @@ import io.github.dsheirer.source.tuner.manager.IDiscoveredTunerStatusListener;
 import io.github.dsheirer.source.tuner.manager.TunerStatus;
 import io.github.dsheirer.source.tuner.sdrplay.rspDuo.DiscoveredRspDuoTuner1;
 import io.github.dsheirer.source.tuner.sdrplay.rspDuo.DiscoveredRspDuoTuner2;
-import java.awt.EventQueue;
+import javafx.application.Platform;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,12 +39,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.table.AbstractTableModel;
+import javafx.collections.ObservableList;
+import javafx.collections.FXCollections;
 
 /**
  * Model for discovered tuners
  */
-public class DiscoveredTunerModel extends AbstractTableModel implements Listener<TunerEvent>,
+public class DiscoveredTunerModel  implements Listener<TunerEvent>,
         IDiscoveredTunerStatusListener
 {
     private static final long serialVersionUID = 1L;
@@ -59,7 +60,7 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
     private static final String MHZ = " MHz";
     private static final String[] COLUMN_HEADERS = {"Status","Name", "Type", "Frequency", "Channels"};
 
-    private List<DiscoveredTuner> mDiscoveredTuners = new CopyOnWriteArrayList<>();
+    private ObservableList<DiscoveredTuner> mDiscoveredTuners = FXCollections.observableArrayList();
     private List<Listener<TunerEvent>> mTunerEventListeners = new ArrayList<>();
     private DecimalFormat mFrequencyFormat = new DecimalFormat("0.00000");
     private Lock mLock = new ReentrantLock();
@@ -80,6 +81,11 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
     public List<DiscoveredTuner> getAvailableTuners()
     {
         return mDiscoveredTuners.stream().filter(discoveredTuner -> discoveredTuner.hasTuner()).toList();
+    }
+
+    
+    public ObservableList<DiscoveredTuner> getObservableList() {
+        return mDiscoveredTuners;
     }
 
     public List<DiscoveredTuner> getDiscoveredTuners()
@@ -184,7 +190,7 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
             {
                 mDiscoveredTuners.add(discoveredTuner);
                 int index = mDiscoveredTuners.indexOf(discoveredTuner);
-                EventQueue.invokeLater(() -> fireTableRowsInserted(index, index));
+                
                 if(discoveredTuner.hasTuner())
                 {
                     discoveredTuner.getTuner().addTunerEventListener(this);
@@ -210,7 +216,7 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
         try
         {
             mDiscoveredTuners.clear();
-            fireTableDataChanged();
+            
         }
         finally
         {
@@ -239,11 +245,11 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
                 int index = mDiscoveredTuners.indexOf(discoveredTuner);
                 mDiscoveredTuners.remove(discoveredTuner);
 
-                if(EventQueue.isDispatchThread())
+                if(Platform.isFxApplicationThread())
                 {
                     try
                     {
-                        fireTableRowsDeleted(index, index);
+                        
                     }
                     catch(Exception e)
                     {
@@ -252,11 +258,11 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
                 }
                 else
                 {
-                    EventQueue.invokeLater(() ->
+                    Platform.runLater(() ->
                     {
                         try
                         {
-                            fireTableRowsDeleted(index, index);
+                            
                         }
                         catch(Exception e)
                         {
@@ -373,13 +379,13 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
         {
             discoveredTuner.getTuner().addTunerEventListener(this);
             int row = mDiscoveredTuners.indexOf(discoveredTuner);
-            EventQueue.invokeLater(() -> fireTableRowsUpdated(row, row));
+            
             return;
         }
         else if(current == TunerStatus.DISABLED)
         {
             int row = mDiscoveredTuners.indexOf(discoveredTuner);
-            EventQueue.invokeLater(() -> fireTableRowsUpdated(row, row));
+            
             return;
         }
 
@@ -442,13 +448,13 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
                     switch(event.getEvent())
                     {
                         case UPDATE_CHANNEL_COUNT:
-                            EventQueue.invokeLater(() -> fireTableCellUpdated(index, COLUMN_CHANNEL_COUNT));
+                            
                             break;
                         case UPDATE_FREQUENCY:
-                            EventQueue.invokeLater(() -> fireTableCellUpdated(index, COLUMN_FREQUENCY));
+                            
                             break;
                         case NOTIFICATION_ERROR_STATE:
-                            EventQueue.invokeLater(() -> fireTableRowsUpdated(index, index));
+                            
                             break;
                         case UPDATE_FREQUENCY_ERROR:
                             if(mTunerConfigurationManager != null)
@@ -474,19 +480,19 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
         broadcast(event);
     }
 
-    @Override
+    // // @Override
     public int getRowCount()
     {
         return mDiscoveredTuners.size();
     }
 
-    @Override
+    // // @Override
     public int getColumnCount()
     {
         return COLUMN_HEADERS.length;
     }
 
-    @Override
+    // // @Override
     public Object getValueAt(int rowIndex, int columnIndex)
     {
         if(rowIndex < mDiscoveredTuners.size())
@@ -536,7 +542,7 @@ public class DiscoveredTunerModel extends AbstractTableModel implements Listener
         return null;
     }
 
-    @Override
+    // // @Override
     public String getColumnName(int columnIndex)
     {
         return COLUMN_HEADERS[columnIndex];

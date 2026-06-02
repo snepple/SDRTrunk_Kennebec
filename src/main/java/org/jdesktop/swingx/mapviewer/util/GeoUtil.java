@@ -8,6 +8,9 @@
  */
 
 package org.jdesktop.swingx.mapviewer.util;
+import javafx.geometry.Rectangle2D;
+import javafx.geometry.Dimension2D;
+
 
 import org.apache.commons.math3.util.FastMath;
 import org.jdesktop.swingx.JXMapViewer;
@@ -16,9 +19,9 @@ import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.jdesktop.swingx.mapviewer.TileFactory;
 import org.jdesktop.swingx.mapviewer.TileFactoryInfo;
 
-import java.awt.*;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
+
+import javafx.geometry.Point2D;
+import javafx.geometry.BoundingBox;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,9 +37,9 @@ public final class GeoUtil
 	 * @param info the tile factory info
 	 * @return the size of the map at the given zoom, in tiles (num tiles tall by num tiles wide)
 	 */
-	public static Dimension getMapSize(int zoom, TileFactoryInfo info)
+	public static Dimension2D getMapSize(int zoom, TileFactoryInfo info)
 	{
-		return new Dimension(info.getMapWidthInTilesAtZoom(zoom), info.getMapWidthInTilesAtZoom(zoom));
+		return new Dimension2D(info.getMapWidthInTilesAtZoom(zoom), info.getMapWidthInTilesAtZoom(zoom));
 	}
 
 	/**
@@ -111,7 +114,7 @@ public final class GeoUtil
 		}
 		double y = info.getMapCenterInPixelsAtZoom(zoomLevel).getY() + 0.5 * FastMath.log((1 + e) / (1 - e)) * -1
 				* (info.getLongitudeRadianWidthInPixels(zoomLevel));
-		return new Point2D.Double(x, y);
+		return new Point2D(x, y);
 	}
 
 	/** 
@@ -158,9 +161,9 @@ public final class GeoUtil
 		TileFactory tileFactory = mapViewer.getTileFactory();
 		int zoom = mapViewer.getZoom();
 		Rectangle2D bounds = mapViewer.getViewportBounds();
-		Point2D pt = new Point2D.Double(bounds.getX(), bounds.getY());
+		Point2D pt = new Point2D(bounds.getMinX(), bounds.getMinY());
 		set.add(tileFactory.pixelToGeo(pt, zoom));
-		pt = new Point2D.Double(bounds.getX() + bounds.getWidth(), bounds.getY() + bounds.getHeight());
+		pt = new Point2D(bounds.getMinX() + bounds.getWidth(), bounds.getMinY() + bounds.getHeight());
 		set.add(tileFactory.pixelToGeo(pt, zoom));
 		return set;
 	}

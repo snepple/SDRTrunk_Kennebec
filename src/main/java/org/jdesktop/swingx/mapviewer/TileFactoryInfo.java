@@ -11,7 +11,7 @@ package org.jdesktop.swingx.mapviewer;
 
 import org.apache.commons.math3.util.FastMath;
 
-import java.awt.geom.Point2D;
+import javafx.geometry.Point2D;
 
 /**
  * A TileFactoryInfo encapsulates all information specific to a map server. This includes everything from the url to
@@ -34,7 +34,7 @@ public class TileFactoryInfo
 	/**
 	 * An array of coordinates in <em>pixels</em> that indicates the center in the world map for the given zoom level.
 	 */
-	private Point2D[] mapCenterInPixelsAtZoom;// = new Point2D.Double[18];
+	private Point2D[] mapCenterInPixelsAtZoom;// = new Point2D[18];
 
 	/**
 	 * An array of doubles that contain the number of pixels per degree of longitude at a give zoom level.
@@ -133,7 +133,7 @@ public class TileFactoryInfo
 
 		longitudeDegreeWidthInPixels = new double[totalMapZoom + 1];
 		longitudeRadianWidthInPixels = new double[totalMapZoom + 1];
-		mapCenterInPixelsAtZoom = new Point2D.Double[totalMapZoom + 1];
+		mapCenterInPixelsAtZoom = new Point2D[totalMapZoom + 1];
 		mapWidthInTilesAtZoom = new int[totalMapZoom + 1];
 
 		// for each zoom level
@@ -144,7 +144,7 @@ public class TileFactoryInfo
 			// how wide is each radian of longitude in pixels
 			longitudeRadianWidthInPixels[z] = tilesize / (2.0 * FastMath.PI);
 			int t2 = tilesize / 2;
-			mapCenterInPixelsAtZoom[z] = new Point2D.Double(t2, t2);
+			mapCenterInPixelsAtZoom[z] = new Point2D(t2, t2);
 			mapWidthInTilesAtZoom[z] = tilesize / this.getTileSize(0);
 			tilesize *= 2;
 		}

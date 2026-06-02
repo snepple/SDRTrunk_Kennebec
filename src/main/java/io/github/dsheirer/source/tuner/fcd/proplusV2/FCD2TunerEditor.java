@@ -24,20 +24,21 @@ import io.github.dsheirer.source.tuner.fcd.FCDTuner;
 import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.ui.TunerEditor;
-import net.miginfocom.swing.MigLayout;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import io.github.dsheirer.gui.control.ToggleSwitch;
+import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
 import java.util.Optional;
-import javax.swing.JSeparator;
-import javax.swing.SpinnerNumberModel;
+import javafx.scene.control.Separator;
+
 
 /**
  * Funcube Dongle Pro Plus tuner editor
@@ -46,8 +47,8 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
 {
     private final static Logger mLog = LoggerFactory.getLogger(FCD2TunerEditor.class);
     private static final long serialVersionUID = 1L;
-    private JCheckBox mLnaGainCheckBox;
-    private JCheckBox mMixerGainCheckBox;
+    private CheckBox mLnaGainCheckBox;
+    private CheckBox mMixerGainCheckBox;
 
     /**
      * Constructs an instance
@@ -106,8 +107,8 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
         getTunerStatusLabel().setText(status);
         getButtonPanel().updateControls();
         getFrequencyPanel().updateControls();
-        getLnaGainCheckBox().setEnabled(hasTuner());
-        getMixerGainCheckBox().setEnabled(hasTuner());
+        getLnaGainCheckBox().setDisable(!(hasTuner()));
+        getMixerGainCheckBox().setDisable(!(hasTuner()));
 
         if(hasTuner() && hasConfiguration())
         {
@@ -120,33 +121,32 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 3", "[right][grow,fill][fill]",
-                "[][][][][][][][][][grow]"));
+        // setLayout(new javafx.scene.layout.HBox(4));
 
-        add(new JLabel("Tuner:"));
-        add(getTunerIdLabel());
+        getChildren().add(new Label("Tuner:"));
+        getChildren().add(getTunerIdLabel());
 
-        add(new JLabel("Status:"));
-        add(getTunerStatusLabel(), "wrap");
+        getChildren().add(new Label("Status:"));
+        getChildren().add(getTunerStatusLabel());
 
-        add(getButtonPanel(), "span,align left");
+        getChildren().add(getButtonPanel());
 
-        add(new JSeparator(), "span,growx,push");
-        add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel(), "wrap");
+        getChildren().add(new Separator());
+        getChildren().add(new Label("Frequency (MHz):"));
+        getChildren().add(getFrequencyPanel());
 
-        add(new JSeparator(), "span,growx,push");
-        add(getLnaGainCheckBox());
-        add(getMixerGainCheckBox());
+        getChildren().add(new Separator());
+        getChildren().add(getLnaGainCheckBox());
+        getChildren().add(getMixerGainCheckBox());
     }
 
-public JCheckBox getLnaGainCheckBox()
+public CheckBox getLnaGainCheckBox()
     {
         if(mLnaGainCheckBox == null)
         {
-            mLnaGainCheckBox = new JCheckBox("LNA Gain");
-            mLnaGainCheckBox.setEnabled(false);
-            mLnaGainCheckBox.addActionListener(event ->
+            mLnaGainCheckBox = new CheckBox("LNA Gain");
+            mLnaGainCheckBox.setDisable(!(false));
+            mLnaGainCheckBox.setOnAction(event ->
             {
                 if(!isLoading())
                 {
@@ -166,13 +166,13 @@ public JCheckBox getLnaGainCheckBox()
         return mLnaGainCheckBox;
     }
 
-    public JCheckBox getMixerGainCheckBox()
+    public CheckBox getMixerGainCheckBox()
     {
         if(mMixerGainCheckBox == null)
         {
-            mMixerGainCheckBox = new JCheckBox("Mixer Gain");
-            mMixerGainCheckBox.setEnabled(false);
-            mMixerGainCheckBox.addActionListener(event ->
+            mMixerGainCheckBox = new CheckBox("Mixer Gain");
+            mMixerGainCheckBox.setDisable(!(false));
+            mMixerGainCheckBox.setOnAction(event ->
             {
                 if(!isLoading())
                 {
@@ -238,7 +238,7 @@ public JCheckBox getLnaGainCheckBox()
             getConfiguration().setFrequency(getFrequencyControl().getFrequency());
             getConfiguration().setMinimumFrequency(getMinimumFrequencyTextField().getFrequency());
             getConfiguration().setMaximumFrequency(getMaximumFrequencyTextField().getFrequency());
-            double value = ((SpinnerNumberModel) getFrequencyCorrectionSpinner().getModel()).getNumber().doubleValue();
+            double value = (Double) getFrequencyCorrectionSpinner().getValue();
             getConfiguration().setFrequencyCorrection(value);
             getConfiguration().setAutoPPMCorrectionEnabled(getAutoPPMCheckBox().isSelected());
             getConfiguration().setGainLNA(getLnaGainCheckBox().isSelected());

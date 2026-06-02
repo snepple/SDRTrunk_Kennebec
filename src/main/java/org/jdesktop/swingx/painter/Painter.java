@@ -19,7 +19,7 @@
 
 package org.jdesktop.swingx.painter;
 
-import java.awt.Graphics2D;
+import javafx.scene.canvas.GraphicsContext;
 
 /**
  * <p>A painting delegate. The Painter interface defines exactly one method,
@@ -36,12 +36,12 @@ import java.awt.Graphics2D;
  *
  * <p>A <code>Painter</code> may be created with a type parameter. This type will be
  * expected in the <code>paint</code> method. For example, you may wish to write a
- * <code>Painter</code> that only works with subclasses of {@link java.awt.Component}.
+ * <code>Painter</code> that only works with subclasses of {@link javafx.scene.Node}.
  * In that case, when the <code>Painter</code> is declared, you may declare that
  * it requires a <code>Component</code>, allowing the paint method to be type safe. Ex:
  * <pre><code>
  *     Painter&lt;Component&gt; p = new Painter&lt;Component&gt;() {
- *         public void paint(Graphics2D g, Component c, int width, int height) {
+ *         public void paint(GraphicsContext g, Component c, int width, int height) {
  *             g.setColor(c.getBackground());
  *             //and so forth
  *         }
@@ -93,10 +93,10 @@ public interface Painter<T> {
      * also be black on the left, white on the right, and a smooth gradient painted
      * between.</p>
      *
-     * @param g The Graphics2D to render to. This must not be null.
+     * @param g The GraphicsContext to render to. This must not be null.
      * @param object an optional configuration parameter. This may be null.
      * @param width width of the area to paint.
      * @param height height of the area to paint.
      */
-    public void paint(Graphics2D g, T object, int width, int height);
+    public void paint(GraphicsContext g, T object, int width, int height);
 }

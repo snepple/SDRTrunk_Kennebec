@@ -1,3 +1,4 @@
+
 /*
  *
  *  * ******************************************************************************
@@ -21,6 +22,7 @@
  */
 
 package io.github.dsheirer.gui.playlist.eventlog;
+import javafx.scene.layout.VBox;
 
 import io.github.dsheirer.gui.playlist.Editor;
 import io.github.dsheirer.module.log.EventLogType;

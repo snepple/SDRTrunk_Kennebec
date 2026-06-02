@@ -155,6 +155,77 @@ public class TestTunerController extends TunerController
     }
 
     /**
+     * Sets a synthetic waveform to be played back in a loop.
+     * @param waveform complex baseband float array (interleaved I/Q)
+     */
+    public void setSyntheticWaveform(float[] waveform)
+    {
+        mSampleGenerator.setSyntheticWaveform(waveform);
+    }
+
+    /**
+     * Synthesize a Two-Tone FM modulated signal
+     */
+    public void setTwoToneWaveform(float toneA, float durA, float toneB, float durB)
+    {
+        int sampleRate = SAMPLE_RATE;
+        int samplesA = (int) (sampleRate * durA);
+        int samplesB = (int) (sampleRate * durB);
+        float[] iq = new float[(samplesA + samplesB) * 2];
+        float deviation = 3000.0f;
+        float kf = deviation / sampleRate;
+        float phase = 0;
+        int idx = 0;
+        for (int i = 0; i < samplesA; i++) {
+            float t = (float) i / sampleRate;
+            float m = (float) Math.cos(2 * Math.PI * toneA * t);
+            phase += 2 * Math.PI * kf * m;
+            iq[idx++] = (float) Math.cos(phase);
+            iq[idx++] = (float) Math.sin(phase);
+        }
+        for (int i = 0; i < samplesB; i++) {
+            float t = (float) i / sampleRate;
+            float m = (float) Math.cos(2 * Math.PI * toneB * t);
+            phase += 2 * Math.PI * kf * m;
+            iq[idx++] = (float) Math.cos(phase);
+            iq[idx++] = (float) Math.sin(phase);
+        }
+        setSyntheticWaveform(iq);
+    }
+
+    /**
+     * Synthesize an NBFM signal (simple tone)
+     */
+    public void setNbfmWaveform(float toneFreq, float duration)
+    {
+        setTwoToneWaveform(toneFreq, duration, toneFreq, 0);
+    }
+
+    /**
+     * Synthesize a P25 Phase 1 C4FM signal (synthetic test pattern)
+     */
+    public void setP25Waveform(float duration)
+    {
+        int sampleRate = SAMPLE_RATE;
+        int numSamples = (int) (sampleRate * duration);
+        float[] iq = new float[numSamples * 2];
+        float phase = 0;
+        int idx = 0;
+        // Symbol rate is 4800 baud. We will just cycle through -1800, -600, +600, +1800 deviations
+        float[] deviations = {-1800f, -600f, 600f, 1800f};
+        int samplesPerSymbol = sampleRate / 4800;
+        
+        for (int i = 0; i < numSamples; i++) {
+            int symIdx = (i / samplesPerSymbol) % 4;
+            float freqDev = deviations[symIdx];
+            phase += 2 * Math.PI * freqDev / sampleRate;
+            iq[idx++] = (float) Math.cos(phase);
+            iq[idx++] = (float) Math.sin(phase);
+        }
+        setSyntheticWaveform(iq);
+    }
+
+    /**
      * Current sample rate for this tuner controller
      */
     @Override

@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2023 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.module.decode.dmr.message.type;
+import javafx.scene.control.Label;
 
 /**
  * Known DMR gateways and system identities defined in ETSI TS 102 361-4 Table A.4 Tier III Gateways/Identifiers

@@ -16,10 +16,16 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package io.github.dsheirer.map;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import org.jdesktop.swingx.painter.Painter;
 
-import java.awt.*;
+
 
 /**
  * Paints a selection rectangle
@@ -27,8 +33,8 @@ import java.awt.*;
  */
 public class SelectionPainter implements Painter<Object>
 {
-	private Color fillColor = new Color(128, 192, 255, 128);
-	private Color frameColor = new Color(0, 0, 255, 128);
+	private javafx.scene.paint.Color fillColor = javafx.scene.paint.Color.rgb(128, 192, 255, 128 / 255.0);
+	private javafx.scene.paint.Color frameColor = javafx.scene.paint.Color.rgb(0, 0, 255, 128 / 255.0);
 
 	private SelectionAdapter adapter;
 	
@@ -40,17 +46,16 @@ public class SelectionPainter implements Painter<Object>
 		this.adapter = adapter;
 	}
 
-	@Override
-	public void paint(Graphics2D g, Object t, int width, int height)
-	{
-		Rectangle rc = adapter.getRectangle();
-		
-		if (rc != null)
-		{
-			g.setColor(frameColor);
-			g.draw(rc);
-			g.setColor(fillColor);
-			g.fill(rc);
-		}
-	}
+	// // @Override
+	public void paint(GraphicsContext g, Object t, int width, int height) {
+        javafx.geometry.Rectangle2D rc = adapter.getRectangle();
+        if (rc != null) {
+            g.setStroke(frameColor);
+            g.strokeRect(rc.getMinX(), rc.getMinY(), rc.getWidth(), rc.getHeight());
+            g.setFill(fillColor);
+            g.fillRect(rc.getMinX(), rc.getMinY(), rc.getWidth(), rc.getHeight());
+        }
+    }
+
+
 }

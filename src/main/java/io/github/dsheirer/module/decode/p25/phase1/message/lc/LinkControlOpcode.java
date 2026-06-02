@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2025 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.module.decode.p25.phase1.message.lc;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.module.decode.p25.reference.Vendor;
 import java.util.EnumSet;

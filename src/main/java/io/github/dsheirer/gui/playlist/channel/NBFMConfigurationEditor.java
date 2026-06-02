@@ -1,3 +1,6 @@
+
+
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2025 Dennis Sheirer
@@ -18,6 +21,9 @@
  */
 
 package io.github.dsheirer.gui.playlist.channel;
+import javafx.scene.layout.Region;
+import javafx.application.Platform;
+import javafx.scene.control.Button;
 import io.github.dsheirer.record.AudioRecordingManager;
 import java.nio.file.Path;
 import io.github.dsheirer.controller.channel.Channel;
@@ -203,7 +209,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             gridPane.setHgap(10);
             gridPane.setVgap(10);
 
-            Label bandwidthLabel = new Label("Channel Bandwidth", createHelpIcon("Width of the radio frequency spectrum to be decoded."));
+            Label bandwidthLabel = new Label("Channel Bandwidth", createHelpIcon("NBFM (Narrow-Band FM) channel width determines how much radio spectrum is decoded.\n\u2022 12.5 kHz = Standard narrow-band (most modern radios)\n\u2022 25 kHz = Wide-band (older or commercial radios)\nIf you hear distorted or chopped audio, try the other setting."));
             GridPane.setHalignment(bandwidthLabel, HPos.RIGHT);
             GridPane.setConstraints(bandwidthLabel, 0, 0);
             gridPane.getChildren().add(bandwidthLabel);
@@ -211,7 +217,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             GridPane.setConstraints(getBandwidthButton(), 1, 0);
             gridPane.getChildren().add(getBandwidthButton());
 
-            Label talkgroupLabel = new Label("Talkgroup To Assign", createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."));
+            Label talkgroupLabel = new Label("Talkgroup To Assign", createHelpIcon("Talkgroup ID: A numeric address used to identify a specific group of radio users.\nFor NBFM channels without trunking, this manually assigns a talkgroup number\nso that alias rules (listen/record/stream) can be applied to this channel's audio.\nLeave blank to use the auto-detected talkgroup (if available)."));
             GridPane.setHalignment(talkgroupLabel, HPos.RIGHT);
             GridPane.setConstraints(talkgroupLabel, 0, 1);
             gridPane.getChildren().add(talkgroupLabel);
@@ -260,6 +266,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
             // Enable switch
             Label enableLabel = new Label("Enable Tone Filter");
+            enableLabel.setTooltip(new Tooltip("When enabled, this channel will only pass audio when the selected tone is detected.\nUse this to reduce false triggering on busy repeaters."));
             GridPane.setHalignment(enableLabel, HPos.RIGHT);
             GridPane.setConstraints(enableLabel, 0, 0);
             gridPane.getChildren().add(enableLabel);
@@ -279,6 +286,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
             // Tone type selector
             Label typeLabel = new Label("Type");
+            typeLabel.setTooltip(new Tooltip("CTCSS (Continuous Tone-Coded Squelch System):\n  A sub-audible tone below 300 Hz transmitted alongside voice.\n  Also called PL Tone (Private Line) or Sub-Tone.\n\nDCS (Digital-Coded Squelch):\n  A digital bit pattern used instead of a tone.\n  Also called DPL (Digital Private Line)."));
             GridPane.setHalignment(typeLabel, HPos.RIGHT);
             GridPane.setConstraints(typeLabel, 0, 1);
             gridPane.getChildren().add(typeLabel);
@@ -378,32 +386,54 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 contentBox.getChildren().addAll(aiPane, new Separator());
             }
 
-            // 1. Low-pass filter
+            // 1. Low-pass filter (primary/most-used control - always visible)
             contentBox.getChildren().add(createLowPassSection());
             contentBox.getChildren().add(new Separator());
 
-            // 2. Hiss Reduction (high-shelf cut)
-            contentBox.getChildren().add(createHissReductionSection());
-            contentBox.getChildren().add(new Separator());
+            // Progressive Disclosure: Advanced Settings
+            // Collapsed by default to reduce cognitive load for new users.
+            // The most useful control (Low-Pass) is always visible above.
+            VBox advancedContent = new VBox(8);
+            advancedContent.setVisible(false);
+            advancedContent.setManaged(false);
+
+            // 2. Hiss Reduction
+            advancedContent.getChildren().add(createHissReductionSection());
+            advancedContent.getChildren().add(new Separator());
 
             // 3. Bass Boost
-            contentBox.getChildren().add(createBassBoostSection());
-            contentBox.getChildren().add(new Separator());
+            advancedContent.getChildren().add(createBassBoostSection());
+            advancedContent.getChildren().add(new Separator());
 
             // 4. Voice Enhancement
-            contentBox.getChildren().add(createVoiceEnhanceSection());
-            contentBox.getChildren().add(new Separator());
+            advancedContent.getChildren().add(createVoiceEnhanceSection());
+            advancedContent.getChildren().add(new Separator());
 
             // 5. Squelch Tail
-            contentBox.getChildren().add(createSquelchTailSection());
-            contentBox.getChildren().add(new Separator());
+            advancedContent.getChildren().add(createSquelchTailSection());
+            advancedContent.getChildren().add(new Separator());
 
             // 6. Intelligent Squelch
-            contentBox.getChildren().add(createSquelchSection());
-            contentBox.getChildren().add(new Separator());
+            advancedContent.getChildren().add(createSquelchSection());
+            advancedContent.getChildren().add(new Separator());
 
-            // 7. Output Gain (applied last)
-            contentBox.getChildren().add(createInputGainSection());
+            // 7. Output Gain
+            advancedContent.getChildren().add(createInputGainSection());
+
+            // Toggle button
+            Button advancedToggle = new Button("\u25B6  Show Advanced Filters");
+            advancedToggle.getStyleClass().add("flat-button");
+            advancedToggle.setStyle("-fx-font-size: 12px; -fx-text-fill: #4f8ef7; -fx-cursor: hand; -fx-background-color: transparent; -fx-border-color: transparent;");
+            advancedToggle.setTooltip(new Tooltip("Expand to access Hiss Reduction, Bass Boost, Voice Enhancement, Squelch, and Output Gain controls."));
+            advancedToggle.setOnAction(ev -> {
+                boolean nowVisible = !advancedContent.isVisible();
+                advancedContent.setVisible(nowVisible);
+                advancedContent.setManaged(nowVisible);
+                advancedToggle.setText(nowVisible ? "\u25BC  Hide Advanced Filters" : "\u25B6  Show Advanced Filters");
+            });
+
+            contentBox.getChildren().addAll(advancedToggle, advancedContent);
+
 
             javafx.scene.control.ScrollPane mAudioFiltersPaneSp = new javafx.scene.control.ScrollPane(contentBox);
             mAudioFiltersPaneSp.setFitToWidth(true);
@@ -574,14 +604,14 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         mInputGainField.setOnAction(event -> {
             commitTextFieldToSlider(mInputGainField, mInputGainSlider, "x", "%.1f");
             // Re-format with dB display
-            double v = mInputGainSlider.getValue();
+            double v = (int) mInputGainSlider.getValue();
             mInputGainField.setText(String.format("%.1fx (%.1f dB)", v, 20.0 * Math.log10(v)));
         });
         mInputGainField.focusedProperty().addListener((obs2, wasFocused, isFocused) -> {
             if(!isFocused)
             {
                 commitTextFieldToSlider(mInputGainField, mInputGainSlider, "x", "%.1f");
-                double v = mInputGainSlider.getValue();
+                double v = (int) mInputGainSlider.getValue();
                 mInputGainField.setText(String.format("%.1fx (%.1f dB)", v, 20.0 * Math.log10(v)));
             }
         });
@@ -1546,7 +1576,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private void saveAudioFilterConfiguration(DecodeConfigNBFM config)
     {
         // Input Gain (store as AGC max gain for compatibility)
-        float inputGain = (float)mInputGainSlider.getValue();
+        float inputGain = (int) (float)mInputGainSlider.getValue();
         float maxGainDb = (float)(40.0 * Math.log10(inputGain));
         config.setAgcMaxGain(maxGainDb);
         config.setAgcEnabled(true);
@@ -1558,7 +1588,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         // De-emphasis
         // Voice Enhancement - store amount as AGC target level
         config.setAgcEnabled(mVoiceEnhanceEnabledSwitch.isSelected());
-        float voiceAmount = (float)mVoiceEnhanceSlider.getValue();
+        float voiceAmount = (int) (float)mVoiceEnhanceSlider.getValue();
         // Map 0-100% to -30 to -6 dB range for storage
         float targetLevel = -30.0f + (voiceAmount / 100.0f * 24.0f);
         config.setAgcTargetLevel(targetLevel);
@@ -1579,6 +1609,69 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         config.setNoiseGateHoldTime((int)mHoldTimeSlider.getValue());
     }
 
+    private void showComparisonUI(DecodeConfigNBFM config, AIAnalysisResult result) {
+        javafx.scene.control.Dialog<Boolean> dialog = new javafx.scene.control.Dialog<>();
+        dialog.setTitle("AI DSP Optimization");
+        dialog.setHeaderText(result.getExplanation());
+
+        javafx.scene.control.ButtonType acceptButtonType = new javafx.scene.control.ButtonType("Accept All", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(acceptButtonType, javafx.scene.control.ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(20);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        grid.add(new Label("Setting"), 0, 0);
+        grid.add(new Label("Current"), 1, 0);
+        grid.add(new Label("Suggested"), 2, 0);
+
+        grid.add(new Label("Low Pass Enabled"), 0, 1);
+        grid.add(new Label(String.valueOf(config.isLowPassEnabled())), 1, 1);
+        grid.add(new Label(String.valueOf(result.isLowPassEnabled())), 2, 1);
+
+        grid.add(new Label("Low Pass Cutoff"), 0, 2);
+        grid.add(new Label(String.valueOf(config.getLowPassCutoff())), 1, 2);
+        grid.add(new Label(String.valueOf(result.getLowPassCutoff())), 2, 2);
+
+        grid.add(new Label("Hiss Reduction"), 0, 3);
+        grid.add(new Label(String.valueOf(config.isHissReductionEnabled())), 1, 3);
+        grid.add(new Label(String.valueOf(result.isHissReductionEnabled())), 2, 3);
+
+        grid.add(new Label("Noise Gate Enabled"), 0, 4);
+        grid.add(new Label(String.valueOf(config.isNoiseGateEnabled())), 1, 4);
+        grid.add(new Label(String.valueOf(result.isNoiseGateEnabled())), 2, 4);
+
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == acceptButtonType) {
+                return true;
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(accepted -> {
+            if (accepted) {
+                mLowPassEnabledSwitch.setSelected(result.isLowPassEnabled());
+                mLowPassCutoffSlider.setValue(result.getLowPassCutoff());
+                mHissReductionEnabledSwitch.setSelected(result.isHissReductionEnabled());
+                mHissReductionDbSlider.setValue(result.getHissReductionDb());
+                mHissReductionCornerSlider.setValue(result.getHissReductionCorner());
+                mBassBoostEnabledSwitch.setSelected(result.isBassBoostEnabled());
+                mBassBoostSlider.setValue(result.getBassBoostDb());
+                mSquelchEnabledSwitch.setSelected(result.isNoiseGateEnabled());
+                mSquelchThresholdSlider.setValue(result.getNoiseGateThreshold());
+                mSquelchReductionSlider.setValue(result.getNoiseGateReduction() * 100.0);
+                mSquelchTailEnabledSwitch.setSelected(result.isSquelchTailRemovalEnabled());
+                mTailRemovalSpinner.getValueFactory().setValue(result.getSquelchTailRemovalMs());
+                mHeadRemovalSpinner.getValueFactory().setValue(result.getSquelchHeadRemovalMs());
+                mHoldTimeSlider.setValue(result.getNoiseGateHoldTime());
+                modifiedProperty().set(true);
+            }
+        });
+    }
+
     private void handleAIOptimizeClick() {
         mAIOptimizeButton.setDisable(true);
         mAIOptimizeStatusLabel.setText("Analyzing...");
@@ -1586,40 +1679,27 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
         new Thread(() -> {
             try {
-                Path basePath = mUserPreferences.getDirectoryPreference().getDirectoryRecording();
-                List<Path> recent = AudioRecordingManager.getRecentRecordings(getItem(), 5, basePath);
-                if (recent.size() < 5) {
+                int eventCount = io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager.getBufferedEventCount(mUserPreferences, getItem().getName());
+                if (eventCount < 5) {
                     javafx.application.Platform.runLater(() -> {
-                        mAIOptimizeStatusLabel.setText("Needs at least 5 audio recordings saved for this channel to optimize.");
+                        mAIOptimizeStatusLabel.setText("Needs at least 5 audio events saved for this channel to optimize.");
                         mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
                     });
                     return;
                 }
 
+                io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager bufferManager = new io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager(mUserPreferences, getItem().getName());
+                java.util.List<java.util.List<float[]>> recent = bufferManager.getBufferedEvents();
+
                 AIAudioOptimizer optimizer = new AIAudioOptimizer(mUserPreferences);
                 DecodeConfigNBFM config = (DecodeConfigNBFM) getItem().getDecodeConfiguration();
-                AIAnalysisResult result = optimizer.analyze(config, recent);
+                AIAnalysisResult result = optimizer.analyzeRawAudio(config, recent);
 
                 javafx.application.Platform.runLater(() -> {
-                    mLowPassEnabledSwitch.setSelected(result.isLowPassEnabled());
-                    mLowPassCutoffSlider.setValue(result.getLowPassCutoff());
-                    mHissReductionEnabledSwitch.setSelected(result.isHissReductionEnabled());
-                    mHissReductionDbSlider.setValue(result.getHissReductionDb());
-                    mHissReductionCornerSlider.setValue(result.getHissReductionCorner());
-                    mBassBoostEnabledSwitch.setSelected(result.isBassBoostEnabled());
-                    mBassBoostSlider.setValue(result.getBassBoostDb());
-                    mSquelchEnabledSwitch.setSelected(result.isNoiseGateEnabled());
-                    mSquelchThresholdSlider.setValue(result.getNoiseGateThreshold());
-                    mSquelchReductionSlider.setValue(result.getNoiseGateReduction() * 100.0);
-                    mSquelchTailEnabledSwitch.setSelected(result.isSquelchTailRemovalEnabled());
-                    mTailRemovalSpinner.getValueFactory().setValue(result.getSquelchTailRemovalMs());
-                    mHeadRemovalSpinner.getValueFactory().setValue(result.getSquelchHeadRemovalMs());
-                    mHoldTimeSlider.setValue(result.getNoiseGateHoldTime());
-
-                    mAIOptimizeStatusLabel.setText(result.getExplanation());
+                    showComparisonUI(config, result);
+                    mAIOptimizeStatusLabel.setText("Analysis complete.");
                     mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #009900;");
                     mAIOptimizeButton.setDisable(false);
-                    modifiedProperty().set(true);
                 });
             } catch (Exception e) {
                 javafx.application.Platform.runLater(() -> {
@@ -1630,7 +1710,6 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             }
         }).start();
     }
-
     @Override
     public void setItem(Channel channel) {
         mLoadingConfiguration = true;
@@ -1644,18 +1723,17 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             }
 
             mAIOptimizeButton.setDisable(true);
-            mAIOptimizeStatusLabel.setText("Checking for recordings...");
+            mAIOptimizeStatusLabel.setText("Checking for buffered events...");
 
-            Path basePath = mUserPreferences.getDirectoryPreference().getDirectoryRecording();
             new Thread(() -> {
-                List<Path> recent = AudioRecordingManager.getRecentRecordings(channel, 5, basePath);
+                int eventCount = io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager.getBufferedEventCount(mUserPreferences, channel.getName());
                 javafx.application.Platform.runLater(() -> {
                     // Prevent updates if the selected channel has changed while we were loading
                     if (getItem() != channel) return;
 
-                    if (recent.size() < 5) {
+                    if (eventCount < 5) {
                         mAIOptimizeButton.setDisable(true);
-                        mAIOptimizeStatusLabel.setText("Needs at least 5 audio recordings saved for this channel to optimize. Found: " + recent.size());
+                        mAIOptimizeStatusLabel.setText("Needs at least 5 audio events saved for this channel to optimize. Found: " + eventCount);
                         mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
                     } else {
                         mAIOptimizeButton.setDisable(false);

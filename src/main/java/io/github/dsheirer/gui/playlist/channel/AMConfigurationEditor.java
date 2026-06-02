@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2023 Dennis Sheirer
@@ -18,8 +19,9 @@
  */
 
 package io.github.dsheirer.gui.playlist.channel;
+import javafx.scene.control.Button;
 
-import io.github.dsheirer.gui.control.DbPowerMeter;
+import io.github.dsheirer.gui.control.DbPowerMeterJFX;
 import io.github.dsheirer.gui.control.HexFormatter;
 import io.github.dsheirer.gui.control.IntegerFormatter;
 import io.github.dsheirer.gui.playlist.eventlog.EventLogConfigurationEditor;
@@ -82,8 +84,8 @@ public class AMConfigurationEditor extends ChannelConfigurationEditor
     private TextField mSquelchThresholdField;
     private ToggleSwitch mSquelchAutoTrackSwitch;
     private TextFormatter<Integer> mTalkgroupTextFormatter;
-    private IntegerFormatter mSquelchTextFormatter = new IntegerFormatter((int)DbPowerMeter.DEFAULT_MINIMUM_POWER,
-            (int)DbPowerMeter.DEFAULT_MAXIMUM_POWER);
+    private IntegerFormatter mSquelchTextFormatter = new IntegerFormatter((int)io.github.dsheirer.gui.control.DbPowerMeterJFX.DEFAULT_MINIMUM_POWER,
+            (int)io.github.dsheirer.gui.control.DbPowerMeterJFX.DEFAULT_MAXIMUM_POWER);
     private EventLogConfigurationEditor mEventLogConfigurationEditor;
     private TalkgroupValueChangeListener mTalkgroupValueChangeListener = new TalkgroupValueChangeListener();
     private IntegerFormatter mDecimalFormatter = new IntegerFormatter(1, 65535);

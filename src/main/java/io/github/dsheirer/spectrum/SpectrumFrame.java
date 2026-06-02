@@ -30,7 +30,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import javax.swing.SwingUtilities;
+
 
 public class SpectrumFrame extends Stage
 {
@@ -49,8 +49,8 @@ public class SpectrumFrame extends Stage
         mSpectralDisplayPanel.showTuner(tuner);
 
         SwingNode swingNode = new SwingNode();
-        SwingUtilities.invokeLater(() -> {
-            swingNode.setContent(mSpectralDisplayPanel);
+        Platform.runLater(() -> {
+            // swingNode.setContent(mSpectralDisplayPanel);
         });
 
         VBox vbox = new VBox(swingNode);

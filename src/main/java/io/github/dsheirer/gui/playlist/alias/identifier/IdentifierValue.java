@@ -1,4 +1,6 @@
+
 package io.github.dsheirer.gui.playlist.alias.identifier;
+import javafx.scene.control.Label;
 
 public class IdentifierValue {
     private Integer value;

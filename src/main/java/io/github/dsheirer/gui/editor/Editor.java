@@ -1,3 +1,5 @@
+
+
 /*******************************************************************************
  * sdrtrunk
  * Copyright (C) 2014-2017 Dennis Sheirer
@@ -17,8 +19,10 @@
  *
  ******************************************************************************/
 package io.github.dsheirer.gui.editor;
+import javafx.scene.control.Button;
+import javafx.scene.layout.VBox;
 
-import javax.swing.*;
+
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
@@ -39,7 +43,7 @@ import java.util.Optional;
  * The top-level editor can override the saveRequest() method to perform custom save operations
  * and validation.
  */
-public abstract class Editor<T> extends JPanel
+public abstract class Editor<T> extends VBox
 {
     private static final long serialVersionUID = 1L;
 

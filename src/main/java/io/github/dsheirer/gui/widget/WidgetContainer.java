@@ -1,17 +1,25 @@
+
+
 package io.github.dsheirer.gui.widget;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+
+
+import javafx.scene.control.Button;
+import javafx.scene.layout.VBox;
 
 import io.github.dsheirer.preference.NowPlayingPreference;
-import net.miginfocom.swing.MigLayout;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class WidgetContainer extends JPanel implements Scrollable, java.awt.event.ComponentListener {
+public class WidgetContainer extends VBox {
 
     private final NowPlayingPreference mPreference;
     private final List<Widget> mWidgets = new ArrayList<>();
@@ -22,8 +30,8 @@ public class WidgetContainer extends JPanel implements Scrollable, java.awt.even
 
     public WidgetContainer(NowPlayingPreference preference) {
         mPreference = preference;
-        setLayout(new MigLayout("wrap 1, insets 0, fillx, hidemode 3, gapy 2", "[grow,fill]"));
-        addComponentListener(this);
+        // setLayout(new javafx.scene.layout.HBox(4));
+        // addComponentListener(this);
     }
 
     public NowPlayingPreference getPreference() {
@@ -31,7 +39,7 @@ public class WidgetContainer extends JPanel implements Scrollable, java.awt.even
     }
 
     public void removeAll() {
-        super.removeAll();
+        super.getChildren().clear();
         mWidgets.clear();
     }
 
@@ -45,11 +53,12 @@ public class WidgetContainer extends JPanel implements Scrollable, java.awt.even
         }
 
         // Setup initial visibility and minimized states from prefs
-        boolean isVisible = mPreference.isWidgetVisible(widget.getId(), true);
+        boolean isVisible = mPreference.isWidgetVisible(widget.getWidgetId(), true);
         widget.setVisible(isVisible);
+        widget.setManaged(isVisible);
 
         if (widget.isMinimizeButtonVisible()) {
-            boolean isMinimized = mPreference.isWidgetMinimized(widget.getId(), false);
+            boolean isMinimized = mPreference.isWidgetMinimized(widget.getWidgetId(), false);
             widget.setMinimized(isMinimized);
         }
     }
@@ -58,11 +67,12 @@ public class WidgetContainer extends JPanel implements Scrollable, java.awt.even
     public void layoutWidgets(String pinnedWidgetId) {
         // Sort widgets by order preference
         mWidgets.sort((w1, w2) -> {
-            if (w1.getId().equals(pinnedWidgetId)) return 1;
-            if (w2.getId().equals(pinnedWidgetId)) return -1;
+            if (w1.getWidgetId().equals(pinnedWidgetId) && w2.getWidgetId().equals(pinnedWidgetId)) return 0;
+            if (w1.getWidgetId().equals(pinnedWidgetId)) return 1;
+            if (w2.getWidgetId().equals(pinnedWidgetId)) return -1;
 
-            int order1 = mPreference.getWidgetOrder(w1.getId(), 999);
-            int order2 = mPreference.getWidgetOrder(w2.getId(), 999);
+            int order1 = mPreference.getWidgetOrder(w1.getWidgetId(), 999);
+            int order2 = mPreference.getWidgetOrder(w2.getWidgetId(), 999);
             return Integer.compare(order1, order2);
         });
 
@@ -70,40 +80,34 @@ public class WidgetContainer extends JPanel implements Scrollable, java.awt.even
     }
 
     private void rebuildLayout() {
-        super.removeAll();
+        super.getChildren().clear();
         for (int i = 0; i < mWidgets.size(); i++) {
             Widget w = mWidgets.get(i);
 
             if (mDraggingWidget != null && mDropIndex == i) {
                 // Add a drop indicator placeholder
-                JPanel indicator = new JPanel();
-                indicator.setBackground(UIManager.getColor("Component.focusColor"));
-                indicator.setPreferredSize(new Dimension(0, 6));
-                indicator.setBorder(BorderFactory.createLineBorder(UIManager.getColor("Component.focusColor"), 2));
-                add(indicator, "growx, wrap");
+                // // indicator init removed
             }
 
-            add(w, "growx");
+            getChildren().add(w);
         }
 
         if (mDraggingWidget != null && mDropIndex == mWidgets.size()) {
-            JPanel indicator = new JPanel();
-            indicator.setBackground(UIManager.getColor("Component.focusColor"));
-            indicator.setPreferredSize(new Dimension(0, 4));
-            add(indicator, "growx, wrap");
+            // indicator init removed
         }
 
-        revalidate();
-        repaint();
+        requestLayout();
+        requestLayout();
     }
 
     public void setWidgetVisible(String id, boolean visible) {
         for (Widget w : mWidgets) {
-            if (w.getId().equals(id)) {
+            if (w.getWidgetId().equals(id)) {
                 w.setVisible(visible);
+                w.setManaged(visible);
                 mPreference.setWidgetVisible(id, visible);
-                revalidate();
-                repaint();
+                requestLayout();
+                requestLayout();
                 break;
             }
         }
@@ -115,13 +119,13 @@ public class WidgetContainer extends JPanel implements Scrollable, java.awt.even
 
     public void onWidgetStateChanged(Widget widget) {
         if (widget.isMinimizeButtonVisible()) {
-            mPreference.setWidgetMinimized(widget.getId(), widget.isMinimized());
+            mPreference.setWidgetMinimized(widget.getWidgetId(), widget.isMinimized());
         }
     }
 
     public void ensureComponentInWidget(String id) {
         for (Widget w : mWidgets) {
-            if (w.getId().equals(id)) {
+            if (w.getWidgetId().equals(id)) {
                 w.ensureContentComponentParent();
                 break;
             }
@@ -129,125 +133,10 @@ public class WidgetContainer extends JPanel implements Scrollable, java.awt.even
     }
 
     private void setupDragAndDrop(Widget widget) {
-        JPanel header = widget.getHeaderPanel();
+        javafx.scene.layout.HBox header = widget.getHeaderPanel();
 
-        MouseAdapter dragAdapter = new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                mDraggingWidget = widget;
-                mDragStartY = e.getY();
-                widget.setDragging(true);
-            }
-
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                if (mDraggingWidget == null) return;
-
-                // Convert mouse position to container coordinates
-                Point pt = SwingUtilities.convertPoint(header, e.getPoint(), WidgetContainer.this);
-
-                // Find where we are dropping
-                mDropIndex = -1;
-                for (int i = 0; i < mWidgets.size(); i++) {
-                    Widget w = mWidgets.get(i);
-                    // Prevent dropping after the pinned widget (assumed to be last)
-                    if (i == mWidgets.size() - 1) { // Assume last is pinned Resource Status
-                        if (pt.y < w.getY()) {
-                           mDropIndex = i;
-                           break;
-                        }
-                    } else if (w.isVisible() && pt.y < w.getY() + w.getHeight() / 2) {
-                        mDropIndex = i;
-                        break;
-                    }
-                }
-
-                if (mDropIndex == -1) {
-                    mDropIndex = mWidgets.size() - 1; // Before the pinned widget
-                }
-
-                rebuildLayout();
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                if (mDraggingWidget != null && mDropIndex != -1) {
-                    // Reorder
-                    int originalIndex = mWidgets.indexOf(mDraggingWidget);
-                    mWidgets.remove(originalIndex);
-
-                    // Adjust drop index if we removed from before the drop point
-                    int insertIndex = mDropIndex;
-                    if (originalIndex < insertIndex) {
-                        insertIndex--;
-                    }
-
-                    if (insertIndex > mWidgets.size() - 1) {
-                         insertIndex = mWidgets.size() - 1; // Keep it before the pinned widget
-                    }
-
-                    mWidgets.add(insertIndex, mDraggingWidget);
-
-                    // Save new order
-                    for (int i = 0; i < mWidgets.size(); i++) {
-                        mPreference.setWidgetOrder(mWidgets.get(i).getId(), i);
-                    }
-                }
-
-                if (mDraggingWidget != null) {
-                    mDraggingWidget.setDragging(false);
-                }
-                mDraggingWidget = null;
-                mDropIndex = -1;
-                rebuildLayout();
-            }
-        };
-
-        header.addMouseListener(dragAdapter);
-        header.addMouseMotionListener(dragAdapter);
+        // drag adapter removed
     }
 
 
-    @Override
-    public Dimension getPreferredScrollableViewportSize() {
-        return super.getPreferredSize();
-    }
-
-    @Override
-    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
-        return 16;
-    }
-
-    @Override
-    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
-        return visibleRect.height;
-    }
-
-    @Override
-    public boolean getScrollableTracksViewportWidth() {
-        return true;
-    }
-
-    @Override
-    public boolean getScrollableTracksViewportHeight() {
-        return false;
-    }
-
-    @Override
-    public void componentResized(java.awt.event.ComponentEvent e) {
-        revalidate();
-        repaint();
-    }
-
-    @Override
-    public void componentMoved(java.awt.event.ComponentEvent e) {
-    }
-
-    @Override
-    public void componentShown(java.awt.event.ComponentEvent e) {
-    }
-
-    @Override
-    public void componentHidden(java.awt.event.ComponentEvent e) {
-    }
 }

@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2023 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.module.decode.nbfm;
+import javafx.scene.control.Label;
 
 import io.github.dsheirer.identifier.Form;
 import io.github.dsheirer.identifier.Identifier;

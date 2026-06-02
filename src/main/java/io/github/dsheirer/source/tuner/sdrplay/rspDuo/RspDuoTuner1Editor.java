@@ -31,17 +31,22 @@ import io.github.dsheirer.source.tuner.sdrplay.api.SDRPlayException;
 import io.github.dsheirer.source.tuner.sdrplay.api.parameter.control.AgcMode;
 import io.github.dsheirer.source.tuner.sdrplay.api.parameter.tuner.RspDuoAmPort;
 import java.util.EnumSet;
-import net.miginfocom.swing.MigLayout;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
-import javax.swing.SpinnerNumberModel;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import io.github.dsheirer.gui.control.ToggleSwitch;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.control.Separator;
+
 
 /**
  * RSPduo Tuner 1 Editor
@@ -50,13 +55,13 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
 {
     private static final Logger mLog = LoggerFactory.getLogger(RspDuoTuner1Editor.class);
 
-    private JComboBox<RspSampleRate> mSampleRateCombo;
-    private JCheckBox mRfDabNotchCheckBox;
-    private JCheckBox mRfNotchCheckBox;
-    private JCheckBox mAmNotchCheckBox;
-    private JCheckBox mExternalReferenceOutputCheckBox;
-    private JComboBox<RspDuoAmPort> mAmPortCombo;
-    private JButton mTunerPreferencesButton;
+    private ComboBox<RspSampleRate> mSampleRateCombo;
+    private CheckBox mRfDabNotchCheckBox;
+    private CheckBox mRfNotchCheckBox;
+    private CheckBox mAmNotchCheckBox;
+    private CheckBox mExternalReferenceOutputCheckBox;
+    private ComboBox<RspDuoAmPort> mAmPortCombo;
+    private Button mTunerPreferencesButton;
 
     /**
      * Constructs an instance
@@ -73,46 +78,44 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 3", "[right][grow,fill][fill]",
-                "[][][][][][][][][][][][][][][][grow]"));
+        // setLayout(new javafx.scene.layout.HBox(4));
 
-        add(new JLabel("Tuner:"));
-        JPanel labelAndButtonPanel = new JPanel();
-        labelAndButtonPanel.setLayout(new MigLayout("insets 0"));
-        labelAndButtonPanel.add(getTunerIdLabel());
-        labelAndButtonPanel.add(getTunerPreferencesButton());
-        add(labelAndButtonPanel, "wrap");
-        add(new JLabel("Status:"));
-        add(getTunerStatusLabel(), "wrap");
-        add(getButtonPanel(), "span,align left");
+        getChildren().add(new Label("Tuner:"));
+        VBox labelAndButtonPanel = new VBox();
+        labelAndButtonPanel.getChildren().add(getTunerIdLabel());
+        labelAndButtonPanel.getChildren().add(getTunerPreferencesButton());
+        getChildren().add(labelAndButtonPanel);
+        getChildren().add(new Label("Status:"));
+        getChildren().add(getTunerStatusLabel());
+        getChildren().add(getButtonPanel());
 
-        add(new JSeparator(), "span,growx,push");
+        getChildren().add(new Separator());
 
-        add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel(), "wrap");
+        getChildren().add(new Label("Frequency (MHz):"));
+        getChildren().add(getFrequencyPanel());
 
-        add(new JLabel("Sample Rate:"));
-        add(getSampleRateCombo(), "wrap");
+        getChildren().add(new Label("Sample Rate:"));
+        getChildren().add(getSampleRateCombo());
 
-        add(new JLabel("Gain:"));
-        add(getGainPanel(), "wrap");
-        add(new JLabel("LNA:"));
-        add(getLNASlider(), "wrap");
-        add(new JLabel("IF:"));
-        add(getIfGainSlider(), "wrap");
+        getChildren().add(new Label("Gain:"));
+        getChildren().add(getGainPanel());
+        getChildren().add(new Label("LNA:"));
+        getChildren().add(getLNASlider());
+        getChildren().add(new Label("IF:"));
+        getChildren().add(getIfGainSlider());
 
-        add(new JSeparator(), "span,growx,push");
+        getChildren().add(new Separator());
 
-        add(new JLabel());
-        add(getExternalReferenceOutputCheckBox(), "wrap");
-        add(new JLabel());
-        add(getAmNotchCheckBox(), "wrap");
-        add(new JLabel());
-        add(getRfDabNotchCheckBox(), "wrap");
-        add(new JLabel());
-        add(getRfNotchCheckBox(), "wrap");
-        add(new JLabel("AM Port:"));
-        add(getAmPortCombo(), "wrap");
+        getChildren().add(new Label());
+        getChildren().add(getExternalReferenceOutputCheckBox());
+        getChildren().add(new Label());
+        getChildren().add(getAmNotchCheckBox());
+        getChildren().add(new Label());
+        getChildren().add(getRfDabNotchCheckBox());
+        getChildren().add(new Label());
+        getChildren().add(getRfNotchCheckBox());
+        getChildren().add(new Label("AM Port:"));
+        getChildren().add(getAmPortCombo());
     }
 
     /**
@@ -132,7 +135,7 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
     public void setTunerLockState(boolean locked)
     {
         getFrequencyPanel().updateControls();
-        getSampleRateCombo().setEnabled(!locked);
+        getSampleRateCombo().setDisable(!(!locked));
         updateSampleRateToolTip();
     }
 
@@ -157,11 +160,11 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
         {
             setSampleRates(getTunerController().getControlRsp().getSupportedSampleRates());
         }
-        getSampleRateCombo().setEnabled(hasTuner() && !getTuner().getTunerController().isLockedSampleRate());
-        getSampleRateCombo().setSelectedItem(hasTuner() ? getTunerController().getControlRsp().getSampleRateEnumeration() : null);
+        getSampleRateCombo().setDisable(!(hasTuner()) && !getTuner().getTunerController().isLockedSampleRate());
+        getSampleRateCombo().setValue(hasTuner() ? getTunerController().getControlRsp().getSampleRateEnumeration() : null);
         updateSampleRateToolTip();
 
-        getAgcButton().setEnabled(hasTuner());
+        getAgcButton().setDisable(!(hasTuner()));
         if(hasTuner())
         {
             AgcMode current = getTunerController().getControlRsp().getAgcMode();
@@ -175,21 +178,21 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
             updateGainLabel();
         }
 
-        getLNASlider().setEnabled(hasTuner());
-        getIfGainSlider().setEnabled(hasTuner() && getTunerController().getControlRsp().getAgcMode() != AgcMode.ENABLE);
-        getGainValueLabel().setEnabled(hasTuner());
+        getLNASlider().setDisable(!(hasTuner()));
+        getIfGainSlider().setDisable(!(hasTuner()) && getTunerController().getControlRsp().getAgcMode() != AgcMode.ENABLE);
+        getGainValueLabel().setDisable(!(hasTuner()));
 
-        getAmPortCombo().setEnabled(hasTuner() && !getTuner().getTunerController().isLockedSampleRate());
+        getAmPortCombo().setDisable(!(hasTuner()) && !getTuner().getTunerController().isLockedSampleRate());
         try
         {
-            getAmPortCombo().setSelectedItem(hasTuner() ? getTunerController().getControlRsp().getAmPort() : null);
+            getAmPortCombo().setValue(hasTuner() ? getTunerController().getControlRsp().getAmPort() : null);
         }
         catch(SDRPlayException se)
         {
             mLog.error("Error setting RSPduo tuner 1 AM Port in editor");
         }
 
-        getRfDabNotchCheckBox().setEnabled(hasTuner());
+        getRfDabNotchCheckBox().setDisable(!(hasTuner()));
         try
         {
             getRfDabNotchCheckBox().setSelected(hasTuner() && getTunerController().getControlRsp().isRfDabNotch());
@@ -199,7 +202,7 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
             mLog.error("Error setting RSPduo tuner 1 RF DAB Notch enabled state in editor");
         }
 
-        getRfNotchCheckBox().setEnabled(hasTuner());
+        getRfNotchCheckBox().setDisable(!(hasTuner()));
         try
         {
             getRfNotchCheckBox().setSelected(hasTuner() && getTunerController().getControlRsp().isRfNotch());
@@ -209,7 +212,7 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
             mLog.error("Error setting RSPduo tuner 1 RF Notch enabled state in editor");
         }
 
-        getAmNotchCheckBox().setEnabled(hasTuner());
+        getAmNotchCheckBox().setDisable(!(hasTuner()));
         try
         {
             getAmNotchCheckBox().setSelected(hasTuner() && getTunerController().getControlRsp().isAmNotch());
@@ -219,7 +222,7 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
             mLog.error("Error setting RSPduo tuner 1 AM Notch enabled state in editor");
         }
 
-        getExternalReferenceOutputCheckBox().setEnabled(hasTuner());
+        getExternalReferenceOutputCheckBox().setDisable(!(hasTuner()));
         try
         {
             getExternalReferenceOutputCheckBox()
@@ -241,12 +244,12 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
             getConfiguration().setFrequency(getFrequencyControl().getFrequency());
             getConfiguration().setMinimumFrequency(getMinimumFrequencyTextField().getFrequency());
             getConfiguration().setMaximumFrequency(getMaximumFrequencyTextField().getFrequency());
-            double value = ((SpinnerNumberModel) getFrequencyCorrectionSpinner().getModel()).getNumber().doubleValue();
+            double value = (Double) getFrequencyCorrectionSpinner().getValue();
             getConfiguration().setFrequencyCorrection(value);
             getConfiguration().setAutoPPMCorrectionEnabled(getAutoPPMCheckBox().isSelected());
-            getConfiguration().setSampleRate((RspSampleRate)getSampleRateCombo().getSelectedItem());
+            getConfiguration().setSampleRate((RspSampleRate)getSampleRateCombo().getValue());
             getConfiguration().setAmNotch(getAmNotchCheckBox().isSelected());
-            getConfiguration().setAmPort(getAmPortCombo().getSelectedItem() != null ? (RspDuoAmPort)getAmPortCombo().getSelectedItem() : null);
+            getConfiguration().setAmPort(getAmPortCombo().getValue() != null ? (RspDuoAmPort)getAmPortCombo().getValue() : null);
             getConfiguration().setExternalReferenceOutput(getExternalReferenceOutputCheckBox().isSelected());
             getConfiguration().setRfDabNotch(getRfDabNotchCheckBox().isSelected());
             getConfiguration().setRfNotch(getRfNotchCheckBox().isSelected());
@@ -268,7 +271,7 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
         {
             for(RspSampleRate sampleRate: sampleRates)
             {
-                getSampleRateCombo().addItem(sampleRate);
+                getSampleRateCombo().getItems().add(sampleRate);
             }
         }
     }
@@ -278,22 +281,22 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
      */
     private void clearSampleRates()
     {
-        getSampleRateCombo().removeAllItems();
+        getSampleRateCombo().getItems().clear();
     }
 
     /**
      * Sample rate selection combobox control
      */
-    private JComboBox<RspSampleRate> getSampleRateCombo()
+    private ComboBox<RspSampleRate> getSampleRateCombo()
     {
         if(mSampleRateCombo == null)
         {
-            mSampleRateCombo = new JComboBox<>();
-            mSampleRateCombo.setEnabled(false);
-            mSampleRateCombo.addActionListener(e -> {
+            mSampleRateCombo = new ComboBox<>();
+            mSampleRateCombo.setDisable(!(false));
+            mSampleRateCombo.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    RspSampleRate selected = (RspSampleRate)mSampleRateCombo.getSelectedItem();
+                    RspSampleRate selected = (RspSampleRate)mSampleRateCombo.getValue();
 
                     try
                     {
@@ -316,16 +319,16 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
     /**
      * AM port selection combobox control
      */
-    private JComboBox<RspDuoAmPort> getAmPortCombo()
+    private ComboBox<RspDuoAmPort> getAmPortCombo()
     {
         if(mAmPortCombo == null)
         {
-            mAmPortCombo = new JComboBox<>(RspDuoAmPort.values());
-            mAmPortCombo.setEnabled(false);
-            mAmPortCombo.addActionListener(e -> {
+            mAmPortCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(RspDuoAmPort.values())))));
+            mAmPortCombo.setDisable(!(false));
+            mAmPortCombo.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    RspDuoAmPort selected = (RspDuoAmPort)mAmPortCombo.getSelectedItem();
+                    RspDuoAmPort selected = (RspDuoAmPort)mAmPortCombo.getValue();
 
                     try
                     {
@@ -346,13 +349,13 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
     /**
      * Checkbox control for RF DAB notch
      */
-    private JCheckBox getRfDabNotchCheckBox()
+    private CheckBox getRfDabNotchCheckBox()
     {
         if(mRfDabNotchCheckBox == null)
         {
-            mRfDabNotchCheckBox = new JCheckBox("DAB Broadcast Band Filter (157-235 MHz)");
-            mRfDabNotchCheckBox.setEnabled(false);
-            mRfDabNotchCheckBox.addActionListener(e -> {
+            mRfDabNotchCheckBox = new CheckBox("DAB Broadcast Band Filter (157-235 MHz)");
+            mRfDabNotchCheckBox.setDisable(!(false));
+            mRfDabNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
                     try
@@ -374,13 +377,13 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
     /**
      * Checkbox control for RF notch
      */
-    private JCheckBox getRfNotchCheckBox()
+    private CheckBox getRfNotchCheckBox()
     {
         if(mRfNotchCheckBox == null)
         {
-            mRfNotchCheckBox = new JCheckBox("FM Broadcast Band Filter (78-114 MHz)");
-            mRfNotchCheckBox.setEnabled(false);
-            mRfNotchCheckBox.addActionListener(e -> {
+            mRfNotchCheckBox = new CheckBox("FM Broadcast Band Filter (78-114 MHz)");
+            mRfNotchCheckBox.setDisable(!(false));
+            mRfNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
                     try
@@ -402,13 +405,13 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
     /**
      * Checkbox control for AM notch
      */
-    private JCheckBox getAmNotchCheckBox()
+    private CheckBox getAmNotchCheckBox()
     {
         if(mAmNotchCheckBox == null)
         {
-            mAmNotchCheckBox = new JCheckBox("AM Broadcast Band Filter (415-1640 kHz)");
-            mAmNotchCheckBox.setEnabled(false);
-            mAmNotchCheckBox.addActionListener(e -> {
+            mAmNotchCheckBox = new CheckBox("AM Broadcast Band Filter (415-1640 kHz)");
+            mAmNotchCheckBox.setDisable(!(false));
+            mAmNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
                     try
@@ -430,13 +433,13 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
     /**
      * Checkbox control for External Reference Output
      */
-    private JCheckBox getExternalReferenceOutputCheckBox()
+    private CheckBox getExternalReferenceOutputCheckBox()
     {
         if(mExternalReferenceOutputCheckBox == null)
         {
-            mExternalReferenceOutputCheckBox = new JCheckBox("External Reference Output");
-            mExternalReferenceOutputCheckBox.setEnabled(false);
-            mExternalReferenceOutputCheckBox.addActionListener(e -> {
+            mExternalReferenceOutputCheckBox = new CheckBox("External Reference Output");
+            mExternalReferenceOutputCheckBox.setDisable(!(false));
+            mExternalReferenceOutputCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
                     try
@@ -460,12 +463,12 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
      * Button to launch the User Preferences editor to show the RSPduo tuner preference selection.
      * @return constructed button.
      */
-    private JButton getTunerPreferencesButton()
+    private Button getTunerPreferencesButton()
     {
         if(mTunerPreferencesButton == null)
         {
-            mTunerPreferencesButton = new JButton("RSPduo Preferences");
-            mTunerPreferencesButton.addActionListener(e -> MyEventBus.getGlobalEventBus()
+            mTunerPreferencesButton = new Button("RSPduo Preferences");
+            mTunerPreferencesButton.setOnAction(e -> MyEventBus.getGlobalEventBus()
                     .post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.SOURCE_TUNERS)));
         }
 
@@ -479,15 +482,15 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
     {
         if(hasTuner() && getTuner().getTunerController().isLockedSampleRate())
         {
-            getSampleRateCombo().setToolTipText("Sample Rate is locked.  Disable decoding channels to unlock.");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("Sample Rate is locked.  Disable decoding channels to unlock."));
         }
         else if(hasTuner())
         {
-            getSampleRateCombo().setToolTipText("Select a sample rate for the tuner");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("Select a sample rate for the tuner"));
         }
         else
         {
-            getSampleRateCombo().setToolTipText("No tuner available");
+            getSampleRateCombo().setTooltip(new javafx.scene.control.Tooltip("No tuner available"));
         }
     }
 }

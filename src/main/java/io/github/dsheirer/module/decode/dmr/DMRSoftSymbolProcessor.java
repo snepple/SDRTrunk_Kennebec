@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2025 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.module.decode.dmr;
+import javafx.scene.layout.Region;
 
 import io.github.dsheirer.dsp.filter.interpolator.LinearInterpolator;
 import io.github.dsheirer.dsp.symbol.Dibit;

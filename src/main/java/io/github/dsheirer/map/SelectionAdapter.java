@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  *     SDR Trunk 
  *     Copyright (C) 2014 Dennis Sheirer
@@ -16,27 +17,29 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package io.github.dsheirer.map;
+import javafx.scene.control.Button;
 
 import org.apache.commons.math3.util.FastMath;
 import org.jdesktop.swingx.JXMapViewer;
 
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.geom.Point2D;
+import java.awt.Rectangle;
+
+import javafx.event.EventHandler;
+import javafx.scene.input.MouseEvent;
+import javafx.geometry.Point2D;
 
 /**
  * Creates a selection rectangle based on mouse input
  * Also triggers repaint events in the viewer
  * @author Martin Steiger
  */
-public class SelectionAdapter extends MouseAdapter 
+public class SelectionAdapter
 {
 	private boolean dragging;
 	private JXMapViewer viewer;
 
-	private Point2D startPos = new Point2D.Double();
-	private Point2D endPos = new Point2D.Double();
+	private Point2D startPos = new Point2D(0, 0);
+	private Point2D endPos = new Point2D(0, 0);
 
 	/**
 	 * @param viewer the jxmapviewer
@@ -46,36 +49,33 @@ public class SelectionAdapter extends MouseAdapter
 		this.viewer = viewer;
 	}
 
-	@Override
 	public void mousePressed(MouseEvent e)
 	{
-		if (e.getButton() != MouseEvent.BUTTON3)
+		if (!e.isSecondaryButtonDown())
 			return;
 		
-		startPos.setLocation(e.getX(), e.getY());
-		endPos.setLocation(e.getX(), e.getY());
+		startPos = new Point2D(e.getX(), e.getY());
+		endPos = new Point2D(e.getX(), e.getY());
 		
 		dragging = true;
 	}
 
-	@Override
 	public void mouseDragged(MouseEvent e)
 	{
 		if (!dragging)
 			return;
 		
-		endPos.setLocation(e.getX(), e.getY());
+		endPos = new Point2D(e.getX(), e.getY());
 		
 		viewer.repaint();
 	}
 
-	@Override
 	public void mouseReleased(MouseEvent e)
 	{
 		if (!dragging)
 			return;
 		
-		if (e.getButton() != MouseEvent.BUTTON3)
+		if (!e.isSecondaryButtonDown())
 			return;
 		
 		viewer.repaint();
@@ -86,19 +86,20 @@ public class SelectionAdapter extends MouseAdapter
 	/**
 	 * @return the selection rectangle
 	 */
-	public Rectangle getRectangle()
+	public javafx.geometry.Rectangle2D getRectangle()
 	{
 		if (dragging)
 		{
-			int x1 = (int) FastMath.min(startPos.getX(), endPos.getX());
-			int y1 = (int) FastMath.min(startPos.getY(), endPos.getY());
-			int x2 = (int) FastMath.max(startPos.getX(), endPos.getX());
-			int y2 = (int) FastMath.max(startPos.getY(), endPos.getY());
+			double x1 = FastMath.min(startPos.getX(), endPos.getX());
+			double y1 = FastMath.min(startPos.getY(), endPos.getY());
+			double x2 = FastMath.max(startPos.getX(), endPos.getX());
+			double y2 = FastMath.max(startPos.getY(), endPos.getY());
 			
-			return new Rectangle(x1, y1, x2-x1, y2-y1);
+			return new javafx.geometry.Rectangle2D(x1, y1, x2-x1, y2-y1);
 		}
 		
 		return null;
 	}
 
 }
+

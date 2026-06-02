@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.web.WebView?>
 
 <fx:root type="BorderPane" xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
@@ -20,24 +21,41 @@
         <TabPane fx:id="mTabbedPane" tabClosingPolicy="UNAVAILABLE">
 
             <Tab text="Live Console">
-                <VBox spacing="10">
-                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-                    <HBox alignment="CENTER_LEFT" spacing="10">
-                        <Button text="Benchmark 10k Logs" onAction="#testLogs" styleClass="kennebec-primary-button"/>
-                    </HBox>
-                    <ListView fx:id="logListView" VBox.vgrow="ALWAYS" />
-                </VBox>
+                <SplitPane orientation="VERTICAL" VBox.vgrow="ALWAYS">
+                    <VBox spacing="10">
+                        <padding><Insets top="10" right="10" bottom="0" left="10"/></padding>
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Button text="Benchmark 10k Logs" onAction="#testLogs" styleClass="kennebec-primary-button"/>
+                            <TextField fx:id="mLiveSearchField" promptText="Filter logs (e.g., error type, exact frequencies, talkgroups)..." styleClass="kennebec-search-field" HBox.hgrow="ALWAYS" />
+                        </HBox>
+                        <ListView fx:id="logListView" VBox.vgrow="ALWAYS" />
+                    </VBox>
+                    <VBox spacing="0">
+                        <Label text="Detail Inspector" styleClass="hig-section-header">
+                            <padding><Insets top="5" right="10" bottom="5" left="10"/></padding>
+                        </Label>
+                        <WebView fx:id="mLiveInspectorView" VBox.vgrow="ALWAYS" />
+                    </VBox>
+                </SplitPane>
             </Tab>
 
             <Tab text="Application Logs">
-                <VBox spacing="10">
-                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-                    <HBox alignment="CENTER_LEFT" spacing="10">
-                        <Label text="Filter by Date or Name:" />
-                        <TextField fx:id="mAppSearchField" promptText="Search..." styleClass="kennebec-search-field" HBox.hgrow="ALWAYS" />
-                    </HBox>
-                    <TableView fx:id="mAppTable" VBox.vgrow="ALWAYS" />
-                </VBox>
+                <SplitPane orientation="VERTICAL" VBox.vgrow="ALWAYS">
+                    <VBox spacing="10">
+                        <padding><Insets top="10" right="10" bottom="0" left="10"/></padding>
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="Filter by Date or Name:" />
+                            <TextField fx:id="mAppSearchField" promptText="Search..." styleClass="kennebec-search-field" HBox.hgrow="ALWAYS" />
+                        </HBox>
+                        <TableView fx:id="mAppTable" VBox.vgrow="ALWAYS" />
+                    </VBox>
+                    <VBox spacing="0">
+                        <Label text="File Inspector" styleClass="hig-section-header">
+                            <padding><Insets top="5" right="10" bottom="5" left="10"/></padding>
+                        </Label>
+                        <ListView fx:id="mAppLogListView" VBox.vgrow="ALWAYS" />
+                    </VBox>
+                </SplitPane>
             </Tab>
 
             <Tab text="Channel Event Logs">

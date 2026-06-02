@@ -48,6 +48,10 @@ public class SampleBufferIteratorVector128Bits extends SampleBufferIterator<Comp
         super(samples, residualI, residualQ, averageDc, timestamp, samplesPerMillisecond);
     }
 
+    // Ring buffers for I and Q samples, 16 buffers deep (plenty for processing pipeline)
+    private final io.github.dsheirer.util.FloatArrayRingBuffer mIRingBuffer = new io.github.dsheirer.util.FloatArrayRingBuffer(16, FRAGMENT_SIZE);
+    private final io.github.dsheirer.util.FloatArrayRingBuffer mQRingBuffer = new io.github.dsheirer.util.FloatArrayRingBuffer(16, FRAGMENT_SIZE);
+
     @Override
     public ComplexSamples next()
     {
@@ -85,9 +89,9 @@ public class SampleBufferIteratorVector128Bits extends SampleBufferIterator<Comp
 
         mSamplesPointer = offset;
 
-        //The i line is a simple delay line, so we'll just copy those as a new array here.
-        float[] i = Arrays.copyOf(mIBuffer, FRAGMENT_SIZE);
-        float[] q = new float[FRAGMENT_SIZE];
+        float[] i = mIRingBuffer.next();
+        System.arraycopy(mIBuffer, 0, i, 0, FRAGMENT_SIZE);
+        float[] q = mQRingBuffer.next();
 
         FloatVector accumulator;
         FloatVector f1 = FloatVector.fromArray(VECTOR_SPECIES, COEFFICIENTS, 0);

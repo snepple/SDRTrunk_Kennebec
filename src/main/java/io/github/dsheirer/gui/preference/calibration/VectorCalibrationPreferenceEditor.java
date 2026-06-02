@@ -18,6 +18,11 @@
  */
 
 package io.github.dsheirer.gui.preference.calibration;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
@@ -178,7 +183,7 @@ public class VectorCalibrationPreferenceEditor extends HBox
     {
         if(mTextAreaLogAppender == null)
         {
-            mTextAreaLogAppender = new TextAreaLogAppender(getConsoleTextArea(), "My Console Logger");
+            mTextAreaLogAppender = new TextAreaLogAppender(getConsoleTextArea(), "");
         }
 
         return mTextAreaLogAppender;

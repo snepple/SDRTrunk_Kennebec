@@ -62,7 +62,7 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
 
     public ComplexDftProcessor()
     {
-        mFrameRate = SystemProperties.getInstance().get(FRAME_RATE_PROPERTY, 20);
+        mFrameRate = SystemProperties.getInstance().get(FRAME_RATE_PROPERTY, 12);
         setWindowType(mWindowType);
         start();
     }

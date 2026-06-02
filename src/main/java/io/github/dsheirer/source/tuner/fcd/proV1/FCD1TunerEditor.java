@@ -17,6 +17,11 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.source.tuner.fcd.proV1;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
 
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.tuner.fcd.FCDTuner;
@@ -27,23 +32,24 @@ import io.github.dsheirer.source.tuner.manager.DiscoveredTuner;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.source.tuner.ui.TunerEditor;
 import java.text.DecimalFormat;
-import net.miginfocom.swing.MigLayout;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
 import java.util.Optional;
-import javax.swing.JSeparator;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerModel;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
+import javafx.scene.control.Separator;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+
+
+
 
 /**
  * Funcube Dongle Pro tuner editor
@@ -52,9 +58,9 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(FCD1TunerEditor.class);
-    private JComboBox<LNAGain> mLnaGainCombo;
-    private JComboBox<LNAEnhance> mLnaEnhanceCombo;
-    private JComboBox<MixerGain> mMixerGainCombo;
+    private ComboBox<LNAGain> mLnaGainCombo;
+    private ComboBox<LNAEnhance> mLnaEnhanceCombo;
+    private ComboBox<MixerGain> mMixerGainCombo;
     private CorrectionSpinner mCorrectionDCI;
     private CorrectionSpinner mCorrectionDCQ;
     private CorrectionSpinner mGainCorrectionSpinner;
@@ -120,76 +126,75 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
 
         if(hasTuner() && hasConfiguration())
         {
-            getMixerGainCombo().setSelectedItem(getConfiguration().getMixerGain());
-            getLnaEnhanceCombo().setSelectedItem(getConfiguration().getLNAEnhance());
-            getLnaGainCombo().setSelectedItem(getConfiguration().getLNAGain());
-            getDcCorrectionSpinnerI().setValue(getConfiguration().getInphaseDCCorrection());
-            getDcCorrectionSpinnerQ().setValue(getConfiguration().getQuadratureDCCorrection());
-            getPhaseCorrectionSpinner().setValue(getConfiguration().getGainCorrection());
-            getGainCorrectionSpinner().setValue(getConfiguration().getPhaseCorrection());
+            getMixerGainCombo().setValue(getConfiguration().getMixerGain());
+            getLnaEnhanceCombo().setValue(getConfiguration().getLNAEnhance());
+            getLnaGainCombo().setValue(getConfiguration().getLNAGain());
+            getDcCorrectionSpinnerI().getValueFactory().setValue(getConfiguration().getInphaseDCCorrection());
+            getDcCorrectionSpinnerQ().getValueFactory().setValue(getConfiguration().getQuadratureDCCorrection());
+            getPhaseCorrectionSpinner().getValueFactory().setValue(getConfiguration().getGainCorrection());
+            getGainCorrectionSpinner().getValueFactory().setValue(getConfiguration().getPhaseCorrection());
         }
 
-        getMixerGainCombo().setEnabled(hasTuner());
-        getLnaEnhanceCombo().setEnabled(hasTuner());
-        getLnaGainCombo().setEnabled(hasTuner());
-        getDcCorrectionSpinnerI().setEnabled(hasTuner());
-        getDcCorrectionSpinnerQ().setEnabled(hasTuner());
-        getPhaseCorrectionSpinner().setEnabled(hasTuner());
-        getGainCorrectionSpinner().setEnabled(hasTuner());
+        getMixerGainCombo().setDisable(!(hasTuner()));
+        getLnaEnhanceCombo().setDisable(!(hasTuner()));
+        getLnaGainCombo().setDisable(!(hasTuner()));
+        getDcCorrectionSpinnerI().setDisable(!(hasTuner()));
+        getDcCorrectionSpinnerQ().setDisable(!(hasTuner()));
+        getPhaseCorrectionSpinner().setDisable(!(hasTuner()));
+        getGainCorrectionSpinner().setDisable(!(hasTuner()));
 
         setLoading(false);
     }
 
     private void init()
     {
-        setLayout(new MigLayout("fill,wrap 3", "[right][grow,fill][fill]",
-                "[][][][][][][][][][][][][][][][][grow]"));
+        // setLayout(new javafx.scene.layout.HBox(4));
 
-        add(new JLabel("Tuner:"));
-        add(getTunerIdLabel());
+        getChildren().add(new Label("Tuner:"));
+        getChildren().add(getTunerIdLabel());
 
-        add(new JLabel("Status:"));
-        add(getTunerStatusLabel(), "wrap");
+        getChildren().add(new Label("Status:"));
+        getChildren().add(getTunerStatusLabel());
 
-        add(getButtonPanel(), "span,align left");
+        getChildren().add(getButtonPanel());
 
-        add(new JSeparator(), "span,growx,push");
-        add(new JLabel("Frequency (MHz):"));
-        add(getFrequencyPanel(), "wrap");
+        getChildren().add(new Separator());
+        getChildren().add(new Label("Frequency (MHz):"));
+        getChildren().add(getFrequencyPanel());
 
-        add(new JSeparator(), "span,growx,push");
-        add(new JLabel("Gain"), "span,align center");
-        add(new JLabel("LNA:"));
-        add(getLnaGainCombo(), "wrap");
-        add(new JLabel("Enhance:"));
-        add(getLnaEnhanceCombo(), "wrap");
-        add(new JLabel("Mixer:"));
-        add(getMixerGainCombo(), "wrap");
+        getChildren().add(new Separator());
+        getChildren().add(new Label("Gain"));
+        getChildren().add(new Label("LNA:"));
+        getChildren().add(getLnaGainCombo());
+        getChildren().add(new Label("Enhance:"));
+        getChildren().add(getLnaEnhanceCombo());
+        getChildren().add(new Label("Mixer:"));
+        getChildren().add(getMixerGainCombo());
 
-        add(new JSeparator(), "span,growx,push");
-        add(new JLabel("Correction"), "span,align center");
-        add(new JLabel("DC Inphase:"));
-        add(getDcCorrectionSpinnerI(), "wrap");
-        add(new JLabel("DC Quadrature:"));
-        add(getDcCorrectionSpinnerQ(), "wrap");
-        add(new JLabel("Gain:"));
-        add(getGainCorrectionSpinner(), "wrap");
-        add(new JLabel("Phase:"));
-        add(getPhaseCorrectionSpinner(), "wrap");
+        getChildren().add(new Separator());
+        getChildren().add(new Label("Correction"));
+        getChildren().add(new Label("DC Inphase:"));
+        getChildren().add(getDcCorrectionSpinnerI());
+        getChildren().add(new Label("DC Quadrature:"));
+        getChildren().add(getDcCorrectionSpinnerQ());
+        getChildren().add(new Label("Gain:"));
+        getChildren().add(getGainCorrectionSpinner());
+        getChildren().add(new Label("Phase:"));
+        getChildren().add(getPhaseCorrectionSpinner());
     }
 
-    public JComboBox getLnaGainCombo()
+    public ComboBox getLnaGainCombo()
     {
         if(mLnaGainCombo == null)
         {
-            mLnaGainCombo = new JComboBox<>(LNAGain.values());
-            mLnaGainCombo.setEnabled(false);
-            mLnaGainCombo.setToolTipText("Adjust the low noise amplifier gain setting.");
-            mLnaGainCombo.addActionListener(arg0 ->
+            mLnaGainCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(LNAGain.values())))));
+            mLnaGainCombo.setDisable(!(false));
+            mLnaGainCombo.setTooltip(new javafx.scene.control.Tooltip("Adjust the low noise amplifier gain setting."));
+            mLnaGainCombo.setOnAction(arg0 ->
             {
                 if(!isLoading())
                 {
-                    LNAGain gain = (LNAGain) mLnaGainCombo.getSelectedItem();
+                    LNAGain gain = (LNAGain) mLnaGainCombo.getValue();
 
                     try
                     {
@@ -210,18 +215,18 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
         return mLnaGainCombo;
     }
 
-    public JComboBox getLnaEnhanceCombo()
+    public ComboBox getLnaEnhanceCombo()
     {
         if(mLnaEnhanceCombo == null)
         {
-            mLnaEnhanceCombo = new JComboBox<>(LNAEnhance.values());
-            mLnaEnhanceCombo.setEnabled(false);
-            mLnaEnhanceCombo.setToolTipText("Adjust the LNA enhance setting.  Default value is OFF");
-            mLnaEnhanceCombo.addActionListener(arg0 ->
+            mLnaEnhanceCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(LNAEnhance.values())))));
+            mLnaEnhanceCombo.setDisable(!(false));
+            mLnaEnhanceCombo.setTooltip(new javafx.scene.control.Tooltip("Adjust the LNA enhance setting.  Default value is OFF"));
+            mLnaEnhanceCombo.setOnAction(arg0 ->
             {
                 if(!isLoading())
                 {
-                    LNAEnhance enhance = (LNAEnhance) mLnaEnhanceCombo.getSelectedItem();
+                    LNAEnhance enhance = (LNAEnhance) mLnaEnhanceCombo.getValue();
 
                     try
                     {
@@ -242,18 +247,18 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
         return mLnaEnhanceCombo;
     }
 
-    public JComboBox getMixerGainCombo()
+    public ComboBox getMixerGainCombo()
     {
         if(mMixerGainCombo == null)
         {
-            mMixerGainCombo = new JComboBox<>(MixerGain.values());
-            mMixerGainCombo.setEnabled(false);
-            mMixerGainCombo.setToolTipText("Adjust mixer gain setting");
-            mMixerGainCombo.addActionListener(arg0 ->
+            mMixerGainCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(MixerGain.values())))));
+            mMixerGainCombo.setDisable(!(false));
+            mMixerGainCombo.setTooltip(new javafx.scene.control.Tooltip("Adjust mixer gain setting"));
+            mMixerGainCombo.setOnAction(arg0 ->
             {
                 if(!isLoading())
                 {
-                    MixerGain gain = (MixerGain) mMixerGainCombo.getSelectedItem();
+                    MixerGain gain = (MixerGain) mMixerGainCombo.getValue();
 
                     try
                     {
@@ -279,8 +284,8 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
         if(mCorrectionDCQ == null)
         {
             mCorrectionDCQ = new CorrectionSpinner(Correction.DC_QUADRATURE, 0.0, 0.00001, 5);
-            mCorrectionDCQ.setEnabled(false);
-            mCorrectionDCQ.setToolTipText("DC Bias Correction/Quadrature Component: valid values are -1.0 to 1.0 (default: 0.0)");
+            mCorrectionDCQ.setDisable(!(false));
+            mCorrectionDCQ.setTooltip(new javafx.scene.control.Tooltip("DC Bias Correction/Quadrature Component: valid values are -1.0 to 1.0 (default: 0.0)"));
         }
 
         return mCorrectionDCQ;
@@ -291,8 +296,8 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
         if(mCorrectionDCI == null)
         {
             mCorrectionDCI = new CorrectionSpinner(Correction.DC_INPHASE, 0.0, 0.00001, 5);
-            mCorrectionDCI.setEnabled(false);
-            mCorrectionDCI.setToolTipText("DC Bias Correction/Inphase Component: valid values are -1.0 to 1.0 (default: 0.0)");
+            mCorrectionDCI.setDisable(!(false));
+            mCorrectionDCI.setTooltip(new javafx.scene.control.Tooltip("DC Bias Correction/Inphase Component: valid values are -1.0 to 1.0 (default: 0.0)"));
         }
 
         return mCorrectionDCI;
@@ -303,8 +308,8 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
         if(mGainCorrectionSpinner == null)
         {
             mGainCorrectionSpinner = new CorrectionSpinner(Correction.GAIN, 0.0, 0.00001, 5);
-            mGainCorrectionSpinner.setEnabled(false);
-            mGainCorrectionSpinner.setToolTipText("Gain Correction: valid values are -1.0 to 1.0 (default: 0.0)");
+            mGainCorrectionSpinner.setDisable(!(false));
+            mGainCorrectionSpinner.setTooltip(new javafx.scene.control.Tooltip("Gain Correction: valid values are -1.0 to 1.0 (default: 0.0)"));
         }
 
         return mGainCorrectionSpinner;
@@ -315,8 +320,8 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
         if(mPhaseCorrectionSpinner == null)
         {
             mPhaseCorrectionSpinner = new CorrectionSpinner(Correction.PHASE, 0.0, 0.00001, 5);
-            mPhaseCorrectionSpinner.setEnabled(false);
-            mPhaseCorrectionSpinner.setToolTipText("Phase Correction: valid values are -1.0 to 1.0 (default: 0.0)");
+            mPhaseCorrectionSpinner.setDisable(!(false));
+            mPhaseCorrectionSpinner.setTooltip(new javafx.scene.control.Tooltip("Phase Correction: valid values are -1.0 to 1.0 (default: 0.0)"));
         }
 
         return mPhaseCorrectionSpinner;
@@ -368,19 +373,19 @@ protected String getTunerInfo()
             getConfiguration().setFrequency(getFrequencyControl().getFrequency());
             getConfiguration().setMinimumFrequency(getMinimumFrequencyTextField().getFrequency());
             getConfiguration().setMaximumFrequency(getMaximumFrequencyTextField().getFrequency());
-            double value = ((SpinnerNumberModel) getFrequencyCorrectionSpinner().getModel()).getNumber().doubleValue();
+            double value = (Double) getFrequencyCorrectionSpinner().getValue();
             getConfiguration().setFrequencyCorrection(value);
             getConfiguration().setAutoPPMCorrectionEnabled(getAutoPPMCheckBox().isSelected());
-            getConfiguration().setLNAEnhance((LNAEnhance) mLnaEnhanceCombo.getSelectedItem());
-            getConfiguration().setLNAGain((LNAGain) mLnaGainCombo.getSelectedItem());
-            getConfiguration().setMixerGain((MixerGain) mMixerGainCombo.getSelectedItem());
-            double dci = ((SpinnerNumberModel)mCorrectionDCI.getModel()).getNumber().doubleValue();
+            getConfiguration().setLNAEnhance((LNAEnhance) mLnaEnhanceCombo.getValue());
+            getConfiguration().setLNAGain((LNAGain) mLnaGainCombo.getValue());
+            getConfiguration().setMixerGain((MixerGain) mMixerGainCombo.getValue());
+            double dci = (Double)mCorrectionDCI.getValue();
             getConfiguration().setInphaseDCCorrection(dci);
-            double dcq = ((SpinnerNumberModel)mCorrectionDCQ.getModel()).getNumber().doubleValue();
+            double dcq = (Double)mCorrectionDCQ.getValue();
             getConfiguration().setQuadratureDCCorrection(dcq);
-            double gain = ((SpinnerNumberModel) mGainCorrectionSpinner.getModel()).getNumber().doubleValue();
+            double gain = (Double) mGainCorrectionSpinner.getValue();
             getConfiguration().setGainCorrection(gain);
-            double phase = ((SpinnerNumberModel) mPhaseCorrectionSpinner.getModel()).getNumber().doubleValue();
+            double phase = (Double) mPhaseCorrectionSpinner.getValue();
             getConfiguration().setPhaseCorrection(phase);
             saveConfiguration();
         }
@@ -388,7 +393,7 @@ protected String getTunerInfo()
 
     public enum Correction {GAIN, PHASE, DC_INPHASE, DC_QUADRATURE};
 
-    public class CorrectionSpinner extends JSpinner
+    public class CorrectionSpinner extends Spinner
     {
         private static final long serialVersionUID = 1L;
         private static final double MIN_VALUE = -1.0d;
@@ -400,52 +405,53 @@ protected String getTunerInfo()
         {
             mCorrectionComponent = component;
 
-            SpinnerModel model = new SpinnerNumberModel(initialValue, MIN_VALUE, MAX_VALUE, step);
-            setModel(model);
+            SpinnerValueFactory model = new javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory((int)MIN_VALUE, (int)MAX_VALUE, (int)initialValue, (int)step);
+            setValueFactory(model);
 
-            JSpinner.NumberEditor editor = (JSpinner.NumberEditor)getEditor();
+            // // Spinner.NumberEditor editor = (Spinner.NumberEditor)getEditor();
 
-            DecimalFormat format = editor.getFormat();
-            format.setMinimumFractionDigits(decimalPlaces);
+            // DecimalFormat format = editor.getFormat();
+            // format.setMinimumFractionDigits(decimalPlaces);
 
-            editor.getTextField().setHorizontalAlignment(SwingConstants.CENTER);
+            // editor.getTextField().setHorizontalAlignment...
 
-            addChangeListener(e ->
-            {
-                if(!isLoading())
-                {
-                    double value = ((SpinnerNumberModel)getModel()).getNumber().doubleValue();
-
-                    try
-                    {
-                        switch(mCorrectionComponent)
-                        {
-                            case DC_INPHASE:
-                                getController().setDCCorrectionInPhase(value);
-                                break;
-                            case DC_QUADRATURE:
-                                getController().setDCCorrectionQuadrature(value);
-                                break;
-                            case GAIN:
-                                getController().setGainCorrection(value);
-                                break;
-                            case PHASE:
-                                getController().setPhaseCorrection(value);
-                                break;
-                        }
-
-                        save();
-                    }
-                    catch(Exception e1)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("FCDPro - error "
-                                + "applying " + mCorrectionComponent.toString() + " correction value [" + value + "]")); alert.showAndWait(); });
-
-                        mLog.error("FCDPro - error applying " + mCorrectionComponent.toString() + " correction value [" +
-                                value + "]", e1);
-                    }
-                }
-            });
-        }
+//             // addChangeListener(e ->
+//             {
+//                 if(!isLoading())
+//                 {
+//                     double value = 0; // (Double)getModel().getValue();
+// 
+//                     try
+//                     {
+//                         switch(mCorrectionComponent)
+//                         {
+//                             case DC_INPHASE:
+//                                 getController().setDCCorrectionInPhase(value);
+//                                 break;
+//                             case DC_QUADRATURE:
+//                                 getController().setDCCorrectionQuadrature(value);
+//                                 break;
+//                             case GAIN:
+//                                 getController().setGainCorrection(value);
+//                                 break;
+//                             case PHASE:
+//                                 getController().setPhaseCorrection(value);
+//                                 break;
+//                         }
+// 
+//                         save();
+//                     }
+//                     catch(Exception e1)
+//                     {
+//                         Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("FCDPro - error "
+//                                 + "applying " + mCorrectionComponent.toString() + " correction value [" + value + "]")); alert.showAndWait(); });
+// 
+//                         mLog.error("FCDPro - error applying " + mCorrectionComponent.toString() + " correction value [" +
+//                                 value + "]", e1);
+//                     }
+//                 }
+//             });
+//         }
     }
+}
 }

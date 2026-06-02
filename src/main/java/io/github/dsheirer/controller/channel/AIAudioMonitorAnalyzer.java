@@ -20,8 +20,21 @@ import java.util.List;
 public class AIAudioMonitorAnalyzer {
     private static final Logger mLog = LoggerFactory.getLogger(AIAudioMonitorAnalyzer.class);
 
+    private static final java.util.Map<String, Boolean> mAnalysisCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     private UserPreferences mUserPreferences;
     private HttpClient mHttpClient;
+
+    private String getCacheKey(List<Path> audioFiles) {
+        StringBuilder sb = new StringBuilder();
+        for (Path path : audioFiles) {
+            sb.append(path.toAbsolutePath().toString())
+              .append(":")
+              .append(path.toFile().lastModified())
+              .append(";");
+        }
+        return sb.toString();
+    }
 
     public AIAudioMonitorAnalyzer(UserPreferences userPreferences) {
         mUserPreferences = userPreferences;
@@ -37,11 +50,18 @@ public class AIAudioMonitorAnalyzer {
             throw new Exception("Gemini API Key is missing. Cannot perform AI audio monitoring.");
         }
 
+        String cacheKey = getCacheKey(audioFiles);
+        if (mAnalysisCache.containsKey(cacheKey)) {
+            mLog.info("Returning cached audio monitor result.");
+            return mAnalysisCache.get(cacheKey);
+        }
+
         mLog.info("Analyzing audio with Gemini for AI Monitoring...");
 
         try {
             String model = mUserPreferences.getAIPreference().getGeminiModel();
-            String url = "https://generativelanguage.googleapis.com/v1beta/" + model + ":generateContent?key=" + apiKey;
+            String baseUrl = System.getProperty("gemini.api.url", "https://generativelanguage.googleapis.com");
+            String url = baseUrl + "/v1beta/" + model + ":generateContent?key=" + apiKey;
 
             String promptText = "Analyze these five radio audio recordings. Confirm if human voices or digital trunking data/control signals are clearly audible. Respond with a boolean-like state: functional or unintelligible. Return JSON with the exact field: functional (boolean).";
 
@@ -84,6 +104,7 @@ public class AIAudioMonitorAnalyzer {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(10))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
 
@@ -115,7 +136,12 @@ public class AIAudioMonitorAnalyzer {
             // Parse the result JSON
             JsonObject resultObj = gson.fromJson(resultText, JsonObject.class);
             if (resultObj.has("functional")) {
-                return resultObj.get("functional").getAsBoolean();
+                boolean functional = resultObj.get("functional").getAsBoolean();
+                mAnalysisCache.put(cacheKey, functional);
+                if (mAnalysisCache.size() > 100) {
+                    mAnalysisCache.clear();
+                }
+                return functional;
             } else {
                 throw new Exception("Unexpected response format from Gemini: " + resultText);
             }

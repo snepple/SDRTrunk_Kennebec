@@ -18,24 +18,23 @@
 package io.github.dsheirer.settings;
 
 import io.github.dsheirer.settings.ColorSetting.ColorSettingName;
-import io.github.dsheirer.util.ColorIcon;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ColorPicker;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
 /**
- * JMenuItem for selecting a color and automatically setting (saving) the
+ * MenuItem for selecting a color and automatically setting (saving) the
  * color selection in the settings manager
  */
-public class ColorSettingMenuItem extends JMenuItem
+public class ColorSettingMenuItem extends MenuItem
 {
-    private static final long serialVersionUID = 1L;
-
     private ColorSettingName mColorSettingName;
     private SettingsManager mSettingsManager;
-    private Color mCurrentColor;
+    private javafx.scene.paint.Color mCurrentColor;
 	
 	public ColorSettingMenuItem( SettingsManager settingsManager,
 								 ColorSettingName colorSettingName )
@@ -48,22 +47,30 @@ public class ColorSettingMenuItem extends JMenuItem
 		mCurrentColor = mSettingsManager.getSettingsModel()
 				.getColorSetting( mColorSettingName ).getColor();
 
-		this.setIcon( new ColorIcon( mCurrentColor ) );
+		Color fxColor = Color.rgb((int)(mCurrentColor.getRed() * 255), (int)(mCurrentColor.getGreen() * 255), (int)(mCurrentColor.getBlue() * 255), mCurrentColor.getOpacity());
 		
-		addActionListener( new ActionListener() 
-		{
-			@Override
-            public void actionPerformed( ActionEvent e )
-            {
-				Color newColor = JColorChooser.showDialog( ColorSettingMenuItem.this,
-	                     mColorSettingName.getDialogTitle(),
-	                     mCurrentColor );
-
-				if( newColor != null )
-				{
-					mSettingsManager.getSettingsModel().setColorSetting( mColorSettingName, newColor );
-				}
-            }
+		Rectangle icon = new Rectangle(16, 16);
+		icon.setFill(fxColor);
+		icon.setStroke(Color.BLACK);
+		this.setGraphic(icon);
+		
+		setOnAction( e -> {
+			Dialog<Color> dialog = new Dialog<>();
+			dialog.setTitle(mColorSettingName.getDialogTitle());
+			ColorPicker colorPicker = new ColorPicker(fxColor);
+			dialog.getDialogPane().setContent(colorPicker);
+			dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+			dialog.setResultConverter(button -> button == ButtonType.OK ? colorPicker.getValue() : null);
+			
+			dialog.showAndWait().ifPresent(newColor -> {
+				javafx.scene.paint.Color awtNewColor = new javafx.scene.paint.Color(
+					(float)newColor.getRed(), 
+					(float)newColor.getGreen(), 
+					(float)newColor.getBlue(), 
+					(float)newColor.getOpacity()
+				);
+				mSettingsManager.getSettingsModel().setColorSetting( mColorSettingName, awtNewColor );
+			});
 		} );
 	}
 }

@@ -22,14 +22,10 @@ package io.github.dsheirer.spectrum.menu;
 import io.github.dsheirer.dsp.window.WindowType;
 import io.github.dsheirer.spectrum.ComplexDftProcessor;
 
-import javax.swing.JCheckBoxMenuItem;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javafx.scene.control.CheckMenuItem;
 
-public class FFTWindowTypeItem extends JCheckBoxMenuItem
+public class FFTWindowTypeItem extends CheckMenuItem
 {
-    private static final long serialVersionUID = 1L;
-
     private ComplexDftProcessor mComplexDftProcessor;
     private WindowType mWindowType;
 
@@ -45,12 +41,8 @@ public class FFTWindowTypeItem extends JCheckBoxMenuItem
             setSelected(true);
         }
 
-        addActionListener(new ActionListener()
-        {
-            @Override public void actionPerformed(ActionEvent arg0)
-            {
-                mComplexDftProcessor.setWindowType(mWindowType);
-            }
+        setOnAction(event -> {
+            mComplexDftProcessor.setWindowType(mWindowType);
         });
     }
 }

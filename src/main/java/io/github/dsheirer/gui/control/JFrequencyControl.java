@@ -1,3 +1,6 @@
+
+
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2024 Dennis Sheirer
@@ -17,43 +20,48 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.gui.control;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 
 import io.github.dsheirer.source.ISourceEventProcessor;
 import io.github.dsheirer.source.InvalidFrequencyException;
 import io.github.dsheirer.source.SourceEvent;
 import io.github.dsheirer.source.SourceException;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Font;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
+
+import javafx.application.Platform;
+import javafx.scene.text.Font;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.MouseButton;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import net.miginfocom.swing.MigLayout;
 import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.JLabel;
+
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.application.Platform;
 import java.util.Optional;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+
+
 
 /**
  * Custom frequency controller for displaying or editing frequency values in MHz.
  */
-public class JFrequencyControl extends JPanel implements ISourceEventProcessor
+public class JFrequencyControl extends VBox implements ISourceEventProcessor
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(JFrequencyControl.class);
@@ -75,9 +83,9 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
      */
     private void init()
     {
-        setLayout(new MigLayout("insets 0 0 0 0", "[]0[]", ""));
+        // setLayout(new javafx.scene.layout.HBox(4));
 
-        Font font = new Font(Font.MONOSPACED, Font.BOLD, 18);
+        javafx.scene.text.Font font = javafx.scene.text.Font.font("Monospaced", javafx.scene.text.FontWeight.BOLD, 18);
 
         for(int x = 9; x >= 0; x--)
         {
@@ -96,32 +104,32 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
             {
                 mDigits.put(x, digit);
 
-                add(digit);
+                getChildren().add(digit);
 
-                digit.setFont(font);
+                // digit.setFont(font);
 
                 if(x == 6)
                 {
-                    add(new JLabel(". "));
+                    getChildren().add(new Label(". "));
                 }
             }
         }
 
-        revalidate();
+        requestLayout();
     }
 
     /**
      * Enables or disables the control.
      * @param enabled true if this component should be enabled, false otherwise
      */
-    @Override
+    // // @Override
     public void setEnabled(boolean enabled)
     {
-        super.setEnabled(enabled);
+        super.setDisable(!enabled);
 
         for(Digit digit : mDigits.values())
         {
-            digit.setEnabled(enabled);
+            /* digit.setDisable(!enabled); */
         }
     }
 
@@ -135,7 +143,7 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
         switch(event.getEvent())
         {
             case NOTIFICATION_FREQUENCY_CHANGE:
-                EventQueue.invokeLater(() -> setFrequency(event.getValue().longValue(), false));
+                Platform.runLater(() -> setFrequency(event.getValue().longValue(), false));
                 break;
         }
     }
@@ -225,7 +233,7 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
     /**
      * Custom single digit value editor.
      */
-    public class Digit extends JTextField
+    public class Digit extends TextField
     {
         private static final long serialVersionUID = 1L;
         private int mPower = 0;
@@ -242,14 +250,45 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
             super("0");
 
             mPower = position;
-            setMargin(new java.awt.Insets(0, 0, 0, 0));
-            setHorizontalAlignment(javax.swing.JTextField.CENTER);
-            setToolTipText(getTooltip(mPower));
-            Listener listener = new Listener();
+            // setMargin(new java.awt.Insets(0, 0, 0, 0));
+            // setHorizontalAlignment(javax.swing.JTextField.CENTER);
+            setTooltip(new Tooltip(getTooltip(mPower)));
 
-            this.addKeyListener(listener);
-            this.addMouseListener(listener);
-            this.addMouseWheelListener(listener);
+            setOnKeyReleased(e -> {
+                switch(e.getCode()) {
+                    case DIGIT0: case NUMPAD0: set(0); requestFocus(); break;
+                    case DIGIT1: case NUMPAD1: set(1); requestFocus(); break;
+                    case DIGIT2: case NUMPAD2: set(2); requestFocus(); break;
+                    case DIGIT3: case NUMPAD3: set(3); requestFocus(); break;
+                    case DIGIT4: case NUMPAD4: set(4); requestFocus(); break;
+                    case DIGIT5: case NUMPAD5: set(5); requestFocus(); break;
+                    case DIGIT6: case NUMPAD6: set(6); requestFocus(); break;
+                    case DIGIT7: case NUMPAD7: set(7); requestFocus(); break;
+                    case DIGIT8: case NUMPAD8: set(8); requestFocus(); break;
+                    case DIGIT9: case NUMPAD9: set(9); requestFocus(); break;
+                    case UP: increment(); break;
+                    case DOWN: decrement(); break;
+                    default: set(mValue); break;
+                }
+            });
+
+            setOnMouseClicked(e -> {
+                if (e.getButton() == MouseButton.PRIMARY) increment();
+                else if (e.getButton() == MouseButton.SECONDARY) decrement();
+            });
+
+            setOnMouseEntered(e -> {
+                setStyle("-fx-background-color: yellow;");
+            });
+
+            setOnMouseExited(e -> {
+                setStyle("");
+            });
+
+            setOnScroll(e -> {
+                if (e.getDeltaY() > 0) increment();
+                else if (e.getDeltaY() < 0) decrement();
+            });
         }
 
         /**
@@ -337,7 +376,7 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
          */
         public void increment(boolean fireChangeEvent)
         {
-            if(isEnabled())
+            if(!isDisabled())
             {
                 set(mValue + 1, fireChangeEvent);
             }
@@ -357,7 +396,7 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
          */
         public void decrement(boolean fireChangeEvent)
         {
-            if(isEnabled())
+            if(!isDisabled())
             {
                 set(mValue - 1, fireChangeEvent);
             }
@@ -447,136 +486,10 @@ public class JFrequencyControl extends JPanel implements ISourceEventProcessor
 
 
             setText(String.valueOf(mValue));
-            repaint();
+            requestLayout();
         }
 
-        /**
-         * Multiple Listener interface implementation
-         */
-        private class Listener implements KeyListener, MouseListener, MouseWheelListener
-        {
-            @Override
-            public void keyReleased(KeyEvent e)
-            {
-                int key = e.getKeyCode();
 
-                switch(key)
-                {
-                    case KeyEvent.VK_0:
-                    case KeyEvent.VK_NUMPAD0:
-                        set(0);
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_1:
-                    case KeyEvent.VK_NUMPAD1:
-                        set(1);
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_2:
-                    case KeyEvent.VK_NUMPAD2:
-                        set(2);
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_3:
-                    case KeyEvent.VK_NUMPAD3:
-                        set(3);
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_4:
-                    case KeyEvent.VK_NUMPAD4:
-                        set(4);
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_5:
-                    case KeyEvent.VK_NUMPAD5:
-                        set(5);
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_6:
-                    case KeyEvent.VK_NUMPAD6:
-                        set(6);
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_7:
-                    case KeyEvent.VK_NUMPAD7:
-                        set(7);
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_8:
-                    case KeyEvent.VK_NUMPAD8:
-                        set(8);
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_9:
-                    case KeyEvent.VK_NUMPAD9:
-                        set(9);
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_LEFT:
-                        Digit.this.transferFocusBackward();
-                        break;
-                    case KeyEvent.VK_RIGHT:
-                        Digit.this.transferFocus();
-                        break;
-                    case KeyEvent.VK_UP:
-                        increment();
-                        break;
-                    case KeyEvent.VK_DOWN:
-                        decrement();
-                        break;
-                    case KeyEvent.VK_TAB:
-                        break;
-                    default:
-                        set(mValue);
-                        break;
-                }
+}
 
-                repaint();
-            }
-
-            @Override
-            public void keyPressed(KeyEvent e) {}
-            @Override
-            public void keyTyped(KeyEvent e) {}
-
-            @Override
-            public void mouseClicked(MouseEvent e)
-            {
-                switch(e.getButton())
-                {
-                    case MouseEvent.BUTTON1:
-                        increment();
-                        break;
-                    case MouseEvent.BUTTON2:
-                        break;
-                    case MouseEvent.BUTTON3:
-                        decrement();
-                        break;
-                }
-            }
-
-            public void mousePressed(MouseEvent e) {}
-            public void mouseReleased(MouseEvent e) {}
-
-            @Override
-            public void mouseEntered(MouseEvent e)
-            {
-                Digit.this.setBackground(mHighlightColor);
-                repaint();
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e)
-            {
-                Digit.this.setBackground(Color.WHITE);
-                repaint();
-            }
-
-            @Override
-            public void mouseWheelMoved(MouseWheelEvent e)
-            {
-                set(mValue - e.getWheelRotation());
-            }
-        }
-    }
 }

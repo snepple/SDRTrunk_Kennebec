@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2023 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.module.decode.ip.mototrbo.lrrp.token;
+import javafx.scene.control.Label;
 
 import java.util.EnumSet;
 import java.util.HashMap;

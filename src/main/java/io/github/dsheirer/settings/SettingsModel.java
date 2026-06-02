@@ -20,7 +20,7 @@ package io.github.dsheirer.settings;
 
 import org.jdesktop.swingx.mapviewer.GeoPosition;
 
-import java.awt.Color;
+import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

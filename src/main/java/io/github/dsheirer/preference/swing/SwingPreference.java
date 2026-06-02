@@ -23,10 +23,9 @@ package io.github.dsheirer.preference.swing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.Dimension;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.Point;
+import javafx.geometry.Point2D;
+import javafx.geometry.Dimension2D;
+import javafx.stage.Screen;
 import java.util.prefs.Preferences;
 
 /**
@@ -83,14 +82,14 @@ public class SwingPreference
      * @param key identifying the window
      * @return location or null
      */
-    public Point getLocation(String key)
+    public Point2D getLocation(String key)
     {
         int x = mPreferences.getInt(key + LOCATION_X, Integer.MAX_VALUE);
         int y = mPreferences.getInt(key + LOCATION_Y, Integer.MAX_VALUE);
 
         if(x != Integer.MAX_VALUE && y != Integer.MAX_VALUE)
         {
-            Point location = new Point(x,y);
+            Point2D location = new Point2D(x,y);
             return location;
         }
 
@@ -102,10 +101,10 @@ public class SwingPreference
      * @param key to identify the window
      * @param location to persist
      */
-    public void setLocation(String key, Point location)
+    public void setLocation(String key, Point2D location)
     {
-        mPreferences.putInt(key + LOCATION_X, location.x);
-        mPreferences.putInt(key + LOCATION_Y, location.y);
+        mPreferences.putInt(key + LOCATION_X, (int)location.getX());
+        mPreferences.putInt(key + LOCATION_Y, (int)location.getY());
     }
 
     /**
@@ -134,23 +133,23 @@ public class SwingPreference
      * @param key to identify the window
      * @return dimension or null
      */
-    public Dimension getDimension(String key)
+    public Dimension2D getDimension(String key)
     {
         int height = mPreferences.getInt(key + SIZE_HEIGHT, Integer.MAX_VALUE);
         int width = mPreferences.getInt(key + SIZE_WIDTH, Integer.MAX_VALUE);
 
         if(height != Integer.MAX_VALUE && width != Integer.MAX_VALUE)
         {
-            return new Dimension(width, height);
+            return new Dimension2D(width, height);
         }
 
         return null;
     }
 
-    public void setDimension(String key, Dimension dimension)
+    public void setDimension(String key, Dimension2D dimension)
     {
-        mPreferences.putInt(key + SIZE_HEIGHT, dimension.height);
-        mPreferences.putInt(key + SIZE_WIDTH, dimension.width);
+        mPreferences.putInt(key + SIZE_HEIGHT, (int)dimension.getHeight());
+        mPreferences.putInt(key + SIZE_WIDTH, (int)dimension.getWidth());
     }
 
     /**
@@ -161,11 +160,11 @@ public class SwingPreference
      * @param location to test
      * @return true if the location is displayable.
      */
-    private boolean isValidWindowLocation(Point location)
+    private boolean isValidWindowLocation(Point2D location)
     {
-        for(GraphicsDevice gd:GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices())
+        for(Screen screen : Screen.getScreens())
         {
-            if(gd.getDefaultConfiguration().getBounds().contains(location))
+            if(screen.getVisualBounds().contains(location))
             {
                 return true;
             }

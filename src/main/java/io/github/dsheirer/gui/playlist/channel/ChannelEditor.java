@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2025 Dennis Sheirer
@@ -18,6 +19,12 @@
  */
 
 package io.github.dsheirer.gui.playlist.channel;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+
 
 import com.google.common.base.Joiner;
 import io.github.dsheirer.controller.channel.Channel;
@@ -64,12 +71,12 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.input.MouseButton;
+
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
+
 import javafx.util.Callback;
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
@@ -514,7 +521,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                         Channel channel = getTableView().getItems().get(getIndex());
                         if (channel != null && channel.getDecodeConfiguration() != null && channel.getDecodeConfiguration().getDecoderType() != null && channel.getDecodeConfiguration().getDecoderType().getIconName() != null) {
                             io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(channel.getDecodeConfiguration().getDecoderType().getIconName());
-                            if (icon != null && icon.getFxImage() != null) {
+                            if (icon != null && icon != null) {
                                 if (imageView == null) {
                                     imageView = new javafx.scene.image.ImageView();
                                 }
@@ -804,7 +811,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mDecoderType = decoderType;
             if (decoderType.getIconName() != null) {
                 io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(decoderType.getIconName());
-                if (icon != null && icon.getFxImage() != null) {
+                if (icon != null && icon != null) {
                     javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(icon.getFxImage());
                     iv.setFitWidth(16);
                     iv.setFitHeight(16);
@@ -825,7 +832,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             setText(DecoderType.P25_PHASE2.getDisplayString());
             if (DecoderType.P25_PHASE2.getIconName() != null) {
                 io.github.dsheirer.icon.Icon icon = mPlaylistManager.getIconModel().getIcon(DecoderType.P25_PHASE2.getIconName());
-                if (icon != null && icon.getFxImage() != null) {
+                if (icon != null && icon != null) {
                     javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(icon.getFxImage());
                     iv.setFitWidth(16);
                     iv.setFitHeight(16);
@@ -835,7 +842,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             MenuItem trunkedP1 = new MenuItem("Trunked System - FDMA Phase 1 Control Channel");
             if (DecoderType.P25_PHASE1.getIconName() != null) {
                 io.github.dsheirer.icon.Icon iconP1 = mPlaylistManager.getIconModel().getIcon(DecoderType.P25_PHASE1.getIconName());
-                if (iconP1 != null && iconP1.getFxImage() != null) {
+                if (iconP1 != null && iconP1 != null) {
                     javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(iconP1.getFxImage());
                     iv.setFitWidth(16);
                     iv.setFitHeight(16);
@@ -846,7 +853,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             MenuItem trunkedP2 = new MenuItem("Trunked System - TDMA Phase 2 Control Channel");
             if (DecoderType.P25_PHASE2.getIconName() != null) {
                 io.github.dsheirer.icon.Icon iconP2 = mPlaylistManager.getIconModel().getIcon(DecoderType.P25_PHASE2.getIconName());
-                if (iconP2 != null && iconP2.getFxImage() != null) {
+                if (iconP2 != null && iconP2 != null) {
                     javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(iconP2.getFxImage());
                     iv.setFitWidth(16);
                     iv.setFitHeight(16);
@@ -857,7 +864,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             MenuItem channel = new MenuItem("Individual Phase 2 Channel");
             if (DecoderType.P25_PHASE2.getIconName() != null) {
                 io.github.dsheirer.icon.Icon iconP2C = mPlaylistManager.getIconModel().getIcon(DecoderType.P25_PHASE2.getIconName());
-                if (iconP2C != null && iconP2C.getFxImage() != null) {
+                if (iconP2C != null && iconP2C != null) {
                     javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(iconP2C.getFxImage());
                     iv.setFitWidth(16);
                     iv.setFitHeight(16);

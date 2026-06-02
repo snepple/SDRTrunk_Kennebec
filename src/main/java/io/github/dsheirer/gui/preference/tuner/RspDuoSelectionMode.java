@@ -1,3 +1,4 @@
+
 /*
  * *****************************************************************************
  * Copyright (C) 2014-2022 Dennis Sheirer
@@ -18,6 +19,7 @@
  */
 
 package io.github.dsheirer.gui.preference.tuner;
+import javafx.scene.control.Label;
 
 /**
  * RSPduo tuner select mode preferences.

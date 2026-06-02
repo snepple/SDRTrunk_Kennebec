@@ -13,8 +13,6 @@ import io.github.dsheirer.settings.SettingChangeListener;
 import io.github.dsheirer.settings.SettingsManager;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.StackPane;
@@ -29,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
-public class SpectrumPanel extends JFXPanel implements DFTResultsListener, SettingChangeListener, SpectralDisplayAdjuster {
+public class SpectrumPanel extends StackPane implements DFTResultsListener, SettingChangeListener, SpectralDisplayAdjuster {
     private static final long serialVersionUID = 1L;
 
     private final static Logger mLog = LoggerFactory.getLogger(SpectrumPanel.class);
@@ -65,33 +63,30 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
 
         getColors();
 
-        Platform.runLater(() -> {
-            mCanvas = new Canvas();
-            mGraphicsContext = mCanvas.getGraphicsContext2D();
+        mCanvas = new Canvas();
+        mGraphicsContext = mCanvas.getGraphicsContext2D();
 
-            StackPane root = new StackPane();
-            root.getChildren().add(mCanvas);
+        this.getChildren().add(mCanvas);
 
-            mCanvas.widthProperty().bind(root.widthProperty());
-            mCanvas.heightProperty().bind(root.heightProperty());
+        mCanvas.widthProperty().bind(this.widthProperty());
+        mCanvas.heightProperty().bind(this.heightProperty());
 
-            mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
-            mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
+        mCanvas.widthProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
+        mCanvas.heightProperty().addListener((observable, oldValue, newValue) -> mNeedsRedraw = true);
 
-            Scene scene = new Scene(root);
-            setScene(scene);
-
-            mAnimationTimer = new AnimationTimer() {
-                @Override
-                public void handle(long now) {
-                    if (mNeedsRedraw) {
-                        mNeedsRedraw = false;
-                        drawSpectrum();
-                    }
+        mAnimationTimer = new AnimationTimer() {
+            private static final long MIN_FRAME_NANOS = 70_000_000L; // ~14 FPS cap
+            private long mLastDrawNanos = 0;
+            @Override
+            public void handle(long now) {
+                if (mNeedsRedraw && (now - mLastDrawNanos) >= MIN_FRAME_NANOS) {
+                    mNeedsRedraw = false;
+                    mLastDrawNanos = now;
+                    drawSpectrum();
                 }
-            };
-            mAnimationTimer.start();
-        });
+            }
+        };
+        mAnimationTimer.start();
     }
 
     public void dispose() {
@@ -224,15 +219,15 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
 
     private Color getColorFromSetting(ColorSettingName name) {
         ColorSetting setting = mSettingsManager.getSettingsModel().getColorSetting(name);
-        java.awt.Color awtColor = setting.getColor();
-        return Color.rgb(awtColor.getRed(), awtColor.getGreen(), awtColor.getBlue(), awtColor.getAlpha() / 255.0);
+        javafx.scene.paint.Color awtColor = setting.getColor();
+        return Color.rgb((int)(awtColor.getRed() * 255), (int)(awtColor.getGreen() * 255), (int)(awtColor.getBlue() * 255), awtColor.getOpacity());
     }
 
     @Override
     public void settingChanged(Setting setting) {
         if (setting instanceof ColorSetting colorSetting) {
-            java.awt.Color awtColor = colorSetting.getColor();
-            Color fxColor = Color.rgb(awtColor.getRed(), awtColor.getGreen(), awtColor.getBlue(), awtColor.getAlpha() / 255.0);
+            javafx.scene.paint.Color awtColor = colorSetting.getColor();
+            Color fxColor = Color.rgb((int)(awtColor.getRed() * 255), (int)(awtColor.getGreen() * 255), (int)(awtColor.getBlue() * 255), awtColor.getOpacity());
 
             switch (colorSetting.getColorSettingName()) {
                 case SPECTRUM_BACKGROUND:
@@ -321,6 +316,20 @@ public class SpectrumPanel extends JFXPanel implements DFTResultsListener, Setti
             }
 
             setSmoothing(pointSize);
+        }
+    }
+
+    /**
+     * Enables or disables spectrum rendering. When disabled, the AnimationTimer is stopped
+     * and no canvas draw calls occur, freeing CPU cycles for the audio DSP thread.
+     */
+    public void setRenderingEnabled(boolean enabled) {
+        if (mAnimationTimer == null) return;
+        if (enabled) {
+            mAnimationTimer.start();
+        } else {
+            mAnimationTimer.stop();
+            mNeedsRedraw = false;
         }
     }
 }

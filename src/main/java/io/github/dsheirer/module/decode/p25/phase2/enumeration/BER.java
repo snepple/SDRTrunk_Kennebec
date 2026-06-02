@@ -1,3 +1,4 @@
+
 /*
  *
  *  * ******************************************************************************
@@ -21,6 +22,7 @@
  */
 
 package io.github.dsheirer.module.decode.p25.phase2.enumeration;
+import javafx.scene.control.Label;
 
 /**
  * Bit Error Rate (BER)

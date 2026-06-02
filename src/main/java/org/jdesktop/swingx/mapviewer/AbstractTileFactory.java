@@ -30,7 +30,7 @@ import javax.imageio.ImageIO;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
-import javax.swing.SwingUtilities;
+import javafx.application.Platform;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -345,14 +345,14 @@ public abstract class AbstractTileFactory extends TileFactory
 			{
 				try
 				{
-					BufferedImage img = null;
+					javafx.scene.image.Image img = null;
 					URI uri = getURI(tile);
 					img = cache.get(uri);
 					if (img == null)
 					{
 						byte[] bimg = cacheInputStream(uri.toURL());
 						// img = PaintUtils.loadCompatibleImage(new ByteArrayInputStream(bimg));
-						img = ImageIO.read(new ByteArrayInputStream(bimg));
+						img = new javafx.scene.image.Image(new ByteArrayInputStream(bimg));
 						cache.put(uri, bimg, img);
 						img = cache.get(uri);
 					}
@@ -362,17 +362,18 @@ public abstract class AbstractTileFactory extends TileFactory
 					}
 					else
 					{
-						final BufferedImage i = img;
-						SwingUtilities.invokeAndWait(new Runnable()
+						final javafx.scene.image.Image i = img;
+						javafx.application.Platform.runLater(new Runnable()
 						{
 							@Override
 							public void run()
 							{
-								tile.image = new SoftReference<BufferedImage>(i);
+								tile.image = new SoftReference<javafx.scene.image.Image>(i);
 								tile.setLoaded(true);
 								fireTileLoadedEvent(tile);
 							}
 						});
+						break;
 					}
 				}
 				catch (OutOfMemoryError memErr)

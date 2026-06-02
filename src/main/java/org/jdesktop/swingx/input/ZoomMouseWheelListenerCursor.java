@@ -16,21 +16,29 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 package org.jdesktop.swingx.input;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.image.*;
+import javafx.scene.paint.*;
+import javafx.geometry.*;
+import javafx.geometry.Rectangle2D;
+import javafx.geometry.Dimension2D;
+
 
 import io.github.dsheirer.map.MapPanel;
 import org.jdesktop.swingx.JXMapViewer;
 
-import java.awt.*;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.geom.Point2D;
+
+import javafx.scene.input.ScrollEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Point2D;
 
 /**
  * zooms to the current mouse cursor 
  * using the mouse wheel
  * @author Martin Steiger
  */
-public class ZoomMouseWheelListenerCursor implements MouseWheelListener
+public class ZoomMouseWheelListenerCursor implements EventHandler<ScrollEvent>
 {
 	private MapPanel mMapPanel;
 	private JXMapViewer mViewer;
@@ -44,20 +52,20 @@ public class ZoomMouseWheelListenerCursor implements MouseWheelListener
 		mViewer = mMapPanel.getMapViewer();
 	}
 
-	@Override
-	public void mouseWheelMoved(MouseWheelEvent evt)
+	// // @Override
+	public void handle(javafx.scene.input.ScrollEvent evt)
 	{
-		Point current = evt.getPoint();
-		Rectangle bound = mViewer.getViewportBounds();
+		Point2D current = new Point2D(evt.getX(), evt.getY());
+		Rectangle2D bound = mViewer.getViewportBounds();
 		
-		double dx = current.x - bound.width / 2;
-		double dy = current.y - bound.height / 2;
+		double dx = current.getX() - bound.getWidth() / 2;
+		double dy = current.getY() - bound.getHeight() / 2;
 		
-		Dimension oldMapSize = mViewer.getTileFactory().getMapSize(mViewer.getZoom());
+		Dimension2D oldMapSize = mViewer.getTileFactory().getMapSize(mViewer.getZoom());
 
-		mMapPanel.adjustZoom(evt.getWheelRotation());
+		mMapPanel.adjustZoom((int)-Math.signum(evt.getDeltaY()));
 
-		Dimension mapSize = mViewer.getTileFactory().getMapSize(mViewer.getZoom());
+		Dimension2D mapSize = mViewer.getTileFactory().getMapSize(mViewer.getZoom());
 
 		Point2D center = mViewer.getCenter();
 
@@ -67,6 +75,6 @@ public class ZoomMouseWheelListenerCursor implements MouseWheelListener
 		double x = center.getX() + dx * (dzw - 1);
 		double y = center.getY() + dy * (dzh - 1);
 
-		mViewer.setCenter(new Point2D.Double(x, y));
+		mViewer.setCenter(new Point2D(x, y));
 	}
 }

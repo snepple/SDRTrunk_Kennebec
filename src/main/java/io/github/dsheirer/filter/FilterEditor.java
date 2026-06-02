@@ -19,9 +19,7 @@
 
 package io.github.dsheirer.filter;
 
-import java.awt.Component;
 
-import javafx.embed.swing.SwingNode;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -30,7 +28,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import javax.swing.SwingUtilities;
+import javafx.scene.control.ScrollPane;
 
 /**
  * Filter editor
@@ -46,7 +44,7 @@ public class FilterEditor<T> extends Stage
      * @param owner to register the popup location
      * @param filterSet to use initially
      */
-    public FilterEditor(String title, Component owner, FilterSet<T> filterSet)
+    public FilterEditor(String title, FilterSet<T> filterSet)
     {
         if(filterSet == null)
         {
@@ -58,20 +56,17 @@ public class FilterEditor<T> extends Stage
 
         mEditorPanel = new FilterEditorPanel<>(filterSet);
 
-        SwingNode swingNode = new SwingNode();
-        SwingUtilities.invokeLater(() -> {
-            javax.swing.JScrollPane scroller = new javax.swing.JScrollPane(mEditorPanel);
-            scroller.setViewportView(mEditorPanel);
-            swingNode.setContent(scroller);
-        });
+        ScrollPane scroller = new ScrollPane(mEditorPanel);
+        scroller.setFitToWidth(true);
+        scroller.setFitToHeight(true);
 
         Button close = new Button("Close");
         close.setOnAction(e -> close());
 
-        VBox vbox = new VBox(10, swingNode, close);
+        VBox vbox = new VBox(10, scroller, close);
         vbox.setPadding(new Insets(10));
         vbox.setAlignment(Pos.CENTER_RIGHT);
-        VBox.setVgrow(swingNode, Priority.ALWAYS);
+        VBox.setVgrow(scroller, Priority.ALWAYS);
 
         Scene scene = new Scene(vbox);
         setScene(scene);
@@ -86,3 +81,4 @@ public class FilterEditor<T> extends Stage
         mEditorPanel.updateFilterSet(filterSet);
     }
 }
+

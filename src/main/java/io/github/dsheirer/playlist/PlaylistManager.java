@@ -240,7 +240,7 @@ public class PlaylistManager implements Listener<ChannelEvent>
     }
 
     /**
-     * Icon manager
+     * javafx.scene.image.Image manager
      */
     public IconModel getIconModel()
     {
