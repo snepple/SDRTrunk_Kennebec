@@ -798,6 +798,7 @@ public class Alias
             AliasID aliasID = iterator.next();
 
             if(aliasID instanceof TwoToneDetectorID &&
+                ((TwoToneDetectorID)aliasID).getDetectorName() != null &&
                 ((TwoToneDetectorID)aliasID).getDetectorName().contentEquals(detectorName))
             {
                 iterator.remove();

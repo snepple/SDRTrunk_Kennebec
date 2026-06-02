@@ -490,7 +490,7 @@ public class TwoToneAliasSelectionEditor extends VBox
         @Override
         public boolean test(Alias alias)
         {
-            if(!alias.hasTwoToneDetector(mStreamName))
+            if(mStreamName == null || !alias.hasTwoToneDetector(mStreamName))
             {
                 return false;
             }
