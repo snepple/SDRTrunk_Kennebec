@@ -182,13 +182,18 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
     public Button getManageWidgetsButton() {
         if (mManageWidgetsBtn == null) {
-            mManageWidgetsBtn = new Button("Manage Widgets");
-            mManageWidgetsBtn.setTooltip(new javafx.scene.control.Tooltip("Manage Widgets"));
-            
-            
+            mManageWidgetsBtn = new Button("⚙");
+            mManageWidgetsBtn.setTooltip(new javafx.scene.control.Tooltip("Show or hide panels"));
+            mManageWidgetsBtn.setStyle("-fx-background-color: rgba(255,255,255,0.08); -fx-background-radius: 4; " +
+                                       "-fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 2 6 2 6;");
+            mManageWidgetsBtn.setOnMouseEntered(e -> mManageWidgetsBtn.setStyle(
+                "-fx-background-color: rgba(255,255,255,0.18); -fx-background-radius: 4; " +
+                "-fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 2 6 2 6;"));
+            mManageWidgetsBtn.setOnMouseExited(e -> mManageWidgetsBtn.setStyle(
+                "-fx-background-color: rgba(255,255,255,0.08); -fx-background-radius: 4; " +
+                "-fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 2 6 2 6;"));
             mManageWidgetsBtn.setOnAction(e -> showManageWidgetsPopup());
-            mManageWidgetsBtn.setStyle("-fx-background-color: transparent; -fx-border-color: transparent;");
-            mManageWidgetsBtn.setPadding(new javafx.geometry.Insets(0, 4, 0, 4));
+            mManageWidgetsBtn.setPadding(new javafx.geometry.Insets(2, 6, 2, 6));
             mManageWidgetsBtn.setCursor(javafx.scene.Cursor.HAND);
         }
         return mManageWidgetsBtn;

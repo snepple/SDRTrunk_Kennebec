@@ -161,7 +161,6 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
 
         // --- RIGHT: Mute + Volume Slider + Audio Channels ---
         mMuteButton = new MuteButton();
-        mMuteButton.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
 
         Label volIcon = new Label("🔊");
         volIcon.setStyle("-fx-text-fill: #808090; -fx-font-size: 11px;");
@@ -405,8 +404,7 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
 
     public void setManageWidgetsButton(Button button)
     {
-        getChildren().add(button);
-        requestLayout();
+        // Manage widgets button is now placed in the main toolbar, not in the audio panel
     }
 
     public class MuteButton extends Button
@@ -416,27 +414,37 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
         public MuteButton()
         {
             getStyleClass().add("mute-button");
-            updateIcons();
-            setTooltip(new javafx.scene.control.Tooltip("Mute All"));
+            setMinWidth(42);
+            setMinHeight(32);
+            setPrefWidth(42);
+            setPrefHeight(32);
+            updateAppearance();
+            setTooltip(new javafx.scene.control.Tooltip("Mute All Audio (Ctrl+M)"));
             accessibleTextProperty().set("Mute");
             setOnAction(e -> {
                 mMuted = !mMuted;
                 mAudioPlaybackManager.getAudioOutput().setMuted(mMuted);
                 Platform.runLater(() -> {
-                    updateIcons();
-                    setTooltip(new javafx.scene.control.Tooltip(mMuted ? "Unmute All" : "Mute All"));
+                    updateAppearance();
+                    setTooltip(new javafx.scene.control.Tooltip(mMuted ? "Unmute All Audio (Ctrl+M)" : "Mute All Audio (Ctrl+M)"));
                     accessibleTextProperty().set(mMuted ? "Unmute" : "Mute");
                 });
             });
         }
 
-        private void updateIcons() {
-            setText(mMuted ? "🔇 Muted" : "🔊 Mute");
+        private void updateAppearance() {
             if (mMuted) {
+                setText("🔇");
+                setStyle("-fx-background-color: rgba(220,38,38,0.85); -fx-background-radius: 6; " +
+                         "-fx-cursor: hand; -fx-font-size: 16px; -fx-padding: 4 8 4 8; " +
+                         "-fx-effect: dropshadow(gaussian, rgba(220,38,38,0.5), 8, 0, 0, 0);");
                 if (!getStyleClass().contains("muted")) {
                     getStyleClass().add("muted");
                 }
             } else {
+                setText("🔊");
+                setStyle("-fx-background-color: rgba(255,255,255,0.1); -fx-background-radius: 6; " +
+                         "-fx-cursor: hand; -fx-font-size: 16px; -fx-padding: 4 8 4 8;");
                 getStyleClass().remove("muted");
             }
         }
