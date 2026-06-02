@@ -496,7 +496,68 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             nameColumn.setId("channelTable.name");
             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
             nameColumn.setPrefWidth(200);
-            nameColumn.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn());
+            nameColumn.setCellFactory(col -> new TableCell<Channel, String>() {
+                private final javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
+                private final Label label = new Label();
+                private final HBox container = new HBox(5);
+                private String lastImagePath = null;
+                private static final java.util.Map<String, javafx.scene.image.Image> IMAGE_CACHE = new java.util.HashMap<>();
+
+                {
+                    imageView.setFitWidth(20);
+                    imageView.setFitHeight(20);
+                    imageView.setPreserveRatio(true);
+                    imageView.setSmooth(true);
+                    // Round clip for thumbnail
+                    javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(20, 20);
+                    clip.setArcWidth(6);
+                    clip.setArcHeight(6);
+                    imageView.setClip(clip);
+                    container.setAlignment(Pos.CENTER_LEFT);
+                }
+
+                @Override
+                protected void updateItem(String name, boolean empty) {
+                    super.updateItem(name, empty);
+                    if (empty || name == null) {
+                        setText(null);
+                        setGraphic(null);
+                        lastImagePath = null;
+                    } else {
+                        Channel channel = null;
+                        if (getIndex() >= 0 && getIndex() < getTableView().getItems().size()) {
+                            channel = getTableView().getItems().get(getIndex());
+                        }
+                        String imgPath = (channel != null) ? channel.getImagePath() : null;
+
+                        if (imgPath != null && !imgPath.isEmpty()) {
+                            // Only reload image if path changed
+                            if (!imgPath.equals(lastImagePath)) {
+                                lastImagePath = imgPath;
+                                javafx.scene.image.Image img = IMAGE_CACHE.get(imgPath);
+                                if (img == null) {
+                                    try {
+                                        java.io.File f = new java.io.File(imgPath);
+                                        if (f.exists()) {
+                                            img = new javafx.scene.image.Image(f.toURI().toString(), 20, 20, true, true);
+                                            IMAGE_CACHE.put(imgPath, img);
+                                        }
+                                    } catch (Exception ignored) {}
+                                }
+                                imageView.setImage(img);
+                            }
+                            label.setText(name);
+                            container.getChildren().setAll(imageView, label);
+                            setText(null);
+                            setGraphic(container);
+                        } else {
+                            lastImagePath = null;
+                            setText(name);
+                            setGraphic(null);
+                        }
+                    }
+                }
+            });
             nameColumn.setOnEditCommit(event -> event.getRowValue().setName(event.getNewValue()));
 
             TableColumn frequencyColumn = new TableColumn("Frequency");

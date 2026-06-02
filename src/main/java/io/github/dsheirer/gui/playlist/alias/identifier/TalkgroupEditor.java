@@ -223,10 +223,10 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
                     if (empty || item == null) {
                         setText(null);
                     } else {
-                        String label = item.toString();
+                        String label = Integer.toUnsignedString(item);
                         for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
                             if (channel.getDecodeConfiguration() instanceof DecodeConfigNBFM nbfmConfig && nbfmConfig.getTalkgroup() == item) {
-                                label = String.format("%d (%s, %s, %s)", item, channel.getSystem() != null ? channel.getSystem() : "", channel.getSite() != null ? channel.getSite() : "", channel.getName() != null ? channel.getName() : "");
+                                label = String.format("%s (%s, %s, %s)", Integer.toUnsignedString(item), channel.getSystem() != null ? channel.getSystem() : "", channel.getSite() != null ? channel.getSite() : "", channel.getName() != null ? channel.getName() : "");
                                 break;
                             }
                         }
