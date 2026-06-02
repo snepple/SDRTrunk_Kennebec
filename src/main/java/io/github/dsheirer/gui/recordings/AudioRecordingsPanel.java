@@ -151,14 +151,20 @@ public class AudioRecordingsPanel extends VBox {
         mChannelComboBox.getSelectionModel().select("All");
         mChannelComboBox.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
-        Button refreshButton = new Button("Refresh");
+        Button refreshButton = new Button("_Refresh");
+        refreshButton.setMnemonicParsing(true);
+        refreshButton.setTooltip(new Tooltip("Refresh the list of audio recordings"));
         refreshButton.setOnAction(e -> loadRecordings());
 
-        mStopButton = new Button("Stop Playback");
+        mStopButton = new Button("_Stop Playback");
+        mStopButton.setMnemonicParsing(true);
+        mStopButton.setTooltip(new Tooltip("Stop the currently playing audio recording"));
         mStopButton.setDisable(true);
         mStopButton.setOnAction(e -> stopPlayback());
 
-        Button deleteSelectedButton = new Button("Delete Selected");
+        Button deleteSelectedButton = new Button("_Delete Selected");
+        deleteSelectedButton.setMnemonicParsing(true);
+        deleteSelectedButton.setTooltip(new Tooltip("Delete the selected audio recordings. This action cannot be undone."));
         deleteSelectedButton.setOnAction(e -> {
             List<RecordingItem> selectedItems = new ArrayList<>(mTableView.getSelectionModel().getSelectedItems());
             if (selectedItems.isEmpty()) return;
@@ -186,7 +192,9 @@ public class AudioRecordingsPanel extends VBox {
             javafx.beans.binding.Bindings.isEmpty(mTableView.getSelectionModel().getSelectedItems())
         );
 
-        Button deleteAllButton = new Button("Delete All");
+        Button deleteAllButton = new Button("Delete _All");
+        deleteAllButton.setMnemonicParsing(true);
+        deleteAllButton.setTooltip(new Tooltip("Delete all currently displayed audio recordings. This action cannot be undone."));
         deleteAllButton.setOnAction(e -> {
             List<RecordingItem> itemsToDelete = new ArrayList<>(mFilteredRecordings);
             if (itemsToDelete.isEmpty()) return;

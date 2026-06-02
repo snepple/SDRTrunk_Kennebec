@@ -98,3 +98,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-17 - HIG Compliant Tooltips for Editors
 **Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
 **Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
+## 2026-06-02 - Action Button Tooltips and Mnemonics
+**Learning:** Destructive actions and common list functions (e.g., Delete All, Refresh) lack clear keyboard navigation support and consequence descriptions, violating HIG Feedback and keyboard accessibility principles.
+**Action:** Always apply `setMnemonicParsing(true)` to action buttons and include explicit warnings (e.g., "This action cannot be undone.") in `Tooltip`s for any destructive delete actions.
