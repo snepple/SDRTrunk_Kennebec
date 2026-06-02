@@ -50,6 +50,8 @@ import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.util.ThreadPool;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -541,10 +543,14 @@ public class PlaylistManager implements Listener<ChannelEvent>
         catch(IOException ioe)
         {
             mLog.error("IO error while writing the playlist to a file [" + playlistPreference.getPlaylist().toString() + "]", ioe);
+            io.github.dsheirer.module.log.DiagnosticEngine.InsightCard card = io.github.dsheirer.module.log.DiagnosticEngine.mapError(ioe, "Playlist save");
+            if (card != null) { mLog.warn("Diagnostic: {} - {}", card.title, card.remediation); }
         }
         catch(Exception e)
         {
             mLog.error("Error while saving playlist [" + playlistPreference.getPlaylist().toString() + "]", e);
+            io.github.dsheirer.module.log.DiagnosticEngine.InsightCard card = io.github.dsheirer.module.log.DiagnosticEngine.mapError(e, "Playlist save");
+            if (card != null) { mLog.warn("Diagnostic: {} - {}", card.title, card.remediation); }
         }
     }
 
@@ -560,12 +566,12 @@ public class PlaylistManager implements Listener<ChannelEvent>
         //Check for a lock file that indicates the previous save attempt was incomplete or had an error
         if(Files.exists(files.getPlaylistLock()))
         {
-            mLog.info("Previous playlist save was incomplete -- restoring from backup file (if possible)");
+            mLog.info("Previous playlist save was incomplete -- quarantining corrupt file and restoring from backup");
 
             try
             {
-                //Remove the previous playlist
-                Files.delete(files.getPlaylist());
+                //Quarantine the corrupt playlist instead of deleting it
+                quarantineCorruptPlaylist(files.getPlaylist());
 
                 //Copy the backup file to restore the previous playlist
                 if(Files.exists(files.getPlaylistBackup()))
@@ -603,7 +609,25 @@ public class PlaylistManager implements Listener<ChannelEvent>
             }
             catch(IOException ioe)
             {
-                mLog.error("IO error while reading playlist file", ioe);
+                mLog.error("IO error while reading playlist file - quarantining corrupt file", ioe);
+                quarantineCorruptPlaylist(files.getPlaylist());
+
+                //Attempt to restore from backup after quarantine
+                if(Files.exists(files.getPlaylistBackup()))
+                {
+                    try
+                    {
+                        Files.copy(files.getPlaylistBackup(), files.getPlaylist());
+                        mLog.info("Restored playlist from backup after quarantine");
+                    }
+                    catch(IOException backupIoe)
+                    {
+                        mLog.error("Failed to restore playlist from backup", backupIoe);
+                    }
+                }
+
+                io.github.dsheirer.module.log.DiagnosticEngine.InsightCard card = io.github.dsheirer.module.log.DiagnosticEngine.mapError(ioe, "Playlist load");
+                if (card != null) { mLog.warn("Diagnostic: {} - {}", card.title, card.remediation); }
             }
         }
         else if(Files.exists(files.getLegacyPlaylist()))
@@ -643,6 +667,59 @@ public class PlaylistManager implements Listener<ChannelEvent>
         }
 
         return playlist;
+    }
+
+    /**
+     * Quarantines a corrupt playlist file by moving it to a quarantine/ subfolder with a timestamp suffix.
+     * @param corruptFile the path to the corrupt playlist file
+     */
+    private void quarantineCorruptPlaylist(Path corruptFile)
+    {
+        if(corruptFile == null || !Files.exists(corruptFile))
+        {
+            return;
+        }
+
+        try
+        {
+            Path quarantineDir = corruptFile.getParent().resolve("quarantine");
+            if(!Files.exists(quarantineDir))
+            {
+                Files.createDirectories(quarantineDir);
+            }
+
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            String originalName = corruptFile.getFileName().toString();
+            int dotIndex = originalName.lastIndexOf('.');
+            String quarantineName;
+            if(dotIndex > 0)
+            {
+                quarantineName = originalName.substring(0, dotIndex) + "_" + timestamp + originalName.substring(dotIndex);
+            }
+            else
+            {
+                quarantineName = originalName + "_" + timestamp;
+            }
+
+            Path quarantinePath = quarantineDir.resolve(quarantineName);
+            Files.move(corruptFile, quarantinePath, StandardCopyOption.REPLACE_EXISTING);
+            mLog.info("Quarantined corrupt playlist to [" + quarantinePath.toString() + "]");
+        }
+        catch(IOException ioe)
+        {
+            mLog.error("Error quarantining corrupt playlist file [" + corruptFile.toString() + "]", ioe);
+
+            //Fall back to deleting the corrupt file if quarantine fails
+            try
+            {
+                Files.delete(corruptFile);
+                mLog.warn("Deleted corrupt playlist file after quarantine failure");
+            }
+            catch(IOException deleteIoe)
+            {
+                mLog.error("Failed to delete corrupt playlist file", deleteIoe);
+            }
+        }
     }
 
     /**

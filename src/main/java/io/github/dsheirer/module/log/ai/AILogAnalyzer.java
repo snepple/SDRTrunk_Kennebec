@@ -16,6 +16,9 @@ public class AILogAnalyzer {
     private io.github.dsheirer.preference.notification.SelfHealingOrchestrator mOrchestrator;
 
     private static final java.util.Map<String, String> mAnalysisCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final int MAX_TOKENS_PER_REQUEST = 4000;
+    private static final int CHARS_PER_TOKEN = 4; // rough estimate
+    private static final int MAX_CHARS = MAX_TOKENS_PER_REQUEST * CHARS_PER_TOKEN;
 
     public AILogAnalyzer(UserPreferences userPreferences) {
         mUserPreferences = userPreferences;
@@ -39,12 +42,14 @@ public class AILogAnalyzer {
         mLog.info("Analyzing log content with Gemini...");
 
         try {
+            // Enforce token budget — truncate to MAX_TOKENS_PER_REQUEST
+            String budgetedContent = enforceTokenBudget(logContent);
             String model = mUserPreferences.getAIPreference().getGeminiModel();
             String baseUrl = System.getProperty("gemini.api.url", "https://generativelanguage.googleapis.com");
             String url = baseUrl + "/v1beta/" + model + ":generateContent?key=" + apiKey;
 
             // Simple json string escape to prevent malformed json payloads when log file contains quotes or new lines.
-            String escapedLogContent = logContent.replace("\\", "\\\\")
+            String escapedLogContent = budgetedContent.replace("\\", "\\\\")
                     .replace("\"", "\\\"")
                     .replace("\n", "\\n")
                     .replace("\r", "\\r")
@@ -138,6 +143,32 @@ public class AILogAnalyzer {
         } catch (Exception e) {
              throw new RuntimeException("Error parsing response: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Estimate token count for a string (~4 chars per token).
+     */
+    private int estimateTokens(String text) {
+        return text == null ? 0 : (text.length() + CHARS_PER_TOKEN - 1) / CHARS_PER_TOKEN;
+    }
+
+    /**
+     * Enforce token budget by truncating content if it exceeds MAX_TOKENS_PER_REQUEST.
+     * Keeps the first and last portions of the log for context.
+     */
+    private String enforceTokenBudget(String content) {
+        if (content == null) return "";
+        int tokens = estimateTokens(content);
+        if (tokens <= MAX_TOKENS_PER_REQUEST) return content;
+
+        int headChars = MAX_CHARS * 3 / 4; // 75% from the start
+        int tailChars = MAX_CHARS / 4;      // 25% from the end
+        String truncated = content.substring(0, headChars)
+            + "\n\n... [TRUNCATED: " + (content.length() - MAX_CHARS) + " chars removed for token budget] ...\n\n"
+            + content.substring(content.length() - tailChars);
+        mLog.info("Token budget enforced: {} estimated tokens -> {} chars truncated to {}",
+            tokens, content.length(), truncated.length());
+        return truncated;
     }
 
     private String getFallbackModel(String currentModel) {

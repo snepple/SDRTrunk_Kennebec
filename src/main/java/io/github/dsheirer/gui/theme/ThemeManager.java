@@ -1,6 +1,7 @@
 package io.github.dsheirer.gui.theme;
 
 import javafx.application.Platform;
+import javafx.scene.Scene;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.WinReg;
 import org.slf4j.Logger;
@@ -11,7 +12,9 @@ public class ThemeManager {
     private static final Logger mLog = LoggerFactory.getLogger(ThemeManager.class);
     private static final String REGISTRY_PATH = "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
     private static final String REGISTRY_KEY = "AppsUseLightTheme";
+    private static final String NIGHT_MODE_CSS = "/css/night-mode.css";
     
+    private static boolean mNightModeEnabled = false;
     private boolean mIsWindows11;
     private Thread mRegistryMonitorThread;
 
@@ -91,5 +94,39 @@ public class ThemeManager {
         });
         mRegistryMonitorThread.setDaemon(true);
         mRegistryMonitorThread.start();
+    }
+
+    /**
+     * Toggles night mode on/off for the given scene by adding or removing the night-mode.css stylesheet.
+     * @param scene the JavaFX Scene to apply night mode to
+     */
+    public static void toggleNightMode(Scene scene) {
+        if (scene == null) {
+            mLog.warn("Cannot toggle night mode - scene is null");
+            return;
+        }
+
+        String cssUrl = ThemeManager.class.getResource(NIGHT_MODE_CSS) != null
+            ? ThemeManager.class.getResource(NIGHT_MODE_CSS).toExternalForm()
+            : NIGHT_MODE_CSS;
+
+        if (mNightModeEnabled) {
+            scene.getStylesheets().remove(cssUrl);
+            mNightModeEnabled = false;
+            mLog.info("Night mode disabled");
+        } else {
+            if (!scene.getStylesheets().contains(cssUrl)) {
+                scene.getStylesheets().add(cssUrl);
+            }
+            mNightModeEnabled = true;
+            mLog.info("Night mode enabled");
+        }
+    }
+
+    /**
+     * @return true if night mode is currently enabled
+     */
+    public static boolean isNightModeEnabled() {
+        return mNightModeEnabled;
     }
 }

@@ -88,6 +88,30 @@ public class LogsViewController {
         // Initialize Live Logs
         logListView.setItems(logData);
         logListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+        // Task 6.1: Color-coded log level highlighting
+        logListView.setCellFactory(lv -> new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                setText(item);
+                if (item.contains(" ERROR ") || item.contains(" FATAL ")) {
+                    setStyle("-fx-text-fill: #ff4444; -fx-font-weight: bold;");
+                } else if (item.contains(" WARN ")) {
+                    setStyle("-fx-text-fill: #ff8800;");
+                } else if (item.contains(" DEBUG ")) {
+                    setStyle("-fx-text-fill: #888888;");
+                } else {
+                    setStyle("-fx-text-fill: #e0e0e0;");
+                }
+            }
+        });
+
         MyEventBus.getGlobalEventBus().register(this);
 
         MenuItem copyItem = new MenuItem("Copy");

@@ -368,7 +368,10 @@ public class JavaFxWindowManager extends Application
             catch(Throwable t)
             {
                 mLog.error("Error processing show playlist editor request", t);
+                io.github.dsheirer.module.log.DiagnosticEngine.InsightCard card = io.github.dsheirer.module.log.DiagnosticEngine.mapError(t instanceof Exception ? (Exception) t : new Exception(t), "PlaylistEditor request");
+                if (card != null) { mLog.warn("Diagnostic: {} - {}", card.title, card.remediation); }
             }
+
         });
     }
 

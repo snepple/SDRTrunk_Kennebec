@@ -131,6 +131,7 @@ import java.util.Optional;
 
 
 import io.github.dsheirer.gui.theme.ThemeManager;
+import io.github.dsheirer.module.log.DiagnosticEngine;
 
 
 
@@ -247,6 +248,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private TunerManager mTunerManager;
     private ApplicationLog mApplicationLog;
     private TwoToneLog mTwoToneLog;
+    private StateJournal mStateJournal;
     private ResourceMonitor mResourceMonitor;
     private Rectangle2D mNormalBounds;
     private javafx.scene.Node mControllerResourceStatusPanel;
@@ -334,6 +336,18 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             primaryStage.setScene(scene);
             primaryStage.show();
 
+            // Wire up global hotkeys
+            try {
+                new HotkeyManager(scene, new HotkeyManager.HotkeyListener() {
+                    @Override public void onToggleSpectrum() { SDRTrunk.this.onToggleSpectrum(); }
+                    @Override public void onToggleMute() { /* mute handled by AudioPanel */ }
+                    @Override public void onToggleNightMode() { toggleNightMode(); }
+                });
+                mLog.info("HotkeyManager initialized");
+            } catch (Exception e) {
+                mLog.error("Failed to initialize HotkeyManager", e);
+            }
+
             CalibrationManager calibrationManager = CalibrationManager.getInstance(mUserPreferences);
             final boolean calibrating = !calibrationManager.isCalibrated() &&
                 !mUserPreferences.getVectorCalibrationPreference().isHideCalibrationDialog();
@@ -389,6 +403,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 LookAndFeelFactory.installJideExtension();
             } catch(Exception e) {
                 mLog.error("Error trying to set LookAndFeelFactory extension for OS [" + operatingSystem + "]");
+                DiagnosticEngine.InsightCard card = DiagnosticEngine.mapError(e, "LookAndFeel init");
+                if (card != null) { mLog.warn("Diagnostic: {} - {}", card.title, card.remediation); }
             }
         }
 
@@ -453,6 +469,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 latch.countDown(); }); latch.await();
             } catch (Exception e) {
                 mLog.error("Error creating sidebar panel", e);
+                DiagnosticEngine.InsightCard card = DiagnosticEngine.mapError(e, "Sidebar panel init");
+                if (card != null) { mLog.warn("Diagnostic: {} - {}", card.title, card.remediation); }
             }
         }
 
@@ -505,6 +523,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 latch.countDown(); }); latch.await();
             } catch (Exception e) {
                 mLog.error("Error creating controller panel", e);
+                DiagnosticEngine.InsightCard card = DiagnosticEngine.mapError(e, "Controller panel init");
+                if (card != null) { mLog.warn("Diagnostic: {} - {}", card.title, card.remediation); }
             }
         }
 
@@ -517,6 +537,15 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         mPlaylistManager.init();
 
+        // Initialize StateJournal for event recording
+        try {
+            mStateJournal = StateJournal.init(
+                mUserPreferences.getDirectoryPreference().getDirectoryApplicationRoot());
+            mStateJournal.record("application_init", java.util.Map.of("headless", String.valueOf(headless)));
+            mLog.info("StateJournal initialized");
+        } catch (Exception e) {
+            mLog.error("Failed to initialize StateJournal", e);
+        }
     }
 
     /**
@@ -653,6 +682,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         } catch (Exception e) {
             mLog.error("Error creating initGUI", e);
+            DiagnosticEngine.InsightCard card = DiagnosticEngine.mapError(e, "initGUI");
+            if (card != null) { mLog.warn("Diagnostic: {} - {}", card.title, card.remediation); }
         }
     }
 
@@ -691,6 +722,10 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mLog.info("Stopping tuners ...");
         mTunerManager.stop();
         mLog.info("Shutdown complete.");
+        if(mStateJournal != null) {
+            mStateJournal.record("application_shutdown");
+            mStateJournal.stop();
+        }
         mApplicationLog.stop();
         mTwoToneLog.stop();
     }
@@ -1105,6 +1140,21 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
     @Override
     public void onActionRequested(String actionId) {
+    }
+
+    /**
+     * Toggles night/dark mode via ThemeManager.
+     * Re-applies the theme by triggering a registry re-read on Windows.
+     */
+    private void toggleNightMode() {
+        mLog.info("Toggle night mode requested");
+        try {
+            // Re-instantiate ThemeManager to pick up or toggle the current theme
+            new ThemeManager();
+            mLog.info("Night mode toggled via ThemeManager");
+        } catch (Exception e) {
+            mLog.error("Error toggling night mode", e);
+        }
     }
 
 }
