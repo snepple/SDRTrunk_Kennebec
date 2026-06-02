@@ -36,41 +36,8 @@ public class UsbMonitorManager {
         }
 
         boolean installed = userPreferences.getApplicationPreference().isUsbMonitorInstalled();
-        boolean prompted = userPreferences.getApplicationPreference().isUsbMonitorPrompted();
 
-        if (!prompted && !installed) {
-            javafx.application.Platform.runLater(() -> {
-                CheckBox dontShowAgain = new CheckBox("Do not show this again");
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                alert.setTitle("Install USB Monitor Script?");
-                alert.setHeaderText("A tuner monitoring power script is available to automatically reset USB devices if they fail.\nDo you want to install it? (Requires Administrator permissions)");
-                alert.getDialogPane().setContent(dontShowAgain);
-                alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
-                Optional<ButtonType> result = alert.showAndWait();
-
-                if (result.isPresent() && result.get() == ButtonType.YES) {
-                    if (install(userPreferences)) {
-                        Platform.runLater(() -> {
-                            Alert a = new Alert(Alert.AlertType.INFORMATION);
-                            a.setTitle("Success");
-                            a.setContentText("USB Monitor script successfully installed.");
-                            a.showAndWait();
-                        });
-                    } else {
-                        Platform.runLater(() -> {
-                            Alert a = new Alert(Alert.AlertType.ERROR);
-                            a.setTitle("Error");
-                            a.setContentText("Failed to install USB Monitor script. Check logs for details.");
-                            a.showAndWait();
-                        });
-                    }
-                } else {
-                    if (dontShowAgain.isSelected()) {
-                        userPreferences.getApplicationPreference().setUsbMonitorPrompted(true);
-                    }
-                }
-            });
-        } else if (installed) {
+        if (installed) {
             startSilent(userPreferences);
         }
     }

@@ -120,8 +120,6 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
         mArtworkView.setPreserveRatio(false);
         mArtworkView.setSmooth(true);
 
-        resetArtworkViewPlaceholder();
-
         // Clip to squircle (rounded rect ~20px radius)
         Rectangle artClip = new Rectangle(46, 46);
         artClip.setArcWidth(12);
@@ -136,6 +134,8 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
 
         mArtworkContainer = new StackPane(mArtworkView);
         mArtworkContainer.setPadding(new Insets(9, 10, 9, 12));
+        
+        resetArtworkViewPlaceholder();
 
         // --- CENTER: Now Playing metadata display ---
         mChannelNameLabel = new Label("");
