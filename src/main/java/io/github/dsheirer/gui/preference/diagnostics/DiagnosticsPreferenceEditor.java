@@ -33,6 +33,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -128,7 +129,9 @@ public class DiagnosticsPreferenceEditor extends VBox
         getChildren().add(optimizeDesc);
 
         Button checkBtn = new Button("Check Host Settings");
+        checkBtn.setTooltip(new Tooltip("Checks the current status of Windows power plans and Defender exclusions."));
         Button applyBtn = new Button("Apply Optimizations (Requires Admin)");
+        applyBtn.setTooltip(new Tooltip("Applies optimizations by disabling USB Selective Suspend, adding Defender exclusions, and disabling DPTF throttling. Requires Administrator privileges."));
         
         TextArea outputArea = new TextArea();
         outputArea.setPrefRowCount(8);
