@@ -53,6 +53,12 @@ public class NativeBufferManager<T extends INativeBuffer>
     private List<T> mDrainedQueue = new ArrayList<>();
     private volatile int mRequestSize;
     private int mProducerAvailable;
+    
+    private static final java.util.concurrent.atomic.AtomicLong sDroppedBuffers = new java.util.concurrent.atomic.AtomicLong(0);
+
+    public static long getDroppedBuffers() {
+        return sDroppedBuffers.get();
+    }
 
     /**
      * Constructs an instance
@@ -81,6 +87,10 @@ public class NativeBufferManager<T extends INativeBuffer>
         {
             mProducerQueue.add(nativeBuffer);
             mProducerAvailable += nativeBuffer.sampleCount();
+        }
+        else
+        {
+            sDroppedBuffers.incrementAndGet();
         }
     }
 

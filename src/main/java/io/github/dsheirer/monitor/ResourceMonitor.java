@@ -71,6 +71,7 @@ public class ResourceMonitor
     private DoubleProperty mDirectoryUsePercentRecordings = new SimpleDoubleProperty();
     private StringProperty mFileSizeEventLogs = new SimpleStringProperty();
     private StringProperty mFileSizeRecordings = new SimpleStringProperty();
+    private LongProperty mDroppedBuffers = new SimpleLongProperty(0);
     private OperatingSystemMXBean mOperatingSystemMXBean;
 
     /**
@@ -148,6 +149,7 @@ public class ResourceMonitor
             mSystemMemoryUsedPercentage.set((double)mMemoryAllocated.get() / (double)mMemoryTotal.get());
             mCpuPercentage.set(loadFinal > 0 ? loadFinal : 0);
             mCpuAvailable.set(loadFinal >= 0);
+            mDroppedBuffers.set(io.github.dsheirer.spectrum.NativeBufferManager.getDroppedBuffers());
         });
     }
 
@@ -281,5 +283,13 @@ public class ResourceMonitor
     public DoubleProperty systemMemoryUsedPercentageProperty()
     {
         return mSystemMemoryUsedPercentage;
+    }
+
+    /**
+     * Property for total dropped native buffers across all tuners.
+     */
+    public LongProperty droppedBuffersProperty()
+    {
+        return mDroppedBuffers;
     }
 }

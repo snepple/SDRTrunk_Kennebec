@@ -99,6 +99,17 @@ public class StatusBox extends HBox
         recordingsSizeLabel.textProperty().bind(mResourceMonitor.fileSizeRecordingsProperty());
         recordingsSizeLabel.setAlignment(Pos.CENTER_RIGHT);
         getChildren().add(recordingsSizeLabel);
+        
+        Label droppedBuffersLabel = new Label("Dropped Buffers:");
+        droppedBuffersLabel.setPadding(new Insets(0, 0, 0, 10));
+        droppedBuffersLabel.setAlignment(Pos.CENTER_RIGHT);
+        getChildren().add(droppedBuffersLabel);
+        
+        Label droppedBuffersValue = new Label();
+        droppedBuffersValue.textProperty().bind(mResourceMonitor.droppedBuffersProperty().asString());
+        droppedBuffersValue.setTooltip(new Tooltip("Total number of native buffers dropped across all tuners due to processor overload"));
+        droppedBuffersValue.setAlignment(Pos.CENTER_RIGHT);
+        getChildren().add(droppedBuffersValue);
 
         jiconfont.javafx.IconNode remoteIcon = new jiconfont.javafx.IconNode(jiconfont.icons.font_awesome.FontAwesome.DESKTOP);
         remoteIcon.setIconSize(14);
