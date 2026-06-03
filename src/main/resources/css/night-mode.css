@@ -76,3 +76,103 @@
 .preferences-main-area .combo-box .list-cell {
     -fx-text-fill: #e0e0e0 !important;
 }
+
+/* === ComboBox Popup & Spinner === */
+.combo-box-popup .list-view { -fx-background-color: #1e1e3a; }
+.combo-box-popup .list-view .list-cell { -fx-background-color: #1e1e3a; -fx-text-fill: #e0e0e0; }
+.combo-box-popup .list-view .list-cell:hover { -fx-background-color: #2a2a4a; }
+.combo-box-popup .list-view .list-cell:selected { -fx-background-color: #0f3460; -fx-text-fill: white; }
+.combo-box .arrow-button { -fx-background-color: #1e1e3a; }
+.combo-box .arrow-button .arrow { -fx-background-color: #b0b0b0; }
+.spinner .increment-arrow-button, .spinner .decrement-arrow-button { -fx-background-color: #1e1e3a; }
+.spinner .increment-arrow-button .increment-arrow, .spinner .decrement-arrow-button .decrement-arrow { -fx-background-color: #b0b0b0; }
+
+/* === Tooltip === */
+.tooltip { -fx-background-color: #2a2a4a; -fx-text-fill: #e0e0e0; -fx-background-radius: 4; -fx-border-color: #3a3a5a; -fx-border-radius: 4; }
+
+/* === Context Menu === */
+.context-menu { -fx-background-color: #1a1a2e; -fx-border-color: #3a3a5a; }
+.context-menu .menu-item { -fx-background-color: transparent; }
+.context-menu .menu-item:hover, .context-menu .menu-item:focused { -fx-background-color: #0f3460; }
+.context-menu .menu-item .label { -fx-text-fill: #e0e0e0; }
+
+/* === ScrollPane Viewport === */
+.scroll-pane > .viewport { -fx-background-color: transparent; }
+.scroll-pane { -fx-background-color: transparent; }
+
+/* === Dialog Pane === */
+.dialog-pane { -fx-background-color: #1a1a2e; }
+.dialog-pane .content { -fx-text-fill: #e0e0e0; }
+.dialog-pane .header-panel { -fx-background-color: #16213e; }
+.dialog-pane .header-panel .label { -fx-text-fill: #e0e0e0; }
+.dialog-pane .button-bar .button { -fx-background-color: #0f3460; -fx-text-fill: white; }
+
+/* === Control Inner Background (TextField/TextArea interior) === */
+.root { -fx-control-inner-background: #1e1e3a; -fx-control-inner-background-alt: #16213e; }
+
+/* === Kennebec Custom Classes === */
+.kennebec-card { -fx-background-color: #1e1e3a; -fx-border-color: #3a3a5a; }
+.kennebec-search-field { -fx-background-color: #3a3a5a, #1e1e3a; -fx-text-fill: #e0e0e0; -fx-prompt-text-fill: #8e8e93; }
+.kennebec-filter-toolbar { -fx-background-color: #16213e; -fx-border-color: #3a3a5a; }
+.kennebec-filter-toolbar .combo-box { -fx-background-color: #1e1e3a; }
+.kennebec-filter-toolbar .combo-box .list-cell { -fx-text-fill: #e0e0e0; }
+.kennebec-toolbar-label { -fx-text-fill: #e0e0e0; }
+.kennebec-toolbar-button { -fx-background-color: #2a2a4a; -fx-text-fill: #e0e0e0; -fx-border-color: #3a3a5a; }
+.kennebec-toolbar-button:hover { -fx-background-color: #3a3a5a; }
+.kennebec-toolbar-button-primary { -fx-background-color: #0f3460; -fx-text-fill: white; }
+.kennebec-toolbar-button-primary:hover { -fx-background-color: #1a4a70; }
+.kennebec-grouped-bg { -fx-background-color: #16213e; }
+
+/* === HIG Classes === */
+.hig-action-bar { -fx-background-color: #16213e; -fx-border-color: #3a3a5a; }
+.hig-data-table { -fx-background-color: #1e1e3a; -fx-border-color: #3a3a5a; }
+.hig-data-table .table-row-cell { -fx-background-color: #1e1e3a; }
+.hig-data-table .table-row-cell:selected { -fx-background-color: #0f3460; }
+.hig-data-table .column-header { -fx-background-color: #16213e; }
+.hig-data-table .column-header .label { -fx-text-fill: #b0b0b0; }
+.hig-settings-card { -fx-background-color: #1e1e3a; -fx-border-color: #3a3a5a; }
+.hig-form-group { -fx-background-color: #1e1e3a; -fx-border-color: #3a3a5a; }
+.hig-page-title { -fx-text-fill: #e0e0e0; }
+
+/* === Sidebar Dark Mode === */
+.sidebar-item .label {
+    -fx-text-fill: #e0e0e0;
+}
+.sidebar-item-hover {
+    -fx-background-color: #3a3a3c;
+}
+.sidebar-item-hover .label {
+    -fx-text-fill: #e0e0e0;
+}
+.sidebar-item-active { -fx-background-color: #0f3460; }
+.sidebar-item-active .label { -fx-text-fill: white; }
+.sidebar-item-active .svg-icon { -fx-fill: white; }
+
+/* === Log Level Colors (work in both themes) === */
+.log-error { -fx-text-fill: #ff6b6b; -fx-font-weight: bold; }
+.log-warning { -fx-text-fill: #fca311; }
+.log-debug { -fx-text-fill: #a0a0a0; }
+
+/* === Flat Button === */
+.flat-button { -fx-background-color: #1e1e3a; -fx-text-fill: #e0e0e0; -fx-border-color: #3a3a5a; }
+.flat-button:hover { -fx-background-color: #2a2a4a; }
+
+/* === Titled Pane === */
+.titled-pane { -fx-text-fill: #e0e0e0; }
+.titled-pane > .title { -fx-background-color: #16213e; -fx-border-color: #3a3a5a; }
+.titled-pane > .title > .arrow-button .arrow { -fx-background-color: #b0b0b0; }
+.titled-pane > .content { -fx-background-color: #1e1e3a; -fx-border-color: #3a3a5a; }
+
+/* === Progress Indicator === */
+.progress-indicator .indicator { -fx-border-color: #3a3a5a; }
+.progress-indicator .percentage { -fx-fill: #e0e0e0; }
+
+/* === Toggle Switch (ControlsFX) === */
+.toggle-switch .thumb { -fx-background-color: #e0e0e0; }
+.toggle-switch > .thumb-area { -fx-background-color: #3a3a5a; }
+
+/* === Radio Reference === */
+.segmented-button-bar .toggle-button { -fx-background-color: #1e1e3a; -fx-text-fill: #e0e0e0; -fx-border-color: #3a3a5a; }
+.segmented-button-bar .toggle-button:selected { -fx-background-color: #0f3460; -fx-text-fill: white; }
+.header-label { -fx-text-fill: #e0e0e0; }
+.secondary-label { -fx-text-fill: #b0b0b0; }

@@ -63,6 +63,7 @@ import javafx.stage.Stage;
 import jiconfont.javafx.IconFontFX;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.github.dsheirer.gui.theme.ThemeManager;
 
 /**
  * Java FX window manager.  Handles all secondary Java FX windows that are used within this primarily
@@ -223,6 +224,7 @@ public class JavaFxWindowManager extends Application
             mRecordingViewerStage = new Stage();
             mRecordingViewerStage.setTitle("sdrtrunk - .bits Viewer");
             mRecordingViewerStage.setScene(scene);
+            ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mRecordingViewerStage, STAGE_MONITOR_KEY_RECORDING_VIEWER);
         }
 
@@ -248,6 +250,7 @@ public class JavaFxWindowManager extends Application
             mIconManagerStage = new Stage();
             mIconManagerStage.setTitle("sdrtrunk - javafx.scene.image.Image Manager");
             mIconManagerStage.setScene(scene);
+            ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mIconManagerStage, STAGE_MONITOR_KEY_ICON_MANAGER_EDITOR);
         }
 
@@ -296,6 +299,7 @@ public class JavaFxWindowManager extends Application
             mJmbeEditorStage = new Stage();
             mJmbeEditorStage.setTitle("sdrtrunk - JMBE Library Updater");
             mJmbeEditorStage.setScene(scene);
+            ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mJmbeEditorStage, STAGE_MONITOR_KEY_JMBE_EDITOR);
         }
 
@@ -337,6 +341,7 @@ public class JavaFxWindowManager extends Application
             mPlaylistStage = new Stage();
             mPlaylistStage.setTitle("sdrtrunk - Playlist Editor");
             mPlaylistStage.setScene(scene);
+            ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mPlaylistStage, STAGE_MONITOR_KEY_PLAYLIST_EDITOR);
         }
 
@@ -400,6 +405,7 @@ public class JavaFxWindowManager extends Application
             mUserPreferencesStage = new Stage();
             mUserPreferencesStage.setTitle("sdrtrunk - User Preferences");
             mUserPreferencesStage.setScene(scene);
+            ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mUserPreferencesStage, STAGE_MONITOR_KEY_USER_PREFERENCES_EDITOR);
         }
 
@@ -443,6 +449,7 @@ public class JavaFxWindowManager extends Application
             mChannelMapStage = new Stage();
             mChannelMapStage.setTitle("sdrtrunk - Channel Map Editor");
             mChannelMapStage.setScene(scene);
+            ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mChannelMapStage, STAGE_MONITOR_KEY_CHANNEL_MAP_EDITOR);
         }
 

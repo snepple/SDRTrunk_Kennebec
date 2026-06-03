@@ -188,6 +188,25 @@ public class ApplicationPreferenceEditor extends HBox
             remoteCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Enable Remote Desktop Optimizations", remoteToggle));
 
             mEditorPane.getChildren().addAll(remoteLabel, remoteCard);
+
+            // Card 7: First-Time Wizard
+            Label wizardLabel = new Label("Setup Wizard");
+            wizardLabel.getStyleClass().add("hig-section-header");
+            io.github.dsheirer.gui.preference.layout.SettingsCard wizardCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
+            javafx.scene.control.Button wizardBtn = new javafx.scene.control.Button("Run Setup Wizard Again...");
+            wizardBtn.getStyleClass().add("kennebec-primary-button");
+            wizardBtn.setOnAction(e -> {
+                java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
+                prefs.putBoolean("sdrtrunk.first.time.wizard.completed", false);
+                javafx.scene.control.Alert a = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+                a.setTitle("Setup Wizard");
+                a.setHeaderText("Wizard Reset");
+                a.setContentText("The first-time setup wizard will run the next time SDRTrunk starts. Please restart the application.");
+                io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
+                a.showAndWait();
+            });
+            wizardCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Re-run initial configuration wizard", wizardBtn));
+            mEditorPane.getChildren().addAll(wizardLabel, wizardCard);
         }
 
         return mEditorPane;

@@ -75,6 +75,8 @@ public class PreferenceEditorFactory
                 return new MqttPreferenceEditor(userPreferences);
             case AI:
                 return new io.github.dsheirer.gui.preference.ai.AIPreferenceEditor(userPreferences);
+            case WINDOWS_HOST_OPTIMIZATION:
+                return new io.github.dsheirer.gui.preference.diagnostics.WindowsHostOptimizationEditor(userPreferences);
         }
 
         return null;

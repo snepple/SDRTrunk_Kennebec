@@ -99,7 +99,7 @@ public class UserPreferencesEditor extends BorderPane
 
         Node sidebar = getEditorSelectionTreeView(); // We will rename the inner method but keep variable reference
         contentBox.getChildren().addAll(sidebar, getEditorAndButtonsBox());
-        contentBox.setStyle("-fx-background-color: #F2F2F7;");
+        contentBox.getStyleClass().add("preferences-main-area");
         setCenter(contentBox);
 
         // Automatically select the first item (e.g., Application) if nothing is selected
@@ -198,8 +198,9 @@ public class UserPreferencesEditor extends BorderPane
                 PreferenceEditorType.AUDIO_MP3,
                 PreferenceEditorType.AUDIO_OUTPUT,
                 PreferenceEditorType.AUDIO_RECORD,
-                "CPU",
+                "CPU Optimization",
                 PreferenceEditorType.VECTOR_CALIBRATION,
+                PreferenceEditorType.WINDOWS_HOST_OPTIMIZATION,
                 "Decoder",
                 PreferenceEditorType.JMBE_LIBRARY,
                 "Display",

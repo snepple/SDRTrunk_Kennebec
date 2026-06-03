@@ -162,14 +162,18 @@ public class JmbeCreator
 
                         if(script != null && Files.exists(script))
                         {
-                            // Fix java 26 compatibility error inside build.gradle if present
+                            // Fix Java version compatibility error inside build.gradle if present
+                            // Dynamically replace any JavaVersion.VERSION_XX where XX > 21
                             String[] gradleFiles = {"build.gradle", "creator/build.gradle", "api/build.gradle", "codec/build.gradle"};
                             for (String gradleFile : gradleFiles) {
                                 Path buildGradle = extractDir.resolve(gradleFile);
                                 if (Files.exists(buildGradle)) {
                                     String content = Files.readString(buildGradle, java.nio.charset.StandardCharsets.UTF_8);
-                                    content = content.replace("JavaVersion.VERSION_26", "JavaVersion.VERSION_21");
-                                    Files.writeString(buildGradle, content, java.nio.charset.StandardCharsets.UTF_8);
+                                    String patched = content.replaceAll("JavaVersion\\.VERSION_\\d+", "JavaVersion.VERSION_21");
+                                    if (!patched.equals(content)) {
+                                        Files.writeString(buildGradle, patched, java.nio.charset.StandardCharsets.UTF_8);
+                                        printToConsole("Patched Java version in: " + gradleFile);
+                                    }
                                 }
                             }
 
@@ -180,6 +184,7 @@ public class JmbeCreator
                             ProcessBuilder processBuilder = new ProcessBuilder();
                             processBuilder.directory(extractDir.toFile());
                             processBuilder.command(script.toString(), "build");
+                            processBuilder.redirectErrorStream(true);
 
                             try
                             {
@@ -195,12 +200,25 @@ public class JmbeCreator
 
                                 if(exitCode == 0)
                                 {
-                                    // Try to find the built jar
-                                    Path builtJar = extractDir.resolve("codec").resolve("build").resolve("libs").resolve("codec-1.0.9.jar");
-                                    if (!Files.exists(builtJar)) {
-                                        builtJar = extractDir.resolve("build").resolve("libs").resolve("jmbe-1.0.9.jar");
+                                    // Search for built JAR using glob instead of hardcoded names
+                                    Path builtJar = null;
+                                    Path[] searchDirs = {
+                                        extractDir.resolve("codec").resolve("build").resolve("libs"),
+                                        extractDir.resolve("build").resolve("libs")
+                                    };
+                                    for (Path searchDir : searchDirs) {
+                                        if (Files.exists(searchDir)) {
+                                            try (var jarFiles = Files.list(searchDir)) {
+                                                builtJar = jarFiles
+                                                    .filter(p -> p.toString().endsWith(".jar"))
+                                                    .filter(p -> !p.getFileName().toString().contains("-sources"))
+                                                    .filter(p -> !p.getFileName().toString().contains("-javadoc"))
+                                                    .findFirst().orElse(null);
+                                            }
+                                            if (builtJar != null) break;
+                                        }
                                     }
-                                    if (Files.exists(builtJar)) {
+                                    if (builtJar != null) {
                                         if (mLibraryPath.getParent() != null && !Files.exists(mLibraryPath.getParent())) {
                                             Files.createDirectories(mLibraryPath.getParent());
                                         }

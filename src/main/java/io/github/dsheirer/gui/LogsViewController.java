@@ -36,7 +36,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.scene.web.WebView;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -83,56 +82,66 @@ public class LogsViewController {
     private FilteredList<LogFile> mTwoToneFiltered;
     
     @FXML private ListView<String> mAppLogListView;
-    @FXML private WebView mLiveInspectorView;
+    @FXML private TextArea mLiveInspectorView;
+    @FXML private TextField mLiveSearchField;
+    @FXML private ComboBox<String> mLogLevelFilter;
+    private FilteredList<String> mLiveFiltered;
 
     public void init(UserPreferences userPreferences) {
         mUserPreferences = userPreferences;
 
-        // Initialize Live Logs
-        logListView.setItems(logData);
+        // Live logs with filtering
+        mLiveFiltered = new FilteredList<>(logData, p -> true);
+        logListView.setItems(mLiveFiltered);
         logListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-        // Task 6.1: Color-coded log level highlighting
+        // Log level filter ComboBox
+        if (mLogLevelFilter != null) {
+            mLogLevelFilter.setItems(FXCollections.observableArrayList("All", "ERROR", "WARN", "INFO", "DEBUG"));
+            mLogLevelFilter.getSelectionModel().select(0);
+            mLogLevelFilter.setOnAction(e -> updateLiveFilter());
+        }
+
+        // Live search field
+        if (mLiveSearchField != null) {
+            mLiveSearchField.textProperty().addListener((obs, oldVal, newVal) -> updateLiveFilter());
+        }
+
+        // Color-coded log level highlighting using CSS classes
         logListView.setCellFactory(lv -> new ListCell<String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
+                getStyleClass().removeAll("log-error", "log-warning", "log-debug");
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
-                    setStyle("");
                     return;
                 }
                 setText(item);
                 javafx.scene.shape.Circle circle = new javafx.scene.shape.Circle(5);
                 if (item.contains(" ERROR ") || item.contains(" FATAL ")) {
-                    setStyle("-fx-text-fill: #ff6b6b; -fx-font-weight: bold;");
+                    getStyleClass().add("log-error");
                     circle.setFill(javafx.scene.paint.Color.RED);
-                    setGraphic(circle);
                 } else if (item.contains(" WARN ")) {
-                    setStyle("-fx-text-fill: #fca311;");
+                    getStyleClass().add("log-warning");
                     circle.setFill(javafx.scene.paint.Color.ORANGE);
-                    setGraphic(circle);
                 } else if (item.contains(" DEBUG ")) {
-                    setStyle("-fx-text-fill: #a0a0a0;");
+                    getStyleClass().add("log-debug");
                     circle.setFill(javafx.scene.paint.Color.GRAY);
-                    setGraphic(circle);
                 } else {
-                    setStyle("");
                     circle.setFill(javafx.scene.paint.Color.GREEN);
-                    setGraphic(circle);
                 }
+                setGraphic(circle);
             }
         });
         
         logListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (mLiveInspectorView != null) {
                 if (newVal != null) {
-                    String html = "<html><body style='font-family: sans-serif; font-size: 13px; color: #333;'>" + 
-                                  newVal.replace("\n", "<br>") + "</body></html>";
-                    mLiveInspectorView.getEngine().loadContent(html);
+                    mLiveInspectorView.setText(newVal);
                 } else {
-                    mLiveInspectorView.getEngine().loadContent("");
+                    mLiveInspectorView.setText("");
                 }
             }
         });
@@ -241,15 +250,28 @@ public class LogsViewController {
 
     @Subscribe
     public void onLogEvent(ILoggingEvent event) {
-        logQueue.add(event.getFormattedMessage());
+        logQueue.add(event.getLevel() + " " + event.getFormattedMessage());
     }
 
-    @FXML
-    public void testLogs() {
-        ThreadPool.CACHED.submit(() -> {
-            for (int i = 0; i < 10000; i++) {
-                mLog.info("Benchmark log line " + i);
+    private void updateLiveFilter() {
+        String levelSelection = (mLogLevelFilter != null && mLogLevelFilter.getValue() != null)
+            ? mLogLevelFilter.getValue() : "All";
+        String searchText = (mLiveSearchField != null && mLiveSearchField.getText() != null)
+            ? mLiveSearchField.getText().toLowerCase() : "";
+
+        mLiveFiltered.setPredicate(line -> {
+            if (line == null) return false;
+            // Level filter
+            if (!"All".equals(levelSelection)) {
+                if (!line.contains(" " + levelSelection + " ") && !line.startsWith(levelSelection + " ")) {
+                    return false;
+                }
             }
+            // Text search filter
+            if (!searchText.isEmpty()) {
+                return line.toLowerCase().contains(searchText);
+            }
+            return true;
         });
     }
 
@@ -472,12 +494,15 @@ public class LogsViewController {
                         Node document = parser.parse(result);
                         HtmlRenderer renderer = HtmlRenderer.builder().build();
                         String htmlResult = renderer.render(document);
-                        WebView webView = new WebView();
-                        webView.getEngine().loadContent("<html><body style='font-family: sans-serif;'>" + htmlResult + "</body></html>");
-                        webView.setPrefSize(600, 400);
+                        // Use TextArea instead of WebView to avoid heavyweight dependency
+                        TextArea resultArea = new TextArea(result);
+                        resultArea.setEditable(false);
+                        resultArea.setWrapText(true);
+                        resultArea.setPrefSize(600, 400);
+                        resultArea.getStyleClass().add("log-inspector-text");
                         if (!alert.isShowing()) alert.show();
                         alert.setHeaderText(null);
-                        alert.getDialogPane().setContent(webView);
+                        alert.getDialogPane().setContent(resultArea);
                         alert.getDialogPane().lookupButton(ButtonType.OK).setDisable(false);
                     } catch (Exception ex) {
                         alert.close();

@@ -141,4 +141,24 @@ public class ThemeManager {
     public static boolean isNightModeEnabled() {
         return mNightModeEnabled;
     }
+
+    /**
+     * Applies the current theme (including night mode if enabled) to a DialogPane.
+     * Call this after creating an Alert or Dialog to ensure it matches the app theme.
+     */
+    public static void applyCurrentTheme(javafx.scene.control.DialogPane dialogPane) {
+        if (dialogPane == null) return;
+        String mainCss = ThemeManager.class.getResource("/sdrtrunk_style.css") != null
+            ? ThemeManager.class.getResource("/sdrtrunk_style.css").toExternalForm() : null;
+        if (mainCss != null && !dialogPane.getStylesheets().contains(mainCss)) {
+            dialogPane.getStylesheets().add(mainCss);
+        }
+        if (mNightModeEnabled) {
+            String nightCss = ThemeManager.class.getResource(NIGHT_MODE_CSS) != null
+                ? ThemeManager.class.getResource(NIGHT_MODE_CSS).toExternalForm() : null;
+            if (nightCss != null && !dialogPane.getStylesheets().contains(nightCss)) {
+                dialogPane.getStylesheets().add(nightCss);
+            }
+        }
+    }
 }

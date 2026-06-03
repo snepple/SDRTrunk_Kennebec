@@ -16,6 +16,7 @@ import javafx.scene.shape.SVGPath;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import io.github.dsheirer.gui.SidebarPanel.SidebarListener;
+import io.github.dsheirer.gui.theme.ThemeManager;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,12 +113,16 @@ public class SidebarController implements Initializable {
 
         boolean isActive = item.id.equals(activeId) || item.subItems.stream().anyMatch(s -> s.id.equals(activeId));
 
-        String baseStyle = isActive ? "-fx-background-color: #007AFF; -fx-background-radius: 6;" : "-fx-background-color: transparent; -fx-background-radius: 6;";
-        box.setStyle(baseStyle);
+        box.getStyleClass().add("sidebar-item");
+        if (isActive) {
+            box.getStyleClass().add("sidebar-item-active");
+        }
+
+        Color inactiveColor = ThemeManager.isNightModeEnabled() ? Color.web("#e0e0e0") : Color.BLACK;
 
         SVGPath icon = new SVGPath();
         icon.setContent(item.iconPath);
-        icon.setFill(isActive ? Color.WHITE : Color.BLACK);
+        icon.setFill(isActive ? Color.WHITE : inactiveColor);
 
         // Scale icon slightly down to match font size
         icon.setScaleX(0.8);
@@ -132,7 +137,7 @@ public class SidebarController implements Initializable {
         if (!collapsed) {
             Label label = new Label(item.label);
             label.setFont(Font.font("System", FontWeight.BOLD, 12));
-            label.setTextFill(isActive ? Color.WHITE : Color.BLACK);
+            label.setTextFill(isActive ? Color.WHITE : inactiveColor);
             box.getChildren().add(label);
         } else {
             Tooltip tooltip = new Tooltip(item.label);
@@ -141,10 +146,10 @@ public class SidebarController implements Initializable {
         }
 
         box.setOnMouseEntered(e -> {
-            if (!isActive) box.setStyle("-fx-background-color: #E5E5EA; -fx-background-radius: 6;");
+            if (!isActive) box.getStyleClass().add("sidebar-item-hover");
         });
         box.setOnMouseExited(e -> {
-            if (!isActive) box.setStyle(baseStyle);
+            box.getStyleClass().remove("sidebar-item-hover");
         });
 
         box.setOnMouseClicked(e -> {
@@ -181,12 +186,16 @@ public class SidebarController implements Initializable {
         box.setCursor(Cursor.HAND);
 
         boolean isActive = sub.id.equals(activeId);
-        String baseStyle = isActive ? "-fx-background-color: #007AFF; -fx-background-radius: 6;" : "-fx-background-color: transparent; -fx-background-radius: 6;";
-        box.setStyle(baseStyle);
+        box.getStyleClass().add("sidebar-item");
+        if (isActive) {
+            box.getStyleClass().add("sidebar-item-active");
+        }
+
+        Color inactiveColor = ThemeManager.isNightModeEnabled() ? Color.web("#e0e0e0") : Color.BLACK;
 
         if (!collapsed) {
             Label label = new Label(sub.label);
-            label.setTextFill(isActive ? Color.WHITE : Color.BLACK);
+            label.setTextFill(isActive ? Color.WHITE : inactiveColor);
             box.getChildren().add(label);
         } else {
             Tooltip tooltip = new Tooltip(sub.label);
@@ -195,10 +204,10 @@ public class SidebarController implements Initializable {
         }
 
         box.setOnMouseEntered(e -> {
-            if (!isActive) box.setStyle("-fx-background-color: #E5E5EA; -fx-background-radius: 6;");
+            if (!isActive) box.getStyleClass().add("sidebar-item-hover");
         });
         box.setOnMouseExited(e -> {
-            if (!isActive) box.setStyle(baseStyle);
+            box.getStyleClass().remove("sidebar-item-hover");
         });
 
         box.setOnMouseClicked(e -> {

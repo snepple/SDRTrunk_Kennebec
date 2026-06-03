@@ -8,6 +8,6 @@
         <StackPane fx:id="cardPane" />
     </center>
     <bottom>
-        <StackPane fx:id="resourcePaneContainer" />
+        <StackPane fx:id="resourcePaneContainer" managed="false" visible="false" />
     </bottom>
 </BorderPane>

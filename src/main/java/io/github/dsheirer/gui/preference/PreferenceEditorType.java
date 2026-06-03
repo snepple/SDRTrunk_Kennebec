@@ -42,6 +42,7 @@ public enum PreferenceEditorType
     MQTT("MQTT"),
     NOTIFICATIONS("Notifications"),
     AI("AI Settings"),
+    WINDOWS_HOST_OPTIMIZATION("Windows Host Optimization"),
     DEFAULT("Default");
 
     private String mLabel;

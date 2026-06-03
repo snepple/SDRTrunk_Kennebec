@@ -14,6 +14,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.Wizard;
 import org.controlsfx.dialog.WizardPane;
+import io.github.dsheirer.gui.theme.ThemeManager;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -60,6 +61,27 @@ public class FirstTimeWizard {
         panes.add(createMemoryPane()); // Memory is now the last step
 
         wizard.setFlow(new Wizard.LinearFlow(panes));
+
+        // Apply Kennebec styling and theme to the wizard dialog
+        wizard.getProperties().put("javafx.scene.control.Dialog.stylesheets", 
+            getClass().getResource("/sdrtrunk_style.css") != null 
+                ? getClass().getResource("/sdrtrunk_style.css").toExternalForm() : null);
+        
+        // Hook into the dialog pane to apply styling once it's shown
+        for (WizardPane wp : panes) {
+            wp.getStyleClass().add("kennebec-card");
+            wp.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene != null) {
+                    String mainCss = getClass().getResource("/sdrtrunk_style.css") != null
+                        ? getClass().getResource("/sdrtrunk_style.css").toExternalForm() : null;
+                    if (mainCss != null && !newScene.getStylesheets().contains(mainCss)) {
+                        newScene.getStylesheets().add(mainCss);
+                    }
+                    ThemeManager.registerScene(newScene);
+                }
+            });
+        }
+
         wizard.showAndWait();
         
         java.util.prefs.Preferences p = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);

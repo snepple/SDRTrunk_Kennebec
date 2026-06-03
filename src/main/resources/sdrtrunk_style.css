@@ -676,3 +676,28 @@
 .preferences-main-area .combo-box .list-cell {
     -fx-text-fill: #1C1C1E !important;
 }
+
+/* ============================================================
+   SIDEBAR ITEM STYLES
+   ============================================================ */
+.sidebar-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+}
+.sidebar-item-active {
+    -fx-background-color: #007AFF;
+    -fx-background-radius: 6;
+}
+.sidebar-item-hover {
+    -fx-background-color: #E5E5EA;
+    -fx-background-radius: 6;
+}
+.sidebar-item-active .label {
+    -fx-text-fill: white;
+}
+.sidebar-item .label {
+    -fx-text-fill: black;
+}
+.sidebar-item-hover .label {
+    -fx-text-fill: black;
+}

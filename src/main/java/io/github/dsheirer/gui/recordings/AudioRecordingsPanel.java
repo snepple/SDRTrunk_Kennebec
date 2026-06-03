@@ -46,6 +46,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class AudioRecordingsPanel extends VBox {
@@ -69,6 +70,8 @@ public class AudioRecordingsPanel extends VBox {
 
     private MediaPlayer mMediaPlayer;
     private Button mStopButton;
+    private Label mStatusLabel;
+    private Label mDiskUsageLabel;
 
     private io.github.dsheirer.playlist.PlaylistManager mPlaylistManager;
 
@@ -157,6 +160,19 @@ public class AudioRecordingsPanel extends VBox {
         mStopButton = new Button("Stop Playback");
         mStopButton.setDisable(true);
         mStopButton.setOnAction(e -> stopPlayback());
+
+        Button clearFiltersButton = new Button("Clear Filters");
+        clearFiltersButton.getStyleClass().add("kennebec-toolbar-button");
+        clearFiltersButton.setOnAction(e -> {
+            mStartDatePicker.setValue(null);
+            mEndDatePicker.setValue(null);
+            mStartHourSpinner.getValueFactory().setValue(0);
+            mStartMinuteSpinner.getValueFactory().setValue(0);
+            mEndHourSpinner.getValueFactory().setValue(23);
+            mEndMinuteSpinner.getValueFactory().setValue(59);
+            mAliasComboBox.getSelectionModel().select("All");
+            mChannelComboBox.getSelectionModel().select("All");
+        });
 
         Button deleteSelectedButton = new Button("Delete Selected");
         deleteSelectedButton.setOnAction(e -> {
@@ -268,7 +284,7 @@ public class AudioRecordingsPanel extends VBox {
 
         HBox buttonBox = new HBox(8);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
-        buttonBox.getChildren().addAll(refreshButton, mStopButton, deleteSelectedButton, deleteAllButton);
+        buttonBox.getChildren().addAll(refreshButton, mStopButton, clearFiltersButton, deleteSelectedButton, deleteAllButton);
 
         controlsBox2.getChildren().addAll(aliasBox, channelBox, spacer, buttonBox);
 
@@ -278,6 +294,7 @@ public class AudioRecordingsPanel extends VBox {
 
         // Table
         mTableView.setPlaceholder(new Label("No audio recordings found"));
+        mTableView.getStyleClass().add("hig-data-table");
         HBox.setHgrow(mTableView, Priority.ALWAYS);
         mTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -332,11 +349,45 @@ public class AudioRecordingsPanel extends VBox {
 
         root.setCenter(mTableView);
 
+        // Status bar at bottom
+        HBox statusBar = new HBox(16);
+        statusBar.setAlignment(Pos.CENTER_LEFT);
+        statusBar.setPadding(new Insets(6, 10, 6, 10));
+        statusBar.getStyleClass().add("kennebec-filter-toolbar");
+
+        mStatusLabel = new Label("Showing 0 of 0 recordings");
+        mStatusLabel.getStyleClass().add("kennebec-toolbar-label");
+
+        mDiskUsageLabel = new Label("Disk Usage: calculating...");
+        mDiskUsageLabel.getStyleClass().add("kennebec-toolbar-label");
+
+        Region statusSpacer = new Region();
+        HBox.setHgrow(statusSpacer, Priority.ALWAYS);
+
+        statusBar.getChildren().addAll(mStatusLabel, statusSpacer, mDiskUsageLabel);
+        root.setBottom(statusBar);
+
+        // Update status label when filtered list changes
+        mFilteredRecordings.addListener((javafx.collections.ListChangeListener<RecordingItem>) change -> {
+            updateStatusLabel();
+        });
+        mRecordings.addListener((javafx.collections.ListChangeListener<RecordingItem>) change -> {
+            updateStatusLabel();
+        });
+
         root.setMinSize(0, 0);
         mTableView.setMinSize(0, 0);
         VBox.setVgrow(root, Priority.ALWAYS);
 
         root.getStylesheets().add(getClass().getResource("/sdrtrunk_style.css").toExternalForm());
+
+        // Stop playback when panel is removed from scene
+        sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null) {
+                stopPlayback();
+            }
+        });
+
         getChildren().add(root);
 
         loadRecordings();
@@ -394,6 +445,7 @@ public class AudioRecordingsPanel extends VBox {
 
         Thread loaderThread = new Thread(() -> {
             try (Stream<Path> stream = Files.list(dir)) {
+                List<RecordingItem> items = new ArrayList<>();
                 stream.filter(Files::isRegularFile)
                       .filter(p -> {
                           String name = p.getFileName().toString().toLowerCase();
@@ -401,8 +453,13 @@ public class AudioRecordingsPanel extends VBox {
                       })
                       .forEach(p -> {
                           RecordingItem item = parseFilename(p);
-                          Platform.runLater(() -> mRecordings.add(item));
+                          items.add(item);
                       });
+                Platform.runLater(() -> {
+                    mRecordings.addAll(items);
+                    updateDiskUsage(dir);
+                    performAutoCleanup(dir);
+                });
             } catch (IOException e) {
                 mLog.error("Error reading recordings directory", e);
             }
@@ -553,7 +610,103 @@ public class AudioRecordingsPanel extends VBox {
             mMediaPlayer.dispose();
             mMediaPlayer = null;
         }
-        mStopButton.setDisable(true);
+        if (mStopButton != null) {
+            mStopButton.setDisable(true);
+        }
+    }
+
+    private void updateStatusLabel() {
+        if (mStatusLabel != null) {
+            mStatusLabel.setText("Showing " + mFilteredRecordings.size() + " of " + mRecordings.size() + " recordings");
+        }
+    }
+
+    private void updateDiskUsage(Path dir) {
+        if (mDiskUsageLabel == null || dir == null) return;
+        Thread t = new Thread(() -> {
+            try {
+                long totalBytes = 0;
+                try (Stream<Path> stream = Files.list(dir)) {
+                    totalBytes = stream.filter(Files::isRegularFile)
+                        .mapToLong(p -> { try { return Files.size(p); } catch (IOException e) { return 0; } })
+                        .sum();
+                }
+                long usageMB = totalBytes / (1024 * 1024);
+                int maxMB = mUserPreferences.getDirectoryPreference().getDirectoryMaxUsageRecordings();
+                final String text = String.format("Disk Usage: %d MB / %d MB", usageMB, maxMB);
+                Platform.runLater(() -> mDiskUsageLabel.setText(text));
+            } catch (IOException e) {
+                Platform.runLater(() -> mDiskUsageLabel.setText("Disk Usage: error"));
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /**
+     * Auto-cleanup: if recordings directory exceeds the configured max disk usage threshold,
+     * deletes oldest recordings until usage is below the threshold.
+     */
+    private void performAutoCleanup(Path dir) {
+        if (dir == null || !Files.exists(dir)) return;
+        Thread t = new Thread(() -> {
+            try {
+                int maxMB = mUserPreferences.getDirectoryPreference().getDirectoryMaxUsageRecordings();
+                long maxBytes = (long) maxMB * 1024 * 1024;
+
+                // Calculate current usage
+                long totalBytes;
+                List<Path> allFiles = new ArrayList<>();
+                try (Stream<Path> stream = Files.list(dir)) {
+                    stream.filter(Files::isRegularFile)
+                          .filter(p -> {
+                              String name = p.getFileName().toString().toLowerCase();
+                              return name.endsWith(".wav") || name.endsWith(".mp3");
+                          })
+                          .forEach(allFiles::add);
+                }
+
+                totalBytes = allFiles.stream()
+                    .mapToLong(p -> { try { return Files.size(p); } catch (IOException e) { return 0; } })
+                    .sum();
+
+                if (totalBytes <= maxBytes) return;
+
+                // Sort by last modified time (oldest first)
+                allFiles.sort(Comparator.comparingLong(p -> {
+                    try { return Files.getLastModifiedTime(p).toMillis(); } catch (IOException e) { return 0; }
+                }));
+
+                int deletedCount = 0;
+                long freedBytes = 0;
+                for (Path file : allFiles) {
+                    if (totalBytes <= maxBytes) break;
+                    try {
+                        long fileSize = Files.size(file);
+                        Files.delete(file);
+                        totalBytes -= fileSize;
+                        freedBytes += fileSize;
+                        deletedCount++;
+                    } catch (IOException e) {
+                        mLog.warn("Auto-cleanup: failed to delete " + file.getFileName(), e);
+                    }
+                }
+
+                if (deletedCount > 0) {
+                    final int count = deletedCount;
+                    final long freed = freedBytes;
+                    mLog.info("Auto-cleanup: deleted {} recordings, freed {} MB",
+                        count, freed / (1024 * 1024));
+                    Platform.runLater(() -> {
+                        loadRecordings(); // Reload to reflect deletions
+                    });
+                }
+            } catch (IOException e) {
+                mLog.error("Auto-cleanup error", e);
+            }
+        });
+        t.setDaemon(true);
+        t.start();
     }
 }
 

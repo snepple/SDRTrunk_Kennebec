@@ -3,7 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.web.WebView?>
+
 
 <fx:root type="BorderPane" xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
@@ -25,7 +25,8 @@
                     <VBox spacing="10">
                         <padding><Insets top="10" right="10" bottom="0" left="10"/></padding>
                         <HBox alignment="CENTER_LEFT" spacing="10">
-                            <Button text="Benchmark 10k Logs" onAction="#testLogs" styleClass="kennebec-primary-button"/>
+                            <Label text="Level:" />
+                            <ComboBox fx:id="mLogLevelFilter" promptText="All" />
                             <TextField fx:id="mLiveSearchField" promptText="Filter logs (e.g., error type, exact frequencies, talkgroups)..." styleClass="kennebec-search-field" HBox.hgrow="ALWAYS" />
                         </HBox>
                         <ListView fx:id="logListView" VBox.vgrow="ALWAYS" />
@@ -34,7 +35,7 @@
                         <Label text="Detail Inspector" styleClass="hig-section-header">
                             <padding><Insets top="5" right="10" bottom="5" left="10"/></padding>
                         </Label>
-                        <WebView fx:id="mLiveInspectorView" VBox.vgrow="ALWAYS" />
+                        <TextArea fx:id="mLiveInspectorView" VBox.vgrow="ALWAYS" editable="false" wrapText="true" styleClass="log-inspector-text" />
                     </VBox>
                 </SplitPane>
             </Tab>

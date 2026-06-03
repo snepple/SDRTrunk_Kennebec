@@ -72,6 +72,10 @@ public class ControllerPanel extends javafx.scene.layout.StackPane {
                 // Add HelpViewer natively without SwingNode
                 mController.addView("help_viewer", new io.github.dsheirer.gui.help.HelpViewer());
 
+                // Ensure the FXML root BorderPane fills the entire StackPane
+                if (root instanceof Region) {
+                    ((Region) root).setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+                }
                 getChildren().add(root);
             } catch (IOException e) {
                 mLog.error("Error loading ControllerPanel.fxml", e);
