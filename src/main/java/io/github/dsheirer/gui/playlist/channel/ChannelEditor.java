@@ -126,15 +126,15 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         mUnknownConfigurationEditor = new UnknownConfigurationEditor(mPlaylistManager, mTunerManager,
                 userPreferences, this);
 
-        HBox topToolbar = new HBox(15);
+        HBox topToolbar = new HBox(12);
         topToolbar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        topToolbar.getStyleClass().add("context-toolbar");
-        topToolbar.setPadding(new Insets(10, 10, 10, 10));
+        topToolbar.getStyleClass().add("kennebec-filter-toolbar");
         
         HBox viewBox = new HBox();
-        viewBox.setSpacing(5);
+        viewBox.setSpacing(8);
         viewBox.setAlignment(Pos.CENTER);
-        Label viewLabel = new Label("View Channels:");
+        Label viewLabel = new Label("View:");
+        viewLabel.getStyleClass().add("kennebec-toolbar-label");
         viewLabel.setMinWidth(Region.USE_PREF_SIZE);
         viewBox.getChildren().addAll(viewLabel, getViewSegmentedButton());
 
@@ -142,9 +142,10 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         HBox.setHgrow(leftSpacer, Priority.ALWAYS);
 
         HBox searchBox = new HBox();
-        searchBox.setSpacing(5);
+        searchBox.setSpacing(8);
         searchBox.setAlignment(Pos.CENTER);
         Label searchLabel = new Label("Search:");
+        searchLabel.getStyleClass().add("kennebec-toolbar-label");
         searchLabel.setMinWidth(Region.USE_PREF_SIZE);
         searchLabel.setAlignment(Pos.CENTER_RIGHT);
         searchBox.getChildren().addAll(searchLabel, getSearchField());
@@ -376,6 +377,9 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         if(mSearchField == null)
         {
             mSearchField = TextFields.createClearableTextField();
+            mSearchField.setPromptText("Filter channels\u2026");
+            mSearchField.getStyleClass().add("kennebec-search-field");
+            mSearchField.setPrefWidth(200);
             mSearchField.textProperty().addListener((observable, oldValue, newValue) -> updateChannelListFilter());
         }
 
@@ -724,6 +728,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         if(mNewButton == null)
         {
             mNewButton = new MenuButton("New");
+            mNewButton.getStyleClass().add("kennebec-toolbar-button-primary");
             mNewButton.setAlignment(Pos.CENTER);
             mNewButton.setMaxWidth(Double.MAX_VALUE);
             mNewButton.setTooltip(new Tooltip("Create a new channel"));
@@ -758,6 +763,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         if(mDeleteButton == null)
         {
             mDeleteButton = new Button("Delete");
+            mDeleteButton.getStyleClass().add("kennebec-toolbar-button");
             mDeleteButton.setDisable(true);
             mDeleteButton.setMaxWidth(Double.MAX_VALUE);
             mDeleteButton.setTooltip(new Tooltip("Delete the currently selected channel"));
@@ -802,6 +808,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         if(mCloneButton == null)
         {
             mCloneButton = new Button("Clone");
+            mCloneButton.getStyleClass().add("kennebec-toolbar-button");
             mCloneButton.setDisable(true);
             mCloneButton.setMaxWidth(Double.MAX_VALUE);
             mCloneButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected channel"));

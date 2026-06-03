@@ -110,9 +110,8 @@ public class AudioRecordingsPanel extends VBox {
         mFilteredRecordings = new FilteredList<>(mRecordings, p -> true);
 
         // Top Filter Bar
-        VBox filterContainer = new VBox(10);
-        filterContainer.setPadding(new Insets(10));
-        filterContainer.getStyleClass().add("context-toolbar");
+        VBox filterContainer = new VBox(2);
+        filterContainer.getStyleClass().add("kennebec-card");
 
         mStartDatePicker = new DatePicker();
         mStartDatePicker.setPromptText("Start Date");
@@ -214,34 +213,60 @@ public class AudioRecordingsPanel extends VBox {
         deleteAllButton.disableProperty().bind(
             javafx.beans.binding.Bindings.isEmpty(mFilteredRecordings)
         );
-        HBox controlsBox1 = new HBox(20);
-        controlsBox1.setAlignment(Pos.CENTER_LEFT);
-        
-        HBox dateBox = new HBox(5);
-        dateBox.setAlignment(Pos.CENTER_LEFT);
-        dateBox.getChildren().addAll(new Label("Date Range:"), mStartDatePicker, new Label("to"), mEndDatePicker);
 
-        HBox timeBox = new HBox(5);
+        // Row 1: Date and Time filters
+        HBox controlsBox1 = new HBox(16);
+        controlsBox1.getStyleClass().add("kennebec-filter-toolbar");
+        
+        HBox dateBox = new HBox(8);
+        dateBox.setAlignment(Pos.CENTER_LEFT);
+        Label dateLabel = new Label("Date Range:");
+        dateLabel.getStyleClass().add("kennebec-toolbar-label");
+        dateLabel.setMinWidth(Region.USE_PREF_SIZE);
+        Label dateToLabel = new Label("to");
+        dateToLabel.getStyleClass().add("kennebec-toolbar-label");
+        dateBox.getChildren().addAll(dateLabel, mStartDatePicker, dateToLabel, mEndDatePicker);
+
+        HBox timeBox = new HBox(8);
         timeBox.setAlignment(Pos.CENTER_LEFT);
-        timeBox.getChildren().addAll(new Label("Time Range:"), mStartHourSpinner, new Label(":"), mStartMinuteSpinner, new Label("to"), mEndHourSpinner, new Label(":"), mEndMinuteSpinner);
+        Label timeLabel = new Label("Time Range:");
+        timeLabel.getStyleClass().add("kennebec-toolbar-label");
+        timeLabel.setMinWidth(Region.USE_PREF_SIZE);
+        Label timeColon1 = new Label(":");
+        Label timeTo = new Label("to");
+        timeTo.getStyleClass().add("kennebec-toolbar-label");
+        Label timeColon2 = new Label(":");
+        timeBox.getChildren().addAll(timeLabel, mStartHourSpinner, timeColon1, mStartMinuteSpinner, timeTo, mEndHourSpinner, timeColon2, mEndMinuteSpinner);
         
         controlsBox1.getChildren().addAll(dateBox, timeBox);
 
-        HBox controlsBox2 = new HBox(20);
-        controlsBox2.setAlignment(Pos.CENTER_LEFT);
+        // Row 2: Alias, Channel filters + action buttons
+        HBox controlsBox2 = new HBox(16);
+        controlsBox2.getStyleClass().add("kennebec-filter-toolbar");
         
-        HBox aliasBox = new HBox(5);
+        HBox aliasBox = new HBox(8);
         aliasBox.setAlignment(Pos.CENTER_LEFT);
-        aliasBox.getChildren().addAll(new Label("Alias:"), mAliasComboBox);
+        Label aliasLabel = new Label("Alias:");
+        aliasLabel.getStyleClass().add("kennebec-toolbar-label");
+        aliasLabel.setMinWidth(Region.USE_PREF_SIZE);
+        aliasBox.getChildren().addAll(aliasLabel, mAliasComboBox);
 
-        HBox channelBox = new HBox(5);
+        HBox channelBox = new HBox(8);
         channelBox.setAlignment(Pos.CENTER_LEFT);
-        channelBox.getChildren().addAll(new Label("Channel:"), mChannelComboBox);
+        Label channelLabel = new Label("Channel:");
+        channelLabel.getStyleClass().add("kennebec-toolbar-label");
+        channelLabel.setMinWidth(Region.USE_PREF_SIZE);
+        channelBox.getChildren().addAll(channelLabel, mChannelComboBox);
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox buttonBox = new HBox(10);
+        refreshButton.getStyleClass().add("kennebec-toolbar-button-primary");
+        mStopButton.getStyleClass().add("kennebec-toolbar-button");
+        deleteSelectedButton.getStyleClass().add("kennebec-toolbar-button");
+        deleteAllButton.getStyleClass().add("kennebec-toolbar-button");
+
+        HBox buttonBox = new HBox(8);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
         buttonBox.getChildren().addAll(refreshButton, mStopButton, deleteSelectedButton, deleteAllButton);
 
@@ -398,71 +423,109 @@ public class AudioRecordingsPanel extends VBox {
         }
 
         // Parse filename
-        String withoutExt = name.substring(0, name.lastIndexOf('.'));
+        String withoutExt = name.contains(".") ? name.substring(0, name.lastIndexOf('.')) : name;
         String[] parts = withoutExt.split("_");
 
-        if (parts.length >= 2) {
-            boolean isBaseband = parts.length >= 4 && parts[1].equals("baseband");
-            int dateIdx = isBaseband ? 2 : 0;
-            int timeIdx = isBaseband ? 3 : 1;
-            
-            if (parts.length > dateIdx && parts.length > timeIdx) {
-                String datePart = parts[dateIdx];
-                if (datePart.length() == 8) {
-                    item.setDate(datePart.substring(0, 4) + "-" + datePart.substring(4, 6) + "-" + datePart.substring(6, 8));
-                } else {
-                    item.setDate(datePart);
-                }
+        if (parts.length < 2) {
+            // Not enough parts to parse - just use the filename as channel
+            item.setChannel(withoutExt);
+            return item;
+        }
 
-                String timePart = parts[timeIdx];
-                if (timePart.length() >= 6) {
-                    item.setTime(timePart.substring(0, 2) + ":" + timePart.substring(2, 4) + ":" + timePart.substring(4, 6));
-                } else {
-                    item.setTime(timePart);
+        // Find the date and time parts by scanning for an 8-digit numeric date (yyyyMMdd)
+        // followed by a 6+ digit numeric time (HHmmss). The recording manager always outputs
+        // the timestamp as "yyyyMMdd_HHmmss" at the start of the filename, but older recordings
+        // or other tools may place it differently.
+        int dateIdx = -1;
+        int timeIdx = -1;
+
+        for (int i = 0; i < parts.length - 1; i++) {
+            if (parts[i].length() == 8 && parts[i].matches("\\d{8}")) {
+                // Validate it looks like a plausible date (year 1900-2099)
+                int year = Integer.parseInt(parts[i].substring(0, 4));
+                int month = Integer.parseInt(parts[i].substring(4, 6));
+                int day = Integer.parseInt(parts[i].substring(6, 8));
+                if (year >= 1900 && year <= 2099 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    // Check if the next part looks like a time (6+ digits)
+                    if (parts[i + 1].length() >= 6 && parts[i + 1].substring(0, 6).matches("\\d{6}")) {
+                        dateIdx = i;
+                        timeIdx = i + 1;
+                        break;
+                    }
                 }
             }
-            
+        }
+
+        // Check for baseband format: FREQ_baseband_yyyyMMdd_HHmmss
+        boolean isBaseband = parts.length >= 4 && parts[1].equals("baseband");
+
+        if (dateIdx >= 0 && timeIdx >= 0) {
+            // Found date and time parts
+            String datePart = parts[dateIdx];
+            item.setDate(datePart.substring(0, 4) + "-" + datePart.substring(4, 6) + "-" + datePart.substring(6, 8));
+
+            String timePart = parts[timeIdx];
+            item.setTime(timePart.substring(0, 2) + ":" + timePart.substring(2, 4) + ":" + timePart.substring(4, 6));
+
+            // Build channel info from parts between time and _TO_/_FROM_ markers,
+            // excluding date and time parts
+            int toIdx = withoutExt.indexOf("_TO_");
+            int fromIdx = withoutExt.indexOf("_FROM_");
+            int endChannelIdx = toIdx != -1 ? toIdx : (fromIdx != -1 ? fromIdx : withoutExt.length());
+
+            // Calculate the character offset right after the time part
+            int startChannelOffset = 0;
+            for (int i = 0; i <= timeIdx; i++) {
+                startChannelOffset += parts[i].length();
+                if (i < timeIdx) {
+                    startChannelOffset += 1; // underscore
+                }
+            }
+            startChannelOffset += 1; // trailing underscore after time part
+
             if (isBaseband) {
                 item.setChannel(parts[0] + " baseband");
+            } else if (endChannelIdx > startChannelOffset && startChannelOffset <= withoutExt.length()) {
+                String channelInfo = withoutExt.substring(startChannelOffset, endChannelIdx);
+                item.setChannel(channelInfo.replace("_", " ").trim());
             }
-        }
 
-        int toIdx = withoutExt.indexOf("_TO_");
-        int fromIdx = withoutExt.indexOf("_FROM_");
-
-        String channelInfo = "";
-
-        if (parts.length > 2) {
-            int endChannelIdx = toIdx != -1 ? toIdx : (fromIdx != -1 ? fromIdx : withoutExt.length());
-            // parts[0] is date, parts[1] is time. Length of date + time + 2 underscores
-            int startChannelIdx = parts[0].length() + parts[1].length() + 2;
-            if (endChannelIdx > startChannelIdx) {
-                channelInfo = withoutExt.substring(startChannelIdx, endChannelIdx);
+            // Parse TO alias
+            if (toIdx != -1) {
+                int toEnd = fromIdx != -1 ? fromIdx : withoutExt.length();
+                int toneIdx = withoutExt.indexOf("_TONES");
+                if (toneIdx != -1 && toneIdx < toEnd) {
+                    toEnd = toneIdx;
+                }
+                if (toIdx + 4 < toEnd) {
+                    item.setToAlias(withoutExt.substring(toIdx + 4, toEnd).replace("_", " ").trim());
+                }
             }
-        }
-        
-        boolean isBaseband = parts.length >= 4 && parts[1].equals("baseband");
-        if (!isBaseband) {
-            item.setChannel(channelInfo.replace("_", " ").trim());
-        }
 
-        if (toIdx != -1) {
-            int toEnd = fromIdx != -1 ? fromIdx : withoutExt.length();
-            // check if there's _TONES or something
-            int toneIdx = withoutExt.indexOf("_TONES");
-            if (toneIdx != -1 && toneIdx < toEnd) {
-                toEnd = toneIdx;
+            // Parse FROM alias
+            if (fromIdx != -1) {
+                int fromEnd = withoutExt.length();
+                int toneIdx = withoutExt.indexOf("_TONES");
+                if (toneIdx != -1 && toneIdx > fromIdx) {
+                    fromEnd = toneIdx;
+                }
+                if (fromIdx + 6 < fromEnd) {
+                    item.setFromAlias(withoutExt.substring(fromIdx + 6, fromEnd).replace("_", " ").trim());
+                }
             }
-            item.setToAlias(withoutExt.substring(toIdx + 4, toEnd).replace("_", " ").trim());
-        }
-
-        if (fromIdx != -1) {
-            int fromEnd = withoutExt.length();
-            int toneIdx = withoutExt.indexOf("_TONES");
-            if (toneIdx != -1 && toneIdx > fromIdx) {
-                fromEnd = toneIdx;
+        } else {
+            // Could not find a valid date/time pattern - try using file modification time
+            try {
+                java.time.Instant lastModified = Files.getLastModifiedTime(path).toInstant();
+                java.time.LocalDateTime ldt = java.time.LocalDateTime.ofInstant(lastModified, java.time.ZoneId.systemDefault());
+                item.setDate(ldt.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+                item.setTime(ldt.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            } catch (IOException e) {
+                item.setDate("");
+                item.setTime("");
             }
-            item.setFromAlias(withoutExt.substring(fromIdx + 6, fromEnd).replace("_", " ").trim());
+            // Use the whole filename (minus extension) as channel info
+            item.setChannel(withoutExt.replace("_", " ").trim());
         }
 
         return item;

@@ -79,28 +79,22 @@ public class AliasViewByIdentifierEditor extends VBox
         		updateList();
         });
 
-        GridPane gridPane = new GridPane();
-        gridPane.setPadding(new Insets(10,10,10,10));
-        gridPane.setVgap(10);
-        gridPane.setHgap(10);
+        HBox filterBar = new HBox();
+        filterBar.getStyleClass().add("kennebec-filter-toolbar");
 
-        Label aliasListLabel = new Label("Alias List");
-        GridPane.setHalignment(aliasListLabel, HPos.RIGHT);
-        GridPane.setConstraints(aliasListLabel, 0, 0);
-        gridPane.getChildren().add(aliasListLabel);
+        Label aliasListLabel = new Label("Alias List:");
+        aliasListLabel.getStyleClass().add("kennebec-toolbar-label");
+        aliasListLabel.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
 
-        GridPane.setConstraints(getAliasListNameComboBox(), 1, 0);
-        GridPane.setHgrow(getAliasListNameComboBox(), Priority.ALWAYS);
-        gridPane.getChildren().add(getAliasListNameComboBox());
+        Label identifierLabel = new Label("Identifier Type:");
+        identifierLabel.getStyleClass().add("kennebec-toolbar-label");
+        identifierLabel.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
 
-        Label identifierLabel = new Label("Identifier Type");
-        GridPane.setHalignment(identifierLabel, HPos.RIGHT);
-        GridPane.setConstraints(identifierLabel, 0, 1);
-        gridPane.getChildren().add(identifierLabel);
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        GridPane.setConstraints(getAliasIDTypeComboBox(), 1, 1);
-        GridPane.setHgrow(getAliasIDTypeComboBox(), Priority.ALWAYS);
-        gridPane.getChildren().add(getAliasIDTypeComboBox());
+        filterBar.getChildren().addAll(aliasListLabel, getAliasListNameComboBox(), spacer,
+            identifierLabel, getAliasIDTypeComboBox());
 
         HBox tableAndButtonBox = new HBox();
         tableAndButtonBox.setPadding(new Insets(0,10,0,0));
@@ -110,7 +104,7 @@ public class AliasViewByIdentifierEditor extends VBox
 
         VBox.setVgrow(tableAndButtonBox, Priority.ALWAYS);
 
-        getChildren().addAll(gridPane, tableAndButtonBox);
+        getChildren().addAll(filterBar, tableAndButtonBox);
 
         updateList();
     }
