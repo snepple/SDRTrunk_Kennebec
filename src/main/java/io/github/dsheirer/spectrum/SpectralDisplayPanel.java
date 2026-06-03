@@ -327,13 +327,10 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
      */
     private int getZoomWindowSizeInBins()
     {
-        return mDFTSize.getSize() / getZoomMultiplier();
+        return mDFTSize.getSize() / SpectrumUtils.getZoomMultiplier(mZoom);
     }
 
-    public int getZoomMultiplier()
-    {
-        return (int)FastMath.pow(2.0, mZoom);
-    }
+    
 
     /**
      * Calculates the overall offset of the frequency from the current minimum
@@ -550,7 +547,7 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
             double binDistance = (double)dragDistance / mPixelsPerBin;
             int offset = (int)(mDFTZoomWindowOffsetAtDragStart + binDistance);
             if(offset < 0) offset = 0;
-            int maxOffset = mDFTSize.getSize() - (mDFTSize.getSize() / getZoomMultiplier());
+            int maxOffset = mDFTSize.getSize() - (mDFTSize.getSize() / SpectrumUtils.getZoomMultiplier(mZoom));
             if(offset > maxOffset) offset = maxOffset;
             setZoomWindowOffset(offset);
         }
@@ -558,7 +555,7 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
         public void mousePressedFX(javafx.scene.input.MouseEvent e) {
             mDragStartX = (int)e.getX();
             mDFTZoomWindowOffsetAtDragStart = mDFTZoomWindowOffset;
-            mPixelsPerBin = (double)((javafx.scene.layout.Region)getParent()).getWidth() / ((double)(mDFTSize.getSize()) / (double)getZoomMultiplier());
+            mPixelsPerBin = (double)((javafx.scene.layout.Region)getParent()).getWidth() / ((double)(mDFTSize.getSize()) / (double)SpectrumUtils.getZoomMultiplier(mZoom));
         }
 
         private void updateFX(javafx.scene.input.MouseEvent event) {

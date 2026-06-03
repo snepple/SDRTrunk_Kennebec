@@ -237,14 +237,14 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
     private Color getColorFromSetting(ColorSettingName name) {
         ColorSetting setting = mSettingsManager.getSettingsModel().getColorSetting(name);
         javafx.scene.paint.Color awtColor = setting.getColor();
-        return Color.rgb((int)(awtColor.getRed() * 255), (int)(awtColor.getGreen() * 255), (int)(awtColor.getBlue() * 255), awtColor.getOpacity());
+        return awtColor;
     }
 
     @Override
     public void settingChanged(Setting setting) {
         if (setting instanceof ColorSetting colorSetting) {
             javafx.scene.paint.Color awtColor = colorSetting.getColor();
-            Color fxColor = Color.rgb((int)(awtColor.getRed() * 255), (int)(awtColor.getGreen() * 255), (int)(awtColor.getBlue() * 255), awtColor.getOpacity());
+            Color fxColor = awtColor;
 
             switch (colorSetting.getColorSettingName()) {
                 case SPECTRUM_BACKGROUND:
@@ -266,16 +266,14 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
         }
     }
 
-    private int getZoomMultiplier() {
-        return (int) FastMath.pow(2.0, mZoom);
-    }
+    
 
     private float[] getBins() {
         synchronized (mBinsLock) {
             if (mZoom == 0 || mDisplayFFTBins == null) {
                 return mDisplayFFTBins != null ? Arrays.copyOf(mDisplayFFTBins, mDisplayFFTBins.length) : null;
             } else {
-                int length = mDisplayFFTBins.length / getZoomMultiplier();
+                int length = mDisplayFFTBins.length / SpectrumUtils.getZoomMultiplier(mZoom);
                 int offset = mZoomWindowOffset;
 
                 if ((offset + length) >= mDisplayFFTBins.length) {

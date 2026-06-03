@@ -149,9 +149,7 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
         mNeedsRedraw = true;
     }
 
-    private int getZoomMultiplier() {
-        return (int) FastMath.pow(2.0, mZoom);
-    }
+    
 
     public void setZoomWindowOffset(int offset) {
         mDFTZoomWindowOffset = offset;
@@ -161,7 +159,7 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
     private Color getColor(ColorSettingName name) {
         ColorSetting setting = mSettingsManager.getSettingsModel().getColorSetting(name);
         javafx.scene.paint.Color awtColor = setting.getColor();
-        return Color.rgb((int)(awtColor.getRed() * 255), (int)(awtColor.getGreen() * 255), (int)(awtColor.getBlue() * 255), awtColor.getOpacity());
+        return awtColor;
     }
 
     @Override
@@ -169,7 +167,7 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
         if (setting instanceof ColorSetting colorSetting) {
             if (colorSetting.getColorSettingName() == ColorSettingName.SPECTRUM_CURSOR) {
                 javafx.scene.paint.Color awtColor = colorSetting.getColor();
-                mColorSpectrumCursor = Color.rgb((int)(awtColor.getRed() * 255), (int)(awtColor.getGreen() * 255), (int)(awtColor.getBlue() * 255), awtColor.getOpacity());
+                mColorSpectrumCursor = awtColor;
                 mNeedsRedraw = true;
             }
         }
@@ -231,7 +229,7 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
             }
         }
 
-        int multiplier = getZoomMultiplier();
+        int multiplier = SpectrumUtils.getZoomMultiplier(mZoom);
         double binPixelWidth = getBinPixelWidth(multiplier);
         int offset = (int) (getPixelOffset(multiplier) - binPixelWidth);
 
@@ -286,7 +284,7 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
             double x = (width / 2) - (indWidth / 2);
 
             graphics.strokeRect(x, height - 12, indWidth, 10);
-            double zoomWidth = indWidth / getZoomMultiplier();
+            double zoomWidth = indWidth / SpectrumUtils.getZoomMultiplier(mZoom);
             double windowOffset = 0;
 
             if (mDFTZoomWindowOffset != 0) {
@@ -294,7 +292,7 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
             }
 
             graphics.fillRect(x + windowOffset, height - 12, zoomWidth, 10);
-            graphics.fillText("Zoom: " + getZoomMultiplier() + "x", x + indWidth + 3, height - 2);
+            graphics.fillText("Zoom: " + SpectrumUtils.getZoomMultiplier(mZoom) + "x", x + indWidth + 3, height - 2);
         }
     }
 

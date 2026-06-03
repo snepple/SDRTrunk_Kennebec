@@ -66,7 +66,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
     private Color toFXColor(javafx.scene.paint.Color c) {
         if (c == null) return Color.WHITE;
-        return Color.rgb((int)(c.getRed() * 255), (int)(c.getGreen() * 255), (int)(c.getBlue() * 255), c.getOpacity());
+        return c;
     }
 
     private GraphicsContext mGraphicsContext = mCanvas.getGraphicsContext2D();
