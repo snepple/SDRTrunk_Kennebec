@@ -11,6 +11,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
+import io.github.dsheirer.util.ThreadPool;
 import io.github.dsheirer.gui.JavaFxWindowManager;
 import io.github.dsheirer.preference.UserPreferences;
 import javafx.application.Platform;
@@ -170,14 +171,25 @@ public class AudioRecordingsPanel extends VBox {
 
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
-                    for (RecordingItem item : selectedItems) {
+                    deleteSelectedButton.setDisable(true);
+                    ThreadPool.CACHED.submit(() -> {
                         try {
-                            Files.deleteIfExists(item.getFile());
-                            mRecordings.remove(item);
-                        } catch (IOException ex) {
-                            mLog.error("Failed to delete recording: " + item.getFile(), ex);
+                            for (RecordingItem item : selectedItems) {
+                                try {
+                                    Files.deleteIfExists(item.getFile());
+                                    Platform.runLater(() -> mRecordings.remove(item));
+                                } catch (IOException ex) {
+                                    mLog.error("Failed to delete recording: " + item.getFile(), ex);
+                                    Platform.runLater(() -> {
+                                        Alert err = new Alert(Alert.AlertType.ERROR, "Failed to delete recording: " + item.getFile(), ButtonType.OK);
+                                        err.show();
+                                    });
+                                }
+                            }
+                        } finally {
+                            Platform.runLater(() -> deleteSelectedButton.setDisable(false));
                         }
-                    }
+                    });
                 }
             });
         });
@@ -198,14 +210,25 @@ public class AudioRecordingsPanel extends VBox {
 
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
-                    for (RecordingItem item : itemsToDelete) {
+                    deleteAllButton.setDisable(true);
+                    ThreadPool.CACHED.submit(() -> {
                         try {
-                            Files.deleteIfExists(item.getFile());
-                            mRecordings.remove(item);
-                        } catch (IOException ex) {
-                            mLog.error("Failed to delete recording: " + item.getFile(), ex);
+                            for (RecordingItem item : itemsToDelete) {
+                                try {
+                                    Files.deleteIfExists(item.getFile());
+                                    Platform.runLater(() -> mRecordings.remove(item));
+                                } catch (IOException ex) {
+                                    mLog.error("Failed to delete recording: " + item.getFile(), ex);
+                                    Platform.runLater(() -> {
+                                        Alert err = new Alert(Alert.AlertType.ERROR, "Failed to delete recording: " + item.getFile(), ButtonType.OK);
+                                        err.show();
+                                    });
+                                }
+                            }
+                        } finally {
+                            Platform.runLater(() -> deleteAllButton.setDisable(false));
                         }
-                    }
+                    });
                 }
             });
         });
