@@ -26,6 +26,11 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
+import javafx.scene.paint.Color;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Pos;
 
 import java.util.Date;
 
@@ -49,12 +54,27 @@ public class DecodeEventViewPreferenceEditor extends VBox
         getChildren().add(headerLabel);
 
         SettingsCard mainCard = new SettingsCard();
-        SettingsRow row = new SettingsRow("Timestamp Format", getTimestampFormatChoiceBox());
+        HBox labelBox = new HBox(new Label("Timestamp Format"), createHelpIcon("Changes how event times are displayed in the channel events view."));
+        labelBox.setAlignment(Pos.CENTER_LEFT);
+        labelBox.setSpacing(5);
+        SettingsRow row = new SettingsRow((javafx.scene.Node) labelBox, getTimestampFormatChoiceBox());
         mainCard.getChildren().add(row);
 
         getChildren().add(mainCard);
     }
 
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
+    }
     private ChoiceBox<DisplayableTimestamp> getTimestampFormatChoiceBox()
     {
         if(mTimestampFormatChoiceBox == null)
@@ -81,7 +101,7 @@ public class DecodeEventViewPreferenceEditor extends VBox
                 DisplayableTimestamp selected = mTimestampFormatChoiceBox.getSelectionModel().getSelectedItem();
                 mDecodeEventPreference.setTimestampFormat(selected.getTimestampFormat());
             });
-            mTimestampFormatChoiceBox.setTooltip(new Tooltip("Changes how event times are displayed in the channel events view."));
+
         }
 
         return mTimestampFormatChoiceBox;

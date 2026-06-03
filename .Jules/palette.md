@@ -98,3 +98,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-17 - HIG Compliant Tooltips for Editors
 **Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
 **Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
+## 2026-05-25 - Relocating Configuration Tooltips
+**Learning:** Placing tooltips directly on input fields in `SettingsRow` layouts separates the context from the label, and plain labels fail to indicate that help is available. This violates the HIG principle of Clarity. Moving tooltips to an info icon directly beside the leading label provides immediate visual affordance and tightly couples the field's name with its description.
+**Action:** Update `SettingsRow` to accept a `Node` leading element. Wrap the `Label` and a newly created `createHelpIcon()` in an `HBox` and pass it as the leading element, removing tooltips from trailing input fields.

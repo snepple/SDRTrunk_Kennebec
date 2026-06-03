@@ -32,6 +32,11 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
+import javafx.scene.paint.Color;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Pos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,9 +68,18 @@ public class MP3PreferenceEditor extends VBox
 
         SettingsCard mainCard = new SettingsCard();
 
-        mainCard.getChildren().add(new SettingsRow("Normalize Audio Before Encoding", getNormalizeAudioCheckBox()));
-        mainCard.getChildren().add(new SettingsRow("(LAME) Encoder Setting", getMP3SettingComboBox()));
-        mainCard.getChildren().add(new SettingsRow("Input Audio Sample Rate", getAudioSampleRateComboBox()));
+        HBox normBox = new HBox(new Label("Normalize Audio Before Encoding"), createHelpIcon("Evens out the volume levels before encoding the audio."));
+        normBox.setAlignment(Pos.CENTER_LEFT);
+        normBox.setSpacing(5);
+        mainCard.getChildren().add(new SettingsRow((javafx.scene.Node) normBox, getNormalizeAudioCheckBox()));
+        HBox encBox = new HBox(new Label("(LAME) Encoder Setting"), createHelpIcon("Adjusts the MP3 encoding quality and compression level."));
+        encBox.setAlignment(Pos.CENTER_LEFT);
+        encBox.setSpacing(5);
+        mainCard.getChildren().add(new SettingsRow((javafx.scene.Node) encBox, getMP3SettingComboBox()));
+        HBox rateBox = new HBox(new Label("Input Audio Sample Rate"), createHelpIcon("Selects the sampling rate used for generating the MP3 file."));
+        rateBox.setAlignment(Pos.CENTER_LEFT);
+        rateBox.setSpacing(5);
+        mainCard.getChildren().add(new SettingsRow((javafx.scene.Node) rateBox, getAudioSampleRateComboBox()));
 
         getChildren().add(mainCard);
 
@@ -73,6 +87,19 @@ public class MP3PreferenceEditor extends VBox
         notice.getStyleClass().add("kennebec-secondary-text");
         notice.setPadding(new Insets(0, 10, 0, 10));
         getChildren().add(notice);
+    }
+
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 
     private ComboBox<MP3Setting> getMP3SettingComboBox()
@@ -87,7 +114,7 @@ public class MP3PreferenceEditor extends VBox
                         mMP3Preference.setMP3Setting(newValue);
                         updateAudioSampleRateComboBox();
                     });
-            mMP3SettingComboBox.setTooltip(new Tooltip("Adjusts the MP3 encoding quality and compression level."));
+
         }
 
         return mMP3SettingComboBox;
@@ -139,7 +166,7 @@ public class MP3PreferenceEditor extends VBox
                             mMP3Preference.setAudioSampleRate(newValue);
                         }
                     });
-            mAudioSampleRateComboBox.setTooltip(new Tooltip("Selects the sampling rate used for generating the MP3 file."));
+
         }
 
         return mAudioSampleRateComboBox;
@@ -153,7 +180,7 @@ public class MP3PreferenceEditor extends VBox
             mNormalizeAudioCheckBox.setSelected(mMP3Preference.isNormalizeAudioBeforeEncode());
             mNormalizeAudioCheckBox.onActionProperty().set(event ->
                     mMP3Preference.setNormalizeAudioBeforeEncode(getNormalizeAudioCheckBox().isSelected()));
-            mNormalizeAudioCheckBox.setTooltip(new Tooltip("Evens out the volume levels before encoding the audio."));
+
         }
 
         return mNormalizeAudioCheckBox;
