@@ -74,7 +74,7 @@ public class MessageRecordingViewer extends VBox
         HBox toolbar = new HBox(10);
         toolbar.setPadding(new Insets(10));
 
-        MenuButton addViewerBtn = new MenuButton("+");
+        MenuButton addViewerBtn = new MenuButton("Add New Viewer...");
 
         MenuItem dmrItem = new MenuItem("New DMR Viewer");
         dmrItem.setOnAction(event -> {

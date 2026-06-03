@@ -93,6 +93,7 @@ public class TunerViewPanel extends VBox {
         getChildren().add(toolBar);
 
         mTunerTable = new TableView<>(mDiscoveredTunerModel.getObservableList());
+        mTunerTable.setPlaceholder(new javafx.scene.control.Label("No Tuners Found"));
         mTunerTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
         TableColumn<DiscoveredTuner, TunerStatus> statusCol = new TableColumn<>("Status");

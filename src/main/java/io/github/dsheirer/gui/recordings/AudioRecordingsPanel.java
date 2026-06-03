@@ -110,8 +110,9 @@ public class AudioRecordingsPanel extends VBox {
         mFilteredRecordings = new FilteredList<>(mRecordings, p -> true);
 
         // Top Filter Bar
-        javafx.scene.layout.FlowPane filterBox = new javafx.scene.layout.FlowPane(10, 10);
-        filterBox.setPadding(new Insets(0, 0, 10, 0));
+        VBox filterContainer = new VBox(10);
+        filterContainer.setPadding(new Insets(10));
+        filterContainer.getStyleClass().add("context-toolbar");
 
         mStartDatePicker = new DatePicker();
         mStartDatePicker.setPromptText("Start Date");
@@ -213,18 +214,42 @@ public class AudioRecordingsPanel extends VBox {
         deleteAllButton.disableProperty().bind(
             javafx.beans.binding.Bindings.isEmpty(mFilteredRecordings)
         );
+        HBox controlsBox1 = new HBox(20);
+        controlsBox1.setAlignment(Pos.CENTER_LEFT);
+        
+        HBox dateBox = new HBox(5);
+        dateBox.setAlignment(Pos.CENTER_LEFT);
+        dateBox.getChildren().addAll(new Label("Date Range:"), mStartDatePicker, new Label("to"), mEndDatePicker);
 
+        HBox timeBox = new HBox(5);
+        timeBox.setAlignment(Pos.CENTER_LEFT);
+        timeBox.getChildren().addAll(new Label("Time Range:"), mStartHourSpinner, new Label(":"), mStartMinuteSpinner, new Label("to"), mEndHourSpinner, new Label(":"), mEndMinuteSpinner);
+        
+        controlsBox1.getChildren().addAll(dateBox, timeBox);
 
+        HBox controlsBox2 = new HBox(20);
+        controlsBox2.setAlignment(Pos.CENTER_LEFT);
+        
+        HBox aliasBox = new HBox(5);
+        aliasBox.setAlignment(Pos.CENTER_LEFT);
+        aliasBox.getChildren().addAll(new Label("Alias:"), mAliasComboBox);
 
-        filterBox.getChildren().addAll(
-            new Label("Filters:"),
-            mStartDatePicker, new Label("-"), mEndDatePicker,
-            new Label(" Time:"), mStartHourSpinner, new Label(":"), mStartMinuteSpinner, new Label("-"), mEndHourSpinner, new Label(":"), mEndMinuteSpinner,
-            mAliasComboBox, mChannelComboBox,
-            refreshButton, mStopButton, deleteSelectedButton, deleteAllButton
-        );
+        HBox channelBox = new HBox(5);
+        channelBox.setAlignment(Pos.CENTER_LEFT);
+        channelBox.getChildren().addAll(new Label("Channel:"), mChannelComboBox);
 
-        root.setTop(filterBox);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER_LEFT);
+        buttonBox.getChildren().addAll(refreshButton, mStopButton, deleteSelectedButton, deleteAllButton);
+
+        controlsBox2.getChildren().addAll(aliasBox, channelBox, spacer, buttonBox);
+
+        filterContainer.getChildren().addAll(controlsBox1, controlsBox2);
+
+        root.setTop(filterContainer);
 
         // Table
         mTableView.setPlaceholder(new Label("No audio recordings found"));
@@ -372,23 +397,33 @@ public class AudioRecordingsPanel extends VBox {
             item.setLength("Unknown");
         }
 
-        // Parse filename: YYYYMMDD_HHMMSS_SYSTEM_SITE_CHANNEL_TO_alias_FROM_alias...
+        // Parse filename
         String withoutExt = name.substring(0, name.lastIndexOf('.'));
         String[] parts = withoutExt.split("_");
 
         if (parts.length >= 2) {
-            String datePart = parts[0];
-            if (datePart.length() == 8) {
-                item.setDate(datePart.substring(0, 4) + "-" + datePart.substring(4, 6) + "-" + datePart.substring(6, 8));
-            } else {
-                item.setDate(datePart);
-            }
+            boolean isBaseband = parts.length >= 4 && parts[1].equals("baseband");
+            int dateIdx = isBaseband ? 2 : 0;
+            int timeIdx = isBaseband ? 3 : 1;
+            
+            if (parts.length > dateIdx && parts.length > timeIdx) {
+                String datePart = parts[dateIdx];
+                if (datePart.length() == 8) {
+                    item.setDate(datePart.substring(0, 4) + "-" + datePart.substring(4, 6) + "-" + datePart.substring(6, 8));
+                } else {
+                    item.setDate(datePart);
+                }
 
-            String timePart = parts[1];
-            if (timePart.length() >= 6) {
-                item.setTime(timePart.substring(0, 2) + ":" + timePart.substring(2, 4) + ":" + timePart.substring(4, 6));
-            } else {
-                item.setTime(timePart);
+                String timePart = parts[timeIdx];
+                if (timePart.length() >= 6) {
+                    item.setTime(timePart.substring(0, 2) + ":" + timePart.substring(2, 4) + ":" + timePart.substring(4, 6));
+                } else {
+                    item.setTime(timePart);
+                }
+            }
+            
+            if (isBaseband) {
+                item.setChannel(parts[0] + " baseband");
             }
         }
 
@@ -405,7 +440,11 @@ public class AudioRecordingsPanel extends VBox {
                 channelInfo = withoutExt.substring(startChannelIdx, endChannelIdx);
             }
         }
-        item.setChannel(channelInfo.replace("_", " ").trim());
+        
+        boolean isBaseband = parts.length >= 4 && parts[1].equals("baseband");
+        if (!isBaseband) {
+            item.setChannel(channelInfo.replace("_", " ").trim());
+        }
 
         if (toIdx != -1) {
             int toEnd = fromIdx != -1 ? fromIdx : withoutExt.length();

@@ -82,6 +82,10 @@ import javafx.scene.control.SplitPane;
 import java.util.LinkedHashMap;
 import javafx.geometry.Orientation;
 import javafx.scene.layout.VBox;
+import javafx.scene.control.SplitMenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ListCell;
 import javafx.scene.paint.Color;
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.javafx.IconNode;
@@ -131,7 +135,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     private IFilterProcessor mFilterProcessor;
 
     private javafx.scene.image.ImageView mChannelImageView;
-    private Button mChooseImageBtn;
+    private SplitMenuButton mChooseImageBtn;
     private Button mClearImageBtn;
     private String mPendingImagePath = null;
 
@@ -903,9 +907,12 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mChannelImageView.setClip(clip);
             mChannelImageView.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 5, 0, 0, 2);");
 
-            mChooseImageBtn = new Button("Choose Image…");
+            mChooseImageBtn = new SplitMenuButton();
+            mChooseImageBtn.setText("Choose Image…");
             mChooseImageBtn.setDisable(true); // enabled when channel is set
-            mChooseImageBtn.setOnAction(ev -> {
+
+            MenuItem uploadItem = new MenuItem("Upload Image...");
+            uploadItem.setOnAction(ev -> {
                 javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
                 fc.setTitle("Choose Channel Image");
                 fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp"));
@@ -936,6 +943,59 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                     }
                 }
             });
+            mChooseImageBtn.setOnAction(uploadItem.getOnAction());
+
+            MenuItem iconItem = new MenuItem("Choose Icon...");
+            iconItem.setOnAction(ev -> {
+                Dialog<io.github.dsheirer.icon.Icon> dialog = new Dialog<>();
+                dialog.setTitle("Choose Icon");
+                dialog.setHeaderText("Select an icon from the library");
+                
+                ComboBox<io.github.dsheirer.icon.Icon> cb = new ComboBox<>();
+                cb.setItems(new javafx.collections.transformation.SortedList<>(mPlaylistManager.getIconModel().iconsProperty(), com.google.common.collect.Ordering.natural()));
+                cb.setCellFactory(param -> new ListCell<>() {
+                    @Override protected void updateItem(io.github.dsheirer.icon.Icon item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) { setText(null); setGraphic(null); }
+                        else {
+                            setText(item.getName());
+                            javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(item.getFxImage());
+                            iv.setFitWidth(16); iv.setFitHeight(16);
+                            setGraphic(iv);
+                        }
+                    }
+                });
+                cb.setButtonCell(cb.getCellFactory().call(null));
+                if (!cb.getItems().isEmpty()) {
+                    cb.getSelectionModel().selectFirst();
+                }
+                
+                dialog.getDialogPane().setContent(cb);
+                dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+                dialog.setResultConverter(btn -> btn == ButtonType.OK ? cb.getValue() : null);
+                dialog.initOwner(mChooseImageBtn.getScene().getWindow());
+                
+                dialog.showAndWait().ifPresent(icon -> {
+                    if (icon != null) {
+                        try {
+                            javafx.scene.image.Image fxImg = icon.getFxImage();
+                            java.awt.image.BufferedImage bufImg = javafx.embed.swing.SwingFXUtils.fromFXImage(fxImg, null);
+                            java.nio.file.Path destDir = mUserPreferences.getDirectoryPreference().getDirectoryApplicationRoot().resolve("channel_images");
+                            java.nio.file.Files.createDirectories(destDir);
+                            String safeName = (getItem().getName() != null ? getItem().getName() : "channel").replaceAll("[^a-zA-Z0-9-_]", "_");
+                            java.nio.file.Path destPath = destDir.resolve(safeName + "_icon_" + System.currentTimeMillis() + ".png");
+                            javax.imageio.ImageIO.write(bufImg, "png", destPath.toFile());
+                            
+                            mPendingImagePath = destPath.toAbsolutePath().toString();
+                            updateChannelImagePreview();
+                            modifiedProperty().set(true);
+                        } catch (Exception e) {
+                            mLog.error("Error saving icon image", e);
+                        }
+                    }
+                });
+            });
+            mChooseImageBtn.getItems().addAll(uploadItem, iconItem);
 
             mClearImageBtn = new Button("Clear");
             mClearImageBtn.setVisible(false);

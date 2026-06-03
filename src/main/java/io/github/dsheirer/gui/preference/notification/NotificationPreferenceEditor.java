@@ -67,7 +67,7 @@ public class NotificationPreferenceEditor extends VBox {
         telegramEnable.setSelected(preference.isTelegramEnabled());
         telegramEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setTelegramEnabled(newValue));
 
-        TextField botTokenField = new TextField(preference.getTelegramBotToken());
+        TextField botTokenField = new TextField(preference.getTelegramBotToken() != null ? preference.getTelegramBotToken() : "");
         botTokenField.setPrefWidth(300);
         botTokenField.setTooltip(new Tooltip("The Telegram Bot Token from BotFather."));
         botTokenField.textProperty().addListener((obs, old, newValue) -> preference.setTelegramBotToken(newValue));
@@ -145,26 +145,26 @@ public class NotificationPreferenceEditor extends VBox {
         emailEnable.setSelected(preference.isEmailEnabled());
         emailEnable.selectedProperty().addListener((obs, old, newValue) -> preference.setEmailEnabled(newValue));
 
-        TextField smtpHostField = new TextField(preference.getSmtpHost());
+        TextField smtpHostField = new TextField(preference.getSmtpHost() != null ? preference.getSmtpHost() : "");
         smtpHostField.setTooltip(new Tooltip("e.g. smtp.gmail.com"));
         smtpHostField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpHost(newValue));
         smtpHostField.disableProperty().bind(emailEnable.selectedProperty().not());
 
-        TextField smtpPortField = new TextField(preference.getSmtpPort());
+        TextField smtpPortField = new TextField(preference.getSmtpPort() != null ? preference.getSmtpPort() : "");
         smtpPortField.setTooltip(new Tooltip("e.g. 465 or 587"));
         smtpPortField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpPort(newValue));
         smtpPortField.disableProperty().bind(emailEnable.selectedProperty().not());
 
-        TextField smtpUsernameField = new TextField(preference.getSmtpUsername());
+        TextField smtpUsernameField = new TextField(preference.getSmtpUsername() != null ? preference.getSmtpUsername() : "");
         smtpUsernameField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpUsername(newValue));
         smtpUsernameField.disableProperty().bind(emailEnable.selectedProperty().not());
 
         PasswordField smtpPasswordField = new PasswordField();
-        smtpPasswordField.setText(preference.getSmtpPassword());
+        smtpPasswordField.setText(preference.getSmtpPassword() != null ? preference.getSmtpPassword() : "");
         smtpPasswordField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpPassword(newValue));
         smtpPasswordField.disableProperty().bind(emailEnable.selectedProperty().not());
 
-        TextField smtpFromAddressField = new TextField(preference.getSmtpFromAddress());
+        TextField smtpFromAddressField = new TextField(preference.getSmtpFromAddress() != null ? preference.getSmtpFromAddress() : "");
         smtpFromAddressField.textProperty().addListener((obs, old, newValue) -> preference.setSmtpFromAddress(newValue));
         smtpFromAddressField.disableProperty().bind(emailEnable.selectedProperty().not());
 
@@ -365,7 +365,7 @@ public class NotificationPreferenceEditor extends VBox {
             mRecipientListView.refresh();
         });
 
-        TextField destField = new TextField(recipient.getDestination());
+        TextField destField = new TextField(recipient.getDestination() != null ? recipient.getDestination() : "");
         destField.setPromptText("Email address or Chat ID");
         destField.setPrefWidth(250);
         destField.textProperty().addListener((obs, old, newValue) -> {

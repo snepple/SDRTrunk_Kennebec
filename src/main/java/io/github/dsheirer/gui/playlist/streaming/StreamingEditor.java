@@ -200,7 +200,6 @@ public class StreamingEditor extends SplitPane
         tableAndLabelBox.getChildren().addAll(getConfiguredBroadcastTableView(), getRadioReferenceLoginLabel());
 
         VBox masterBox = new VBox();
-        masterBox.setPadding(new Insets(10, 10, 10, 10));
         VBox.setVgrow(tableAndLabelBox, Priority.ALWAYS);
         masterBox.getChildren().addAll(toolbar, tableAndLabelBox);
 

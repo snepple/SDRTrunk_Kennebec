@@ -81,6 +81,9 @@ public class LogsViewController {
     @FXML private TextField mTwoToneSearchField;
     private ObservableList<LogFile> mTwoToneListModel = FXCollections.observableArrayList();
     private FilteredList<LogFile> mTwoToneFiltered;
+    
+    @FXML private ListView<String> mAppLogListView;
+    @FXML private WebView mLiveInspectorView;
 
     public void init(UserPreferences userPreferences) {
         mUserPreferences = userPreferences;
@@ -96,18 +99,40 @@ public class LogsViewController {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
+                    setGraphic(null);
                     setStyle("");
                     return;
                 }
                 setText(item);
+                javafx.scene.shape.Circle circle = new javafx.scene.shape.Circle(5);
                 if (item.contains(" ERROR ") || item.contains(" FATAL ")) {
                     setStyle("-fx-text-fill: #ff6b6b; -fx-font-weight: bold;");
+                    circle.setFill(javafx.scene.paint.Color.RED);
+                    setGraphic(circle);
                 } else if (item.contains(" WARN ")) {
                     setStyle("-fx-text-fill: #fca311;");
+                    circle.setFill(javafx.scene.paint.Color.ORANGE);
+                    setGraphic(circle);
                 } else if (item.contains(" DEBUG ")) {
                     setStyle("-fx-text-fill: #a0a0a0;");
+                    circle.setFill(javafx.scene.paint.Color.GRAY);
+                    setGraphic(circle);
                 } else {
                     setStyle("");
+                    circle.setFill(javafx.scene.paint.Color.GREEN);
+                    setGraphic(circle);
+                }
+            }
+        });
+        
+        logListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (mLiveInspectorView != null) {
+                if (newVal != null) {
+                    String html = "<html><body style='font-family: sans-serif; font-size: 13px; color: #333;'>" + 
+                                  newVal.replace("\n", "<br>") + "</body></html>";
+                    mLiveInspectorView.getEngine().loadContent(html);
+                } else {
+                    mLiveInspectorView.getEngine().loadContent("");
                 }
             }
         });
@@ -162,6 +187,23 @@ public class LogsViewController {
         mAppFiltered = new FilteredList<>(mAppListModel, p -> true);
         setupTable(mAppTable, mAppFiltered);
         setupSearchField(mAppSearchField, mAppFiltered);
+        
+        mAppTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (mAppLogListView != null) {
+                if (newVal != null && newVal.getFile() != null && newVal.getFile().exists()) {
+                    try {
+                        List<String> lines = Files.readAllLines(newVal.getFile().toPath());
+                        int maxLines = 1000;
+                        if (lines.size() > maxLines) lines = lines.subList(lines.size() - maxLines, lines.size());
+                        mAppLogListView.setItems(FXCollections.observableArrayList(lines));
+                    } catch (IOException e) {
+                        mAppLogListView.setItems(FXCollections.observableArrayList("Error reading file: " + e.getMessage()));
+                    }
+                } else {
+                    mAppLogListView.setItems(FXCollections.emptyObservableList());
+                }
+            }
+        });
 
         mEventFiltered = new FilteredList<>(mEventListModel, p -> true);
         setupTable(mEventTable, mEventFiltered);
