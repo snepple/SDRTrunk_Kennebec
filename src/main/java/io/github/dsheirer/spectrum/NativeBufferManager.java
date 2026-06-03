@@ -51,7 +51,7 @@ public class NativeBufferManager<T extends INativeBuffer>
     private List<T> mConsumerQueue = new ArrayList<>();
     //Single-consumer scratch list reused by get() to avoid a throwaway drained-list allocation on every request.
     private List<T> mDrainedQueue = new ArrayList<>();
-    private int mRequestSize;
+    private volatile int mRequestSize;
     private int mProducerAvailable;
 
     /**
@@ -66,7 +66,7 @@ public class NativeBufferManager<T extends INativeBuffer>
      * Adds the buffer to this manager if it's needed.
      * @param nativeBuffer to add
      */
-    public void add(T nativeBuffer)
+    public synchronized void add(T nativeBuffer)
     {
         //If we have enough produced buffers and the transfer queue is empty ... move them to the queue
         if(mProducerAvailable >= mRequestSize && mTransferQueue.isEmpty())
@@ -87,7 +87,7 @@ public class NativeBufferManager<T extends INativeBuffer>
     /**
      * Clears/removes all queued native buffers
      */
-    public void clear()
+    public synchronized void clear()
     {
         mTransferQueue.clear();
         mProducerQueue.clear();

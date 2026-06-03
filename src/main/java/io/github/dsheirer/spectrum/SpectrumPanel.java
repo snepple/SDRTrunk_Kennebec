@@ -86,6 +86,23 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
                 }
             }
         };
+
+        this.visibleProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue && mAnimationTimer != null) {
+                mAnimationTimer.start();
+            } else if (mAnimationTimer != null) {
+                mAnimationTimer.stop();
+            }
+        });
+
+        this.sceneProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null && isVisible() && mAnimationTimer != null) {
+                mAnimationTimer.start();
+            } else if (mAnimationTimer != null) {
+                mAnimationTimer.stop();
+            }
+        });
+
         mAnimationTimer.start();
     }
 

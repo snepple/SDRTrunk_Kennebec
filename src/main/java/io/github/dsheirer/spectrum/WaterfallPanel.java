@@ -39,15 +39,15 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
     private int mHeadY = 0;
     private java.util.concurrent.ConcurrentLinkedQueue<int[]> mRowQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
-    private int mDFTSize = 4096;
+    private volatile int mDFTSize = 4096;
     private int mImageHeight = 700;
 
     private Color mColorSpectrumCursor;
     private Point2D mCursorLocation = new Point2D(0, 0);
     private boolean mCursorVisible = false;
     private long mCursorFrequency = 0;
-    private boolean mPaused = false;
-    private boolean mDisabled = true;
+    private volatile boolean mPaused = false;
+    private volatile boolean mDisabled = true;
     private int mZoom = 0;
     private int mDFTZoomWindowOffset = 0;
 
@@ -90,6 +90,23 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
                 }
             }
         };
+
+        this.visibleProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue && mAnimationTimer != null) {
+                mAnimationTimer.start();
+            } else if (mAnimationTimer != null) {
+                mAnimationTimer.stop();
+            }
+        });
+
+        this.sceneProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null && isVisible() && mAnimationTimer != null) {
+                mAnimationTimer.start();
+            } else if (mAnimationTimer != null) {
+                mAnimationTimer.stop();
+            }
+        });
+
         mAnimationTimer.start();
     }
 
