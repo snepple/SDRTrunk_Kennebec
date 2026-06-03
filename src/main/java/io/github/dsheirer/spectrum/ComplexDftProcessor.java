@@ -71,6 +71,8 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
     {
         stop();
 
+        mExecutorService.shutdownNow();
+
         mListeners.clear();
         mWindow = null;
     }

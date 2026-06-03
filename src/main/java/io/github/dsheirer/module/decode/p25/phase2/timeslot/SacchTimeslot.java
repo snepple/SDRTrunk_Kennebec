@@ -19,6 +19,9 @@
 
 package io.github.dsheirer.module.decode.p25.phase2.timeslot;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.dsheirer.bits.BinaryMessage;
 import io.github.dsheirer.bits.CorrectedBinaryMessage;
 import io.github.dsheirer.bits.IntField;
@@ -35,6 +38,7 @@ import java.util.List;
  */
 public class SacchTimeslot extends AbstractSignalingTimeslot
 {
+    private static final Logger mLog = LoggerFactory.getLogger(SacchTimeslot.class);
     private static final int MAX_OCTET_INDEX = 168; //180-12 = message length minus CRC-12 checksum.
 
     private static final IntField INFO_1 = IntField.range(2, 7);
@@ -224,7 +228,7 @@ public class SacchTimeslot extends AbstractSignalingTimeslot
             }
             catch(Exception e)
             {
-                e.printStackTrace();
+                mLog.error("Error during Reed-Solomon decoding of SACCH timeslot", e);
                 irrecoverableErrors = true;
             }
 

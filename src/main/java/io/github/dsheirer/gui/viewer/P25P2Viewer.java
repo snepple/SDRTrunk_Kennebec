@@ -303,7 +303,7 @@ public class P25P2Viewer extends VBox
                 }
                 catch(Exception ioe)
                 {
-                    ioe.printStackTrace();
+                    mLog.error("Error processing P25 Phase 2 message", ioe);
                 }
 
                 Platform.runLater(() -> {

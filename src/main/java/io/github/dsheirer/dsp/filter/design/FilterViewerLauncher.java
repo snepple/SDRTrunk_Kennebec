@@ -1,11 +1,15 @@
 package io.github.dsheirer.dsp.filter.design;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.stage.Stage;
 
 public class FilterViewerLauncher
 {
+    private static final Logger mLog = LoggerFactory.getLogger(FilterViewerLauncher.class);
     private javafx.scene.layout.Pane mJFXPanel;
 
     public FilterViewerLauncher()
@@ -23,7 +27,7 @@ public class FilterViewerLauncher
             }
             catch(Exception e)
             {
-                e.printStackTrace();
+                mLog.error("Error launching filter viewer", e);
             }
         });
     }

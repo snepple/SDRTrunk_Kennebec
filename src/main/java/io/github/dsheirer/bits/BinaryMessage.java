@@ -93,7 +93,7 @@ public class BinaryMessage extends BitSet
             }
             catch(BitSetFullException e)
             {
-                e.printStackTrace();
+                LOGGER.error("Error adding bits to BinaryMessage", e);
             }
 
             pointer++;
@@ -211,7 +211,7 @@ public class BinaryMessage extends BitSet
             }
             catch(BitSetFullException e)
             {
-                e.printStackTrace();
+                LOGGER.error("Error adding bits to BinaryMessage", e);
             }
 
             pointer++;

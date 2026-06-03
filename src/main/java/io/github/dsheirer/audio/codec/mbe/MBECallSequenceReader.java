@@ -22,6 +22,9 @@
 
 package io.github.dsheirer.audio.codec.mbe;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
@@ -39,6 +42,7 @@ import java.util.List;
  */
 public class MBECallSequenceReader
 {
+    private static final Logger mLog = LoggerFactory.getLogger(MBECallSequenceReader.class);
     public static List<String> getAudioFrames(Path path) throws IOException
     {
         ObjectMapper mapper = new ObjectMapper();
@@ -73,7 +77,7 @@ public class MBECallSequenceReader
         }
         catch(Exception e)
         {
-            e.printStackTrace();
+            mLog.error("Error writing MBE frames", e);
         }
     }
 }

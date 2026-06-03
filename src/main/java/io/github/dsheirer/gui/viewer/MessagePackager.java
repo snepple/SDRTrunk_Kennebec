@@ -27,12 +27,15 @@ import io.github.dsheirer.message.IMessage;
 import io.github.dsheirer.module.decode.event.DecodeEvent;
 import io.github.dsheirer.module.decode.event.DecodeEventSnapshot;
 import io.github.dsheirer.module.decode.event.IDecodeEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility for combining a message and decoder state events.
  */
 public class MessagePackager
 {
+    private static final Logger mLog = LoggerFactory.getLogger(MessagePackager.class);
     private MessagePackage mMessagePackage;
 
     /**
@@ -101,7 +104,7 @@ public class MessagePackager
                 }
                 catch(Exception e)
                 {
-                    e.printStackTrace();
+                    mLog.error("Error packaging message snapshot", e);
                 }
             }
         }

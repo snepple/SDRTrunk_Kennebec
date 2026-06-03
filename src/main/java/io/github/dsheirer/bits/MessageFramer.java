@@ -19,6 +19,9 @@
  */
 package io.github.dsheirer.bits;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.dsheirer.dsp.symbol.ISyncDetectListener;
 import io.github.dsheirer.dsp.symbol.SyncDetectProvider;
 import io.github.dsheirer.sample.Broadcaster;
@@ -38,6 +41,7 @@ import java.util.List;
  */
 public class MessageFramer implements IBinarySymbolProcessor, Listener<Boolean>, SyncDetectProvider
 {
+    private static final Logger mLog = LoggerFactory.getLogger(MessageFramer.class);
     private boolean[] mSyncPattern;
     private int mMessageLength;
     private ISyncDetectListener mSyncDetectListener;
@@ -218,7 +222,7 @@ public class MessageFramer implements IBinarySymbolProcessor, Listener<Boolean>,
             }
             catch(BitSetFullException e)
             {
-                e.printStackTrace();
+                mLog.error("BitSet full while adding message bits", e);
             }
 
             /* Once our message is complete (ie full), send it to all registered

@@ -398,7 +398,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             }
             catch(Exception e)
             {
-                e.printStackTrace();
+                mLog.error("Error during application startup", e);
             }
         }
     }

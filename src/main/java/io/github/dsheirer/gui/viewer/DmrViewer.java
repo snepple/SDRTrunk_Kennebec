@@ -240,7 +240,7 @@ public class DmrViewer extends VBox
                     }
                     catch(Exception ioe)
                     {
-                        ioe.printStackTrace();
+                        mLog.error("Error processing DMR message", ioe);
                     }
 
                     Platform.runLater(() -> {

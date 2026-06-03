@@ -1,5 +1,8 @@
 
 package io.github.dsheirer.gui.help;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javafx.scene.control.Label;
 
 import javafx.application.Platform;
@@ -11,6 +14,7 @@ import javafx.scene.layout.StackPane;
 import java.awt.Dimension;
 
 public class HelpIconLabel extends javafx.scene.layout.Pane {
+    private static final Logger mLog = LoggerFactory.getLogger(HelpIconLabel.class);
 
     public HelpIconLabel(String htmlHelpText) {
         final String cleanText = htmlHelpText.replace("<html>", "").replace("</html>", "").replace("<b>", "").replace("</b>", "").replace("<br>", "\n");
@@ -30,7 +34,7 @@ public class HelpIconLabel extends javafx.scene.layout.Pane {
                 /*  setScene(scene); */
                 setBackground(javafx.scene.layout.Background.EMPTY); // transparent swing bg
             } catch (Exception e) {
-                e.printStackTrace();
+                mLog.error("Error initializing help icon", e);
             }
         });
     }

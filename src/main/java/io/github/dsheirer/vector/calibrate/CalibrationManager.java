@@ -293,7 +293,7 @@ public class CalibrationManager
             }
             catch(Exception e)
             {
-                e.printStackTrace();
+                mLog.error("Error during calibration", e);
             }
         }
 

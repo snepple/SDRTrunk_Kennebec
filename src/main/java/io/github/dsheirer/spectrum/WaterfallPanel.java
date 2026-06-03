@@ -78,10 +78,14 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
         reset();
 
         mAnimationTimer = new AnimationTimer() {
+            private long mLastDrawNanos = 0;
+            private static final long MIN_FRAME_NANOS = 70_000_000L; // ~14 FPS cap
+
             @Override
             public void handle(long now) {
-                if (mNeedsRedraw) {
+                if (mNeedsRedraw && (now - mLastDrawNanos) >= MIN_FRAME_NANOS) {
                     mNeedsRedraw = false;
+                    mLastDrawNanos = now;
                     draw();
                 }
             }
@@ -239,9 +243,21 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
         }
 
         if (mDisabled) {
-            mGraphicsContext.fillText(DISABLED, 20, 20);
+            javafx.scene.text.Text measureText = new javafx.scene.text.Text(DISABLED);
+            double textWidth = measureText.getBoundsInLocal().getWidth();
+            double textHeight = measureText.getBoundsInLocal().getHeight();
+            mGraphicsContext.setFill(Color.color(0, 0, 0, 0.6));
+            mGraphicsContext.fillRoundRect(15, 8, textWidth + 10, textHeight + 6, 6, 6);
+            mGraphicsContext.setFill(Color.WHITE);
+            mGraphicsContext.fillText(DISABLED, 20, 20 + textHeight * 0.3);
         } else if (mPaused) {
-            mGraphicsContext.fillText(PAUSED, 20, 20);
+            javafx.scene.text.Text measureText = new javafx.scene.text.Text(PAUSED);
+            double textWidth = measureText.getBoundsInLocal().getWidth();
+            double textHeight = measureText.getBoundsInLocal().getHeight();
+            mGraphicsContext.setFill(Color.color(0, 0, 0, 0.6));
+            mGraphicsContext.fillRoundRect(15, 8, textWidth + 10, textHeight + 6, 6, 6);
+            mGraphicsContext.setFill(Color.WHITE);
+            mGraphicsContext.fillText(PAUSED, 20, 20 + textHeight * 0.3);
         }
 
         paintZoomIndicator(mGraphicsContext, width, height);

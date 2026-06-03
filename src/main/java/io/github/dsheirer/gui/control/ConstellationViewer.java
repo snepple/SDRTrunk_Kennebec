@@ -1,6 +1,9 @@
 
 
 package io.github.dsheirer.gui.control;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -34,6 +37,7 @@ import javafx.animation.AnimationTimer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ConstellationViewer extends javafx.scene.layout.Pane implements Listener<Complex> {
+    private static final Logger mLog = LoggerFactory.getLogger(ConstellationViewer.class);
     private static final long serialVersionUID = 1L;
 
     private int mSampleRate;
@@ -88,7 +92,7 @@ public class ConstellationViewer extends javafx.scene.layout.Pane implements Lis
                 };
                 timer.start();
             } catch (Exception e) {
-                e.printStackTrace();
+                mLog.error("Error in constellation viewer", e);
             }
         });
 

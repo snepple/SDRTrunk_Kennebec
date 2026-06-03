@@ -18,6 +18,9 @@
  */
 package io.github.dsheirer.dsp.filter.cic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.dsheirer.dsp.filter.FilterFactory;
 import io.github.dsheirer.dsp.filter.design.FilterDesignException;
 import io.github.dsheirer.dsp.filter.fir.FIRFilterSpecification;
@@ -42,6 +45,7 @@ import java.util.List;
  */
 public class PrimeCicDecimationFilter
 {
+    private static final Logger mLog = LoggerFactory.getLogger(PrimeCicDecimationFilter.class);
     private Stage mFirstStage;
 
     /**
@@ -463,7 +467,7 @@ public class PrimeCicDecimationFilter
         }
         catch(FilterDesignException fde)
         {
-            fde.printStackTrace();
+            mLog.error("Filter design error in CIC decimation filter", fde);
         }
 
 

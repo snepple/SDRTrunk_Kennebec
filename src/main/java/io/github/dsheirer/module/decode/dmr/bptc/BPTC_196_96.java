@@ -19,6 +19,9 @@
 
 package io.github.dsheirer.module.decode.dmr.bptc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.dsheirer.bits.BinaryMessage;
 import io.github.dsheirer.bits.BitSetFullException;
 import io.github.dsheirer.bits.CorrectedBinaryMessage;
@@ -34,6 +37,7 @@ import java.util.List;
  */
 public class BPTC_196_96
 {
+    private static final Logger mLog = LoggerFactory.getLogger(BPTC_196_96.class);
     public static final int BPTC_LENGTH = 196;
     public static final int EXTRACTED_LENGTH = 96; //However, we set the 3x reserved bits in 96, 97, and 98 making the length 99
     public static final int MAX_ORIGINAL_INDEX = 136;
@@ -110,7 +114,7 @@ public class BPTC_196_96
                 catch(BitSetFullException bsfe)
                 {
                     //Should never get to here
-                    bsfe.printStackTrace();
+                    mLog.error("BitSet full error during BPTC extraction", bsfe);
                     return extracted;
                 }
 

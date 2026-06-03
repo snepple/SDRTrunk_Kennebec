@@ -187,40 +187,43 @@ public class OverflowableBufferStream<T extends INativeBuffer> extends Overflowa
      */
     private void getNextBuffer() throws IOException
     {
-        if(mCurrentNativeBufferIterator == null)
+        while(true)
         {
-            if(mBufferList.isEmpty())
+            if(mCurrentNativeBufferIterator == null)
             {
-                drainTo(mBufferList, mBufferFetchLimit);
-            }
-
-            if(!mBufferList.isEmpty())
-            {
-                T buffer = mBufferList.poll();
-
-                if(buffer != null)
+                if(mBufferList.isEmpty())
                 {
-                    mCurrentNativeBufferIterator = buffer.iteratorInterleaved();
+                    drainTo(mBufferList, mBufferFetchLimit);
+                }
+
+                if(!mBufferList.isEmpty())
+                {
+                    T buffer = mBufferList.poll();
+
+                    if(buffer != null)
+                    {
+                        mCurrentNativeBufferIterator = buffer.iteratorInterleaved();
+                    }
                 }
             }
-        }
 
-        if(mCurrentNativeBufferIterator != null && !mCurrentNativeBufferIterator.hasNext())
-        {
-            mCurrentNativeBufferIterator = null;
-            getNextBuffer();
-            return;
-        }
+            if(mCurrentNativeBufferIterator != null && !mCurrentNativeBufferIterator.hasNext())
+            {
+                mCurrentNativeBufferIterator = null;
+                continue; // Loop instead of recursing
+            }
 
-        if(mCurrentNativeBufferIterator != null && mCurrentNativeBufferIterator.hasNext())
-        {
-            mCurrentBuffer = mCurrentNativeBufferIterator.next();
-            mCurrentBufferPointer = 0;
-        }
-        else
-        {
-            mCurrentBuffer = null;
-            throw new IOException("Buffer queue is empty");
+            if(mCurrentNativeBufferIterator != null && mCurrentNativeBufferIterator.hasNext())
+            {
+                mCurrentBuffer = mCurrentNativeBufferIterator.next();
+                mCurrentBufferPointer = 0;
+                return;
+            }
+            else
+            {
+                mCurrentBuffer = null;
+                throw new IOException("Buffer queue is empty");
+            }
         }
     }
 

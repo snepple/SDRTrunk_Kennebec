@@ -1,5 +1,8 @@
 package io.github.dsheirer.gui.playlist.streaming;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -13,6 +16,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.paint.Color;
 
 public class ZelloAuditChecklistPanel extends VBox {
+    private static final Logger mLog = LoggerFactory.getLogger(ZelloAuditChecklistPanel.class);
 
     public ZelloAuditChecklistPanel() {
         setPadding(new Insets(20));
@@ -45,7 +49,7 @@ public class ZelloAuditChecklistPanel extends VBox {
                 javafx.scene.control.Alert a = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION, "Documentation generated at zello_docs.json");
                 a.show();
             } catch (Exception ex) {
-                ex.printStackTrace();
+                mLog.error("Error generating Zello documentation", ex);
             }
         });
 

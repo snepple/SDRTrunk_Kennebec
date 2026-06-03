@@ -72,7 +72,6 @@ import javafx.scene.Node;
 
 import javafx.scene.input.ScrollEvent;
 import java.util.ArrayList;
-import java.util.Hashtable;
 
 import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
@@ -193,6 +192,9 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
     {
         /* De-register from receiving samples when the window closes */
         clearTuner();
+
+        /* Unregister from EventBus to prevent memory leak */
+        MyEventBus.getGlobalEventBus().unregister(this);
 
         mSettingsManager = null;
 
@@ -728,30 +730,18 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
             mFrequency = frequency;
             mWindowOffset = windowOffset;
 
-            Hashtable<Integer, Region> labels = new Hashtable<>();
-            labels.put(0, new Label("1x"));
-            labels.put(1, new Label("2x"));
-            labels.put(2, new Label("4x"));
-            labels.put(3, new Label("8x"));
-            labels.put(4, new Label("16x"));
-            labels.put(5, new Label("32x"));
-            labels.put(6, new Label("64x"));
+            setMajorTickUnit(1);
+            setMinorTickCount(0);
+            setShowTickMarks(true);
+            setShowTickLabels(true);
+            setSnapToTicks(true);
+            setBlockIncrement(1);
+            setPrefWidth(200);
 
-            // setLabelTable...
-
-            // setMajorTickSpacing...
-            // setMinorTickSpacing...
-            // setPaintTicks...
-            // setPaintLabels...
-
-            // ChangeListener removed
-            {
-                // // @Override // public void stateChanged(ChangeEvent e)
-                {
-                    // setZoom...
-                }
+            mChangeListener = (observable, oldValue, newValue) -> {
+                setZoom(newValue.intValue(), mFrequency, mWindowOffset);
             };
-            // this.addChangeListener(mChangeListener);
+            this.valueProperty().addListener(mChangeListener);
         }
     }
 

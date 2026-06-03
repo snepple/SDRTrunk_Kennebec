@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 public class SampleGenerator
 {
-    private final static Logger mLog = LoggerFactory.getLogger(SampleGenerator.class);
+    private static final Logger mLog = LoggerFactory.getLogger(SampleGenerator.class);
 
     private Broadcaster<INativeBuffer> mNativeBufferBroadcaster = new Broadcaster<>();
     private IComplexOscillator mComplexOscillator;
@@ -245,7 +245,7 @@ public class SampleGenerator
             }
             catch(Throwable t)
             {
-                t.printStackTrace();
+                mLog.error("Error generating test samples", t);
             }
         }
     }

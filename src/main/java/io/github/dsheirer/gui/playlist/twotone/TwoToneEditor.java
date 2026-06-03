@@ -1,4 +1,7 @@
 package io.github.dsheirer.gui.playlist.twotone;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.collections.transformation.FilteredList;
@@ -38,6 +41,7 @@ import java.util.stream.Collectors;
 
 public class TwoToneEditor extends javafx.scene.layout.BorderPane
 {
+    private static final Logger mLog = LoggerFactory.getLogger(TwoToneEditor.class);
     public static final double[] MOTOROLA_QCII = {
             330.5, 349.0, 368.5, 389.0, 410.6, 433.7, 457.9, 483.5, 510.5, 539.0,
             569.1, 600.9, 634.5, 669.9, 707.3, 746.8, 788.5, 832.5, 879.0, 928.1,
@@ -324,7 +328,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                         System.err.println("Could not find audio resource: /audio/" + selectedFile);
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    mLog.error("Error playing two-tone audio sample", ex);
                 }
             }
         });

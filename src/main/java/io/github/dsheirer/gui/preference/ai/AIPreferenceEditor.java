@@ -1,5 +1,8 @@
 package io.github.dsheirer.gui.preference.ai;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.gui.preference.layout.SettingsCard;
 import io.github.dsheirer.gui.preference.layout.SettingsRow;
@@ -25,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class AIPreferenceEditor extends VBox {
+    private static final Logger mLog = LoggerFactory.getLogger(AIPreferenceEditor.class);
 
     private final UserPreferences mUserPreferences;
 
@@ -125,7 +129,7 @@ public class AIPreferenceEditor extends VBox {
                     java.awt.Desktop.getDesktop().browse(new URI("https://aistudio.google.com/app/apikey"));
                 }
             } catch (Exception ex) {
-                ex.printStackTrace();
+                mLog.error("Error opening API key URL in browser", ex);
             }
         });
         scaffoldingBox.getChildren().addAll(scaffoldingHeader, scaffoldingStep1, scaffoldingStep2, scaffoldingStep3, apiKeyLink);

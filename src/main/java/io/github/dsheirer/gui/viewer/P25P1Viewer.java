@@ -243,7 +243,7 @@ public class P25P1Viewer extends VBox
                 }
                 catch(Exception ioe)
                 {
-                    ioe.printStackTrace();
+                    mLog.error("Error processing P25 Phase 1 message", ioe);
                 }
 
                 audioModule.stop();

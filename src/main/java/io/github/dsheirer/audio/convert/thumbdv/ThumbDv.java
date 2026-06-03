@@ -477,7 +477,7 @@ public class ThumbDv implements AutoCloseable
         }
         catch(InterruptedException e)
         {
-            e.printStackTrace();
+            mLog.error("Thread interrupted during ThumbDV operation", e);
         }
     }
 }
