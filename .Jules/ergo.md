@@ -39,3 +39,6 @@
 ## 2024-05-18 - Streaming Editor Tooltips
 **Learning:** Configurations for streaming servers like Icecast contain many backend-specific terms (Host, Port, Mount Point, Inline Metadata) that are confusing to users who aren't familiar with audio broadcasting software.
 **Action:** Always provide explicit tooltips to inputs in streaming editors (`AbstractStreamEditor`, `IcecastStreamEditor`) detailing the expected format and purpose (e.g., "Enter the server port number (e.g., 8000)") to lower the cognitive load.
+## 2024-05-18 - Auto-complete for standard data entry fields
+**Learning:** Free-form text fields (like System and Site identifiers) force users to remember previous entries and are prone to typos, resulting in fragmented configuration. The JavaFX TextFields.bindAutoCompletion method provides an excellent non-intrusive way to suggest existing data from the ChannelModel.
+**Action:** Use TextFields.bindAutoCompletion when implementing free-form identifier fields that share a common pool of known values across the application, adding a clear Tooltip to indicate the feature is available.

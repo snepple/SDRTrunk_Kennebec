@@ -69,6 +69,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
+import org.controlsfx.control.textfield.TextFields;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.GridPane;
@@ -1075,6 +1076,17 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSystemField.setDisable(true);
             mSystemField.setMaxWidth(Double.MAX_VALUE);
             mSystemField.textProperty().addListener(mEditorModificationListener);
+
+            TextFields.bindAutoCompletion(mSystemField, request -> {
+                if(mPlaylistManager != null && mPlaylistManager.getChannelModel() != null)
+                {
+                    String query = request.getUserText().toLowerCase();
+                    java.util.List<String> systems = mPlaylistManager.getChannelModel().getSystemNames();
+                    return systems.stream().filter(s -> s.toLowerCase().contains(query)).collect(java.util.stream.Collectors.toList());
+                }
+                return java.util.Collections.emptyList();
+            });
+            mSystemField.setTooltip(new javafx.scene.control.Tooltip("System name. Type to search existing systems or enter a new one."));
         }
 
         return mSystemField;
@@ -1088,6 +1100,17 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSiteField.setDisable(true);
             mSiteField.setMaxWidth(Double.MAX_VALUE);
             mSiteField.textProperty().addListener(mEditorModificationListener);
+
+            TextFields.bindAutoCompletion(mSiteField, request -> {
+                if(mPlaylistManager != null && mPlaylistManager.getChannelModel() != null)
+                {
+                    String query = request.getUserText().toLowerCase();
+                    java.util.List<String> sites = mPlaylistManager.getChannelModel().getSiteNames();
+                    return sites.stream().filter(s -> s.toLowerCase().contains(query)).collect(java.util.stream.Collectors.toList());
+                }
+                return java.util.Collections.emptyList();
+            });
+            mSiteField.setTooltip(new javafx.scene.control.Tooltip("Site name. Type to search existing sites or enter a new one."));
         }
 
         return mSiteField;
