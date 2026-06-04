@@ -49,7 +49,7 @@ public class TunerViewPanel extends VBox {
     @Subscribe
     public void process(USBAlertEvent event) {
         Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
+            Alert alert = new Alert(Alert.AlertType.WARNING); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setContentText(String.valueOf(event.getMessage()));
             alert.showAndWait();
         });

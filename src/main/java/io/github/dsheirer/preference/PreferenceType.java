@@ -27,6 +27,7 @@ public enum PreferenceType
     APPLICATION,
     NOTIFICATIONS,
     CALIBRATION,
+    DISPLAY,
     DECODE_EVENT,
     DIAGNOSTICS,
     DIRECTORY,

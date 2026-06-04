@@ -290,7 +290,7 @@ public class BroadcastifyCallEditor extends AbstractBroadcastEditor<Broadcastify
                 if(apiKey == null || apiKey.isEmpty())
                 {
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Please enter an API Key",
-                        ButtonType.OK);
+                        ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Test Connection");
                     alert.setHeaderText("A valid API Key is required");
                     alert.initOwner(getTestButton().getScene().getWindow());
@@ -301,7 +301,7 @@ public class BroadcastifyCallEditor extends AbstractBroadcastEditor<Broadcastify
                 if(systemID < 1)
                 {
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Please enter a non-zero System ID",
-                        ButtonType.OK);
+                        ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Test Connection");
                     alert.setHeaderText("A valid System ID is required");
                     alert.initOwner(getTestButton().getScene().getWindow());
@@ -312,7 +312,7 @@ public class BroadcastifyCallEditor extends AbstractBroadcastEditor<Broadcastify
                 if(host == null || host.isEmpty())
                 {
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Please enter a Broadcastify URL",
-                        ButtonType.OK);
+                        ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Test Connection");
                     alert.setHeaderText("A valid URL for Broadcastify is required");
                     alert.initOwner(getTestButton().getScene().getWindow());
@@ -330,7 +330,7 @@ public class BroadcastifyCallEditor extends AbstractBroadcastEditor<Broadcastify
                 if(result != null && result.toLowerCase().startsWith("ok"))
                 {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Test successful.",
-                        ButtonType.OK);
+                        ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Test Result");
                     alert.setHeaderText("Success!");
                     alert.initOwner(getTestButton().getScene().getWindow());
@@ -350,7 +350,7 @@ public class BroadcastifyCallEditor extends AbstractBroadcastEditor<Broadcastify
                         message = "Invalid System ID";
                     }
 
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Error: " + message, ButtonType.OK);
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Error: " + message, ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Test Result");
                     alert.setHeaderText("Test Failed.");
                     alert.initOwner(getTestButton().getScene().getWindow());

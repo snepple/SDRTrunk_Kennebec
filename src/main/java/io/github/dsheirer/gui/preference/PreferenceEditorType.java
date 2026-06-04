@@ -27,6 +27,7 @@ import javafx.scene.control.Label;
 public enum PreferenceEditorType
 {
     APPLICATION("Application"),
+    DISPLAY("Display"),
     CHANNEL_EVENT("Channel Events"),
     DIAGNOSTICS("Diagnostics (Logging)"),
     DIRECTORY("Directories"),

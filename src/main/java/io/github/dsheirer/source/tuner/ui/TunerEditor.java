@@ -24,7 +24,7 @@ import javafx.scene.paint.*;
 import javafx.geometry.*;
 
 import io.github.dsheirer.gui.control.FrequencyTextField;
-import io.github.dsheirer.gui.control.JFrequencyControl;
+import io.github.dsheirer.gui.control.FrequencyControl;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.properties.SystemProperties;
 import io.github.dsheirer.record.wave.IRecordingStatusListener;
@@ -95,7 +95,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     private DiscoveredTuner mDiscoveredTuner;
     private C mTunerConfiguration;
     // private FrequencyAndCorrectionChangeListener...
-    private JFrequencyControl mFrequencyControl;
+    private FrequencyControl mFrequencyControl;
     private Spinner mFrequencyCorrectionSpinner;
     private Button mEnabledButton;
     private Button mViewSpectrumButton;
@@ -390,7 +390,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                 }
                 panel.getChildren().add(new Label("Friendly Name:"));
                 panel.getChildren().add(getFriendlyNameTextField());
-                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(panel)); alert.showAndWait(); });
+                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(panel)); alert.showAndWait(); });
             });
         }
         return mInfoConfigButton;
@@ -411,11 +411,11 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         return mButtonsPanel;
     }
 
-    protected JFrequencyControl getFrequencyControl()
+    protected FrequencyControl getFrequencyControl()
     {
         if(mFrequencyControl == null)
         {
-            mFrequencyControl = new JFrequencyControl();
+            mFrequencyControl = new FrequencyControl();
         }
 
         return mFrequencyControl;
@@ -445,7 +445,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
 
                         if(minimum < getMinimumTunableFrequency())
                         {
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Frequency value [" +
+                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Frequency value [" +
                                             getMinimumFrequencyTextField().getText() + "] is below the supported frequency range for this tuner")); alert.showAndWait(); });
                             getMinimumFrequencyTextField().setFrequency(minExisting[0]);
                             return;
@@ -462,7 +462,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                             }
                             else
                             {
-                                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Frequency value [" +
+                                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Frequency value [" +
                                                 getMinimumFrequencyTextField().getText() + "] is invalid for current sample rate " +
                                                 "and maximum supported frequency for this tuner")); alert.showAndWait(); });
                                 getMinimumFrequencyTextField().setFrequency(minExisting[0]);
@@ -540,7 +540,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                 }
                 else
                 {
-                    Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Unable to adjust tuner's " +
+                    Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Unable to adjust tuner's " +
                             "minimum and maximum frequency values to accommodate new sample rate [" + sampleRate + "]")); alert.showAndWait(); });
                 }
             }
@@ -571,7 +571,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
 
                         if(maximum > getMaximumTunableFrequency())
                         {
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Frequency value [" +
+                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Frequency value [" +
                                     getMaximumFrequencyTextField().getText() + "] is above the supported frequency " +
                                     "range for this tuner")); alert.showAndWait(); });
                             getMaximumFrequencyTextField().setFrequency(maxExisting[0]);
@@ -589,7 +589,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                             }
                             else
                             {
-                                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Frequency value [" +
+                                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Frequency value [" +
                                                 getMaximumFrequencyTextField().getText() + "] is invalid for current sample rate " +
                                                 "and minimum supported frequency for this tuner")); alert.showAndWait(); });
                                 getMaximumFrequencyTextField().setFrequency(maxExisting[0]);

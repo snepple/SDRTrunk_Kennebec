@@ -98,7 +98,7 @@ public class TunerOptimizationManager {
     }
     
     private void promptUserForReassignment(Tuner tuner, long requiredBandwidth, int optimalBandwidth) {
-        Alert alert = new Alert(AlertType.WARNING);
+        Alert alert = new Alert(AlertType.WARNING); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
         alert.setTitle("Tuner Bandwidth Exceeded");
         alert.setHeaderText("The required bandwidth for tuner " + tuner.getPreferredName() + " exceeds optimal bandwidth.");
         alert.setContentText(String.format("Required: %d Hz\nOptimal: %d Hz\n\nWould you like to Reassign outlier channels or move them to a Standby pool instead of forcing a CPU-heavy wide sample rate?", requiredBandwidth, optimalBandwidth));

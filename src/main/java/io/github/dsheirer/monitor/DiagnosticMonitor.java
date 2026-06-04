@@ -168,7 +168,7 @@ public class DiagnosticMonitor
                     
                     final String finalProcessPath = processPath;
                     Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        Alert alert = new Alert(Alert.AlertType.WARNING); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                         alert.setTitle(title);
                         alert.setHeaderText(title);
                         alert.setContentText(message);
@@ -259,7 +259,7 @@ public class DiagnosticMonitor
                                          "The application may degrade over time and eventually run out of memory.\n" +
                                          "A diagnostic report was generated.  Please open an issue on the GitHub\n" +
                                          "website and attach this diagnostic report:\n\n" + reportPath.toString();
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf(title)); alert.showAndWait(); });
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(title)); alert.showAndWait(); });
                     }
                 }
             }

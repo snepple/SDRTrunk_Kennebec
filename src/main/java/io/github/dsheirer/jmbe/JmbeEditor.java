@@ -114,7 +114,7 @@ public class JmbeEditor extends VBox
                     "source code.\n\nClicking the YES button indicates that you are requesting to download " +
                     "the JMBE source code and compile the JMBE library.";
 
-                Alert alert = new Alert(Alert.AlertType.WARNING, noticeText, ButtonType.YES, ButtonType.NO);
+                Alert alert = new Alert(Alert.AlertType.WARNING, noticeText, ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.setResizable(true);
 
                 //Workaroud for dialog sizing issue on Windows
@@ -160,7 +160,7 @@ public class JmbeEditor extends VBox
                 mUserPreferences.getJmbeLibraryPreference().setPathJmbeLibrary(jmbeCreator.getLibraryPath());
                 getCurrentVersionLabel().setText(mCurrentRelease.getVersion().toString());
             }
-            Alert alert = new Alert(Alert.AlertType.INFORMATION, content, ButtonType.OK);
+            Alert alert = new Alert(Alert.AlertType.INFORMATION, content, ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setTitle("JMBE Library Creator");
             alert.setHeaderText((failed ? "Attempt failed." : "Success!") + " Please click OK to close this window");
             alert.initOwner(getCreateButton().getScene().getWindow());

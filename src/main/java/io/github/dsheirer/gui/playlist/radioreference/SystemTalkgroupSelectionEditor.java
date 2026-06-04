@@ -314,7 +314,7 @@ public class SystemTalkgroupSelectionEditor extends GridPane
                 if(aliasList == null)
                 {
                     Alert alert = new Alert(Alert.AlertType.INFORMATION, "Please select an Alias List",
-                        ButtonType.OK);
+                        ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Alias List Required");
                     alert.setHeaderText("An alias list is required to create aliases");
                     alert.initOwner((getImportAllTalkgroupsButton()).getScene().getWindow());

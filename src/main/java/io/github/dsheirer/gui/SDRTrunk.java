@@ -27,7 +27,6 @@ import javafx.geometry.*;
 
 import javafx.scene.control.Button;
 
-import com.jidesoft.plaf.LookAndFeelFactory;
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.audio.DuplicateCallDetector;
 import io.github.dsheirer.audio.broadcast.AudioStreamingManager;
@@ -109,7 +108,6 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.Node;
 import jiconfont.icons.font_awesome.FontAwesome;
-import jiconfont.swing.IconFontSwing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -229,6 +227,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private boolean mTunerSpectrumDisabled = false;
     private String mCurrentViewId = "now_playing";
 
+    private WindowsReliabilityManager mWindowsReliabilityManager;
+    private SystemTrayManager mSystemTrayManager;
     private AudioRecordingManager mAudioRecordingManager;
     private ChannelAlertMonitor mChannelAlertMonitor;
     private AudioStreamingManager mAudioStreamingManager;
@@ -352,6 +352,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                   });
                   mLog.info("HotkeyManager initialized");
                   
+                  mSystemTrayManager = new SystemTrayManager(primaryStage, this);
+                  mLog.info("SystemTrayManager initialized");
+                  
                   io.github.dsheirer.gui.theme.ThemeManager.registerScene(scene);
               } catch (Exception e) {
                 mLog.error("Failed to initialize HotkeyManager", e);
@@ -409,7 +412,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         ThemeManager themeManager = new ThemeManager();
         if(operatingSystem.contains("mac") || operatingSystem.contains("nux")) {
             try {
-                LookAndFeelFactory.installJideExtension();
             } catch(Exception e) {
                 mLog.error("Error trying to set LookAndFeelFactory extension for OS [" + operatingSystem + "]");
                 DiagnosticEngine.InsightCard card = DiagnosticEngine.mapError(e, "LookAndFeel init");
@@ -448,7 +450,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         SystemProperties.getInstance().logCurrentSettings();
 
         //Register FontAwesome so we can use the fonts in Swing windows
-        IconFontSwing.register(FontAwesome.getIconFont());
 
         mTunerManager = new TunerManager(mUserPreferences);
         mTunerManager.start();
@@ -666,8 +667,11 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mTopContentPanel.setManaged(false);
         mTopContentPanel.setCenter(mSpectralPanel);
 
-        mRightContentPanel.getChildren().addAll(mControllerPanel.getAudioPanel(), mTopContentPanel, mControllerPanel);
-        VBox.setVgrow(mControllerPanel, Priority.ALWAYS);
+        javafx.scene.control.SplitPane resizablePane = new javafx.scene.control.SplitPane();
+        resizablePane.setOrientation(javafx.geometry.Orientation.VERTICAL);
+        resizablePane.getItems().addAll(mTopContentPanel, mControllerPanel);
+        mRightContentPanel.getChildren().addAll(mControllerPanel.getAudioPanel(), resizablePane);
+        VBox.setVgrow(resizablePane, Priority.ALWAYS);
 
         mRightContentPanel.maxHeightProperty().bind(contentWithSidebar.heightProperty());
         BorderPane.setAlignment(mRightContentPanel, Pos.TOP_LEFT);

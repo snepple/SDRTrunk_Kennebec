@@ -113,7 +113,7 @@ public class MP3PreferenceEditor extends VBox
         {
             getAudioSampleRateComboBox().getSelectionModel().select(InputAudioFormat.getDefault());
 
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setTitle("Sample Rate Updated");
             alert.setHeaderText("Input Sample Rate Updated");
 

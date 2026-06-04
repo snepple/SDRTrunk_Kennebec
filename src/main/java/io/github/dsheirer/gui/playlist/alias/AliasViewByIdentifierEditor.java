@@ -160,7 +160,7 @@ public class AliasViewByIdentifierEditor extends VBox
             }
 
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Can't find matching identifier in list",
-                ButtonType.OK);
+                ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setTitle("No Match Found");
             alert.setContentText("No Match Found");
             alert.initOwner(getAliasAndIdentifierTableView().getScene().getWindow());

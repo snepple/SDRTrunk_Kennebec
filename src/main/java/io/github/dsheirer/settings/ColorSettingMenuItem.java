@@ -55,7 +55,7 @@ public class ColorSettingMenuItem extends MenuItem
 		this.setGraphic(icon);
 		
 		setOnAction( e -> {
-			Dialog<Color> dialog = new Dialog<>();
+			Dialog<Color> dialog = new Dialog<>(); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(dialog.getDialogPane());
 			dialog.setTitle(mColorSettingName.getDialogTitle());
 			ColorPicker colorPicker = new ColorPicker(fxColor);
 			dialog.getDialogPane().setContent(colorPicker);

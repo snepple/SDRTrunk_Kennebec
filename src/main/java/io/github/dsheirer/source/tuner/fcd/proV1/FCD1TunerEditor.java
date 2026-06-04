@@ -203,7 +203,7 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
                     }
                     catch(Exception e)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("FCD Pro Tuner " +
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("FCD Pro Tuner " +
                                 "Controller - error setting LNA gain [" + gain + "]")); alert.showAndWait(); });
 
                         mLog.error("FuncubeDonglePro Controller - error setting gain [" + gain + "]", e);
@@ -235,7 +235,7 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
                     }
                     catch(Exception e1)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("FCD Pro Tuner"
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("FCD Pro Tuner"
                                 + " error setting LNA enhance gain [" + enhance + "]")); alert.showAndWait(); });
 
                         mLog.error("FCDPro - error setting LNA enhance  [" + enhance + "]", e1);
@@ -267,7 +267,7 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
                     }
                     catch(Exception e1)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("FCDPro - error setting"
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("FCDPro - error setting"
                                 + " mixer gain [" + gain + "]")); alert.showAndWait(); });
 
                         mLog.error("FCDPro - error setting mixer gain [" + gain + "]", e1);
@@ -443,7 +443,7 @@ protected String getTunerInfo()
 //                     }
 //                     catch(Exception e1)
 //                     {
-//                         Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("FCDPro - error "
+//                         Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("FCDPro - error "
 //                                 + "applying " + mCorrectionComponent.toString() + " correction value [" + value + "]")); alert.showAndWait(); });
 // 
 //                         mLog.error("FCDPro - error applying " + mCorrectionComponent.toString() + " correction value [" +

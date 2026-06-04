@@ -157,7 +157,7 @@ public class FirstTimeWizard {
                     Platform.runLater(() -> {
                         progress.setVisible(false);
                         if (creator.hasErrors()) {
-                            Alert a = new Alert(Alert.AlertType.ERROR, "Failed to build JMBE library. Check the output.");
+                            Alert a = new Alert(Alert.AlertType.ERROR, "Failed to build JMBE library. Check the output."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                             a.showAndWait();
                             createBtn.setDisable(false);
                         } else {
@@ -165,7 +165,7 @@ public class FirstTimeWizard {
                             // Or just save it to preferences directly.
                             java.util.prefs.Preferences p = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.preference.decoder.JmbeLibraryPreference.class);
                             p.put("sdrtrunk.decoder.jmbe.library.path", libraryPath.toAbsolutePath().toString());
-                            Alert a = new Alert(Alert.AlertType.INFORMATION, "JMBE Library built and installed successfully! You may now click Next to continue.");
+                            Alert a = new Alert(Alert.AlertType.INFORMATION, "JMBE Library built and installed successfully! You may now click Next to continue."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                             a.showAndWait();
                         }
                     });
@@ -196,7 +196,7 @@ public class FirstTimeWizard {
                 CalibrationDialog dialog = mWindowManager.getCalibrationDialog(mUserPreferences);
                 dialog.showAndWait();
             } else {
-                Alert a = new Alert(Alert.AlertType.WARNING, "Calibration dialog requires main window to be initialized.");
+                Alert a = new Alert(Alert.AlertType.WARNING, "Calibration dialog requires main window to be initialized."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                 a.showAndWait();
             }
         });
@@ -235,7 +235,7 @@ public class FirstTimeWizard {
                 a.showAndWait();
                 System.exit(0);
             } catch (IOException ex) {
-                Alert a = new Alert(Alert.AlertType.ERROR, "Failed to write memory settings.");
+                Alert a = new Alert(Alert.AlertType.ERROR, "Failed to write memory settings."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                 a.showAndWait();
             }
         });
@@ -274,10 +274,10 @@ public class FirstTimeWizard {
             task.setOnSucceeded(ev -> {
                 progress.setVisible(false);
                 if (task.getValue()) {
-                    Alert a = new Alert(Alert.AlertType.INFORMATION, "Script successfully installed! You may now click Next to continue.");
+                    Alert a = new Alert(Alert.AlertType.INFORMATION, "Script successfully installed! You may now click Next to continue."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                     a.showAndWait();
                 } else {
-                    Alert a = new Alert(Alert.AlertType.ERROR, "Failed to install script. Make sure you run as Administrator or check logs.");
+                    Alert a = new Alert(Alert.AlertType.ERROR, "Failed to install script. Make sure you run as Administrator or check logs."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                     a.showAndWait();
                     installBtn.setDisable(false);
                 }
@@ -360,7 +360,7 @@ public class FirstTimeWizard {
         testBtn.setOnAction(e -> {
             String key = apiKeyField.getText();
             if (key == null || key.isBlank()) {
-                Alert a = new Alert(Alert.AlertType.WARNING, "Please enter an API Key first.");
+                Alert a = new Alert(Alert.AlertType.WARNING, "Please enter an API Key first."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                 a.showAndWait();
                 return;
             }
@@ -380,14 +380,14 @@ public class FirstTimeWizard {
                 if (valid) {
                     mUserPreferences.getAIPreference().setGeminiApiKey(key);
                     mUserPreferences.getAIPreference().setAIEnabled(enableAiChk.isSelected());
-                    Alert a = new Alert(Alert.AlertType.INFORMATION, "API Key tested successfully! You may now click Next to continue.");
+                    Alert a = new Alert(Alert.AlertType.INFORMATION, "API Key tested successfully! You may now click Next to continue."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                     a.showAndWait();
                 } else {
                     apiKeyField.setText("");
                     mUserPreferences.getAIPreference().setGeminiApiKey("");
                     mUserPreferences.getAIPreference().setAIEnabled(false);
                     enableAiChk.setSelected(false);
-                    Alert a = new Alert(Alert.AlertType.ERROR, "API Key test failed. Field cleared.");
+                    Alert a = new Alert(Alert.AlertType.ERROR, "API Key test failed. Field cleared."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                     a.showAndWait();
                     testBtn.setDisable(false);
                 }

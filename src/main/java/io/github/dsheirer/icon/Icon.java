@@ -1,83 +1,51 @@
-/*
- * *****************************************************************************
- *  Copyright (C) 2014-2020 Dennis Sheirer
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- * ****************************************************************************
- */
-
 package io.github.dsheirer.icon;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.image.Image;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.ImageIcon;
-import javafx.embed.swing.SwingFXUtils;
+import com.github.weisj.jsvg.parser.SVGLoader;
+import com.github.weisj.jsvg.SVGDocument;
+import com.github.weisj.jsvg.geometry.size.FloatSize;
+import com.github.weisj.jsvg.attributes.ViewBox;
+
 import java.awt.image.BufferedImage;
 import java.awt.Graphics2D;
-import com.formdev.flatlaf.extras.FlatSVGIcon;
-import java.io.InputStream;
-
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.Objects;
 
-@JacksonXmlRootElement(localName = "icon")
 public class Icon implements Comparable<Icon>
 {
-    static {
-        System.setProperty("com.github.weisj.jsvg.disableStax", "true");
-        System.setProperty("com.ctc.wstx.maxAttributeSize", "10000000");
-        System.setProperty("jdk.xml.maxAttributeSize", "10000000");
-    }
     private final static Logger mLog = LoggerFactory.getLogger(Icon.class);
-    private static final int ICON_HEIGHT_JAVAFX = 16;
+
+    public final static int ICON_HEIGHT_JAVAFX = 18;
+
     private StringProperty mName = new SimpleStringProperty();
     private StringProperty mPath = new SimpleStringProperty();
-    private BooleanProperty mDefaultIcon = new SimpleBooleanProperty();
-    private BooleanProperty mStandardIcon = new SimpleBooleanProperty();
-    private ImageIcon mImageIcon;
+
+    private BooleanProperty mStandardIcon = new SimpleBooleanProperty(false);
+    private BooleanProperty mDefaultIcon = new SimpleBooleanProperty(false);
+
     private Image mFxImage;
     private boolean mFxImageLoaded = false;
 
-    /**
-     * JAXB constructor - do not use
-     */
     public Icon()
     {
-        //No-arg JAXB constructor
     }
 
-    /**
-     * Constructs an instance
-     * @param name for the icon
-     * @param path to the icon
-     */
     public Icon(String name, String path)
     {
-        setName(name);
-        setPath(path);
+        mName.set(name);
+        mPath.set(path);
     }
 
     @JsonIgnore
@@ -93,65 +61,45 @@ public class Icon implements Comparable<Icon>
     }
 
     @JsonIgnore
-    public BooleanProperty defaultIconProperty()
-    {
-        return mDefaultIcon;
-    }
-
-    @JsonIgnore
     public BooleanProperty standardIconProperty()
     {
         return mStandardIcon;
     }
 
-    /**
-     * Name of the icon
-     */
+    @JsonIgnore
+    public BooleanProperty defaultIconProperty()
+    {
+        return mDefaultIcon;
+    }
+
     @JacksonXmlProperty(isAttribute = true, localName = "name")
     public String getName()
     {
         return mName.get();
     }
 
-    /**
-     * Sets the name of the icon
-     */
     public void setName(String name)
     {
         mName.set(name);
     }
 
-    /**
-     * Indicates if this is a standard icon
-     */
     @JsonIgnore
     public boolean getStandardIcon()
     {
         return mStandardIcon.get();
     }
 
-    /**
-     * Sets or flags this icon as a standard icon indicating that it should not be deleted
-     */
     void setStandardIcon(boolean standardIcon)
     {
         mStandardIcon.set(standardIcon);
     }
 
-    /**
-     * Indicates if this icon is the default icon
-     */
     @JsonIgnore
     public boolean getDefaultIcon()
     {
         return mDefaultIcon.get();
     }
 
-    /**
-     * Sets the default icon state.
-     *
-     * Note: uniqueness of default flag is only enforced through the icon model and package private access
-     */
     void setDefaultIcon(boolean defaultIcon)
     {
         mDefaultIcon.set(defaultIcon);
@@ -162,85 +110,15 @@ public class Icon implements Comparable<Icon>
         return getName();
     }
 
-    /**
-     * Path to the icon
-     */
     @JacksonXmlProperty(isAttribute = true, localName = "path")
     public String getPath()
     {
         return mPath.get();
     }
 
-    /**
-     * Sets the path to the icon
-     */
     public void setPath(String path)
     {
         mPath.set(path);
-    }
-
-    @JsonIgnore
-    ImageIcon getIcon()
-    {
-        if(mImageIcon == null && getPath() != null && !getPath().isEmpty())
-        {
-            try
-            {
-                if(!getPath().startsWith("images"))
-                {
-                    // For absolute or external paths
-java.io.File file = new java.io.File(getPath());
-                    if (file.exists() && getPath().toLowerCase().endsWith(".svg")) {
-                        mImageIcon = new FlatSVGIcon(file);
-                    } else {
-                        String svgPath = getPath().replaceAll("\\.png$", ".svg");
-                        java.io.File svgFile = new java.io.File(svgPath);
-                        if (svgFile.exists()) {
-                            mImageIcon = new FlatSVGIcon(svgFile);
-                        } else {
-                            mImageIcon = new ImageIcon(getPath());
-                        }
-                    }
-                }
-                else
-                {
-                    String resourcePath = getPath();
-                    if (!resourcePath.startsWith("/")) {
-                        resourcePath = "/" + resourcePath;
-                    }
-                    
-URL exactURL = Icon.class.getResource(resourcePath);
-                    if (exactURL != null) {
-                        if (resourcePath.toLowerCase().endsWith(".svg")) {
-                            mImageIcon = new FlatSVGIcon(exactURL);
-                        } else {
-                            mImageIcon = new ImageIcon(exactURL);
-                        }
-                    } else {
-                        // Fallback
-                        String svgResourcePath = resourcePath.replaceAll("\\.png$", ".svg");
-                        URL svgURL = Icon.class.getResource(svgResourcePath);
-                        if (svgURL != null) {
-                            mImageIcon = new FlatSVGIcon(svgURL);
-                        } else {
-                            String pngResourcePath = resourcePath.replaceAll("\\.svg$", ".png");
-                            URL pngURL = Icon.class.getResource(pngResourcePath);
-                            if (pngURL != null) {
-                                mImageIcon = new ImageIcon(pngURL);
-                            } else {
-                                mImageIcon = new ImageIcon(getPath());
-                            }
-                        }
-                    }
-                }
-            }
-            catch(Exception e)
-            {
-                mLog.error("Error loading Icon [" + getPath() + "]", e);
-            }
-        }
-
-        return mImageIcon;
     }
 
     @JsonIgnore
@@ -248,8 +126,6 @@ URL exactURL = Icon.class.getResource(resourcePath);
     {
         if(!mFxImageLoaded && getPath() != null && !getPath().isEmpty())
         {
-            //Set the loaded flag to true regardless if the image loads so that if there is an error loading the
-            //image we log it once and don't attempt to reload it again
             mFxImageLoaded = true;
 
             if(getPath() == null || getPath().isEmpty())
@@ -265,45 +141,69 @@ URL exactURL = Icon.class.getResource(resourcePath);
         return mFxImage;
     }
 
-    /**
-     * Lazy loads an FX image for the icon scaled to the specified height.
-     * @return loaded image or null if the image can't be loaded
-     */
     @JsonIgnore
     public Image getFxImage(int renderHeight)
     {
-        ImageIcon original = getIcon();
-        if (original == null) return null;
+        if (getPath() == null || getPath().isEmpty()) return null;
 
-        ImageIcon icon = io.github.dsheirer.icon.IconModel.getScaledIcon(original, renderHeight);
-        if (icon != null && icon.getIconWidth() > 0 && icon.getIconHeight() > 0) {
-            try {
-                if (icon instanceof FlatSVGIcon) {
-                    BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+        try {
+            URL url = null;
+            if (!getPath().startsWith("images")) {
+                java.io.File file = new java.io.File(getPath());
+                if (file.exists()) {
+                    url = file.toURI().toURL();
+                } else {
+                    String svgPath = getPath().replaceAll("\\.png$", ".svg");
+                    java.io.File svgFile = new java.io.File(svgPath);
+                    if (svgFile.exists()) {
+                        url = svgFile.toURI().toURL();
+                    } else {
+                        url = new java.io.File(getPath()).toURI().toURL();
+                    }
+                }
+            } else {
+                String resourcePath = getPath();
+                if (!resourcePath.startsWith("/")) {
+                    resourcePath = "/" + resourcePath;
+                }
+                url = Icon.class.getResource(resourcePath);
+                if (url == null) {
+                    String svgResourcePath = resourcePath.replaceAll("\\.png$", ".svg");
+                    url = Icon.class.getResource(svgResourcePath);
+                    if (url == null) {
+                        String pngResourcePath = resourcePath.replaceAll("\\.svg$", ".png");
+                        url = Icon.class.getResource(pngResourcePath);
+                    }
+                }
+            }
+
+            if (url == null) {
+                mLog.error("Could not resolve URL for icon: " + getPath());
+                return null;
+            }
+
+            if (url.toString().toLowerCase().endsWith(".svg")) {
+                SVGLoader loader = new SVGLoader();
+                SVGDocument doc = loader.load(url);
+                if (doc != null) {
+                    FloatSize size = doc.size();
+                    float scale = (float) renderHeight / size.height;
+                    int width = Math.round(size.width * scale);
+
+                    BufferedImage bImg = new BufferedImage(width, renderHeight, BufferedImage.TYPE_INT_ARGB);
                     Graphics2D cg = bImg.createGraphics();
                     cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                     cg.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
                     cg.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
-                    icon.paintIcon(null, cg, 0, 0);
+                    doc.render(null, cg, new ViewBox(0, 0, width, renderHeight));
                     cg.dispose();
                     return SwingFXUtils.toFXImage(bImg, null);
-                } else {
-                    if (original != null && original.getDescription() != null && original.getDescription().startsWith("file:")) {
-                        return new javafx.scene.image.Image(original.getDescription(), renderHeight, renderHeight, true, true);
-                    } else {
-                        BufferedImage bImg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-                        Graphics2D cg = bImg.createGraphics();
-                        cg.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                        cg.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-                        cg.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
-                        icon.paintIcon(null, cg, 0, 0);
-                        cg.dispose();
-                        return SwingFXUtils.toFXImage(bImg, null);
-                    }
                 }
-            } catch (Exception e) {
-                mLog.error("Error converting icon to FX image [" + getName() + "]", e);
+            } else {
+                return new javafx.scene.image.Image(url.toString(), renderHeight, renderHeight, true, true);
             }
+        } catch (Exception e) {
+            mLog.error("Error converting icon to FX image [" + getName() + "]", e);
         }
         return null;
     }
@@ -311,44 +211,16 @@ URL exactURL = Icon.class.getResource(resourcePath);
     @Override
     public int compareTo(Icon other)
     {
-        if(other == null)
-        {
-            return -1;
-        }
-        else if(hashCode() == other.hashCode())
-        {
-            return 0;
-        }
-        else if(getName() != null && other.getName() != null)
-        {
-            if(getName().contentEquals(other.getName()))
-            {
-                if(getPath() != null && other.getPath() != null)
-                {
-                    return getPath().compareTo(other.getPath());
-                }
-                else if(getPath() != null)
-                {
-                    return -1;
-                }
-                else
-                {
-                    return 1;
-                }
-            }
-            else
-            {
-                return getName().compareTo(other.getName());
-            }
-        }
-        else if(getName() != null)
-        {
-            return -1;
-        }
-        else
-        {
-            return 1;
-        }
+        if(other == null) return -1;
+        else if(hashCode() == other.hashCode()) return 0;
+        else if(getName() != null && other.getName() != null) {
+            if(getName().contentEquals(other.getName())) {
+                if(getPath() != null && other.getPath() != null) return getPath().compareTo(other.getPath());
+                else if(getPath() != null) return -1;
+                else return 1;
+            } else return getName().compareTo(other.getName());
+        } else if(getName() != null) return -1;
+        else return 1;
    }
 
     @Override
@@ -363,9 +235,6 @@ URL exactURL = Icon.class.getResource(resourcePath);
         return compareTo((Icon) o) == 0;
     }
 
-    /**
-     * Creates an observable property extractor for use with observable lists to detect changes internal to this object.
-     */
     @JsonIgnore
     public static Callback<Icon,Observable[]> extractor()
     {

@@ -455,7 +455,7 @@ public class LogsViewController {
         if (logFile == null || !logFile.getFile().exists()) return;
         analyzeBtn.setDisable(true);
         analyzeBtn.setText("Analyzing...");
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
         alert.setTitle("AI Log Analysis");
         alert.setHeaderText("Analyzing log with Gemini AI...");
         ProgressIndicator progressIndicator = new ProgressIndicator();
@@ -534,7 +534,7 @@ public class LogsViewController {
 
     private void showError(String message) {
         Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
+            Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setTitle("Error");
             alert.setHeaderText(null);
             alert.setContentText(message);

@@ -18,6 +18,12 @@
  */
 package io.github.dsheirer.spectrum;
 
+import java.util.prefs.Preferences;
+import io.github.dsheirer.preference.display.DisplayPreference;
+import io.github.dsheirer.eventbus.MyEventBus;
+import io.github.dsheirer.preference.PreferenceType;
+import com.google.common.eventbus.Subscribe;
+
 import io.github.dsheirer.controller.channel.Channel;
 import io.github.dsheirer.controller.channel.Channel.ChannelType;
 import io.github.dsheirer.controller.channel.ChannelEvent;
@@ -118,7 +124,8 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
     //Defines the offset at the bottom of the spectral display to account for
     //the frequency labels
-    private double mSpectrumInset = 20.0d;
+    private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
+    private double mSpectrumInset = mPreferences.getDouble("spectrum.inset", 20.0);
     private LabelSizeManager mLabelSizeMonitor = new LabelSizeManager();
 
     private SettingsManager mSettingsManager;
@@ -130,8 +137,8 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
      * processing channels, selected channels, frequency labels and lines, and
      * a cursor with a frequency readout.
      */
-    public OverlayPanel(SettingsManager settingsManager, ChannelModel channelModel, ChannelProcessingManager channelProcessingManager)
-    {
+    public OverlayPanel(SettingsManager settingsManager, ChannelModel channelModel, ChannelProcessingManager channelProcessingManager) {
+        MyEventBus.getGlobalEventBus().register(this);
         mSettingsManager = settingsManager;
 
         if(mSettingsManager != null)
@@ -165,8 +172,8 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
         mCanvas.heightProperty().addListener((obs, oldVal, newVal) -> mLabelSizeMonitor.update());
     }
 
-    public void dispose()
-    {
+    public void dispose() {
+        MyEventBus.getGlobalEventBus().unregister(this);
         if(mChannelModel != null)
         {
             mChannelModel.removeListener(this);
@@ -332,7 +339,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
             
 
-            double rectWidth = 50; double rectHeight = 12;
+            double rectWidth = mPreferences.getDouble("overlay.label.width", 50.0); double rectHeight = mPreferences.getDouble("overlay.label.height", 12.0);
 
             if(mCursorLocation.getY() > rectHeight)
             {
@@ -477,7 +484,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
         
 
-        double rectWidth = 50; double rectHeight = 12;
+        double rectWidth = mPreferences.getDouble("overlay.label.width", 50.0); double rectHeight = mPreferences.getDouble("overlay.label.height", 12.0);
 
         //Only render the correction value label if the spacing is large enough
         if(rectWidth <= bandwidth && rectHeight * 5 <= height)
@@ -538,7 +545,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
         
 
-        double rectWidth = 50; double rectHeight = 12;
+        double rectWidth = mPreferences.getDouble("overlay.label.width", 50.0); double rectHeight = mPreferences.getDouble("overlay.label.height", 12.0);
 
         float xOffset = (float)rectWidth / 2;
 
@@ -642,7 +649,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
             return 0;
         }
 
-        double labelWidth = 50; double labelHeight = 12;
+        double labelWidth = mPreferences.getDouble("overlay.label.width", 50.0); double labelHeight = mPreferences.getDouble("overlay.label.height", 12.0);
 
         double offset = labelWidth / 2.0d;
         double y = baseY + labelHeight;
@@ -873,7 +880,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
                 //Set maximum precision as a starting point
                 setPrecision(5);
 
-                int maxLabelWidth = 50;
+                int maxLabelWidth = (int)mPreferences.getDouble("overlay.label.width", 50.0);
 
                 double maxLabels = ((double)OverlayPanel.this.mCanvas.getWidth() * LABEL_FILL_THRESHOLD) / (double)maxLabelWidth;
 

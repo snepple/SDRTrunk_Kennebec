@@ -87,8 +87,7 @@ test {
 dependencies {
     implementation 'com.sun.mail:javax.mail:1.6.2'
 
-    implementation 'com.formdev:flatlaf:3.4'
-    implementation 'com.formdev:flatlaf-extras:3.4'
+    implementation 'com.github.weisj:jsvg:1.3.0'
     implementation 'net.java.dev.jna:jna:5.14.0'
     implementation 'net.java.dev.jna:jna-platform:5.14.0'
 
@@ -687,4 +686,46 @@ jmh {
     benchmarkMode = ['avgt']
     timeUnit = 'ms'
     jvmArgs = ["-Djava.library.path=${buildDir}/jni"]
+}
+
+
+tasks.register('createInstaller', Exec) {
+    dependsOn 'runtimeZipCurrent'
+    group = 'ap-fork'
+    description = 'Creates a native OS installer using jpackage'
+
+    def osName = System.properties.getProperty("os.name").toLowerCase()
+    def arch = System.properties.getProperty("os.arch")
+    def versionStr = project.findProperty('projectVersion')
+    def appVersion = versionStr.toString().replaceAll("-.*", "")
+    
+    def jpackageCmd = "jpackage"
+    def type = "app-image"
+    
+    if (osName.contains("win")) {
+        type = "exe"
+        jpackageCmd = "jpackage.exe"
+    } else if (osName.contains("mac")) {
+        type = "dmg"
+    } else if (osName.contains("linux")) {
+        type = "deb"
+    }
+
+    def inputDir = "$buildDir/image/sdr-trunk/bin" // We need the assembled jars
+    def destDir = "$buildDir/installer"
+    
+    // Actually, beryx.runtime creates an image at build/image/sdr-trunk/
+    // We can just point jpackage to use that jlink image as the runtime!
+    
+    doFirst {
+        file(destDir).mkdirs()
+    }
+    
+    commandLine jpackageCmd, 
+        '--type', type,
+        '--dest', destDir,
+        '--name', 'SDRTrunk',
+        '--app-version', appVersion,
+        '--runtime-image', "$buildDir/image/sdr-trunk",
+        '--module', 'sdrtrunk/io.github.dsheirer.gui.SDRTrunk'
 }

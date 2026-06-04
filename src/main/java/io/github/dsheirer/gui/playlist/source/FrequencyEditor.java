@@ -553,7 +553,7 @@ public class FrequencyEditor extends SourceConfigurationEditor<SourceConfigurati
                 mRemoveButton.setDisable(true);
                 mRemoveButton.setOnAction(event -> {
                     Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                        "Do you want to remove this frequency?", ButtonType.YES, ButtonType.NO);
+                        "Do you want to remove this frequency?", ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(confirm.getDialogPane());
                     confirm.setTitle("Remove Frequency");
                     confirm.setHeaderText("Remove frequency?");
                     confirm.initOwner(((Node)event.getTarget()).getScene().getWindow());

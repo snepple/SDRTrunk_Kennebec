@@ -15,7 +15,7 @@ public class DialogUtil {
     }
 
     public static void showError(Window owner, String title, String header, String content) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
+        Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
         if (owner != null) alert.initOwner(owner);
         alert.setTitle(title);
         alert.setHeaderText(header);
@@ -25,7 +25,7 @@ public class DialogUtil {
     }
 
     public static void showWarning(Window owner, String title, String header, String content) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
+        Alert alert = new Alert(Alert.AlertType.WARNING); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
         if (owner != null) alert.initOwner(owner);
         alert.setTitle(title);
         alert.setHeaderText(header);
@@ -35,7 +35,7 @@ public class DialogUtil {
     }
 
     public static void showInfo(Window owner, String title, String header, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
         if (owner != null) alert.initOwner(owner);
         alert.setTitle(title);
         alert.setHeaderText(header);
@@ -45,7 +45,7 @@ public class DialogUtil {
     }
 
     public static boolean showConfirmation(Window owner, String title, String header, String content) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
         if (owner != null) alert.initOwner(owner);
         alert.setTitle(title);
         alert.setHeaderText(header);

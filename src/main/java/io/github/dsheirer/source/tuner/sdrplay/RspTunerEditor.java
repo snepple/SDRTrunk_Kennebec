@@ -292,7 +292,7 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
             catch(Exception e)
             {
                 mLog.error("Couldn't set RSP gain to LNA:" + lna + " Gain Reduction:" + gr, e);
-                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Couldn't set RSP gain value to LNA:" + lna + " Gain Reduction:" + gr)); alert.showAndWait(); });
+                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set RSP gain value to LNA:" + lna + " Gain Reduction:" + gr)); alert.showAndWait(); });
             }
         }
     }

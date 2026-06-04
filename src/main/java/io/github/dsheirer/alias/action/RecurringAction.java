@@ -25,7 +25,7 @@ import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.message.IMessage;
 import io.github.dsheirer.util.ThreadPool;
 
-import javax.swing.*;
+
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
@@ -77,7 +77,7 @@ public abstract class RecurringAction extends AliasAction
                     final String text = sb.toString();
 
                     Platform.runLater(() -> { 
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); 
                         alert.setContentText(String.valueOf(text)); 
                         alert.showAndWait(); 
 

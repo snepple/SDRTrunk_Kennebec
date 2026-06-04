@@ -1,5 +1,11 @@
 package io.github.dsheirer.spectrum;
 
+import java.util.prefs.Preferences;
+import io.github.dsheirer.preference.display.DisplayPreference;
+import io.github.dsheirer.eventbus.MyEventBus;
+import io.github.dsheirer.preference.PreferenceType;
+import com.google.common.eventbus.Subscribe;
+
 import io.github.dsheirer.settings.ColorSetting;
 import io.github.dsheirer.settings.ColorSetting.ColorSettingName;
 import io.github.dsheirer.settings.Setting;
@@ -40,7 +46,8 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
     private java.util.concurrent.ConcurrentLinkedQueue<int[]> mRowQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
     private volatile int mDFTSize = 4096;
-    private int mImageHeight = 700;
+    private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
+    private int mImageHeight = mPreferences.getInt("waterfall.image.height", 700);
 
     private Color mColorSpectrumCursor;
     private Point2D mCursorLocation = new Point2D(0, 0);
@@ -67,6 +74,8 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
         mGraphicsContext = mCanvas.getGraphicsContext2D();
 
         this.getChildren().add(mCanvas);
+        this.setPrefHeight(mImageHeight);
+        MyEventBus.getGlobalEventBus().register(this);
 
         // Bind canvas size to parent size so it resizes
         mCanvas.widthProperty().bind(this.widthProperty());
@@ -111,6 +120,7 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
     }
 
     public void dispose() {
+        MyEventBus.getGlobalEventBus().unregister(this);
         if (mSettingsManager != null) {
             mSettingsManager.getSettingsModel().removeListener(this);
         }
@@ -179,6 +189,21 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
     public void setCursorLocation(Point2D point) {
         mCursorLocation = point;
         mNeedsRedraw = true;
+    }
+
+    @Subscribe
+    public void onPreferenceUpdate(PreferenceType preferenceType) {
+        if (preferenceType == PreferenceType.DISPLAY) {
+            int prefHeight = mPreferences.getInt("waterfall.image.height", 700);
+            if (prefHeight != mImageHeight) {
+                mImageHeight = prefHeight;
+                javafx.application.Platform.runLater(() -> {
+                    mCanvas.setHeight(mImageHeight);
+                    this.setPrefHeight(mImageHeight);
+                    reset();
+                });
+            }
+        }
     }
 
     public void setCursorFrequency(long frequency) {

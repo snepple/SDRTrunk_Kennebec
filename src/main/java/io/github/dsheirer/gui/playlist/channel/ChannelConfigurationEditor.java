@@ -597,7 +597,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                     if(modifiedProperty().get())
                     {
                         Alert alert = new Alert(Alert.AlertType.WARNING,
-                            "Do you want to save these changes?", ButtonType.YES, ButtonType.NO);
+                            "Do you want to save these changes?", ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                         alert.setTitle("Channel Configuration Modified");
                         alert.setHeaderText("Channel configuration has unsaved changes");
                         alert.initOwner((getPlayButton()).getScene().getWindow());
@@ -617,7 +617,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                             "library to produce audio and the JMBE library is not currently setup.  Do you want to " +
                             "setup the JMBE library?";
 
-                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, content, ButtonType.YES, ButtonType.NO);
+                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, content, ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                         alert.setTitle("JMBE Library");
                         alert.setHeaderText("Setup JMBE Library?");
 
@@ -922,7 +922,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                     try {
                         javafx.scene.image.Image testImg = new javafx.scene.image.Image(chosen.toURI().toString());
                         if (testImg.getWidth() < 64 || testImg.getHeight() < 64) {
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                             alert.setTitle("Invalid Resolution");
                             alert.setHeaderText("Image resolution is too low");
                             alert.setContentText("Selected image resolution is " + (int)testImg.getWidth() + "x" + (int)testImg.getHeight() + 
@@ -947,7 +947,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
             MenuItem iconItem = new MenuItem("Choose Icon...");
             iconItem.setOnAction(ev -> {
-                Dialog<io.github.dsheirer.icon.Icon> dialog = new Dialog<>();
+                Dialog<io.github.dsheirer.icon.Icon> dialog = new Dialog<>(); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(dialog.getDialogPane());
                 dialog.setTitle("Choose Icon");
                 dialog.setHeaderText("Select an icon from the library");
                 
@@ -1227,7 +1227,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
                 if(getItem().isProcessing())
                 {
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Would you like to restart the channel?", ButtonType.YES, ButtonType.NO);
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Would you like to restart the channel?", ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Restart Channel?");
                     alert.setHeaderText("Channel configuration has changed");
                     alert.initOwner((getPlayButton()).getScene().getWindow());

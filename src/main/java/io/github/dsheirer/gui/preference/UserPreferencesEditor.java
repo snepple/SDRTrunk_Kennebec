@@ -204,6 +204,7 @@ public class UserPreferencesEditor extends BorderPane
                 "Decoder",
                 PreferenceEditorType.JMBE_LIBRARY,
                 "Display",
+                PreferenceEditorType.DISPLAY,
                 PreferenceEditorType.CHANNEL_EVENT,
                 PreferenceEditorType.TALKGROUP_FORMAT,
                 "File Storage",

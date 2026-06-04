@@ -179,7 +179,7 @@ public class AudioRecordingsPanel extends VBox {
             List<RecordingItem> selectedItems = new ArrayList<>(mTableView.getSelectionModel().getSelectedItems());
             if (selectedItems.isEmpty()) return;
 
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setTitle("Delete Confirmation");
             alert.setHeaderText("Delete Selected Recordings");
             alert.setContentText("Are you sure you want to delete " + selectedItems.size() + " selected recording(s)?\nThis action cannot be undone.");
@@ -207,7 +207,7 @@ public class AudioRecordingsPanel extends VBox {
             List<RecordingItem> itemsToDelete = new ArrayList<>(mFilteredRecordings);
             if (itemsToDelete.isEmpty()) return;
 
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setTitle("Delete Confirmation");
             alert.setHeaderText("Delete ALL Recordings");
             alert.setContentText("Are you sure you want to delete all " + itemsToDelete.size() + " recording(s) currently displayed?\nThis action cannot be undone.");

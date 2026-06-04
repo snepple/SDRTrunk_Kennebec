@@ -272,7 +272,7 @@ public class PlaylistManagerEditor extends BorderPane
             if(autoStartChannels.size() > 0)
             {
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                        "Would you like to auto-start your channels?", ButtonType.YES, ButtonType.NO);
+                        "Would you like to auto-start your channels?", ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.setTitle("Auto-Start Channels");
                 alert.setHeaderText("Discovered [" + autoStartChannels.size() + "] auto-start channel" +
                         (autoStartChannels.size() > 1 ? "s" : ""));
@@ -297,7 +297,7 @@ public class PlaylistManagerEditor extends BorderPane
                         {
                             Alert errorAlert = new Alert(Alert.AlertType.ERROR,
                                     "Unable to start some or all of the auto-start channels",
-                                    ButtonType.OK);
+                                    ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(errorAlert.getDialogPane());
                             errorAlert.setTitle("Channel Auto-Start Error(s)");
                             errorAlert.setHeaderText("Auto-Start Error");
                             errorAlert.showAndWait();
@@ -412,7 +412,7 @@ public class PlaylistManagerEditor extends BorderPane
                             {
                                 mLog.error("Error creating copy of playlist [" + selected.toString() + "] as [" + copyFileFinal.toString() + "]", ioe);
                                 Platform.runLater(() -> {
-                                    Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to create copy of playlist", ButtonType.OK);
+                                    Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to create copy of playlist", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                                     alert.initOwner(((Node)getCloneButton()).getScene().getWindow());
                                     alert.show();
                                     getCloneButton().setDisable(false);
@@ -530,7 +530,7 @@ public class PlaylistManagerEditor extends BorderPane
                 if(selected != null)
                 {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Delete playlist from file system?",
-                        ButtonType.YES, ButtonType.NO);
+                        ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setHeaderText("Are you sure?");
                     alert.initOwner(((Node)getDeleteButton()).getScene().getWindow());
                     Button noButton = (Button)alert.getDialogPane().lookupButton(ButtonType.NO);

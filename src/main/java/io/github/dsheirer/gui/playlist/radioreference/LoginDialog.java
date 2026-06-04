@@ -283,7 +283,7 @@ public class LoginDialog extends Dialog<AuthorizationInformation>
 
                     if(userName == null || userName.isEmpty())
                     {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "Please provide a user name", ButtonType.OK);
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "Please provide a user name", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                         alert.setHeaderText("Invalid User Name");
                         alert.setTitle("Login Credentials Required");
                         alert.initOwner(((Node)getTestConnectionButton()).getScene().getWindow());
@@ -294,7 +294,7 @@ public class LoginDialog extends Dialog<AuthorizationInformation>
 
                     if(password == null || password.isEmpty())
                     {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "Please provide a password", ButtonType.OK);
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "Please provide a password", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                         alert.setHeaderText("Invalid Password");
                         alert.setTitle("Login Credentials Required");
                         alert.initOwner(((Node)getTestConnectionButton()).getScene().getWindow());
@@ -339,7 +339,7 @@ public class LoginDialog extends Dialog<AuthorizationInformation>
                                     getTestFailIcon().setVisible(true);
                                     getTestExpiredIcon().setVisible(false);
 
-                                    Alert alert = new Alert(Alert.AlertType.ERROR, "Please verify username and password", ButtonType.OK);
+                                    Alert alert = new Alert(Alert.AlertType.ERROR, "Please verify username and password", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                                     alert.setHeaderText("Login Failed");
                                     alert.setTitle("Test Failed");
                                     alert.initOwner(((Node)getTestConnectionButton()).getScene().getWindow());
@@ -361,7 +361,7 @@ public class LoginDialog extends Dialog<AuthorizationInformation>
 
                                 if(rre.getCause() instanceof ConnectException)
                                 {
-                                    Alert alert = new Alert(Alert.AlertType.ERROR, "Please check network or radio reference availability", ButtonType.OK);
+                                    Alert alert = new Alert(Alert.AlertType.ERROR, "Please check network or radio reference availability", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                                     alert.setHeaderText("No Network Connection");
                                     alert.setTitle("Test Failed");
                                     alert.initOwner(((Node)getTestConnectionButton()).getScene().getWindow());

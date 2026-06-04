@@ -250,7 +250,7 @@ private ComboBox getLNAGainCombo()
                     }
                     catch(Exception e)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() +
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() +
                                 "couldn't apply the LNA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
                         mLog.error(getLogPrefix() + "couldn't apply LNA gain setting - ", e);
                     }
@@ -283,7 +283,7 @@ private ComboBox getLNAGainCombo()
                     }
                     catch(SourceException | LibUsbException eSampleRate)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() + "couldn't apply the sample rate setting [" +
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() + "couldn't apply the sample rate setting [" +
                                         sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage())); alert.showAndWait(); });
 
                         mLog.error(getLogPrefix() + "couldn't apply sample rate setting [" + sampleRate.getLabel() +
@@ -316,7 +316,7 @@ private ComboBox getLNAGainCombo()
                     }
                     catch(Exception e)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(getLogPrefix() +
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() +
                                 "couldn't set AGC" + e.getLocalizedMessage())); alert.showAndWait(); });
                         mLog.error(getLogPrefix() + "couldn't set AGC", e);
                     }
@@ -432,7 +432,7 @@ TextInputDialog dialog = new TextInputDialog();
             if (newSerial != null) {
                 newSerial = newSerial.trim();
                 if (!newSerial.matches("[A-Za-z0-9]*") || newSerial.length() > 16) {
-                    Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Invalid serial number. Must be alphanumeric and max 16 characters.")); alert.showAndWait(); });
+                    Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Invalid serial number. Must be alphanumeric and max 16 characters.")); alert.showAndWait(); });
                     return;
                 }
 
@@ -448,12 +448,12 @@ TextInputDialog dialog = new TextInputDialog();
                         ((io.github.dsheirer.source.tuner.rtl.RTL2832TunerController)getTuner().getTunerController()).setSerialNumber(serialToSet);
                         javafx.application.Platform.runLater(() -> {
                             progressMonitor.setProgress(100);
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Serial number updated successfully.\nPlease disconnect and reconnect the tuner.")); alert.showAndWait(); });
+                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Serial number updated successfully.\nPlease disconnect and reconnect the tuner.")); alert.showAndWait(); });
                         });
                     } catch (Exception ex) {
                         javafx.application.Platform.runLater(() -> {
                             // progressMonitor.close();
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Failed to update serial number: " + ex.getMessage())); alert.showAndWait(); });
+                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Failed to update serial number: " + ex.getMessage())); alert.showAndWait(); });
                         });
                     }
                 });

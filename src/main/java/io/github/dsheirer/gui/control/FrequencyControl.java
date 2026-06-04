@@ -61,10 +61,10 @@ import java.util.Optional;
 /**
  * Custom frequency controller for displaying or editing frequency values in MHz.
  */
-public class JFrequencyControl extends VBox implements ISourceEventProcessor
+public class FrequencyControl extends VBox implements ISourceEventProcessor
 {
     private static final long serialVersionUID = 1L;
-    private final static Logger mLog = LoggerFactory.getLogger(JFrequencyControl.class);
+    private final static Logger mLog = LoggerFactory.getLogger(FrequencyControl.class);
     private List<ISourceEventProcessor> mProcessors = new ArrayList<>();
     private Color mHighlightColor = Color.YELLOW;
     private long mFrequency;
@@ -73,7 +73,7 @@ public class JFrequencyControl extends VBox implements ISourceEventProcessor
     /**
      * Constructor
      */
-    public JFrequencyControl()
+    public FrequencyControl()
     {
         init();
     }
@@ -97,7 +97,7 @@ public class JFrequencyControl extends VBox implements ISourceEventProcessor
             }
             catch(ParseException e)
             {
-                mLog.error("JFrequencyControl - parse exception constructing a digit - " + e);
+                mLog.error("FrequencyControl - parse exception constructing a digit - " + e);
             }
 
             if(digit != null)
@@ -479,7 +479,7 @@ public class JFrequencyControl extends VBox implements ISourceEventProcessor
 
                     if(se instanceof InvalidFrequencyException ife)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf(ife.getMessage() + " for this tuner.")); alert.showAndWait(); });
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(ife.getMessage() + " for this tuner.")); alert.showAndWait(); });
                     }
                 }
             }

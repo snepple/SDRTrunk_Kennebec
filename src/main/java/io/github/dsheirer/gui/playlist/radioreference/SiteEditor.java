@@ -728,7 +728,7 @@ public class SiteEditor extends GridPane
         if(siteFrequencies.isEmpty())
         {
             String context = (selectedOnly ? "Please select frequencies" : "Site has no channel frequencies");
-            Alert alert = new Alert(Alert.AlertType.ERROR, context, ButtonType.OK);
+            Alert alert = new Alert(Alert.AlertType.ERROR, context, ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setTitle("Create Channel Configuration");
             alert.setHeaderText("Can't Create Channel Configuration");
             alert.initOwner((getCreateChannelConfigurationButton()).getScene().getWindow());
@@ -1143,7 +1143,7 @@ public class SiteEditor extends GridPane
                 if(aliasList == null)
                 {
                     Alert alert = new Alert(Alert.AlertType.INFORMATION, "Please select an Alias List",
-                        ButtonType.OK);
+                        ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Alias List Required");
                     alert.setHeaderText("Channel configuration requires an alias list");
                     alert.initOwner((getCreateChannelConfigurationButton()).getScene().getWindow());

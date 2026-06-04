@@ -121,7 +121,7 @@ public class TunerPreferenceEditor extends VBox
 
                 Label label = new Label("Please restart the application for this change to take effect");
                 label.setWrapText(true);
-                Alert alert = new Alert(Alert.AlertType.WARNING);
+                Alert alert = new Alert(Alert.AlertType.WARNING); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.getDialogPane().setContent(label);
                 alert.initOwner(((Node)getChannelizerTypeChoiceBox()).getScene().getWindow());
                 alert.show();
@@ -189,7 +189,7 @@ public class TunerPreferenceEditor extends VBox
 
                 Label label = new Label("Please restart the application for this change to take effect");
                 label.setWrapText(true);
-                Alert alert = new Alert(Alert.AlertType.WARNING);
+                Alert alert = new Alert(Alert.AlertType.WARNING); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.getDialogPane().setContent(label);
                 alert.initOwner(((Node)getRspDuoTunerModeChoiceBox()).getScene().getWindow());
                 alert.show();

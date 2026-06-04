@@ -181,7 +181,7 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
                     }
                     catch(UsbException e)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("HackRF Tuner Controller"
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("HackRF Tuner Controller"
                                 + " - couldn't apply the VGA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
 
                         mLog.error("HackRF Tuner Controller - couldn't apply VGA gain setting", e);
@@ -218,7 +218,7 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
                     }
                     catch(UsbException e)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("HackRF Tuner Controller"
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("HackRF Tuner Controller"
                                 + " - couldn't apply the LNA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
                         mLog.error("HackRF Tuner Controller - couldn't apply LNA gain setting - ", e);
                     }
@@ -249,7 +249,7 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
                     {
                         mLog.error("couldn't enable/disable amplifier", e);
 
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); alert.setContentText(String.valueOf("Couldn't change amplifier setting")); alert.showAndWait(); });
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't change amplifier setting")); alert.showAndWait(); });
                     }
                 }
             });
@@ -280,7 +280,7 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
                     }
                     catch(SourceException | UsbException e2)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("HackRF Tuner Controller"
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("HackRF Tuner Controller"
                                 + " - couldn't apply the sample rate setting [" + sampleRate.getLabel() +
                                 "] " + e2.getLocalizedMessage())); alert.showAndWait(); });
 

@@ -208,7 +208,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         //Prompt the user to save if the contents of the current channel editor have been modified
         if(getAliasItemEditor().modifiedProperty().get())
         {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.getButtonTypes().clear();
             alert.getButtonTypes().addAll(ButtonType.NO, ButtonType.YES);
             alert.setTitle("Save Changes");
@@ -425,7 +425,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                 String aliasListName = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
 
                 if (aliasListName.equals(AliasModel.NO_ALIAS_LIST)) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "", ButtonType.OK);
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Rename Alias List");
                     alert.setHeaderText("You cannot rename " + aliasListName + ".");
                     alert.initOwner((getRenameAliasListButton()).getScene().getWindow());
@@ -458,7 +458,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             mDeleteAliasListButton.setOnAction(event -> {
                 String aliasListName = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
                 if (aliasListName.equals(AliasModel.NO_ALIAS_LIST)) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "", ButtonType.OK);
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Delete Alias List");
                     alert.setHeaderText("You cannot delete " + aliasListName + ".");
                     alert.initOwner((getDeleteAliasListButton()).getScene().getWindow());
@@ -466,7 +466,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                     return;
                 }
 
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "", ButtonType.NO, ButtonType.YES);
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "", ButtonType.NO, ButtonType.YES); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.setTitle("Delete Alias List");
                 alert.setHeaderText("Are you sure you want to delete the alias list " + aliasListName + " and all associated aliases?");
                 alert.initOwner((getDeleteAliasListButton()).getScene().getWindow());

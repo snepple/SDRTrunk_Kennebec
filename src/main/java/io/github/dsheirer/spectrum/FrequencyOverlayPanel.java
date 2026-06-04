@@ -19,6 +19,12 @@
  * ****************************************************************************
  */
 package io.github.dsheirer.spectrum;
+
+import java.util.prefs.Preferences;
+import io.github.dsheirer.preference.display.DisplayPreference;
+import io.github.dsheirer.eventbus.MyEventBus;
+import io.github.dsheirer.preference.PreferenceType;
+import com.google.common.eventbus.Subscribe;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.image.*;
@@ -47,17 +53,15 @@ import javafx.geometry.Point2D;
 import java.text.DecimalFormat;
 import org.apache.commons.math3.util.FastMath;
 
-
-
 /**
  * Frequency overlay panel.
  */
 public class FrequencyOverlayPanel extends Pane implements ISourceEventProcessor, SettingChangeListener
 {
+    private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
     private Canvas mCanvas = new Canvas();
     private static final long serialVersionUID = 1L;
     private final DecimalFormat PPM_FORMATTER = new DecimalFormat( "#.0" );
-    
 
     private static DecimalFormat CURSOR_FORMAT = new DecimalFormat("000.00000");
     private long mFrequency = 0;
@@ -240,7 +244,7 @@ public class FrequencyOverlayPanel extends Pane implements ISourceEventProcessor
         {
             drawFrequencyLine(graphics, mCursorLocation.getX(), mColorSpectrumCursor);
             String frequency = CURSOR_FORMAT.format(getFrequencyFromAxis(mCursorLocation.getX()) / 1E6D);
-            double stringWidth = 50; double stringHeight = 12;
+            double stringWidth = mPreferences.getDouble("overlay.label.width", 50.0); double stringHeight = mPreferences.getDouble("overlay.label.height", 12.0);
             
 
             if(mCursorLocation.getY() > stringHeight)
@@ -430,7 +434,7 @@ graphics.setStroke(Color.GREEN);
     private void drawFrequencyLabel(GraphicsContext graphics, double xaxis, long frequency)
     {
         String label = mLabelSizeMonitor.format(frequency);
-        double stringWidth = 50; double stringHeight = 12;
+        double stringWidth = mPreferences.getDouble("overlay.label.width", 50.0); double stringHeight = mPreferences.getDouble("overlay.label.height", 12.0);
         
         float xOffset = (float)stringWidth / 2;
         graphics.fillText(label, (float)(xaxis - xOffset), (float)(getHeight() - 2.0f));
@@ -547,9 +551,9 @@ graphics.setStroke(Color.GREEN);
                 //Set maximum precision as a starting point
                 setPrecision(5);
 
-                double stringWidth = 50;
+                double stringWidth = mPreferences.getDouble("overlay.label.width", 50.0);
 
-                int maxLabelWidth = 50;
+                int maxLabelWidth = (int)mPreferences.getDouble("overlay.label.width", 50.0);
 
                 double maxLabels = ((double) FrequencyOverlayPanel.this.getWidth() * LABEL_FILL_THRESHOLD) / (double)maxLabelWidth;
 

@@ -23,6 +23,11 @@ import io.github.dsheirer.controller.NamingThreadFactory;
 import io.github.dsheirer.dsp.window.WindowFactory;
 import io.github.dsheirer.dsp.window.WindowType;
 import io.github.dsheirer.properties.SystemProperties;
+import io.github.dsheirer.eventbus.MyEventBus;
+import io.github.dsheirer.preference.PreferenceType;
+import java.util.prefs.Preferences;
+import io.github.dsheirer.preference.display.DisplayPreference;
+import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.spectrum.converter.DFTResultsConverter;
 import java.io.IOException;
@@ -47,6 +52,7 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
 
     //The Cosine and Hann windows seem to offer the best spectral display with minimal bin leakage/smearing
     private WindowType mWindowType = WindowType.BLACKMAN_HARRIS_7;
+    private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
     private float[] mWindow;
     private DFTSize mDFTSize = DFTSize.FFT04096;
     private DFTSize mNewDFTSize = DFTSize.FFT04096;
@@ -63,18 +69,34 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
     public ComplexDftProcessor()
     {
         mFrameRate = SystemProperties.getInstance().get(FRAME_RATE_PROPERTY, 12);
+        String windowPref = mPreferences.get("fft.window.type", "BLACKMAN_HARRIS_7");
+        try { mWindowType = WindowType.valueOf(windowPref); } catch (Exception e) {}
         setWindowType(mWindowType);
+        MyEventBus.getGlobalEventBus().register(this);
         start();
     }
 
-    public void dispose()
-    {
+    public void dispose() {
+        MyEventBus.getGlobalEventBus().unregister(this);
         stop();
 
         mExecutorService.shutdownNow();
 
         mListeners.clear();
         mWindow = null;
+    }
+
+    @Subscribe
+    public void onPreferenceUpdate(PreferenceType preferenceType) {
+        if (preferenceType == PreferenceType.DISPLAY) {
+            String windowPref = mPreferences.get("fft.window.type", "BLACKMAN_HARRIS_7");
+            try {
+                WindowType newType = WindowType.valueOf(windowPref);
+                if (newType != mWindowType) {
+                    setWindowType(newType);
+                }
+            } catch (Exception e) {}
+        }
     }
 
     public WindowType getWindowType()

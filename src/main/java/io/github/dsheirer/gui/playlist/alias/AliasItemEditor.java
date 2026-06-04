@@ -777,7 +777,7 @@ public class AliasItemEditor extends Editor<Alias>
                     if(selected != null)
                     {
                         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                            "Do you want to delete the selected alias action?", ButtonType.NO, ButtonType.YES);
+                            "Do you want to delete the selected alias action?", ButtonType.NO, ButtonType.YES); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                         alert.setTitle("Delete Alias Action");
                         alert.setHeaderText("Are you sure?");
                         alert.initOwner(((Node)getDeleteActionButton()).getScene().getWindow());
@@ -972,7 +972,7 @@ public class AliasItemEditor extends Editor<Alias>
                 if(selected != null)
                 {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                        "Do you want to delete the selected alias identifier?", ButtonType.NO, ButtonType.YES);
+                        "Do you want to delete the selected alias identifier?", ButtonType.NO, ButtonType.YES); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Delete Alias Identifier");
                     alert.setHeaderText("Are you sure?");
                     alert.initOwner(((Node)getDeleteIdentifierButton()).getScene().getWindow());

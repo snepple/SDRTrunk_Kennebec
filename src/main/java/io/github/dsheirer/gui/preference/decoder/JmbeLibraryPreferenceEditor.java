@@ -201,7 +201,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
                         {
                             String content = "The bazineta JMBE fork will be downloaded and compiled from source. " +
                                 "Would you like to proceed?";
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION, content, ButtonType.YES, ButtonType.NO);
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, content, ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                             alert.setResizable(true);
                             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
                             alert.setTitle("JMBE Library - Bazineta Fork");
@@ -251,7 +251,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
                                 String content = "JMBE library version " + release.getVersion().toString() +
                                     " is available.  Would you like to download the latest source code and " +
                                     "create an updated JMBE library?";
-                                Alert alert = new Alert(Alert.AlertType.INFORMATION, content, ButtonType.YES, ButtonType.NO);
+                                Alert alert = new Alert(Alert.AlertType.INFORMATION, content, ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                                 alert.setResizable(true);
 
                                 //Workaroud for dialog sizing issue on Windows
@@ -271,7 +271,7 @@ public class JmbeLibraryPreferenceEditor extends VBox
                             else
                             {
                                 Alert alert = new Alert(Alert.AlertType.INFORMATION,
-                                    "No JMBE library update is available.", ButtonType.OK);
+                                    "No JMBE library update is available.", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                                 alert.setTitle("JMBE Library Update Check");
                                 if(release != null)
                                 {

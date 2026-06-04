@@ -267,7 +267,7 @@ public class StreamingEditor extends SplitPane
         //Prompt the user to save if the contents of the current channel editor have been modified
         if(getCurrentEditor().modifiedProperty().get())
         {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.getButtonTypes().clear();
             alert.getButtonTypes().addAll(ButtonType.NO, ButtonType.YES);
             alert.setTitle("Save Changes");
@@ -552,7 +552,7 @@ public class StreamingEditor extends SplitPane
                 if(config != null)
                 {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                        "Do you want to delete the selected stream?", ButtonType.NO, ButtonType.YES);
+                        "Do you want to delete the selected stream?", ButtonType.NO, ButtonType.YES); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Delete Stream Configuration");
                     alert.setHeaderText("Are you sure?");
                     alert.initOwner(((Node)getDeleteButton()).getScene().getWindow());
@@ -659,7 +659,7 @@ public class StreamingEditor extends SplitPane
                     broadcast.getBroadcastConfiguration().setName(newName);
 
                     if (oldName != null && !oldName.isEmpty() && mPlaylistManager.getAliasModel().hasAliasesWithBroadcastChannel(oldName)) {
-                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                         alert.getButtonTypes().clear();
                         alert.getButtonTypes().addAll(ButtonType.NO, ButtonType.YES);
                         alert.setTitle("Update Aliases");

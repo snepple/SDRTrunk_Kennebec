@@ -27,6 +27,7 @@ import io.github.dsheirer.preference.decoder.JmbeLibraryPreference;
 import io.github.dsheirer.preference.diagnostics.DiagnosticsPreference;
 import io.github.dsheirer.preference.diagnostics.LogLevelController;
 import io.github.dsheirer.preference.directory.DirectoryPreference;
+import io.github.dsheirer.preference.display.DisplayPreference;
 import io.github.dsheirer.preference.duplicate.CallManagementPreference;
 import io.github.dsheirer.preference.event.DecodeEventPreference;
 import io.github.dsheirer.preference.identifier.TalkgroupFormatPreference;
@@ -66,6 +67,7 @@ public class UserPreferences implements Listener<PreferenceType>
     private ChannelMultiFrequencyPreference mChannelMultiFrequencyPreference;
     private DecodeEventPreference mDecodeEventPreference;
     private DiagnosticsPreference mDiagnosticsPreference;
+    private DisplayPreference mDisplayPreference;
     private DirectoryPreference mDirectoryPreference;
     private CallManagementPreference mCallManagementPreference;
     private JmbeLibraryPreference mJmbeLibraryPreference;
@@ -159,6 +161,8 @@ public class UserPreferences implements Listener<PreferenceType>
     /**
      * Directory preferences
      */
+    public DisplayPreference getDisplayPreference() { return mDisplayPreference; }
+
     public DirectoryPreference getDirectoryPreference()
     {
         return mDirectoryPreference;
@@ -265,6 +269,7 @@ public class UserPreferences implements Listener<PreferenceType>
         mDiagnosticsPreference = new DiagnosticsPreference(this::receive);
         //Apply persisted diagnostics log levels to the running Logback context (ap-14.6)
         LogLevelController.applyAll(mDiagnosticsPreference);
+        mDisplayPreference = new DisplayPreference(this::receive);
         mDirectoryPreference = new DirectoryPreference(this::receive);
         mCallManagementPreference = new CallManagementPreference(this::receive);
         mJmbeLibraryPreference = new JmbeLibraryPreference(this::receive);

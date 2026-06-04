@@ -151,7 +151,7 @@ public abstract class AbstractBroadcastEditor<T extends BroadcastConfiguration> 
             {
                 if(getPlaylistManager().getAliasModel().hasAliasesWithBroadcastChannel(previousName))
                 {
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.getButtonTypes().clear();
                     alert.getButtonTypes().addAll(ButtonType.NO, ButtonType.YES);
                     alert.setTitle("Update Aliases");

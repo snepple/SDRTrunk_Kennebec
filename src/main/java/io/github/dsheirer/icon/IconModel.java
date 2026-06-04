@@ -44,8 +44,6 @@ import javafx.collections.ObservableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.ImageIcon;
-import com.formdev.flatlaf.extras.FlatSVGIcon;
 
 
 public class IconModel
@@ -266,74 +264,7 @@ public class IconModel
         return scaledIcon;
     }
 
-    /**
-     * Scales the icon to the new pixel height value
-     *
-     * @param original image icon
-     * @param height new height to scale the image (width will be scaled accordingly)
-     * @return
-     */
-        static ImageIcon getScaledIcon(ImageIcon original, int height)
-    {
-        if(original != null)
-        {
-            if (original instanceof FlatSVGIcon) {
-                FlatSVGIcon svgIcon = (FlatSVGIcon) original;
-                if (!svgIcon.hasFound() || svgIcon.getIconHeight() <= 0 || svgIcon.getIconWidth() <= 0) {
-                    return null;
-                }
-                float scale = (float) height / svgIcon.getIconHeight();
-                return svgIcon.derive(Math.round(svgIcon.getIconWidth() * scale), height);
-            }
-            if (original.getIconHeight() <= 0 || original.getIconWidth() <= 0) {
-                return null;
-            }
-            double scale = (double) original.getIconHeight() / (double) height;
-            int scaledWidth = (int) ((double) original.getIconWidth() / scale);
 
-            return new ImageIcon(original.getImage()) {
-                @Override
-                public synchronized void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {
-                    java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
-                    try {
-                        g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                        g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-                        g2.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
-                        if (getImage() != null) {
-                            g2.drawImage(getImage(), x, y, scaledWidth, height, c);
-                        } else {
-                            super.paintIcon(c, g2, x, y);
-                        }
-                    } finally {
-                        g2.dispose();
-                    }
-                }
-                @Override
-                public int getIconWidth() { return scaledWidth; }
-                @Override
-                public int getIconHeight() { return height; }
-            };
-        }
-
-        return null;
-    }
-
-    /**
-     * Constructs an icon and scales it to the specified height
-     * @param path
-     * @param height
-     * @return
-     */
-    public static ImageIcon getScaledIcon(String path, int height)
-    {
-        if(path != null)
-        {
-            Icon icon = new Icon("", path);
-            return getScaledIcon(icon.getIcon(), height);
-        }
-
-        return null;
-    }
 
     /**
      * Folder where icon, backup and lock files are stored

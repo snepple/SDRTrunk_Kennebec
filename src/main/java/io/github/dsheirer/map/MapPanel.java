@@ -342,7 +342,7 @@ public class MapPanel extends BorderPane implements IPlottableUpdateListener {
         if (mDeleteAllTracksButton == null) {
             mDeleteAllTracksButton = new Button("Delete All");
             mDeleteAllTracksButton.setOnAction(e -> {
-                Alert alert = new Alert(Alert.AlertType.WARNING, "Are you sure you want to delete all tracks?", ButtonType.YES, ButtonType.NO);
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Are you sure you want to delete all tracks?", ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.setTitle("Delete All Tracks");
                 Optional<ButtonType> confirmation = alert.showAndWait();
                 if (confirmation.isPresent() && confirmation.get() == ButtonType.YES) {
@@ -368,7 +368,7 @@ public class MapPanel extends BorderPane implements IPlottableUpdateListener {
                         ? "Are you sure you want to delete the selected track?"
                         : "Are you sure you want to delete the " + selected.size() + " selected tracks?";
 
-                Alert alert = new Alert(Alert.AlertType.WARNING, message, ButtonType.YES, ButtonType.NO);
+                Alert alert = new Alert(Alert.AlertType.WARNING, message, ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.setTitle("Delete Tracks");
                 Optional<ButtonType> confirmation = alert.showAndWait();
 

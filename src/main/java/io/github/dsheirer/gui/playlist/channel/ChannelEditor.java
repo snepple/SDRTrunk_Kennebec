@@ -199,7 +199,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         //Prompt the user to save if the contents of the current channel editor have been modified
         if(getChannelConfigurationEditor() != null && getChannelConfigurationEditor().modifiedProperty().get())
         {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.getButtonTypes().clear();
             alert.getButtonTypes().addAll(ButtonType.NO, ButtonType.YES);
             alert.setTitle("Save Changes");
@@ -773,7 +773,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                 if(selected != null)
                 {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                        "Do you want to delete the selected channel?", ButtonType.NO, ButtonType.YES);
+                        "Do you want to delete the selected channel?", ButtonType.NO, ButtonType.YES); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Delete Channel");
                     alert.setHeaderText("Are you sure?");
                     alert.initOwner(((Node)getDeleteButton()).getScene().getWindow());
@@ -844,7 +844,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                 mPlaylistManager.getChannelModel().addChannel(copy);
                 getChannelTableView().getSelectionModel().select(copy);
 
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.setTitle("Channel Cloned");
                 alert.setHeaderText("Please Review Cloned Channel Settings");
                 alert.setContentText("Please update values for any fields that will cause conflicts/issues with the cloned channel (e.g., using the same talkgroup ID or frequency).");

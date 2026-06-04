@@ -256,7 +256,7 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
                         icon.setName(name);
                         icon.setPath(selected.getAbsolutePath());
                         if(icon.getFxImage() == null) {
-                            Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to load icon image from selected file.", ButtonType.OK);
+                            Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to load icon image from selected file.", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                             alert.setHeaderText("Invalid image file");
                             alert.setTitle("Add Icon");
                             alert.showAndWait();
@@ -305,7 +305,7 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
                 if(selected != null)
                 {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Delete alias: " +
-                        selected != null ? "" : "" /* TODO name */ + "?", ButtonType.YES, ButtonType.NO);
+                        selected != null ? "" : "" /* TODO name */ + "?", ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Delete Alias");
                     alert.setHeaderText("Deleting Alias");
                     alert.showAndWait().ifPresent(buttonType -> {
@@ -349,7 +349,7 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
 
         if(name == null || name.isEmpty())
         {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Please assign a name for the icon", ButtonType.OK);
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Please assign a name for the icon", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setHeaderText("Name is required");
             alert.setTitle("Save io.github.dsheirer.icon.Icon");
             alert.showAndWait();
@@ -358,7 +358,7 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
 
         if(path == null || path.isEmpty() || !Files.exists(Path.of(path)))
         {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Please select a picture file for the icon", ButtonType.OK);
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Please select a picture file for the icon", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setHeaderText("File is required");
             alert.setTitle("Save io.github.dsheirer.icon.Icon");
             alert.showAndWait();
@@ -379,7 +379,7 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
             if(icon.getFxImage() == null)
             {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Unable to load icon image from selected " +
-                    "file. Please select a valid image file for the icon", ButtonType.OK);
+                    "file. Please select a valid image file for the icon", ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.setHeaderText("Invalid image file");
                 alert.setTitle("Save Icon");
                 alert.showAndWait();

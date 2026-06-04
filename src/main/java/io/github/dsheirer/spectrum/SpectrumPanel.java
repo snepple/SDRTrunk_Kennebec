@@ -1,5 +1,11 @@
 package io.github.dsheirer.spectrum;
 
+import java.util.prefs.Preferences;
+import io.github.dsheirer.preference.display.DisplayPreference;
+import io.github.dsheirer.eventbus.MyEventBus;
+import io.github.dsheirer.preference.PreferenceType;
+import com.google.common.eventbus.Subscribe;
+
 import io.github.dsheirer.dsp.filter.smoothing.GaussianSmoothingFilter;
 import io.github.dsheirer.dsp.filter.smoothing.NoSmoothingFilter;
 import io.github.dsheirer.dsp.filter.smoothing.RectangularSmoothingFilter;
@@ -39,7 +45,8 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
 
     private int mZoom = 0;
     private int mZoomWindowOffset = 0;
-    private int mSpectrumInset = 20;
+    private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
+    private int mSpectrumInset = (int)mPreferences.getDouble("spectrum.inset", 20.0);
 
     private float mDBScale = -120.0f;
     private int mAveraging = 1;
@@ -58,6 +65,7 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
     private final Object mBinsLock = new Object();
 
     public SpectrumPanel(SettingsManager settingsManager) {
+        MyEventBus.getGlobalEventBus().register(this);
         mSettingsManager = settingsManager;
         mSettingsManager.getSettingsModel().addListener(this);
 
@@ -107,6 +115,7 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
     }
 
     public void dispose() {
+        MyEventBus.getGlobalEventBus().unregister(this);
         if (mSettingsManager != null) {
             mSettingsManager.getSettingsModel().removeListener(this);
         }
@@ -305,6 +314,17 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
     @Override
     public SmoothingType getSmoothingType() {
         return mSmoothingFilter.getSmoothingType();
+    }
+
+    @Subscribe
+    public void onPreferenceUpdate(PreferenceType preferenceType) {
+        if (preferenceType == PreferenceType.DISPLAY) {
+            int prefInset = (int)mPreferences.getDouble("spectrum.inset", 20.0);
+            if (prefInset != mSpectrumInset) {
+                mSpectrumInset = prefInset;
+                mNeedsRedraw = true;
+            }
+        }
     }
 
     @Override

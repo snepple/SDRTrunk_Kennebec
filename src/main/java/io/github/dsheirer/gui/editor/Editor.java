@@ -94,7 +94,7 @@ public abstract class Editor<T> extends VBox
     {
         if(isModified())
         {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "This item has changed.  Do you want to save these changes?", ButtonType.YES, ButtonType.NO);
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "This item has changed.  Do you want to save these changes?", ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
             alert.setTitle("Save Changes?");
             Optional<ButtonType> option = alert.showAndWait();
 

@@ -250,7 +250,7 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
                         catch(SourceException se)
                         {
                             mLog.error("Error setting Airspy Hf Sample Rate [" + sampleRate + "]", se);
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Airspy Tuner Controller - couldn't apply the sample rate setting [" +
+                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Airspy Tuner Controller - couldn't apply the sample rate setting [" +
                                             sampleRate + "] " + se.getLocalizedMessage())); alert.showAndWait(); });
                         }
                     }
@@ -283,7 +283,7 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
                     catch(IOException ioe)
                     {
                         mLog.error("Error setting Airspy Hf attenuation [" + selected + "]", ioe);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Airspy Tuner Controller - couldn't apply attenuation setting [" +
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Airspy Tuner Controller - couldn't apply attenuation setting [" +
                                         selected + "] " + ioe.getLocalizedMessage())); alert.showAndWait(); });
                     }
                 }
@@ -314,7 +314,7 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
                     catch(IOException ioe)
                     {
                         mLog.error("Error setting Airspy HF AGC", ioe);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Airspy HF Tuner Controller - couldn't change AGC setting" + ioe.getLocalizedMessage())); alert.showAndWait(); });
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Airspy HF Tuner Controller - couldn't change AGC setting" + ioe.getLocalizedMessage())); alert.showAndWait(); });
                     }
                 }
             });
@@ -344,7 +344,7 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
                     catch(IOException ioe)
                     {
                         mLog.error("Error setting Airspy HF LNA", ioe);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); alert.setContentText(String.valueOf("Airspy HF Tuner Controller - couldn't change LNA setting" + ioe.getLocalizedMessage())); alert.showAndWait(); });
+                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Airspy HF Tuner Controller - couldn't change LNA setting" + ioe.getLocalizedMessage())); alert.showAndWait(); });
                     }
                 }
             });

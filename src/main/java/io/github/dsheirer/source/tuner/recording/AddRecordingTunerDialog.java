@@ -169,7 +169,7 @@ public class AddRecordingTunerDialog
             mAddButton.setDisable(true);
             mAddButton.setOnAction(e -> {
                 if(mSelectedRecording == null) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Please select a recording file");
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Please select a recording file"); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.showAndWait();
                     return;
                 }

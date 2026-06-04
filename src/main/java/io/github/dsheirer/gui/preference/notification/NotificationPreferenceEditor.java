@@ -195,7 +195,7 @@ public class NotificationPreferenceEditor extends VBox {
                 String fromAddress = smtpFromAddressField.getText();
 
                 if (host == null || host.isEmpty() || port == null || port.isEmpty() || username == null || username.isEmpty() || password == null || password.isEmpty() || fromAddress == null || fromAddress.isEmpty()) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Please configure all SMTP settings before testing.");
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Please configure all SMTP settings before testing."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.showAndWait();
                     return;
                 }

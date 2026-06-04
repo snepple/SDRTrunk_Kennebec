@@ -200,7 +200,7 @@ public class ChannelMapEditor extends SplitPane
                 public void handle(ActionEvent event)
                 {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                        "Do you want to delete the selected channel map?", ButtonType.NO, ButtonType.YES);
+                        "Do you want to delete the selected channel map?", ButtonType.NO, ButtonType.YES); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Delete Channel Map");
                     alert.setHeaderText("Are you sure?");
                     alert.initOwner(((Node)getDeleteMapButton()).getScene().getWindow());
@@ -235,7 +235,7 @@ public class ChannelMapEditor extends SplitPane
                 @Override
                 public void handle(ActionEvent event)
                 {
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
 
                     Text text1 = new Text("Channel maps are used by trunking systems to define the transmit frequency " +
                         "used for each channel number.  A channel map is required so that the frequency for each call " +
@@ -496,7 +496,7 @@ public class ChannelMapEditor extends SplitPane
 
             if(getItem() != null && !getItem().isValid())
             {
-                Alert alert = new Alert(Alert.AlertType.WARNING);
+                Alert alert = new Alert(Alert.AlertType.WARNING); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
 
                 Text text1 = new Text("Channel range(s) have errors that must be fixed:");
                 text1.setWrappingWidth(300);
@@ -547,7 +547,7 @@ public class ChannelMapEditor extends SplitPane
         {
             if(modifiedProperty().get())
             {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.getButtonTypes().clear();
                 alert.getButtonTypes().addAll(ButtonType.NO, ButtonType.YES);
                 alert.setTitle("Save Changes");
@@ -725,7 +725,7 @@ public class ChannelMapEditor extends SplitPane
                             if(selected != null)
                             {
                                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                                    "Do you want to delete the selected channel range?", ButtonType.NO, ButtonType.YES);
+                                    "Do you want to delete the selected channel range?", ButtonType.NO, ButtonType.YES); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                                 alert.setTitle("Delete Channel Range");
                                 alert.setHeaderText("Are you sure?");
                                 alert.initOwner(((Node)getDeleteRangeButton()).getScene().getWindow());
