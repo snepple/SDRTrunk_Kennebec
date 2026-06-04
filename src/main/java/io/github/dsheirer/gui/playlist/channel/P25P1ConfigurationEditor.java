@@ -177,7 +177,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             SettingsCard nacCard = new SettingsCard();
             nacCard.getChildren().addAll(
                 new SettingsRow("NAC Filter",
-                    createHelpIcon("A unique code identifying a specific radio system. This is usually provided by RadioReference and tells the software which network to follow."),
+                    createHelpIcon("<html><b>Network Access Code (NAC):</b> A unique code identifying a specific radio system. <br>This is usually provided by RadioReference and tells the software which network to follow.</html>"),
                     getNacFilterButton(), getNacTextField()),
                 new SettingsRow("Talkgroup To Assign",
                     createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."),

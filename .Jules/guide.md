@@ -30,3 +30,7 @@
 ## 2024-05-14 - LNA Gain
 **Simplified:**
 - The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+
+## 2024-05-30 - Translated WACN and NAC Tooltips
+**Learning:** SDR jargon like WACN and NAC can be very confusing to users. "Network Access Code" and "Wide Area Communication Network" are too technical. Explaining them as unique system identifiers usually found on RadioReference helps bridge the gap between technical specs and user outcomes.
+**Action:** Updated `P25P1ConfigurationEditor.java` and `P25P2ConfigurationEditor.java` tooltips for WACN and NAC fields using `<html>` tags with bold titles and beginner-friendly explanations.

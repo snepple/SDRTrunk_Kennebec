@@ -144,13 +144,13 @@ public class P25P2ConfigurationEditor extends ChannelConfigurationEditor
             SettingsCard scrambleCard = new SettingsCard();
             scrambleCard.getChildren().addAll(
                 new SettingsRow("WACN",
-                    createHelpIcon("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."),
+                    createHelpIcon("<html><b>WACN:</b> A unique code identifying a large regional radio system. <br>This is usually provided by RadioReference and tells the software which network to follow.</html>"),
                     getWacnTextField()),
                 new SettingsRow("System",
                     createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system."),
                     getSystemTextField()),
                 new SettingsRow("NAC",
-                    createHelpIcon("Network Access Code (NAC). A unique code identifying a specific radio system to follow."),
+                    createHelpIcon("<html><b>Network Access Code (NAC):</b> A unique code identifying a specific radio system. <br>This is usually provided by RadioReference and tells the software which network to follow.</html>"),
                     getNacTextField())
             );
             content.getChildren().add(scrambleCard);
