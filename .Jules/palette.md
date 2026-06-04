@@ -98,3 +98,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-17 - HIG Compliant Tooltips for Editors
 **Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
 **Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
+## 2024-05-24 - MapPanel Button Accessibility and Tooltips
+**Learning:** The JavaFX buttons for controlling map tracks (Replot All, Clear Map, Delete All, Delete) were missing mnemonics, tooltips, and accessibility properties, which reduced usability, especially for destructive actions.
+**Action:** Ensure all interactive UI buttons include `setMnemonicParsing(true)`, descriptive `Tooltip`s (with warnings for destructive actions), and explicit accessibility properties (`accessibleTextProperty`, `accessibleHelpProperty`) to comply with Apple HIG and accessibility guidelines.

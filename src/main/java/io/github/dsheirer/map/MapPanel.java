@@ -238,7 +238,11 @@ public class MapPanel extends BorderPane implements IPlottableUpdateListener {
 
     private Button getReplotAllTracksButton() {
         if (mReplotAllTracksButton == null) {
-            mReplotAllTracksButton = new Button("Replot All");
+            mReplotAllTracksButton = new Button("_Replot All");
+            mReplotAllTracksButton.setMnemonicParsing(true);
+            mReplotAllTracksButton.setTooltip(new Tooltip("Replot all tracks onto the map"));
+            mReplotAllTracksButton.accessibleTextProperty().set("Replot All Tracks");
+            mReplotAllTracksButton.accessibleHelpProperty().set("Restores all available tracks to the map view");
             mReplotAllTracksButton.setOnAction(e -> {
                 boolean added = mMapPainter.addAll(mMapService.getPlottableEntityModel().getItems());
                 if (added) {
@@ -321,7 +325,11 @@ public class MapPanel extends BorderPane implements IPlottableUpdateListener {
 
     private Button getClearMapButton() {
         if (mClearMapButton == null) {
-            mClearMapButton = new Button("Clear Map");
+            mClearMapButton = new Button("_Clear Map");
+            mClearMapButton.setMnemonicParsing(true);
+            mClearMapButton.setTooltip(new Tooltip("Clear all tracks from the map"));
+            mClearMapButton.accessibleTextProperty().set("Clear Map");
+            mClearMapButton.accessibleHelpProperty().set("Removes all plotted tracks from the map view. This does not delete the tracks.");
             mClearMapButton.setOnAction(e -> {
                 mMapPainter.clearAllEntities();
                 repaintCanvas();
@@ -340,7 +348,11 @@ public class MapPanel extends BorderPane implements IPlottableUpdateListener {
 
     private Button getDeleteAllTracksButton() {
         if (mDeleteAllTracksButton == null) {
-            mDeleteAllTracksButton = new Button("Delete All");
+            mDeleteAllTracksButton = new Button("Delete _All");
+            mDeleteAllTracksButton.setMnemonicParsing(true);
+            mDeleteAllTracksButton.setTooltip(new Tooltip("Permanently delete all track history. This action cannot be undone."));
+            mDeleteAllTracksButton.accessibleTextProperty().set("Delete All Tracks");
+            mDeleteAllTracksButton.accessibleHelpProperty().set("Permanently deletes all tracks and history. This action cannot be undone.");
             mDeleteAllTracksButton.setOnAction(e -> {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Are you sure you want to delete all tracks?", ButtonType.YES, ButtonType.NO);
                 alert.setTitle("Delete All Tracks");
@@ -358,7 +370,11 @@ public class MapPanel extends BorderPane implements IPlottableUpdateListener {
 
     private Button getDeleteTrackButton() {
         if (mDeleteTrackButton == null) {
-            mDeleteTrackButton = new Button("Delete");
+            mDeleteTrackButton = new Button("_Delete");
+            mDeleteTrackButton.setMnemonicParsing(true);
+            mDeleteTrackButton.setTooltip(new Tooltip("Delete selected track. This action cannot be undone."));
+            mDeleteTrackButton.accessibleTextProperty().set("Delete Selected Track");
+            mDeleteTrackButton.accessibleHelpProperty().set("Permanently deletes the currently selected track. This action cannot be undone.");
             mDeleteTrackButton.setDisable(true);
             mDeleteTrackButton.setOnAction(e -> {
                 List<PlottableEntityHistory> selected = getPlottedTracksTable().getSelectionModel().getSelectedItems();
