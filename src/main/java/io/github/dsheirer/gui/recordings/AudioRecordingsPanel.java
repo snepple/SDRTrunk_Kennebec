@@ -174,7 +174,11 @@ public class AudioRecordingsPanel extends VBox {
             mChannelComboBox.getSelectionModel().select("All");
         });
 
-        Button deleteSelectedButton = new Button("Delete Selected");
+        Button deleteSelectedButton = new Button("Delete _Selected");
+        deleteSelectedButton.setMnemonicParsing(true);
+        deleteSelectedButton.setTooltip(new Tooltip("Delete selected recordings. This action cannot be undone."));
+        deleteSelectedButton.accessibleTextProperty().set("Delete Selected Recordings");
+        deleteSelectedButton.accessibleHelpProperty().set("Permanently delete selected recordings. This action cannot be undone.");
         deleteSelectedButton.setOnAction(e -> {
             List<RecordingItem> selectedItems = new ArrayList<>(mTableView.getSelectionModel().getSelectedItems());
             if (selectedItems.isEmpty()) return;
@@ -202,7 +206,11 @@ public class AudioRecordingsPanel extends VBox {
             javafx.beans.binding.Bindings.isEmpty(mTableView.getSelectionModel().getSelectedItems())
         );
 
-        Button deleteAllButton = new Button("Delete All");
+        Button deleteAllButton = new Button("Delete _All");
+        deleteAllButton.setMnemonicParsing(true);
+        deleteAllButton.setTooltip(new Tooltip("Delete all displayed recordings. This action cannot be undone."));
+        deleteAllButton.accessibleTextProperty().set("Delete All Recordings");
+        deleteAllButton.accessibleHelpProperty().set("Permanently delete all displayed recordings. This action cannot be undone.");
         deleteAllButton.setOnAction(e -> {
             List<RecordingItem> itemsToDelete = new ArrayList<>(mFilteredRecordings);
             if (itemsToDelete.isEmpty()) return;

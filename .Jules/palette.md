@@ -98,3 +98,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-17 - HIG Compliant Tooltips for Editors
 **Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
 **Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
+## 2024-05-24 - Add HIG Accessibility to Destructive Recording Actions
+**Learning:** Destructive actions like deleting audio recordings lacked explicit consequence warnings in tooltips and accessibility metadata, increasing cognitive load and risk of accidental data loss for screen reader users.
+**Action:** Always add `Tooltip`s with 'This action cannot be undone.', keyboard mnemonics (`setMnemonicParsing(true)`), and set `accessibleTextProperty` and `accessibleHelpProperty` for destructive JavaFX buttons to align with Apple HIG.
