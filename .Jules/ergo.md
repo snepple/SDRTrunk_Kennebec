@@ -39,3 +39,7 @@
 ## 2024-05-18 - Streaming Editor Tooltips
 **Learning:** Configurations for streaming servers like Icecast contain many backend-specific terms (Host, Port, Mount Point, Inline Metadata) that are confusing to users who aren't familiar with audio broadcasting software.
 **Action:** Always provide explicit tooltips to inputs in streaming editors (`AbstractStreamEditor`, `IcecastStreamEditor`) detailing the expected format and purpose (e.g., "Enter the server port number (e.g., 8000)") to lower the cognitive load.
+
+## 2024-10-25 - [SettingsRow Help Icons for CheckBox/ChoiceBox]
+**Learning:** Tooltips directly on trailing JavaFX `ChoiceBox` or `CheckBox` controls within a `SettingsRow` have poor discoverability and violate HIG guidelines which prefer contextual help icons.
+**Action:** When updating preferences using `SettingsRow`, move tooltips from trailing input controls to the leading label by wrapping the label and a help icon (via `createHelpIcon()`) in an `HBox`.

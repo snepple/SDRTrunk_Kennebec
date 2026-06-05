@@ -12,17 +12,14 @@ import javafx.scene.layout.Region;
  */
 public class SettingsRow extends HBox {
 
-    public SettingsRow(String labelText, Node... trailingControls) {
+
+    public SettingsRow(Node leadingNode, Node... trailingControls) {
         getStyleClass().add("hig-settings-row");
-
-        Label label = new Label(labelText);
-
-        label.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        getChildren().addAll(label, spacer);
+        getChildren().addAll(leadingNode, spacer);
         if (trailingControls != null) {
             for (Node n : trailingControls) {
                 if (n instanceof javafx.scene.control.Button) {
@@ -36,4 +33,15 @@ public class SettingsRow extends HBox {
             getChildren().addAll(trailingControls);
         }
     }
+
+    public SettingsRow(String labelText, Node... trailingControls) {
+        this(createLabel(labelText), trailingControls);
+    }
+
+    private static Label createLabel(String labelText) {
+        Label label = new Label(labelText != null ? labelText : "");
+        label.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+        return label;
+    }
+
 }
