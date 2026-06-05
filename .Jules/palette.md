@@ -98,3 +98,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-17 - HIG Compliant Tooltips for Editors
 **Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
 **Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
+## 2024-05-28 - Adding Tooltips to Audio Recording Panel Buttons
+**Learning:** Action buttons in complex data panels (like the Audio Recordings panel) often lack textual context for their operations (e.g., Delete All vs Delete Selected, Refresh, Clear Filters). For destructive actions, HIG recommends indicating the consequence directly in the tooltip.
+**Action:** Always verify action buttons have descriptive `Tooltip` objects. For destructive actions like deletions, explicitly add "This action cannot be undone." to the tooltip to reduce user error and anxiety.

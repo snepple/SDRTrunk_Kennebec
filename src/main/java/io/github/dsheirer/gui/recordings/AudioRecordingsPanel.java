@@ -155,13 +155,16 @@ public class AudioRecordingsPanel extends VBox {
         mChannelComboBox.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
         Button refreshButton = new Button("Refresh");
+        refreshButton.setTooltip(new Tooltip("Reload audio recordings from disk"));
         refreshButton.setOnAction(e -> loadRecordings());
 
         mStopButton = new Button("Stop Playback");
+        mStopButton.setTooltip(new Tooltip("Stop the currently playing audio recording"));
         mStopButton.setDisable(true);
         mStopButton.setOnAction(e -> stopPlayback());
 
         Button clearFiltersButton = new Button("Clear Filters");
+        clearFiltersButton.setTooltip(new Tooltip("Reset all date, time, and alias filters"));
         clearFiltersButton.getStyleClass().add("kennebec-toolbar-button");
         clearFiltersButton.setOnAction(e -> {
             mStartDatePicker.setValue(null);
@@ -175,6 +178,7 @@ public class AudioRecordingsPanel extends VBox {
         });
 
         Button deleteSelectedButton = new Button("Delete Selected");
+        deleteSelectedButton.setTooltip(new Tooltip("Permanently delete the selected recording(s). This action cannot be undone."));
         deleteSelectedButton.setOnAction(e -> {
             List<RecordingItem> selectedItems = new ArrayList<>(mTableView.getSelectionModel().getSelectedItems());
             if (selectedItems.isEmpty()) return;
@@ -203,6 +207,7 @@ public class AudioRecordingsPanel extends VBox {
         );
 
         Button deleteAllButton = new Button("Delete All");
+        deleteAllButton.setTooltip(new Tooltip("Permanently delete all currently displayed recording(s). This action cannot be undone."));
         deleteAllButton.setOnAction(e -> {
             List<RecordingItem> itemsToDelete = new ArrayList<>(mFilteredRecordings);
             if (itemsToDelete.isEmpty()) return;
@@ -322,6 +327,7 @@ public class AudioRecordingsPanel extends VBox {
             private final Button playBtn = new Button("Play");
 
             {
+                playBtn.setTooltip(new Tooltip("Play this recording"));
                 playBtn.setOnAction(e -> {
                     RecordingItem item = getItem();
                     if (item != null) {
