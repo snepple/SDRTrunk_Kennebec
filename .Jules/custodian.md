@@ -5,3 +5,7 @@
 ## 2026-05-09 - Mintlify Docs Integrity
 **Finding:** Mintlify uses the `docs` folder for its site generation, while the Help viewer inside the app uses `src/main/resources/docs`.
 **Action:** Do NOT delete `.md` or `.mdx` files in the `docs` directory or `src/main/resources/docs`. They are explicitly required for the Mintlify integration and the embedded help viewer respectively. Do NOT blindly copy `docs/*.mdx` to `src/main/resources/docs/*.md` as the Java help viewer does not support MDX React components. When syncing documentation, adapt the content to standard Markdown.
+
+## 2026-06-05 - Old testing scripts
+**Finding:** Found obsolete testing scripts and dummy classes checked into root and deep within src/ directories (e.g. TestJSVG.java, patch_alerts.py, etc).
+**Action:** Cleaned up unused python scripts and java classes. Added checks for scripts tracked under `org/jdesktop/swingx` and other root python files in future sweeps.
