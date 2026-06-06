@@ -70,6 +70,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -1074,6 +1075,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSystemField = new TextField();
             mSystemField.setDisable(true);
             mSystemField.setMaxWidth(Double.MAX_VALUE);
+            mSystemField.setTooltip(new Tooltip("The overarching radio system this channel belongs to (e.g., 'Metropolitan Police')."));
             mSystemField.textProperty().addListener(mEditorModificationListener);
         }
 
@@ -1087,6 +1089,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSiteField = new TextField();
             mSiteField.setDisable(true);
             mSiteField.setMaxWidth(Double.MAX_VALUE);
+            mSiteField.setTooltip(new Tooltip("The specific physical radio site or tower location (e.g., 'North Tower')."));
             mSiteField.textProperty().addListener(mEditorModificationListener);
         }
 
@@ -1100,6 +1103,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mNameField = new TextField();
             mNameField.setDisable(true);
             mNameField.setMaxWidth(Double.MAX_VALUE);
+            mNameField.setTooltip(new Tooltip("A unique, descriptive name for this specific channel or talkgroup."));
             mNameField.textProperty().addListener(mEditorModificationListener);
         }
 

@@ -39,3 +39,6 @@
 ## 2024-05-18 - Streaming Editor Tooltips
 **Learning:** Configurations for streaming servers like Icecast contain many backend-specific terms (Host, Port, Mount Point, Inline Metadata) that are confusing to users who aren't familiar with audio broadcasting software.
 **Action:** Always provide explicit tooltips to inputs in streaming editors (`AbstractStreamEditor`, `IcecastStreamEditor`) detailing the expected format and purpose (e.g., "Enter the server port number (e.g., 8000)") to lower the cognitive load.
+## 2026-06-06 - Adding Tooltips to Channel Configuration Text Fields
+**Learning:** Abstract text fields used for identifiers like System, Site, and Name can be confusing for new users who are unfamiliar with radio terminology and conventions.
+**Action:** Add descriptive Tooltips to these foundational fields in the ChannelConfigurationEditor to clarify their purpose, providing concrete examples where helpful (e.g. 'Metropolitan Police' for System).
