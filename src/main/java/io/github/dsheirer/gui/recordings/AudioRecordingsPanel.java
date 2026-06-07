@@ -162,6 +162,7 @@ public class AudioRecordingsPanel extends VBox {
         mStopButton.setOnAction(e -> stopPlayback());
 
         Button clearFiltersButton = new Button("Clear Filters");
+        clearFiltersButton.setTooltip(new Tooltip("Clear all applied search filters"));
         clearFiltersButton.getStyleClass().add("kennebec-toolbar-button");
         clearFiltersButton.setOnAction(e -> {
             mStartDatePicker.setValue(null);
@@ -175,6 +176,7 @@ public class AudioRecordingsPanel extends VBox {
         });
 
         Button deleteSelectedButton = new Button("Delete Selected");
+        deleteSelectedButton.setTooltip(new Tooltip("Delete the selected recordings. This action cannot be undone."));
         deleteSelectedButton.setOnAction(e -> {
             List<RecordingItem> selectedItems = new ArrayList<>(mTableView.getSelectionModel().getSelectedItems());
             if (selectedItems.isEmpty()) return;
@@ -203,6 +205,7 @@ public class AudioRecordingsPanel extends VBox {
         );
 
         Button deleteAllButton = new Button("Delete All");
+        deleteAllButton.setTooltip(new Tooltip("Delete all displayed recordings. This action cannot be undone."));
         deleteAllButton.setOnAction(e -> {
             List<RecordingItem> itemsToDelete = new ArrayList<>(mFilteredRecordings);
             if (itemsToDelete.isEmpty()) return;
