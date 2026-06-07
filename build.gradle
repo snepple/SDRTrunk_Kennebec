@@ -669,7 +669,9 @@ tasks.register('createInstaller', Exec) {
     def osName = System.properties.getProperty("os.name").toLowerCase()
     def arch = System.properties.getProperty("os.arch")
     def versionStr = project.findProperty('projectVersion')
-    def appVersion = versionStr.toString().replaceAll("-.*", "")
+    // jpackage requires a numeric version (e.g. 0.0.75), strip any non-numeric prefix
+    def appVersion = versionStr.toString().replaceAll("^[^0-9]*", "").replaceAll("-.*", "")
+    if (appVersion.isEmpty()) appVersion = "0.0.1"
     
     def jpackageCmd = "jpackage"
     def type = "app-image"
@@ -683,21 +685,58 @@ tasks.register('createInstaller', Exec) {
         type = "deb"
     }
 
-    def inputDir = "$buildDir/image/sdr-trunk/bin" // We need the assembled jars
     def destDir = "$buildDir/installer"
-    
-    // Actually, beryx.runtime creates an image at build/image/sdr-trunk/
-    // We can just point jpackage to use that jlink image as the runtime!
     
     doFirst {
         file(destDir).mkdirs()
+
+        // Dynamically find the runtime image directory created by runtimeZipCurrent.
+        // It is named like: sdr-trunk-windows-x86_64-v<version>
+        def imageBase = file("$buildDir/image")
+        def imageDir = null
+        if (imageBase.exists()) {
+            imageBase.eachDir { dir ->
+                if (dir.name.startsWith("sdr-trunk")) {
+                    imageDir = dir
+                }
+            }
+        }
+        if (imageDir == null) {
+            throw new GradleException("Runtime image not found in $buildDir/image/. Run runtimeZipCurrent first.")
+        }
+        logger.lifecycle("createInstaller: using runtime image at ${imageDir}")
+
+        // Build the jpackage command using --runtime-image and --input for the classpath
+        def libDir = new File(imageDir, "lib")
+        def launcherJar = null
+        if (libDir.exists()) {
+            libDir.eachFile { f ->
+                if (f.name.startsWith("sdr-trunk") && f.name.endsWith(".jar")) {
+                    launcherJar = f
+                }
+            }
+        }
+
+        def cmdList = [jpackageCmd,
+            '--type', type,
+            '--dest', destDir,
+            '--name', 'SDRTrunk',
+            '--app-version', appVersion,
+            '--runtime-image', imageDir.absolutePath,
+            '--input', libDir.absolutePath,
+            '--main-jar', launcherJar != null ? launcherJar.name : 'sdr-trunk.jar',
+            '--main-class', 'io.github.dsheirer.gui.SDRTrunk']
+
+        if (osName.contains("win")) {
+            // Add Windows-specific options
+            def iconFile = file("${projectDir}/src/main/resources/images/SDRTrunk.ico")
+            if (iconFile.exists()) {
+                cmdList.addAll(['--icon', iconFile.absolutePath])
+            }
+            cmdList.addAll(['--win-shortcut', '--win-menu', '--win-menu-group', 'SDRTrunk'])
+        }
+
+        commandLine cmdList
     }
-    
-    commandLine jpackageCmd, 
-        '--type', type,
-        '--dest', destDir,
-        '--name', 'SDRTrunk',
-        '--app-version', appVersion,
-        '--runtime-image', "$buildDir/image/sdr-trunk",
-        '--module', 'sdrtrunk/io.github.dsheirer.gui.SDRTrunk'
 }
+

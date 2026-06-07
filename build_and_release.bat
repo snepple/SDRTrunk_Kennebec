@@ -133,9 +133,8 @@ set "APP_VER=!PROJ_VER!"
 for /f "tokens=* delims=ABCDEFGHIJKLMNOPQRSTUVWXYZ." %%V in ("!APP_VER!") do set "APP_VER=%%V"
 if "!APP_VER!"=="" set "APP_VER=0.0.1"
 
-:: Create a staging directory for all release artifacts
+:: Define the staging directory for release artifacts (created after Gradle clean)
 set "RELEASE_DIR=%ROOT_DIR%\%FOLDER_NAME%\build\releases"
-if not exist "!RELEASE_DIR!" mkdir "!RELEASE_DIR!"
 
 :: ============================================================================
 :: STEP 6: Gradle Init (Compile)
@@ -144,6 +143,9 @@ call :drawProgressBar 25 "Initializing Gradle (compile)..."
 call gradlew.bat clean classes --no-daemon --console=plain > gradle_out.log 2>&1
 type gradle_out.log >> "%LOG_FILE%"
 findstr /C:"BUILD SUCCESSFUL" gradle_out.log >nul || goto ai_triage
+
+:: Create the releases staging directory AFTER clean (clean wipes build\)
+if not exist "!RELEASE_DIR!" mkdir "!RELEASE_DIR!"
 
 :: ============================================================================
 :: STEP 7: C++ Native Library Compilation
