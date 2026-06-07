@@ -92,12 +92,7 @@ public class WidgetContainer extends VBox {
             event.consume();
         });
         
-        setOnDragDone(event -> {
-            mDraggingWidget = null;
-            mDropIndex = -1;
-            rebuildLayout();
-            event.consume();
-        });
+
     }
 
     public NowPlayingPreference getPreference() {
@@ -212,6 +207,13 @@ public class WidgetContainer extends VBox {
             ClipboardContent content = new ClipboardContent();
             content.putString(widget.getWidgetId());
             db.setContent(content);
+            event.consume();
+        });
+
+        header.setOnDragDone(event -> {
+            mDraggingWidget = null;
+            mDropIndex = -1;
+            rebuildLayout();
             event.consume();
         });
     }
