@@ -1,30 +1,18 @@
-### Latest Compiled Release: [Download K.00.058](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.058)
-### Latest Compiled Release: [Download K.00.058](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.058)
+### Latest Compiled Release: [Download K.00.076](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.076)
 
 <h1>sdrtrunk - Kennebec Version</h1>
 
-## 🆕 Recent Updates (Week of May 10, 2026)
-* **🚀 New Features:**
-  * **JMBE Support:** Added support for building the bazineta JMBE fork.
-  * **AI Integration:** Implemented AI Audio Monitoring for channels and added an "AI Optimize Audio Filters" button to the NBFM channel configuration.
-  * **System Health:** Implemented a new System Health Notification feature to alert you of application issues.
-  * **Geographic IDs:** Added a Geographic ID generator for NBFM channels.
+## 🆕 Recent Updates (Week of June 7, 2026)
+* **🚀 Architecture & Features:**
+  * **Phase 3 Enhancements:** Major architectural upgrades including an advanced Docking framework, comprehensive UI theming, application notifications, and native app packaging via jpackage.
 * **🎨 UI/UX Improvements:**
-  * **Channel Table Enhancements:** Enabled inline editing and added a right-click context menu to the channel table rows.
-  * **Alias & Streaming:** Added inline editing to the alias table, separated listen and priority columns in the Alias Configuration Editor, and added context menu filtering to the streaming widget.
-  * **Live Console:** Added multiple selection and clipboard copy support to Live Console logs.
-  * **Notifications:** Redesigned the Notifications configuration and added alerts.
-  * **Sidebar Update:** Updated the sidebar expand/contract styling to feature the SDRTrunk logo and dynamic positioning.
-* **🛡️ Security & Stability:**
-  * Fixed a GUI threading issue ensuring main GUI initialization and Swing UI component updates are correctly handled on the Event Dispatch Thread (EDT).
-  * Resolved a deadlock and buffer leak in the NativeBufferManager affecting the waterfall display.
-  * Fixed a resource leak in the AudioSegmentRecorder.
-  * Prevented application crashes on startup caused by MigLayout constraints.
-* **🔧 Bug Fixes:**
-  * Fixed an issue where the tuner enable button failed silently due to a bandwidth bug.
-  * Resolved UI bugs causing empty spectrum and waterfall displays.
+  * **Accessibility & HIG Compliance:** Significant focus on Apple Human Interface Guidelines (HIG) with updated tooltips for configuration, MapPanel, and Audio Recordings. Added keyboard mnemonics and specific accessibility warnings to destructive actions.
+  * **Smart Dropdowns:** Added auto-complete features to System and Site configuration fields to reduce cognitive load.
+* **⚡ Performance & Stability:**
+  * **FloatFIRFilter:** Optimized FloatFIRFilter buffer logic using primitive `float[]` arrays, improving memory efficiency and lowering CPU usage.
+  * **Audio Recordings Offloading:** Moved AudioRecordingsPanel delete operations to background threads (async offloading) to prevent blocking the Event Dispatch Thread (EDT).
 * **📚 Documentation:**
-  * Added new guides for Radio Reference import, OpenMHz streaming, Rdio Scanner streaming, and ThinLine Radio documentation.
+  * Added and updated comprehensive guides for Custom Channel Images, WACN & NAC tooltips, and general channel images.
 
 
 <p>Welcome to the Kennebec version of sdrtrunk—a modernized, cross-platform Java application engineered for decoding, monitoring, recording, and streaming trunked mobile and related radio protocols using Software Defined Radios (SDR).</p>
@@ -55,6 +43,7 @@
 <h3>Modernized Interface and Workflow</h3>
 <ul>
   <li>Refreshed GUI with updated icons and an improved Now Playing view</li>
+  <li>Advanced Docking Framework and Comprehensive Theming</li>
   <li>Consolidated settings in a single user preference area, eliminating the need to hunt across multiple menus</li>
   <li>New interface for reviewing logs and browsing recorded audio files</li>
   <li>Ability to set allocated memory directly via the user preferences Ux/GUI</li>

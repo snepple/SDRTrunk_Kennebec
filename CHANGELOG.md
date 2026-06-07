@@ -6,6 +6,30 @@ DSheirer/sdrtrunk changes are not repeated; only fork deltas are recorded.
 Kennebec releases are versioned `K.XX.YYY`. Earlier `0.6.2-ap-<n>` entries refer
 to the upstream `actionpagezello/sdrtrunk` fork that Kennebec is based on.
 
+## [K.00.058] - 2026-05-10
+
+### Added
+- **JMBE Support:** Added support for building the bazineta JMBE fork.
+- **AI Integration:** Implemented AI Audio Monitoring for channels and added an "AI Optimize Audio Filters" button to the NBFM channel configuration.
+- **System Health:** Implemented a new System Health Notification feature to alert you of application issues.
+- **Geographic IDs:** Added a Geographic ID generator for NBFM channels.
+- Added new guides for Radio Reference import, OpenMHz streaming, Rdio Scanner streaming, and ThinLine Radio documentation.
+
+### Changed
+- **Channel Table Enhancements:** Enabled inline editing and added a right-click context menu to the channel table rows.
+- **Alias & Streaming:** Added inline editing to the alias table, separated listen and priority columns in the Alias Configuration Editor, and added context menu filtering to the streaming widget.
+- **Live Console:** Added multiple selection and clipboard copy support to Live Console logs.
+- **Notifications:** Redesigned the Notifications configuration and added alerts.
+- **Sidebar Update:** Updated the sidebar expand/contract styling to feature the SDRTrunk logo and dynamic positioning.
+
+### Fixed
+- Fixed a GUI threading issue ensuring main GUI initialization and Swing UI component updates are correctly handled on the Event Dispatch Thread (EDT).
+- Resolved a deadlock and buffer leak in the NativeBufferManager affecting the waterfall display.
+- Fixed a resource leak in the AudioSegmentRecorder.
+- Prevented application crashes on startup caused by MigLayout constraints.
+- Fixed an issue where the tuner enable button failed silently due to a bandwidth bug.
+- Resolved UI bugs causing empty spectrum and waterfall displays.
+
 ## [K.00.041] - 2026-05-08
 
 This week's release focuses on the JavaFX modernization push, new monitoring and
