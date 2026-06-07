@@ -30,3 +30,6 @@
 ## 2024-05-14 - LNA Gain
 **Simplified:**
 - The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+## 2024-05-15 - WACN (Wide Area Communication Network)
+**Simplified:**
+- WACN: A unique code identifying a large regional radio system. This is usually provided by RadioReference and tells the software which network to follow.
