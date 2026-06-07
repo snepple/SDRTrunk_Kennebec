@@ -145,16 +145,18 @@ public class JavaFxWindowManager extends Application
      */
     public javafx.scene.layout.Pane createStatusPanel(ResourceMonitor resourceMonitor)
     {
-        javafx.scene.layout.Pane panel = new javafx.scene.layout.HBox();
-            panel.setPrefHeight(25);
-            panel.setMaxHeight(25);
+        javafx.scene.layout.VBox wrapper = new javafx.scene.layout.VBox();
+        wrapper.setPrefHeight(30);
+        wrapper.setMaxHeight(30);
+        // Add a subtle top border line and top padding to separate from content above
+        wrapper.setStyle("-fx-border-color: -fx-box-border transparent transparent transparent; -fx-border-width: 1 0 0 0; -fx-padding: 4 0 0 0;");
 
-            //Container has to be populated on the FX event thread
-            Platform.runLater(() -> {
-                StatusBox statusBox = new StatusBox(resourceMonitor);
-                panel.getChildren().add(statusBox);
-            });
-        return panel;
+        //Container has to be populated on the FX event thread
+        Platform.runLater(() -> {
+            StatusBox statusBox = new StatusBox(resourceMonitor);
+            wrapper.getChildren().add(statusBox);
+        });
+        return wrapper;
     }
 
     private void setup()
