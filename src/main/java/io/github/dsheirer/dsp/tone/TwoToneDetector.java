@@ -29,6 +29,13 @@ import io.github.dsheirer.identifier.Form;
 import io.github.dsheirer.identifier.Role;
 import io.github.dsheirer.audio.broadcast.mqtt.MqttService;
 import io.github.dsheirer.eventbus.MyEventBus;
+import org.jtransforms.fft.FloatFFT_1D;
+import io.github.dsheirer.identifier.Identifier;
+import io.github.dsheirer.identifier.IdentifierClass;
+import io.github.dsheirer.identifier.Form;
+import io.github.dsheirer.identifier.Role;
+import io.github.dsheirer.audio.broadcast.mqtt.MqttService;
+import io.github.dsheirer.eventbus.MyEventBus;
 
 /**
  * Detects A/B two-tone sequences in a background thread to prevent audio playback stuttering.
@@ -64,6 +71,19 @@ public class TwoToneDetector
     private int mCurrentToneABlocks = 0;
     private double mCurrentToneB = 0.0;
     private int mCurrentToneBBlocks = 0;
+
+    // FFT Auto-Discovery variables
+    private static final int FFT_SIZE = 4096;
+    private final float[] mRingBuffer = new float[FFT_SIZE];
+    private int mRingIndex = 0;
+    private int mSamplesReceived = 0;
+    private int mFftCounter = 0;
+    private FloatFFT_1D mFft = new FloatFFT_1D(FFT_SIZE);
+
+    private double mDiscoveryCurrentToneA = 0.0;
+    private int mDiscoveryToneABlocks = 0;
+    private double mDiscoveryCurrentToneB = 0.0;
+    private int mDiscoveryToneBBlocks = 0;
 
     public TwoToneDetector(PlaylistManager playlistManager, List<ZelloBroadcaster> zelloBroadcasters)
     {
@@ -109,6 +129,15 @@ public class TwoToneDetector
         if (configs.isEmpty() && !discoveryEnabled)
         {
             return; // Nothing to do
+        }
+
+        if (discoveryEnabled) {
+            for (int i = 0; i < buffer.length; i++) {
+                mRingBuffer[mRingIndex] = buffer[i];
+                mRingIndex = (mRingIndex + 1) % FFT_SIZE;
+                mSamplesReceived++;
+                mFftCounter++;
+            }
         }
 
         // To make this fully optimized, we would typically run an FFT or a bank of Goertzel filters
@@ -214,9 +243,70 @@ public class TwoToneDetector
         // A true discovery mode would require an FFT to find the strongest peak frequency
         if (discoveryEnabled && !matchedToneAThisBlock && !matchedToneBThisBlock)
         {
-            // Placeholder for FFT unknown peak detection logic
-            // E.g. finding a 600Hz tone that isn't mapped
-            // logDiscovery(600.0, 700.0, segment);
+            if (mFftCounter >= 800 && mSamplesReceived >= FFT_SIZE) {
+                mFftCounter = 0;
+                float[] fftBuffer = new float[FFT_SIZE];
+                for (int i = 0; i < FFT_SIZE; i++) {
+                    fftBuffer[i] = mRingBuffer[(mRingIndex + i) % FFT_SIZE];
+                }
+                
+                mFft.realForward(fftBuffer);
+                
+                double maxMagnitude = 0;
+                int maxIndex = -1;
+                for (int i = 1; i < FFT_SIZE / 2; i++) {
+                    float re = fftBuffer[2 * i];
+                    float im = fftBuffer[2 * i + 1];
+                    double mag = re * re + im * im;
+                    if (mag > maxMagnitude) {
+                        maxMagnitude = mag;
+                        maxIndex = i;
+                    }
+                }
+                
+                if (maxMagnitude > 1000.0) { // relative threshold
+                    double frequency = (double) maxIndex * SAMPLE_RATE / FFT_SIZE;
+                    frequency = Math.round(frequency);
+                    
+                    if (frequency >= 300 && frequency <= 3000) {
+                        if (mDiscoveryCurrentToneB > 0) {
+                            if (Math.abs(mDiscoveryCurrentToneB - frequency) < 5) {
+                                mDiscoveryToneBBlocks++;
+                                if (mDiscoveryToneBBlocks >= 3) { // 3 * 100ms = 300ms
+                                    logDiscovery(mDiscoveryCurrentToneA, mDiscoveryCurrentToneB, segment);
+                                    mDiscoveryCurrentToneA = 0;
+                                    mDiscoveryToneABlocks = 0;
+                                    mDiscoveryCurrentToneB = 0;
+                                    mDiscoveryToneBBlocks = 0;
+                                }
+                            } else {
+                                mDiscoveryCurrentToneB = 0;
+                                mDiscoveryToneBBlocks = 0;
+                            }
+                        } else if (mDiscoveryCurrentToneA > 0) {
+                            if (Math.abs(mDiscoveryCurrentToneA - frequency) < 5) {
+                                mDiscoveryToneABlocks++;
+                            } else {
+                                if (mDiscoveryToneABlocks >= 3) {
+                                    mDiscoveryCurrentToneB = frequency;
+                                    mDiscoveryToneBBlocks = 1;
+                                } else {
+                                    mDiscoveryCurrentToneA = frequency;
+                                    mDiscoveryToneABlocks = 1;
+                                }
+                            }
+                        } else {
+                            mDiscoveryCurrentToneA = frequency;
+                            mDiscoveryToneABlocks = 1;
+                        }
+                    }
+                } else {
+                    mDiscoveryCurrentToneA = 0;
+                    mDiscoveryToneABlocks = 0;
+                    mDiscoveryCurrentToneB = 0;
+                    mDiscoveryToneBBlocks = 0;
+                }
+            }
         }
     }
 
@@ -414,7 +504,40 @@ public class TwoToneDetector
 
     private void logDiscovery(double toneA, double toneB, AudioSegment segment)
     {
-        DISCOVERY_LOG.add(new TwoToneDiscoveryLog(toneA, toneB));
+        mLog.info(String.format("Discovery: Detected unknown two-tone sequence: Tone A: %.1f Hz, Tone B: %.1f Hz", toneA, toneB));
+        
+        boolean exists = false;
+        for (TwoToneConfiguration config : mPlaylistManager.getTwoToneConfigurations()) {
+            if (Math.abs(config.getToneA() - toneA) < config.getFrequencyTolerance() && 
+                Math.abs(config.getToneB() - toneB) < config.getFrequencyTolerance()) {
+                exists = true;
+                break;
+            }
+        }
+        
+        if (!exists) {
+            TwoToneConfiguration newConfig = new TwoToneConfiguration();
+            newConfig.setToneA((float) toneA);
+            newConfig.setToneB((float) toneB);
+            newConfig.setAlias("Discovered: " + Math.round(toneA) + " / " + Math.round(toneB));
+            newConfig.setEnabled(false); // disabled until manually activated
+            newConfig.setAutoDiscovered(true);
+            
+            // Add to PlaylistManager
+            javafx.application.Platform.runLater(() -> {
+                try {
+                    // Update the active PlaylistManager memory
+                    mPlaylistManager.getTwoToneConfigurations().add(newConfig);
+                    mPlaylistManager.schedulePlaylistSave();
+                    
+                    // Force a UI refresh by triggering an event or the editor might refresh on next load
+                    // It's sufficient to add to the configurations list. The UI binds to it when opened.
+                } catch (Exception e) {
+                    mLog.error("Failed to add discovered Two-Tone configuration", e);
+                }
+            });
+        }
+        
         String channel = "Unknown";
         if(segment != null) {
             io.github.dsheirer.identifier.Identifier id = segment.getIdentifierCollection().getIdentifier(io.github.dsheirer.identifier.IdentifierClass.CONFIGURATION, io.github.dsheirer.identifier.Form.CHANNEL, io.github.dsheirer.identifier.Role.ANY);

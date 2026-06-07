@@ -105,6 +105,25 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         TableColumn<TwoToneConfiguration, String> aliasCol = new TableColumn<>("Name");
         aliasCol.setId("alias");
         aliasCol.setCellValueFactory(new PropertyValueFactory<>("alias"));
+        aliasCol.setCellFactory(column -> new TableCell<TwoToneConfiguration, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    TwoToneConfiguration config = getTableRow().getItem();
+                    if (config != null && config.isAutoDiscovered() && !config.isEnabled()) {
+                        setText(item + " (Auto-Discovered)");
+                        setStyle("-fx-font-weight: bold; -fx-text-fill: darkorange;");
+                    } else {
+                        setText(item);
+                        setStyle("");
+                    }
+                }
+            }
+        });
         TableColumn<TwoToneConfiguration, Double> toneACol = new TableColumn<>("Tone A");
         toneACol.setId("toneA");
         toneACol.setCellValueFactory(new PropertyValueFactory<>("toneA"));

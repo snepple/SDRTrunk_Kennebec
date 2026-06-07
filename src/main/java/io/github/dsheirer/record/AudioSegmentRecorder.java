@@ -60,6 +60,8 @@ public class AudioSegmentRecorder
     public static void record(AudioSegment audioSegment, Path path, RecordFormat recordFormat,
                               UserPreferences userPreferences) throws IOException
     {
+        io.github.dsheirer.alias.DynamicAliasPopulator.populate(audioSegment.getIdentifierCollection());
+        io.github.dsheirer.transcription.TranscriptionEngine.transcribeAsync(audioSegment, userPreferences);
         record(audioSegment, path, recordFormat, userPreferences, audioSegment.getIdentifierCollection());
     }
 

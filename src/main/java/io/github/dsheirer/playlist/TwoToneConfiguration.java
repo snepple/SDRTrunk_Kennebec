@@ -36,6 +36,8 @@ public class TwoToneConfiguration
 
     private DoubleProperty mFrequencyToleranceProperty = new SimpleDoubleProperty(10.0);
     private DoubleProperty mToneDurationMsProperty = new SimpleDoubleProperty(300.0);
+    
+    private BooleanProperty mAutoDiscoveredProperty = new SimpleBooleanProperty(false);
 
     public TwoToneConfiguration()
     {
@@ -61,6 +63,7 @@ public class TwoToneConfiguration
         copy.setShowNotification(isShowNotification());
         copy.setFrequencyTolerance(getFrequencyTolerance());
         copy.setToneDurationMs(getToneDurationMs());
+        copy.setAutoDiscovered(isAutoDiscovered());
         return copy;
     }
 
@@ -354,10 +357,27 @@ public class TwoToneConfiguration
         return mShowNotificationProperty;
     }
 
+    @JacksonXmlProperty(isAttribute = true, localName = "autoDiscovered")
+    public boolean isAutoDiscovered()
+    {
+        return mAutoDiscoveredProperty.get();
+    }
+
+    public void setAutoDiscovered(boolean autoDiscovered)
+    {
+        mAutoDiscoveredProperty.set(autoDiscovered);
+    }
+
+    @JsonIgnore
+    public BooleanProperty autoDiscoveredProperty()
+    {
+        return mAutoDiscoveredProperty;
+    }
+
     public static Callback<TwoToneConfiguration, Observable[]> extractor()
     {
         return (TwoToneConfiguration config) -> new Observable[]{
-            config.aliasProperty(), config.templateProperty(), config.longAToneProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty(), config.enableZelloTextMessageProperty(), config.frequencyToleranceProperty(), config.toneDurationMsProperty(), config.toneAProperty(), config.toneBProperty(), config.enabledProperty(), config.alertFilePathProperty(), config.showNotificationProperty()
+            config.aliasProperty(), config.templateProperty(), config.longAToneProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty(), config.enableZelloTextMessageProperty(), config.frequencyToleranceProperty(), config.toneDurationMsProperty(), config.toneAProperty(), config.toneBProperty(), config.enabledProperty(), config.alertFilePathProperty(), config.showNotificationProperty(), config.autoDiscoveredProperty()
         };
     }
 }

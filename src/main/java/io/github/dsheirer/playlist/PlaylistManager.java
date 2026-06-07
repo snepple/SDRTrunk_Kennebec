@@ -113,6 +113,8 @@ public class PlaylistManager implements Listener<ChannelEvent>
 
         mBroadcastModel = new BroadcastModel(mAliasModel, mIconModel, userPreferences);
         mRadioReference = new RadioReference(mUserPreferences);
+        
+        io.github.dsheirer.alias.DynamicAliasPopulator.init(mAliasModel);
 
         initRemaining(eventLogManager);
 
@@ -468,6 +470,10 @@ public class PlaylistManager implements Listener<ChannelEvent>
         }
     }
 
+
+    public List<TwoToneConfiguration> getTwoToneConfigurations() {
+        return mTwoToneConfigurations;
+    }
 
     /**
      * Constructs and returns the current playlist based on the internal models.

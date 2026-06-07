@@ -13,6 +13,11 @@ public class AIPreference extends Preference {
     public static final String KEY_SYSTEM_HEALTH_ENABLED = "ai.system.health.enabled";
     public static final String KEY_GEMINI_MODEL = "gemini.model";
     public static final String KEY_AI_LOG_ANALYSIS_ENABLED = "ai.log.analysis.enabled";
+    
+    public static final String KEY_TRANSCRIPTION_ENABLED = "ai.transcription.enabled";
+    public static final String KEY_TRANSCRIPTION_ENGINE = "ai.transcription.engine";
+    public static final String KEY_GOOGLE_STT_API_KEY = "ai.transcription.google.key";
+    public static final String KEY_WHISPER_API_KEY = "ai.transcription.whisper.key";
 
     private Preferences mPreferences = Preferences.userNodeForPackage(AIPreference.class);
 
@@ -75,6 +80,42 @@ public class AIPreference extends Preference {
 
     public void setGeminiModel(String model) {
         mPreferences.put(KEY_GEMINI_MODEL, model);
+        notifyPreferenceUpdated();
+    }
+
+    public boolean isTranscriptionEnabled() {
+        return mPreferences.getBoolean(KEY_TRANSCRIPTION_ENABLED, false);
+    }
+
+    public void setTranscriptionEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_TRANSCRIPTION_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public String getTranscriptionEngine() {
+        return mPreferences.get(KEY_TRANSCRIPTION_ENGINE, "WHISPER"); // "WHISPER" or "GOOGLE"
+    }
+
+    public void setTranscriptionEngine(String engine) {
+        mPreferences.put(KEY_TRANSCRIPTION_ENGINE, engine);
+        notifyPreferenceUpdated();
+    }
+
+    public String getGoogleSttApiKey() {
+        return mPreferences.get(KEY_GOOGLE_STT_API_KEY, "");
+    }
+
+    public void setGoogleSttApiKey(String apiKey) {
+        mPreferences.put(KEY_GOOGLE_STT_API_KEY, apiKey);
+        notifyPreferenceUpdated();
+    }
+
+    public String getWhisperApiKey() {
+        return mPreferences.get(KEY_WHISPER_API_KEY, "");
+    }
+
+    public void setWhisperApiKey(String apiKey) {
+        mPreferences.put(KEY_WHISPER_API_KEY, apiKey);
         notifyPreferenceUpdated();
     }
 }
