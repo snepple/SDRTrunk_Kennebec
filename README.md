@@ -5,16 +5,21 @@
 
 ## 🆕 Recent Updates (Week of May 10, 2026)
 * **🚀 New Features:**
-  * **JMBE Support:** Added support for building the bazineta JMBE fork.
-  * **AI Integration:** Implemented AI Audio Monitoring for channels and added an "AI Optimize Audio Filters" button to the NBFM channel configuration.
+  * **Audio Transcriptions:** Support for transcribing radio audio using OpenAI Whisper and Google Speech-to-Text APIs.
+  * **NBFM AI Audio Optimizer:** AI-driven noise filtering for analog channels.
+  * **IAmResponding:** Real-time UDP streaming feature specifically for the IAmResponding platform.
+  * **Smart Bandwidth:** Auto-optimizing sample rate to save CPU.
+  * **Native Sequential Paging:** Phase 4 Native Sequential Paging Detection.
+  * **Contextual Help Viewer:** An embedded, searchable documentation viewer right inside the app.
   * **System Health:** Implemented a new System Health Notification feature to alert you of application issues.
   * **Geographic IDs:** Added a Geographic ID generator for NBFM channels.
+  * **JMBE Support:** Added support for building the bazineta JMBE fork.
 * **🎨 UI/UX Improvements:**
+  * **macOS Aesthetic Redesign:** A major macOS System Settings-style UI redesign, including a custom collapsible left-hand sidebar and high-dpi SVG icons.
   * **Channel Table Enhancements:** Enabled inline editing and added a right-click context menu to the channel table rows.
   * **Alias & Streaming:** Added inline editing to the alias table, separated listen and priority columns in the Alias Configuration Editor, and added context menu filtering to the streaming widget.
   * **Live Console:** Added multiple selection and clipboard copy support to Live Console logs.
   * **Notifications:** Redesigned the Notifications configuration and added alerts.
-  * **Sidebar Update:** Updated the sidebar expand/contract styling to feature the SDRTrunk logo and dynamic positioning.
 * **🛡️ Security & Stability:**
   * Fixed a GUI threading issue ensuring main GUI initialization and Swing UI component updates are correctly handled on the Event Dispatch Thread (EDT).
   * Resolved a deadlock and buffer leak in the NativeBufferManager affecting the waterfall display.
@@ -101,6 +106,12 @@
   <li>Automated control channel following and voice traffic decoding</li>
   <li>Manage talkgroups and route audio to various streaming platforms</li>
 </ul>
+
+<h2>Installing via Native Installer</h2>
+<p>If you prefer an easy-to-use application installer (such as a <code>.exe</code> installer for Windows) instead of extracting a ZIP file and running the <code>sdr-trunk.bat</code> script, you can easily generate one! The build system natively supports the JDK's <code>jpackage</code> utility.</p>
+<p>Simply run the following command from the source code root directory (using the Gradle wrapper):</p>
+<pre><code>./gradlew createInstaller -x compileJni</code></pre>
+<p>This will bundle the compiled Java application, dependencies, and native Java runtime into a standard OS installer package in the <code>build/installer/</code> directory.</p>
 
 <h2>📚 Documentation & Guides</h2>
 <p><strong><a href="https://sam-64221fcd.mintlify.app/">Read the official SDRTrunk Kennebec Documentation</a></strong></p>

@@ -547,38 +547,6 @@ tasks.register('runPipelineReplay', JavaExec) {
     } else {
 
     }
-    doFirst {
-        file('wrapper.c').text = '''
-#include <windows.h>
-#include <stdio.h>
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    char exePath[MAX_PATH];
-    GetModuleFileName(NULL, exePath, MAX_PATH);
-
-    char *lastBackslash = strrchr(exePath, '\\\\');
-    if (lastBackslash != NULL) {
-        *lastBackslash = '\\0';
-    }
-
-    char batPath[MAX_PATH];
-    snprintf(batPath, MAX_PATH, "%s\\\\bin\\\\sdr-trunk.bat", exePath);
-
-    ShellExecute(NULL, "open", batPath, lpCmdLine, exePath, SW_HIDE);
-    return 0;
-}
-'''
-        def compiler = System.properties.getProperty("os.name").toLowerCase().contains("win") ? 'gcc' : 'x86_64-w64-mingw32-gcc'
-        try {
-            def process = new ProcessBuilder(compiler, '-o', "${buildDir}/launch4j/SDRTrunk.exe", 'wrapper.c', '-mwindows').start()
-            process.waitFor()
-            if (process.exitValue() != 0) {
-                println "Warning: compiler returned non-zero exit code: ${process.exitValue()}"
-            }
-        } catch (Exception e) {
-            println "Warning: compiler failed to build SDRTrunk.exe: ${e.message}"
-        }
-    }
 }
 
 //Hook the archive task onto every runtimeZip* task as a finalizer so it runs
