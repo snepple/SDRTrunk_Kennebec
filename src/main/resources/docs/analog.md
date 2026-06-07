@@ -74,7 +74,7 @@ NBFM squelch opens when the signal noise floor drops below a threshold (indicati
 | **Hysteresis open** | Consecutive samples below open threshold required to open | 4 |
 | **Hysteresis close** | Consecutive samples above close threshold required to close | 4 |
 
-> **Tip**
+> [!TIP]
 >
 If the squelch opens frequently on a noisy frequency, raise the **noise open threshold** in small increments until false triggers stop. If weak signals are not opening the squelch, lower it.
 
@@ -97,7 +97,7 @@ AM is used primarily on aviation and some HF bands. Configuration follows the sa
     Click **Save**, then click **Play** or enable **Auto-Start**.
 
 
-> **Note**
+> [!NOTE]
 >
 AM does not support sub-audible tone squelch (CTCSS/DCS). The squelch on AM channels is carrier-based only.
 
@@ -122,7 +122,7 @@ Continuous Tone-Coded Squelch System (CTCSS) uses a sub-audible tone in the rang
     Click **Save**. SDRTrunk will now pass audio only when the configured CTCSS tone is detected.
 
 
-> **Warning**
+> [!WARNING]
 >
 When tone filtering is enabled and the tone filter list is empty, **no audio will pass**. Always add at least one tone filter entry before enabling the feature.
 
@@ -145,7 +145,7 @@ Digital Coded Squelch (DCS) uses a 134 bps continuous digital code transmitted b
     Click **Save**. Audio will only pass when the configured DCS code is received.
 
 
-> **Tip**
+> [!TIP]
 >
 CTCSS and DCS tone filters can be mixed on the same channel. SDRTrunk opens the squelch when **any** configured code is detected, letting you monitor a shared frequency where different agencies use different squelch codes.
 
@@ -165,6 +165,6 @@ The following MDC-1200 message types are decoded and appear in the event log:
 
 To assign friendly names to MDC-1200 unit IDs, add alias entries with the **Protocol** set to `MDC-1200` and the identifier type set to **Talkgroup**, entering the numeric unit ID in the **Identifier** field.
 
-> **Note**
+> [!NOTE]
 >
 MDC-1200 and Fleetsync II both layer over NBFM carriers. You do not create a separate channel entry for them — they are automatically decoded alongside the voice audio on any NBFM channel where they appear.

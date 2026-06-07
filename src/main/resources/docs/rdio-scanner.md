@@ -37,7 +37,7 @@ Before adding a Rdio Scanner broadcaster in SDRTrunk Kennebec, you need:
     Toggle **Enabled** on, then click **Save**. SDRTrunk Kennebec begins uploading completed call recordings to your Rdio Scanner instance.
 
 
-> **Note**
+> [!NOTE]
 >
   The **Rdio Scanner URL** field defaults to `http://localhost` if you leave it blank. Update it to the actual address of your Rdio Scanner server before enabling the broadcaster — uploads to `localhost` will fail unless Rdio Scanner is running on the same machine.
 

@@ -21,7 +21,7 @@ SDRTrunk Kennebec includes an optional integration with Google Gemini AI that ad
     The AI monitors the last five decoded audio files from each active channel. If a channel's audio becomes unintelligible, Gemini flags it so you can investigate whether the cause is a decoding problem, weak signal, or hardware fault.
 
 
-> **Info**
+> [!NOTE]
 >
   When AI features are enabled, SDRTrunk Kennebec saves the last five audio files from each active channel to your local disk to allow for audio quality review. These files are managed automatically and cleared as new audio arrives.
 
@@ -44,7 +44,7 @@ Before enabling Gemini AI, confirm you have the following:
     Click **Create API key** and follow the prompts. Copy the generated key — you will need it in the next section.
 
 
-> **Warning**
+> [!WARNING]
 >
   Treat your Gemini API key like a password. Do not share it or store it in a public location. SDRTrunk Kennebec stores the key in your local user preferences using a masked password field.
 
@@ -75,7 +75,7 @@ Before enabling Gemini AI, confirm you have the following:
     Choose a model from the **Gemini Model** dropdown. The default is `models/gemini-1.5-flash`, which balances speed and capability for the tasks SDRTrunk Kennebec performs. You can also type a model name directly into the field if you prefer a specific version.
 
 
-> **Tip**
+> [!TIP]
 >
   `models/gemini-1.5-flash` is a good default for most users — it is fast, cost-efficient, and well-suited for short-form analysis tasks. If you need higher accuracy for log analysis or audio quality review, consider `models/gemini-1.5-pro`.
 
@@ -102,7 +102,7 @@ The system health advisor runs on a timer in the background and reads CPU load a
 
 When CPU usage exceeds 80%, the advisor recommends reducing sample rates or disabling waterfall displays to prevent audio dropouts. When memory usage exceeds 80%, it suggests closing unused features or tuners. These suggestions appear highlighted in red directly in the application window.
 
-> **Note**
+> [!NOTE]
 >
   The system health advisor displays its output within the SDRTrunk Kennebec application window. It does not send suggestions via Telegram or Email. For remote alerting on system health, use the standard [error notifications](/alerts/notifications) feature.
 
@@ -112,7 +112,7 @@ When **Intelligent Log Analysis** is enabled, SDRTrunk Kennebec sends relevant l
 
 If the Gemini API quota for your selected model is exhausted, SDRTrunk Kennebec automatically downgrades to the next available model for the following request and notifies you in the log viewer.
 
-> **Warning**
+> [!WARNING]
 >
   Log entries sent to the Gemini API may contain application state information such as channel names, protocol details, and error messages. Review Google's data usage policy for the Gemini API before enabling log analysis if you are operating in a sensitive environment.
 

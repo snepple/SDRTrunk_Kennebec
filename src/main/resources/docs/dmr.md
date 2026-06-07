@@ -96,11 +96,11 @@ DMR talkgroup IDs are integers decoded from the air interface. Assign human-read
 
 Use the **Ignore Unaliased Talkgroups** option to limit decoding to only the talkgroups you have added as aliases. This is the primary filtering mechanism for DMR: SDRTrunk will not allocate a traffic channel for any call whose talkgroup has no alias entry.
 
-> **Warning**
+> [!WARNING]
 >
 Enabling **Ignore Unaliased Talkgroups** silently drops any talkgroup without an alias entry — including calls you might not have known to add. Disable this option during initial monitoring to discover all active talkgroups before narrowing the list.
 
-> **Tip**
+> [!TIP]
 >
 DMR talkgroup IDs on trunked systems can differ from the IDs shown in RadioReference listings if the system uses compressed talkgroups. If aliases are not matching, enable **Use Compressed Talkgroups** and verify the IDs in the SDRTrunk event log.
 

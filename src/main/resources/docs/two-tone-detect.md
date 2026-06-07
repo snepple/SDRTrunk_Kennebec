@@ -6,7 +6,7 @@ Two Tone Detect monitors an audio channel for sequential paging tones used in fi
 
 Two-tone sequential paging is a signaling system widely used in North American fire and EMS dispatch. Each station or unit is assigned a unique pair of audio frequencies — called Tone A and Tone B — transmitted back-to-back for a fixed duration. SDRTrunk Kennebec supports tone frequencies from the Motorola QC-II and Plectron standard tables, covering approximately 282 Hz to 3,062 Hz, and also accepts custom frequency values entered directly in Hz.
 
-> **Note**
+> [!NOTE]
 >
   Two Tone Detect works on any channel that carries paging tones — typically a conventional FM dispatch channel. The channel must already be configured and decoding in the **Channels** section before Two Tone Detect can process its audio.
 
@@ -46,7 +46,7 @@ In the **Playlist Editor**, click **Two Tones** in the left sidebar. The editor 
     Click **Save** at the bottom of the **Configuration** tab. The detector is saved to the current playlist.
 
 
-> **Tip**
+> [!TIP]
 >
   Use **Clone** in the left-pane toolbar to duplicate an existing detector and adjust only the tone values. This is faster than creating detectors from scratch when you have many similar entries.
 
@@ -103,7 +103,7 @@ If you have a Zello broadcast stream configured in the **Playlist Editor's Strea
     Click **Save**. Each time the detector fires, SDRTrunk Kennebec publishes to the configured MQTT broker using the global MQTT settings in **User Preferences**.
 
 
-> **Note**
+> [!NOTE]
 >
   MQTT broker connection settings — host, port, and credentials — are configured in **View → User Preferences**, not in the Two Tone Editor.
 
@@ -113,7 +113,7 @@ SDRTrunk Kennebec can send Two Tone detection events to **IAmResponding** via a 
 
 To use this integration, configure a UDP broadcast stream in the **Streaming** section of the **Playlist Editor** and point it at the IAmResponding local receiver port on the same computer. Then assign that stream to the alias linked to the Two Tone detector.
 
-> **Warning**
+> [!WARNING]
 >
   UDP streaming to IAmResponding is a local-only integration. The IAmResponding receiver software must be running on the same machine as SDRTrunk Kennebec.
 

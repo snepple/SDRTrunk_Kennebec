@@ -32,7 +32,7 @@ SDRTrunk Kennebec supports two Icecast connection modes that match different ser
 | **Public** | Whether to advertise the stream in the Icecast directory |
 | **URL** | A website URL associated with the stream |
 
-> **Note**
+> [!NOTE]
 >
   The **Inline** metadata flag is enabled by default. It embeds talkgroup metadata into the MP3 stream at an interval calculated from the bit rate. Leave this enabled unless your player has compatibility issues with inline ICY metadata.
 
@@ -138,7 +138,7 @@ Shoutcast v2 introduces stream IDs and optional user ID authentication to suppor
 
 IAmResponding is a first-responder alerting platform with a **Two Tone Detect** feature. SDRTrunk Kennebec streams raw PCM audio to the IAmResponding Two Tone Detect listener over UDP on the local machine, allowing the software to detect two-tone sequential paging tones and trigger dispatch alerts automatically.
 
-> **Warning**
+> [!WARNING]
 >
   IAmResponding is a **local, Windows-only** integration. SDRTrunk Kennebec sends audio to a UDP socket on the same computer — it does not transmit audio over a network. The IAmResponding Two Tone Detect client software must be installed and running on the same Windows machine as SDRTrunk Kennebec.
 

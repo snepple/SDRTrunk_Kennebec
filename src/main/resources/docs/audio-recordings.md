@@ -25,11 +25,11 @@ Recording is controlled at the alias level. A call is recorded when the talkgrou
     In the alias detail editor, click **Add ID** and select **Record**. This marks the alias as recordable. Click **Save**.
 
 
-> **Tip**
+> [!TIP]
 >
   Use the **Record** view mode in the Alias Editor (the toggle button at the top) to see all aliases that currently have recording enabled and manage them in bulk.
 
-> **Note**
+> [!NOTE]
 >
   Recording only captures calls on channels that are actively decoding. Make sure the channel is started (or set to Auto-Start) before expecting recordings to appear.
 
@@ -139,7 +139,7 @@ The filter bar above the table lets you narrow the list without deleting any fil
     Click **Stop Playback** to end playback before the file finishes, or wait for the file to play to completion.
 
 
-> **Note**
+> [!NOTE]
 >
   Only one recording can play at a time. Starting playback of a new file automatically stops any recording currently playing.
 
@@ -149,7 +149,7 @@ The filter bar above the table lets you narrow the list without deleting any fil
 
 Select one or more rows in the table and click **Delete Selected** to permanently remove those files. To remove all recordings currently visible in the filtered view, click **Delete All**. Both actions display a confirmation dialog before deleting.
 
-> **Warning**
+> [!WARNING]
 >
   Deletions are permanent and cannot be undone. Use filters to narrow the table before clicking **Delete All** to avoid removing recordings you want to keep.
 

@@ -24,7 +24,7 @@ A playlist is an XML file that stores all your channel, alias, and streaming con
     Select the new playlist in the list and click **Select**. SDRTrunk Kennebec switches to this playlist immediately. The title bar of the editor reflects the active playlist filename.
 
 
-> **Tip:**
+> [!TIP]
   You can maintain separate playlists for different locations or use cases and switch between them without losing your configurations. Use **Clone** to copy an existing playlist as a starting point.
 
 ## Add systems, sites, and channels
@@ -47,7 +47,7 @@ SDRTrunk Kennebec organizes channels in a three-level hierarchy: **System → Si
     Click **Save** in the detail editor. The channel row in the table updates immediately.
 
 
-> **Note:**
+> [!NOTE]
   The system and site fields are free-text labels. Use consistent naming across channels that belong to the same logical system so they sort and filter together in the Channels table.
 
 ## Channel configuration fields
@@ -82,7 +82,7 @@ The lower half of the Channels section is the detail editor. Its fields change d
     When enabled, SDRTrunk Kennebec starts decoding this channel automatically each time the application launches. Channels without Auto-Start enabled must be started manually. The Channels table shows a checkmark in the **Auto-Start** column for any channel with this setting on.
 
 
-> **Warning:**
+> [!WARNING]
   Enabling Auto-Start on a large number of channels simultaneously increases CPU and SDR tuner load at startup. Start with the channels you monitor most frequently and enable Auto-Start selectively.
 
 ## Filter and sort the Channels table
@@ -95,7 +95,7 @@ The Channels table supports live filtering and persistent sort order.
 
 **Column sort:** Click any column header to sort by that column. Click again to reverse the sort direction. Your chosen sort column, sort direction, and column widths persist across application restarts.
 
-> **Tip:**
+> [!TIP]
   Double-click a channel row to immediately start or stop decoding that channel without opening its detail editor.
 
 ## Import from RadioReference
@@ -114,5 +114,5 @@ If you have a RadioReference.com account, you can import systems and talkgroups 
     Navigate to your state, county, and system. Select the talkgroups or channels you want to import and click **Import**. SDRTrunk Kennebec creates the channels and aliases in your active playlist automatically.
 
 
-> **Note:**
+> [!NOTE]
   A RadioReference.com Premium subscription is required to use the API import feature.

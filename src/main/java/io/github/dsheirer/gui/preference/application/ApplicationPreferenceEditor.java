@@ -102,6 +102,30 @@ public class ApplicationPreferenceEditor extends HBox
             });
             themeCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Enable Dark Mode", themeToggle));
 
+            // Card 1.75: Audio Toggles
+            Label audioLabel = new Label("Audio Feature Toggles");
+            audioLabel.getStyleClass().add("hig-section-header");
+            io.github.dsheirer.gui.preference.layout.SettingsCard audioCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
+            
+            ToggleSwitch twoToneToggle = new ToggleSwitch();
+            twoToneToggle.setTooltip(new Tooltip("Globally enable or disable Two-Tone audio detection. Disable to save CPU."));
+            twoToneToggle.setSelected(mApplicationPreference.isAudioTwoToneDetectEnabled());
+            twoToneToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                mApplicationPreference.setAudioTwoToneDetectEnabled(newValue);
+            });
+            
+            ToggleSwitch aliasToggle = new ToggleSwitch();
+            aliasToggle.setTooltip(new Tooltip("Globally enable or disable identifying unit alias detection from audio/control streams. Disable to save CPU."));
+            aliasToggle.setSelected(mApplicationPreference.isAudioAliasDetectEnabled());
+            aliasToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                mApplicationPreference.setAudioAliasDetectEnabled(newValue);
+            });
+            
+            audioCard.getChildren().addAll(
+                new io.github.dsheirer.gui.preference.layout.SettingsRow("Enable Two-Tone Detection", twoToneToggle),
+                new io.github.dsheirer.gui.preference.layout.SettingsRow("Enable Talker Alias Detection (Identifying Units)", aliasToggle)
+            );
+
             // Card 2: Auto Start
             Label autoStartLabel = new Label("Channel Auto-start Disable Timeout");
             autoStartLabel.getStyleClass().add("hig-section-header");
@@ -166,7 +190,7 @@ public class ApplicationPreferenceEditor extends HBox
                 );
             }
 
-            mEditorPane.getChildren().addAll(monitoringLabel, diagCard, themeLabel, themeCard, autoStartLabel, autoStartCard, memoryLabel, memoryCard, getMemoryWarningLabel());
+            mEditorPane.getChildren().addAll(monitoringLabel, diagCard, themeLabel, themeCard, audioLabel, audioCard, autoStartLabel, autoStartCard, memoryLabel, memoryCard, getMemoryWarningLabel());
             if (usbMonitorCard != null) {
                 mEditorPane.getChildren().addAll(usbLabel, usbMonitorCard, usbDesc);
             }

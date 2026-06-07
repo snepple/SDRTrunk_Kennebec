@@ -54,7 +54,7 @@ You can start and stop a channel at any time without deleting it:
 - **Stop decoding** — select a running channel and click **Stop**, or double-click the row.
 - **Auto-Start** — enable the **Auto-Start** checkbox in the channel detail editor to have SDRTrunk Kennebec start this channel automatically every time the application launches.
 
-> **Warning**
+> [!WARNING]
 >
 Enabling **Auto-Start** on a large number of channels simultaneously increases CPU and SDR tuner load at startup. Enable it selectively for the channels you monitor most frequently.
 
@@ -102,6 +102,6 @@ SDRTrunk Kennebec includes a decoder for each of the following protocols. Select
     A European analog trunked radio standard widely deployed on commercial and utility systems. Select **MPT-1327** when adding a channel.
 
 
-> **Note**
+> [!NOTE]
 >
 The **Passport** decoder type is also available for Motorola Passport analog trunking systems.

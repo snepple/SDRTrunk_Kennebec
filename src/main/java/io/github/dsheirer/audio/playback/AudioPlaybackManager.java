@@ -137,7 +137,7 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
             }
             else if(newSegment.hasAudio())
             {
-                if(mTwoToneDetector != null) {
+                if(mTwoToneDetector != null && mUserPreferences.getApplicationPreference().isAudioTwoToneDetectEnabled()) {
                     for(float[] buffer : newSegment.getAudioBuffers()) {
                         mTwoToneDetector.processAudio(buffer, newSegment);
                     }

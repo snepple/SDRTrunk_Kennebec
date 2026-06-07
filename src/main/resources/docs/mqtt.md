@@ -35,7 +35,7 @@ The full URL of your MQTT broker, including the protocol scheme and port. Defaul
 
 Enter the credentials required by your broker. Leave both fields empty if your broker does not require authentication. The password field masks input for security.
 
-> **Warning**
+> [!WARNING]
 >
   SDRTrunk Kennebec stores the MQTT password in plaintext within its XML preferences file. Do not use a sensitive or shared password. Use a dedicated broker account with minimal permissions.
 
@@ -45,7 +45,7 @@ The MQTT client identifier sent to the broker when the connection is established
 
 Leave this field blank and the application automatically generates a unique identifier in the format `SDRTrunk-{UUID}` — for example, `SDRTrunk-a3f2c1d0-4e5b-...`. Set a fixed value such as `SDRTrunk-HomeStation` if you want a stable, human-readable identifier in your broker logs.
 
-> **Note**
+> [!NOTE]
 >
   Most brokers require each connected client to have a unique ID. If two SDRTrunk instances connect with the same client ID, the broker will typically disconnect the earlier session.
 
@@ -74,7 +74,7 @@ Leave this field blank and the application automatically generates a unique iden
     Check **Enable MQTT**. SDRTrunk Kennebec connects to the broker immediately and begins publishing events.
 
 
-> **Tip**
+> [!TIP]
 >
   Use a tool like MQTT Explorer or `mosquitto_sub` to verify that events are arriving at your broker after enabling the integration.
 

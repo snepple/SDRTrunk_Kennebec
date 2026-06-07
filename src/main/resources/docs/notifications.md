@@ -15,7 +15,7 @@ Notifications trigger on two categories of events:
 | **Channel inactivity** | A monitored channel exceeds its configured silence threshold (see [Inactivity Monitoring](/alerts/inactivity-monitoring)) |
 | **AI audio monitoring** | An AI-flagged audio quality issue is detected on a channel |
 
-> **Note**
+> [!NOTE]
 >
   SDRTrunk Kennebec attempts to self-heal a failed tuner before sending any alert. You will only receive a hardware notification if the automatic recovery fails.
 
@@ -61,7 +61,7 @@ To receive alerts through Telegram, you need a bot token and a chat ID. Both are
     Click **Send Test Message**. Your Telegram bot should deliver a test message within a few seconds.
 
 
-> **Tip**
+> [!TIP]
 >
   You can send alerts to a Telegram group or channel instead of a private chat. Add your bot to the group, then use the group's chat ID — which will be a negative number — in the **Telegram Chat ID** field.
 
@@ -91,7 +91,7 @@ SDRTrunk Kennebec sends email via SMTP, which works with Gmail, Outlook, or any 
     Click **Send Test Email**. Check the inbox of your **To Address** for a test message from SDRTrunk Kennebec.
 
 
-> **Warning**
+> [!WARNING]
 >
   If you use Gmail, Google requires an **App Password** rather than your regular account password. Generate one at **Google Account → Security → App passwords**. Using your regular password with 2-Step Verification enabled will cause authentication to fail.
 

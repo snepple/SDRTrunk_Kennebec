@@ -54,7 +54,7 @@ Right-clicking anywhere on the Spectrum & Waterfall display opens a context menu
 | **Disable Spectrum/Waterfall** | Disables the spectral display to reduce CPU usage. |
 | **FFT Width** | Allows you to select the Fast Fourier Transform (FFT) bin size. Higher sizes offer better frequency resolution but use more CPU. |
 
-> **Tip**
+> [!TIP]
 >
   If you are running SDRTrunk on a lower-end machine, disabling the Spectrum & Waterfall display can significantly reduce CPU load and improve decoding performance.
 

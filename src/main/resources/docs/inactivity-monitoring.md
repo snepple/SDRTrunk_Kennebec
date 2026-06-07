@@ -2,7 +2,7 @@
 
 Inactivity monitoring watches your channels for audio activity and fires an alert — via Telegram, Email, or both — when a channel has been silent for longer than a duration you configure. Once audio resumes on that channel, the timer resets automatically and will not fire again until the full threshold elapses a second time.
 
-> **Note**
+> [!NOTE]
 >
   Inactivity monitoring relies on at least one notification delivery method being configured and enabled. Set up Telegram or Email in **User Preferences → Notifications** before enabling inactivity monitoring. See [Notifications](/alerts/notifications) for setup instructions.
 
@@ -66,11 +66,11 @@ Pick a threshold that reflects the expected activity level of the channel. Thres
 | Moderate-traffic talkgroup | 20–30 minutes |
 | Low-traffic or overnight channel | 60 minutes or more |
 
-> **Warning**
+> [!WARNING]
 >
   Thresholds under 5 minutes can generate frequent alerts on channels that experience natural quiet periods. Consider the typical usage pattern of a channel before setting a low value.
 
-> **Tip**
+> [!TIP]
 >
   Start with 30 minutes or longer to reduce false positives, then adjust downward once you understand the channel's normal activity pattern.
 

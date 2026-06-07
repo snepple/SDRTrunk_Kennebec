@@ -33,7 +33,7 @@ Each row in the panel represents a named subsystem. Checking the box sets that s
 | P25 decoder | Disabled | Message decoding, NAC filtering, control channel events |
 | NBFM / audio output | Disabled | Squelch state, audio filter chain, output events |
 
-> **Info**
+> [!NOTE]
 >
   **Zello streaming** and **ThinLine Radio streaming** are enabled by default so that live streaming sessions capture full diagnostic output without any additional configuration.
 
@@ -45,7 +45,7 @@ When you enable a category, debug output is captured for all activity in that su
 
 The **Enable ALL diagnostics categories** checkbox at the top of the panel is a convenience shortcut. Checking it enables every category simultaneously; unchecking it disables every category simultaneously. The master checkbox reflects the current state automatically: it appears checked only when every individual category is enabled, and unchecked the moment any single category is turned off.
 
-> **Warning**
+> [!WARNING]
 >
   Enabling all categories at once generates extremely large log files — potentially hundreds of megabytes per day when P25 traffic is active. Enable only the categories you are actively debugging, and disable them when you are done.
 
@@ -59,7 +59,7 @@ SDRTrunk Kennebec applies diagnostics preference changes directly to the running
 - No configuration files on disk are modified.
 - Your selections are persisted and reapplied automatically on the next startup, before the first log line is written.
 
-> **Note**
+> [!NOTE]
 >
   Because diagnostics preferences are restored on startup, the categories you had enabled in your last session are active from the very first log entry after relaunch.
 
@@ -90,6 +90,6 @@ To see the debug output in real time, open **View → Logs** from the main menu 
     Attach the log file to your issue on the [GitHub repository](https://github.com/snepple/SDRTrunk_Kennebec/issues). If the file is large, you can filter it by the component name shown in the log lines.
 
 
-> **Tip**
+> [!TIP]
 >
   Disable diagnostics categories you no longer need after collecting logs. Leaving DEBUG enabled for high-volume categories like **P25 decoder** or **Channelizer** during normal operation will quickly fill your disk.

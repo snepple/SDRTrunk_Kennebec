@@ -40,6 +40,9 @@ public class ApplicationPreference extends Preference
     private static final String PREFERENCE_KEY_WATCHDOG_ENABLED = "watchdog.enabled";
     private static final String PREFERENCE_KEY_REMOTE_ACCESS_OPTIMIZATION = "remote.access.optimization";
 
+    private static final String PREFERENCE_KEY_AUDIO_TWO_TONE_DETECT = "audio.two.tone.detect.enabled";
+    private static final String PREFERENCE_KEY_AUDIO_ALIAS_DETECT = "audio.alias.detect.enabled";
+
     private final static Logger mLog = LoggerFactory.getLogger(ApplicationPreference.class);
     private Preferences mPreferences = Preferences.userNodeForPackage(ApplicationPreference.class);
     private Integer mChannelAutoStartTimeout;
@@ -50,6 +53,8 @@ public class ApplicationPreference extends Preference
     private Boolean mAutoStartEnabled;
     private Boolean mWatchdogEnabled;
     private Boolean mRemoteAccessOptimization;
+    private Boolean mAudioTwoToneDetectEnabled;
+    private Boolean mAudioAliasDetectEnabled;
 
     /**
      * Constructs an instance
@@ -247,6 +252,38 @@ public class ApplicationPreference extends Preference
     {
         mRemoteAccessOptimization = enabled;
         mPreferences.putBoolean(PREFERENCE_KEY_REMOTE_ACCESS_OPTIMIZATION, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public boolean isAudioTwoToneDetectEnabled()
+    {
+        if(mAudioTwoToneDetectEnabled == null)
+        {
+            mAudioTwoToneDetectEnabled = mPreferences.getBoolean(PREFERENCE_KEY_AUDIO_TWO_TONE_DETECT, true);
+        }
+        return mAudioTwoToneDetectEnabled;
+    }
+
+    public void setAudioTwoToneDetectEnabled(boolean enabled)
+    {
+        mAudioTwoToneDetectEnabled = enabled;
+        mPreferences.putBoolean(PREFERENCE_KEY_AUDIO_TWO_TONE_DETECT, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public boolean isAudioAliasDetectEnabled()
+    {
+        if(mAudioAliasDetectEnabled == null)
+        {
+            mAudioAliasDetectEnabled = mPreferences.getBoolean(PREFERENCE_KEY_AUDIO_ALIAS_DETECT, true);
+        }
+        return mAudioAliasDetectEnabled;
+    }
+
+    public void setAudioAliasDetectEnabled(boolean enabled)
+    {
+        mAudioAliasDetectEnabled = enabled;
+        mPreferences.putBoolean(PREFERENCE_KEY_AUDIO_ALIAS_DETECT, enabled);
         notifyPreferenceUpdated();
     }
 }

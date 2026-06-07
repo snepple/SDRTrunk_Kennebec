@@ -1,5 +1,0 @@
-rootProject.name = 'jmbe'
-include 'api'
-include 'codec'
-include 'creator'
-

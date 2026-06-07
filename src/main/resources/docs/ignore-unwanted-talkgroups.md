@@ -32,5 +32,5 @@ You can enable this feature individually for each channel in your playlist.
 6. Ensure that you have assigned an **Alias List** to this channel. The feature relies on this list to determine which talkgroups are "wanted."
 7. Click **Save** to apply the changes.
 
-> **Note:**
+> [!NOTE]
   If you enable "Ignore Unaliased TGs" but do not assign an alias list to the channel, all traffic on that channel will be ignored because no talkgroups are defined.

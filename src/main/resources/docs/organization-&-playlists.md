@@ -40,7 +40,7 @@ You can place playlist files anywhere on your system — SDRTrunk tracks the fil
     Select the new playlist in the list and click **Select**. SDRTrunk Kennebec switches to this playlist immediately. The title bar of the editor reflects the active playlist filename.
 
 
-> **Tip**
+> [!TIP]
 >
 Use **Clone** to copy an existing playlist as a starting point for a new one. This is faster than rebuilding channels and aliases from scratch when you want a variation of an existing setup.
 
@@ -81,7 +81,7 @@ If you have a RadioReference.com Premium subscription, you can import systems an
     Navigate to your state, county, and target system. Select the talkgroups or channels you want to import and click **Import**. SDRTrunk Kennebec creates the channels and aliases in the active playlist automatically.
 
 
-> **Note**
+> [!NOTE]
 >
 A RadioReference.com **Premium** subscription is required to use the API import feature.
 
@@ -89,6 +89,6 @@ A RadioReference.com **Premium** subscription is required to use the API import 
 
 To switch to a different playlist, open the **Playlist Editor**, click **Playlists** in the sidebar, select the target playlist file in the list, and click **Select**. SDRTrunk Kennebec stops all currently running channels, unloads the old playlist, and loads the selected one. You can then start channels from the new playlist manually or rely on their **Auto-Start** settings.
 
-> **Warning**
+> [!WARNING]
 >
 Switching playlists stops all active decoding. If you are recording or streaming, make sure those sessions are concluded before switching.

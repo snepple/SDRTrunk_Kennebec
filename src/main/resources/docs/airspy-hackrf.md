@@ -2,7 +2,7 @@
 
 SDRTrunk Kennebec supports the Airspy Mini, Airspy R2, Airspy HF+, HackRF One, HackRF Jawbreaker, and HackRF RAD1O as USB tuners. All of these devices communicate through libusb and share the same driver prerequisites as RTL-SDR dongles, but offer wider tuning ranges, higher maximum sample rates, and more granular gain controls than a typical RTL2832 dongle. Both families are detected automatically at startup once the driver is in place.
 
-> **Info**
+> [!NOTE]
 >
 Both Airspy and HackRF devices use libusb for communication. On Windows you must install the WinUSB driver via Zadig. On Linux you must add a udev rule to grant non-root access. macOS requires no driver changes.
 
@@ -54,7 +54,7 @@ Both Airspy and HackRF devices use libusb for communication. On Windows you must
   <Tab title="macOS">
     macOS does not load a conflicting kernel driver for Airspy or HackRF devices. Plug in the device and launch SDRTrunk Kennebec — the tuner manager claims the device through libusb automatically.
 
-    > **Note**
+    > [!NOTE]
 >
       On macOS Tahoe (version 26), there is a known compatibility issue with libusb. If device detection fails, install the HEAD build of libusb via Homebrew:
 
@@ -75,7 +75,7 @@ The Airspy Mini and R2 both use the R820T tuner IC and are identified in SDRTrun
 
 The Airspy reports its supported sample rates directly from the device firmware. SDRTrunk Kennebec reads these rates at startup and populates the **Sample Rate** dropdown in the tuner editor. The default fallback rate is **10.00 MHz**.
 
-> **Tip**
+> [!TIP]
 >
 Higher sample rates give you a wider instantaneous view of the spectrum and allow more channels to be decoded simultaneously from a single tuner. Choose the highest rate your CPU can sustain without dropping samples.
 
@@ -150,7 +150,7 @@ The HackRF tuner editor exposes separate **LNA Gain** and **VGA Gain** dropdowns
 
 The HackRF One includes an internal RF amplifier that you can toggle with the **Amplifier** button in the tuner editor. The amplifier applies approximately 11 dB of gain before the LNA stage.
 
-> **Warning**
+> [!WARNING]
 >
 Enabling the internal amplifier on strong local signals can cause overload and intermodulation distortion. Start with the amplifier off and enable it only when you need additional gain for weak signals.
 

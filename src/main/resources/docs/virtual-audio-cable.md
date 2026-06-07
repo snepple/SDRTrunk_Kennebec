@@ -39,7 +39,7 @@ SDRTrunk Kennebec
                                                       on VAC input/monitor
 ```
 
-> **Note**
+> [!NOTE]
 >
   When a specific audio output device is assigned to an alias, the audio for that alias will **no longer play** through your default computer speakers. It is routed entirely to the VAC.
 

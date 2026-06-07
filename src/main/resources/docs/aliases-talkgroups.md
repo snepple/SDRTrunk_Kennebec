@@ -62,7 +62,7 @@ In the **Playlist Editor**, click **Aliases** in the left sidebar. The Alias Edi
 
 The process is identical to mapping a talkgroup — select **Radio ID** (or **Radio ID Range**) as the identifier type instead. Radio IDs identify individual subscriber units transmitting on a channel.
 
-> **Note**
+> [!NOTE]
 >
 P25 systems may use **P25 Fully Qualified Radio ID** or **P25 Fully Qualified Talkgroup** identifiers for cross-system calls. Select the appropriate identifier type when monitoring P25 Phase 2 or DFSI systems.
 
@@ -107,7 +107,7 @@ In addition to a name and color, each alias can trigger one or more automated ac
 
     To add a script action: click **Add Action**, select **Run Script**, then enter the full path to the script.
 
-    > **Warning**
+    > [!WARNING]
 >
     The **Run Script** action executes with the same OS privileges as SDRTrunk Kennebec. Only point it at scripts you control and trust.
 

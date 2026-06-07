@@ -29,7 +29,7 @@ SDRTrunk Kennebec communicates with RTL-SDR dongles using **libusb**, not the de
 
 
 
-    > **Warning**
+    > [!WARNING]
 >
       Replacing the driver with Zadig removes the ability to use the dongle as a DVB-T receiver in other software. You can re-run Zadig to restore the original driver if needed.
 
@@ -72,7 +72,7 @@ SDRTrunk Kennebec communicates with RTL-SDR dongles using **libusb**, not the de
   <Tab title="macOS">
     macOS does not load a conflicting kernel driver for RTL2832 devices. Plug in the dongle and launch SDRTrunk Kennebec — the tuner manager claims the device through libusb directly, with no driver installation required.
 
-    > **Note**
+    > [!NOTE]
 >
       On macOS Tahoe (version 26), there is a known compatibility issue between libusb and the operating system. If USB tuner detection fails on Tahoe, install the latest HEAD build of libusb via Homebrew:
 
@@ -89,7 +89,7 @@ When SDRTrunk Kennebec starts, the tuner manager enumerates all USB devices and 
 
 During initialization, the application performs a test communication with the device. If the test fails — indicating the device may need a USB reset — it issues a reset and retries before continuing. It then reads the device EEPROM for the serial number and identifies the embedded tuner IC to determine which configuration options to display.
 
-> **Note**
+> [!NOTE]
 >
 Hot-plug is supported on platforms where libusb provides that capability. Plugging in an RTL-SDR dongle while SDRTrunk Kennebec is already running adds it to the tuner list automatically — no restart required.
 
@@ -121,7 +121,7 @@ The default sample rate for RTL2832-based devices is **2.400 MHz**. Select a dif
 | 2.560 MHz | 2,560,000 samples/sec |
 | 2.880 MHz | 2,880,000 samples/sec |
 
-> **Warning**
+> [!WARNING]
 >
 The sample rate is locked while any decoding channels are assigned to the tuner. Disable or remove all channels before changing the sample rate.
 
@@ -135,7 +135,7 @@ Clock crystals in RTL-SDR dongles vary slightly from their nominal frequency. Us
 
 You can also enable **Auto PPM Correction**, which allows SDRTrunk Kennebec to apply dynamic frequency error correction automatically based on decoded signals.
 
-> **Tip**
+> [!TIP]
 >
 To find the correct PPM value for your dongle, tune to a known-accurate reference signal — such as a strong broadcast FM station — and adjust the PPM spinner until the signal centers correctly in the spectrum display.
 
@@ -143,7 +143,7 @@ To find the correct PPM value for your dongle, tune to a known-accurate referenc
 
 R820T/R828D-based dongles that include a bias-T circuit expose a **Bias-T** toggle in the tuner editor. Enabling this applies a DC voltage to the antenna connector to power active antenna preamplifiers or inline LNA modules.
 
-> **Warning**
+> [!WARNING]
 >
 Only enable Bias-T if your antenna or feed line is designed to carry DC voltage. Enabling Bias-T on passive antennas or unprotected equipment may cause damage.
 

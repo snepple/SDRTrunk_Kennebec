@@ -57,7 +57,7 @@ When the USB device stops responding on the bus, the application uses a two-phas
     A successful reconnect restores the tuner to `Enabled` and channels resume automatically. If the device is still unreachable after **45 minutes**, the tuner is permanently set to `Error` with the message `Permanent USB Error - Device Disconnected`.
 
 
-> **Note**
+> [!NOTE]
 >
 The disconnect recovery schedule is designed to handle brief USB resets or cable reconnections quickly, while still accommodating longer hardware failures without consuming excessive system resources.
 
@@ -80,7 +80,7 @@ On Windows 10 and Windows 11, SDRTrunk Kennebec starts an additional background 
     The scheduled task runs silently in the background. The monitor watches for tuner failures and issues OS-level USB device reset commands when needed.
 
 
-> **Warning**
+> [!WARNING]
 >
 Creating the scheduled task requires administrator (UAC) approval. SDRTrunk Kennebec displays a UAC prompt the first time the task needs to be registered — you only need to approve this once. If you deny the prompt, the software-level self-healing continues to operate normally, but the OS-level USB reset is not available.
 
@@ -123,6 +123,6 @@ If a tuner reaches `Error` status after exhausting all recovery attempts, self-h
 3. Restart SDRTrunk Kennebec if re-plugging alone does not bring the tuner back.
 4. On Windows, confirm the USB monitor scheduled task exists by opening **Task Scheduler** and searching for `SDRTrunk_UsbMonitor_<your username>`.
 
-> **Note**
+> [!NOTE]
 >
 Recovery is not attempted for configuration errors, unknown tuner types, or other startup failures. These conditions move the tuner directly to `Error` status. On macOS Tahoe (OS version 26), a known libusb compatibility issue can also prevent USB tuner detection — see the [RTL-SDR setup guide](/hardware/rtl-sdr) for the Homebrew workaround.
