@@ -70,7 +70,7 @@ public class WindowsHostOptimizer {
             );
             String encoded = Base64.getEncoder().encodeToString(script.getBytes(StandardCharsets.UTF_16LE));
             try {
-                ProcessBuilder pb = new ProcessBuilder("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "Start-Process", "powershell", "-ArgumentList", "\"-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand " + encoded + "\"", "-Verb", "RunAs", "-Wait");
+                ProcessBuilder pb = new ProcessBuilder("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "Start-Process powershell -ArgumentList '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand " + encoded + "' -Verb RunAs -Wait");
                 Process p = pb.start();
                 int exitCode = p.waitFor();
                 mLog.info("Optimization script exited with code {}", exitCode);

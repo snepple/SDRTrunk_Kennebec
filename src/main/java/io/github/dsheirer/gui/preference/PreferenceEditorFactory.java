@@ -59,6 +59,8 @@ public class PreferenceEditorFactory
                 return new DiagnosticsPreferenceEditor(userPreferences);
             case DIRECTORY:
                 return new DirectoryPreferenceEditor(userPreferences);
+            case DISPLAY:
+                return new io.github.dsheirer.gui.preference.display.DisplayPreferenceEditor(userPreferences.getDisplayPreference());
             case JMBE_LIBRARY:
                 return new JmbeLibraryPreferenceEditor(userPreferences);
             case SOURCE_TUNERS:

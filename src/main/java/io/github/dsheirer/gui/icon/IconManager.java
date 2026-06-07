@@ -85,13 +85,12 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
 
 
 
-    /**
-     * Constructs an instance
-     */
     public IconManager(IconModel iconModel)
     {
         mIconModel = iconModel;
-        getChildren().addAll(getAccordion());
+        VBox accordion = getAccordion();
+        VBox.setVgrow(accordion, Priority.ALWAYS);
+        getChildren().addAll(accordion);
         showEditor(false);
     }
 
@@ -100,7 +99,9 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
         // Renamed from Accordion but keeping method name to avoid extensive refactoring right now
         VBox container = new VBox(10);
         container.getStyleClass().add("preferences-main-area");
-        container.getChildren().addAll(getContentTitledPane(), getEditorTitledPane());
+        VBox content = getContentTitledPane();
+        VBox.setVgrow(content, Priority.ALWAYS);
+        container.getChildren().addAll(content, getEditorTitledPane());
         return container;
     }
 
