@@ -145,8 +145,9 @@ public class JavaFxWindowManager extends Application
      */
     public javafx.scene.layout.Pane createStatusPanel(ResourceMonitor resourceMonitor)
     {
-        javafx.scene.layout.Pane panel = new javafx.scene.layout.Pane();
-            panel.setPrefSize(100, 100); // new java.awt.Dimension(0, 30));
+        javafx.scene.layout.Pane panel = new javafx.scene.layout.HBox();
+            panel.setPrefHeight(25);
+            panel.setMaxHeight(25);
 
             //Container has to be populated on the FX event thread
             Platform.runLater(() -> {
