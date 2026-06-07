@@ -281,7 +281,8 @@ String targetWindowsAarch64 = 'windows-aarch64-v' + version
  * Optional pre-downloaded Java Development Kit (JDK) for each target OS and CPU.  These locations are hard-coded to the
  * author's development environment, but can be changed to your environment if you want to use this build pattern.
  */
-String jdk_base = '/home/denny/java_jdks/'
+String jdk_base = System.getProperty('os.name').toLowerCase().contains('win') ?
+    System.getProperty('user.home') + '/java_jdks/' : '/home/denny/java_jdks/'
 String jdk_linux_aarch64 = jdk_base + 'linux-arm64/jdk-25.0.1-full'
 String jdk_linux_x86_64 = jdk_base + 'linux-x64/jdk-25.0.1-full'
 String jdk_osx_x86_64 = jdk_base + 'osx-x64/jdk-25.0.1-full.jdk'
@@ -700,7 +701,7 @@ tasks.register('createInstaller', Exec) {
         file(destDir).mkdirs()
 
         // Dynamically find the runtime image directory created by runtimeZipCurrent.
-        // It is named like: sdr-trunk-windows-x86_64-v<version>
+        // It may be a subdirectory named sdr-trunk-* or the image may be placed directly in build/image/.
         def imageBase = file("$buildDir/image")
         def imageDir = null
         if (imageBase.exists()) {
@@ -708,6 +709,10 @@ tasks.register('createInstaller', Exec) {
                 if (dir.name.startsWith("sdr-trunk")) {
                     imageDir = dir
                 }
+            }
+            // Fallback: if no sdr-trunk subdirectory, check if imageBase itself contains the runtime
+            if (imageDir == null && new File(imageBase, "lib").exists()) {
+                imageDir = imageBase
             }
         }
         if (imageDir == null) {
