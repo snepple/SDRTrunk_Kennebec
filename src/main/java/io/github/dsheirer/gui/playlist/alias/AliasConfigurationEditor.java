@@ -280,14 +280,14 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         {
             mSearchAndListSelectionBox = new HBox();
             mSearchAndListSelectionBox.setAlignment(Pos.CENTER_LEFT);
-            mSearchAndListSelectionBox.getStyleClass().add("kennebec-filter-toolbar");
+            mSearchAndListSelectionBox.getStyleClass().add("context-toolbar");
+            mSearchAndListSelectionBox.setPadding(new Insets(10, 10, 10, 10));
+            mSearchAndListSelectionBox.setSpacing(10);
 
 
             Label listLabel = new Label("Alias List:");
-            listLabel.getStyleClass().add("kennebec-toolbar-label");
             listLabel.setMinWidth(Region.USE_PREF_SIZE);
             Label searchLabel = new Label("Search:");
-            searchLabel.getStyleClass().add("kennebec-toolbar-label");
             searchLabel.setMinWidth(Region.USE_PREF_SIZE);
             searchLabel.setAlignment(Pos.CENTER_RIGHT);
 
@@ -307,6 +307,11 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             getRenameAliasListButton().setMinWidth(Region.USE_PREF_SIZE);
             getDeleteAliasListButton().setMinWidth(Region.USE_PREF_SIZE);
             searchBox.setMinWidth(Region.USE_PREF_SIZE);
+            
+            getMoveToAliasButton().setMinWidth(Region.USE_PREF_SIZE);
+            getNewAliasButton().setMinWidth(Region.USE_PREF_SIZE);
+            getCloneAliasButton().setMinWidth(Region.USE_PREF_SIZE);
+            getDeleteAliasButton().setMinWidth(Region.USE_PREF_SIZE);
 
             mSearchAndListSelectionBox.getChildren().addAll(listLabel, getAliasListNameComboBox(),
                 getNewAliasListButton(), getRenameAliasListButton(), getDeleteAliasListButton(), 
@@ -323,7 +328,6 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         {
             mSearchField = TextFields.createClearableTextField();
             mSearchField.setPromptText("Filter aliases\u2026");
-            mSearchField.getStyleClass().add("kennebec-search-field");
             mSearchField.setPrefWidth(200);
             mSearchField.textProperty().addListener((observable, oldValue, newValue) -> update());
         }
@@ -387,7 +391,6 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mNewAliasListButton == null)
         {
             mNewAliasListButton = new Button("New Alias List");
-            mNewAliasListButton.getStyleClass().add("kennebec-toolbar-button-primary");
             mNewAliasListButton.setTooltip(new Tooltip("Create a new alias list"));
             mNewAliasListButton.setOnAction(event ->
             {
@@ -419,7 +422,6 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
 
         if (mRenameAliasButton == null) {
             mRenameAliasButton = new Button("Rename");
-            mRenameAliasButton.getStyleClass().add("kennebec-toolbar-button");
             mRenameAliasButton.setTooltip(new Tooltip("Rename the current alias list"));
             mRenameAliasButton.setOnAction(event -> {
                 String aliasListName = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
@@ -453,7 +455,6 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
 
         if (mDeleteAliasListButton == null) {
             mDeleteAliasListButton = new Button("Delete");
-            mDeleteAliasListButton.getStyleClass().add("kennebec-toolbar-button");
             mDeleteAliasListButton.setTooltip(new Tooltip("Delete the current alias list"));
             mDeleteAliasListButton.setOnAction(event -> {
                 String aliasListName = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
@@ -488,6 +489,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mAliasTableView == null)
         {
             mAliasTableView = new TableView<>();
+            mAliasTableView.getStyleClass().add("preferences-table");
 
             TableColumn nameColumn = new TableColumn();
             nameColumn.setText("Alias");
@@ -772,7 +774,6 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mNewAliasButton == null)
         {
             mNewAliasButton = new Button("New");
-            mNewAliasButton.getStyleClass().add("kennebec-toolbar-button-primary");
             mNewAliasButton.setDisable(true);
             mNewAliasButton.setAlignment(Pos.CENTER);
             mNewAliasButton.setMaxWidth(Double.MAX_VALUE);
@@ -801,7 +802,6 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mDeleteAliasButton == null)
         {
             mDeleteAliasButton = new Button("Delete");
-            mDeleteAliasButton.getStyleClass().add("kennebec-toolbar-button");
             mDeleteAliasButton.setDisable(true);
             mDeleteAliasButton.setMaxWidth(Double.MAX_VALUE);
             mDeleteAliasButton.setTooltip(new Tooltip("Delete the currently selected aliases"));
@@ -834,7 +834,6 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mCloneAliasButton == null)
         {
             mCloneAliasButton = new Button("Clone");
-            mCloneAliasButton.getStyleClass().add("kennebec-toolbar-button");
             mCloneAliasButton.setDisable(true);
             mCloneAliasButton.setMaxWidth(Double.MAX_VALUE);
             mCloneAliasButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected alias"));
@@ -878,7 +877,6 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mMoveToAliasButton == null)
         {
             mMoveToAliasButton = new MenuButton("Move To");
-            mMoveToAliasButton.getStyleClass().add("kennebec-toolbar-button");
             mMoveToAliasButton.setDisable(true);
             mMoveToAliasButton.setTooltip(new Tooltip("Move the currently selected aliases to another list"));
             mMoveToAliasButton.setOnShowing(event ->
