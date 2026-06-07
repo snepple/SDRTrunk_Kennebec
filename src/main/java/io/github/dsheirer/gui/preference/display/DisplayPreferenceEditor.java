@@ -67,7 +67,16 @@ public class DisplayPreferenceEditor extends VBox {
         });
         card.getChildren().add(new SettingsRow("FFT Window Type", windowTypeCombo));
 
-        container.getChildren().addAll(title, card);
+                  // GPU Acceleration
+          javafx.scene.control.CheckBox openCLCheckBox = new javafx.scene.control.CheckBox("Enable GPU Acceleration (OpenCL)");
+          openCLCheckBox.setSelected(mDisplayPreference.openClEnabledProperty().get());
+          openCLCheckBox.selectedProperty().addListener((obs, oldV, newV) -> {
+              if (newV != null) {
+                  mDisplayPreference.openClEnabledProperty().set(newV);
+              }
+          });
+          card.getChildren().add(new SettingsRow("DSP Acceleration", openCLCheckBox));
+          container.getChildren().addAll(title, card);
         return container;
     }
 
@@ -98,7 +107,16 @@ public class DisplayPreferenceEditor extends VBox {
         });
         card.getChildren().add(new SettingsRow("Label Height (px)", labelHeightSpinner));
 
-        container.getChildren().addAll(title, card);
+                  // GPU Acceleration
+          javafx.scene.control.CheckBox openCLCheckBox = new javafx.scene.control.CheckBox("Enable GPU Acceleration (OpenCL)");
+          openCLCheckBox.setSelected(mDisplayPreference.openClEnabledProperty().get());
+          openCLCheckBox.selectedProperty().addListener((obs, oldV, newV) -> {
+              if (newV != null) {
+                  mDisplayPreference.openClEnabledProperty().set(newV);
+              }
+          });
+          card.getChildren().add(new SettingsRow("DSP Acceleration", openCLCheckBox));
+          container.getChildren().addAll(title, card);
         return container;
     }
 }

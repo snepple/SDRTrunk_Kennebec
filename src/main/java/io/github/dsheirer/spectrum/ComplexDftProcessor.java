@@ -52,7 +52,8 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
 
     //The Cosine and Hann windows seem to offer the best spectral display with minimal bin leakage/smearing
     private WindowType mWindowType = WindowType.BLACKMAN_HARRIS_7;
-    private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
+        private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
+    private io.github.dsheirer.dsp.opencl.OpenCLFFTKernel mOpenCLFFTKernel;
     private float[] mWindow;
     private DFTSize mDFTSize = DFTSize.FFT04096;
     private DFTSize mNewDFTSize = DFTSize.FFT04096;
@@ -76,7 +77,11 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
         start();
     }
 
-    public void dispose() {
+        public void dispose() {
+        if (mOpenCLFFTKernel != null) {
+            mOpenCLFFTKernel.dispose();
+            mOpenCLFFTKernel = null;
+        }
         MyEventBus.getGlobalEventBus().unregister(this);
         stop();
 
@@ -237,6 +242,19 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
                 //If this throws an IO exception, the buffer queue is (temporarily) empty and we return from the method
                 mDftBufferManager.get(mDFTSize.getSize(), mCurrentSamples);
                 WindowFactory.apply(mWindow, mCurrentSamples);
+
+                if (mPreferences.getBoolean("opencl.enabled", false)) {
+                    if (mOpenCLFFTKernel == null) {
+                        mOpenCLFFTKernel = new io.github.dsheirer.dsp.opencl.OpenCLFFTKernel();
+                    }
+                    mOpenCLFFTKernel.setInput(mCurrentSamples, mCurrentSamples, 1, 1, mCurrentSamples.length, mCurrentSamples.length / 2);
+                    try {
+                        mOpenCLFFTKernel.execute(mCurrentSamples.length / 2);
+                    } catch (Exception ex) {
+                        mLog.error("OpenCL execution failed, falling back to CPU", ex);
+                    }
+                }
+
                 mFFT.complexForward(mCurrentSamples);
                 float[] completedSamples = mPreviousSamples;
                 mPreviousSamples = mCurrentSamples;

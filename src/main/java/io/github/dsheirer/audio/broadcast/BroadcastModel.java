@@ -70,9 +70,10 @@ public class BroadcastModel implements Listener<AudioRecording>
     public static final int COLUMN_BROADCASTER_STREAMED_COUNT = 4;
     public static final int COLUMN_BROADCASTER_AGED_OFF_COUNT = 5;
     public static final int COLUMN_BROADCASTER_ERROR_COUNT = 6;
+    public static final int COLUMN_BROADCASTER_USERS_ONLINE = 7;
 
     public static final String[] COLUMN_NAMES = new String[]
-        {"Stream Type", "Name", "Status", "Queued", "Streamed/Uploaded", "Aged Off", "Upload Error"};
+        {"Stream Type", "Name", "Status", "Queued", "Streamed/Uploaded", "Aged Off", "Upload Error", "Users Online"};
 
     private ObservableList<ConfiguredBroadcast> mConfiguredBroadcasts =
         FXCollections.observableArrayList(ConfiguredBroadcast.extractor());
@@ -541,6 +542,12 @@ public class BroadcastModel implements Listener<AudioRecording>
                         // // fireTableCellUpdated(row, COLUMN_BROADCASTER_ERROR_COUNT);
                     }
                     break;
+                case BROADCASTER_USERS_ONLINE_CHANGE:
+                    if(row >= 0)
+                    {
+                        // // fireTableCellUpdated(row, COLUMN_BROADCASTER_USERS_ONLINE);
+                    }
+                    break;
             }
         }
 
@@ -618,6 +625,12 @@ public class BroadcastModel implements Listener<AudioRecording>
                                 return configuredBroadcast.getAudioBroadcaster().getAudioErrorCount();
                             }
                             break;
+                        case COLUMN_BROADCASTER_USERS_ONLINE:
+                            if(configuredBroadcast.hasAudioBroadcaster())
+                            {
+                                return configuredBroadcast.getAudioBroadcaster().getUsersOnline();
+                            }
+                            break;
                         default:
                             break;
                     }
@@ -643,6 +656,7 @@ public class BroadcastModel implements Listener<AudioRecording>
             case COLUMN_BROADCASTER_QUEUE_SIZE:
             case COLUMN_BROADCASTER_STREAMED_COUNT:
             case COLUMN_BROADCASTER_ERROR_COUNT:
+            case COLUMN_BROADCASTER_USERS_ONLINE:
                 return Integer.class;
             case COLUMN_BROADCAST_SERVER_TYPE:
                 return BroadcastServerType.class;

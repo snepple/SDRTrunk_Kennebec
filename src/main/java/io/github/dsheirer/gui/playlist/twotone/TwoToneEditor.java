@@ -62,6 +62,14 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
 
     private static final List<String> STANDARD_FREQUENCIES;
 
+    public static final List<String> THINLINE_SOUNDS = java.util.Arrays.asList(
+        "alert.wav", "Beep.mp3", "chirp_long.wav", "classic.wav", "Click.mp3", 
+        "ding.wav", "door_bell.wav", "double_pulse.wav", "fast_beep_long.wav", 
+        "fast_beep_short.wav", "five_beep.wav", "MDC-1200.mp3", "modern.wav", 
+        "pluck.wav", "pop.wav", "quick_beep.wav", "quiet.wav", "relaxed.wav", 
+        "settle_alert.wav", "simple.wav", "smoke_alarm.wav", "startup.wav", "tone.wav"
+    );
+
     static {
         Set<Double> allFreqs = new TreeSet<>();
         for (double d : MOTOROLA_QCII) allFreqs.add(d);
@@ -187,18 +195,32 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
 
         CheckBox enabledCheck = new CheckBox("Enable Detector");
         CheckBox showNotificationCheck = new CheckBox("Show Visual Notification");
-        TextField alertFileField = new TextField();
+        
+        ComboBox<String> alertFileCombo = new ComboBox<>();
+        alertFileCombo.setEditable(true);
+        alertFileCombo.getItems().add("");
+        alertFileCombo.getItems().addAll(THINLINE_SOUNDS);
+        alertFileCombo.getItems().add("Custom File...");
+
         Button browseAlertBtn = new Button("Browse...");
         browseAlertBtn.setOnAction(e -> {
             javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
             fc.setTitle("Select Alert Audio File");
             java.io.File file = fc.showOpenDialog(null);
             if (file != null) {
-                alertFileField.setText(file.getAbsolutePath());
+                alertFileCombo.setValue(file.getAbsolutePath());
             }
         });
-        HBox alertFileBox = new HBox(5, alertFileField, browseAlertBtn);
-        HBox.setHgrow(alertFileField, Priority.ALWAYS);
+
+        alertFileCombo.setOnAction(e -> {
+            if ("Custom File...".equals(alertFileCombo.getValue())) {
+                browseAlertBtn.fire();
+            }
+        });
+
+        Button previewLocalAlertBtn = new Button("Preview");
+        HBox alertFileBox = new HBox(5, alertFileCombo, browseAlertBtn, previewLocalAlertBtn);
+        HBox.setHgrow(alertFileCombo, Priority.ALWAYS);
 
         GridPane generalGrid = new GridPane();
         generalGrid.setHgap(10);
@@ -304,19 +326,26 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             "medical_pager.mp3",
             "minitor_v_alert_tone.mp3"
         );
+        alertToneCombo.getItems().addAll(THINLINE_SOUNDS);
 
-        Button previewBtn = new Button("Preview");
-        previewBtn.setOnAction(ev -> {
-            String selectedFile = alertToneCombo.getValue();
-            if (selectedFile != null && !selectedFile.isEmpty()) {
+        java.util.function.BiConsumer<String, Button> playPreview = (selectedFile, btn) -> {
+            if (selectedFile != null && !selectedFile.isEmpty() && !"Custom File...".equals(selectedFile)) {
                 try {
-                    URL resource = TwoToneEditor.class.getResource("/audio/" + selectedFile);
+                    URL resource = null;
+                    if (THINLINE_SOUNDS.contains(selectedFile)) {
+                        resource = TwoToneEditor.class.getResource("/audio/thinline/" + selectedFile);
+                    } else if (!selectedFile.contains("\\") && !selectedFile.contains("/") && !selectedFile.contains(":")) {
+                        resource = TwoToneEditor.class.getResource("/audio/" + selectedFile);
+                    } else {
+                        java.io.File f = new java.io.File(selectedFile);
+                        if (f.exists()) resource = f.toURI().toURL();
+                    }
+
                     if (resource != null) {
                         if (selectedFile.toLowerCase().endsWith(".mp3")) {
                             javafx.scene.media.Media media = new javafx.scene.media.Media(resource.toURI().toString());
                             javafx.scene.media.MediaPlayer mediaPlayer = new javafx.scene.media.MediaPlayer(media);
-                            // Avoid GC issue by attaching it to the node properties
-                            previewBtn.getProperties().put("mediaPlayer", mediaPlayer);
+                            btn.getProperties().put("mediaPlayer", mediaPlayer);
                             mediaPlayer.play();
                         } else {
                             AudioInputStream ais = AudioSystem.getAudioInputStream(resource);
@@ -325,13 +354,17 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                             clip.start();
                         }
                     } else {
-                        System.err.println("Could not find audio resource: /audio/" + selectedFile);
+                        System.err.println("Could not find audio resource: " + selectedFile);
                     }
                 } catch (Exception ex) {
-                    mLog.error("Error playing two-tone audio sample", ex);
+                    mLog.error("Error playing audio sample", ex);
                 }
             }
-        });
+        };
+
+        Button previewBtn = new Button("Preview");
+        previewBtn.setOnAction(ev -> playPreview.accept(alertToneCombo.getValue(), previewBtn));
+        previewLocalAlertBtn.setOnAction(ev -> playPreview.accept(alertFileCombo.getValue(), previewLocalAlertBtn));
 
         alertToneCombo.disableProperty().bind(zelloAlertCheck.selectedProperty().not());
         previewBtn.disableProperty().bind(zelloAlertCheck.selectedProperty().not());
@@ -386,7 +419,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 freqTolSlider.valueProperty().unbindBidirectional(oldVal.frequencyToleranceProperty());
                 durationSlider.valueProperty().unbindBidirectional(oldVal.toneDurationMsProperty());
                 enabledCheck.selectedProperty().unbindBidirectional(oldVal.enabledProperty());
-                alertFileField.textProperty().unbindBidirectional(oldVal.alertFilePathProperty());
+                alertFileCombo.valueProperty().unbindBidirectional(oldVal.alertFilePathProperty());
                 showNotificationCheck.selectedProperty().unbindBidirectional(oldVal.showNotificationProperty());
 
                 try {
@@ -427,7 +460,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 freqTolSlider.valueProperty().bindBidirectional(newVal.frequencyToleranceProperty());
                 durationSlider.valueProperty().bindBidirectional(newVal.toneDurationMsProperty());
                 enabledCheck.selectedProperty().bindBidirectional(newVal.enabledProperty());
-                alertFileField.textProperty().bindBidirectional(newVal.alertFilePathProperty());
+                alertFileCombo.valueProperty().bindBidirectional(newVal.alertFilePathProperty());
                 showNotificationCheck.selectedProperty().bindBidirectional(newVal.showNotificationProperty());
                 if (!centerSplitPane.getItems().contains(rightPane)) {
                     centerSplitPane.getItems().add(rightPane);
@@ -451,7 +484,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 freqTolSlider.setValue(10);
                 durationSlider.setValue(300);
                 enabledCheck.setSelected(false);
-                alertFileField.clear();
+                alertFileCombo.setValue(null);
                 showNotificationCheck.setSelected(false);
                 if (centerSplitPane.getItems().contains(rightPane)) {
                     centerSplitPane.getItems().remove(rightPane);

@@ -55,6 +55,12 @@ public class ChannelConfigurationEditorFactory
                 return new AMConfigurationEditor(playlistManager, tunerManager, userPreferences, filterProcessor);
             case DMR:
                 return new DMRConfigurationEditor(playlistManager, tunerManager, userPreferences, filterProcessor);
+            case NXDN:
+                return new NxdnConfigurationEditor(playlistManager, tunerManager, userPreferences, filterProcessor);
+            case TETRA:
+                return new TetraConfigurationEditor(playlistManager, tunerManager, userPreferences, filterProcessor);
+            case DMR_TIER_3:
+                return new DmrTier3ConfigurationEditor(playlistManager, tunerManager, userPreferences, filterProcessor);
             case NBFM:
                 return new NBFMConfigurationEditor(playlistManager, tunerManager, userPreferences, filterProcessor);
             case LTR_NET:
@@ -79,3 +85,4 @@ public class ChannelConfigurationEditorFactory
         }
     }
 }
+

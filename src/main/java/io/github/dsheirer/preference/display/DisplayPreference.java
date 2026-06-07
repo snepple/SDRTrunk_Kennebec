@@ -13,7 +13,8 @@ public class DisplayPreference {
     private static final String PREF_SPECTRUM_INSET = "spectrum.inset";
     private static final String PREF_LABEL_WIDTH = "overlay.label.width";
     private static final String PREF_LABEL_HEIGHT = "overlay.label.height";
-    private static final String PREF_FFT_WINDOW_TYPE = "fft.window.type"; // Storing name or index? Store string name of WindowType
+    private static final String PREF_FFT_WINDOW_TYPE = "fft.window.type";
+    private static final String PREF_OPENCL_ENABLED = "opencl.enabled";
 
     private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
     private Listener<PreferenceType> mPreferenceUpdateListener;
@@ -26,6 +27,11 @@ public class DisplayPreference {
     // Storing the String name of the WindowType enum
     private String mFFTWindowType = "BLACKMAN_HARRIS_7";
 
+        private javafx.beans.property.BooleanProperty openClEnabledProperty = new javafx.beans.property.SimpleBooleanProperty(false);
+    
+    public javafx.beans.property.BooleanProperty openClEnabledProperty() {
+        return openClEnabledProperty;
+    }
     public DisplayPreference(Listener<PreferenceType> listener) {
         mPreferenceUpdateListener = listener;
         load();
@@ -36,7 +42,9 @@ public class DisplayPreference {
         mSpectrumInset.set(mPreferences.getDouble(PREF_SPECTRUM_INSET, 20.0));
         mOverlayLabelWidth.set(mPreferences.getDouble(PREF_LABEL_WIDTH, 50.0));
         mOverlayLabelHeight.set(mPreferences.getDouble(PREF_LABEL_HEIGHT, 12.0));
-        mFFTWindowType = mPreferences.get(PREF_FFT_WINDOW_TYPE, "BLACKMAN_HARRIS_7");
+                mFFTWindowType = mPreferences.get(PREF_FFT_WINDOW_TYPE, "BLACKMAN_HARRIS_7");
+        openClEnabledProperty.set(mPreferences.getBoolean(PREF_OPENCL_ENABLED, false));
+        openClEnabledProperty.addListener((obs, oldV, newV) -> save());
 
         mWaterfallImageHeight.addListener((obs, oldV, newV) -> save());
         mSpectrumInset.addListener((obs, oldV, newV) -> save());
@@ -49,7 +57,8 @@ public class DisplayPreference {
         mPreferences.putDouble(PREF_SPECTRUM_INSET, mSpectrumInset.get());
         mPreferences.putDouble(PREF_LABEL_WIDTH, mOverlayLabelWidth.get());
         mPreferences.putDouble(PREF_LABEL_HEIGHT, mOverlayLabelHeight.get());
-        mPreferences.put(PREF_FFT_WINDOW_TYPE, mFFTWindowType);
+                mPreferences.put(PREF_FFT_WINDOW_TYPE, mFFTWindowType);
+        mPreferences.putBoolean(PREF_OPENCL_ENABLED, openClEnabledProperty.get());
         
         if (mPreferenceUpdateListener != null) {
             mPreferenceUpdateListener.receive(PreferenceType.DISPLAY);

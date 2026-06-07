@@ -18,6 +18,11 @@ import io.github.dsheirer.preference.NowPlayingPreference;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.MouseEvent;
 
 public class WidgetContainer extends VBox {
 
@@ -30,8 +35,69 @@ public class WidgetContainer extends VBox {
 
     public WidgetContainer(NowPlayingPreference preference) {
         mPreference = preference;
-        // setLayout(new javafx.scene.layout.HBox(4));
-        // addComponentListener(this);
+        setSpacing(4);
+
+        setOnDragOver(event -> {
+            if (event.getGestureSource() != this && event.getDragboard().hasString() && mDraggingWidget != null) {
+                event.acceptTransferModes(TransferMode.MOVE);
+                
+                double y = event.getY();
+                int newDropIndex = 0;
+                double currentY = 0;
+                
+                for (int i = 0; i < mWidgets.size(); i++) {
+                    Widget w = mWidgets.get(i);
+                    if (w == mDraggingWidget) continue;
+                    
+                    double widgetHeight = w.getBoundsInParent().getHeight();
+                    if (y > currentY + (widgetHeight / 2)) {
+                        newDropIndex = i + 1;
+                    }
+                    currentY += widgetHeight + getSpacing();
+                }
+                
+                if (newDropIndex != mDropIndex) {
+                    mDropIndex = newDropIndex;
+                    rebuildLayout();
+                }
+            }
+            event.consume();
+        });
+
+        setOnDragExited(event -> {
+            if (!event.isDropCompleted() && mDraggingWidget != null) {
+                mDropIndex = -1;
+                rebuildLayout();
+            }
+            event.consume();
+        });
+
+        setOnDragDropped(event -> {
+            boolean success = false;
+            if (mDraggingWidget != null && mDropIndex >= 0 && mDropIndex <= mWidgets.size()) {
+                mWidgets.remove(mDraggingWidget);
+                int insertIndex = mDropIndex;
+                if (insertIndex > mWidgets.size()) {
+                    insertIndex = mWidgets.size();
+                }
+                mWidgets.add(insertIndex, mDraggingWidget);
+                
+                for (int i = 0; i < mWidgets.size(); i++) {
+                    mPreference.setWidgetOrder(mWidgets.get(i).getWidgetId(), i);
+                }
+                
+                success = true;
+            }
+            event.setDropCompleted(success);
+            event.consume();
+        });
+        
+        setOnDragDone(event -> {
+            mDraggingWidget = null;
+            mDropIndex = -1;
+            rebuildLayout();
+            event.consume();
+        });
     }
 
     public NowPlayingPreference getPreference() {
@@ -81,22 +147,27 @@ public class WidgetContainer extends VBox {
 
     private void rebuildLayout() {
         super.getChildren().clear();
+        
+        Region dropIndicator = new Region();
+        dropIndicator.setPrefHeight(40);
+        dropIndicator.setStyle("-fx-border-color: #2196F3; -fx-border-width: 2; -fx-border-style: dashed; -fx-background-color: rgba(33, 150, 243, 0.1);");
+
         for (int i = 0; i < mWidgets.size(); i++) {
             Widget w = mWidgets.get(i);
 
             if (mDraggingWidget != null && mDropIndex == i) {
-                // Add a drop indicator placeholder
-                // // indicator init removed
+                getChildren().add(dropIndicator);
             }
 
-            getChildren().add(w);
+            if (w != mDraggingWidget) {
+                getChildren().add(w);
+            }
         }
 
         if (mDraggingWidget != null && mDropIndex == mWidgets.size()) {
-            // indicator init removed
+            getChildren().add(dropIndicator);
         }
 
-        requestLayout();
         requestLayout();
     }
 
@@ -134,8 +205,15 @@ public class WidgetContainer extends VBox {
 
     private void setupDragAndDrop(Widget widget) {
         javafx.scene.layout.HBox header = widget.getHeaderPanel();
-
-        // drag adapter removed
+        
+        header.setOnDragDetected(event -> {
+            mDraggingWidget = widget;
+            Dragboard db = header.startDragAndDrop(TransferMode.MOVE);
+            ClipboardContent content = new ClipboardContent();
+            content.putString(widget.getWidgetId());
+            db.setContent(content);
+            event.consume();
+        });
     }
 
 

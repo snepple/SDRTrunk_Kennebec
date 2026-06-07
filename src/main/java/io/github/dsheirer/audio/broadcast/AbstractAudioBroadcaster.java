@@ -252,4 +252,13 @@ public abstract class AbstractAudioBroadcaster<T extends BroadcastConfiguration>
     {
         mErrorAudioCount++;
     }
+
+    /**
+     * Number of users currently online for this broadcast, if applicable.
+     * Overridden by broadcasters that support tracking online users.
+     */
+    public int getUsersOnline()
+    {
+        return 0;
+    }
 }

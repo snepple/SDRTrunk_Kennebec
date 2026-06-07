@@ -36,6 +36,9 @@ public enum DecoderType
     PASSPORT("Passport", "Passport", Protocol.PASSPORT),
     P25_PHASE1("P25 Phase 1", "P25-1", Protocol.APCO25),
     P25_PHASE2("P25 Phase 2", "P25-2", Protocol.APCO25_PHASE2),
+    NXDN("NXDN", "NXDN", Protocol.NXDN),
+    TETRA("TETRA", "TETRA", Protocol.TETRA),
+    DMR_TIER_3("DMR Tier 3", "DMR_T3", Protocol.DMR_TIER_3),
 
     //Auxiliary Decoders
     CTCSS("Continuous Tone-Coded Squelch (CTCSS)", "CTCSS", Protocol.CTCSS),

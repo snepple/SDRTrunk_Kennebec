@@ -32,6 +32,7 @@ import io.github.dsheirer.audio.convert.InputAudioFormat;
 import io.github.dsheirer.audio.convert.MP3Setting;
 import io.github.dsheirer.identifier.IdentifierCollection;
 import io.github.dsheirer.util.ThreadPool;
+import io.github.dsheirer.dsp.filter.resample.RealResampler;
 import io.github.jaredmdobson.concentus.OpusApplication;
 import io.github.jaredmdobson.concentus.OpusEncoder;
 import io.github.jaredmdobson.concentus.OpusSignal;
@@ -100,6 +101,7 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
     private WebSocket mWebSocket;
     private final AtomicBoolean mConnected = new AtomicBoolean(false);
     private final AtomicBoolean mChannelOnline = new AtomicBoolean(false);
+    private final AtomicInteger mUsersOnline = new AtomicInteger(0);
     private final AtomicBoolean mKicked = new AtomicBoolean(false);
     private final AtomicBoolean mReconnecting = new AtomicBoolean(false);
     private final AtomicBoolean mStopped = new AtomicBoolean(false);
@@ -137,12 +139,12 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
     private final LinkedTransferQueue<float[]> mAudioQueue = new LinkedTransferQueue<>();
     private ScheduledFuture<?> mEncoderFuture;
 
+    private RealResampler mResampler;
     private OpusEncoder mOpusEncoder;
     private short[] mResampleBuffer = new short[ZELLO_FRAME_SIZE_SAMPLES];
     private int mResampleBufferPos = 0;
     private byte[] mOpusOutputBuffer = new byte[1275];
     private final AtomicInteger mStreamedCount = new AtomicInteger(0);
-    private short mPreviousSample = 0;
 
     public ZelloConsumerBroadcaster(ZelloConsumerConfiguration configuration, InputAudioFormat inputAudioFormat,
                             MP3Setting mp3Setting, AliasModel aliasModel)
@@ -218,6 +220,12 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
     }
 
     @Override
+    public int getUsersOnline()
+    {
+        return mUsersOnline.get();
+    }
+
+    @Override
     public synchronized void startRealTimeStream(IdentifierCollection identifiers)
     {
         if(!mConnected.get() || !mChannelOnline.get())
@@ -257,9 +265,18 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
         mStreamActive.set(true);
         mCurrentStreamId.set(-1);
         mResampleBufferPos = 0;
-        mPreviousSample = 0;
         mAudioQueue.clear();
         mStreamSessionEpoch = mSessionEpoch.get();
+
+        mResampler = new RealResampler(8000.0, ZELLO_SAMPLE_RATE, 16000, ZELLO_FRAME_SIZE_SAMPLES);
+        mResampler.setListener(resampled -> {
+            for(int i = 0; i < resampled.length; i++) {
+                mResampleBuffer[i] = (short)(resampled[i] * 32767.0f);
+            }
+            mResampleBufferPos = resampled.length;
+            encodeAndSendFrame();
+            mResampleBufferPos = 0;
+        });
 
         sendStartStream();
 
@@ -379,33 +396,12 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
         }
     }
 
-    /** Convert float 8kHz -> short 16kHz (2x upsample with linear interpolation), accumulate, encode when frame full */
+    /** Resample float 8kHz -> short 16kHz using RealResampler, accumulate, encode when frame full */
     private void processAudioBuffer(float[] audio8k)
     {
-        for(int i = 0; i < audio8k.length; i++)
+        if (mResampler != null)
         {
-            short currentSample = (short)(audio8k[i] * 32767.0f);
-
-            // 2x upsample with linear interpolation:
-            // Insert midpoint between previous and current sample, then current sample
-            short midpoint = (short)((mPreviousSample + currentSample) / 2);
-
-            // Defensive bounds check (protects against residual race conditions)
-            if(mResampleBufferPos >= ZELLO_FRAME_SIZE_SAMPLES)
-            {
-                encodeAndSendFrame();
-                mResampleBufferPos = 0;
-            }
-            mResampleBuffer[mResampleBufferPos++] = midpoint;
-
-            if(mResampleBufferPos >= ZELLO_FRAME_SIZE_SAMPLES)
-            {
-                encodeAndSendFrame();
-                mResampleBufferPos = 0;
-            }
-            mResampleBuffer[mResampleBufferPos++] = currentSample;
-
-            mPreviousSample = currentSample;
+            mResampler.resample(audio8k);
         }
     }
 
@@ -450,13 +446,10 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
     {
         try
         {
-            if(mResampleBufferPos <= 0 || mResampleBufferPos > ZELLO_FRAME_SIZE_SAMPLES) {
-                mResampleBufferPos = 0;
-                return;
+            if (mResampler != null)
+            {
+                mResampler.resample(new float[0], true);
             }
-            for(int i = mResampleBufferPos; i < ZELLO_FRAME_SIZE_SAMPLES; i++)
-                mResampleBuffer[i] = 0;
-            encodeAndSendFrame();
         }
         catch(Exception | AssertionError e)
         {
@@ -509,6 +502,9 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
         }
         mConnected.set(false);
         mChannelOnline.set(false);
+        if (mUsersOnline.getAndSet(0) != 0) {
+            broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_USERS_ONLINE_CHANGE));
+        }
         mPendingCommands.clear();
         // Clear refresh token so reconnection uses full credentials — a stale
         // refresh token can cause auth failures after a server-side session reset
@@ -557,6 +553,9 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
     {
         mConnected.set(false);
         mChannelOnline.set(false);
+        if (mUsersOnline.getAndSet(0) != 0) {
+            broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_USERS_ONLINE_CHANGE));
+        }
         if(mWebSocket != null)
         {
             try { mWebSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Shutting down"); }
@@ -659,6 +658,9 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
             stopKeepalive();
             mConnected.set(false);
             mChannelOnline.set(false);
+            if (mUsersOnline.getAndSet(0) != 0) {
+                broadcast(new BroadcastEvent(ZelloConsumerBroadcaster.this, BroadcastEvent.Event.BROADCASTER_USERS_ONLINE_CHANGE));
+            }
             mStreamActive.set(false);
             mCurrentStreamId.set(-1);
             // Abort the dead WebSocket so connectWebSocket() starts fresh
@@ -852,6 +854,9 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
             stopKeepalive();
             mConnected.set(false);
             mChannelOnline.set(false);
+            if (mUsersOnline.getAndSet(0) != 0) {
+                broadcast(new BroadcastEvent(ZelloConsumerBroadcaster.this, BroadcastEvent.Event.BROADCASTER_USERS_ONLINE_CHANGE));
+            }
             // Always reset stream state on disconnect — prevents stale stream IDs
             // from surviving into the next session regardless of mStreamActive state
             mStreamActive.set(false);
@@ -882,6 +887,9 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
             stopKeepalive();
             mConnected.set(false);
             mChannelOnline.set(false);
+            if (mUsersOnline.getAndSet(0) != 0) {
+                broadcast(new BroadcastEvent(ZelloConsumerBroadcaster.this, BroadcastEvent.Event.BROADCASTER_USERS_ONLINE_CHANGE));
+            }
             // Reset stream state on error — same as onClose
             mStreamActive.set(false);
             mCurrentStreamId.set(-1);
@@ -973,6 +981,12 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
                         String status = json.has("status") ? json.get("status").getAsString() : "";
                         if("online".equals(status))
                         {
+                            if (json.has("users_online")) {
+                                int users = json.get("users_online").getAsInt();
+                                if (mUsersOnline.getAndSet(users) != users) {
+                                    broadcast(new BroadcastEvent(ZelloConsumerBroadcaster.this, BroadcastEvent.Event.BROADCASTER_USERS_ONLINE_CHANGE));
+                                }
+                            }
                             // getAndSet(true) returns the old value; only log/set state on first transition
                             if(!mChannelOnline.getAndSet(true))
                             {
@@ -984,6 +998,9 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
                         else
                         {
                             mChannelOnline.set(false);
+                            if (mUsersOnline.getAndSet(0) != 0) {
+                                broadcast(new BroadcastEvent(ZelloConsumerBroadcaster.this, BroadcastEvent.Event.BROADCASTER_USERS_ONLINE_CHANGE));
+                            }
                         }
                     }
                     else if("on_stream_stop".equals(command))
@@ -1017,6 +1034,9 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
                             mKickedCount.incrementAndGet();
                             mConnected.set(false);
                             mChannelOnline.set(false);
+                            if (mUsersOnline.getAndSet(0) != 0) {
+                                broadcast(new BroadcastEvent(ZelloConsumerBroadcaster.this, BroadcastEvent.Event.BROADCASTER_USERS_ONLINE_CHANGE));
+                            }
                             // Close the WebSocket ourselves to prevent onClose from also scheduling
                             if(mWebSocket != null)
                             {

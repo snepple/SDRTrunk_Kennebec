@@ -357,12 +357,20 @@ public class TwoToneDetector
         if (config.getAlertFilePath() != null && !config.getAlertFilePath().isEmpty()) {
             try {
                 String path = config.getAlertFilePath();
-                java.io.File file = new java.io.File(path);
-                if (file.exists()) {
+                java.net.URL resource = null;
+                if (!path.contains("\\") && !path.contains("/") && !path.contains(":")) {
+                    resource = TwoToneDetector.class.getResource("/audio/thinline/" + path);
+                    if (resource == null) {
+                        resource = TwoToneDetector.class.getResource("/audio/" + path);
+                    }
+                }
+                
+                if (resource != null) {
                     if (path.toLowerCase().endsWith(".mp3")) {
+                        final java.net.URL finalResource = resource;
                         javafx.application.Platform.runLater(() -> {
                             try {
-                                javafx.scene.media.Media media = new javafx.scene.media.Media(file.toURI().toString());
+                                javafx.scene.media.Media media = new javafx.scene.media.Media(finalResource.toURI().toString());
                                 javafx.scene.media.MediaPlayer mediaPlayer = new javafx.scene.media.MediaPlayer(media);
                                 mediaPlayer.play();
                             } catch (Exception ex) {
@@ -370,10 +378,32 @@ public class TwoToneDetector
                             }
                         });
                     } else {
-                        javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(file);
+                        javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(resource);
                         javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
                         clip.open(ais);
                         clip.start();
+                    }
+                } else {
+                    java.io.File file = new java.io.File(path);
+                    if (file.exists()) {
+                        if (path.toLowerCase().endsWith(".mp3")) {
+                            javafx.application.Platform.runLater(() -> {
+                                try {
+                                    javafx.scene.media.Media media = new javafx.scene.media.Media(file.toURI().toString());
+                                    javafx.scene.media.MediaPlayer mediaPlayer = new javafx.scene.media.MediaPlayer(media);
+                                    mediaPlayer.play();
+                                } catch (Exception ex) {
+                                    mLog.error("Error playing mp3 alert", ex);
+                                }
+                            });
+                        } else {
+                            javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(file);
+                            javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
+                            clip.open(ais);
+                            clip.start();
+                        }
+                    } else {
+                        mLog.error("Could not find alert audio file or resource: " + path);
                     }
                 }
             } catch (Exception ex) {

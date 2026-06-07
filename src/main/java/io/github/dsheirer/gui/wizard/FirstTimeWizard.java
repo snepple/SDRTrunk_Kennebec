@@ -25,6 +25,9 @@ import java.util.List;
 import io.github.dsheirer.jmbe.github.GitHub;
 import io.github.dsheirer.jmbe.github.Release;
 import javafx.concurrent.Task;
+import io.github.dsheirer.dsp.opencl.GpuDetector;
+import io.github.dsheirer.preference.display.DisplayPreference;
+import java.util.prefs.Preferences;
 
 public class FirstTimeWizard {
 
@@ -58,6 +61,7 @@ public class FirstTimeWizard {
         
         panes.add(createRemoteDesktopPane());
         panes.add(createAIPane());
+        panes.add(createGpuOptimizationPane());
         panes.add(createMemoryPane()); // Memory is now the last step
 
         wizard.setFlow(new Wizard.LinearFlow(panes));
@@ -424,4 +428,59 @@ public class FirstTimeWizard {
     }
 
     // createSummaryPane removed as Memory is now the last step
+
+    private WizardPane createGpuOptimizationPane() {
+        WizardPane pane = new WizardPane();
+        pane.setHeaderText("Hardware Acceleration (GPU)");
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(10));
+        
+        Label lbl = new Label("SDRTrunk can offload massive DSP math operations to your GPU via OpenCL.\n\n" +
+                "This dramatically lowers CPU utilization, but requires stable graphics drivers.");
+        lbl.setWrapText(true);
+        
+        Label statusLbl = new Label("Detecting compatible OpenCL devices...");
+        statusLbl.setStyle("-fx-font-style: italic; -fx-text-fill: gray;");
+        
+        CheckBox enableGpuBox = new CheckBox("Enable OpenCL GPU Acceleration");
+        enableGpuBox.setDisable(true);
+        
+        box.getChildren().addAll(lbl, statusLbl, enableGpuBox);
+        pane.setContent(box);
+        
+        // Run detection in background
+        Task<Boolean> checkTask = new Task<>() {
+            @Override
+            protected Boolean call() {
+                return GpuDetector.isGpuAvailable();
+            }
+        };
+        
+        checkTask.setOnSucceeded(e -> {
+            boolean hasGpu = checkTask.getValue();
+            if (hasGpu) {
+                statusLbl.setText("? Compatible GPU Detected!");
+                statusLbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #4CAF50;");
+                enableGpuBox.setDisable(false);
+                enableGpuBox.setSelected(true);
+                Preferences p = Preferences.userNodeForPackage(DisplayPreference.class);
+                p.putBoolean("opencl.enabled", true);
+            } else {
+                statusLbl.setText("? No compatible OpenCL GPU found.");
+                statusLbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #F44336;");
+            }
+        });
+        
+        Thread t = new Thread(checkTask);
+        t.setDaemon(true);
+        t.start();
+        
+        // Save preference
+        enableGpuBox.setOnAction(e -> {
+            Preferences p = Preferences.userNodeForPackage(DisplayPreference.class);
+            p.putBoolean("opencl.enabled", enableGpuBox.isSelected());
+        });
+        
+        return pane;
+    }
 }

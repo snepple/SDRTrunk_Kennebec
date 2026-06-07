@@ -61,6 +61,7 @@ import java.util.Iterator;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.github.dsheirer.module.decode.dmr.tier3.Tier3Controller;
 
 /**
  * DMR DQPSK decoder.
@@ -95,6 +96,7 @@ public class DMRDecoder extends FeedbackDecoder implements IByteBufferProvider, 
     private final DMRMessageFramer mMessageFramer;
     private final DMRSoftSymbolProcessor mSymbolProcessor;
     private final DMRMessageProcessor mMessageProcessor;
+    private Tier3Controller mTier3Controller = new Tier3Controller();
     private IRealFilter mIBasebandFilter;
     private IRealFilter mQBasebandFilter;
     private IRealDecimationFilter mDecimationFilterI;
@@ -525,5 +527,8 @@ public class DMRDecoder extends FeedbackDecoder implements IByteBufferProvider, 
         }
 
         LOGGER.info("Finished");
+    }
+    public Tier3Controller getTier3Controller() {
+        return mTier3Controller;
     }
 }
