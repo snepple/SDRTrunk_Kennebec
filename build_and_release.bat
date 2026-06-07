@@ -287,14 +287,12 @@ echo.
 
 if !ASSET_COUNT! GTR 0 (
     :: Write release notes to a temp file (avoids batch escaping issues)
-    > "!RELEASE_DIR!\release_notes.md" (
-        echo ## SDRTrunk Kennebec !PROJ_VER!
-        echo.
-        echo ### Downloads
-        echo.
-        echo ^| Platform ^| Type ^| File ^|
-        echo ^|----------|------|------^|
-    )
+    > "!RELEASE_DIR!\release_notes.md" echo ## SDRTrunk Kennebec !PROJ_VER!
+    >> "!RELEASE_DIR!\release_notes.md" echo.
+    >> "!RELEASE_DIR!\release_notes.md" echo ### Downloads
+    >> "!RELEASE_DIR!\release_notes.md" echo.
+    >> "!RELEASE_DIR!\release_notes.md" echo ^| Platform ^| Type ^| File ^|
+    >> "!RELEASE_DIR!\release_notes.md" echo ^| ---------- ^| ------ ^| ------ ^|
     if exist "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-windows-installer.exe" (
         >> "!RELEASE_DIR!\release_notes.md" echo ^| Windows x64 ^| Installer ^(.exe^) ^| SDRTrunk-!PROJ_VER!-windows-installer.exe ^|
     )
@@ -313,16 +311,14 @@ if !ASSET_COUNT! GTR 0 (
     if exist "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-macos-aarch64.zip" (
         >> "!RELEASE_DIR!\release_notes.md" echo ^| macOS ARM64 ^(Apple Silicon^) ^| Portable ^(.zip^) ^| SDRTrunk-!PROJ_VER!-macos-aarch64.zip ^|
     )
-    >> "!RELEASE_DIR!\release_notes.md" (
-        echo.
-        echo ### Installation
-        echo.
-        echo - **Windows Installer**: Download the .exe installer and double-click to install.
-        echo - **Portable Zip**: Extract the zip and run `bin\sdr-trunk.bat` ^(Windows^) or `bin/sdr-trunk` ^(Linux/macOS^).
-        echo - **Windows Portable**: You can also launch via `SDRTrunk.exe` in the extracted folder.
-        echo.
-        echo Bundled with a complete Java runtime - no separate JDK installation required.
-    )
+    >> "!RELEASE_DIR!\release_notes.md" echo.
+    >> "!RELEASE_DIR!\release_notes.md" echo ### Installation
+    >> "!RELEASE_DIR!\release_notes.md" echo.
+    >> "!RELEASE_DIR!\release_notes.md" echo - **Windows Installer**: Download the .exe installer and double-click to install.
+    >> "!RELEASE_DIR!\release_notes.md" echo - **Portable Zip**: Extract the zip and run `bin\sdr-trunk.bat` ^(Windows^) or `bin/sdr-trunk` ^(Linux/macOS^).
+    >> "!RELEASE_DIR!\release_notes.md" echo - **Windows Portable**: You can also launch via `SDRTrunk.exe` in the extracted folder.
+    >> "!RELEASE_DIR!\release_notes.md" echo.
+    >> "!RELEASE_DIR!\release_notes.md" echo Bundled with a complete Java runtime - no separate JDK installation required.
 
     :: Delete existing release with same tag if it exists (to allow re-runs)
     gh release delete !PROJ_VER! --repo %GH_REPO% --yes >nul 2>&1
