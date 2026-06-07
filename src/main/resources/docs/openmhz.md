@@ -12,33 +12,32 @@ Before adding an OpenMHz broadcaster in SDRTrunk Kennebec, you need:
 
 ## Add the Broadcaster
 
-  **1. Open the Streaming Editor**
+**1. Open the Streaming Editor**
 
-    In SDRTrunk Kennebec, go to **View** > **Streaming**.
+In SDRTrunk Kennebec, go to **View** > **Streaming**.
 
-  **2. Add an OpenMHz broadcaster**
+**2. Add an OpenMHz broadcaster**
 
-    Click **+** and select **OpenMHz**.
+Click **+** and select **OpenMHz**.
 
-  **3. Enter the configuration**
+**3. Enter the configuration**
 
-    Fill in the following fields in the configuration panel:
+Fill in the following fields in the configuration panel:
 
-    | Field | Description |
-    |---|---|
-    | **Name** | A label for this configuration, for example `My OpenMHz Stream` |
-    | **API Key** | Your OpenMHz API key for authentication |
-    | **System Name** | Your system's short name as registered on OpenMHz, for example `countysheriff` |
-    | **OpenMHz URL** | The OpenMHz API base URL. Defaults to `https://api.openmhz.com` — leave this unchanged unless you are using a self-hosted OpenMHz instance |
+| Field | Description |
+|---|---|
+| **Name** | A label for this configuration, for example `My OpenMHz Stream` |
+| **API Key** | Your OpenMHz API key for authentication |
+| **System Name** | Your system's short name as registered on OpenMHz, for example `countysheriff` |
+| **OpenMHz URL** | The OpenMHz API base URL. Defaults to `https://api.openmhz.com` — leave this unchanged unless you are using a self-hosted OpenMHz instance |
 
-  **4. Enable and save**
+**4. Enable and save**
 
-    Toggle **Enabled** on, then click **Save**. SDRTrunk Kennebec begins uploading completed call recordings to OpenMHz.
+Toggle **Enabled** on, then click **Save**. SDRTrunk Kennebec begins uploading completed call recordings to OpenMHz.
 
 
 > [!WARNING]
->
-  The **System Name** field must exactly match the short name registered for your system on OpenMHz. A mismatch — including differences in capitalization — will cause uploads to be rejected by the API.
+> The **System Name** field must exactly match the short name registered for your system on OpenMHz. A mismatch — including differences in capitalization — will cause uploads to be rejected by the API.
 
 ## How Calls Are Uploaded
 

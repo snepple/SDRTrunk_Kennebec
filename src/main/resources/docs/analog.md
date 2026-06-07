@@ -19,35 +19,35 @@ NBFM is the most common analog mode for land mobile systems. SDRTrunk demodulate
 
 ### Set up an NBFM channel
 
-  **1. Open the Playlist Editor**
+**1. Open the Playlist Editor**
 
-    Select **View → Playlist Editor** from the main menu. Choose a playlist and go to the **Channels** section.
+Select **View → Playlist Editor** from the main menu. Choose a playlist and go to the **Channels** section.
 
-  **2. Add a new channel**
+**2. Add a new channel**
 
-    Click **New** and select **NBFM** from the decoder type dropdown.
+Click **New** and select **NBFM** from the decoder type dropdown.
 
-  **3. Enter the frequency**
+**3. Enter the frequency**
 
-    Type the channel frequency in Hz in the **Frequency** field.
+Type the channel frequency in Hz in the **Frequency** field.
 
-  **4. Select the channel bandwidth**
+**4. Select the channel bandwidth**
 
-    Choose the bandwidth that matches the channel plan for your system:
+Choose the bandwidth that matches the channel plan for your system:
 
-    | Bandwidth | Channel spacing | Typical use |
-    | --- | --- | --- |
-    | 7.5 kHz (default) | 12.5 kHz | Modern narrowband land mobile |
-    | 12.5 kHz | 25 kHz | Transitional narrowband |
-    | 25 kHz | 50 kHz | Wideband / legacy VHF |
+| Bandwidth | Channel spacing | Typical use |
+| --- | --- | --- |
+| 7.5 kHz (default) | 12.5 kHz | Modern narrowband land mobile |
+| 12.5 kHz | 25 kHz | Transitional narrowband |
+| 25 kHz | 50 kHz | Wideband / legacy VHF |
 
-  **5. Configure audio filters (optional)**
+**5. Configure audio filters (optional)**
 
-    Expand **Audio Filters** in the detail editor to tune the post-demodulation filter chain. See [Audio filter options](#audio-filter-options) below.
+Expand **Audio Filters** in the detail editor to tune the post-demodulation filter chain. See [Audio filter options](#audio-filter-options) below.
 
-  **6. Save and start**
+**6. Save and start**
 
-    Click **Save**, then click **Play** or enable **Auto-Start**.
+Click **Save**, then click **Play** or enable **Auto-Start**.
 
 
 ### Audio filter options
@@ -75,8 +75,7 @@ NBFM squelch opens when the signal noise floor drops below a threshold (indicati
 | **Hysteresis close** | Consecutive samples above close threshold required to close | 4 |
 
 > [!TIP]
->
-If the squelch opens frequently on a noisy frequency, raise the **noise open threshold** in small increments until false triggers stop. If weak signals are not opening the squelch, lower it.
+> If the squelch opens frequently on a noisy frequency, raise the **noise open threshold** in small increments until false triggers stop. If weak signals are not opening the squelch, lower it.
 
 **Squelch tail removal** trims the noise burst at the end of a transmission when the transmitter drops carrier. It is enabled by default and removes the last 100 ms of each transmission. You can also configure **squelch head removal** (default 0 ms) to trim CTCSS tone ramp-up noise from the start of each transmission.
 
@@ -84,47 +83,45 @@ If the squelch opens frequently on a noisy frequency, raise the **noise open thr
 
 AM is used primarily on aviation and some HF bands. Configuration follows the same steps as NBFM, but with a simpler signal path.
 
-  **7. Add a channel**
+**7. Add a channel**
 
-    Open the **Playlist Editor**, click **New**, and select **AM**.
+Open the **Playlist Editor**, click **New**, and select **AM**.
 
-  **8. Enter the frequency**
+**8. Enter the frequency**
 
-    Type the frequency in Hz. Aviation VHF frequencies are typically in the 118–137 MHz range.
+Type the frequency in Hz. Aviation VHF frequencies are typically in the 118–137 MHz range.
 
-  **9. Save and start**
+**9. Save and start**
 
-    Click **Save**, then click **Play** or enable **Auto-Start**.
+Click **Save**, then click **Play** or enable **Auto-Start**.
 
 
 > [!NOTE]
->
-AM does not support sub-audible tone squelch (CTCSS/DCS). The squelch on AM channels is carrier-based only.
+> AM does not support sub-audible tone squelch (CTCSS/DCS). The squelch on AM channels is carrier-based only.
 
 ## CTCSS tone squelch
 
 Continuous Tone-Coded Squelch System (CTCSS) uses a sub-audible tone in the range of 67–254.1 Hz transmitted simultaneously with voice. SDRTrunk can detect and filter on CTCSS tones on NBFM channels, passing audio only when the correct tone is present.
 
-  **10. Select your NBFM channel**
+**10. Select your NBFM channel**
 
-    In the **Playlist Editor**, select the NBFM channel you want to configure.
+In the **Playlist Editor**, select the NBFM channel you want to configure.
 
-  **11. Enable tone filtering**
+**11. Enable tone filtering**
 
-    Toggle **Tone Filter Enabled** to on in the **Decoder** configuration section.
+Toggle **Tone Filter Enabled** to on in the **Decoder** configuration section.
 
-  **12. Add a CTCSS tone filter**
+**12. Add a CTCSS tone filter**
 
-    Click **Add Tone Filter**, set the type to **CTCSS**, and select the tone frequency from the dropdown — for example, `100.0 Hz` or `127.3 Hz`.
+Click **Add Tone Filter**, set the type to **CTCSS**, and select the tone frequency from the dropdown — for example, `100.0 Hz` or `127.3 Hz`.
 
-  **13. Save the channel**
+**13. Save the channel**
 
-    Click **Save**. SDRTrunk will now pass audio only when the configured CTCSS tone is detected.
+Click **Save**. SDRTrunk will now pass audio only when the configured CTCSS tone is detected.
 
 
 > [!WARNING]
->
-When tone filtering is enabled and the tone filter list is empty, **no audio will pass**. Always add at least one tone filter entry before enabling the feature.
+> When tone filtering is enabled and the tone filter list is empty, **no audio will pass**. Always add at least one tone filter entry before enabling the feature.
 
 You can add multiple CTCSS entries to a single channel. Audio passes when **any** of the configured tones is detected — useful if a repeater is shared by multiple agencies on different tones.
 
@@ -132,22 +129,21 @@ You can add multiple CTCSS entries to a single channel. Audio passes when **any*
 
 Digital Coded Squelch (DCS) uses a 134 bps continuous digital code transmitted below the voice audio. It functions identically to CTCSS from a configuration perspective.
 
-  **14. Enable tone filtering**
+**14. Enable tone filtering**
 
-    Toggle **Tone Filter Enabled** to on in the channel's Decoder settings.
+Toggle **Tone Filter Enabled** to on in the channel's Decoder settings.
 
-  **15. Add a DCS tone filter**
+**15. Add a DCS tone filter**
 
-    Click **Add Tone Filter**, set the type to **DCS**, and select the DCS code — for example, `023` or `445`.
+Click **Add Tone Filter**, set the type to **DCS**, and select the DCS code — for example, `023` or `445`.
 
-  **16. Save**
+**16. Save**
 
-    Click **Save**. Audio will only pass when the configured DCS code is received.
+Click **Save**. Audio will only pass when the configured DCS code is received.
 
 
 > [!TIP]
->
-CTCSS and DCS tone filters can be mixed on the same channel. SDRTrunk opens the squelch when **any** configured code is detected, letting you monitor a shared frequency where different agencies use different squelch codes.
+> CTCSS and DCS tone filters can be mixed on the same channel. SDRTrunk opens the squelch when **any** configured code is detected, letting you monitor a shared frequency where different agencies use different squelch codes.
 
 ## MDC-1200 metadata decoding
 
@@ -166,5 +162,4 @@ The following MDC-1200 message types are decoded and appear in the event log:
 To assign friendly names to MDC-1200 unit IDs, add alias entries with the **Protocol** set to `MDC-1200` and the identifier type set to **Talkgroup**, entering the numeric unit ID in the **Identifier** field.
 
 > [!NOTE]
->
-MDC-1200 and Fleetsync II both layer over NBFM carriers. You do not create a separate channel entry for them — they are automatically decoded alongside the voice audio on any NBFM channel where they appear.
+> MDC-1200 and Fleetsync II both layer over NBFM carriers. You do not create a separate channel entry for them — they are automatically decoded alongside the voice audio on any NBFM channel where they appear.

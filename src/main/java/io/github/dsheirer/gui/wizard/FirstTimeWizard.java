@@ -55,8 +55,7 @@ public class FirstTimeWizard {
         boolean isWindows = osName != null && osName.toLowerCase().contains("win");
         
         if (isWindows) {
-            panes.add(createPowerScriptPane());
-            panes.add(createWindowsOptimizationPane());
+            panes.add(createSystemOptimizationsPane());
         }
         
         panes.add(createRemoteDesktopPane());
@@ -249,18 +248,19 @@ public class FirstTimeWizard {
         return pane;
     }
 
-    private WizardPane createPowerScriptPane() {
+    private WizardPane createSystemOptimizationsPane() {
         WizardPane pane = new WizardPane();
-        pane.setHeaderText("Tuner Monitoring Power Script");
+        pane.setHeaderText("System Optimizations (Recommended)");
         VBox box = new VBox(10);
         box.setPadding(new Insets(10));
         
-        Label lbl = new Label("SDRTrunk can install a background Windows scheduled task that monitors " +
-                "for crashed or locked-up USB SDR devices and attempts to automatically reset them. " +
-                "Requires Administrator permissions to install.");
+        Label lbl = new Label("SDRTrunk Kennebec requires two system optimizations for maximum performance and stability on Windows:\n\n" +
+                "1. USB Monitor: A background task to automatically reset crashed/locked SDR hardware.\n" +
+                "2. Windows EcoQoS Fix: Disables power throttling which causes audio dropouts.\n\n" +
+                "Applying these requires Administrator permissions. You will receive exactly ONE User Account Control (UAC) prompt for both optimizations.");
         lbl.setWrapText(true);
         
-        Button installBtn = new Button("Install Power Script...");
+        Button installBtn = new Button("Apply Recommended Optimizations...");
         ProgressIndicator progress = new ProgressIndicator();
         progress.setVisible(false);
         progress.setMaxSize(24, 24);
@@ -272,16 +272,37 @@ public class FirstTimeWizard {
             Task<Boolean> task = new Task<>() {
                 @Override
                 protected Boolean call() throws Exception {
-                    return UsbMonitorManager.install(mUserPreferences);
+                    String optScript = io.github.dsheirer.gui.preference.diagnostics.WindowsHostOptimizer.getOptimizationScriptContent();
+                    String usbScript = UsbMonitorManager.prepareAndGetScheduledTaskScript(mUserPreferences);
+                    
+                    if (usbScript.isEmpty()) return false;
+                    
+                    String combinedScript = optScript + "\n" + usbScript + "\nexit 0;";
+                    String encoded = java.util.Base64.getEncoder().encodeToString(combinedScript.getBytes(java.nio.charset.StandardCharsets.UTF_16LE));
+
+                    ProcessBuilder pb = new ProcessBuilder("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "Start-Process powershell.exe -ArgumentList '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand " + encoded + "' -Verb RunAs -Wait");
+                    Process p = pb.start();
+                    int exitCode = p.waitFor();
+                    
+                    if (exitCode == 0) {
+                        mUserPreferences.getApplicationPreference().setUsbMonitorInstalled(true);
+                        mUserPreferences.getApplicationPreference().setUsbMonitorPrompted(true);
+                        // Also mark the power throttling optimization as done/prompted
+                        try {
+                            java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
+                            prefs.putBoolean("sdrtrunk.diagnostics.powerthrottling.prompted", true);
+                        } catch (Exception ex) {}
+                    }
+                    return exitCode == 0;
                 }
             };
             task.setOnSucceeded(ev -> {
                 progress.setVisible(false);
                 if (task.getValue()) {
-                    Alert a = new Alert(Alert.AlertType.INFORMATION, "Script successfully installed! You may now click Next to continue."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
+                    Alert a = new Alert(Alert.AlertType.INFORMATION, "Optimizations successfully applied! You may now click Next to continue."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                     a.showAndWait();
                 } else {
-                    Alert a = new Alert(Alert.AlertType.ERROR, "Failed to install script. Make sure you run as Administrator or check logs."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
+                    Alert a = new Alert(Alert.AlertType.ERROR, "Failed to apply optimizations. Make sure you click Yes on the UAC prompt."); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(a.getDialogPane());
                     a.showAndWait();
                     installBtn.setDisable(false);
                 }

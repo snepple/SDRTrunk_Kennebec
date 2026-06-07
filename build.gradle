@@ -580,11 +580,20 @@ startScripts {
 
         unixScriptFile.text = unixScriptFile.text.replace('"-Xmx6g"\'', '"-Xmx6g"\'\n\nif [ -f "$HOME/SDRTrunk/SDRTrunk.memory" ]; then\n    MEM_LIMIT=$(cat "$HOME/SDRTrunk/SDRTrunk.memory")\n    SDR_TRUNK_OPTS="$SDR_TRUNK_OPTS \\"-Xmx${MEM_LIMIT}g\\""\nfi')
 
-                // Append memory parsing block to the windows batch script after the JVM OPTS are set
+        windowsScriptFile.text = windowsScriptFile.text.replaceFirst('set APP_HOME=.*', '$0\r\nset "JAVA_HOME=%APP_HOME%\\\\jre"')
+        
+        // This makes sure the launch script doesn't blow up the environment block by exceeding the 8KB limit
+        // By replacing the enumerated classpath list with a wildcard, we can safely have many dependencies.
+        // It's critical this works on Windows.
+        windowsScriptFile.text = windowsScriptFile.text.replaceAll('set CLASSPATH=.*', 'set CLASSPATH=%APP_HOME%\\\\lib\\\\*')
+
+        // Hide terminal window by launching with javaw.exe via 'start'
+        windowsScriptFile.text = windowsScriptFile.text.replace('"%JAVA_EXE%" %DEFAULT_JVM_OPTS%', 'start "SDRTrunk" "%JAVA_EXE:java.exe=javaw.exe%" %DEFAULT_JVM_OPTS%')
+
+        // Append memory parsing block to the windows batch script after the JVM OPTS are set
         windowsScriptFile.text = windowsScriptFile.text.replaceAll(/(?m)^set DEFAULT_JVM_OPTS=.*$/) { match ->
             match + '\n\nif exist "%USERPROFILE%\\\\SDRTrunk\\\\SDRTrunk.memory" (\n    set /p MEM_LIMIT=<"%USERPROFILE%\\\\SDRTrunk\\\\SDRTrunk.memory"\n)\nif defined MEM_LIMIT (\n    set SDR_TRUNK_OPTS=%SDR_TRUNK_OPTS% "-Xmx%MEM_LIMIT%g"\n)'
         }
-        windowsScriptFile.text = windowsScriptFile.text.replaceAll('set CLASSPATH=.*', 'set CLASSPATH=%APP_HOME%\\\\lib\\\\*')
     }
 }
 

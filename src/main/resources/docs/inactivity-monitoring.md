@@ -3,8 +3,7 @@
 Inactivity monitoring watches your channels for audio activity and fires an alert — via Telegram, Email, or both — when a channel has been silent for longer than a duration you configure. Once audio resumes on that channel, the timer resets automatically and will not fire again until the full threshold elapses a second time.
 
 > [!NOTE]
->
-  Inactivity monitoring relies on at least one notification delivery method being configured and enabled. Set up Telegram or Email in **User Preferences → Notifications** before enabling inactivity monitoring. See [Notifications](/alerts/notifications) for setup instructions.
+> Inactivity monitoring relies on at least one notification delivery method being configured and enabled. Set up Telegram or Email in **User Preferences → Notifications** before enabling inactivity monitoring. See [Notifications](/alerts/notifications) for setup instructions.
 
 ## How inactivity monitoring works
 
@@ -12,48 +11,48 @@ SDRTrunk Kennebec tracks the elapsed time since the last decoded audio event on 
 
 ## Use cases
 
-  **Detecting a down feed**
+**Detecting a down feed**
 
-    If you stream a channel to Broadcastify or another platform, inactivity monitoring alerts you when the source goes quiet so you can determine whether the feed is genuinely down or the radio system itself is inactive.
+If you stream a channel to Broadcastify or another platform, inactivity monitoring alerts you when the source goes quiet so you can determine whether the feed is genuinely down or the radio system itself is inactive.
 
-  **Watching a high-priority talkgroup**
+**Watching a high-priority talkgroup**
 
-    For talkgroups you expect to hear regularly — such as a primary dispatch channel — a silence alert tells you if decoding has stalled or if there is an upstream problem with the radio system.
+For talkgroups you expect to hear regularly — such as a primary dispatch channel — a silence alert tells you if decoding has stalled or if there is an upstream problem with the radio system.
 
-  **Overnight and unattended monitoring**
+**Overnight and unattended monitoring**
 
-    When running SDRTrunk Kennebec unattended, inactivity monitoring acts as a lightweight watchdog, notifying you on your phone via Telegram without requiring you to check the application manually.
+When running SDRTrunk Kennebec unattended, inactivity monitoring acts as a lightweight watchdog, notifying you on your phone via Telegram without requiring you to check the application manually.
 
-  **Confirming control channel health**
+**Confirming control channel health**
 
-    A trunked control channel that stops producing decoded traffic is a strong signal that the decoder has lost sync. Set a short threshold to catch these events quickly.
+A trunked control channel that stops producing decoded traffic is a strong signal that the decoder has lost sync. Set a short threshold to catch these events quickly.
 
 
 ## Enable inactivity monitoring
 
-  **1. Open User Preferences**
+**1. Open User Preferences**
 
-    Go to **View** → **User Preferences** in the menu bar.
+Go to **View** → **User Preferences** in the menu bar.
 
-  **2. Navigate to Inactivity Monitoring**
+**2. Navigate to Inactivity Monitoring**
 
-    Select **Inactivity Monitoring** in the left sidebar of the **User Preferences** panel.
+Select **Inactivity Monitoring** in the left sidebar of the **User Preferences** panel.
 
-  **3. Enable the feature**
+**3. Enable the feature**
 
-    Turn on the **Enable Inactivity Monitoring** toggle.
+Turn on the **Enable Inactivity Monitoring** toggle.
 
-  **4. Set the silence threshold**
+**4. Set the silence threshold**
 
-    Enter your desired silence duration in the **Silence Threshold** field. The value is in minutes. For example, entering `15` means an alert fires after 15 consecutive minutes of silence on a monitored channel.
+Enter your desired silence duration in the **Silence Threshold** field. The value is in minutes. For example, entering `15` means an alert fires after 15 consecutive minutes of silence on a monitored channel.
 
-  **5. Choose channels to monitor**
+**5. Choose channels to monitor**
 
-    Under **Monitored Channels**, select which channels or talkgroups to watch. You can apply monitoring globally to all active channels or limit it to specific entries from your playlist.
+Under **Monitored Channels**, select which channels or talkgroups to watch. You can apply monitoring globally to all active channels or limit it to specific entries from your playlist.
 
-  **6. Select alert delivery methods**
+**6. Select alert delivery methods**
 
-    Enable **Telegram**, **Email**, or both. These toggles operate independently from your error notification delivery settings, so you can use a different combination if needed.
+Enable **Telegram**, **Email**, or both. These toggles operate independently from your error notification delivery settings, so you can use a different combination if needed.
 
 
 ## Choosing a silence threshold
@@ -67,12 +66,10 @@ Pick a threshold that reflects the expected activity level of the channel. Thres
 | Low-traffic or overnight channel | 60 minutes or more |
 
 > [!WARNING]
->
-  Thresholds under 5 minutes can generate frequent alerts on channels that experience natural quiet periods. Consider the typical usage pattern of a channel before setting a low value.
+> Thresholds under 5 minutes can generate frequent alerts on channels that experience natural quiet periods. Consider the typical usage pattern of a channel before setting a low value.
 
 > [!TIP]
->
-  Start with 30 minutes or longer to reduce false positives, then adjust downward once you understand the channel's normal activity pattern.
+> Start with 30 minutes or longer to reduce false positives, then adjust downward once you understand the channel's normal activity pattern.
 
 ## Alert message content
 
@@ -90,14 +87,14 @@ Inactivity alerts are routed to recipients who have the **Channel Inactivity** t
 
 ## Troubleshooting
 
-  **Alerts not firing when channel goes silent**
+**Alerts not firing when channel goes silent**
 
-    Confirm that **Enable Inactivity Monitoring** is toggled on and that at least one delivery method (Telegram or Email) is enabled in both the Inactivity Monitoring settings and the Notifications settings. Also verify that the channel appears under **Monitored Channels** and that its decoder is actively running.
+Confirm that **Enable Inactivity Monitoring** is toggled on and that at least one delivery method (Telegram or Email) is enabled in both the Inactivity Monitoring settings and the Notifications settings. Also verify that the channel appears under **Monitored Channels** and that its decoder is actively running.
 
-  **Receiving too many alerts**
+**Receiving too many alerts**
 
-    Increase the silence threshold or reduce the number of monitored channels. Channels with naturally long gaps between transmissions — such as low-traffic talkgroups overnight — are poor candidates for short thresholds.
+Increase the silence threshold or reduce the number of monitored channels. Channels with naturally long gaps between transmissions — such as low-traffic talkgroups overnight — are poor candidates for short thresholds.
 
-  **Alert not clearing after audio resumes**
+**Alert not clearing after audio resumes**
 
-    The timer resets automatically when the channel produces a new decoded audio event. If activity has resumed but the status has not updated, check whether the decoder for that channel is still running in the **Now Playing** view.
+The timer resets automatically when the channel produces a new decoded audio event. If activity has resumed but the status has not updated, check whether the decoder for that channel is still running in the **Now Playing** view.

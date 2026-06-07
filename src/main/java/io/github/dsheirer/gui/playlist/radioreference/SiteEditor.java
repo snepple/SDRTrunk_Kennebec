@@ -76,6 +76,7 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.util.Callback;
 import javafx.util.Duration;
 import org.controlsfx.control.SegmentedButton;
@@ -923,6 +924,7 @@ public class SiteEditor extends GridPane
         if(mNewAliasListButton == null)
         {
             mNewAliasListButton = new Button("New Alias List");
+            mNewAliasListButton.getStyleClass().add("kennebec-toolbar-button");
             mNewAliasListButton.setDisable(true);
             mNewAliasListButton.setOnAction(event -> {
                 TextInputDialog dialog = new TextInputDialog();
@@ -1130,6 +1132,8 @@ public class SiteEditor extends GridPane
         if(mCreateChannelConfigurationButton == null)
         {
             mCreateChannelConfigurationButton = new Button("Create Channel Configuration");
+            mCreateChannelConfigurationButton.getStyleClass().add("kennebec-toolbar-button-primary");
+            mCreateChannelConfigurationButton.setMinWidth(Region.USE_PREF_SIZE);
             mCreateChannelConfigurationButton.setVisible(false);
             mCreateChannelConfigurationButton.setDisable(true);
             mCreateChannelConfigurationButton.setOnAction(event -> {

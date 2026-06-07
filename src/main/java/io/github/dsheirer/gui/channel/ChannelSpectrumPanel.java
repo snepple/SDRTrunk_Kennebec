@@ -86,7 +86,7 @@ import javafx.scene.Scene;
 /**
  * Display for channel FFT and squelch details
  */
-public class ChannelSpectrumPanel extends VBox implements Listener<ProcessingChain>
+public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingChain>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelSpectrumPanel.class);
     private static final DecimalFormat FREQUENCY_FORMAT = new DecimalFormat("0.00000");
@@ -123,25 +123,31 @@ public class ChannelSpectrumPanel extends VBox implements Listener<ProcessingCha
         VBox fftPanel = new VBox();
         // fftPanel.setLayout(new javafx.scene.layout.HBox(4));
 
-        VBox labelPanel = new VBox();
-        // labelPanel.setLayout(new javafx.scene.layout.HBox(4));
-        labelPanel.getChildren().add(new Label("Channel Spectrum    "));
+        HBox labelPanel = new HBox(5);
+        labelPanel.setAlignment(Pos.CENTER_LEFT);
+        labelPanel.setPadding(new Insets(2, 5, 2, 5));
+        labelPanel.getChildren().add(new Label("Channel Spectrum"));
 
         mEstimatedCarrierOffsetFrequencyTitleLabel = new Label("Carrier Offset:");
-        mEstimatedCarrierOffsetFrequencyTitleLabel.setTextFill(javafx.scene.paint.Color.rgb(142, 142, 147)); // HIG subtle gray
+        mEstimatedCarrierOffsetFrequencyTitleLabel.setTextFill(javafx.scene.paint.Color.rgb(142, 142, 147));
+        mEstimatedCarrierOffsetFrequencyTitleLabel.setMinWidth(Region.USE_PREF_SIZE);
         labelPanel.getChildren().add(mEstimatedCarrierOffsetFrequencyTitleLabel);
 
         mEstimatedCarrierOffsetFrequencyValueLabel = new Label("0 Hz");
         mEstimatedCarrierOffsetFrequencyValueLabel.setFont(javafx.scene.text.Font.font(mEstimatedCarrierOffsetFrequencyValueLabel.getFont().getFamily(), javafx.scene.text.FontWeight.BOLD, mEstimatedCarrierOffsetFrequencyValueLabel.getFont().getSize()));
-        mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(!false);
-        labelPanel.getChildren().add(mEstimatedCarrierOffsetFrequencyValueLabel); mEstimatedCarrierOffsetFrequencyValueLabel.setPrefWidth(60);
+        mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(true);
+        mEstimatedCarrierOffsetFrequencyValueLabel.setPrefWidth(60);
+        mEstimatedCarrierOffsetFrequencyValueLabel.setMinWidth(Region.USE_PREF_SIZE);
+        labelPanel.getChildren().add(mEstimatedCarrierOffsetFrequencyValueLabel);
 
         javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory mNoiseFloorSpinnerValueFactory = new javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory(8, 36, 18, 1);
-//         mNoiseFloorSpinnerModel.// addChangeListener(e -> {
-//             Number number = mNoiseFloorSpinnerModel.getNumber();
-//             mSpectrumPanel.setSampleSize(number.doubleValue());
-//         });
-        Spinner noiseFloorSpinner = new Spinner(mNoiseFloorSpinnerValueFactory);
+        Spinner<Integer> noiseFloorSpinner = new Spinner<>(mNoiseFloorSpinnerValueFactory);
+        noiseFloorSpinner.setPrefWidth(70);
+        noiseFloorSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if(newVal != null) {
+                mSpectrumPanel.setSampleSize(newVal.doubleValue());
+            }
+        });
         labelPanel.getChildren().add(noiseFloorSpinner);
         labelPanel.getChildren().add(new Label("Noise Floor"));
 
@@ -215,47 +221,37 @@ public class ChannelSpectrumPanel extends VBox implements Listener<ProcessingCha
         
 
         //Add the spectrum and channel panels to the layered panel
-        
-        javafx.scene.layout.Pane fxPanel = new javafx.scene.layout.Pane();
-//         javafx.application.Platform.runLater(() -> /* fxPanel.setScene(new Scene(mSpectrumPanel)); */
-        layeredPanel.getChildren().add(fxPanel);
-
+        layeredPanel.getChildren().add(mSpectrumPanel);
         layeredPanel.getChildren().add(mFrequencyOverlayPanel);
 
+        VBox.setVgrow(layeredPanel, Priority.ALWAYS);
         fftPanel.getChildren().add(layeredPanel);
 
         mNoiseSquelchPanel = new javafx.scene.layout.Pane();
         mSymbolPanel = new javafx.scene.layout.Pane();
 
-        //Spin noise squelch panel construction off onto the JavafX UI thread.
-        Platform.runLater(() -> {
-            Scene scene = new Scene(mNoiseSquelchView);
-            /* mNoiseSquelchPanel.setScene(scene); */
-            Scene scene2 = new Scene(mSymbolView);
-            URL resource = getClass().getResource("/sdrtrunk_style.css");
+        //Add the JavaFX views directly as children
+        mNoiseSquelchPanel.getChildren().add(mNoiseSquelchView);
+        mNoiseSquelchView.prefWidthProperty().bind(mNoiseSquelchPanel.widthProperty());
+        mNoiseSquelchView.prefHeightProperty().bind(mNoiseSquelchPanel.heightProperty());
 
-            if(resource != null)
-            {
-                scene2.getStylesheets().add(resource.toExternalForm());
-            }
-            else
-            {
-                LOGGER.warn("Can't find stylesheet resource for sdrtrunk");
-            }
+        mSymbolPanel.getChildren().add(mSymbolView);
+        mSymbolView.prefWidthProperty().bind(mSymbolPanel.widthProperty());
+        mSymbolView.prefHeightProperty().bind(mSymbolPanel.heightProperty());
 
-            /* mSymbolPanel.setScene(scene2); */
-        });
-
-        
         mInspectorPanel = new javafx.scene.layout.StackPane();
-         // Apple HIG subtle border
 
         mInspectorPanel.getChildren().add(mNoiseSquelchPanel); mNoiseSquelchPanel.setVisible(false);
         mInspectorPanel.getChildren().add(mSignalPowerView); mSignalPowerView.setVisible(false);
         mInspectorPanel.getChildren().add(mSymbolPanel); mSymbolPanel.setVisible(false);
 
-        // Use MigLayout for the main panel
-        // setLayout(new javafx.scene.layout.HBox(4));
+        // Side-by-side layout: FFT on the left, inspector on the right
+        HBox.setHgrow(fftPanel, Priority.ALWAYS);
+        HBox.setHgrow(mInspectorPanel, Priority.ALWAYS);
+        fftPanel.setMinWidth(200);
+        fftPanel.setPrefWidth(400);
+        mInspectorPanel.setMinWidth(300);
+        mInspectorPanel.setPrefWidth(400);
         getChildren().add(fftPanel);
         getChildren().add(mInspectorPanel);
 
@@ -372,7 +368,7 @@ public class ChannelSpectrumPanel extends VBox implements Listener<ProcessingCha
         //has to apply to move the signal to center/baseband
         Platform.runLater(() -> {
             mEstimatedCarrierOffsetFrequencyValueLabel.setText(carrierOffsetFrequency + " Hz");
-            mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(!true);
+            mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(false);
         });
 
         mFrequencyOverlayPanel.setEstimatedCarrierOffsetFrequency(carrierOffsetFrequency);
@@ -393,7 +389,7 @@ public class ChannelSpectrumPanel extends VBox implements Listener<ProcessingCha
     private void reset()
     {
         mEstimatedCarrierOffsetFrequencyValueLabel.setText("0 Hz");
-        mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(!false);
+        mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(true);
         mFrequencyOverlayPanel.process(SourceEvent.frequencyChange(null, 0));
         mFrequencyOverlayPanel.process(SourceEvent.sampleRateChange(0));
         mFrequencyOverlayPanel.setEstimatedCarrierOffsetFrequency(0);

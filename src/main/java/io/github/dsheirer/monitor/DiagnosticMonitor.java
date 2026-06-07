@@ -127,6 +127,17 @@ public class DiagnosticMonitor
 
     private void checkForPowerThrottling() {
         if (!mUserAlertedToPowerThrottling && System.getProperty("os.name").toLowerCase().contains("win")) {
+            boolean prompted = false;
+            try {
+                java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
+                prompted = prefs.getBoolean("sdrtrunk.diagnostics.powerthrottling.prompted", false);
+            } catch (Exception ex) {}
+
+            if (prompted) {
+                mUserAlertedToPowerThrottling = true;
+                return;
+            }
+
             boolean isSdrTrunkExeDisabled = isEcoQoSDisabled("SDRTrunk.exe");
             boolean isJavaExeDisabled = isEcoQoSDisabled("java.exe");
             

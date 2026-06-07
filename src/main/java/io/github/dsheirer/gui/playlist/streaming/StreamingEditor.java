@@ -495,6 +495,7 @@ public class StreamingEditor extends SplitPane
         if(mNewButton == null)
         {
             mNewButton = new MenuButton("New");
+            mNewButton.getStyleClass().add("kennebec-toolbar-button-primary");
             mNewButton.setMaxWidth(Double.MAX_VALUE);
             mNewButton.setTooltip(new Tooltip("Create a new stream configuration"));
             mNewButton.setOnShowing(event -> {
@@ -531,6 +532,7 @@ public class StreamingEditor extends SplitPane
         if(mRefreshButton == null)
         {
             mRefreshButton = new Button("Refresh");
+            mRefreshButton.getStyleClass().add("kennebec-toolbar-button");
             mRefreshButton.setTooltip(new Tooltip("Refresh streams available from Broadcastify"));
             mRefreshButton.setOnAction(event -> refreshBroadcastifyStreams());
         }
@@ -543,6 +545,7 @@ public class StreamingEditor extends SplitPane
         if(mDeleteButton == null)
         {
             mDeleteButton = new Button("Delete");
+            mDeleteButton.getStyleClass().add("kennebec-toolbar-button");
             mDeleteButton.setMaxWidth(Double.MAX_VALUE);
             mDeleteButton.setTooltip(new Tooltip("Delete the currently selected stream configuration"));
             mDeleteButton.setOnAction(event -> {
@@ -575,6 +578,7 @@ public class StreamingEditor extends SplitPane
         if(mCloneButton == null)
         {
             mCloneButton = new Button("Clone");
+            mCloneButton.getStyleClass().add("kennebec-toolbar-button");
             mCloneButton.setMaxWidth(Double.MAX_VALUE);
             mCloneButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected stream configuration"));
             mCloneButton.setOnAction(event -> {

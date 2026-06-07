@@ -95,6 +95,48 @@ public class UsbMonitorManager {
         }
     }
 
+    public static String prepareAndGetScheduledTaskScript(UserPreferences userPreferences) {
+        String osName = System.getProperty("os.name");
+        if (osName == null || (!osName.startsWith("Windows 10") && !osName.startsWith("Windows 11"))) {
+            return "";
+        }
+        try {
+            Path appRoot = userPreferences.getDirectoryPreference().getDirectoryApplicationRoot();
+            Path scriptDir = appRoot.resolve("scripts");
+            if (!Files.exists(scriptDir)) {
+                Files.createDirectories(scriptDir);
+            }
+
+            Path scriptPath = scriptDir.resolve(SCRIPT_NAME);
+            Path configPath = scriptDir.resolve(CONFIG_NAME);
+
+            try (InputStream is = UsbMonitorManager.class.getResourceAsStream("/scripts/" + SCRIPT_NAME)) {
+                if (is != null) {
+                    Files.copy(is, scriptPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+
+            long currentPid = ProcessHandle.current().pid();
+            Path logDir = userPreferences.getDirectoryPreference().getDirectoryApplicationLog();
+            Path logFile = logDir.resolve("sdrtrunk_usb_monitor.log");
+
+            String configJson = String.format("{\"ProcessId\": %d, \"LogFile\": \"%s\"}",
+                    currentPid, logFile.toAbsolutePath().toString().replace("\\", "\\\\"));
+            Files.writeString(configPath, configJson);
+
+            String userName = System.getProperty("user.name");
+            String taskName = "SDRTrunk_UsbMonitor_" + userName;
+            String scriptPathStr = scriptPath.toAbsolutePath().toString();
+
+            return getScheduledTaskScriptContent(taskName, scriptPathStr);
+        } catch (Exception e) {
+            mLog.error("Error preparing USB Monitor script", e);
+            return "";
+        }
+    }
+
+
+
     public static boolean uninstall(UserPreferences userPreferences) {
         String userName = System.getProperty("user.name");
         String taskName = "SDRTrunk_UsbMonitor_" + userName;
@@ -177,23 +219,26 @@ public class UsbMonitorManager {
         }
     }
 
+    public static String getScheduledTaskScriptContent(String taskName, String scriptPath) {
+        String scriptCmd = String.format("& '%s'", scriptPath);
+        String encodedScriptCmd = Base64.getEncoder().encodeToString(scriptCmd.getBytes(StandardCharsets.UTF_16LE));
+
+        return String.format(
+                "Unregister-ScheduledTask -TaskName '%s' -Confirm:$false -ErrorAction SilentlyContinue\r\n" +
+                "$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand %s'\r\n" +
+                "$principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest\r\n" +
+                "$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Days 1000)\r\n" +
+                "Register-ScheduledTask -TaskName '%s' -Action $action -Principal $principal -Settings $settings\r\n",
+                taskName, encodedScriptCmd, taskName
+        );
+    }
+
     private static boolean createScheduledTask(String taskName, String scriptPath) {
         try {
             // Sanitize task name - dots and special chars can cause issues
             taskName = taskName.replaceAll("[^a-zA-Z0-9_]", "_");
 
-            String scriptCmd = String.format("& '%s'", scriptPath);
-            String encodedScriptCmd = Base64.getEncoder().encodeToString(scriptCmd.getBytes(StandardCharsets.UTF_16LE));
-
-            // Write the admin commands to a temp script file to avoid command-line length limits
-            String psCommands = String.format(
-                    "Unregister-ScheduledTask -TaskName '%s' -Confirm:$false -ErrorAction SilentlyContinue\r\n" +
-                    "$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand %s'\r\n" +
-                    "$principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest\r\n" +
-                    "$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Days 1000)\r\n" +
-                    "Register-ScheduledTask -TaskName '%s' -Action $action -Principal $principal -Settings $settings\r\n",
-                    taskName, encodedScriptCmd, taskName
-            );
+            String psCommands = getScheduledTaskScriptContent(taskName, scriptPath);
 
             String encodedInnerCmd = Base64.getEncoder().encodeToString(psCommands.getBytes(StandardCharsets.UTF_16LE));
 

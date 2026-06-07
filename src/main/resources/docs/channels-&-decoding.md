@@ -13,37 +13,37 @@ On conventional (non-trunked) systems, every channel is a fixed frequency with n
 
 ## Add and configure a channel
 
-  **1. Open the Playlist Editor**
+**1. Open the Playlist Editor**
 
-    Select **View → Playlist Editor** from the main menu. The editor opens with a sidebar showing **Playlists**, **Channels**, **Aliases**, **Streaming**, **Radio Reference**, and **Two Tones**.
+Select **View → Playlist Editor** from the main menu. The editor opens with a sidebar showing **Playlists**, **Channels**, **Aliases**, **Streaming**, **Radio Reference**, and **Two Tones**.
 
-  **2. Go to the Channels section**
+**2. Go to the Channels section**
 
-    Click **Channels** in the sidebar. The upper pane displays a table of every channel in the active playlist.
+Click **Channels** in the sidebar. The upper pane displays a table of every channel in the active playlist.
 
-  **3. Create a new channel**
+**3. Create a new channel**
 
-    Click **New** in the top-right toolbar. A dropdown lists the supported decoder types. Select the protocol that matches your system — for example, **P25 Phase 1**, **DMR**, or **NBFM**. A new channel row appears and the detail editor opens below.
+Click **New** in the top-right toolbar. A dropdown lists the supported decoder types. Select the protocol that matches your system — for example, **P25 Phase 1**, **DMR**, or **NBFM**. A new channel row appears and the detail editor opens below.
 
-  **4. Set the channel fields**
+**4. Set the channel fields**
 
-    Fill in the required fields in the detail editor:
+Fill in the required fields in the detail editor:
 
-    | Field | Description |
-    | --- | --- |
-    | **Name** | A short label such as `Fire Dispatch` or `PD Car-to-Car`. Appears in the Now Playing panel and in recorded audio filenames. |
-    | **System** | Free-text grouping label for the radio network, for example `County EMS`. |
-    | **Site** | The tower or repeater name within the system. Leave blank for single-site conventional channels. |
-    | **Frequency** | Receive frequency in Hz. For trunked systems, enter the control channel frequency. |
-    | **Alias List** | The alias list used to resolve talkgroup and radio IDs decoded on this channel. |
+| Field | Description |
+| --- | --- |
+| **Name** | A short label such as `Fire Dispatch` or `PD Car-to-Car`. Appears in the Now Playing panel and in recorded audio filenames. |
+| **System** | Free-text grouping label for the radio network, for example `County EMS`. |
+| **Site** | The tower or repeater name within the system. Leave blank for single-site conventional channels. |
+| **Frequency** | Receive frequency in Hz. For trunked systems, enter the control channel frequency. |
+| **Alias List** | The alias list used to resolve talkgroup and radio IDs decoded on this channel. |
 
-  **5. Configure protocol-specific options**
+**5. Configure protocol-specific options**
 
-    Each decoder type adds its own settings below the common fields — traffic channel pool size, NAC filtering for P25, color code for DMR, squelch thresholds for NBFM, and so on. See the protocol-specific pages for details.
+Each decoder type adds its own settings below the common fields — traffic channel pool size, NAC filtering for P25, color code for DMR, squelch thresholds for NBFM, and so on. See the protocol-specific pages for details.
 
-  **6. Save the channel**
+**6. Save the channel**
 
-    Click **Save**. The channel row updates immediately in the Channels table.
+Click **Save**. The channel row updates immediately in the Channels table.
 
 
 ## Enable and disable channels
@@ -55,8 +55,7 @@ You can start and stop a channel at any time without deleting it:
 - **Auto-Start** — enable the **Auto-Start** checkbox in the channel detail editor to have SDRTrunk Kennebec start this channel automatically every time the application launches.
 
 > [!WARNING]
->
-Enabling **Auto-Start** on a large number of channels simultaneously increases CPU and SDR tuner load at startup. Enable it selectively for the channels you monitor most frequently.
+> Enabling **Auto-Start** on a large number of channels simultaneously increases CPU and SDR tuner load at startup. Enable it selectively for the channels you monitor most frequently.
 
 ## Channel states in the Now Playing view
 
@@ -77,31 +76,30 @@ The **All / Playing / Auto-Start** segmented control at the top of the Channels 
 
 SDRTrunk Kennebec includes a decoder for each of the following protocols. Select the appropriate type from the **New** dropdown when creating a channel.
 
-  **P25 Phase 1 & Phase 2**
+**P25 Phase 1 & Phase 2**
 
-    APCO-25 digital trunked and conventional systems used by North American public safety agencies. Supports C4FM, LSM/CQPSK, and HDQPSK (Phase 2 TDMA).
+APCO-25 digital trunked and conventional systems used by North American public safety agencies. Supports C4FM, LSM/CQPSK, and HDQPSK (Phase 2 TDMA).
 
-  **DMR**
+**DMR**
 
-    Digital Mobile Radio — commercial fleet and utility systems in Tier I, Tier II, and Tier III (trunked) variants, including MOTOTRBO networks.
+Digital Mobile Radio — commercial fleet and utility systems in Tier I, Tier II, and Tier III (trunked) variants, including MOTOTRBO networks.
 
-  **NBFM & AM**
+**NBFM & AM**
 
-    Narrowband FM and AM conventional channels with configurable squelch, CTCSS/DCS tone filtering, and post-demodulation audio filters.
+Narrowband FM and AM conventional channels with configurable squelch, CTCSS/DCS tone filtering, and post-demodulation audio filters.
 
-  **LTR Standard**
+**LTR Standard**
 
-    E.F. Johnson Logic Trunked Radio — an analog trunking protocol that embeds control signaling in-band on each channel. Select **LTR Standard** from the decoder dropdown when adding a channel.
+E.F. Johnson Logic Trunked Radio — an analog trunking protocol that embeds control signaling in-band on each channel. Select **LTR Standard** from the decoder dropdown when adding a channel.
 
-  **LTR-Net**
+**LTR-Net**
 
-    An enhanced version of LTR that uses a dedicated control channel for faster call setup. Select **LTR-Net** when adding a channel.
+An enhanced version of LTR that uses a dedicated control channel for faster call setup. Select **LTR-Net** when adding a channel.
 
-  **MPT1327**
+**MPT1327**
 
-    A European analog trunked radio standard widely deployed on commercial and utility systems. Select **MPT-1327** when adding a channel.
+A European analog trunked radio standard widely deployed on commercial and utility systems. Select **MPT-1327** when adding a channel.
 
 
 > [!NOTE]
->
-The **Passport** decoder type is also available for Motorola Passport analog trunking systems.
+> The **Passport** decoder type is also available for Motorola Passport analog trunking systems.

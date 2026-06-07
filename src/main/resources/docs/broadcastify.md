@@ -30,39 +30,38 @@ Log in to your Broadcastify account and locate the feed you want to connect. Gat
 
 ### Add the Broadcaster
 
-  **1. Open the Streaming Editor**
+**1. Open the Streaming Editor**
 
-    In SDRTrunk Kennebec, go to **View** > **Streaming**.
+In SDRTrunk Kennebec, go to **View** > **Streaming**.
 
-  **2. Add a Broadcastify Feed broadcaster**
+**2. Add a Broadcastify Feed broadcaster**
 
-    Click **+** and select **Broadcastify Feed**.
+Click **+** and select **Broadcastify Feed**.
 
-  **3. Enter the connection details**
+**3. Enter the connection details**
 
-    Fill in the following fields in the configuration panel:
+Fill in the following fields in the configuration panel:
 
-    | Field | Description |
-    |---|---|
-    | **Name** | A label for this configuration, for example `County Fire Main` |
-    | **Host** | The Broadcastify server hostname |
-    | **Port** | The server port number |
-    | **Mount Point** | The stream path, starting with `/` |
-    | **Password** | The source password for your feed |
-    | **Feed ID** | Your numeric Broadcastify feed ID |
+| Field | Description |
+|---|---|
+| **Name** | A label for this configuration, for example `County Fire Main` |
+| **Host** | The Broadcastify server hostname |
+| **Port** | The server port number |
+| **Mount Point** | The stream path, starting with `/` |
+| **Password** | The source password for your feed |
+| **Feed ID** | Your numeric Broadcastify feed ID |
 
-  **4. Enable verbose logging (optional)**
+**4. Enable verbose logging (optional)**
 
-    Toggle **Verbose Logging** on if you need detailed diagnostic output in the application log. This is useful for troubleshooting connection or audio quality issues.
+Toggle **Verbose Logging** on if you need detailed diagnostic output in the application log. This is useful for troubleshooting connection or audio quality issues.
 
-  **5. Enable and save**
+**5. Enable and save**
 
-    Check **Enabled**, then click **Save**. SDRTrunk Kennebec connects to the Broadcastify server immediately and begins streaming decoded audio.
+Check **Enabled**, then click **Save**. SDRTrunk Kennebec connects to the Broadcastify server immediately and begins streaming decoded audio.
 
 
 > [!NOTE]
->
-  SDRTrunk Kennebec sets the audio parameters for Broadcastify Feed automatically: 16 kbps MP3, mono, 8000 Hz. You do not need to configure bit rate or sample rate.
+> SDRTrunk Kennebec sets the audio parameters for Broadcastify Feed automatically: 16 kbps MP3, mono, 8000 Hz. You do not need to configure bit rate or sample rate.
 
 ---
 
@@ -76,33 +75,32 @@ Log in to your Broadcastify account and locate the Calls API key and system ID f
 
 ### Add the Broadcaster
 
-  **6. Open the Streaming Editor**
+**6. Open the Streaming Editor**
 
-    In SDRTrunk Kennebec, go to **View** > **Streaming**.
+In SDRTrunk Kennebec, go to **View** > **Streaming**.
 
-  **7. Add a Broadcastify Call broadcaster**
+**7. Add a Broadcastify Call broadcaster**
 
-    Click **+** and select **Broadcastify Call**.
+Click **+** and select **Broadcastify Call**.
 
-  **8. Enter the configuration**
+**8. Enter the configuration**
 
-    Fill in the following fields:
+Fill in the following fields:
 
-    | Field | Description |
-    |---|---|
-    | **Name** | A label for this configuration |
-    | **API Key** | Your Broadcastify Calls API key |
-    | **System ID** | Your numeric Broadcastify system ID |
-    | **Host** | Leave at the default production endpoint (`https://api.broadcastify.com/call-upload`) unless directed otherwise |
+| Field | Description |
+|---|---|
+| **Name** | A label for this configuration |
+| **API Key** | Your Broadcastify Calls API key |
+| **System ID** | Your numeric Broadcastify system ID |
+| **Host** | Leave at the default production endpoint (`https://api.broadcastify.com/call-upload`) unless directed otherwise |
 
-  **9. Enable and save**
+**9. Enable and save**
 
-    Check **Enabled**, then click **Save**. SDRTrunk Kennebec uploads completed call recordings to the Broadcastify Calls API as they arrive.
+Check **Enabled**, then click **Save**. SDRTrunk Kennebec uploads completed call recordings to the Broadcastify Calls API as they arrive.
 
 
 > [!TIP]
->
-  A development endpoint (`https://api.broadcastify.com/call-upload-dev`) is available for testing. Switch the **Host** field to this value while verifying your configuration, then switch back to the production endpoint before going live.
+> A development endpoint (`https://api.broadcastify.com/call-upload-dev`) is available for testing. Switch the **Host** field to this value while verifying your configuration, then switch back to the production endpoint before going live.
 
 ---
 
@@ -133,5 +131,4 @@ If the **Broadcaster Status** panel shows **Disconnected** or **Error**, work th
 Enable **Verbose Logging** on the Broadcastify Feed configuration and review the application log for detailed error messages.
 
 > [!WARNING]
->
-  The **Delay** and **Maximum Recording Age** fields are available in the configuration but should be left at their defaults unless Broadcastify support specifically advises you to change them. Setting **Maximum Recording Age** too low can cause call recordings to be discarded before they are uploaded.
+> The **Delay** and **Maximum Recording Age** fields are available in the configuration but should be left at their defaults unless Broadcastify support specifically advises you to change them. Setting **Maximum Recording Age** too low can cause call recordings to be discarded before they are uploaded.

@@ -4,13 +4,13 @@ SDRTrunk Kennebec's **Diagnostics** panel gives you fine-grained control over de
 
 ## Open the Diagnostics panel
 
-  **1. Open User Preferences**
+**1. Open User Preferences**
 
-    In the main application window, open the **View** menu and select **User Preferences**.
+In the main application window, open the **View** menu and select **User Preferences**.
 
-  **2. Navigate to Diagnostics**
+**2. Navigate to Diagnostics**
 
-    In the left sidebar, under the **Application** section header, click **Diagnostics (Logging)**.
+In the left sidebar, under the **Application** section header, click **Diagnostics (Logging)**.
 
 
 The panel displays a description, a log volume warning, a master toggle, and a grid of per-category checkboxes.
@@ -34,8 +34,7 @@ Each row in the panel represents a named subsystem. Checking the box sets that s
 | NBFM / audio output | Disabled | Squelch state, audio filter chain, output events |
 
 > [!NOTE]
->
-  **Zello streaming** and **ThinLine Radio streaming** are enabled by default so that live streaming sessions capture full diagnostic output without any additional configuration.
+> **Zello streaming** and **ThinLine Radio streaming** are enabled by default so that live streaming sessions capture full diagnostic output without any additional configuration.
 
 When you enable a category, debug output is captured for all activity in that subsystem.
 
@@ -46,8 +45,7 @@ When you enable a category, debug output is captured for all activity in that su
 The **Enable ALL diagnostics categories** checkbox at the top of the panel is a convenience shortcut. Checking it enables every category simultaneously; unchecking it disables every category simultaneously. The master checkbox reflects the current state automatically: it appears checked only when every individual category is enabled, and unchecked the moment any single category is turned off.
 
 > [!WARNING]
->
-  Enabling all categories at once generates extremely large log files — potentially hundreds of megabytes per day when P25 traffic is active. Enable only the categories you are actively debugging, and disable them when you are done.
+> Enabling all categories at once generates extremely large log files — potentially hundreds of megabytes per day when P25 traffic is active. Enable only the categories you are actively debugging, and disable them when you are done.
 
 ---
 
@@ -60,8 +58,7 @@ SDRTrunk Kennebec applies diagnostics preference changes directly to the running
 - Your selections are persisted and reapplied automatically on the next startup, before the first log line is written.
 
 > [!NOTE]
->
-  Because diagnostics preferences are restored on startup, the categories you had enabled in your last session are active from the very first log entry after relaunch.
+> Because diagnostics preferences are restored on startup, the categories you had enabled in your last session are active from the very first log entry after relaunch.
 
 ---
 
@@ -73,23 +70,22 @@ To see the debug output in real time, open **View → Logs** from the main menu 
 
 ## Collecting logs for a bug report
 
-  **3. Enable the relevant category**
+**3. Enable the relevant category**
 
-    Open **User Preferences → Diagnostics (Logging)** and enable the category that matches the subsystem you are troubleshooting. For example, enable **Zello streaming** if you are reporting a Zello connection issue.
+Open **User Preferences → Diagnostics (Logging)** and enable the category that matches the subsystem you are troubleshooting. For example, enable **Zello streaming** if you are reporting a Zello connection issue.
 
-  **4. Reproduce the problem**
+**4. Reproduce the problem**
 
-    Perform the action that triggers the issue. Because changes take effect immediately, logs capture from the moment you enable the toggle.
+Perform the action that triggers the issue. Because changes take effect immediately, logs capture from the moment you enable the toggle.
 
-  **5. Locate the log file**
+**5. Locate the log file**
 
-    Navigate to `~/SDRTrunk/logs/` and find the most recent `sdrtrunk.log` file.
+Navigate to `~/SDRTrunk/logs/` and find the most recent `sdrtrunk.log` file.
 
-  **6. Attach to your report**
+**6. Attach to your report**
 
-    Attach the log file to your issue on the [GitHub repository](https://github.com/snepple/SDRTrunk_Kennebec/issues). If the file is large, you can filter it by the component name shown in the log lines.
+Attach the log file to your issue on the [GitHub repository](https://github.com/snepple/SDRTrunk_Kennebec/issues). If the file is large, you can filter it by the component name shown in the log lines.
 
 
 > [!TIP]
->
-  Disable diagnostics categories you no longer need after collecting logs. Leaving DEBUG enabled for high-volume categories like **P25 decoder** or **Channelizer** during normal operation will quickly fill your disk.
+> Disable diagnostics categories you no longer need after collecting logs. Leaving DEBUG enabled for high-volume categories like **P25 decoder** or **Channelizer** during normal operation will quickly fill your disk.

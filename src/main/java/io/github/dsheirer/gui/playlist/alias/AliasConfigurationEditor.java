@@ -391,6 +391,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mNewAliasListButton == null)
         {
             mNewAliasListButton = new Button("New Alias List");
+            mNewAliasListButton.getStyleClass().add("kennebec-toolbar-button");
             mNewAliasListButton.setTooltip(new Tooltip("Create a new alias list"));
             mNewAliasListButton.setOnAction(event ->
             {
@@ -422,6 +423,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
 
         if (mRenameAliasButton == null) {
             mRenameAliasButton = new Button("Rename");
+            mRenameAliasButton.getStyleClass().add("kennebec-toolbar-button");
             mRenameAliasButton.setTooltip(new Tooltip("Rename the current alias list"));
             mRenameAliasButton.setOnAction(event -> {
                 String aliasListName = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
@@ -455,6 +457,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
 
         if (mDeleteAliasListButton == null) {
             mDeleteAliasListButton = new Button("Delete");
+            mDeleteAliasListButton.getStyleClass().add("kennebec-toolbar-button");
             mDeleteAliasListButton.setTooltip(new Tooltip("Delete the current alias list"));
             mDeleteAliasListButton.setOnAction(event -> {
                 String aliasListName = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
@@ -505,7 +508,8 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                     }
                 }
             });
-            nameColumn.setPrefWidth(140);
+            nameColumn.setPrefWidth(200);
+            nameColumn.setMinWidth(140);
             nameColumn.setId("alias.name");
 
             TableColumn groupColumn = new TableColumn();
@@ -522,7 +526,8 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                     }
                 }
             });
-            groupColumn.setPrefWidth(140);
+            groupColumn.setPrefWidth(160);
+            groupColumn.setMinWidth(120);
             groupColumn.setId("alias.group");
 
             TableColumn<Alias, Integer> colorColumn = new TableColumn("Color");
@@ -532,6 +537,8 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                 Alias alias = event.getRowValue();
                 alias.setColor(event.getNewValue());
             });
+            colorColumn.setPrefWidth(60);
+            colorColumn.setMinWidth(60);
             colorColumn.setId("alias.color");
 
             TableColumn<Alias, String> iconColumn = new TableColumn("Icon");
@@ -544,6 +551,8 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                     getAliasItemEditor().setItem(alias);
                 }
             });
+            iconColumn.setPrefWidth(60);
+            iconColumn.setMinWidth(60);
             iconColumn.setId("alias.icon");
 
             TableColumn<Alias, Boolean> listenColumn = new TableColumn("Listen");
@@ -564,6 +573,8 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                     getAliasItemEditor().setItem(alias);
                 }
             });
+            listenColumn.setPrefWidth(60);
+            listenColumn.setMinWidth(60);
             listenColumn.setId("alias.listen");
 
             TableColumn<Alias, Integer> priorityColumn = new TableColumn("Priority");
@@ -578,20 +589,28 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                     getAliasItemEditor().setItem(alias);
                 }
             });
+            priorityColumn.setPrefWidth(70);
+            priorityColumn.setMinWidth(70);
             priorityColumn.setId("alias.priority");
 
             TableColumn<Alias, Boolean> recordColumn = new TableColumn("Record");
             recordColumn.setCellValueFactory(new PropertyValueFactory<>("recordable"));
             recordColumn.setCellFactory(new IconCell(FontAwesome.SQUARE, Color.RED));
+            recordColumn.setPrefWidth(65);
+            recordColumn.setMinWidth(65);
             recordColumn.setId("alias.record");
 
             TableColumn<Alias, Boolean> streamColumn = new TableColumn("Stream");
             streamColumn.setCellValueFactory(new PropertyValueFactory<>("streamable"));
             streamColumn.setCellFactory(new IconCell(FontAwesome.VOLUME_UP, Color.DARKBLUE));
+            streamColumn.setPrefWidth(65);
+            streamColumn.setMinWidth(65);
             streamColumn.setId("alias.stream");
 
             TableColumn<Alias, Integer> idsColumn = new TableColumn("IDs");
             idsColumn.setCellValueFactory(new IdentifierCountCell());
+            idsColumn.setPrefWidth(50);
+            idsColumn.setMinWidth(50);
             idsColumn.setId("alias.ids");
 
             TableColumn<Alias, Boolean> errorsColumn = new TableColumn<>("Error");
@@ -774,6 +793,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mNewAliasButton == null)
         {
             mNewAliasButton = new Button("New");
+            mNewAliasButton.getStyleClass().add("kennebec-toolbar-button-primary");
             mNewAliasButton.setDisable(true);
             mNewAliasButton.setAlignment(Pos.CENTER);
             mNewAliasButton.setMaxWidth(Double.MAX_VALUE);
@@ -802,6 +822,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mDeleteAliasButton == null)
         {
             mDeleteAliasButton = new Button("Delete");
+            mDeleteAliasButton.getStyleClass().add("kennebec-toolbar-button");
             mDeleteAliasButton.setDisable(true);
             mDeleteAliasButton.setMaxWidth(Double.MAX_VALUE);
             mDeleteAliasButton.setTooltip(new Tooltip("Delete the currently selected aliases"));
@@ -834,6 +855,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mCloneAliasButton == null)
         {
             mCloneAliasButton = new Button("Clone");
+            mCloneAliasButton.getStyleClass().add("kennebec-toolbar-button");
             mCloneAliasButton.setDisable(true);
             mCloneAliasButton.setMaxWidth(Double.MAX_VALUE);
             mCloneAliasButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected alias"));
@@ -877,6 +899,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         if(mMoveToAliasButton == null)
         {
             mMoveToAliasButton = new MenuButton("Move To");
+            mMoveToAliasButton.getStyleClass().add("kennebec-toolbar-button");
             mMoveToAliasButton.setDisable(true);
             mMoveToAliasButton.setTooltip(new Tooltip("Move the currently selected aliases to another list"));
             mMoveToAliasButton.setOnShowing(event ->

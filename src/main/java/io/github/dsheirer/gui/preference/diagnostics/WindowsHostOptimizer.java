@@ -49,25 +49,28 @@ public class WindowsHostOptimizer {
         });
     }
 
+    public static String getOptimizationScriptContent() {
+        String currentDir = System.getProperty("user.dir");
+        String sdrTrunkDir = Paths.get(System.getProperty("user.home"), "SDRTrunk").toString();
+        
+        return String.format(
+            "$ErrorActionPreference = 'SilentlyContinue'; " +
+            "try { " +
+            "powercfg /SETACVALUEINDEX SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bea12814ab 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0; " +
+            "powercfg /SETDCVALUEINDEX SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bea12814ab 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0; " +
+            "powercfg /SETACTIVE SCHEME_CURRENT; " +
+            "Add-MpPreference -ExclusionPath '%s'; " +
+            "Add-MpPreference -ExclusionPath '%s'; " +
+            "Stop-Service -Name '*DPTF*' -ErrorAction SilentlyContinue; " +
+            "Set-Service -Name '*DPTF*' -StartupType Disabled -ErrorAction SilentlyContinue; " +
+            "} catch { } ",
+            currentDir, sdrTrunkDir
+        );
+    }
+
     public static CompletableFuture<Boolean> runOptimizationScript() {
         return CompletableFuture.supplyAsync(() -> {
-            String currentDir = System.getProperty("user.dir");
-            String sdrTrunkDir = Paths.get(System.getProperty("user.home"), "SDRTrunk").toString();
-            
-            String script = String.format(
-                "$ErrorActionPreference = 'SilentlyContinue'; " +
-                "try { " +
-                "powercfg /SETACVALUEINDEX SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bea12814ab 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0; " +
-                "powercfg /SETDCVALUEINDEX SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bea12814ab 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0; " +
-                "powercfg /SETACTIVE SCHEME_CURRENT; " +
-                "Add-MpPreference -ExclusionPath '%s'; " +
-                "Add-MpPreference -ExclusionPath '%s'; " +
-                "Stop-Service -Name '*DPTF*' -ErrorAction SilentlyContinue; " +
-                "Set-Service -Name '*DPTF*' -StartupType Disabled -ErrorAction SilentlyContinue; " +
-                "} catch { } " +
-                "exit 0;",
-                currentDir, sdrTrunkDir
-            );
+            String script = getOptimizationScriptContent() + "exit 0;";
             String encoded = Base64.getEncoder().encodeToString(script.getBytes(StandardCharsets.UTF_16LE));
             try {
                 ProcessBuilder pb = new ProcessBuilder("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "Start-Process powershell -ArgumentList '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand " + encoded + "' -Verb RunAs -Wait");

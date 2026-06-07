@@ -3,32 +3,31 @@
 RadioReference.com is the largest public database of radio system information in North America, containing frequencies, talkgroup IDs, site coordinates, and system metadata for thousands of public safety and government networks. SDRTrunk Kennebec's RadioReference integration lets you browse this database by location and pull a complete system configuration — channels, sites, and aliases — directly into your active playlist in seconds, without entering anything manually.
 
 > [!NOTE]
->
-  A RadioReference.com **Premium** subscription is required to use the API import feature. Free accounts cannot access the API.
+> A RadioReference.com **Premium** subscription is required to use the API import feature. Free accounts cannot access the API.
 
 ---
 
 ## Quick start: import a system
 
-  **1. Open the RadioReference panel**
+**1. Open the RadioReference panel**
 
-    In the Playlist Editor, click **Radio Reference** in the left sidebar.
+In the Playlist Editor, click **Radio Reference** in the left sidebar.
 
-  **2. Authenticate your account**
+**2. Authenticate your account**
 
-    Enter your RadioReference.com username and password in the credentials section, then click **Login**.
+Enter your RadioReference.com username and password in the credentials section, then click **Login**.
 
-  **3. Browse for your system**
+**3. Browse for your system**
 
-    Use the cascading dropdown menus to locate the system you want to import:
-    1. Select your **Country**.
-    2. Select your **State/Province**.
-    3. Select your **County**.
-    4. Select the specific **System** you want to monitor.
+Use the cascading dropdown menus to locate the system you want to import:
+1. Select your **Country**.
+2. Select your **State/Province**.
+3. Select your **County**.
+4. Select the specific **System** you want to monitor.
 
-  **4. Select components and import**
+**4. Select components and import**
 
-    Check the boxes next to the sites and talkgroup categories you want to include. Click **Import Selected**. SDRTrunk Kennebec automatically creates the necessary channels and alias lists in your active playlist.
+Check the boxes next to the sites and talkgroup categories you want to include. Click **Import Selected**. SDRTrunk Kennebec automatically creates the necessary channels and alias lists in your active playlist.
 
 
 ---
@@ -74,5 +73,4 @@ Navigate to the **Aliases** tab. The import process groups talkgroups based on t
 Your RadioReference username and password are saved in the application's Java preferences store. The **Store credentials** option (enabled by default) means you only need to log in once. To remove stored credentials, open the RadioReference panel and click the option to clear them.
 
 > [!WARNING]
->
-  Credentials are stored in your operating system's user preferences store. Avoid using your RadioReference password on shared or publicly accessible systems.
+> Credentials are stored in your operating system's user preferences store. Avoid using your RadioReference password on shared or publicly accessible systems.

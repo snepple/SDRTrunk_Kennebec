@@ -16,84 +16,81 @@ Notifications trigger on two categories of events:
 | **AI audio monitoring** | An AI-flagged audio quality issue is detected on a channel |
 
 > [!NOTE]
->
-  SDRTrunk Kennebec attempts to self-heal a failed tuner before sending any alert. You will only receive a hardware notification if the automatic recovery fails.
+> SDRTrunk Kennebec attempts to self-heal a failed tuner before sending any alert. You will only receive a hardware notification if the automatic recovery fails.
 
 ## Open notification settings
 
-  **1. Open User Preferences**
+**1. Open User Preferences**
 
-    In the menu bar, go to **View** → **User Preferences**.
+In the menu bar, go to **View** → **User Preferences**.
 
-  **2. Navigate to Notifications**
+**2. Navigate to Notifications**
 
-    Select **Notifications** in the left sidebar of the **User Preferences** panel.
+Select **Notifications** in the left sidebar of the **User Preferences** panel.
 
 
 ## Configure Telegram alerts
 
 To receive alerts through Telegram, you need a bot token and a chat ID. Both are free to create from the Telegram app.
 
-  **3. Create a Telegram bot**
+**3. Create a Telegram bot**
 
-    Open Telegram and start a conversation with **@BotFather**. Send the `/newbot` command and follow the prompts. BotFather will give you a **bot token** — a string that looks like `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`.
+Open Telegram and start a conversation with **@BotFather**. Send the `/newbot` command and follow the prompts. BotFather will give you a **bot token** — a string that looks like `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`.
 
-  **4. Find your chat ID**
+**4. Find your chat ID**
 
-    Send any message to your new bot, then open a browser and visit:
+Send any message to your new bot, then open a browser and visit:
 
-    ```text
-    https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
-    ```
+```text
+https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
+```
 
-    Look for the `"id"` field inside the `"chat"` object. That number is your chat ID.
+Look for the `"id"` field inside the `"chat"` object. That number is your chat ID.
 
-  **5. Enter your credentials in SDRTrunk Kennebec**
+**5. Enter your credentials in SDRTrunk Kennebec**
 
-    In the **Notifications** panel of **User Preferences**:
+In the **Notifications** panel of **User Preferences**:
 
-    - Paste your bot token into the **Telegram Bot Token** field.
-    - Paste your chat ID into the **Telegram Chat ID** field.
-    - Enable the **Telegram Notifications** toggle.
+- Paste your bot token into the **Telegram Bot Token** field.
+- Paste your chat ID into the **Telegram Chat ID** field.
+- Enable the **Telegram Notifications** toggle.
 
-  **6. Test the configuration**
+**6. Test the configuration**
 
-    Click **Send Test Message**. Your Telegram bot should deliver a test message within a few seconds.
+Click **Send Test Message**. Your Telegram bot should deliver a test message within a few seconds.
 
 
 > [!TIP]
->
-  You can send alerts to a Telegram group or channel instead of a private chat. Add your bot to the group, then use the group's chat ID — which will be a negative number — in the **Telegram Chat ID** field.
+> You can send alerts to a Telegram group or channel instead of a private chat. Add your bot to the group, then use the group's chat ID — which will be a negative number — in the **Telegram Chat ID** field.
 
 ## Configure Email alerts
 
 SDRTrunk Kennebec sends email via SMTP, which works with Gmail, Outlook, or any standard mail provider.
 
-  **7. Enter SMTP settings**
+**7. Enter SMTP settings**
 
-    In the **Notifications** panel of **User Preferences**, fill in the **Email / SMTP** section:
+In the **Notifications** panel of **User Preferences**, fill in the **Email / SMTP** section:
 
-    | Field | Description |
-    | --- | --- |
-    | **SMTP Host** | Your mail server hostname, e.g. `smtp.gmail.com` |
-    | **SMTP Port** | Typically `587` (STARTTLS) or `465` (SSL) |
-    | **Username** | Your email address or SMTP login |
-    | **Password** | Your email account password or app-specific password |
-    | **From Address** | The address that will appear as the sender |
-    | **To Address** | The address that will receive the alerts |
+| Field | Description |
+| --- | --- |
+| **SMTP Host** | Your mail server hostname, e.g. `smtp.gmail.com` |
+| **SMTP Port** | Typically `587` (STARTTLS) or `465` (SSL) |
+| **Username** | Your email address or SMTP login |
+| **Password** | Your email account password or app-specific password |
+| **From Address** | The address that will appear as the sender |
+| **To Address** | The address that will receive the alerts |
 
-  **8. Enable Email notifications**
+**8. Enable Email notifications**
 
-    Turn on the **Email Notifications** toggle.
+Turn on the **Email Notifications** toggle.
 
-  **9. Test the configuration**
+**9. Test the configuration**
 
-    Click **Send Test Email**. Check the inbox of your **To Address** for a test message from SDRTrunk Kennebec.
+Click **Send Test Email**. Check the inbox of your **To Address** for a test message from SDRTrunk Kennebec.
 
 
 > [!WARNING]
->
-  If you use Gmail, Google requires an **App Password** rather than your regular account password. Generate one at **Google Account → Security → App passwords**. Using your regular password with 2-Step Verification enabled will cause authentication to fail.
+> If you use Gmail, Google requires an **App Password** rather than your regular account password. Generate one at **Google Account → Security → App passwords**. Using your regular password with 2-Step Verification enabled will cause authentication to fail.
 
 ## Add notification recipients
 
@@ -116,14 +113,14 @@ Each toggle is independent, so you can tailor exactly which events reach each re
 
 ## Troubleshooting
 
-  **No Telegram message received**
+**No Telegram message received**
 
-    Verify that your bot token is correct and that your bot has not been blocked. Re-run the `getUpdates` check in your browser to confirm the chat ID is current. If you added the bot to a group, confirm you are using the group's chat ID (a negative number), not your personal chat ID.
+Verify that your bot token is correct and that your bot has not been blocked. Re-run the `getUpdates` check in your browser to confirm the chat ID is current. If you added the bot to a group, confirm you are using the group's chat ID (a negative number), not your personal chat ID.
 
-  **Email delivery fails**
+**Email delivery fails**
 
-    Check that your SMTP host and port are correct for your provider. For Gmail, confirm you are using an App Password. Review SDRTrunk's application log (**View → Logs**) for the exact SMTP error message.
+Check that your SMTP host and port are correct for your provider. For Gmail, confirm you are using an App Password. Review SDRTrunk's application log (**View → Logs**) for the exact SMTP error message.
 
-  **Notifications fire too frequently**
+**Notifications fire too frequently**
 
-    If tuner errors repeat persistently, the underlying hardware may need attention. Review the application log for the specific tuner error, and check connections and USB power for the affected device.
+If tuner errors repeat persistently, the underlying hardware may need attention. Review the application log for the specific tuner error, and check connections and USB power for the affected device.

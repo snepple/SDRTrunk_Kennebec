@@ -220,13 +220,13 @@ public class SignalPowerView extends VBox
                 final double power = sourceEvent.getValue().doubleValue();
                 final double peak = mPeakMonitor.process(power);
 
-                
+                Platform.runLater(() -> {
                     mPowerMeter.setPower(power);
                     mPowerLabel.setText(DECIMAL_FORMAT.format(power));
 
                     mPowerMeter.setPeak(peak);
                     mPeakLabel.setText(DECIMAL_FORMAT.format(peak));
-        
+                });
             }
             case NOTIFICATION_SQUELCH_THRESHOLD ->
             {
@@ -234,23 +234,23 @@ public class SignalPowerView extends VBox
                 mSquelchThreshold = threshold;
                 setConfigSquelchThreshold((int)threshold);
 
-                
+                Platform.runLater(() -> {
                     mPowerMeter.setSquelchThreshold(threshold);
                     mSquelchLabel.setDisable(false);
                     mSquelchValueLabel.setDisable(false);
                     mSquelchValueLabel.setText(DECIMAL_FORMAT.format(threshold));
                     mSquelchDownButton.setDisable(false);
                     mSquelchUpButton.setDisable(false);
-        
+                });
             }
             case NOTIFICATION_SQUELCH_AUTO_TRACK ->
             {
                 boolean autoTrack = sourceEvent.getValue().intValue() == 1;
                 setConfigSquelchAutoTrack(autoTrack);
-                
+                Platform.runLater(() -> {
                     mSquelchAutoTrackCheckBox.setSelected(autoTrack);
                     mSquelchAutoTrackCheckBox.setDisable(false);
-        
+                });
             }
         }
     }

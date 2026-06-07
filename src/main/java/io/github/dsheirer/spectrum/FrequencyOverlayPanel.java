@@ -221,10 +221,9 @@ public class FrequencyOverlayPanel extends Pane implements ISourceEventProcessor
      * Renders the channel configs, lines, labels, and cursor
      */
     public void draw(GraphicsContext graphics) {
-// // // // // //         graphics.clearRect(0, 0, getWidth(), getHeight());
+        graphics.clearRect(0, 0, getWidth(), getHeight());
 
         
-
         
 // //         graphics.setBackground(mColorSpectrumBackground);
         

@@ -18,44 +18,44 @@ In the **Playlist Editor**, click **Aliases** in the left sidebar. The Alias Edi
 
 ## Create an alias list
 
-  **1. Open the Alias Editor**
+**1. Open the Alias Editor**
 
-    Click **Aliases** in the **Playlist Editor** sidebar.
+Click **Aliases** in the **Playlist Editor** sidebar.
 
-  **2. Add a new alias list**
+**2. Add a new alias list**
 
-    Click **New List** or type a new list name in the alias list dropdown. Alias list names must be unique within a playlist.
+Click **New List** or type a new list name in the alias list dropdown. Alias list names must be unique within a playlist.
 
-  **3. Select the list**
+**3. Select the list**
 
-    Choose your new list from the dropdown. All aliases you create from this point are added to the selected list.
+Choose your new list from the dropdown. All aliases you create from this point are added to the selected list.
 
 
 ## Map a talkgroup ID to a name
 
-  **4. Select the target alias list**
+**4. Select the target alias list**
 
-    Use the alias list dropdown at the top of the Alias Editor to choose the list you want to add to.
+Use the alias list dropdown at the top of the Alias Editor to choose the list you want to add to.
 
-  **5. Create a new alias**
+**5. Create a new alias**
 
-    Click **New** in the alias table toolbar. A blank alias row appears.
+Click **New** in the alias table toolbar. A blank alias row appears.
 
-  **6. Set the alias name**
+**6. Set the alias name**
 
-    In the **Name** field of the detail editor, type the display name for this talkgroup — for example, `Engine 7` or `PD Dispatch`.
+In the **Name** field of the detail editor, type the display name for this talkgroup — for example, `Engine 7` or `PD Dispatch`.
 
-  **7. Add a talkgroup identifier**
+**7. Add a talkgroup identifier**
 
-    Click **Add ID** and select **Talkgroup** from the identifier type menu. Enter the numeric talkgroup ID. For systems that use a range, select **Talkgroup Range** and enter the start and end values.
+Click **Add ID** and select **Talkgroup** from the identifier type menu. Enter the numeric talkgroup ID. For systems that use a range, select **Talkgroup Range** and enter the start and end values.
 
-  **8. Set a color (optional)**
+**8. Set a color (optional)**
 
-    Click the color swatch to open the color picker and assign a highlight color. This color appears in the **Now Playing** panel when this alias is active.
+Click the color swatch to open the color picker and assign a highlight color. This color appears in the **Now Playing** panel when this alias is active.
 
-  **9. Save**
+**9. Save**
 
-    Click **Save**. The alias row in the table updates with the name and identifier summary.
+Click **Save**. The alias row in the table updates with the name and identifier summary.
 
 
 ## Map a radio ID to a name
@@ -63,8 +63,7 @@ In the **Playlist Editor**, click **Aliases** in the left sidebar. The Alias Edi
 The process is identical to mapping a talkgroup — select **Radio ID** (or **Radio ID Range**) as the identifier type instead. Radio IDs identify individual subscriber units transmitting on a channel.
 
 > [!NOTE]
->
-P25 systems may use **P25 Fully Qualified Radio ID** or **P25 Fully Qualified Talkgroup** identifiers for cross-system calls. Select the appropriate identifier type when monitoring P25 Phase 2 or DFSI systems.
+> P25 systems may use **P25 Fully Qualified Radio ID** or **P25 Fully Qualified Talkgroup** identifiers for cross-system calls. Select the appropriate identifier type when monitoring P25 Phase 2 or DFSI systems.
 
 ## Supported identifier types
 
@@ -89,27 +88,26 @@ Each alias can have one or more identifiers attached to it. SDRTrunk Kennebec ma
 
 In addition to a name and color, each alias can trigger one or more automated actions when a matching call is decoded.
 
-  **Beep**
+**Beep**
 
-    Plays a short audible beep through the system speaker when a call matching this alias begins. Use this as a heads-up alert for high-priority talkgroups.
+Plays a short audible beep through the system speaker when a call matching this alias begins. Use this as a heads-up alert for high-priority talkgroups.
 
-    To add a beep action: click **Add Action** in the alias detail editor and select **Beep**.
+To add a beep action: click **Add Action** in the alias detail editor and select **Beep**.
 
-  **Play Clip**
+**Play Clip**
 
-    Plays a custom audio file (WAV or MP3) when a call matching this alias begins. You specify the path to the clip file in the action editor.
+Plays a custom audio file (WAV or MP3) when a call matching this alias begins. You specify the path to the clip file in the action editor.
 
-    To add a clip action: click **Add Action**, select **Play Clip**, then browse to the audio file.
+To add a clip action: click **Add Action**, select **Play Clip**, then browse to the audio file.
 
-  **Run Script**
+**Run Script**
 
-    Executes an external script or command when a call matching this alias begins. The script receives call metadata as arguments, enabling integrations such as home automation triggers or custom logging.
+Executes an external script or command when a call matching this alias begins. The script receives call metadata as arguments, enabling integrations such as home automation triggers or custom logging.
 
-    To add a script action: click **Add Action**, select **Run Script**, then enter the full path to the script.
+To add a script action: click **Add Action**, select **Run Script**, then enter the full path to the script.
 
-    > [!WARNING]
->
-    The **Run Script** action executes with the same OS privileges as SDRTrunk Kennebec. Only point it at scripts you control and trust.
+> [!WARNING]
+> The **Run Script** action executes with the same OS privileges as SDRTrunk Kennebec. Only point it at scripts you control and trust.
 
 
 
@@ -130,18 +128,18 @@ You can also assign an **Icon** to each alias. SDRTrunk Kennebec displays the ic
 
 If you have a RadioReference.com Premium subscription, you can import talkgroup names and IDs directly into the active playlist's alias list rather than entering them one by one.
 
-  **10. Open the Radio Reference section**
+**10. Open the Radio Reference section**
 
-    Click **Radio Reference** in the **Playlist Editor** sidebar.
+Click **Radio Reference** in the **Playlist Editor** sidebar.
 
-  **11. Log in**
+**11. Log in**
 
-    Enter your RadioReference.com username and password and click **Login**.
+Enter your RadioReference.com username and password and click **Login**.
 
-  **12. Browse to your system**
+**12. Browse to your system**
 
-    Navigate to your state, county, and target radio system.
+Navigate to your state, county, and target radio system.
 
-  **13. Import**
+**13. Import**
 
-    Select the talkgroups you want and click **Import**. SDRTrunk Kennebec creates alias entries in the active playlist automatically, using the RadioReference display names.
+Select the talkgroups you want and click **Import**. SDRTrunk Kennebec creates alias entries in the active playlist automatically, using the RadioReference display names.

@@ -12,34 +12,33 @@ Before adding a Rdio Scanner broadcaster in SDRTrunk Kennebec, you need:
 
 ## Add the Broadcaster
 
-  **1. Open the Streaming Editor**
+**1. Open the Streaming Editor**
 
-    In SDRTrunk Kennebec, go to **View** > **Streaming**.
+In SDRTrunk Kennebec, go to **View** > **Streaming**.
 
-  **2. Add an Rdio Scanner broadcaster**
+**2. Add an Rdio Scanner broadcaster**
 
-    Click **+** and select **Rdio Scanner**.
+Click **+** and select **Rdio Scanner**.
 
-  **3. Enter the configuration**
+**3. Enter the configuration**
 
-    Fill in the following fields in the configuration panel:
+Fill in the following fields in the configuration panel:
 
-    | Field | Description |
-    |---|---|
-    | **Name** | A label for this configuration, for example `My Rdio Scanner Stream` |
-    | **Rdio Scanner URL** | The base URL of your Rdio Scanner server, for example `http://192.168.1.50` or `https://scanner.example.com`. The path `/api/call-upload` is appended automatically |
-    | **API Key** | The API key configured in your Rdio Scanner administration interface |
-    | **System ID** | The numeric system ID assigned in Rdio Scanner for the radio system you are uploading |
-    | **Max Recording Age (seconds)** | The maximum age of a recording that will be uploaded. Recordings older than this value are discarded rather than uploaded |
+| Field | Description |
+|---|---|
+| **Name** | A label for this configuration, for example `My Rdio Scanner Stream` |
+| **Rdio Scanner URL** | The base URL of your Rdio Scanner server, for example `http://192.168.1.50` or `https://scanner.example.com`. The path `/api/call-upload` is appended automatically |
+| **API Key** | The API key configured in your Rdio Scanner administration interface |
+| **System ID** | The numeric system ID assigned in Rdio Scanner for the radio system you are uploading |
+| **Max Recording Age (seconds)** | The maximum age of a recording that will be uploaded. Recordings older than this value are discarded rather than uploaded |
 
-  **4. Enable and save**
+**4. Enable and save**
 
-    Toggle **Enabled** on, then click **Save**. SDRTrunk Kennebec begins uploading completed call recordings to your Rdio Scanner instance.
+Toggle **Enabled** on, then click **Save**. SDRTrunk Kennebec begins uploading completed call recordings to your Rdio Scanner instance.
 
 
 > [!NOTE]
->
-  The **Rdio Scanner URL** field defaults to `http://localhost` if you leave it blank. Update it to the actual address of your Rdio Scanner server before enabling the broadcaster — uploads to `localhost` will fail unless Rdio Scanner is running on the same machine.
+> The **Rdio Scanner URL** field defaults to `http://localhost` if you leave it blank. Update it to the actual address of your Rdio Scanner server before enabling the broadcaster — uploads to `localhost` will fail unless Rdio Scanner is running on the same machine.
 
 ## How Call Data Is Sent
 

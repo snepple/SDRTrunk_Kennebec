@@ -538,6 +538,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         VBox.setVgrow(mTableView, Priority.ALWAYS);
 
         Button newBtn = new Button("New Detector");
+        newBtn.getStyleClass().add("kennebec-toolbar-button-primary");
         newBtn.setOnAction(e -> {
             TwoToneConfiguration conf = new TwoToneConfiguration();
             conf.setAlias("New Detector");
@@ -548,6 +549,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         });
 
         Button delBtn = new Button("Delete");
+        delBtn.getStyleClass().add("kennebec-toolbar-button");
         delBtn.setOnAction(e -> {
             TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
             if (sel != null) {
@@ -557,6 +559,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         });
 
         Button cloneBtn = new Button("Clone");
+        cloneBtn.getStyleClass().add("kennebec-toolbar-button");
         cloneBtn.setOnAction(e -> {
             TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
             if (sel != null) {
@@ -570,6 +573,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         });
 
         Button refreshBtn = new Button("Refresh");
+        refreshBtn.getStyleClass().add("kennebec-toolbar-button");
         refreshBtn.setOnAction(e -> {
             mObservableConfigs.setAll(mPlaylistManager.getCurrentPlaylist().getTwoToneConfigurations());
         });

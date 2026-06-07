@@ -7,8 +7,7 @@ Two Tone Detect monitors an audio channel for sequential paging tones used in fi
 Two-tone sequential paging is a signaling system widely used in North American fire and EMS dispatch. Each station or unit is assigned a unique pair of audio frequencies — called Tone A and Tone B — transmitted back-to-back for a fixed duration. SDRTrunk Kennebec supports tone frequencies from the Motorola QC-II and Plectron standard tables, covering approximately 282 Hz to 3,062 Hz, and also accepts custom frequency values entered directly in Hz.
 
 > [!NOTE]
->
-  Two Tone Detect works on any channel that carries paging tones — typically a conventional FM dispatch channel. The channel must already be configured and decoding in the **Channels** section before Two Tone Detect can process its audio.
+> Two Tone Detect works on any channel that carries paging tones — typically a conventional FM dispatch channel. The channel must already be configured and decoding in the **Channels** section before Two Tone Detect can process its audio.
 
 ## Open the Two Tone Editor
 
@@ -16,39 +15,38 @@ In the **Playlist Editor**, click **Two Tones** in the left sidebar. The editor 
 
 ## Create a detector
 
-  **1. Add a new detector**
+**1. Add a new detector**
 
-    Click **New** in the left-pane toolbar and select **Detector**. A new entry named `New Detector` appears in the list.
+Click **New** in the left-pane toolbar and select **Detector**. A new entry named `New Detector` appears in the list.
 
-  **2. Set the detector name**
+**2. Set the detector name**
 
-    In the **Name** field of the **Configuration** tab, type a descriptive name such as `Station 7` or `EMS Unit 42`. This name is also used as the alias name when the detector fires.
+In the **Name** field of the **Configuration** tab, type a descriptive name such as `Station 7` or `EMS Unit 42`. This name is also used as the alias name when the detector fires.
 
-  **3. Choose the detection type**
+**3. Choose the detection type**
 
-    Open the **Type** dropdown and select one of the following:
+Open the **Type** dropdown and select one of the following:
 
-    | Type | When to use |
-    | --- | --- |
-    | **A/B Tones** | Standard two-tone paging — both Tone A and Tone B must be received in sequence |
-    | **Long A Tone Only** | Some older or simplified paging systems that use a single sustained Tone A |
+| Type | When to use |
+| --- | --- |
+| **A/B Tones** | Standard two-tone paging — both Tone A and Tone B must be received in sequence |
+| **Long A Tone Only** | Some older or simplified paging systems that use a single sustained Tone A |
 
-  **4. Set Tone A**
+**4. Set Tone A**
 
-    Click the **Tone A** dropdown. Type a frequency value directly or select from the autocomplete list, which is populated from the combined Motorola QC-II and Plectron standard tables. Enter the value in Hz — for example, `688.3`.
+Click the **Tone A** dropdown. Type a frequency value directly or select from the autocomplete list, which is populated from the combined Motorola QC-II and Plectron standard tables. Enter the value in Hz — for example, `688.3`.
 
-  **5. Set Tone B (A/B Tones mode only)**
+**5. Set Tone B (A/B Tones mode only)**
 
-    Click the **Tone B** dropdown and enter the second tone frequency. The **Tone B** field is disabled automatically when **Long A Tone Only** is selected.
+Click the **Tone B** dropdown and enter the second tone frequency. The **Tone B** field is disabled automatically when **Long A Tone Only** is selected.
 
-  **6. Save the configuration**
+**6. Save the configuration**
 
-    Click **Save** at the bottom of the **Configuration** tab. The detector is saved to the current playlist.
+Click **Save** at the bottom of the **Configuration** tab. The detector is saved to the current playlist.
 
 
 > [!TIP]
->
-  Use **Clone** in the left-pane toolbar to duplicate an existing detector and adjust only the tone values. This is faster than creating detectors from scratch when you have many similar entries.
+> Use **Clone** in the left-pane toolbar to duplicate an existing detector and adjust only the tone values. This is faster than creating detectors from scratch when you have many similar entries.
 
 ## Link a detector to an alias
 
@@ -62,50 +60,49 @@ To link from the alias side, open the alias in the **Alias Editor**, add a **Two
 
 If you have a Zello broadcast stream configured in the **Playlist Editor's Streaming** section, you can route Two Tone detection events to a Zello channel.
 
-  **7. Select a Zello channel**
+**7. Select a Zello channel**
 
-    In the **Configuration** tab, open the **Zello Channel** dropdown. It is populated from your existing Zello broadcast configurations. Select the channel you want to receive the alert.
+In the **Configuration** tab, open the **Zello Channel** dropdown. It is populated from your existing Zello broadcast configurations. Select the channel you want to receive the alert.
 
-  **8. Enable a text message (optional)**
+**8. Enable a text message (optional)**
 
-    Check **Enable Text Message** to send a text message to the Zello channel when the detector fires. Enter your message in the **Message Template** field using any of the following placeholders:
+Check **Enable Text Message** to send a text message to the Zello channel when the detector fires. Enter your message in the **Message Template** field using any of the following placeholders:
 
-    | Placeholder | Replaced with |
-    | --- | --- |
-    | `{Alias}` | The detector name |
-    | `{Channel Name}` | The Zello channel name |
-    | `{Frequency}` | The channel frequency |
-    | `{Timestamp}` | The time of detection (Unix milliseconds) |
+| Placeholder | Replaced with |
+| --- | --- |
+| `{Alias}` | The detector name |
+| `{Channel Name}` | The Zello channel name |
+| `{Frequency}` | The channel frequency |
+| `{Timestamp}` | The time of detection (Unix milliseconds) |
 
-    A live preview of the resolved message appears below the template field.
+A live preview of the resolved message appears below the template field.
 
-  **9. Enable an alert tone (optional)**
+**9. Enable an alert tone (optional)**
 
-    Check **Enable Zello Alert Tone** and select a tone file from the **Alert Tone File** dropdown (`alert1.wav` or `alert2.wav`). Click **Preview** to audition the tone before saving.
+Check **Enable Zello Alert Tone** and select a tone file from the **Alert Tone File** dropdown (`alert1.wav` or `alert2.wav`). Click **Preview** to audition the tone before saving.
 
-  **10. Save**
+**10. Save**
 
-    Click **Save** in the **Configuration** tab.
+Click **Save** in the **Configuration** tab.
 
 
 ## Configure MQTT integration
 
-  **11. Enable MQTT publish**
+**11. Enable MQTT publish**
 
-    Check **Enable MQTT Publish** in the MQTT Integration section of the **Configuration** tab. The **MQTT Topic** and **MQTT Payload** fields become active.
+Check **Enable MQTT Publish** in the MQTT Integration section of the **Configuration** tab. The **MQTT Topic** and **MQTT Payload** fields become active.
 
-  **12. Set the topic and payload**
+**12. Set the topic and payload**
 
-    Enter the MQTT topic string in **MQTT Topic** — for example, `sdrtrunk/dispatch/station7`. Enter the message payload in **MQTT Payload**. The payload can be any text, including JSON.
+Enter the MQTT topic string in **MQTT Topic** — for example, `sdrtrunk/dispatch/station7`. Enter the message payload in **MQTT Payload**. The payload can be any text, including JSON.
 
-  **13. Save**
+**13. Save**
 
-    Click **Save**. Each time the detector fires, SDRTrunk Kennebec publishes to the configured MQTT broker using the global MQTT settings in **User Preferences**.
+Click **Save**. Each time the detector fires, SDRTrunk Kennebec publishes to the configured MQTT broker using the global MQTT settings in **User Preferences**.
 
 
 > [!NOTE]
->
-  MQTT broker connection settings — host, port, and credentials — are configured in **View → User Preferences**, not in the Two Tone Editor.
+> MQTT broker connection settings — host, port, and credentials — are configured in **View → User Preferences**, not in the Two Tone Editor.
 
 ## IAmResponding integration
 
@@ -114,8 +111,7 @@ SDRTrunk Kennebec can send Two Tone detection events to **IAmResponding** via a 
 To use this integration, configure a UDP broadcast stream in the **Streaming** section of the **Playlist Editor** and point it at the IAmResponding local receiver port on the same computer. Then assign that stream to the alias linked to the Two Tone detector.
 
 > [!WARNING]
->
-  UDP streaming to IAmResponding is a local-only integration. The IAmResponding receiver software must be running on the same machine as SDRTrunk Kennebec.
+> UDP streaming to IAmResponding is a local-only integration. The IAmResponding receiver software must be running on the same machine as SDRTrunk Kennebec.
 
 ## Manage detectors
 

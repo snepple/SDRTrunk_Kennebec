@@ -3,42 +3,21 @@
 
 <h1>sdrtrunk - Kennebec Version</h1>
 
-## 🆕 Recent Updates (Week of May 10, 2026)
-* **🚀 New Features:**
-  * **Audio Transcriptions:** Support for transcribing radio audio using OpenAI Whisper and Google Speech-to-Text APIs.
-  * **NBFM AI Audio Optimizer:** AI-driven noise filtering for analog channels.
-  * **IAmResponding:** Real-time UDP streaming feature specifically for the IAmResponding platform.
-  * **Smart Bandwidth:** Auto-optimizing sample rate to save CPU.
-  * **Native Sequential Paging:** Phase 4 Native Sequential Paging Detection.
-  * **Contextual Help Viewer:** An embedded, searchable documentation viewer right inside the app.
-  * **System Health:** Implemented a new System Health Notification feature to alert you of application issues.
-  * **Geographic IDs:** Added a Geographic ID generator for NBFM channels.
-  * **JMBE Support:** Added support for building the bazineta JMBE fork.
-* **🎨 UI/UX Improvements:**
-  * **macOS Aesthetic Redesign:** A major macOS System Settings-style UI redesign, including a custom collapsible left-hand sidebar and high-dpi SVG icons.
-  * **Channel Table Enhancements:** Enabled inline editing and added a right-click context menu to the channel table rows.
-  * **Alias & Streaming:** Added inline editing to the alias table, separated listen and priority columns in the Alias Configuration Editor, and added context menu filtering to the streaming widget.
-  * **Live Console:** Added multiple selection and clipboard copy support to Live Console logs.
-  * **Notifications:** Redesigned the Notifications configuration and added alerts.
-* **🛡️ Security & Stability:**
-  * Fixed a GUI threading issue ensuring main GUI initialization and Swing UI component updates are correctly handled on the Event Dispatch Thread (EDT).
-  * Resolved a deadlock and buffer leak in the NativeBufferManager affecting the waterfall display.
-  * Fixed a resource leak in the AudioSegmentRecorder.
-  * Prevented application crashes on startup caused by MigLayout constraints.
-* **🔧 Bug Fixes:**
-  * Fixed an issue where the tuner enable button failed silently due to a bandwidth bug.
-  * Resolved UI bugs causing empty spectrum and waterfall displays.
-* **📚 Documentation:**
-  * Added new guides for Radio Reference import, OpenMHz streaming, Rdio Scanner streaming, and ThinLine Radio documentation.
 
 
-<p>Welcome to the Kennebec version of sdrtrunk—a modernized, cross-platform Java application engineered for decoding, monitoring, recording, and streaming trunked mobile and related radio protocols using Software Defined Radios (SDR).</p>
+<p>Welcome to <strong>SDRTrunk Kennebec</strong>—a highly customized, feature-rich fork of the original SDRTrunk application. Engineered for robust decoding, monitoring, recording, and streaming of trunked mobile and related radio protocols using Software Defined Radios (SDR).</p>
 
-<p>This repository is a fork of <a href="https://github.com/actionpagezello/sdrtrunk">https://github.com/actionpagezello/sdrtrunk</a>, which is itself a fork of the original SDRTrunk application (<a href="https://github.com/DSheirer/sdrtrunk">https://github.com/DSheirer/sdrtrunk</a>). The Kennebec version adds an extensive layer of new capabilities on top of the features introduced by the actionpagezello fork.</p>
+<p>While the original SDRTrunk provides an excellent decoding engine, the Kennebec build is explicitly designed for the modern public safety listening environment. It layers an extensive suite of new capabilities on top of the original engine to provide a highly refined, context-aware, and automated user experience.</p>
 
-<p>This version is explicitly designed for listening to public safety and other radio frequencies and streaming audio to various internet streaming services. It takes the robust decoding engine of sdrtrunk and pairs it with a highly refined, context-aware user experience.</p>
-
-<p>Prerelease Notice: The current version is a prerelease pending the completion of unit and system testing.</p>
+<h2>🌟 Kennebec Highlights</h2>
+<p>Kennebec introduces features not found in any other SDR software:</p>
+<ul>
+  <li><strong>AI-Powered Transcriptions & Optimization:</strong> Real-time radio audio transcription (via OpenAI Whisper / Google Speech-to-Text) and NBFM AI audio noise filtering.</li>
+  <li><strong>Advanced Integrations:</strong> Real-time UDP streaming specifically for the IAmResponding platform, plus enhanced OpenMHz and Broadcastify integration.</li>
+  <li><strong>Modern UX/UI Redesign:</strong> A beautiful macOS-style aesthetic with a custom collapsible left-hand sidebar, high-DPI SVG icons, and inline table editing.</li>
+  <li><strong>Resilience & Health:</strong> Automated tuner self-healing logic, Smart Bandwidth (auto-optimizing sample rate to save CPU), and built-in System Health notifications.</li>
+  <li><strong>In-App Documentation:</strong> An embedded, fully searchable knowledge base right inside the application.</li>
+</ul>
 
 <h2>What is SDRTrunk?</h2>
 <p>SDRTrunk is a Java-based application that transforms a standard computer and compatible Software Defined Radio hardware, such as RTL-SDR, Airspy, or HackRF, into a powerful, multi-channel radio scanner. Unlike traditional hardware scanners that can only listen to one frequency at a time, SDRTrunk captures a wide swath of the radio spectrum simultaneously.</p>
@@ -117,7 +96,26 @@
 <p><strong><a href="https://sam-64221fcd.mintlify.app/">Read the official SDRTrunk Kennebec Documentation</a></strong></p>
 <p>For detailed information, setup guides, tutorials, and troubleshooting, please visit our comprehensive documentation portal. The portal covers everything from initial hardware setup to advanced streaming and AI integration.</p>
 
-<h2>Screenshots</h2>
+<h2>📸 Updated Screenshots</h2>
+
+<p align="center">
+Refreshed macOS-style GUI & Side Navigation<br>
+<img src="images/media__1780864906236.png" alt="SDRTrunk Kennebec - Updated GUI" width="800">
+<br><br>
+
+Streamlined Aliases & Inline Editing<br>
+<img src="images/media__1780864764513.png" alt="SDRTrunk Kennebec - Aliases" width="800">
+<br><br>
+
+Enhanced Channel Layouts & Graphs<br>
+<img src="images/media__1780864705827.png" alt="SDRTrunk Kennebec - Channels" width="800">
+<br><br>
+
+Streaming Integrations (IAmResponding & more)<br>
+<img src="images/media__1780864680301.png" alt="SDRTrunk Kennebec - Integrations" width="800">
+</p>
+
+<h2>Historical Screenshots</h2>
 
 <p align="center">
 Refreshed GUI (Now Playing)<br>

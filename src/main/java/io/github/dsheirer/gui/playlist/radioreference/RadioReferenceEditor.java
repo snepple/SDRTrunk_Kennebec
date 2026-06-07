@@ -423,9 +423,13 @@ public class RadioReferenceEditor extends BorderPane implements Consumer<Authori
             Region rightFiller = new Region();
             HBox.setHgrow(rightFiller, Priority.ALWAYS);
             mCredentialsBox.getChildren().add(rightFiller);
-            mCredentialsBox.getChildren().add(new Label("User Name:"));
+            Label userNameLabel = new Label("User Name:");
+            userNameLabel.setMinWidth(Region.USE_PREF_SIZE);
+            mCredentialsBox.getChildren().add(userNameLabel);
             mCredentialsBox.getChildren().add(getUserNameText());
-            mCredentialsBox.getChildren().add(new Label("Expires:"));
+            Label expiresLabel = new Label("Expires:");
+            expiresLabel.setMinWidth(Region.USE_PREF_SIZE);
+            mCredentialsBox.getChildren().add(expiresLabel);
             mCredentialsBox.getChildren().add(getAccountExpiresText());
             mCredentialsBox.getChildren().add(getTestFailIcon());
             mCredentialsBox.getChildren().add(getTestPassIcon());
@@ -528,6 +532,8 @@ public class RadioReferenceEditor extends BorderPane implements Consumer<Authori
         if(mLoginButton == null)
         {
             mLoginButton = new Button("Login");
+            mLoginButton.getStyleClass().add("kennebec-toolbar-button-primary");
+            mLoginButton.setMinWidth(Region.USE_PREF_SIZE);
             IconNode configureIcon = new IconNode(FontAwesome.COG);
             configureIcon.setFill(Color.GRAY);
             mLoginButton.setGraphic(configureIcon);

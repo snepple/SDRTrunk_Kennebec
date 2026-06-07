@@ -38,58 +38,58 @@ DMR uses the AMBE+2 voice codec. As with P25, audio decoding requires the **JMBE
 
 ## Set up a DMR channel
 
-  **1. Open the Playlist Editor**
+**1. Open the Playlist Editor**
 
-    Select **View → Playlist Editor** from the main menu. Choose or create a playlist.
+Select **View → Playlist Editor** from the main menu. Choose or create a playlist.
 
-  **2. Add a new channel**
+**2. Add a new channel**
 
-    Click **New** in the Channels toolbar and select **DMR**. A new channel row appears and the detail editor opens.
+Click **New** in the Channels toolbar and select **DMR**. A new channel row appears and the detail editor opens.
 
-  **3. Enter the frequency**
+**3. Enter the frequency**
 
-    Type the channel frequency in Hz in the **Frequency** field. For a trunked Tier III system, enter the control channel frequency.
+Type the channel frequency in Hz in the **Frequency** field. For a trunked Tier III system, enter the control channel frequency.
 
-  **4. Configure decoder options**
+**4. Configure decoder options**
 
-    Expand the **Decoder Options** section and set the options appropriate for your system:
+Expand the **Decoder Options** section and set the options appropriate for your system:
 
-    | Option | Description |
-    | --- | --- |
-    | **Traffic Channel Pool Size** | Maximum simultaneous calls to decode. Reduce on constrained hardware. |
-    | **Ignore Data Calls** | Enabled by default. Disable only if you need to decode data traffic grants. |
-    | **Ignore Unaliased Talkgroups** | When enabled, only talkgroups with an alias entry are decoded. Useful for filtering busy systems. |
-    | **Ignore CRC Checksums** | Disables CRC validation. Enable only on poor-signal sites where valid calls are being dropped due to checksum errors. |
-    | **Use Compressed Talkgroups** | Enable for Hytera Tier III systems that use the compressed talkgroup format from ETSI 102 361-2 Annex C. |
+| Option | Description |
+| --- | --- |
+| **Traffic Channel Pool Size** | Maximum simultaneous calls to decode. Reduce on constrained hardware. |
+| **Ignore Data Calls** | Enabled by default. Disable only if you need to decode data traffic grants. |
+| **Ignore Unaliased Talkgroups** | When enabled, only talkgroups with an alias entry are decoded. Useful for filtering busy systems. |
+| **Ignore CRC Checksums** | Disables CRC validation. Enable only on poor-signal sites where valid calls are being dropped due to checksum errors. |
+| **Use Compressed Talkgroups** | Enable for Hytera Tier III systems that use the compressed talkgroup format from ETSI 102 361-2 Annex C. |
 
-  **5. Assign system and site names**
+**5. Assign system and site names**
 
-    Fill in the **System** and **Site** fields for clear labeling in the **Now Playing** view and in recording metadata.
+Fill in the **System** and **Site** fields for clear labeling in the **Now Playing** view and in recording metadata.
 
-  **6. Save and start**
+**6. Save and start**
 
-    Click **Save**, then select the channel and click **Play**, or enable **Auto-Start**.
+Click **Save**, then select the channel and click **Play**, or enable **Auto-Start**.
 
 
 ## Talkgroup aliases
 
 DMR talkgroup IDs are integers decoded from the air interface. Assign human-readable names so you can identify calls at a glance.
 
-  **7. Open the Aliases tab**
+**7. Open the Aliases tab**
 
-    In the **Playlist Editor**, click **Aliases** in the sidebar.
+In the **Playlist Editor**, click **Aliases** in the sidebar.
 
-  **8. Create an alias group**
+**8. Create an alias group**
 
-    Click **Add Group** and name it to match the system or agency, for example `Fleet` or `Operations`.
+Click **Add Group** and name it to match the system or agency, for example `Fleet` or `Operations`.
 
-  **9. Add a talkgroup alias**
+**9. Add a talkgroup alias**
 
-    Click **Add Alias** inside the group. Set **Protocol** to `DMR`, set the identifier type to **Talkgroup**, and enter the numeric talkgroup ID and a display name.
+Click **Add Alias** inside the group. Set **Protocol** to `DMR`, set the identifier type to **Talkgroup**, and enter the numeric talkgroup ID and a display name.
 
-  **10. Add radio ID aliases (optional)**
+**10. Add radio ID aliases (optional)**
 
-    Set the identifier type to **Radio ID** to tag transmissions from specific subscriber units.
+Set the identifier type to **Radio ID** to tag transmissions from specific subscriber units.
 
 
 ## Filtering by talkgroup
@@ -97,27 +97,25 @@ DMR talkgroup IDs are integers decoded from the air interface. Assign human-read
 Use the **Ignore Unaliased Talkgroups** option to limit decoding to only the talkgroups you have added as aliases. This is the primary filtering mechanism for DMR: SDRTrunk will not allocate a traffic channel for any call whose talkgroup has no alias entry.
 
 > [!WARNING]
->
-Enabling **Ignore Unaliased Talkgroups** silently drops any talkgroup without an alias entry — including calls you might not have known to add. Disable this option during initial monitoring to discover all active talkgroups before narrowing the list.
+> Enabling **Ignore Unaliased Talkgroups** silently drops any talkgroup without an alias entry — including calls you might not have known to add. Disable this option during initial monitoring to discover all active talkgroups before narrowing the list.
 
 > [!TIP]
->
-DMR talkgroup IDs on trunked systems can differ from the IDs shown in RadioReference listings if the system uses compressed talkgroups. If aliases are not matching, enable **Use Compressed Talkgroups** and verify the IDs in the SDRTrunk event log.
+> DMR talkgroup IDs on trunked systems can differ from the IDs shown in RadioReference listings if the system uses compressed talkgroups. If aliases are not matching, enable **Use Compressed Talkgroups** and verify the IDs in the SDRTrunk event log.
 
 ## Common issues
 
-  **Timeslot 2 shows no activity on a Tier III system**
+**Timeslot 2 shows no activity on a Tier III system**
 
-    On many MotoTRBO systems, Timeslot 2 of the control channel carries data only. Voice traffic appears on dedicated traffic channel frequencies. Verify that your tuner's bandwidth includes the traffic channel frequencies and that the traffic channel pool size is greater than zero.
+On many MotoTRBO systems, Timeslot 2 of the control channel carries data only. Voice traffic appears on dedicated traffic channel frequencies. Verify that your tuner's bandwidth includes the traffic channel frequencies and that the traffic channel pool size is greater than zero.
 
-  **Talkgroup IDs do not match RadioReference listings**
+**Talkgroup IDs do not match RadioReference listings**
 
-    Enable **Use Compressed Talkgroups** in the decoder options. This converts the air interface value to the compressed format used by Hytera Tier III and some other vendors.
+Enable **Use Compressed Talkgroups** in the decoder options. This converts the air interface value to the compressed format used by Hytera Tier III and some other vendors.
 
-  **Decoding works but audio quality is poor**
+**Decoding works but audio quality is poor**
 
-    DMR uses AMBE+2 vocoder compression, and artifacts on weak signals are normal. Improving antenna placement or adding a low-noise amplifier (LNA) is the most effective remedy. SDRTrunk does not provide a per-channel equalizer for DMR, so hardware improvements are the primary path to better audio.
+DMR uses AMBE+2 vocoder compression, and artifacts on weak signals are normal. Improving antenna placement or adding a low-noise amplifier (LNA) is the most effective remedy. SDRTrunk does not provide a per-channel equalizer for DMR, so hardware improvements are the primary path to better audio.
 
-  **CRC errors in the log and calls cutting out**
+**CRC errors in the log and calls cutting out**
 
-    On sites with multipath or interference, CRC errors are common. Enable **Ignore CRC Checksums** to pass messages with CRC failures through to the decoder. This can recover audio on marginal signals but may also produce occasional garbled messages.
+On sites with multipath or interference, CRC errors are common. Enable **Ignore CRC Checksums** to pass messages with CRC failures through to the decoder. This can recover audio on marginal signals but may also produce occasional garbled messages.

@@ -4,22 +4,21 @@ SDRTrunk Kennebec consolidates every application setting into a single **User Pr
 
 ## Opening User Preferences
 
-  **1. Open the View menu**
+**1. Open the View menu**
 
-    In the main application window, open the **View** menu in the menu bar.
+In the main application window, open the **View** menu in the menu bar.
 
-  **2. Select User Preferences**
+**2. Select User Preferences**
 
-    Click **User Preferences**. The preferences panel opens in a new window.
+Click **User Preferences**. The preferences panel opens in a new window.
 
-  **3. Choose a category**
+**3. Choose a category**
 
-    Select any item in the left sidebar to display that category's settings in the right pane. Section headers such as **Application**, **Audio**, and **Decoder** are grouping labels only — they are not clickable.
+Select any item in the left sidebar to display that category's settings in the right pane. Section headers such as **Application**, **Audio**, and **Decoder** are grouping labels only — they are not clickable.
 
 
 > [!TIP]
->
-  The preferences panel remembers which category you last viewed and opens to it automatically on subsequent launches.
+> The preferences panel remembers which category you last viewed and opens to it automatically on subsequent launches.
 
 ---
 
@@ -40,8 +39,7 @@ The **Application** section contains three preference pages.
 | Allocated memory | Sets the maximum memory allocated to SDRTrunk Kennebec in GB. Takes effect the next time you launch the application. Default: `6` GB. |
 
 > [!NOTE]
->
-  The **Allocated memory** field lets you set the maximum memory directly from the GUI without editing any launch scripts. The new value takes effect on the next application restart.
+> The **Allocated memory** field lets you set the maximum memory directly from the GUI without editing any launch scripts. The new value takes effect on the next application restart.
 
 **Diagnostics (Logging)** — Runtime per-category DEBUG log toggles. See [Enable diagnostics and debug logging](/configuration/diagnostics) for full details.
 
@@ -106,8 +104,7 @@ The **Talkgroup & Radio ID** preference page controls how numeric identifiers ap
 The **Allocated memory** field in **Application** preferences lets you set the maximum memory the application can use, in gigabytes, without editing any launch scripts or configuration files. When you save a new value, it is stored automatically and applied the next time the application starts.
 
 > [!WARNING]
->
-  Memory changes do not take effect until you restart the application. Set the value before starting a monitoring session.
+> Memory changes do not take effect until you restart the application. Set the value before starting a monitoring session.
 
 Recommended starting points:
 
@@ -124,5 +121,4 @@ Recommended starting points:
 SDRTrunk Kennebec uses JNA-based desktop integration to detect your operating system's light or dark theme and apply a matching appearance automatically. No preference setting is required — the application reads the OS theme at startup and adjusts accordingly.
 
 > [!NOTE]
->
-  If you change your OS theme while the application is running, restart SDRTrunk Kennebec to pick up the new appearance.
+> If you change your OS theme while the application is running, restart SDRTrunk Kennebec to pick up the new appearance.
