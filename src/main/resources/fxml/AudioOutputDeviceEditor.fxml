@@ -2,10 +2,22 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
-<fx:root type="javafx.scene.layout.HBox" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" spacing="10" padding="5">
-    <Label text="Audio Output:" minWidth="-Infinity"/>
-    <ComboBox fx:id="mDeviceComboBox" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS"/>
-    <CheckBox fx:id="mRecordableCheckBox" text="Recordable"/>
-    <Label text="Priority:" minWidth="-Infinity"/>
-    <Slider fx:id="mPrioritySlider" min="1" max="99" value="50" showTickLabels="true" showTickMarks="true"/>
+<fx:root type="javafx.scene.layout.HBox" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" spacing="10" padding="5" alignment="CENTER_LEFT">
+    <Label text="_Audio Output:" minWidth="-Infinity" mnemonicParsing="true" labelFor="$mDeviceComboBox" />
+    <ComboBox fx:id="mDeviceComboBox" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" accessibleHelp="Select Audio Output Device">
+        <tooltip>
+            <Tooltip text="Select the destination device for this audio output"/>
+        </tooltip>
+    </ComboBox>
+    <CheckBox fx:id="mRecordableCheckBox" text="_Recordable" mnemonicParsing="true" accessibleHelp="Toggle Recording for this alias">
+        <tooltip>
+            <Tooltip text="Enable saving audio recordings for this alias"/>
+        </tooltip>
+    </CheckBox>
+    <Label text="_Priority:" minWidth="-Infinity" mnemonicParsing="true" labelFor="$mPrioritySlider"/>
+    <Slider fx:id="mPrioritySlider" min="1" max="99" value="50" showTickLabels="true" showTickMarks="true" accessibleHelp="Priority level">
+        <tooltip>
+            <Tooltip text="Set the playback priority level (1 is lowest, 99 is highest)"/>
+        </tooltip>
+    </Slider>
 </fx:root>

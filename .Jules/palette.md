@@ -98,3 +98,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-17 - HIG Compliant Tooltips for Editors
 **Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
 **Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
+## 2026-06-07 - Adding Tooltips and Labels to Audio Output Device Editor
+**Learning:** The Audio Output Device Editor lacked keyboard mnemonics, accessible contexts, and alignment parameters. This breaks accessibility for screen readers and visual consistency based on Apple HIG principles.
+**Action:** Add `labelFor` and `mnemonicParsing` to Labels, `accessibleHelp` and `Tooltip` to controls, and `alignment="CENTER_LEFT"` to horizontal container flows for aesthetic consistency and keyboard navigability.
