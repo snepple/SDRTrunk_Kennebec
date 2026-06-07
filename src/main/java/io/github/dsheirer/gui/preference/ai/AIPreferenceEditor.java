@@ -75,10 +75,17 @@ public class AIPreferenceEditor extends VBox {
             mUserPreferences.getAIPreference().setSystemHealthAdvisorEnabled(newValue);
         });
 
+        ToggleSwitch enableTranscriptionSwitch = new ToggleSwitch();
+        enableTranscriptionSwitch.setSelected(mUserPreferences.getAIPreference().isTranscriptionEnabled());
+        enableTranscriptionSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setTranscriptionEnabled(newValue);
+        });
+
         SettingsCard featuresCard = new SettingsCard();
         featuresCard.getChildren().addAll(
             new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
-            new SettingsRow("System Health Advisor & Auto-Remediation", enableSystemHealthSwitch)
+            new SettingsRow("System Health Advisor & Auto-Remediation", enableSystemHealthSwitch),
+            new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch)
         );
 
         // API Key Card with Embedded Scaffolding
@@ -111,6 +118,46 @@ public class AIPreferenceEditor extends VBox {
         apiCard.getChildren().addAll(
             new SettingsRow("API Key", apiKeyInputBox),
             new SettingsRow("Model", modelComboBox)
+        );
+
+        // Transcription Service Card
+        Label transcriptionHeaderLabel = new Label("Transcription Service");
+        transcriptionHeaderLabel.getStyleClass().add("hig-section-header");
+        
+        ComboBox<String> engineComboBox = new ComboBox<>();
+        engineComboBox.getItems().addAll("WHISPER", "GOOGLE");
+        engineComboBox.setValue(mUserPreferences.getAIPreference().getTranscriptionEngine());
+        engineComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setTranscriptionEngine(newValue);
+        });
+
+        PasswordField whisperApiKeyField = new PasswordField();
+        whisperApiKeyField.setText(mUserPreferences.getAIPreference().getWhisperApiKey());
+        whisperApiKeyField.setPrefWidth(200);
+        whisperApiKeyField.textProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setWhisperApiKey(newValue);
+        });
+
+        PasswordField googleApiKeyField = new PasswordField();
+        googleApiKeyField.setText(mUserPreferences.getAIPreference().getGoogleSttApiKey());
+        googleApiKeyField.setPrefWidth(200);
+        googleApiKeyField.textProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setGoogleSttApiKey(newValue);
+        });
+
+        SettingsRow whisperKeyRow = new SettingsRow("OpenAI Whisper API Key", whisperApiKeyField);
+        whisperKeyRow.managedProperty().bind(engineComboBox.valueProperty().isEqualTo("WHISPER"));
+        whisperKeyRow.visibleProperty().bind(engineComboBox.valueProperty().isEqualTo("WHISPER"));
+
+        SettingsRow googleKeyRow = new SettingsRow("Google STT API Key", googleApiKeyField);
+        googleKeyRow.managedProperty().bind(engineComboBox.valueProperty().isEqualTo("GOOGLE"));
+        googleKeyRow.visibleProperty().bind(engineComboBox.valueProperty().isEqualTo("GOOGLE"));
+
+        SettingsCard transcriptionCard = new SettingsCard();
+        transcriptionCard.getChildren().addAll(
+            new SettingsRow("Engine", engineComboBox),
+            whisperKeyRow,
+            googleKeyRow
         );
 
         // Embedded Scaffolding VBox
@@ -193,7 +240,7 @@ public class AIPreferenceEditor extends VBox {
                     });
         });
 
-        settingsBox.getChildren().addAll(featuresLabel, featuresCard, apiHeaderLabel, apiCard, scaffoldingBox);
+        settingsBox.getChildren().addAll(featuresLabel, featuresCard, transcriptionHeaderLabel, transcriptionCard, apiHeaderLabel, apiCard, scaffoldingBox);
         getChildren().addAll(headerLabel, mainCard, mainExplanation, settingsBox);
 
         sceneProperty().addListener((observable, oldScene, newScene) -> {
