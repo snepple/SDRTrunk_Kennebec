@@ -235,7 +235,6 @@ public class RTL2832TunerController extends USBTunerController implements ISampl
 
         setMinimumFrequency(mEmbeddedTuner.getMinimumFrequencySupported());
         setMaximumFrequency(mEmbeddedTuner.getMaximumFrequencySupported());
-        setMiddleUnusableHalfBandwidth(mEmbeddedTuner.getDcSpikeHalfBandwidth());
         setUsableBandwidthPercentage(mEmbeddedTuner.getUsableBandwidthPercent());
 
         try

@@ -12,4 +12,18 @@
     "light": "#334155",
     "dark": "#020617"
   }
+  "colors": {
+    "primary": "#000000",
+    "light": "#ffffff",
+    "dark": "#000000"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "README"
+      ]
+    }
+  ]
 }
