@@ -1,4 +1,17 @@
 {
   "name": "SDRTrunk",
-  "navigation": []
+  "colors": {
+    "primary": "#000000",
+    "light": "#ffffff",
+    "dark": "#000000"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "README"
+      ]
+    }
+  ]
 }
