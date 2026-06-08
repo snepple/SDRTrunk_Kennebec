@@ -1,29 +1,48 @@
 {
+  "$schema": "https://mintlify.com/schema.json",
   "name": "SDRTrunk",
-  "favicon": "favicon.ico",
-  "navigation": [
-    {
-      "group": "Guides",
-      "pages": ["src/main/resources/docs/index.md"]
-    }
-  ],
-  "colors": {
-    "primary": "#0F172A",
-    "light": "#334155",
-    "dark": "#020617"
-  }
-  "colors": {
-    "primary": "#000000",
-    "light": "#ffffff",
-    "dark": "#000000"
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
   },
   "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#07C983",
+    "dark": "#0D9373",
+    "anchors": {
+      "from": "#0D9373",
+      "to": "#07C983"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:hi@mintlify.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "https://mintlify.com/start"
+  },
+  "anchors": [
+    {
+      "name": "Community",
+      "icon": "discord",
+      "url": "https://discord.gg/mintlify"
+    }
+  ],
   "navigation": [
     {
-      "group": "Getting Started",
+      "group": "Get Started",
       "pages": [
-        "README"
+        "src/main/resources/docs/getting-started"
       ]
     }
-  ]
+  ],
+  "footerSocials": {
+    "x": "https://x.com/mintlify",
+    "github": "https://github.com/mintlify",
+    "discord": "https://discord.gg/mintlify"
+  }
 }
