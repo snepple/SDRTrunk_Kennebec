@@ -1,0 +1,107 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "SDRTrunk",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#0F172A",
+    "light": "#334155",
+    "dark": "#020617"
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "https://github.com/snepple/SDRTrunk_Kennebec/issues"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "/getting-started"
+  },
+  "tabs": [
+    {
+      "name": "Documentation",
+      "url": "/"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "src/main/resources/docs/getting-started",
+        "src/main/resources/docs/introduction",
+        "src/main/resources/docs/overview",
+        "src/main/resources/docs/quickstart",
+        "src/main/resources/docs/whats-new"
+      ]
+    },
+    {
+      "group": "Hardware & Tuners",
+      "pages": [
+        "src/main/resources/docs/hardware-&-tuners",
+        "src/main/resources/docs/airspy-hackrf",
+        "src/main/resources/docs/rtl-sdr",
+        "src/main/resources/docs/spectrum-&-waterfall",
+        "src/main/resources/docs/supported-tuners",
+        "src/main/resources/docs/tuner-self-healing"
+      ]
+    },
+    {
+      "group": "Channels & Decoding",
+      "pages": [
+        "src/main/resources/docs/channels-&-decoding",
+        "src/main/resources/docs/analog",
+        "src/main/resources/docs/dmr",
+        "src/main/resources/docs/p25"
+      ]
+    },
+    {
+      "group": "Organization & Playlists",
+      "pages": [
+        "src/main/resources/docs/organization-&-playlists",
+        "src/main/resources/docs/aliases-talkgroups",
+        "src/main/resources/docs/playlist-editor",
+        "src/main/resources/docs/radio-reference"
+      ]
+    },
+    {
+      "group": "Integrations & Streaming",
+      "pages": [
+        "src/main/resources/docs/integrations-&-streaming",
+        "src/main/resources/docs/broadcastify",
+        "src/main/resources/docs/mqtt",
+        "src/main/resources/docs/openmhz",
+        "src/main/resources/docs/other-platforms",
+        "src/main/resources/docs/rdio-scanner",
+        "src/main/resources/docs/thinline-radio",
+        "src/main/resources/docs/two-tone-detect",
+        "src/main/resources/docs/zello"
+      ]
+    },
+    {
+      "group": "Advanced & System",
+      "pages": [
+        "src/main/resources/docs/advanced-&-system",
+        "src/main/resources/docs/audio-recordings",
+        "src/main/resources/docs/audio-transcriptions",
+        "src/main/resources/docs/diagnostics",
+        "src/main/resources/docs/gemini-ai",
+        "src/main/resources/docs/ignore-unwanted-talkgroups",
+        "src/main/resources/docs/inactivity-monitoring",
+        "src/main/resources/docs/map-panel",
+        "src/main/resources/docs/nbfm-ai-optimizer",
+        "src/main/resources/docs/notifications",
+        "src/main/resources/docs/smart-bandwidth",
+        "src/main/resources/docs/system-requirements",
+        "src/main/resources/docs/user-preferences",
+        "src/main/resources/docs/virtual-audio-cable"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/snepple/SDRTrunk_Kennebec"
+  }
+}
