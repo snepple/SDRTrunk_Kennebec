@@ -153,6 +153,14 @@ public class TunerViewPanel extends VBox {
             return new SimpleStringProperty(io.github.dsheirer.source.tuner.manager.AIFrequencyStabilizer.getInstance(mUserPreferences).getStabilityStatus());
         });
 
+        statusCol.setMinWidth(60);
+        nameCol.setMinWidth(80);
+        typeCol.setMinWidth(60);
+        freqCol.setMinWidth(100);
+        channelsCol.setMinWidth(80);
+        stabilityCol.setMinWidth(90);
+
+        mTunerTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         mTunerTable.getColumns().addAll(statusCol, nameCol, typeCol, freqCol, channelsCol, stabilityCol);
 
         
@@ -197,6 +205,7 @@ public class TunerViewPanel extends VBox {
         tunerTablePanel.getChildren().add(mTunerTable);
 
         HBox buttonPanel = new HBox(5);
+        buttonPanel.setPadding(new javafx.geometry.Insets(4, 0, 4, 0));
         buttonPanel.getChildren().addAll(getAddRecordingButton(), getRemoveRecordingButton());
         tunerTablePanel.getChildren().add(buttonPanel);
 
@@ -217,6 +226,7 @@ public class TunerViewPanel extends VBox {
     private Button getAddRecordingButton() {
         if(mAddRecordingButton == null) {
             mAddRecordingButton = new Button("Add Recording Tuner");
+            mAddRecordingButton.setMinWidth(Region.USE_PREF_SIZE);
             mAddRecordingButton.setTooltip(new Tooltip("Add a new recording tuner to the workspace"));
             mAddRecordingButton.setOnAction(e -> {
                 AddRecordingTunerDialog dialog = new AddRecordingTunerDialog(mUserPreferences, mDiscoveredTunerModel, mTunerConfigurationManager);
@@ -230,6 +240,7 @@ public class TunerViewPanel extends VBox {
     private Button getRemoveRecordingButton() {
         if(mRemoveRecordingButton == null) {
             mRemoveRecordingButton = new Button("Remove Recording Tuner");
+            mRemoveRecordingButton.setMinWidth(Region.USE_PREF_SIZE);
             mRemoveRecordingButton.setTooltip(new Tooltip("Permanently remove the selected recording tuner. This action cannot be undone."));
             mRemoveRecordingButton.setDisable(false);
             mRemoveRecordingButton.setOnAction(e -> {
