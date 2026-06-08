@@ -35,11 +35,8 @@ import javafx.scene.paint.Color;
 
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.RowConstraints;
-import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.Tab;
@@ -71,16 +68,9 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     private VisibilityListener mVisibilityListener;
     private ChangeListener<Tab> mTabbedPaneChangeListener;
     private WidgetContainer mWidgetContainer;
-    private GridPane mGridPane;
     private NowPlayingPreference mNowPlayingPreference;
     private Button mManageWidgetsBtn;
-
-    // Widget references for grid management
-    private Widget mSpectrumWidget;
-    private Widget mChannelWidget;  // Combined Channel Table + Details
     private SplitPane mChannelSplitPane;
-    private Widget mStreamingWidget;
-    private Widget mResourceWidget;
 
     /**
      * GUI panel that combines the currently decoding channels metadata table and viewers for channel details,
@@ -155,28 +145,24 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     public void setSpectralPanelVisible(boolean visible) {
         if (mWidgetContainer != null) {
             mWidgetContainer.setWidgetVisible("spectrum", visible);
-            rebuildGrid();
         }
     }
 
     public void setResourceStatusPanelVisible(boolean visible) {
         if (mWidgetContainer != null) {
             mWidgetContainer.setWidgetVisible("resource", visible);
-            rebuildGrid();
         }
     }
 
     public void setBroadcastStatusPanelVisible(boolean visible) {
         if (mWidgetContainer != null) {
             mWidgetContainer.setWidgetVisible("streaming", visible);
-            rebuildGrid();
         }
     }
 
     public void setDetailTabsVisible(boolean visible) {
         if (mWidgetContainer != null) {
             mWidgetContainer.setWidgetVisible("channel", visible);
-            rebuildGrid();
         }
     }
 
@@ -226,31 +212,20 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
         mWidgetContainer = new WidgetContainer(mNowPlayingPreference);
 
-        // Use GridPane instead of ScrollPane for no-scroll layout
-        mGridPane = new GridPane();
-        mGridPane.setVgap(2);
-        mGridPane.setHgap(4);
-
-        // Two equal-width columns (used for streaming + resource row)
-        ColumnConstraints col1 = new ColumnConstraints();
-        col1.setPercentWidth(50);
-        col1.setHgrow(Priority.ALWAYS);
-        ColumnConstraints col2 = new ColumnConstraints();
-        col2.setPercentWidth(50);
-        col2.setHgrow(Priority.ALWAYS);
-        mGridPane.getColumnConstraints().addAll(col1, col2);
-
-        VBox.setVgrow(mGridPane, Priority.ALWAYS);
-
-        getChildren().add(mGridPane);
+        // Place WidgetContainer directly in VBox — no ScrollPane, no GridPane.
+        // The WidgetContainer (extends VBox) handles drag-to-reorder natively.
+        // Each widget gets VBox.setVgrow(Priority.ALWAYS) to share available space.
+        VBox.setVgrow(mWidgetContainer, Priority.ALWAYS);
+        getChildren().add(mWidgetContainer);
     }
 
     private void setupWidgets() {
         mWidgetContainer.removeAll();
 
         if (mSpectralPanel != null) {
-            mSpectrumWidget = new Widget("spectrum", "Spectrum/Waterfall", (Region) mSpectralPanel, mWidgetContainer, 150);
-            mWidgetContainer.addWidget(mSpectrumWidget, false);
+            Widget spectrumWidget = new Widget("spectrum", "Spectrum/Waterfall", (Region) mSpectralPanel, mWidgetContainer, 100);
+            VBox.setVgrow(spectrumWidget, Priority.ALWAYS);
+            mWidgetContainer.addWidget(spectrumWidget, false);
         }
 
         // Combined Channel Table + Channel Details widget using a horizontal SplitPane
@@ -261,127 +236,25 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
             mChannelSplitPane.setDividerPositions(0.40);
             mChannelSplitPane.setMinHeight(0);
 
-            mChannelWidget = new Widget("channel", "Channel Table & Details", mChannelSplitPane, mWidgetContainer, 120);
-            mWidgetContainer.addWidget(mChannelWidget, false);
+            Widget channelWidget = new Widget("channel", "Channel Table & Details", mChannelSplitPane, mWidgetContainer, 100);
+            VBox.setVgrow(channelWidget, Priority.ALWAYS);
+            mWidgetContainer.addWidget(channelWidget, false);
         }
 
         if (mBroadcastStatusPanel != null) {
-            mStreamingWidget = new Widget("streaming", "Streaming Status", (Region) mBroadcastStatusPanel, mWidgetContainer, 50);
-            mWidgetContainer.addWidget(mStreamingWidget, false);
+            Widget streamingWidget = new Widget("streaming", "Streaming Status", (Region) mBroadcastStatusPanel, mWidgetContainer, 40);
+            VBox.setVgrow(streamingWidget, Priority.SOMETIMES);
+            mWidgetContainer.addWidget(streamingWidget, false);
         }
 
         if (mResourceStatusPanel != null) {
-            mResourceWidget = new Widget("resource", "Resource Status", (Region) mResourceStatusPanel, mWidgetContainer, 30);
-            mResourceWidget.setMinimizeButtonVisible(false);
-            mWidgetContainer.addWidget(mResourceWidget, true);
+            Widget resourceWidget = new Widget("resource", "Resource Status", (Region) mResourceStatusPanel, mWidgetContainer, 30);
+            resourceWidget.setMinimizeButtonVisible(false);
+            VBox.setVgrow(resourceWidget, Priority.SOMETIMES);
+            mWidgetContainer.addWidget(resourceWidget, true);
         }
 
         mWidgetContainer.layoutWidgets("resource");
-
-        rebuildGrid();
-    }
-
-    /**
-     * Rebuilds the grid layout based on current widget visibility.
-     * Layout:
-     *   Row 0: Spectrum (spans 2 columns)                         — 35% height
-     *   Row 1: Channel Table & Details SplitPane (spans 2 cols)   — 45% height
-     *   Row 2: Streaming | Resource (side-by-side)                — 20% height
-     *
-     * If a widget is hidden, remaining widgets share the space proportionally.
-     */
-    private void rebuildGrid() {
-        mGridPane.getChildren().clear();
-        mGridPane.getRowConstraints().clear();
-
-        int row = 0;
-
-        // Row 0: Spectrum (full width)
-        if (mSpectrumWidget != null && mSpectrumWidget.isVisible()) {
-            GridPane.setColumnSpan(mSpectrumWidget, 2);
-            GridPane.setRowIndex(mSpectrumWidget, row);
-            GridPane.setColumnIndex(mSpectrumWidget, 0);
-            GridPane.setVgrow(mSpectrumWidget, Priority.ALWAYS);
-            GridPane.setHgrow(mSpectrumWidget, Priority.ALWAYS);
-            GridPane.setFillWidth(mSpectrumWidget, true);
-            GridPane.setFillHeight(mSpectrumWidget, true);
-            mGridPane.getChildren().add(mSpectrumWidget);
-
-            RowConstraints spectrumRow = new RowConstraints();
-            spectrumRow.setPercentHeight(35);
-            spectrumRow.setVgrow(Priority.ALWAYS);
-            mGridPane.getRowConstraints().add(spectrumRow);
-            row++;
-        }
-
-        // Row 1: Combined Channel Table & Details (full width SplitPane)
-        if (mChannelWidget != null && mChannelWidget.isVisible()) {
-            GridPane.setColumnSpan(mChannelWidget, 2);
-            GridPane.setRowIndex(mChannelWidget, row);
-            GridPane.setColumnIndex(mChannelWidget, 0);
-            GridPane.setVgrow(mChannelWidget, Priority.ALWAYS);
-            GridPane.setHgrow(mChannelWidget, Priority.ALWAYS);
-            GridPane.setFillWidth(mChannelWidget, true);
-            GridPane.setFillHeight(mChannelWidget, true);
-            mGridPane.getChildren().add(mChannelWidget);
-
-            RowConstraints channelRow = new RowConstraints();
-            channelRow.setPercentHeight(45);
-            channelRow.setVgrow(Priority.ALWAYS);
-            mGridPane.getRowConstraints().add(channelRow);
-            row++;
-        }
-
-        // Row 2: Streaming + Resource (side-by-side, compact)
-        boolean streamingVisible = mStreamingWidget != null && mStreamingWidget.isVisible();
-        boolean resourceVisible = mResourceWidget != null && mResourceWidget.isVisible();
-
-        if (streamingVisible || resourceVisible) {
-            if (streamingVisible && resourceVisible) {
-                GridPane.setColumnSpan(mStreamingWidget, 1);
-                GridPane.setRowIndex(mStreamingWidget, row);
-                GridPane.setColumnIndex(mStreamingWidget, 0);
-                GridPane.setVgrow(mStreamingWidget, Priority.SOMETIMES);
-                GridPane.setHgrow(mStreamingWidget, Priority.ALWAYS);
-                GridPane.setFillWidth(mStreamingWidget, true);
-                GridPane.setFillHeight(mStreamingWidget, true);
-                mGridPane.getChildren().add(mStreamingWidget);
-
-                GridPane.setColumnSpan(mResourceWidget, 1);
-                GridPane.setRowIndex(mResourceWidget, row);
-                GridPane.setColumnIndex(mResourceWidget, 1);
-                GridPane.setVgrow(mResourceWidget, Priority.SOMETIMES);
-                GridPane.setHgrow(mResourceWidget, Priority.ALWAYS);
-                GridPane.setFillWidth(mResourceWidget, true);
-                GridPane.setFillHeight(mResourceWidget, true);
-                mGridPane.getChildren().add(mResourceWidget);
-            } else if (streamingVisible) {
-                GridPane.setColumnSpan(mStreamingWidget, 2);
-                GridPane.setRowIndex(mStreamingWidget, row);
-                GridPane.setColumnIndex(mStreamingWidget, 0);
-                GridPane.setVgrow(mStreamingWidget, Priority.SOMETIMES);
-                GridPane.setHgrow(mStreamingWidget, Priority.ALWAYS);
-                GridPane.setFillWidth(mStreamingWidget, true);
-                GridPane.setFillHeight(mStreamingWidget, true);
-                mGridPane.getChildren().add(mStreamingWidget);
-            } else {
-                GridPane.setColumnSpan(mResourceWidget, 2);
-                GridPane.setRowIndex(mResourceWidget, row);
-                GridPane.setColumnIndex(mResourceWidget, 0);
-                GridPane.setVgrow(mResourceWidget, Priority.SOMETIMES);
-                GridPane.setHgrow(mResourceWidget, Priority.ALWAYS);
-                GridPane.setFillWidth(mResourceWidget, true);
-                GridPane.setFillHeight(mResourceWidget, true);
-                mGridPane.getChildren().add(mResourceWidget);
-            }
-
-            RowConstraints bottomRow = new RowConstraints();
-            bottomRow.setPercentHeight(20);
-            bottomRow.setVgrow(Priority.SOMETIMES);
-            mGridPane.getRowConstraints().add(bottomRow);
-        }
-
-        mGridPane.requestLayout();
     }
 
     private void showManageWidgetsPopup() {
@@ -398,10 +271,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     private void addPopupItem(ContextMenu popup, String label, String widgetId) {
         CheckMenuItem item = new CheckMenuItem(label);
         item.setSelected(mNowPlayingPreference.isWidgetVisible(widgetId, true));
-        item.setOnAction(e -> {
-            mWidgetContainer.setWidgetVisible(widgetId, item.isSelected());
-            rebuildGrid();
-        });
+        item.setOnAction(e -> mWidgetContainer.setWidgetVisible(widgetId, item.isSelected()));
         popup.getItems().add(item);
     }
 }
