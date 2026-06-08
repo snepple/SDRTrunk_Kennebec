@@ -98,3 +98,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-05-17 - HIG Compliant Tooltips for Editors
 **Learning:** Discovered more opportunities for HIG compliant help tooltips on labels instead of directly on input fields in the alias identifier and channel configuration editors.
 **Action:** Applied `createHelpIcon` and attached it to the Labels for Talkgroup, Talkgroup Range, Channel Bandwidth, Squelch Threshold, Squelch Auto-Track, and Talkgroup To Assign across various UI configuration editors.
+## 2026-06-08 - Adding Tooltips and A11y to Action Buttons
+**Learning:** Action buttons like "Send Test", "Add Recipient", and "Remove Selected" lack semantic meaning for screen readers without proper A11y bindings. For destructive actions, consequence warnings are required.
+**Action:** Always add `Tooltip`s with clear functionality, `accessibleTextProperty`, `accessibleHelpProperty`, and mnemonics to JavaFX action buttons. Include "This action cannot be undone." in tooltips for destructive actions.
