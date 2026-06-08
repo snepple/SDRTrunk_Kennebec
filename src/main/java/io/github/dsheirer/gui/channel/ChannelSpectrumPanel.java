@@ -108,7 +108,9 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
     private final javafx.scene.layout.Pane mNoiseSquelchPanel;
     private final javafx.scene.layout.Pane mSymbolPanel;
     private javafx.scene.layout.StackPane mInspectorPanel;
-    
+    private ToggleButton mSquelchBtn;
+    private ToggleButton mPowerBtn;
+    private ToggleButton mSymbolBtn;
 
     /**
      * Constructs an instance.
@@ -121,7 +123,6 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         // setLayout(new javafx.scene.layout.HBox(4));
 
         VBox fftPanel = new VBox();
-        // fftPanel.setLayout(new javafx.scene.layout.HBox(4));
 
         HBox labelPanel = new HBox(5);
         labelPanel.setAlignment(Pos.CENTER_LEFT);
@@ -150,6 +151,38 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         });
         labelPanel.getChildren().add(noiseFloorSpinner);
         labelPanel.getChildren().add(new Label("Noise Floor"));
+
+        // Spacer to push view selector buttons to the right
+        Region labelSpacer = new Region();
+        HBox.setHgrow(labelSpacer, Priority.ALWAYS);
+        labelPanel.getChildren().add(labelSpacer);
+
+        // View selector toggle buttons for the inspector panel
+        ToggleGroup viewToggle = new ToggleGroup();
+
+        ToggleButton squelchBtn = new ToggleButton("Squelch");
+        squelchBtn.setToggleGroup(viewToggle);
+        squelchBtn.setMinWidth(Region.USE_PREF_SIZE);
+        squelchBtn.setTooltip(new Tooltip("Show noise squelch view"));
+        squelchBtn.setOnAction(e -> { if(squelchBtn.isSelected()) setRightComponent(mNoiseSquelchPanel); });
+
+        ToggleButton powerBtn = new ToggleButton("Power");
+        powerBtn.setToggleGroup(viewToggle);
+        powerBtn.setMinWidth(Region.USE_PREF_SIZE);
+        powerBtn.setTooltip(new Tooltip("Show signal power view"));
+        powerBtn.setOnAction(e -> { if(powerBtn.isSelected()) setRightComponent(mSignalPowerView); });
+
+        ToggleButton symbolBtn = new ToggleButton("Symbols");
+        symbolBtn.setToggleGroup(viewToggle);
+        symbolBtn.setMinWidth(Region.USE_PREF_SIZE);
+        symbolBtn.setTooltip(new Tooltip("Show symbol constellation view"));
+        symbolBtn.setOnAction(e -> { if(symbolBtn.isSelected()) setRightComponent(mSymbolPanel); });
+
+        mSquelchBtn = squelchBtn;
+        mPowerBtn = powerBtn;
+        mSymbolBtn = symbolBtn;
+
+        labelPanel.getChildren().addAll(squelchBtn, powerBtn, symbolBtn);
 
         Button logIndexesButton = new Button("Log Settings");
         logIndexesButton.setTooltip(new javafx.scene.control.Tooltip("Log channel spectrum settings"));
@@ -193,8 +226,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
                 }
             }
         });
-        //This is a debug button to log the current settings to the app log.
-//        labelPanel.add(mLogIndexesButton);
+        labelPanel.getChildren().add(logIndexesButton);
 
         fftPanel.getChildren().add(labelPanel);
 
@@ -245,13 +277,19 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         mInspectorPanel.getChildren().add(mSignalPowerView); mSignalPowerView.setVisible(false);
         mInspectorPanel.getChildren().add(mSymbolPanel); mSymbolPanel.setVisible(false);
 
+        // No-channel placeholder label for the inspector panel
+        Label noChannelLabel = new Label("Select a channel to view inspector");
+        noChannelLabel.setTextFill(javafx.scene.paint.Color.GRAY);
+        noChannelLabel.setStyle("-fx-font-style: italic;");
+        mInspectorPanel.getChildren().add(noChannelLabel);
+
         // Side-by-side layout: FFT on the left, inspector on the right
         HBox.setHgrow(fftPanel, Priority.ALWAYS);
         HBox.setHgrow(mInspectorPanel, Priority.ALWAYS);
         fftPanel.setMinWidth(200);
         fftPanel.setPrefWidth(400);
-        mInspectorPanel.setMinWidth(300);
-        mInspectorPanel.setPrefWidth(400);
+        mInspectorPanel.setMinWidth(200);
+        mInspectorPanel.setPrefWidth(300);
         getChildren().add(fftPanel);
         getChildren().add(mInspectorPanel);
 
@@ -427,17 +465,20 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
             {
                 setRightComponent(mNoiseSquelchPanel);
                 mNoiseSquelchView.setController(nbfmDecoder);
+                if(mSquelchBtn != null) mSquelchBtn.setSelected(true);
             }
             else if(primaryDecoder instanceof AMDecoder)
             {
                 setRightComponent(mSignalPowerView);
                 mSignalPowerView.setProcessingChain(mProcessingChain);
+                if(mPowerBtn != null) mPowerBtn.setSelected(true);
             }
             else if(primaryDecoder instanceof FeedbackDecoder feedbackDecoder)
             {
                 setRightComponent(mSymbolPanel);
                 mSymbolView.setSymbolProvider(feedbackDecoder);
                 mSymbolView.setProtocol(feedbackDecoder.getProtocolDescription());
+                if(mSymbolBtn != null) mSymbolBtn.setSelected(true);
             }
 
             mProcessingChain.addModule(mSampleStreamTapModule);
