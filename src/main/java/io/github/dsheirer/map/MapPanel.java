@@ -259,6 +259,7 @@ public class MapPanel extends BorderPane implements IPlottableUpdateListener {
     private TableView<TimestampedGeoPosition> getTrackHistoryTable() {
         if (mTrackHistoryTable == null) {
             mTrackHistoryTable = new TableView<>();
+            mTrackHistoryTable.setPlaceholder(new Label("No track history \u2014 GPS positions will appear when units report location"));
             
             TableColumn<TimestampedGeoPosition, String> timeCol = new TableColumn<>("Time");
             timeCol.setCellValueFactory(data -> new SimpleStringProperty(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(data.getValue().getTimestamp())));
@@ -419,6 +420,7 @@ public class MapPanel extends BorderPane implements IPlottableUpdateListener {
     private TableView<PlottableEntityHistory> getPlottedTracksTable() {
         if (mPlottedTracksTable == null) {
             mPlottedTracksTable = new TableView<>();
+            mPlottedTracksTable.setPlaceholder(new Label("No plotted tracks \u2014 add tracks from the map to see them here"));
             mPlottedTracksTable.setItems(mMapService.getPlottableEntityModel().getItems());
 
             TableColumn<PlottableEntityHistory, String> idCol = new TableColumn<>("ID");

@@ -75,6 +75,7 @@ public class ChannelMetadataPanel extends VBox
         }
         
         VBox.setVgrow(mTable, Priority.ALWAYS);
+        mTable.setPlaceholder(new Label("No active channels — start a channel to see activity here"));
         getChildren().add(mTable);
         
         mTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {

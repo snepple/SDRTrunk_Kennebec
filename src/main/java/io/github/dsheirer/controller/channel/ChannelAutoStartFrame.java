@@ -110,6 +110,7 @@ public class ChannelAutoStartFrame
             root.getChildren().add(mCountdownLabel);
 
             mChannelTable = new TableView<>();
+            mChannelTable.setPlaceholder(new Label("No channels configured for auto-start"));
             mChannelTable.setItems(FXCollections.observableArrayList(mChannels));
             VBox.setVgrow(mChannelTable, Priority.ALWAYS);
 
