@@ -41,7 +41,6 @@ public class E4KEmbeddedTuner extends EmbeddedTuner
     public static final long MINIMUM_TUNABLE_FREQUENCY_HZ = 52000000;
     public static final long MAXIMUM_TUNABLE_FREQUENCY_HZ = 2200000000l;
     public static final double USABLE_BANDWIDTH_PERCENT = 0.95;
-    public static final int DC_SPIKE_AVOID_BUFFER = 15000;
 
     /**
      * The local oscillator is defined by whole (integer) units of the oscillator frequency and fractional units
@@ -106,12 +105,6 @@ public class E4KEmbeddedTuner extends EmbeddedTuner
     public long getMaximumFrequencySupported()
     {
         return MAXIMUM_TUNABLE_FREQUENCY_HZ;
-    }
-
-    @Override
-    public int getDcSpikeHalfBandwidth()
-    {
-        return DC_SPIKE_AVOID_BUFFER;
     }
 
     @Override

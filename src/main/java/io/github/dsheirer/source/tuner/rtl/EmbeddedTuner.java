@@ -84,12 +84,6 @@ public abstract class EmbeddedTuner
     public abstract long getMaximumFrequencySupported();
 
     /**
-     * Bandwidth of the DC spike that is unusable for this tuner
-     */
-    //TODO: can we get rid of this now?
-    public abstract int getDcSpikeHalfBandwidth();
-
-    /**
      * Percentage of the bandwidth that is usable for this tuner
      */
     public abstract double getUsableBandwidthPercent();

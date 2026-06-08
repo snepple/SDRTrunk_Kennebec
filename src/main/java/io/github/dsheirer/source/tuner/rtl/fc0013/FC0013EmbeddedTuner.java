@@ -64,7 +64,6 @@ public class FC0013EmbeddedTuner extends EmbeddedTuner
     public static final long MINIMUM_TUNABLE_FREQUENCY_HZ = 13_500_000;
     public static final long MAXIMUM_TUNABLE_FREQUENCY_HZ = 1_907_999_890l;
     private static final double USABLE_BANDWIDTH_PERCENT = 0.95;
-    private static final int DC_SPIKE_AVOID_BUFFER = 15000;
     //Hardware I2C address
     private static final byte I2C_ADDRESS = (byte) 0xC6;
     //Hardware crystal oscillator frequency - used by the frequency divider
@@ -102,12 +101,6 @@ public class FC0013EmbeddedTuner extends EmbeddedTuner
     public long getMaximumFrequencySupported()
     {
         return MAXIMUM_TUNABLE_FREQUENCY_HZ;
-    }
-
-    @Override
-    public int getDcSpikeHalfBandwidth()
-    {
-        return DC_SPIKE_AVOID_BUFFER;
     }
 
     @Override

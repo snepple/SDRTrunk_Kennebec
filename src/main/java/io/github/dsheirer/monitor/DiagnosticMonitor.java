@@ -31,6 +31,7 @@ import io.github.dsheirer.source.tuner.manager.TunerManager;
 import io.github.dsheirer.util.ThreadPool;
 import io.github.dsheirer.util.TimeStamp;
 import java.io.IOException;
+import java.lang.ProcessBuilder;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -152,7 +153,7 @@ public class DiagnosticMonitor
                 
                 try {
                     String cmd = "Start-Process powercfg -ArgumentList '/powerthrottling disable /path `\"" + processPath + "`\"' -Verb RunAs -WindowStyle Hidden -Wait";
-                    Process p = Runtime.getRuntime().exec(new String[]{"powershell.exe", "-Command", cmd});
+                    Process p = new ProcessBuilder("powershell.exe", "-Command", cmd).start();
                     boolean completed = p.waitFor(10, TimeUnit.SECONDS);
                     
                     if (completed && p.exitValue() == 0) {
@@ -192,7 +193,7 @@ public class DiagnosticMonitor
                         if (result.isPresent() && result.get() == fixBtn) {
                             try {
                                 String retryCmd = "Start-Process powercfg -ArgumentList '/powerthrottling disable /path `\"" + finalProcessPath + "`\"' -Verb RunAs -WindowStyle Hidden";
-                                Runtime.getRuntime().exec(new String[]{"powershell.exe", "-Command", retryCmd});
+                                new ProcessBuilder("powershell.exe", "-Command", retryCmd).start();
                             } catch (Exception ex) {
                                 LOGGER.error("Failed to disable power throttling on retry", ex);
                             }
@@ -205,7 +206,9 @@ public class DiagnosticMonitor
 
     private boolean isEcoQoSDisabled(String processName) {
         try {
-            Process process = Runtime.getRuntime().exec("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\" + processName + "\\PerfOptions\" /v CpuPriorityClass");
+            Process process = new ProcessBuilder("reg", "query",
+                    "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\" + processName + "\\PerfOptions",
+                    "/v", "CpuPriorityClass").start();
             java.util.Scanner s = new java.util.Scanner(process.getInputStream()).useDelimiter("\\A");
             String output = s.hasNext() ? s.next() : "";
             process.waitFor();
@@ -213,7 +216,9 @@ public class DiagnosticMonitor
                 return true;
             }
             
-            process = Runtime.getRuntime().exec("reg query \"HKCU\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\" + processName + "\\PerfOptions\" /v CpuPriorityClass");
+            process = new ProcessBuilder("reg", "query",
+                    "HKCU\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\" + processName + "\\PerfOptions",
+                    "/v", "CpuPriorityClass").start();
             s = new java.util.Scanner(process.getInputStream()).useDelimiter("\\A");
             output = s.hasNext() ? s.next() : "";
             process.waitFor();
