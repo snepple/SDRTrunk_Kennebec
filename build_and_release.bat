@@ -70,6 +70,17 @@ if not exist "!JPACKAGE_EXE!" (
     set "HAS_JPACKAGE=1"
 )
 
+:: Check for WiX Toolset (required by jpackage for .exe/.msi)
+if exist "C:\Users\default.LAPTOP-U0KBII5M\wix311\light.exe" (
+    set "PATH=C:\Users\default.LAPTOP-U0KBII5M\wix311;!PATH!"
+    echo [OK] WiX Toolset found locally and added to PATH.
+) else if exist "C:\Program Files (x86)\WiX Toolset v3.11\bin\light.exe" (
+    set "PATH=C:\Program Files (x86)\WiX Toolset v3.11\bin;!PATH!"
+    echo [OK] WiX Toolset found globally and added to PATH.
+) else (
+    echo [WARNING] WiX Toolset not found in standard paths. Native installer creation may fail.
+)
+
 :: ============================================================================
 :: STEP 2: Libvolk Dependency Check
 :: ============================================================================
