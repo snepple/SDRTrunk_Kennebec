@@ -1,9 +1,10 @@
 {
   "name": "SDRTrunk",
+  "favicon": "favicon.ico",
   "navigation": [
     {
       "group": "Guides",
-      "pages": []
+      "pages": ["src/main/resources/docs/index.md"]
     }
   ],
   "colors": {
