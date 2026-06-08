@@ -105,8 +105,8 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
     private final NoiseSquelchView mNoiseSquelchView;
     private final SignalPowerView mSignalPowerView;
     private final SymbolView mSymbolView = new SymbolView();
-    private final javafx.scene.layout.Pane mNoiseSquelchPanel;
-    private final javafx.scene.layout.Pane mSymbolPanel;
+    private final javafx.scene.layout.Pane mNoiseSquelchPanel = new javafx.scene.layout.Pane();
+    private final javafx.scene.layout.Pane mSymbolPanel = new javafx.scene.layout.Pane();
     private javafx.scene.layout.StackPane mInspectorPanel;
     private ToggleButton mSquelchBtn;
     private ToggleButton mPowerBtn;
@@ -259,8 +259,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         VBox.setVgrow(layeredPanel, Priority.ALWAYS);
         fftPanel.getChildren().add(layeredPanel);
 
-        mNoiseSquelchPanel = new javafx.scene.layout.Pane();
-        mSymbolPanel = new javafx.scene.layout.Pane();
+
 
         //Add the JavaFX views directly as children
         mNoiseSquelchPanel.getChildren().add(mNoiseSquelchView);

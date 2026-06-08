@@ -10,3 +10,7 @@
 ## 2024-05-20 - Global Notification Dispatch Rate-Limiting
 **Learning:** When using an application-wide event bus or hooking into low-level streaming and decoding events (like sync loss or LibUsb hotplug), it's trivial to accidentally flood the user with thousands of notifications for a sustained error condition. A debounce or rate-limiting mechanism is essential.
 **Action:** Always wrap event-driven notifications in a dedicated monitor/manager class (like `SystemHealthMonitor`) that maintains a timestamp map of the last triggered alert to strictly enforce a sensible rate limit (e.g., 1 per hour per type) before dispatching to the UI or remote notification sinks.
+
+## $(date +%Y-%m-%d) - Unclosed resources using try-with-resources
+**Finding:** Unclosed FileInputStreams, OutputStreams, PrintWriters, BufferedWriters, Process handlers causing memory leaks or zombie threads.
+**Action:** Always wrap resource handling code using try-with-resources. I updated ZipUtility, JmbeCreator, WindowsHostOptimizer, and several others to properly manage their IO instances and processes with modern try-with-resource mechanisms.

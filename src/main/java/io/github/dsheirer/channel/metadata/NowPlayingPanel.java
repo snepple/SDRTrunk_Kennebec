@@ -261,7 +261,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         javafx.scene.control.ContextMenu popup = new javafx.scene.control.ContextMenu();
 
         if (mSpectralPanel != null) addPopupItem(popup, "Spectrum/Waterfall", "spectrum");
-        if (mChannelWidget != null) addPopupItem(popup, "Channel Table & Details", "channel");
+        if (mChannelSplitPane != null) addPopupItem(popup, "Channel Table & Details", "channel");
         if (mBroadcastStatusPanel != null) addPopupItem(popup, "Streaming Status", "streaming");
         if (mResourceStatusPanel != null) addPopupItem(popup, "Resource Status", "resource");
 

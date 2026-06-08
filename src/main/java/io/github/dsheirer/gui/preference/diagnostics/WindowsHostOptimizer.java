@@ -20,26 +20,29 @@ public class WindowsHostOptimizer {
             try {
                 // Check Power Plan
                 Process powerProcess = Runtime.getRuntime().exec("powercfg /getactivescheme");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(powerProcess.getInputStream()));
-                String line;
-                sb.append("Current Power Plan:\n");
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line).append("\n");
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(powerProcess.getInputStream()))) {
+                    String line;
+                    sb.append("Current Power Plan:\n");
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line).append("\n");
+                    }
                 }
                 
                 // Check Defender Exclusions
                 Process defenderProcess = Runtime.getRuntime().exec(new String[]{"powershell", "-Command", "Get-MpPreference | Select-Object -ExpandProperty ExclusionPath"});
-                BufferedReader defenderReader = new BufferedReader(new InputStreamReader(defenderProcess.getInputStream()));
-                sb.append("\nWindows Defender Exclusions:\n");
-                boolean foundExclusions = false;
-                while ((line = defenderReader.readLine()) != null) {
-                    if (!line.trim().isEmpty()) {
-                        sb.append(line).append("\n");
-                        foundExclusions = true;
+                try (BufferedReader defenderReader = new BufferedReader(new InputStreamReader(defenderProcess.getInputStream()))) {
+                    sb.append("\nWindows Defender Exclusions:\n");
+                    boolean foundExclusions = false;
+                    String line;
+                    while ((line = defenderReader.readLine()) != null) {
+                        if (!line.trim().isEmpty()) {
+                            sb.append(line).append("\n");
+                            foundExclusions = true;
+                        }
                     }
-                }
-                if (!foundExclusions) {
-                    sb.append("None found.\n");
+                    if (!foundExclusions) {
+                        sb.append("None found.\n");
+                    }
                 }
             } catch (IOException e) {
                 mLog.error("Error checking diagnostics", e);
@@ -74,8 +77,13 @@ public class WindowsHostOptimizer {
             String encoded = Base64.getEncoder().encodeToString(script.getBytes(StandardCharsets.UTF_16LE));
             try {
                 ProcessBuilder pb = new ProcessBuilder("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "Start-Process powershell -ArgumentList '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand " + encoded + "' -Verb RunAs -Wait");
-                Process p = pb.start();
-                int exitCode = p.waitFor();
+                int exitCode;
+                try {
+                    Process p = pb.start();
+                    exitCode = p.waitFor();
+                } catch (Exception processEx) {
+                    throw new RuntimeException(processEx);
+                }
                 mLog.info("Optimization script exited with code {}", exitCode);
                 return exitCode == 0;
             } catch (Exception e) {
