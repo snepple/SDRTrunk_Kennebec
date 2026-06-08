@@ -1,0 +1,14 @@
+{
+  "name": "SDRTrunk",
+  "navigation": [
+    {
+      "group": "Guides",
+      "pages": []
+    }
+  ],
+  "colors": {
+    "primary": "#0F172A",
+    "light": "#334155",
+    "dark": "#020617"
+  }
+}
