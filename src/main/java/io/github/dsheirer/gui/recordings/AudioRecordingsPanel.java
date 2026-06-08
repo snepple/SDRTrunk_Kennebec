@@ -342,6 +342,7 @@ public class AudioRecordingsPanel extends VBox {
         });
 
         mTableView.getColumns().addAll(dateCol, timeCol, channelCol, toAliasCol, fromAliasCol, lengthCol, actionCol);
+        mTableView.setTableMenuButtonVisible(true);
 
         SortedList<RecordingItem> sortedData = new SortedList<>(mFilteredRecordings);
         sortedData.comparatorProperty().bind(mTableView.comparatorProperty());

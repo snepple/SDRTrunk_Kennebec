@@ -325,47 +325,70 @@
     -fx-spacing: 10;
 }
 
-/* Tables */
+/* Tables - Aliases, Streaming, Two Tones */
 .preferences-table {
-    -fx-background-color: transparent;
-    -fx-border-color: #e5e5ea;
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E5E5EA;
     -fx-border-radius: 8;
+    -fx-background-radius: 8;
     -fx-border-width: 1;
-}
-
-.preferences-table .table-row-cell {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent transparent #f2f2f7 transparent;
-    -fx-border-width: 0 0 1 0;
-    -fx-padding: 5;
-}
-
-.preferences-table .table-row-cell:empty {
-    -fx-border-color: transparent;
-}
-
-.preferences-table .table-cell {
-    -fx-border-color: transparent;
-    -fx-padding: 8 10 8 10;
 }
 
 .preferences-table .column-header {
     -fx-background-color: #F2F2F7;
-    -fx-border-color: transparent transparent #e5e5ea transparent;
+    -fx-border-color: transparent transparent #D1D1D6 transparent;
     -fx-border-width: 0 0 1 0;
     -fx-padding: 8 10 8 10;
 }
 
-.preferences-main-area {
+.preferences-table .column-header .label {
+    -fx-text-fill: #48484A;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+.preferences-table .column-header-background {
     -fx-background-color: #F2F2F7;
 }
 
+.preferences-table .table-row-cell {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: transparent transparent #F2F2F7 transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0;
+}
+
+.preferences-table .table-row-cell:odd {
+    -fx-background-color: #F9F9FB;
+}
+
+.preferences-table .table-row-cell:empty {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.preferences-table .table-cell {
+    -fx-border-color: transparent #F2F2F7 transparent transparent;
+    -fx-border-width: 0 1 0 0;
+    -fx-padding: 6 10 6 10;
+    -fx-font-size: 13px;
+}
+
 .preferences-table .table-row-cell:selected {
-    -fx-background-color: #007aff;
+    -fx-background-color: #007AFF;
 }
 
 .preferences-table .table-row-cell:selected .text {
-    -fx-fill: #ffffff;
+    -fx-fill: #FFFFFF;
+}
+
+.preferences-table .table-row-cell:selected .label {
+    -fx-text-fill: #FFFFFF;
+}
+
+
+.preferences-main-area {
+    -fx-background-color: #F2F2F7;
 }
 
 .flat-button:disabled {

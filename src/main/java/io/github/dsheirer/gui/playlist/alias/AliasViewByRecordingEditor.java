@@ -243,6 +243,7 @@ public class AliasViewByRecordingEditor extends VBox
             groupColumn.setCellValueFactory(new PropertyValueFactory<>("group"));
 
             mNoRecordAliasTableView.getColumns().addAll(nameColumn, groupColumn);
+            mNoRecordAliasTableView.setTableMenuButtonVisible(true);
             mNoRecordAliasTableView.setPlaceholder(new Label("No non-recordable aliases available"));
             mNoRecordAliasTableView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<Alias>)c -> {
                 int selectedCount = mNoRecordAliasTableView.getSelectionModel().getSelectedItems().size();
@@ -281,6 +282,7 @@ public class AliasViewByRecordingEditor extends VBox
             groupColumn.setCellValueFactory(new PropertyValueFactory<>("group"));
 
             mRecordAliasTableView.getColumns().addAll(nameColumn, groupColumn);
+            mRecordAliasTableView.setTableMenuButtonVisible(true);
             mRecordAliasTableView.setPlaceholder(new Label("No recordable aliases available"));
             mRecordAliasTableView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<Alias>)c -> {
                 int selectedCount = mRecordAliasTableView.getSelectionModel().getSelectedItems().size();

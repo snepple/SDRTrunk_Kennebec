@@ -162,6 +162,7 @@ public class TunerViewPanel extends VBox {
 
         mTunerTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         mTunerTable.getColumns().addAll(statusCol, nameCol, typeCol, freqCol, channelsCol, stabilityCol);
+        mTunerTable.setTableMenuButtonVisible(true);
 
         
         mTunerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {

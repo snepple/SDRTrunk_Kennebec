@@ -208,6 +208,7 @@ public class AliasViewByIdentifierEditor extends VBox
             groupColumn.setPrefWidth(200);
             
             mAliasAndIdentifierTableView.getColumns().addAll(mIdentifierColumn, aliasColumn, groupColumn);
+            mAliasAndIdentifierTableView.setTableMenuButtonVisible(true);
             mAliasAndIdentifierTableView.setMaxHeight(Double.MAX_VALUE);
 
             mAliasAndIdentifierTableView.getSelectionModel().selectedItemProperty()

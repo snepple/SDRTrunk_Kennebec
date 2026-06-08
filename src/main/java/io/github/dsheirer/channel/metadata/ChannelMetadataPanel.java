@@ -68,6 +68,7 @@ public class ChannelMetadataPanel extends VBox
             cellData.getValue().hasFromIdentifier() ? cellData.getValue().getFromIdentifier().toString() : ""));
             
         mTable.getColumns().addAll(stateCol, channelCol, freqCol, toCol, fromCol);
+        mTable.setTableMenuButtonVisible(true);
         
         if (mChannelProcessingManager != null && mChannelProcessingManager.getChannelMetadataModel() != null) {
             mTable.setItems(mChannelProcessingManager.getChannelMetadataModel().getObservableList());

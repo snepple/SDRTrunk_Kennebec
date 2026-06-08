@@ -34,11 +34,13 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+import org.controlsfx.control.SegmentedButton;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -84,7 +86,8 @@ public class LogsViewController {
     @FXML private ListView<String> mAppLogListView;
     @FXML private TextArea mLiveInspectorView;
     @FXML private TextField mLiveSearchField;
-    @FXML private ComboBox<String> mLogLevelFilter;
+    @FXML private HBox mLogLevelFilterContainer;
+    private String mSelectedLevel = "All";
     private FilteredList<String> mLiveFiltered;
 
     public void init(UserPreferences userPreferences) {
@@ -95,11 +98,28 @@ public class LogsViewController {
         logListView.setItems(mLiveFiltered);
         logListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-        // Log level filter ComboBox
-        if (mLogLevelFilter != null) {
-            mLogLevelFilter.setItems(FXCollections.observableArrayList("All", "ERROR", "WARN", "INFO", "DEBUG"));
-            mLogLevelFilter.getSelectionModel().select(0);
-            mLogLevelFilter.setOnAction(e -> updateLiveFilter());
+        // Log level filter - SegmentedButton (matches Two Tone Detector filter style)
+        if (mLogLevelFilterContainer != null) {
+            ToggleButton allBtn = new ToggleButton("All");
+            ToggleButton errorBtn = new ToggleButton("ERROR");
+            ToggleButton warnBtn = new ToggleButton("WARN");
+            ToggleButton infoBtn = new ToggleButton("INFO");
+            ToggleButton debugBtn = new ToggleButton("DEBUG");
+
+            SegmentedButton levelSegmented = new SegmentedButton(allBtn, errorBtn, warnBtn, infoBtn, debugBtn);
+            levelSegmented.getStyleClass().add(SegmentedButton.STYLE_CLASS_DARK);
+            allBtn.setSelected(true);
+
+            levelSegmented.getToggleGroup().selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal == null) {
+                    oldVal.setSelected(true);
+                } else {
+                    mSelectedLevel = ((ToggleButton) newVal).getText();
+                    updateLiveFilter();
+                }
+            });
+
+            mLogLevelFilterContainer.getChildren().add(levelSegmented);
         }
 
         // Live search field
@@ -254,8 +274,7 @@ public class LogsViewController {
     }
 
     private void updateLiveFilter() {
-        String levelSelection = (mLogLevelFilter != null && mLogLevelFilter.getValue() != null)
-            ? mLogLevelFilter.getValue() : "All";
+        String levelSelection = mSelectedLevel != null ? mSelectedLevel : "All";
         String searchText = (mLiveSearchField != null && mLiveSearchField.getText() != null)
             ? mLiveSearchField.getText().toLowerCase() : "";
 

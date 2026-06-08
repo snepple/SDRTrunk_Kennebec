@@ -117,6 +117,7 @@ public class ChannelAutoStartFrame
             col.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
             col.setPrefWidth(280);
             mChannelTable.getColumns().add(col);
+            mChannelTable.setTableMenuButtonVisible(true);
 
             root.getChildren().add(mChannelTable);
 

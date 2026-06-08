@@ -434,6 +434,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         {
             mChannelTableView = new TableView<>();
             mChannelTableView.setEditable(true);
+            mChannelTableView.setTableMenuButtonVisible(true);
 
             TableColumn<Channel,Boolean> playingColumn = new TableColumn("Playing");
             playingColumn.setId("channelTable.playing");

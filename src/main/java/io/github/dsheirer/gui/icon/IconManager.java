@@ -203,6 +203,7 @@ public class IconManager extends Editor<io.github.dsheirer.icon.Icon>
             });
 
             mIconTableView.getColumns().addAll(typeColumn, iconColumn, nameColumn);
+            mIconTableView.setTableMenuButtonVisible(true);
             mIconTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
                 getDeleteButton().setDisable(newValue == null || newValue.getStandardIcon());
                 getEditButton().setDisable(newValue == null || newValue.getStandardIcon());

@@ -25,8 +25,7 @@
                     <VBox spacing="10">
                         <padding><Insets top="10" right="10" bottom="0" left="10"/></padding>
                         <HBox alignment="CENTER_LEFT" spacing="10">
-                            <Label text="Level:" />
-                            <ComboBox fx:id="mLogLevelFilter" promptText="All" />
+                            <HBox fx:id="mLogLevelFilterContainer" alignment="CENTER_LEFT" />
                             <TextField fx:id="mLiveSearchField" promptText="Filter logs (e.g., error type, exact frequencies, talkgroups)..." styleClass="kennebec-search-field" HBox.hgrow="ALWAYS" />
                         </HBox>
                         <ListView fx:id="logListView" VBox.vgrow="ALWAYS" />
