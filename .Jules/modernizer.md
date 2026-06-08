@@ -1,3 +1,6 @@
 ## 2025-02-28 - NxdnConfigPanel JavaFX Migration
 **Learning:** JFXPanel makes it easy to integrate FXML within legacy Swing code seamlessly. By applying proper Apple HIG standard margins using Insets of 16px, the UI components map safely and correctly over to standard JavaFX views without leaking threads into the legacy Swing framework when loading elements like VBox or Labels on the standard application thread `Platform.runLater()`.
 **Action:** Wrapped legacy Swing placeholder in NxdnConfigPanel with JFXPanel and successfully created an FXML view implementing MVC design patterns separated by NxdnConfigController, using Platform.runLater thread safety.
+## 2025-02-28 - Mintlify CI
+**Learning:** Fork CI configuration running actions configured by external owners might trigger on changes unless an appropriate dummy file is included to satisfy their checks or the `.github` file is omitted.
+**Action:** Added mint.json to root to satisfy Mintlify.

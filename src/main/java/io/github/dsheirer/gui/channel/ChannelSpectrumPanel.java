@@ -164,7 +164,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         squelchBtn.setToggleGroup(viewToggle);
         squelchBtn.setMinWidth(Region.USE_PREF_SIZE);
         squelchBtn.setTooltip(new Tooltip("Show noise squelch view"));
-        squelchBtn.setOnAction(e -> { if(squelchBtn.isSelected()) setRightComponent(mNoiseSquelchPanel); });
+        squelchBtn.setOnAction(e -> { if(squelchBtn.isSelected()) setRightComponent(getNoiseSquelchPanel()); });
 
         ToggleButton powerBtn = new ToggleButton("Power");
         powerBtn.setToggleGroup(viewToggle);
@@ -176,7 +176,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         symbolBtn.setToggleGroup(viewToggle);
         symbolBtn.setMinWidth(Region.USE_PREF_SIZE);
         symbolBtn.setTooltip(new Tooltip("Show symbol constellation view"));
-        symbolBtn.setOnAction(e -> { if(symbolBtn.isSelected()) setRightComponent(mSymbolPanel); });
+        symbolBtn.setOnAction(e -> { if(symbolBtn.isSelected()) setRightComponent(getSymbolPanel()); });
 
         mSquelchBtn = squelchBtn;
         mPowerBtn = powerBtn;
@@ -582,4 +582,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
             mFrequencyOverlayPanel.setCursorVisible(false);
         }
     }
+
+    private javafx.scene.layout.Pane getNoiseSquelchPanel() { return mNoiseSquelchPanel; }
+    private javafx.scene.layout.Pane getSymbolPanel() { return mSymbolPanel; }
 }
