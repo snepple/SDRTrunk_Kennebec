@@ -105,8 +105,8 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
     private final NoiseSquelchView mNoiseSquelchView;
     private final SignalPowerView mSignalPowerView;
     private final SymbolView mSymbolView = new SymbolView();
-    private final javafx.scene.layout.Pane mNoiseSquelchPanel;
-    private final javafx.scene.layout.Pane mSymbolPanel;
+    private javafx.scene.layout.Pane mNoiseSquelchPanel;
+    private javafx.scene.layout.Pane mSymbolPanel;
     private javafx.scene.layout.StackPane mInspectorPanel;
     private ToggleButton mSquelchBtn;
     private ToggleButton mPowerBtn;
