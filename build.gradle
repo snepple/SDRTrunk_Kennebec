@@ -283,17 +283,18 @@ String targetWindowsAarch64 = 'windows-aarch64-v' + version
  */
 String jdk_base = System.getProperty('os.name').toLowerCase().contains('win') ?
     System.getProperty('user.home') + '/java_jdks/' : '/home/denny/java_jdks/'
-String jdk_linux_aarch64 = jdk_base + 'linux-arm64/jdk-25.0.1-full'
-String jdk_linux_x86_64 = jdk_base + 'linux-x64/jdk-25.0.1-full'
-String jdk_osx_x86_64 = jdk_base + 'osx-x64/jdk-25.0.1-full.jdk'
-String jdk_osx_aarch64 = jdk_base + 'osx-arm64/jdk-25.0.1-full.jdk'
-String jdk_windows_x86_64 = jdk_base + 'windows-x64/jdk-25.0.1-full'
-String jdk_windows_aarch64 = jdk_base + 'windows-arm64/jdk-25.0.1-full'
+String jdk_linux_aarch64 = jdk_base + 'linux-arm64/jdk-23.0.2-full'
+String jdk_linux_x86_64 = jdk_base + 'linux-x64/jdk-23.0.2-full'
+String jdk_osx_x86_64 = jdk_base + 'osx-x64/jdk-23.0.2-full.jdk'
+String jdk_osx_aarch64 = jdk_base + 'osx-arm64/jdk-23.0.2-full.jdk'
+String jdk_windows_x86_64 = jdk_base + 'windows-x64/jdk-23.0.2-full'
+String jdk_windows_aarch64 = jdk_base + 'windows-arm64/jdk-23.0.2-full'
 
 /**
- * Download URLs to download the JDK as part of the gradle build packaging process
+ * Download URLs to download the JDK as part of the gradle build packaging process.
+ * Must match the local toolchain version (JDK 23) so jlink can process the jmod files.
  */
-def jdk_download_base = "https://download.bell-sw.com/java/25.0.1+11/bellsoft-jdk25.0.1+11-"
+def jdk_download_base = "https://download.bell-sw.com/java/23.0.2+9/bellsoft-jdk23.0.2+9-"
 def jdk_download_suffix = "-full.tar.gz"
 def jdk_download_linux_aarch64 = jdk_download_base + "linux-aarch64" + jdk_download_suffix
 def jdk_download_linux_x86_64 = jdk_download_base + "linux-amd64" + jdk_download_suffix
@@ -581,7 +582,8 @@ startScripts {
 
         unixScriptFile.text = unixScriptFile.text.replace('"-Xmx6g"\'', '"-Xmx6g"\'\n\nif [ -f "$HOME/SDRTrunk/SDRTrunk.memory" ]; then\n    MEM_LIMIT=$(cat "$HOME/SDRTrunk/SDRTrunk.memory")\n    SDR_TRUNK_OPTS="$SDR_TRUNK_OPTS \\"-Xmx${MEM_LIMIT}g\\""\nfi')
 
-        windowsScriptFile.text = windowsScriptFile.text.replaceFirst('set APP_HOME=.*', '$0\r\nset "JAVA_HOME=%APP_HOME%\\\\jre"')
+        // Only override JAVA_HOME if a bundled JRE exists (runtime zip packages have one, installDist does not)
+        windowsScriptFile.text = windowsScriptFile.text.replaceFirst('set APP_HOME=.*', '$0\r\nif exist \"%APP_HOME%\\\\jre\" set \"JAVA_HOME=%APP_HOME%\\\\jre\"')
         
         // This makes sure the launch script doesn't blow up the environment block by exceeding the 8KB limit
         // By replacing the enumerated classpath list with a wildcard, we can safely have many dependencies.
