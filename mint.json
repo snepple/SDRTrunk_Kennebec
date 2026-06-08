@@ -1,5 +1,17 @@
 {
   "name": "SDRTrunk",
+  "favicon": "favicon.ico",
+  "navigation": [
+    {
+      "group": "Guides",
+      "pages": ["src/main/resources/docs/index.md"]
+    }
+  ],
+  "colors": {
+    "primary": "#0F172A",
+    "light": "#334155",
+    "dark": "#020617"
+  }
   "colors": {
     "primary": "#000000",
     "light": "#ffffff",

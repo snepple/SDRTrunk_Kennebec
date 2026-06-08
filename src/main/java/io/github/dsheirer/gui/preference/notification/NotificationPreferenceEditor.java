@@ -3,6 +3,7 @@
 package io.github.dsheirer.gui.preference.notification;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 
 import java.util.Properties;
 import javax.mail.Message;
@@ -99,6 +100,9 @@ public class NotificationPreferenceEditor extends VBox {
 
         Button telegramTestBtn = new Button("_Send Test");
         telegramTestBtn.setMnemonicParsing(true);
+        telegramTestBtn.setTooltip(new Tooltip("Send a test message to the configured Telegram bot."));
+        telegramTestBtn.accessibleTextProperty().set("Send Telegram Test");
+        telegramTestBtn.accessibleHelpProperty().set("Sends a test message to the configured Telegram bot to verify connectivity.");
         telegramTestBtn.setOnAction(e -> {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Test Telegram");
@@ -181,6 +185,9 @@ public class NotificationPreferenceEditor extends VBox {
 
         Button emailTestBtn = new Button("_Send Test");
         emailTestBtn.setMnemonicParsing(true);
+        emailTestBtn.setTooltip(new Tooltip("Send a test message to the configured email server."));
+        emailTestBtn.accessibleTextProperty().set("Send Email Test");
+        emailTestBtn.accessibleHelpProperty().set("Sends a test message to the configured email server to verify connectivity.");
         emailTestBtn.setOnAction(e -> {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Test Email");
@@ -275,7 +282,11 @@ public class NotificationPreferenceEditor extends VBox {
             }
         });
 
-        Button addBtn = new Button("Add Recipient");
+        Button addBtn = new Button("_Add Recipient");
+        addBtn.setMnemonicParsing(true);
+        addBtn.setTooltip(new Tooltip("Create a new notification recipient."));
+        addBtn.accessibleTextProperty().set("Add Recipient");
+        addBtn.accessibleHelpProperty().set("Creates a new notification recipient entry.");
         addBtn.setOnAction(e -> {
             NotificationRecipient nr = new NotificationRecipient();
             mRecipientsList.add(nr);
@@ -283,7 +294,11 @@ public class NotificationPreferenceEditor extends VBox {
             mRecipientListView.getSelectionModel().select(nr);
         });
 
-        Button removeBtn = new Button("Remove Selected");
+        Button removeBtn = new Button("_Remove Selected");
+        removeBtn.setMnemonicParsing(true);
+        removeBtn.setTooltip(new Tooltip("Delete the currently selected notification recipient. This action cannot be undone."));
+        removeBtn.accessibleTextProperty().set("Remove Selected Recipient");
+        removeBtn.accessibleHelpProperty().set("Deletes the currently selected notification recipient. This action cannot be undone.");
         removeBtn.setOnAction(e -> {
             NotificationRecipient selected = mRecipientListView.getSelectionModel().getSelectedItem();
             if(selected != null) {
