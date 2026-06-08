@@ -41,7 +41,6 @@ public abstract class R8xEmbeddedTuner extends EmbeddedTuner
     public static final long MINIMUM_TUNABLE_FREQUENCY_HZ = 3180000;
     public static final long MAXIMUM_TUNABLE_FREQUENCY_HZ = 1782030000;
     private static final double USABLE_BANDWIDTH_PERCENT = 0.98;
-    private static final int DC_SPIKE_AVOID_BUFFER = 5000;
     private static final byte VERSION = (byte) 49;
     protected static final int IF_FREQUENCY = 3570000;
     private static final Logger mLog = LoggerFactory.getLogger(R8xEmbeddedTuner.class);
@@ -154,12 +153,6 @@ public abstract class R8xEmbeddedTuner extends EmbeddedTuner
     public long getMaximumFrequencySupported()
     {
         return MAXIMUM_TUNABLE_FREQUENCY_HZ;
-    }
-
-    @Override
-    public int getDcSpikeHalfBandwidth()
-    {
-        return DC_SPIKE_AVOID_BUFFER;
     }
 
     @Override
