@@ -114,7 +114,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
     private Button mCloneAliasButton;
     private MenuButton mMoveToAliasButton;
     private HBox mButtonBox;
-    private HBox mSearchAndListSelectionBox;
+    private VBox mSearchAndListSelectionBox;
     private TextField mSearchField;
     private ComboBox<String> mAliasListNameComboBox;
     private Button mNewAliasListButton;
@@ -274,49 +274,58 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
         return mAliasBulkEditor;
     }
 
-    private HBox getSearchAndListSelectionBox()
+    private VBox getSearchAndListSelectionBox()
     {
         if(mSearchAndListSelectionBox == null)
         {
-            mSearchAndListSelectionBox = new HBox();
-            mSearchAndListSelectionBox.setAlignment(Pos.CENTER_LEFT);
-            mSearchAndListSelectionBox.getStyleClass().add("context-toolbar");
-            mSearchAndListSelectionBox.setPadding(new Insets(10, 10, 10, 10));
-            mSearchAndListSelectionBox.setSpacing(10);
-
+            // Row 1: Alias list management + search
+            HBox row1 = new HBox();
+            row1.setAlignment(Pos.CENTER_LEFT);
+            row1.setPadding(new Insets(8, 10, 4, 10));
+            row1.setSpacing(8);
 
             Label listLabel = new Label("Alias List:");
             listLabel.setMinWidth(Region.USE_PREF_SIZE);
             Label searchLabel = new Label("Search:");
             searchLabel.setMinWidth(Region.USE_PREF_SIZE);
-            searchLabel.setAlignment(Pos.CENTER_RIGHT);
-
-            HBox searchBox = new HBox();
-            searchBox.setSpacing(8);
-            searchBox.getChildren().addAll(searchLabel, getSearchField());
-            searchBox.setAlignment(Pos.CENTER);
-
-            Region leftSpacer = new Region();
-            HBox.setHgrow(leftSpacer, Priority.ALWAYS);
-            
-            Region rightSpacer = new Region();
-            HBox.setHgrow(rightSpacer, Priority.ALWAYS);
 
             getAliasListNameComboBox().setMinWidth(Region.USE_PREF_SIZE);
             getNewAliasListButton().setMinWidth(Region.USE_PREF_SIZE);
             getRenameAliasListButton().setMinWidth(Region.USE_PREF_SIZE);
             getDeleteAliasListButton().setMinWidth(Region.USE_PREF_SIZE);
+
+            Region spacer1 = new Region();
+            HBox.setHgrow(spacer1, Priority.ALWAYS);
+
+            HBox searchBox = new HBox(8);
+            searchBox.setAlignment(Pos.CENTER);
             searchBox.setMinWidth(Region.USE_PREF_SIZE);
-            
+            searchBox.getChildren().addAll(searchLabel, getSearchField());
+
+            row1.getChildren().addAll(listLabel, getAliasListNameComboBox(),
+                getNewAliasListButton(), getRenameAliasListButton(), getDeleteAliasListButton(),
+                spacer1, searchBox);
+
+            // Row 2: Alias actions (move, new, clone, delete)
+            HBox row2 = new HBox();
+            row2.setAlignment(Pos.CENTER_RIGHT);
+            row2.setPadding(new Insets(4, 10, 8, 10));
+            row2.setSpacing(8);
+
             getMoveToAliasButton().setMinWidth(Region.USE_PREF_SIZE);
             getNewAliasButton().setMinWidth(Region.USE_PREF_SIZE);
             getCloneAliasButton().setMinWidth(Region.USE_PREF_SIZE);
             getDeleteAliasButton().setMinWidth(Region.USE_PREF_SIZE);
 
-            mSearchAndListSelectionBox.getChildren().addAll(listLabel, getAliasListNameComboBox(),
-                getNewAliasListButton(), getRenameAliasListButton(), getDeleteAliasListButton(), 
-                leftSpacer, searchBox, rightSpacer, 
-                getMoveToAliasButton(), getNewAliasButton(), getCloneAliasButton(), getDeleteAliasButton());
+            Region spacer2 = new Region();
+            HBox.setHgrow(spacer2, Priority.ALWAYS);
+
+            row2.getChildren().addAll(spacer2, getMoveToAliasButton(), getNewAliasButton(),
+                getCloneAliasButton(), getDeleteAliasButton());
+
+            mSearchAndListSelectionBox = new VBox();
+            mSearchAndListSelectionBox.getStyleClass().add("context-toolbar");
+            mSearchAndListSelectionBox.getChildren().addAll(row1, row2);
         }
 
         return mSearchAndListSelectionBox;
