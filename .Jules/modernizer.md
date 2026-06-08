@@ -1,9 +1,3 @@
-## 2026-05-08 - Modernize MapPanel integration
-**Learning:** Legacy UI integration wrapped a Swing `MapPanel` in a `MapPanelFXWrapper` (which extended JavaFX `BorderPane` and embedded the Swing panel in a `SwingNode`), only to be later re-embedded in a `JFXPanel` inside `ControllerPanel`. This double-embedding (`Swing -> JFXPanel -> Scene -> MapPanelFXWrapper -> SwingNode -> Swing MapPanel`) caused rendering unreliability, delayed painting, and general content rendering issues.
-**Action:** Removed `MapPanelFXWrapper` and the intermediary `JFXPanel` in `ControllerPanel`. Attached the Swing `MapPanel` directly to the `mCardPanel` (which is a Swing `JPanel` using `CardLayout`), thus resolving the rendering issues and streamlining the component hierarchy.
-## $(date +%Y-%m-%d) - Modernize Standalone Frames and Dialogs
-**Learning:** Legacy UI integration heavily relied on `javax.swing.JOptionPane` for popups and `javax.swing.JFrame` for standalone windows.
-**Action:** Migrated `FilterEditor`, `SpectrumFrame`, `ChannelizerViewer`, `ChannelizerViewer2`, `HeterodyneChannelizerViewer`, and `SynthesizerViewer` to extend JavaFX `Stage` and use native `Scene` and `VBox` layouts. Systematically replaced all `JOptionPane` instances with `javafx.scene.control.Alert` and `TextInputDialog`, ensuring thread-safety by wrapping executions in `Platform.runLater()`.
-## 2026-05-17 - Migrated BroadcastStatusPanel and AudioChannelsPanel
-**Finding:** BroadcastStatusPanel and AudioChannelsPanel were using legacy Swing JTables and JPanels.
-**Action:** Created JavaFX VBox and HBox equivalents using FXML, wrapped them in JFXPanels, and updated controllers to use JavaFX properties and observable lists, decoupling Swing implementations.
+## 2025-02-28 - NxdnConfigPanel JavaFX Migration
+**Learning:** JFXPanel makes it easy to integrate FXML within legacy Swing code seamlessly. By applying proper Apple HIG standard margins using Insets of 16px, the UI components map safely and correctly over to standard JavaFX views without leaking threads into the legacy Swing framework when loading elements like VBox or Labels on the standard application thread `Platform.runLater()`.
+**Action:** Wrapped legacy Swing placeholder in NxdnConfigPanel with JFXPanel and successfully created an FXML view implementing MVC design patterns separated by NxdnConfigController, using Platform.runLater thread safety.
