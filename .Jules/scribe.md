@@ -36,3 +36,7 @@
 **Topic:** Spectrum & Waterfall Display
 **Learning:** Added a new documentation guide covering the Spectrum & Waterfall display, as there was no getting started guide for this core navigational component, and added a signal flow Mermaid diagram to clarify interactions.
 **Action:** Created `src/main/resources/docs/spectrum-&-waterfall.md` and integrated it into the navigation tree of `HelpViewer.java` under "Hardware & Tuners".
+## 2026-06-08 - Topic Selection
+**Topic:** Map Panel & Track Plotting
+**Learning:** The Map Panel is a complex navigational component that lacked a "Getting Started" guide.
+**Action:** Created `src/main/resources/docs/map-panel.md` and integrated it into the navigation tree of `HelpViewer.java` under "Advanced & System".
