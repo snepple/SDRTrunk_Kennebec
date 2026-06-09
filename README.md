@@ -118,19 +118,23 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 
 <p align="center">
 Refreshed macOS-style GUI & Side Navigation<br>
-<img src="images/media__1780864906236.png" alt="SDRTrunk Kennebec - Updated GUI" width="800">
+<img src="images/now_playing_k78.png" alt="SDRTrunk Kennebec - Updated GUI" width="800">
 <br><br>
 
 Streamlined Aliases & Inline Editing<br>
-<img src="images/media__1780864764513.png" alt="SDRTrunk Kennebec - Aliases" width="800">
+<img src="images/playlist_editor_k78.png" alt="SDRTrunk Kennebec - Aliases" width="800">
 <br><br>
 
-Enhanced Channel Layouts & Graphs<br>
-<img src="images/media__1780864705827.png" alt="SDRTrunk Kennebec - Channels" width="800">
+Enhanced Two Tone Detect Configuration<br>
+<img src="images/two_tones_k78.png" alt="SDRTrunk Kennebec - Two Tones" width="800">
 <br><br>
 
 Streaming Integrations (IAmResponding & more)<br>
-<img src="images/media__1780864680301.png" alt="SDRTrunk Kennebec - Integrations" width="800">
+<img src="images/streaming_k78.png" alt="SDRTrunk Kennebec - Integrations" width="800">
+<br><br>
+
+AI Monitoring & Setup<br>
+<img src="images/ai_preferences_k78.png" alt="SDRTrunk Kennebec - AI Setup" width="800">
 </p>
 
 <h2>Historical Screenshots</h2>
