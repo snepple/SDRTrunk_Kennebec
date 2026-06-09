@@ -32,7 +32,7 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 <ul>
   <li><strong>AI-Powered Transcriptions & Optimization:</strong> Real-time radio audio transcription (via OpenAI Whisper / Google Speech-to-Text) and NBFM AI audio noise filtering.</li>
   <li><strong>Advanced Integrations:</strong> Real-time UDP streaming specifically for the IAmResponding platform, plus enhanced OpenMHz and Broadcastify integration.</li>
-  <li><strong>Modern UX/UI Redesign:</strong> A beautiful macOS-style aesthetic with a custom collapsible left-hand sidebar, high-DPI SVG icons, and inline table editing.</li>
+  <li><strong>Modern UX/UI Redesign:</strong> A beautiful Apple-style aesthetic with a custom collapsible left-hand sidebar, high-DPI SVG icons, and inline table editing.</li>
   <li><strong>Resilience & Health:</strong> Automated tuner self-healing logic, Smart Bandwidth (auto-optimizing sample rate to save CPU), and built-in System Health notifications.</li>
   <li><strong>In-App Documentation:</strong> An embedded, fully searchable knowledge base right inside the application.</li>
 </ul>
@@ -65,7 +65,7 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 <ul>
   <li><strong>Unified User Preferences:</strong> We completely eliminated the need to hunt across multiple menus. <em>All</em> application settings, memory allocation configurations, and tuner preferences are now consolidated into a single, intuitive "User Preferences" area.</li>
   <li><strong>New GUI for Logs & Recordings:</strong> Replaced the old file-system approach with a beautiful, in-app GUI for reviewing live application/tuner logs and browsing, filtering, and playing back recorded audio files natively.</li>
-  <li><strong>Refreshed MacOS-Style Aesthetic:</strong> Updated icons, a collapsible left-hand navigation sidebar, and a highly polished "Now Playing" view for better visual ergonomics.</li>
+  <li><strong>Refreshed Apple-Style Aesthetic:</strong> Updated icons, a collapsible left-hand navigation sidebar, and a highly polished "Now Playing" view for better visual ergonomics.</li>
   <li><strong>Windows Native Installer & Friendly <code>.exe</code>:</strong> Added a seamless Windows native installer. No more launching via ugly batch scripts—SDRTrunk Kennebec installs cleanly to your Program Files and launches via a silent, Windows-friendly native <code>.exe</code> wrapper (no background terminal window!).</li>
 </ul>
 
@@ -109,7 +109,7 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 <h2>📸 Updated Screenshots</h2>
 
 <p align="center">
-Refreshed macOS-style GUI & Side Navigation<br>
+Refreshed Apple-style GUI & Side Navigation<br>
 <img src="images/now_playing_k78.png" alt="SDRTrunk Kennebec - Updated GUI" width="800">
 <br><br>
 
