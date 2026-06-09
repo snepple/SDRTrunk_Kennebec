@@ -135,6 +135,18 @@ Streaming Integrations (IAmResponding & more)<br>
 
 AI Monitoring & Setup<br>
 <img src="images/ai_preferences_k78.png" alt="SDRTrunk Kennebec - AI Setup" width="800">
+<br><br>
+
+In-App Knowledge Base & Help Viewer<br>
+<img src="images/help_docs_k78.png" alt="SDRTrunk Kennebec - Help and Docs" width="800">
+<br><br>
+
+Audio Recordings Review<br>
+<img src="images/audio_recordings_k78.png" alt="SDRTrunk Kennebec - Audio Recordings" width="800">
+<br><br>
+
+Performance & Live Log Analysis<br>
+<img src="images/performance_logs_k78.png" alt="SDRTrunk Kennebec - Performance and Logs" width="800">
 </p>
 
 <h2>Historical Screenshots</h2>
