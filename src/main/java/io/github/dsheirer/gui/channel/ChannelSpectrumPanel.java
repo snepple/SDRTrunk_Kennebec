@@ -124,22 +124,22 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
 
         VBox fftPanel = new VBox();
 
-        HBox labelPanel = new HBox(5);
-        labelPanel.setAlignment(Pos.CENTER_LEFT);
-        labelPanel.setPadding(new Insets(2, 5, 2, 5));
-        labelPanel.getChildren().add(new Label("Channel Spectrum"));
+        HBox fftControls = new HBox(5);
+        fftControls.setAlignment(Pos.CENTER_LEFT);
+        fftControls.setPadding(new Insets(2, 5, 2, 5));
+        fftControls.getChildren().add(new Label("Channel Spectrum"));
 
         mEstimatedCarrierOffsetFrequencyTitleLabel = new Label("Carrier Offset:");
         mEstimatedCarrierOffsetFrequencyTitleLabel.setTextFill(javafx.scene.paint.Color.rgb(142, 142, 147));
         mEstimatedCarrierOffsetFrequencyTitleLabel.setMinWidth(Region.USE_PREF_SIZE);
-        labelPanel.getChildren().add(mEstimatedCarrierOffsetFrequencyTitleLabel);
+        fftControls.getChildren().add(mEstimatedCarrierOffsetFrequencyTitleLabel);
 
         mEstimatedCarrierOffsetFrequencyValueLabel = new Label("0 Hz");
         mEstimatedCarrierOffsetFrequencyValueLabel.setFont(javafx.scene.text.Font.font(mEstimatedCarrierOffsetFrequencyValueLabel.getFont().getFamily(), javafx.scene.text.FontWeight.BOLD, mEstimatedCarrierOffsetFrequencyValueLabel.getFont().getSize()));
         mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(true);
         mEstimatedCarrierOffsetFrequencyValueLabel.setPrefWidth(60);
         mEstimatedCarrierOffsetFrequencyValueLabel.setMinWidth(Region.USE_PREF_SIZE);
-        labelPanel.getChildren().add(mEstimatedCarrierOffsetFrequencyValueLabel);
+        fftControls.getChildren().add(mEstimatedCarrierOffsetFrequencyValueLabel);
 
         javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory mNoiseFloorSpinnerValueFactory = new javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory(8, 36, 18, 1);
         Spinner<Integer> noiseFloorSpinner = new Spinner<>(mNoiseFloorSpinnerValueFactory);
@@ -149,13 +149,14 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
                 mSpectrumPanel.setSampleSize(newVal.doubleValue());
             }
         });
-        labelPanel.getChildren().add(noiseFloorSpinner);
-        labelPanel.getChildren().add(new Label("Noise Floor"));
+        fftControls.getChildren().add(noiseFloorSpinner);
+        fftControls.getChildren().add(new Label("Noise Floor"));
 
-        // Spacer to push view selector buttons to the right
-        Region labelSpacer = new Region();
-        HBox.setHgrow(labelSpacer, Priority.ALWAYS);
-        labelPanel.getChildren().add(labelSpacer);
+        fftPanel.getChildren().add(fftControls);
+
+        HBox inspectorControls = new HBox(5);
+        inspectorControls.setAlignment(Pos.CENTER_LEFT);
+        inspectorControls.setPadding(new Insets(2, 5, 2, 5));
 
         // View selector toggle buttons for the inspector panel
         ToggleGroup viewToggle = new ToggleGroup();
@@ -182,7 +183,12 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         mPowerBtn = powerBtn;
         mSymbolBtn = symbolBtn;
 
-        labelPanel.getChildren().addAll(squelchBtn, powerBtn, symbolBtn);
+        inspectorControls.getChildren().addAll(squelchBtn, powerBtn, symbolBtn);
+        
+        // Spacer to push view selector buttons to the left and log button to right
+        Region labelSpacer = new Region();
+        HBox.setHgrow(labelSpacer, Priority.ALWAYS);
+        inspectorControls.getChildren().add(labelSpacer);
 
         Button logIndexesButton = new Button("Log Settings");
         logIndexesButton.setTooltip(new javafx.scene.control.Tooltip("Log channel spectrum settings"));
@@ -226,9 +232,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
                 }
             }
         });
-        labelPanel.getChildren().add(logIndexesButton);
-
-        fftPanel.getChildren().add(labelPanel);
+        inspectorControls.getChildren().add(logIndexesButton);
 
         mFrequencyOverlayPanel = new FrequencyOverlayPanel(settingsManager);
         mSpectrumPanel = new SpectrumPanel(settingsManager);
@@ -279,19 +283,25 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
 
         // No-channel placeholder label for the inspector panel
         Label noChannelLabel = new Label("Select a channel to view inspector");
+        noChannelLabel.setId("noChannelLabel");
         noChannelLabel.setTextFill(javafx.scene.paint.Color.GRAY);
         noChannelLabel.setStyle("-fx-font-style: italic;");
         mInspectorPanel.getChildren().add(noChannelLabel);
+        
+        VBox rightPanel = new VBox();
+        rightPanel.getChildren().add(inspectorControls);
+        VBox.setVgrow(mInspectorPanel, Priority.ALWAYS);
+        rightPanel.getChildren().add(mInspectorPanel);
 
         // Side-by-side layout: FFT on the left, inspector on the right
         HBox.setHgrow(fftPanel, Priority.ALWAYS);
-        HBox.setHgrow(mInspectorPanel, Priority.ALWAYS);
+        HBox.setHgrow(rightPanel, Priority.ALWAYS);
         fftPanel.setMinWidth(200);
         fftPanel.setPrefWidth(400);
-        mInspectorPanel.setMinWidth(200);
-        mInspectorPanel.setPrefWidth(300);
+        rightPanel.setMinWidth(200);
+        rightPanel.setPrefWidth(300);
         getChildren().add(fftPanel);
-        getChildren().add(mInspectorPanel);
+        getChildren().add(rightPanel);
 
         mSampleStreamTapModule.setListener(mComplexDftProcessor);
         DFTResultsConverter DFTResultsConverter = new ComplexDecibelConverter();
@@ -512,17 +522,24 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
      */
     private void setRightComponent(Node component)
     {
+        Node noChannelLabel = mInspectorPanel.lookup("#noChannelLabel");
+        
         if (component == mNoiseSquelchPanel) {
             mNoiseSquelchPanel.setVisible(true); mSignalPowerView.setVisible(false); mSymbolPanel.setVisible(false);
             mInspectorPanel.setVisible(true);
+            if(noChannelLabel != null) noChannelLabel.setVisible(false);
         } else if (component == mSignalPowerView) {
             mNoiseSquelchPanel.setVisible(false); mSignalPowerView.setVisible(true); mSymbolPanel.setVisible(false);
             mInspectorPanel.setVisible(true);
+            if(noChannelLabel != null) noChannelLabel.setVisible(false);
         } else if (component == mSymbolPanel) {
             mNoiseSquelchPanel.setVisible(false); mSignalPowerView.setVisible(false); mSymbolPanel.setVisible(true);
             mInspectorPanel.setVisible(true);
+            if(noChannelLabel != null) noChannelLabel.setVisible(false);
         } else {
-            mInspectorPanel.setVisible(false);
+            mNoiseSquelchPanel.setVisible(false); mSignalPowerView.setVisible(false); mSymbolPanel.setVisible(false);
+            mInspectorPanel.setVisible(true);
+            if(noChannelLabel != null) noChannelLabel.setVisible(true);
         }
     }
 
