@@ -52,48 +52,40 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 
 <p>No message is transmitted on the control channel when a conversation on a talkgroup is over. The monitoring process keeps track of transmissions and if there has been no activity for a specified period, it ends the recording.</p>
 <h2>What the Kennebec Version Adds (Versus the Source Fork)</h2>
-<p>The Kennebec version builds on the upstream sdrtrunk codebase with a focused set of improvements for operators who need reliable, unattended streaming and monitoring.</p>
+<p>The Kennebec version builds on the upstream <a href="https://github.com/actionpagezello/sdrtrunk">sdrtrunk</a> codebase with a massive set of improvements for operators who need reliable, unattended streaming and monitoring. Below is an in-depth comparison of features explicitly added or significantly overhauled in the Kennebec fork:</p>
+
+<h3>Performance & Resource Optimization</h3>
+<ul>
+  <li><strong>Reduced CPU & Memory Utilization:</strong> Major underlying engine optimizations aimed at reducing heap allocations, aggressive memory management, and smarter thread pooling.</li>
+  <li><strong>GPU Acceleration for Spectral Visuals:</strong> Waterfall and Spectrum displays now offload heavy rendering tasks to the GPU, producing much smoother frame rates while drastically reducing CPU tax.</li>
+  <li><strong>Smart Bandwidth:</strong> Automatically calculates and reduces SDR tuner sample rates when observing narrower bandwidths, further conserving CPU.</li>
+</ul>
 
 <h3>Modernized Interface and Workflow</h3>
 <ul>
-  <li>Refreshed GUI with updated icons and an improved Now Playing view</li>
-  <li>Consolidated settings in a single user preference area, eliminating the need to hunt across multiple menus</li>
-  <li>New interface for reviewing logs and browsing recorded audio files</li>
-  <li>Ability to set allocated memory directly via the user preferences Ux/GUI</li>
-  <li>AI Integration for Audio Monitoring and System Health Notifications</li>
-  <li>Automated Geographic ID generation for NBFM channels</li>
+  <li><strong>Unified User Preferences:</strong> We completely eliminated the need to hunt across multiple menus. <em>All</em> application settings, memory allocation configurations, and tuner preferences are now consolidated into a single, intuitive "User Preferences" area.</li>
+  <li><strong>New GUI for Logs & Recordings:</strong> Replaced the old file-system approach with a beautiful, in-app GUI for reviewing live application/tuner logs and browsing, filtering, and playing back recorded audio files natively.</li>
+  <li><strong>Refreshed MacOS-Style Aesthetic:</strong> Updated icons, a collapsible left-hand navigation sidebar, and a highly polished "Now Playing" view for better visual ergonomics.</li>
+  <li><strong>Windows Native Installer & Friendly <code>.exe</code>:</strong> Added a seamless Windows native installer. No more launching via ugly batch scripts—SDRTrunk Kennebec installs cleanly to your Program Files and launches via a silent, Windows-friendly native <code>.exe</code> wrapper (no background terminal window!).</li>
+</ul>
+
+<h3>Advanced Monitoring & Integrations</h3>
+<ul>
+  <li><strong>Two-Tone Detection:</strong> Brand new, fully integrated Two-Tone paging detection for monitoring and dispatching fire/EMS alerts.</li>
+  <li><strong>IAmResponding Streaming:</strong> A custom-built, native UDP streaming integration designed specifically to route audio dispatches directly into the IAmResponding platform.</li>
+  <li><strong>Inactivity & Error Alerts:</strong> Receive alerts via Telegram or Email when a channel remains silent for a configurable duration or when the application/tuner faults.</li>
+</ul>
+
+<h3>Artificial Intelligence Integration</h3>
+<ul>
+  <li><strong>AI-Powered Audio Transcriptions:</strong> Real-time radio audio transcription capabilities via OpenAI Whisper and Google Speech-to-Text.</li>
+  <li><strong>NBFM AI Audio Optimization:</strong> AI-driven noise filtering specifically designed to clean up analog NBFM signals.</li>
+  <li><strong>Intelligent System Health Advisor:</strong> Optional AI assistant that can automatically review system logs, monitor application performance, and provide auto-remediation advice if a channel becomes unintelligible or a tuner locks up.</li>
 </ul>
 
 <h3>In-App Knowledge Base</h3>
 <ul>
-  <li>An embedded, searchable help viewer brings documentation directly into the application. You no longer need to switch to a browser to look up configuration details or protocol explanations.</li>
-  <li>Contextual DSP explanations and interactive configuration.</li>
-</ul>
-
-<h3>Streaming and Audio Reliability</h3>
-<ul>
-  <li>Automated audio recording, streaming, and metadata tagging</li>
-  <li>SDR tuner width auto-calculation to reduce manual configuration</li>
-  <li>New stream type for IamResponding (local UDP) using Two Tone Detect</li>
-  <li>Tuner self-healing logic that automatically attempts to recover from hardware errors</li>
-  <li>Automated tuner reset on Windows 10 and higher using PowerShell scripts for hard-reset of locked or failed SDR devices</li>
-</ul>
-
-<h3>Monitoring and Alerts</h3>
-<ul>
-  <li>Two Tone Detect functionality for paging and dispatch monitoring</li>
-  <li>Inactivity monitoring: alerts via Telegram or Email when a channel remains silent for a configurable duration</li>
-  <li>Configurable error notifications via Telegram or Email for application or tuner faults</li>
-</ul>
-
-<h3>Optional AI Integration</h3>
-<ul>
-  <li>When enabled, Gemini AI can automatically set channel filters, review logs, monitor application performance, assess audio quality, and notify you if a channel becomes unintelligible.</li>
-</ul>
-
-<h3>OS and Java Integration</h3>
-<ul>
-  <li>Deep OS integration via modern Java and JNA provides native backdrop effects, theme syncing with the system appearance, and DPI-aware rendering on Windows.</li>
+  <li>An embedded, searchable help viewer brings all documentation directly into the application. You no longer need to switch to a browser to look up configuration details or DSP explanations!</li>
 </ul>
 
 <h2>Core SDRTrunk Features</h2>
