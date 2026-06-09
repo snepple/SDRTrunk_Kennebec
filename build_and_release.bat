@@ -357,7 +357,7 @@ if !ASSET_COUNT! GTR 0 (
 :: ============================================================================
 call :drawProgressBar 95 "Updating README..."
 cd /d "%ROOT_DIR%\%FOLDER_NAME%"
-powershell -Command "(Get-Content README.md) -replace 'Latest Compiled Release: .*', 'Latest Compiled Release: [Download !PROJ_VER!](https://github.com/%GH_REPO%/releases/tag/!PROJ_VER!)' | Set-Content README.md"
+powershell -Command "(Get-Content README.md) -replace 'K\.\d{2}\.\d{3}', '!PROJ_VER!' | Set-Content README.md"
 git add README.md
 git commit -m "Update README.md with release !PROJ_VER!" >nul 2>&1
 git push origin HEAD >nul 2>&1
