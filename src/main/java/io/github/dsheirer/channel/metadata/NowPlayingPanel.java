@@ -133,7 +133,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         if (!initialized) {
             setupWidgets();
         } else {
-            mWidgetContainer.ensureComponentInWidget("spectrum");
+            mWidgetContainer.ensureComponentInWidget("spectrum_v2");
             mWidgetContainer.ensureComponentInWidget("streaming");
             mWidgetContainer.ensureComponentInWidget("resource");
         }
@@ -144,7 +144,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
     public void setSpectralPanelVisible(boolean visible) {
         if (mWidgetContainer != null) {
-            mWidgetContainer.setWidgetVisible("spectrum", visible);
+            mWidgetContainer.setWidgetVisible("spectrum_v2", visible);
         }
     }
 
@@ -223,8 +223,8 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         mWidgetContainer.removeAll();
 
         if (mSpectralPanel != null) {
-            Widget spectrumWidget = new Widget("spectrum", "Spectrum/Waterfall", (Region) mSpectralPanel, mWidgetContainer, 100);
-            int prefHeight = mNowPlayingPreference.getWidgetHeight("spectrum", 250);
+            Widget spectrumWidget = new Widget("spectrum_v2", "Spectrum/Waterfall", (Region) mSpectralPanel, mWidgetContainer, 100);
+            int prefHeight = mNowPlayingPreference.getWidgetHeight("spectrum_v2", 180);
             ((Region) mSpectralPanel).setPrefHeight(prefHeight);
             VBox.setVgrow(spectrumWidget, Priority.SOMETIMES);
             mWidgetContainer.addWidget(spectrumWidget, false);
@@ -262,7 +262,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     private void showManageWidgetsPopup() {
         javafx.scene.control.ContextMenu popup = new javafx.scene.control.ContextMenu();
 
-        if (mSpectralPanel != null) addPopupItem(popup, "Spectrum/Waterfall", "spectrum");
+        if (mSpectralPanel != null) addPopupItem(popup, "Spectrum/Waterfall", "spectrum_v2");
         if (mChannelSplitPane != null) addPopupItem(popup, "Channel Table & Details", "channel");
         if (mBroadcastStatusPanel != null) addPopupItem(popup, "Streaming Status", "streaming");
         if (mResourceStatusPanel != null) addPopupItem(popup, "Resource Status", "resource");
