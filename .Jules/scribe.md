@@ -36,3 +36,7 @@
 **Topic:** Spectrum & Waterfall Display
 **Learning:** Added a new documentation guide covering the Spectrum & Waterfall display, as there was no getting started guide for this core navigational component, and added a signal flow Mermaid diagram to clarify interactions.
 **Action:** Created `src/main/resources/docs/spectrum-&-waterfall.md` and integrated it into the navigation tree of `HelpViewer.java` under "Hardware & Tuners".
+## 2024-05-20 - Topic Selection
+**Topic:** Custom Channel Images
+**Learning:** The "Custom Artwork Pipeline" is a new feature allowing users to upload custom images for channels. Verified that images must be at least 64x64 and are automatically scaled to 128x128 PNGs in `ChannelConfigurationEditor.java`.
+**Action:** Created `src/main/resources/docs/custom-channel-images.md` and integrated it into the navigation tree of `HelpViewController.java` under "Organization & Playlists".

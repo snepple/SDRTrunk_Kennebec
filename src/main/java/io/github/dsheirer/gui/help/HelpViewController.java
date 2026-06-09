@@ -87,6 +87,7 @@ public class HelpViewController {
 
         TreeItem<String> organizationPlaylistsNode = new TreeItem<>("Organization & Playlists");
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Aliases Talkgroups"));
+        organizationPlaylistsNode.getChildren().add(new TreeItem<>("Custom Channel Images"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Playlist Editor"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Radio Reference"));
         guidesNode.getChildren().add(organizationPlaylistsNode);
