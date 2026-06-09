@@ -4,3 +4,6 @@
 
 ## 2025-02-28 - [RecordingTunerEditor HIG Consistency]
 **Global UI Constant:** All editor panels should strictly use the 8pt grid with standardized MigLayout gaps/insets for consistency, specifically adopting "insets 16 16 16 16, gapy 8" where explicit padding is required instead of arbitrary magic numbers.
+
+## 2026-06-09 - P25P1ConfigurationEditor Padding/Spacing Standardization
+**Global UI Constant:** All editor panels should strictly use the 8pt grid with standardized insets/gaps (e.g. `new Insets(16)` and `new VBox(8)`) for consistency, specifically adopting "insets 16" and spacing "8" where explicit padding is required instead of arbitrary magic numbers like 5 or 10.

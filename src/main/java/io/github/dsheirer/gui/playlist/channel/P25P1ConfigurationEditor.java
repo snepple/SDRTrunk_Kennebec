@@ -146,8 +146,8 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getDecoderPane(){
         if(mDecoderPane == null)
         {
-            VBox content = new VBox(10);
-            content.setPadding(new Insets(10));
+            VBox content = new VBox(8);
+            content.setPadding(new Insets(16));
 
             // Card 1: Modulation
             Label modulationHelpLabel = new Label("C4FM: repeaters and non-simulcast trunked systems.  LSM: simulcast trunked systems.");
@@ -214,7 +214,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         if(mRecordPane == null)
         {
             Label notice = new Label("Note: use aliases to control call audio recording");
-            notice.setPadding(new Insets(10, 10, 0, 10));
+            notice.setPadding(new Insets(16, 16, 0, 16));
 
             VBox vBox = new VBox();
             vBox.getChildren().addAll(getRecordConfigurationEditor(), notice);
@@ -232,8 +232,8 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     private javafx.scene.Node getGraphicEQPane(){
         if(mGraphicEQPane == null)
         {
-            VBox content = new VBox(10);
-            content.setPadding(new Insets(10));
+            VBox content = new VBox(8);
+            content.setPadding(new Insets(16));
 
             mGraphicEQEnabledSwitch = new ToggleSwitch("Enable Graphic Equalizer");
             mGraphicEQEnabledSwitch.setTooltip(new Tooltip("Apply a 5-band graphic EQ to decoded P25 audio"));
@@ -340,7 +340,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             types.add(EventLogType.TRAFFIC_DECODED_MESSAGE);
 
             mEventLogConfigurationEditor = new EventLogConfigurationEditor(types);
-            mEventLogConfigurationEditor.setPadding(new Insets(5,5,5,5));
+            mEventLogConfigurationEditor.setPadding(new Insets(8));
             mEventLogConfigurationEditor.modifiedProperty().addListener((observable, oldValue, newValue) -> modifiedProperty().set(true));
         }
 
