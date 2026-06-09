@@ -224,7 +224,9 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
         if (mSpectralPanel != null) {
             Widget spectrumWidget = new Widget("spectrum", "Spectrum/Waterfall", (Region) mSpectralPanel, mWidgetContainer, 100);
-            VBox.setVgrow(spectrumWidget, Priority.ALWAYS);
+            int prefHeight = mNowPlayingPreference.getWidgetHeight("spectrum", 250);
+            ((Region) mSpectralPanel).setPrefHeight(prefHeight);
+            VBox.setVgrow(spectrumWidget, Priority.SOMETIMES);
             mWidgetContainer.addWidget(spectrumWidget, false);
         }
 
@@ -243,7 +245,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
         if (mBroadcastStatusPanel != null) {
             Widget streamingWidget = new Widget("streaming", "Streaming Status", (Region) mBroadcastStatusPanel, mWidgetContainer, 40);
-            VBox.setVgrow(streamingWidget, Priority.SOMETIMES);
+            VBox.setVgrow(streamingWidget, Priority.ALWAYS);
             mWidgetContainer.addWidget(streamingWidget, false);
         }
 
