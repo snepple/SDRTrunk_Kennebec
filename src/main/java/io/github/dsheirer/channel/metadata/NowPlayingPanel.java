@@ -224,7 +224,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
         if (mSpectralPanel != null) {
             Widget spectrumWidget = new Widget("spectrum_v2", "Spectrum/Waterfall", (Region) mSpectralPanel, mWidgetContainer, 100);
-            int prefHeight = mNowPlayingPreference.getWidgetHeight("spectrum_v2", 180);
+            int prefHeight = mNowPlayingPreference.getWidgetHeight("spectrum_v2", 120);
             ((Region) mSpectralPanel).setPrefHeight(prefHeight);
             VBox.setVgrow(spectrumWidget, Priority.SOMETIMES);
             mWidgetContainer.addWidget(spectrumWidget, false);

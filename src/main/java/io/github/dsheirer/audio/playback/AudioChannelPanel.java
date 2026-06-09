@@ -417,7 +417,7 @@ public class AudioChannelPanel extends VBox implements Listener<AudioEvent>, Set
         }
         finally
         {
-            mLock.unlock();
+            // mLock.unlock();
         }
     }
 

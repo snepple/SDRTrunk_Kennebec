@@ -95,6 +95,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
     private final ComplexSamplesToNativeBufferModule mSampleStreamTapModule = new ComplexSamplesToNativeBufferModule();
     private final ComplexDftProcessor mComplexDftProcessor = new ComplexDftProcessor();
     private SpectrumPanel mSpectrumPanel;
+    private io.github.dsheirer.spectrum.WaterfallPanel mWaterfallPanel;
     private final FrequencyOverlayPanel mFrequencyOverlayPanel;
     private final SourceEventProcessor mSourceEventProcessor = new SourceEventProcessor();
     // SpinnerNumberModel removed - replaced by IntegerSpinnerValueFactory below
@@ -237,31 +238,29 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         mFrequencyOverlayPanel = new FrequencyOverlayPanel(settingsManager);
         mSpectrumPanel = new SpectrumPanel(settingsManager);
         mSpectrumPanel.setSampleSize(18.0);
+        mWaterfallPanel = new io.github.dsheirer.spectrum.WaterfallPanel(settingsManager);
 
-        /**
-         * The layered pane holds the overlapping spectrum and channel panels
-         * and manages the sizing of each panel with the resize listener
-         */
         StackPane layeredPanel = new StackPane();
-        
-
-        /**
-         * Create a mouse adapter to handle mouse events over the spectrum
-         * and waterfall panels
-         */
         MouseEventProcessor mouser = new MouseEventProcessor();
 
         mFrequencyOverlayPanel.setOnMouseEntered(mouser::mouseEntered);
         mFrequencyOverlayPanel.setOnMouseExited(mouser::mouseExited);
         mFrequencyOverlayPanel.setOnMouseMoved(mouser::mouseMoved);
         
+        mWaterfallPanel.setOnMouseEntered(mouser::mouseEntered);
+        mWaterfallPanel.setOnMouseExited(mouser::mouseExited);
+        mWaterfallPanel.setOnMouseMoved(mouser::mouseMoved);
 
-        //Add the spectrum and channel panels to the layered panel
         layeredPanel.getChildren().add(mSpectrumPanel);
         layeredPanel.getChildren().add(mFrequencyOverlayPanel);
 
-        VBox.setVgrow(layeredPanel, Priority.ALWAYS);
-        fftPanel.getChildren().add(layeredPanel);
+        SplitPane splitPane = new SplitPane();
+        splitPane.setOrientation(javafx.geometry.Orientation.VERTICAL);
+        splitPane.getItems().addAll(layeredPanel, mWaterfallPanel);
+        splitPane.setDividerPositions(0.35);
+
+        VBox.setVgrow(splitPane, Priority.ALWAYS);
+        fftPanel.getChildren().add(splitPane);
 
         mNoiseSquelchPanel = new javafx.scene.layout.Pane();
         mSymbolPanel = new javafx.scene.layout.Pane();
@@ -307,7 +306,9 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         DFTResultsConverter DFTResultsConverter = new ComplexDecibelConverter();
         mComplexDftProcessor.addConverter(DFTResultsConverter);
         DFTResultsConverter.addListener(mSpectrumPanel);
+        DFTResultsConverter.addListener(mWaterfallPanel);
         mSpectrumPanel.clearSpectrum();
+        mWaterfallPanel.clearWaterfall();
         installWindowVisibilityListeners();
     }
 
@@ -402,6 +403,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
             mSampleStreamTapModule.removeListener();
             mComplexDftProcessor.stop();
             mSpectrumPanel.clearSpectrum();
+            mWaterfallPanel.clearWaterfall();
             mDftProcessing = false;
         }
     }

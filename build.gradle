@@ -79,6 +79,9 @@ sourceSets {
     test.java.srcDirs 'src/test'
 }
 
+compileTestJava {
+}
+
 test {
     useJUnitPlatform()
     jvmArgs '-XX:+EnableDynamicAgentLoading'
@@ -597,6 +600,12 @@ startScripts {
         windowsScriptFile.text = windowsScriptFile.text.replaceAll(/(?m)^set DEFAULT_JVM_OPTS=.*$/) { match ->
             match + '\n\nif exist "%USERPROFILE%\\\\SDRTrunk\\\\SDRTrunk.memory" (\n    set /p MEM_LIMIT=<"%USERPROFILE%\\\\SDRTrunk\\\\SDRTrunk.memory"\n)\nif defined MEM_LIMIT (\n    set SDR_TRUNK_OPTS=%SDR_TRUNK_OPTS% "-Xmx%MEM_LIMIT%g"\n)'
         }
+        
+        // Create a VBS script to completely hide the console window when starting
+        def vbsScriptFile = new File(windowsScriptFile.parentFile, windowsScriptFile.name.replace('.bat', '.vbs'))
+        vbsScriptFile.text = 'Set WshShell = CreateObject("WScript.Shell")\n' +
+                             'WshShell.Run chr(34) & "sdr-trunk.bat" & Chr(34), 0\n' +
+                             'Set WshShell = Nothing'
     }
 }
 

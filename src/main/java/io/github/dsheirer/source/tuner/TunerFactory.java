@@ -436,6 +436,7 @@ public class TunerFactory
                 return new R820TTunerConfiguration(uniqueID);
             case RAFAELMICRO_R828D:
                 return new R828DTunerConfiguration(uniqueID);
+            case TEST:
             case RECORDING:
                 return RecordingTunerConfiguration.create();
             case RSP_1:
@@ -515,6 +516,7 @@ public class TunerFactory
                 throw new IllegalArgumentException("Unrecognized discovered RSP tuner class: " +
                         discoveredTuner.getClass());
             case RECORDING_TUNER:
+            case TEST_TUNER:
                 return new RecordingTunerEditor(userPreferences, tunerManager, discoveredTuner);
             case RTL2832:
                 if(discoveredTuner.hasTuner())
@@ -531,7 +533,6 @@ public class TunerFactory
                     }
                 }
                 return new RTL2832UnknownTunerEditor(userPreferences, tunerManager, discoveredTuner);
-            case TEST_TUNER:
             case UNKNOWN:
             default:
                 throw new IllegalArgumentException("Unsupported tuner class: " + discoveredTuner.getTunerClass());
