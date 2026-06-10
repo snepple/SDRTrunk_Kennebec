@@ -154,14 +154,26 @@ public class AudioRecordingsPanel extends VBox {
         mChannelComboBox.getSelectionModel().select("All");
         mChannelComboBox.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
-        Button refreshButton = new Button("Refresh");
+        Button refreshButton = new Button("_Refresh");
+        refreshButton.setMnemonicParsing(true);
+        refreshButton.accessibleTextProperty().set("Refresh Recordings");
+        refreshButton.accessibleHelpProperty().set("Reloads the recordings list from disk.");
+        refreshButton.setTooltip(new Tooltip("Reloads the recordings list from disk."));
         refreshButton.setOnAction(e -> loadRecordings());
 
-        mStopButton = new Button("Stop Playback");
+        mStopButton = new Button("Sto_p Playback");
+        mStopButton.setMnemonicParsing(true);
+        mStopButton.accessibleTextProperty().set("Stop Playback");
+        mStopButton.accessibleHelpProperty().set("Stop the currently playing recording.");
+        mStopButton.setTooltip(new Tooltip("Stop the currently playing recording."));
         mStopButton.setDisable(true);
         mStopButton.setOnAction(e -> stopPlayback());
 
-        Button clearFiltersButton = new Button("Clear Filters");
+        Button clearFiltersButton = new Button("Clear _Filters");
+        clearFiltersButton.setMnemonicParsing(true);
+        clearFiltersButton.accessibleTextProperty().set("Clear Filters");
+        clearFiltersButton.accessibleHelpProperty().set("Reset all search filters to default.");
+        clearFiltersButton.setTooltip(new Tooltip("Reset all search filters to default."));
         clearFiltersButton.getStyleClass().add("kennebec-toolbar-button");
         clearFiltersButton.setOnAction(e -> {
             mStartDatePicker.setValue(null);
@@ -174,7 +186,11 @@ public class AudioRecordingsPanel extends VBox {
             mChannelComboBox.getSelectionModel().select("All");
         });
 
-        Button deleteSelectedButton = new Button("Delete Selected");
+        Button deleteSelectedButton = new Button("Delete _Selected");
+        deleteSelectedButton.setMnemonicParsing(true);
+        deleteSelectedButton.accessibleTextProperty().set("Delete Selected Recordings");
+        deleteSelectedButton.accessibleHelpProperty().set("Permanently delete the selected recordings. This action cannot be undone.");
+        deleteSelectedButton.setTooltip(new Tooltip("Permanently delete the selected recordings.\nThis action cannot be undone."));
         deleteSelectedButton.setOnAction(e -> {
             List<RecordingItem> selectedItems = new ArrayList<>(mTableView.getSelectionModel().getSelectedItems());
             if (selectedItems.isEmpty()) return;
@@ -214,7 +230,11 @@ public class AudioRecordingsPanel extends VBox {
             javafx.beans.binding.Bindings.isEmpty(mTableView.getSelectionModel().getSelectedItems())
         );
 
-        Button deleteAllButton = new Button("Delete All");
+        Button deleteAllButton = new Button("Delete _All");
+        deleteAllButton.setMnemonicParsing(true);
+        deleteAllButton.accessibleTextProperty().set("Delete All Recordings");
+        deleteAllButton.accessibleHelpProperty().set("Permanently delete all currently displayed recordings. This action cannot be undone.");
+        deleteAllButton.setTooltip(new Tooltip("Permanently delete all currently displayed recordings.\nThis action cannot be undone."));
         deleteAllButton.setOnAction(e -> {
             List<RecordingItem> itemsToDelete = new ArrayList<>(mFilteredRecordings);
             if (itemsToDelete.isEmpty()) return;

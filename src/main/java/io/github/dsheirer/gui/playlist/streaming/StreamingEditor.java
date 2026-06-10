@@ -152,7 +152,7 @@ public class StreamingEditor extends SplitPane
         refreshBroadcastifyStreams();
 
         HBox toolbar = new HBox();
-        toolbar.getStyleClass().add("context-toolbar");
+        toolbar.getStyleClass().addAll("context-toolbar", "kennebec-filter-toolbar");
         toolbar.setAlignment(Pos.CENTER_LEFT);
         toolbar.setPadding(new Insets(10, 10, 10, 10));
         toolbar.setSpacing(10);
@@ -211,6 +211,7 @@ public class StreamingEditor extends SplitPane
     private TextField getSearchField() {
         if(mSearchField == null) {
             mSearchField = TextFields.createClearableTextField();
+            mSearchField.getStyleClass().add("kennebec-search-field");
             mSearchField.textProperty().addListener((observable, oldValue, newValue) -> updateFilter());
         }
         return mSearchField;
@@ -742,7 +743,7 @@ public class StreamingEditor extends SplitPane
                         } else if (item == BroadcastState.DISABLED) {
                             setStyle("-fx-text-fill: #8E8E93;");
                         } else {
-                            setStyle("-fx-text-fill: #FFFFFF;");
+                            setStyle("");
                         }
                     }
                 }

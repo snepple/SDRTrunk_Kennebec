@@ -36,3 +36,7 @@
 **Topic:** Spectrum & Waterfall Display
 **Learning:** Added a new documentation guide covering the Spectrum & Waterfall display, as there was no getting started guide for this core navigational component, and added a signal flow Mermaid diagram to clarify interactions.
 **Action:** Created `src/main/resources/docs/spectrum-&-waterfall.md` and integrated it into the navigation tree of `HelpViewer.java` under "Hardware & Tuners".
+## 2024-06-10 - Topic Selection
+**Topic:** Smart Bandwidth Optimization
+**Learning:** The "Smart Bandwidth" feature lacked a comprehensive Mintlify-style guide with a Mermaid flow diagram and was missing from the Help Viewer navigation tree.
+**Action:** Rewrote `src/main/resources/docs/smart-bandwidth.md` with visual diagrams, and integrated it into `HelpViewController.java` under "Advanced & System".

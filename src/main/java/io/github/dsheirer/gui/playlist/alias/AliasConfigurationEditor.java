@@ -324,7 +324,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                 getCloneAliasButton(), getDeleteAliasButton());
 
             mSearchAndListSelectionBox = new VBox();
-            mSearchAndListSelectionBox.getStyleClass().add("context-toolbar");
+            mSearchAndListSelectionBox.getStyleClass().addAll("context-toolbar", "kennebec-filter-toolbar");
             mSearchAndListSelectionBox.getChildren().addAll(row1, row2);
         }
 
@@ -338,6 +338,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             mSearchField = TextFields.createClearableTextField();
             mSearchField.setPromptText("Filter aliases\u2026");
             mSearchField.setPrefWidth(200);
+            mSearchField.getStyleClass().add("kennebec-search-field");
             mSearchField.textProperty().addListener((observable, oldValue, newValue) -> update());
         }
 

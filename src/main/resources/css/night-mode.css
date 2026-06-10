@@ -130,6 +130,16 @@
 .hig-data-table .table-row-cell:selected { -fx-background-color: #0f3460; }
 .hig-data-table .column-header { -fx-background-color: #16213e; }
 .hig-data-table .column-header .label { -fx-text-fill: #b0b0b0; }
+
+/* === Preferences Table === */
+.preferences-table { -fx-background-color: #1e1e3a; -fx-border-color: #3a3a5a; }
+.preferences-table .table-row-cell { -fx-background-color: #1e1e3a; }
+.preferences-table .table-row-cell:odd { -fx-background-color: #2a2a4a; }
+.preferences-table .table-row-cell:selected { -fx-background-color: #0f3460; }
+.preferences-table .column-header { -fx-background-color: #16213e; }
+.preferences-table .column-header-background { -fx-background-color: #16213e; }
+.preferences-table .column-header .label { -fx-text-fill: #b0b0b0; }
+
 .hig-settings-card { -fx-background-color: #1e1e3a; -fx-border-color: #3a3a5a; }
 .hig-form-group { -fx-background-color: #1e1e3a; -fx-border-color: #3a3a5a; }
 .hig-page-title { -fx-text-fill: #e0e0e0; }

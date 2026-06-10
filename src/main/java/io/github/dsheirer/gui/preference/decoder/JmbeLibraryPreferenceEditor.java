@@ -305,10 +305,11 @@ public class JmbeLibraryPreferenceEditor extends VBox
         {
             mJmbeVersionLabel = new Label();
             Version version = mUserPreferences.getJmbeLibraryPreference().getCurrentVersion();
+            boolean isBazineta = mUserPreferences.getJmbeLibraryPreference().getUseBazinetaFork();
 
             if(version != null)
             {
-                mJmbeVersionLabel.setText(version.toString());
+                mJmbeVersionLabel.setText(version.toString() + (isBazineta ? " (Bazineta)" : ""));
             }
             else
             {
@@ -385,7 +386,8 @@ public class JmbeLibraryPreferenceEditor extends VBox
             Path path = mUserPreferences.getJmbeLibraryPreference().getPathJmbeLibrary();
             getPathToJmbeLibraryLabel().setText(path != null ? path.toString() : PATH_NOT_SET);
             Version version = mUserPreferences.getJmbeLibraryPreference().getCurrentVersion();
-            getJmbeVersionLabel().setText(version != null ? version.toString() : LIBRARY_NOT_SETUP);
+            boolean isBazineta = mUserPreferences.getJmbeLibraryPreference().getUseBazinetaFork();
+            getJmbeVersionLabel().setText(version != null ? version.toString() + (isBazineta ? " (Bazineta)" : "") : LIBRARY_NOT_SETUP);
             getCreateButton().setText(mUserPreferences.getJmbeLibraryPreference()
                 .getPathJmbeLibrary() != null ? CHECK_FOR_UPDATE : CREATE_LIBRARY);
             getAlertUserWhenMissingCheckBox().setSelected(mUserPreferences.getJmbeLibraryPreference()
