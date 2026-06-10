@@ -110,6 +110,7 @@ public class HelpViewController {
         advancedSystemNode.getChildren().add(new TreeItem<>("Ignore Unwanted Talkgroups"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Inactivity Monitoring"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Notifications"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Smart Bandwidth"));
         advancedSystemNode.getChildren().add(new TreeItem<>("System Requirements"));
         advancedSystemNode.getChildren().add(new TreeItem<>("User Preferences"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Virtual Audio Cable"));
