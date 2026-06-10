@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.VBox?>
@@ -24,7 +25,9 @@
             <Insets bottom="5"/>
         </padding>
         <Button fx:id="toggleBtn" onAction="#handleToggle"
+                accessibleText="Toggle Sidebar"
                 style="-fx-background-color: transparent; -fx-padding: 5;">
+            <tooltip><Tooltip text="Toggle Sidebar"/></tooltip>
             <!-- Simple SVG for bars -->
             <graphic>
                 <SVGPath content="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
