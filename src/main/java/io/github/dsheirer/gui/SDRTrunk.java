@@ -1073,11 +1073,12 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             }
         } else if (id.equals("tuners")) {
             if (!mTunerSpectrumDisabled) {
-                mSpectralPanel.setPrefHeight(300);
+                double prefHeight = mUserPreferences.getSwingPreference().getDimension("spectrum_v2") != null ? mUserPreferences.getSwingPreference().getDimension("spectrum_v2").getHeight() : 300;
+                mSpectralPanel.setPrefHeight(prefHeight);
                 mTopContentPanel.setCenter(mSpectralPanel);
-                mTopContentPanel.setMinHeight(300);
-                mTopContentPanel.setPrefHeight(300);
-                mTopContentPanel.setMaxHeight(300);
+                mTopContentPanel.setMinHeight(0);
+                mTopContentPanel.setPrefHeight(prefHeight);
+                mTopContentPanel.setMaxHeight(Double.MAX_VALUE);
                 mTopContentPanel.setVisible(true);
                 mTopContentPanel.setManaged(true);
                 mSpectralPanel.start();

@@ -27,13 +27,13 @@ public class AudioChannelsPanelController {
     private HBox mainContainer;
 
     public void init(IconModel iconModel, UserPreferences userPreferences, SettingsManager settingsManager,
-                     IAudioController controller, AliasModel aliasModel, BroadcastModel broadcastModel) {
+                     IAudioController controller, AliasModel aliasModel, BroadcastModel broadcastModel, io.github.dsheirer.playlist.PlaylistManager playlistManager) {
 
         mainContainer.getChildren().clear();
         mainContainer.getChildren().add(new Separator(Orientation.VERTICAL));
 
         for (int x = 0; x < controller.getAudioChannels().size(); x++) {
-            AudioChannelPanel panel = new AudioChannelPanel(controller.getAudioChannels().get(x), aliasModel, iconModel, settingsManager, userPreferences, broadcastModel);
+            AudioChannelPanel panel = new AudioChannelPanel(controller.getAudioChannels().get(x), aliasModel, iconModel, settingsManager, userPreferences, broadcastModel, playlistManager);
             HBox.setHgrow(panel, Priority.ALWAYS);
             mainContainer.getChildren().add(panel);
 
@@ -44,7 +44,7 @@ public class AudioChannelsPanelController {
 
         if (controller.getAudioChannels().size() == 1) {
             mainContainer.getChildren().add(new Separator(Orientation.VERTICAL));
-            AudioChannelPanel panel = new AudioChannelPanel(null, aliasModel, iconModel, settingsManager, userPreferences, broadcastModel);
+            AudioChannelPanel panel = new AudioChannelPanel(null, aliasModel, iconModel, settingsManager, userPreferences, broadcastModel, playlistManager);
             HBox.setHgrow(panel, Priority.ALWAYS);
             mainContainer.getChildren().add(panel);
         }

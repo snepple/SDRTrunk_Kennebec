@@ -691,8 +691,7 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
             }
 
             if(contextMenu != null) {
-                int yOffset = event.getSource() == mOverlayPanel ? 0 : (int)(getHeight() * 0.5);
-                contextMenu.show(SpectralDisplayPanel.this, (int)event.getX(), (int)event.getY() + yOffset);
+                contextMenu.show(SpectralDisplayPanel.this, event.getScreenX(), event.getScreenY());
             }
         }
     }
