@@ -125,7 +125,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
 
         VBox fftPanel = new VBox();
 
-        HBox fftControls = new HBox(5);
+        javafx.scene.layout.FlowPane fftControls = new javafx.scene.layout.FlowPane(5, 5);
         fftControls.setAlignment(Pos.CENTER_LEFT);
         fftControls.setPadding(new Insets(2, 5, 2, 5));
         fftControls.getChildren().add(new Label("Channel Spectrum"));
@@ -155,7 +155,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
 
         fftPanel.getChildren().add(fftControls);
 
-        HBox inspectorControls = new HBox(5);
+        javafx.scene.layout.FlowPane inspectorControls = new javafx.scene.layout.FlowPane(5, 5);
         inspectorControls.setAlignment(Pos.CENTER_LEFT);
         inspectorControls.setPadding(new Insets(2, 5, 2, 5));
 
@@ -186,9 +186,8 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
 
         inspectorControls.getChildren().addAll(squelchBtn, powerBtn, symbolBtn);
         
-        // Spacer to push view selector buttons to the left and log button to right
+        // Spacer to push view selector buttons to the left and log button to right (removed for FlowPane)
         Region labelSpacer = new Region();
-        HBox.setHgrow(labelSpacer, Priority.ALWAYS);
         inspectorControls.getChildren().add(labelSpacer);
 
         Button logIndexesButton = new Button("Log Settings");
