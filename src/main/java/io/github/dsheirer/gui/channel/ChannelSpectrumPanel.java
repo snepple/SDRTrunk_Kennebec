@@ -106,8 +106,6 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
     private final NoiseSquelchView mNoiseSquelchView;
     private final SignalPowerView mSignalPowerView;
     private final SymbolView mSymbolView = new SymbolView();
-    private javafx.scene.layout.Pane mNoiseSquelchPanel;
-    private javafx.scene.layout.Pane mSymbolPanel;
     private javafx.scene.layout.StackPane mInspectorPanel;
     private ToggleButton mSquelchBtn;
     private ToggleButton mPowerBtn;
@@ -166,7 +164,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         squelchBtn.setToggleGroup(viewToggle);
         squelchBtn.setMinWidth(Region.USE_PREF_SIZE);
         squelchBtn.setTooltip(new Tooltip("Show noise squelch view"));
-        squelchBtn.setOnAction(e -> { if(squelchBtn.isSelected()) setRightComponent(mNoiseSquelchPanel); });
+        squelchBtn.setOnAction(e -> { if(squelchBtn.isSelected()) setRightComponent(mNoiseSquelchView); });
 
         ToggleButton powerBtn = new ToggleButton("Power");
         powerBtn.setToggleGroup(viewToggle);
@@ -178,7 +176,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         symbolBtn.setToggleGroup(viewToggle);
         symbolBtn.setMinWidth(Region.USE_PREF_SIZE);
         symbolBtn.setTooltip(new Tooltip("Show symbol constellation view"));
-        symbolBtn.setOnAction(e -> { if(symbolBtn.isSelected()) setRightComponent(mSymbolPanel); });
+        symbolBtn.setOnAction(e -> { if(symbolBtn.isSelected()) setRightComponent(mSymbolView); });
 
         mSquelchBtn = squelchBtn;
         mPowerBtn = powerBtn;
@@ -246,38 +244,17 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         mFrequencyOverlayPanel.setOnMouseExited(mouser::mouseExited);
         mFrequencyOverlayPanel.setOnMouseMoved(mouser::mouseMoved);
         
-        mWaterfallPanel.setOnMouseEntered(mouser::mouseEntered);
-        mWaterfallPanel.setOnMouseExited(mouser::mouseExited);
-        mWaterfallPanel.setOnMouseMoved(mouser::mouseMoved);
-
         layeredPanel.getChildren().add(mSpectrumPanel);
         layeredPanel.getChildren().add(mFrequencyOverlayPanel);
 
-        SplitPane splitPane = new SplitPane();
-        splitPane.setOrientation(javafx.geometry.Orientation.VERTICAL);
-        splitPane.getItems().addAll(layeredPanel, mWaterfallPanel);
-        splitPane.setDividerPositions(0.35);
-
-        VBox.setVgrow(splitPane, Priority.ALWAYS);
-        fftPanel.getChildren().add(splitPane);
-
-        mNoiseSquelchPanel = new javafx.scene.layout.Pane();
-        mSymbolPanel = new javafx.scene.layout.Pane();
-
-        //Add the JavaFX views directly as children
-        mNoiseSquelchPanel.getChildren().add(mNoiseSquelchView);
-        mNoiseSquelchView.prefWidthProperty().bind(mNoiseSquelchPanel.widthProperty());
-        mNoiseSquelchView.prefHeightProperty().bind(mNoiseSquelchPanel.heightProperty());
-
-        mSymbolPanel.getChildren().add(mSymbolView);
-        mSymbolView.prefWidthProperty().bind(mSymbolPanel.widthProperty());
-        mSymbolView.prefHeightProperty().bind(mSymbolPanel.heightProperty());
+        VBox.setVgrow(layeredPanel, Priority.ALWAYS);
+        fftPanel.getChildren().add(layeredPanel);
 
         mInspectorPanel = new javafx.scene.layout.StackPane();
 
-        mInspectorPanel.getChildren().add(mNoiseSquelchPanel); mNoiseSquelchPanel.setVisible(false);
+        mInspectorPanel.getChildren().add(mNoiseSquelchView); mNoiseSquelchView.setVisible(false);
         mInspectorPanel.getChildren().add(mSignalPowerView); mSignalPowerView.setVisible(false);
-        mInspectorPanel.getChildren().add(mSymbolPanel); mSymbolPanel.setVisible(false);
+        mInspectorPanel.getChildren().add(mSymbolView); mSymbolView.setVisible(false);
 
         // No-channel placeholder label for the inspector panel
         Label noChannelLabel = new Label("Select a channel to view inspector");
@@ -474,7 +451,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
             PrimaryDecoder primaryDecoder = mProcessingChain.getPrimaryDecoder();
             if(primaryDecoder instanceof NBFMDecoder nbfmDecoder)
             {
-                setRightComponent(mNoiseSquelchPanel);
+                setRightComponent(mNoiseSquelchView);
                 mNoiseSquelchView.setController(nbfmDecoder);
                 if(mSquelchBtn != null) mSquelchBtn.setSelected(true);
             }
@@ -486,7 +463,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
             }
             else if(primaryDecoder instanceof FeedbackDecoder feedbackDecoder)
             {
-                setRightComponent(mSymbolPanel);
+                setRightComponent(mSymbolView);
                 mSymbolView.setSymbolProvider(feedbackDecoder);
                 mSymbolView.setProtocol(feedbackDecoder.getProtocolDescription());
                 if(mSymbolBtn != null) mSymbolBtn.setSelected(true);
@@ -525,20 +502,20 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
     {
         Node noChannelLabel = mInspectorPanel.lookup("#noChannelLabel");
         
-        if (component == mNoiseSquelchPanel) {
-            mNoiseSquelchPanel.setVisible(true); mSignalPowerView.setVisible(false); mSymbolPanel.setVisible(false);
+        if (component == mNoiseSquelchView) {
+            mNoiseSquelchView.setVisible(true); mSignalPowerView.setVisible(false); mSymbolView.setVisible(false);
             mInspectorPanel.setVisible(true);
             if(noChannelLabel != null) noChannelLabel.setVisible(false);
         } else if (component == mSignalPowerView) {
-            mNoiseSquelchPanel.setVisible(false); mSignalPowerView.setVisible(true); mSymbolPanel.setVisible(false);
+            mNoiseSquelchView.setVisible(false); mSignalPowerView.setVisible(true); mSymbolView.setVisible(false);
             mInspectorPanel.setVisible(true);
             if(noChannelLabel != null) noChannelLabel.setVisible(false);
-        } else if (component == mSymbolPanel) {
-            mNoiseSquelchPanel.setVisible(false); mSignalPowerView.setVisible(false); mSymbolPanel.setVisible(true);
+        } else if (component == mSymbolView) {
+            mNoiseSquelchView.setVisible(false); mSignalPowerView.setVisible(false); mSymbolView.setVisible(true);
             mInspectorPanel.setVisible(true);
             if(noChannelLabel != null) noChannelLabel.setVisible(false);
         } else {
-            mNoiseSquelchPanel.setVisible(false); mSignalPowerView.setVisible(false); mSymbolPanel.setVisible(false);
+            mNoiseSquelchView.setVisible(false); mSignalPowerView.setVisible(false); mSymbolView.setVisible(false);
             mInspectorPanel.setVisible(true);
             if(noChannelLabel != null) noChannelLabel.setVisible(true);
         }
