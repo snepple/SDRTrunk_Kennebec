@@ -118,6 +118,23 @@ public class BroadcastStatusPanelController {
                             setGraphic(null);
                         } else {
                             setText(item.toString());
+                            if (item.getIconPath() != null) {
+                                try {
+                                    java.net.URL url = getClass().getResource(item.getIconPath());
+                                    if (url != null) {
+                                        ImageView iv = new ImageView(new Image(url.toExternalForm(), 16, 16, true, true));
+                                        iv.setFitWidth(16);
+                                        iv.setFitHeight(16);
+                                        setGraphic(iv);
+                                    } else {
+                                        setGraphic(null);
+                                    }
+                                } catch (Exception e) {
+                                    setGraphic(null);
+                                }
+                            } else {
+                                setGraphic(null);
+                            }
                         }
                     }
                 });
