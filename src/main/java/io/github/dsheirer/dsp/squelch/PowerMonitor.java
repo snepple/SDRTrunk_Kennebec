@@ -66,8 +66,10 @@ public class PowerMonitor
             double iSquared, qSquared;
             for(int x = 0; x < 10; x++)
             {
-                iSquared = Math.pow(i[x], 2.0f);
-                qSquared = Math.pow(q[x], 2.0f);
+                // Bolt: Direct multiplication is significantly faster than Math.pow(val, 2.0f)
+                // in this high-frequency DSP hot loop.
+                iSquared = i[x] * i[x];
+                qSquared = q[x] * q[x];
                 mPowerFilter.filter((float)(iSquared + qSquared));
             }
 
