@@ -86,7 +86,9 @@
     <bottom>
         <HBox alignment="CENTER_RIGHT" spacing="10">
             <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-            <Button text="Refresh" onAction="#loadLogs" />
+            <Button text="_Refresh" onAction="#loadLogs" mnemonicParsing="true" accessibleText="Refresh Logs">
+                <tooltip><Tooltip text="Refresh the current logs view"/></tooltip>
+            </Button>
         </HBox>
     </bottom>
 </fx:root>

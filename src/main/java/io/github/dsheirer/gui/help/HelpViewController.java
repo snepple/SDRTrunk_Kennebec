@@ -26,6 +26,7 @@ public class HelpViewController {
 
     @FXML
     public void initialize() {
+        searchField.getStyleClass().add("kennebec-search-field");
         TreeItem<String> root = new TreeItem<>("Knowledge Base");
         createNodes(root);
         root.setExpanded(true);
@@ -52,7 +53,7 @@ public class HelpViewController {
         });
 
         contentWebView.getEngine().loadContent(
-                "<html><body style='font-family: sans-serif; padding: 20px;'>" +
+                "<html><head>" + getCssStyle() + "</head><body>" +
                         "<h1>Welcome to SDRTrunk Help</h1>" +
                         "<p>Select a topic from the left to view details.</p></body></html>"
         );
@@ -109,6 +110,7 @@ public class HelpViewController {
         advancedSystemNode.getChildren().add(new TreeItem<>("Ignore Unwanted Talkgroups"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Inactivity Monitoring"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Notifications"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Smart Bandwidth"));
         advancedSystemNode.getChildren().add(new TreeItem<>("System Requirements"));
         advancedSystemNode.getChildren().add(new TreeItem<>("User Preferences"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Virtual Audio Cable"));
@@ -226,41 +228,75 @@ public class HelpViewController {
         return markdown;
     }
 
-    private static final String CSS_STYLE =
-        "<style>" +
-        "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; " +
-        "  padding: 24px 32px; margin: 0; color: #1a1a2e; background: #fafbfc; line-height: 1.7; font-size: 14px; }" +
-        "h1 { color: #1a1a2e; font-size: 24px; font-weight: 700; margin-top: 0; margin-bottom: 16px; " +
-        "  padding-bottom: 12px; border-bottom: 2px solid #e8e8f0; }" +
-        "h2 { color: #2d2d4e; font-size: 20px; font-weight: 600; margin-top: 28px; margin-bottom: 12px; }" +
-        "h3 { color: #3d3d6e; font-size: 16px; font-weight: 600; margin-top: 24px; margin-bottom: 8px; }" +
-        "h4 { color: #4d4d7e; font-size: 14px; font-weight: 600; margin-top: 20px; margin-bottom: 6px; }" +
-        "p { margin: 8px 0; }" +
-        "a { color: #4a6fa5; text-decoration: none; }" +
-        "a:hover { text-decoration: underline; }" +
-        "ul, ol { padding-left: 24px; margin: 8px 0; }" +
-        "li { margin: 4px 0; }" +
-        "code { background: #e8e8f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Consolas', 'Monaco', monospace; }" +
-        "pre { background: #1e1e2e; color: #cdd6f4; padding: 16px; border-radius: 8px; overflow-x: auto; " +
-        "  font-size: 13px; line-height: 1.5; margin: 12px 0; }" +
-        "pre code { background: none; padding: 0; color: inherit; }" +
-        "blockquote { margin: 16px 0; padding: 12px 16px; border-left: 4px solid #4a6fa5; " +
-        "  background: #eef2f8; border-radius: 0 6px 6px 0; }" +
-        "blockquote p { margin: 4px 0; }" +
-        "blockquote strong { color: #2d4a7a; }" +
-        "table { border-collapse: collapse; width: 100%; margin: 16px 0; }" +
-        "th { background: #eef2f8; font-weight: 600; text-align: left; padding: 10px 14px; " +
-        "  border: 1px solid #d0d5e0; font-size: 13px; }" +
-        "td { padding: 8px 14px; border: 1px solid #d0d5e0; font-size: 13px; }" +
-        "tr:nth-child(even) { background: #f5f7fa; }" +
-        "hr { border: none; border-top: 1px solid #e0e0e8; margin: 20px 0; }" +
-        "img { max-width: 100%; border-radius: 6px; margin: 8px 0; }" +
-        "</style>";
+    private String getCssStyle() {
+        boolean dark = io.github.dsheirer.gui.theme.ThemeManager.isNightModeEnabled();
+        if (dark) {
+            return "<style>" +
+            "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; " +
+            "  padding: 24px 32px; margin: 0; color: #e0e0e0; background: #1a1a2e; line-height: 1.7; font-size: 14px; }" +
+            "h1 { color: #ffffff; font-size: 24px; font-weight: 700; margin-top: 0; margin-bottom: 16px; " +
+            "  padding-bottom: 12px; border-bottom: 2px solid #3a3a5a; }" +
+            "h2 { color: #e0e0e0; font-size: 20px; font-weight: 600; margin-top: 28px; margin-bottom: 12px; }" +
+            "h3 { color: #d0d0d0; font-size: 16px; font-weight: 600; margin-top: 24px; margin-bottom: 8px; }" +
+            "h4 { color: #c0c0c0; font-size: 14px; font-weight: 600; margin-top: 20px; margin-bottom: 6px; }" +
+            "p { margin: 8px 0; }" +
+            "a { color: #4a90e2; text-decoration: none; }" +
+            "a:hover { text-decoration: underline; }" +
+            "ul, ol { padding-left: 24px; margin: 8px 0; }" +
+            "li { margin: 4px 0; }" +
+            "code { background: #2a2a4a; padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Consolas', 'Monaco', monospace; }" +
+            "pre { background: #16213e; color: #e0e0e0; padding: 16px; border-radius: 8px; overflow-x: auto; " +
+            "  font-size: 13px; line-height: 1.5; margin: 12px 0; border: 1px solid #3a3a5a; }" +
+            "pre code { background: none; padding: 0; color: inherit; }" +
+            "blockquote { margin: 16px 0; padding: 12px 16px; border-left: 4px solid #4a90e2; " +
+            "  background: #1e1e3a; border-radius: 0 6px 6px 0; }" +
+            "blockquote p { margin: 4px 0; }" +
+            "blockquote strong { color: #4a90e2; }" +
+            "table { border-collapse: collapse; width: 100%; margin: 16px 0; }" +
+            "th { background: #16213e; color: #e0e0e0; font-weight: 600; text-align: left; padding: 10px 14px; " +
+            "  border: 1px solid #3a3a5a; font-size: 13px; }" +
+            "td { padding: 8px 14px; border: 1px solid #3a3a5a; font-size: 13px; }" +
+            "tr:nth-child(even) { background: #1e1e3a; }" +
+            "hr { border: none; border-top: 1px solid #3a3a5a; margin: 20px 0; }" +
+            "img { max-width: 100%; border-radius: 6px; margin: 8px 0; }" +
+            "</style>";
+        } else {
+            return "<style>" +
+            "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; " +
+            "  padding: 24px 32px; margin: 0; color: #1a1a2e; background: #fafbfc; line-height: 1.7; font-size: 14px; }" +
+            "h1 { color: #1a1a2e; font-size: 24px; font-weight: 700; margin-top: 0; margin-bottom: 16px; " +
+            "  padding-bottom: 12px; border-bottom: 2px solid #e8e8f0; }" +
+            "h2 { color: #2d2d4e; font-size: 20px; font-weight: 600; margin-top: 28px; margin-bottom: 12px; }" +
+            "h3 { color: #3d3d6e; font-size: 16px; font-weight: 600; margin-top: 24px; margin-bottom: 8px; }" +
+            "h4 { color: #4d4d7e; font-size: 14px; font-weight: 600; margin-top: 20px; margin-bottom: 6px; }" +
+            "p { margin: 8px 0; }" +
+            "a { color: #4a6fa5; text-decoration: none; }" +
+            "a:hover { text-decoration: underline; }" +
+            "ul, ol { padding-left: 24px; margin: 8px 0; }" +
+            "li { margin: 4px 0; }" +
+            "code { background: #e8e8f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Consolas', 'Monaco', monospace; }" +
+            "pre { background: #1e1e2e; color: #cdd6f4; padding: 16px; border-radius: 8px; overflow-x: auto; " +
+            "  font-size: 13px; line-height: 1.5; margin: 12px 0; }" +
+            "pre code { background: none; padding: 0; color: inherit; }" +
+            "blockquote { margin: 16px 0; padding: 12px 16px; border-left: 4px solid #4a6fa5; " +
+            "  background: #eef2f8; border-radius: 0 6px 6px 0; }" +
+            "blockquote p { margin: 4px 0; }" +
+            "blockquote strong { color: #2d4a7a; }" +
+            "table { border-collapse: collapse; width: 100%; margin: 16px 0; }" +
+            "th { background: #eef2f8; font-weight: 600; text-align: left; padding: 10px 14px; " +
+            "  border: 1px solid #d0d5e0; font-size: 13px; }" +
+            "td { padding: 8px 14px; border: 1px solid #d0d5e0; font-size: 13px; }" +
+            "tr:nth-child(even) { background: #f5f7fa; }" +
+            "hr { border: none; border-top: 1px solid #e0e0e8; margin: 20px 0; }" +
+            "img { max-width: 100%; border-radius: 6px; margin: 8px 0; }" +
+            "</style>";
+        }
+    }
 
     private void updateContent(String topic) {
         if (topic.equals("Knowledge Base") || topic.equals("Guides & Documentation")) {
             contentWebView.getEngine().loadContent(
-                    "<html><head>" + CSS_STYLE + "</head><body>" +
+                    "<html><head>" + getCssStyle() + "</head><body>" +
                             "<h1>" + topic + "</h1>" +
                             "<p>Select a sub-topic from the left to view details.</p></body></html>"
             );
@@ -274,7 +310,7 @@ public class HelpViewController {
         HtmlRenderer renderer = HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
         String htmlBody = renderer.render(document);
 
-        String html = "<html><head>" + CSS_STYLE + "</head><body>" + htmlBody + "</body></html>";
+        String html = "<html><head>" + getCssStyle() + "</head><body>" + htmlBody + "</body></html>";
         contentWebView.getEngine().loadContent(html);
     }
 }
