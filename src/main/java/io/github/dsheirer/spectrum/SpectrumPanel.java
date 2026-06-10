@@ -198,6 +198,8 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
         mGraphicsContext.fill();
 
         mGraphicsContext.setStroke(mColorSpectrumLine);
+        mGraphicsContext.setLineWidth(1.0);
+        mGraphicsContext.stroke();
         mGraphicsContext.strokeLine(0, insideHeight, width, insideHeight);
     }
 

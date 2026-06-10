@@ -168,6 +168,8 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
         //Fetch color settings from settings manager
         setColors();
 
+        this.getChildren().add(mCanvas);
+
         mCanvas.widthProperty().addListener((obs, oldVal, newVal) -> mLabelSizeMonitor.update());
         mCanvas.heightProperty().addListener((obs, oldVal, newVal) -> mLabelSizeMonitor.update());
     }
@@ -378,6 +380,10 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
         {
             label = 1;
         }
+        if(major == 0)
+        {
+            major = 1;
+        }
 
         //Adjust the start frequency to a multiple of the minor tick spacing
         long frequency = minFrequency - (minFrequency % minor);
@@ -569,17 +575,12 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
                     if(tunerChannel.overlaps(getMinDisplayFrequency(), getMaxDisplayFrequency()))
                     {
                         //Choose the correct background color to use
-                        if(channel.isSelected())
-                        {
-                            graphics.setStroke(mColorChannelConfigSelected);
-                        }
-                        else if(channel.isProcessing())
-                        {
-                            graphics.setStroke(mColorChannelConfigProcessing);
-                        }
-                        else
-                        {
-                            graphics.setStroke(mColorChannelConfig);
+                        if (channel.isSelected()) {
+                            graphics.setFill(mColorChannelConfigSelected);
+                        } else if (channel.isProcessing()) {
+                            graphics.setFill(mColorChannelConfigProcessing);
+                        } else {
+                            graphics.setFill(mColorChannelConfig);
                         }
 
                         double xAxis = getAxisFromFrequency(tunerChannel.getFrequency());

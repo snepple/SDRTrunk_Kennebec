@@ -145,32 +145,18 @@ public class DiagnosticMonitor
             if (!isSdrTrunkExeDisabled && !isJavaExeDisabled) {
                 mUserAlertedToPowerThrottling = true;
                 
-                // Auto-disable power throttling silently
-                String processPath = ProcessHandle.current().info().command().orElse("java.exe");
-                if (!processPath.toLowerCase().endsWith(".exe")) {
-                    processPath = "java.exe";
-                }
-                
-                try {
-                    String cmd = "Start-Process powercfg -ArgumentList '/powerthrottling disable /path `\"" + processPath + "`\"' -Verb RunAs -WindowStyle Hidden -Wait";
-                    Process p = new ProcessBuilder("powershell.exe", "-Command", cmd).start();
-                    boolean completed = p.waitFor(10, TimeUnit.SECONDS);
-                    
-                    if (completed && p.exitValue() == 0) {
-                        LOGGER.info("Auto-disabled Windows EcoQoS power throttling for: " + processPath);
-                        return;
-                    }
-                } catch (Exception ex) {
-                    LOGGER.warn("Auto-disable power throttling failed, showing prompt: " + ex.getMessage());
-                }
-                
-                // Fallback: show the dialog only if auto-disable failed (e.g., UAC denied)
+                // Show the dialog first instead of blindly throwing a UAC prompt at the user
                 if (!mHeadless) {
+                    String processPath = ProcessHandle.current().info().command().orElse("java.exe");
+                    if (!processPath.toLowerCase().endsWith(".exe")) {
+                        processPath = "java.exe";
+                    }
+                    
                     String title = "SDRTrunk Needs Your Permission";
                     String message = "Windows is slowing down SDRTrunk to save power. " +
                                      "This can cause audio to cut out or sound choppy.\n\n" +
                                      "To fix this, click \"Fix It Now\" below. Windows will ask " +
-                                     "for your permission — just click \"Yes\" on the popup that appears.\n\n" +
+                                     "for your permission (UAC) — just click \"Yes\" on the popup that appears.\n\n" +
                                      "If you'd rather do this later, click \"Remind Me Later\". " +
                                      "You can also fix this manually:\n\n" +
                                      "Step 1: Right-click the Start button and choose\n" +
@@ -187,15 +173,28 @@ public class DiagnosticMonitor
                         
                         javafx.scene.control.ButtonType fixBtn = new javafx.scene.control.ButtonType("Fix It Now", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
                         javafx.scene.control.ButtonType laterBtn = new javafx.scene.control.ButtonType("Remind Me Later", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
-                        alert.getButtonTypes().setAll(fixBtn, laterBtn);
+                        javafx.scene.control.ButtonType dismissBtn = new javafx.scene.control.ButtonType("Don't Ask Again", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+                        
+                        alert.getButtonTypes().setAll(fixBtn, laterBtn, dismissBtn);
                         
                         Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
                         if (result.isPresent() && result.get() == fixBtn) {
                             try {
                                 String retryCmd = "Start-Process powercfg -ArgumentList '/powerthrottling disable /path `\"" + finalProcessPath + "`\"' -Verb RunAs -WindowStyle Hidden";
                                 new ProcessBuilder("powershell.exe", "-Command", retryCmd).start();
+                                // Save preference so we don't prompt again after they fix it
+                                java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
+                                prefs.putBoolean("sdrtrunk.diagnostics.powerthrottling.prompted", true);
                             } catch (Exception ex) {
-                                LOGGER.error("Failed to disable power throttling on retry", ex);
+                                LOGGER.error("Failed to disable power throttling", ex);
+                            }
+                        } else if (result.isPresent() && result.get() == dismissBtn) {
+                            // Save preference so we NEVER prompt again
+                            try {
+                                java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
+                                prefs.putBoolean("sdrtrunk.diagnostics.powerthrottling.prompted", true);
+                            } catch (Exception ex) {
+                                LOGGER.error("Failed to save preferences", ex);
                             }
                         }
                     });

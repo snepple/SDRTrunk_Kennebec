@@ -30,3 +30,6 @@
 ## 2024-05-14 - LNA Gain
 **Simplified:**
 - The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise.
+## 2024-05-23 - FFT Window Type Help
+**Learning:** Adding a help icon with clear explanation for "FFT Window Type" helps beginners understand that different window types affect frequency resolution and amplitude accuracy, and recommends Hanning or Hamming as good defaults.
+**Action:** Added a `createHelpIcon` to `DisplayPreferenceEditor.java` and applied it to the "FFT Window Type" `SettingsRow`.

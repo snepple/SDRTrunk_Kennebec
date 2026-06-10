@@ -95,6 +95,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
     private final ComplexSamplesToNativeBufferModule mSampleStreamTapModule = new ComplexSamplesToNativeBufferModule();
     private final ComplexDftProcessor mComplexDftProcessor = new ComplexDftProcessor();
     private SpectrumPanel mSpectrumPanel;
+    private io.github.dsheirer.spectrum.WaterfallPanel mWaterfallPanel;
     private final FrequencyOverlayPanel mFrequencyOverlayPanel;
     private final SourceEventProcessor mSourceEventProcessor = new SourceEventProcessor();
     // SpinnerNumberModel removed - replaced by IntegerSpinnerValueFactory below
@@ -105,12 +106,8 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
     private final NoiseSquelchView mNoiseSquelchView;
     private final SignalPowerView mSignalPowerView;
     private final SymbolView mSymbolView = new SymbolView();
-    private javafx.scene.layout.Pane mNoiseSquelchPanel;
-    private javafx.scene.layout.Pane mSymbolPanel;
-    private javafx.scene.layout.StackPane mInspectorPanel;
-    private ToggleButton mSquelchBtn;
-    private ToggleButton mPowerBtn;
-    private ToggleButton mSymbolBtn;
+    private VBox mLogSettingsNode;
+    private TextArea mLogTextArea;
 
     /**
      * Constructs an instance.
@@ -124,22 +121,22 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
 
         VBox fftPanel = new VBox();
 
-        HBox labelPanel = new HBox(5);
-        labelPanel.setAlignment(Pos.CENTER_LEFT);
-        labelPanel.setPadding(new Insets(2, 5, 2, 5));
-        labelPanel.getChildren().add(new Label("Channel Spectrum"));
+        javafx.scene.layout.FlowPane fftControls = new javafx.scene.layout.FlowPane(5, 5);
+        fftControls.setAlignment(Pos.CENTER_LEFT);
+        fftControls.setPadding(new Insets(2, 5, 2, 5));
+        fftControls.getChildren().add(new Label("Channel Spectrum"));
 
         mEstimatedCarrierOffsetFrequencyTitleLabel = new Label("Carrier Offset:");
         mEstimatedCarrierOffsetFrequencyTitleLabel.setTextFill(javafx.scene.paint.Color.rgb(142, 142, 147));
         mEstimatedCarrierOffsetFrequencyTitleLabel.setMinWidth(Region.USE_PREF_SIZE);
-        labelPanel.getChildren().add(mEstimatedCarrierOffsetFrequencyTitleLabel);
+        fftControls.getChildren().add(mEstimatedCarrierOffsetFrequencyTitleLabel);
 
         mEstimatedCarrierOffsetFrequencyValueLabel = new Label("0 Hz");
         mEstimatedCarrierOffsetFrequencyValueLabel.setFont(javafx.scene.text.Font.font(mEstimatedCarrierOffsetFrequencyValueLabel.getFont().getFamily(), javafx.scene.text.FontWeight.BOLD, mEstimatedCarrierOffsetFrequencyValueLabel.getFont().getSize()));
         mEstimatedCarrierOffsetFrequencyValueLabel.setDisable(true);
         mEstimatedCarrierOffsetFrequencyValueLabel.setPrefWidth(60);
         mEstimatedCarrierOffsetFrequencyValueLabel.setMinWidth(Region.USE_PREF_SIZE);
-        labelPanel.getChildren().add(mEstimatedCarrierOffsetFrequencyValueLabel);
+        fftControls.getChildren().add(mEstimatedCarrierOffsetFrequencyValueLabel);
 
         javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory mNoiseFloorSpinnerValueFactory = new javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory(8, 36, 18, 1);
         Spinner<Integer> noiseFloorSpinner = new Spinner<>(mNoiseFloorSpinnerValueFactory);
@@ -149,45 +146,20 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
                 mSpectrumPanel.setSampleSize(newVal.doubleValue());
             }
         });
-        labelPanel.getChildren().add(noiseFloorSpinner);
-        labelPanel.getChildren().add(new Label("Noise Floor"));
+        fftControls.getChildren().add(noiseFloorSpinner);
+        fftControls.getChildren().add(new Label("Noise Floor"));
 
-        // Spacer to push view selector buttons to the right
-        Region labelSpacer = new Region();
-        HBox.setHgrow(labelSpacer, Priority.ALWAYS);
-        labelPanel.getChildren().add(labelSpacer);
+        fftPanel.getChildren().add(fftControls);
 
-        // View selector toggle buttons for the inspector panel
-        ToggleGroup viewToggle = new ToggleGroup();
+        mLogTextArea = new TextArea();
+        mLogTextArea.setEditable(false);
+        mLogTextArea.setWrapText(true);
+        VBox.setVgrow(mLogTextArea, Priority.ALWAYS);
 
-        ToggleButton squelchBtn = new ToggleButton("Squelch");
-        squelchBtn.setToggleGroup(viewToggle);
-        squelchBtn.setMinWidth(Region.USE_PREF_SIZE);
-        squelchBtn.setTooltip(new Tooltip("Show noise squelch view"));
-        squelchBtn.setOnAction(e -> { if(squelchBtn.isSelected()) setRightComponent(mNoiseSquelchPanel); });
-
-        ToggleButton powerBtn = new ToggleButton("Power");
-        powerBtn.setToggleGroup(viewToggle);
-        powerBtn.setMinWidth(Region.USE_PREF_SIZE);
-        powerBtn.setTooltip(new Tooltip("Show signal power view"));
-        powerBtn.setOnAction(e -> { if(powerBtn.isSelected()) setRightComponent(mSignalPowerView); });
-
-        ToggleButton symbolBtn = new ToggleButton("Symbols");
-        symbolBtn.setToggleGroup(viewToggle);
-        symbolBtn.setMinWidth(Region.USE_PREF_SIZE);
-        symbolBtn.setTooltip(new Tooltip("Show symbol constellation view"));
-        symbolBtn.setOnAction(e -> { if(symbolBtn.isSelected()) setRightComponent(mSymbolPanel); });
-
-        mSquelchBtn = squelchBtn;
-        mPowerBtn = powerBtn;
-        mSymbolBtn = symbolBtn;
-
-        labelPanel.getChildren().addAll(squelchBtn, powerBtn, symbolBtn);
-
-        Button logIndexesButton = new Button("Log Settings");
+        Button logIndexesButton = new Button("Log Spectrum Settings");
         logIndexesButton.setTooltip(new javafx.scene.control.Tooltip("Log channel spectrum settings"));
         logIndexesButton.accessibleTextProperty().set("Log Spectrum Settings");
-        logIndexesButton.accessibleHelpProperty().set("Logs the current configuration settings of the channel spectrum to the application log");
+        logIndexesButton.accessibleHelpProperty().set("Logs the current configuration settings of the channel spectrum to the application log and text area");
         logIndexesButton.setOnAction(e -> {
             if(mProcessingChain != null)
             {
@@ -208,96 +180,64 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
                     sb.append("/").append(FREQUENCY_FORMAT.format(appliedFrequencyOffset / 1E6d));
                     sb.append(" Polyphase Indexes: ").append(indexes);
                     sb.append(" Tuner SR:").append(FREQUENCY_FORMAT.format(pcs.getTunerSampleRate() / 1E6d));
-                    sb.append(" CF:").append(FREQUENCY_FORMAT.format(pcs.getTunerCenterFrequency() / 1E6d));
-                    LOGGER.info(sb.toString());
-                    LOGGER.info("Output Processor: " + pcs.getStateDescription());
+                    sb.append(" CF:").append(FREQUENCY_FORMAT.format(pcs.getTunerCenterFrequency() / 1E6d)).append("\n");
+                    sb.append("Output Processor: ").append(pcs.getStateDescription()).append("\n");
+                    
+                    LOGGER.info(sb.toString().trim());
+                    mLogTextArea.appendText(sb.toString());
                 }
                 else if(source instanceof HalfBandTunerChannelSource<?> hbtcs)
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.append("Heterodyne Channel - CF:").append(FREQUENCY_FORMAT.format(hbtcs.getFrequency() / 1E6d));
                     sb.append(" SR:").append(FREQUENCY_FORMAT.format(hbtcs.getSampleRate() / 1E6d));
-                    sb.append(" Mixer:").append(FREQUENCY_FORMAT.format(hbtcs.getMixerFrequency() / 1E6d));
-                    LOGGER.info(sb.toString());
+                    sb.append(" Mixer:").append(FREQUENCY_FORMAT.format(hbtcs.getMixerFrequency() / 1E6d)).append("\n");
+                    
+                    LOGGER.info(sb.toString().trim());
+                    mLogTextArea.appendText(sb.toString());
                 }
                 else
                 {
-                    LOGGER.info("Unsupported channel type: " + (source != null ? source.getClass() : " null"));
+                    String msg = "Unsupported channel type: " + (source != null ? source.getClass() : " null") + "\n";
+                    LOGGER.info(msg.trim());
+                    mLogTextArea.appendText(msg);
                 }
             }
         });
-        labelPanel.getChildren().add(logIndexesButton);
-
-        fftPanel.getChildren().add(labelPanel);
+        
+        mLogSettingsNode = new VBox(5, logIndexesButton, mLogTextArea);
+        mLogSettingsNode.setPadding(new Insets(5));
 
         mFrequencyOverlayPanel = new FrequencyOverlayPanel(settingsManager);
         mSpectrumPanel = new SpectrumPanel(settingsManager);
         mSpectrumPanel.setSampleSize(18.0);
+        mWaterfallPanel = new io.github.dsheirer.spectrum.WaterfallPanel(settingsManager);
 
-        /**
-         * The layered pane holds the overlapping spectrum and channel panels
-         * and manages the sizing of each panel with the resize listener
-         */
         StackPane layeredPanel = new StackPane();
-        
-
-        /**
-         * Create a mouse adapter to handle mouse events over the spectrum
-         * and waterfall panels
-         */
         MouseEventProcessor mouser = new MouseEventProcessor();
 
         mFrequencyOverlayPanel.setOnMouseEntered(mouser::mouseEntered);
         mFrequencyOverlayPanel.setOnMouseExited(mouser::mouseExited);
         mFrequencyOverlayPanel.setOnMouseMoved(mouser::mouseMoved);
         
-
-        //Add the spectrum and channel panels to the layered panel
         layeredPanel.getChildren().add(mSpectrumPanel);
         layeredPanel.getChildren().add(mFrequencyOverlayPanel);
 
         VBox.setVgrow(layeredPanel, Priority.ALWAYS);
         fftPanel.getChildren().add(layeredPanel);
 
-        mNoiseSquelchPanel = new javafx.scene.layout.Pane();
-        mSymbolPanel = new javafx.scene.layout.Pane();
-
-        //Add the JavaFX views directly as children
-        mNoiseSquelchPanel.getChildren().add(mNoiseSquelchView);
-        mNoiseSquelchView.prefWidthProperty().bind(mNoiseSquelchPanel.widthProperty());
-        mNoiseSquelchView.prefHeightProperty().bind(mNoiseSquelchPanel.heightProperty());
-
-        mSymbolPanel.getChildren().add(mSymbolView);
-        mSymbolView.prefWidthProperty().bind(mSymbolPanel.widthProperty());
-        mSymbolView.prefHeightProperty().bind(mSymbolPanel.heightProperty());
-
-        mInspectorPanel = new javafx.scene.layout.StackPane();
-
-        mInspectorPanel.getChildren().add(mNoiseSquelchPanel); mNoiseSquelchPanel.setVisible(false);
-        mInspectorPanel.getChildren().add(mSignalPowerView); mSignalPowerView.setVisible(false);
-        mInspectorPanel.getChildren().add(mSymbolPanel); mSymbolPanel.setVisible(false);
-
-        // No-channel placeholder label for the inspector panel
-        Label noChannelLabel = new Label("Select a channel to view inspector");
-        noChannelLabel.setTextFill(javafx.scene.paint.Color.GRAY);
-        noChannelLabel.setStyle("-fx-font-style: italic;");
-        mInspectorPanel.getChildren().add(noChannelLabel);
-
-        // Side-by-side layout: FFT on the left, inspector on the right
         HBox.setHgrow(fftPanel, Priority.ALWAYS);
-        HBox.setHgrow(mInspectorPanel, Priority.ALWAYS);
         fftPanel.setMinWidth(200);
         fftPanel.setPrefWidth(400);
-        mInspectorPanel.setMinWidth(200);
-        mInspectorPanel.setPrefWidth(300);
         getChildren().add(fftPanel);
-        getChildren().add(mInspectorPanel);
 
         mSampleStreamTapModule.setListener(mComplexDftProcessor);
         DFTResultsConverter DFTResultsConverter = new ComplexDecibelConverter();
         mComplexDftProcessor.addConverter(DFTResultsConverter);
         DFTResultsConverter.addListener(mSpectrumPanel);
+        DFTResultsConverter.addListener(mWaterfallPanel);
         mSpectrumPanel.clearSpectrum();
+        mWaterfallPanel.clearWaterfall();
         installWindowVisibilityListeners();
     }
 
@@ -392,6 +332,7 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
             mSampleStreamTapModule.removeListener();
             mComplexDftProcessor.stop();
             mSpectrumPanel.clearSpectrum();
+            mWaterfallPanel.clearWaterfall();
             mDftProcessing = false;
         }
     }
@@ -463,22 +404,16 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
             PrimaryDecoder primaryDecoder = mProcessingChain.getPrimaryDecoder();
             if(primaryDecoder instanceof NBFMDecoder nbfmDecoder)
             {
-                setRightComponent(mNoiseSquelchPanel);
                 mNoiseSquelchView.setController(nbfmDecoder);
-                if(mSquelchBtn != null) mSquelchBtn.setSelected(true);
             }
             else if(primaryDecoder instanceof AMDecoder)
             {
-                setRightComponent(mSignalPowerView);
                 mSignalPowerView.setProcessingChain(mProcessingChain);
-                if(mPowerBtn != null) mPowerBtn.setSelected(true);
             }
             else if(primaryDecoder instanceof FeedbackDecoder feedbackDecoder)
             {
-                setRightComponent(mSymbolPanel);
                 mSymbolView.setSymbolProvider(feedbackDecoder);
                 mSymbolView.setProtocol(feedbackDecoder.getProtocolDescription());
-                if(mSymbolBtn != null) mSymbolBtn.setSelected(true);
             }
 
             mProcessingChain.addModule(mSampleStreamTapModule);
@@ -506,24 +441,20 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
         updateFFTProcessing();
     }
 
-    /**
-     * Shows the component on the right side of the split pane.
-     * @param component to show.
-     */
-    private void setRightComponent(Node component)
-    {
-        if (component == mNoiseSquelchPanel) {
-            mNoiseSquelchPanel.setVisible(true); mSignalPowerView.setVisible(false); mSymbolPanel.setVisible(false);
-            mInspectorPanel.setVisible(true);
-        } else if (component == mSignalPowerView) {
-            mNoiseSquelchPanel.setVisible(false); mSignalPowerView.setVisible(true); mSymbolPanel.setVisible(false);
-            mInspectorPanel.setVisible(true);
-        } else if (component == mSymbolPanel) {
-            mNoiseSquelchPanel.setVisible(false); mSignalPowerView.setVisible(false); mSymbolPanel.setVisible(true);
-            mInspectorPanel.setVisible(true);
-        } else {
-            mInspectorPanel.setVisible(false);
-        }
+    public NoiseSquelchView getNoiseSquelchView() {
+        return mNoiseSquelchView;
+    }
+
+    public SignalPowerView getSignalPowerView() {
+        return mSignalPowerView;
+    }
+
+    public SymbolView getSymbolView() {
+        return mSymbolView;
+    }
+
+    public Node getLogSettingsNode() {
+        return mLogSettingsNode;
     }
 
     /**

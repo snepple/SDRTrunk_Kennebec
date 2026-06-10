@@ -145,9 +145,45 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         mChannelProcessingManager.addDecodeEventListener(mGlobalEventListener);
         mGlobalEventModel.setHistorySize(mUserPreferences.getNowPlayingPreference().getEventHistorySize());
         mTable = new TableView();
-        mTable.setPlaceholder(new Label("No decode events — events will appear when a channel is active"));
+        
+        Label placeholderLabel = new Label("No decode events — events will appear when a channel is active");
+        VBox placeholderContainer = new VBox(placeholderLabel);
+        placeholderContainer.setAlignment(Pos.TOP_CENTER);
+        placeholderContainer.setPadding(new Insets(10, 0, 0, 0));
+        mTable.setPlaceholder(placeholderContainer);
+        
         mTable.setTableMenuButtonVisible(true);
-        // mTable.setFillsViewportHeight(true);
+        mTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        mTable.getColumns().addAll(DecodeEventModel.createColumns());
+        mTable.setItems(mActiveModelWrapper.getItems());
+        
+        Runnable updateHeaderVisibility = () -> {
+            boolean singleColumn = mTable.getColumns().size() <= 1;
+            mTable.setTableMenuButtonVisible(!singleColumn);
+            Pane header = (Pane) mTable.lookup("TableHeaderRow");
+            if (header != null) {
+                if (singleColumn) {
+                    header.setMaxHeight(0);
+                    header.setMinHeight(0);
+                    header.setPrefHeight(0);
+                    header.setVisible(false);
+                } else {
+                    header.setMaxHeight(Region.USE_COMPUTED_SIZE);
+                    header.setMinHeight(Region.USE_COMPUTED_SIZE);
+                    header.setPrefHeight(Region.USE_COMPUTED_SIZE);
+                    header.setVisible(true);
+                }
+            }
+        };
+
+        mTable.getColumns().addListener((javafx.beans.InvalidationListener) obs -> {
+            updateHeaderVisibility.run();
+        });
+
+        mTable.skinProperty().addListener((obs, oldSkin, newSkin) -> {
+            Platform.runLater(updateHeaderVisibility);
+        });
+
         mTableColumnWidthMonitor = new TableViewColumnWidthMonitor(mUserPreferences, mTable, TABLE_PREFERENCE_KEY);
         updateCellRenderers();
         NowPlayingPreference nowPlayingPreference = mUserPreferences.getNowPlayingPreference();
@@ -162,8 +198,8 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
 
         mHistoryManagementPanel.updateFilterSet(mFilterSet);
         getChildren().add(mHistoryManagementPanel);
-        mEmptyScroller = new ScrollPane(mTable);
-        getChildren().add(mEmptyScroller);
+        VBox.setVgrow(mTable, Priority.ALWAYS);
+        getChildren().add(mTable);
 
         mFilterSet.register(() -> {
             saveFilterStates(nowPlayingPreference);

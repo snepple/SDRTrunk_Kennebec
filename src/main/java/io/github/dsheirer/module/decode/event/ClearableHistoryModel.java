@@ -29,19 +29,26 @@ import javafx.scene.control.TableView;
 
 
 import javafx.application.Platform;
-import java.util.LinkedList;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import java.util.List;
 
-
-
 /**
- * AbstractTableModel implementation supporting clearable method options.
+ * Model implementation supporting clearable history for JavaFX TableView.
  */
 public abstract class ClearableHistoryModel<T> 
 {
     public static final int DEFAULT_HISTORY_SIZE = 200;
-    private LinkedList<T> mItems = new LinkedList<>();
+    private ObservableList<T> mItems = FXCollections.observableArrayList();
     private int mHistorySize = DEFAULT_HISTORY_SIZE;
+
+    /**
+     * @return the observable list of items for UI binding
+     */
+    public ObservableList<T> getItems()
+    {
+        return mItems;
+    }
 
     /**
      * Access an item/row by the model index value.
@@ -50,7 +57,7 @@ public abstract class ClearableHistoryModel<T>
      */
     public T getItem(int index)
     {
-        if(index < mItems.size())
+        if(index >= 0 && index < mItems.size())
         {
             return mItems.get(index);
         }
@@ -65,22 +72,22 @@ public abstract class ClearableHistoryModel<T>
      */
     public void add(T item)
     {
-        if(mItems.contains(item))
-        {
-            int itemRow = mItems.indexOf(item);
-            // fireTableRowsUpdated();
-        }
-        else
-        {
-            mItems.addFirst(item);
-            // fireTableRowsInserted();
-
-            while(mItems.size() > mHistorySize)
+        Platform.runLater(() -> {
+            if(mItems.contains(item))
             {
-                mItems.removeLast();
-                // fireTableRowsDeleted();
+                int itemRow = mItems.indexOf(item);
+                mItems.set(itemRow, item); // Trigger an update for the item
             }
-        }
+            else
+            {
+                mItems.add(0, item);
+
+                while(mItems.size() > mHistorySize)
+                {
+                    mItems.remove(mItems.size() - 1);
+                }
+            }
+        });
     }
 
     /**
@@ -90,7 +97,6 @@ public abstract class ClearableHistoryModel<T>
     {
         Platform.runLater(() -> {
             mItems.clear();
-            // fireTableDataChanged();
         });
     }
 
@@ -101,10 +107,12 @@ public abstract class ClearableHistoryModel<T>
     {
         Platform.runLater(() -> {
             mItems.clear();
-            // fireTableDataChanged();
             for(T item: items)
             {
-                add(item);
+                mItems.add(item);
+                if (mItems.size() > mHistorySize) {
+                    break;
+                }
             }
         });
     }
@@ -125,11 +133,17 @@ public abstract class ClearableHistoryModel<T>
     public void setHistorySize(int historySize)
     {
         mHistorySize = historySize;
+        Platform.runLater(() -> {
+            while(mItems.size() > mHistorySize)
+            {
+                mItems.remove(mItems.size() - 1);
+            }
+        });
     }
 
-    // // @Override
     public int getRowCount()
     {
         return mItems.size();
     }
 }
+

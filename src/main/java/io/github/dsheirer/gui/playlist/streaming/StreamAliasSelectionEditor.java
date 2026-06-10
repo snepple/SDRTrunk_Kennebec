@@ -213,6 +213,7 @@ public class StreamAliasSelectionEditor extends VBox
         if(mAvailableAliasTableView == null)
         {
             mAvailableAliasTableView = new TableView<>();
+            mAvailableAliasTableView.getStyleClass().add("preferences-table");
             mAvailableAliasTableView.setMaxHeight(Double.MAX_VALUE);
             mAvailableAliasTableView.setDisable(true);
             mAvailableAliasTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -257,6 +258,7 @@ public class StreamAliasSelectionEditor extends VBox
         if(mSelectedAliasTableView == null)
         {
             mSelectedAliasTableView = new TableView<>();
+            mSelectedAliasTableView.getStyleClass().add("preferences-table");
             mSelectedAliasTableView.setMaxHeight(Double.MAX_VALUE);
             mSelectedAliasTableView.setDisable(true);
             mSelectedAliasTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
