@@ -172,23 +172,6 @@ public class TunerManager implements IDiscoveredTunerStatusListener
         }
 
         discoverRecordingTuners();
-        discoverTestTuners();
-    }
-
-    private void discoverTestTuners() {
-        DiscoveredTuner discoveredTestTuner = new DiscoveredTuner() {
-            @Override
-            public TunerClass getTunerClass() { return TunerClass.TEST_TUNER; }
-            @Override
-            public String getId() { return "TestTuner1"; }
-            @Override
-            public void start() {
-                mTuner = new io.github.dsheirer.source.tuner.test.TestTuner(this);
-                // Start pumping test data
-                ((io.github.dsheirer.source.tuner.test.TestTuner)mTuner).getTunerController().setP25Waveform(1.0f);
-            }
-        };
-        startAndConfigureTuner(discoveredTestTuner);
     }
 
     /**
