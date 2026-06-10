@@ -675,29 +675,29 @@
 .preferences-main-area .label,
 .preferences-card .label,
 .preferences-scrollpane .label {
-    -fx-text-fill: #1C1C1E !important;
+    -fx-text-fill: #1C1C1E;
 }
 
 .preferences-main-area .check-box,
 .preferences-card .check-box,
 .preferences-scrollpane .check-box {
-    -fx-text-fill: #1C1C1E !important;
+    -fx-text-fill: #1C1C1E;
 }
 
 .preferences-main-area .radio-button,
 .preferences-card .radio-button,
 .preferences-scrollpane .radio-button {
-    -fx-text-fill: #1C1C1E !important;
+    -fx-text-fill: #1C1C1E;
 }
 
 .preferences-main-area .text,
 .preferences-card .text,
 .preferences-scrollpane .text {
-    -fx-fill: #1C1C1E !important;
+    -fx-fill: #1C1C1E;
 }
 
 .preferences-main-area .combo-box .list-cell {
-    -fx-text-fill: #1C1C1E !important;
+    -fx-text-fill: #1C1C1E;
 }
 
 /* ============================================================

@@ -75,13 +75,7 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
     private final BroadcastModel mBroadcastModel;
     private Button mMuteButton;
 
-    // Now Playing display components
-    private Label mChannelNameLabel;
-    private Label mAliasLabel;
-    private Label mStreamingLabel;
-    private ImageView mArtworkView;
-    private StackPane mArtworkContainer;
-    private javafx.scene.image.Image mCustomArtwork = null;
+    // Now Playing display components removed in favor of AudioChannelsPanel
 
     /**
      * Constructs an instance
@@ -113,48 +107,6 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
         setMaxHeight(64);
         setStyle("-fx-background-color: rgba(30,30,36,0.97); -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 0 0 1 0;");
 
-        // --- LEFT: Artwork + Upload ---
-        mArtworkView = new ImageView();
-        mArtworkView.setFitWidth(46);
-        mArtworkView.setFitHeight(46);
-        mArtworkView.setPreserveRatio(false);
-        mArtworkView.setSmooth(true);
-
-        // Clip to squircle (rounded rect ~20px radius)
-        Rectangle artClip = new Rectangle(46, 46);
-        artClip.setArcWidth(12);
-        artClip.setArcHeight(12);
-        mArtworkView.setClip(artClip);
-
-        DropShadow artShadow = new DropShadow();
-        artShadow.setRadius(8);
-        artShadow.setColor(Color.rgb(0, 0, 0, 0.5));
-        artShadow.setOffsetY(2);
-        mArtworkView.setEffect(artShadow);
-
-        mArtworkContainer = new StackPane(mArtworkView);
-        mArtworkContainer.setPadding(new Insets(9, 10, 9, 12));
-        
-        resetArtworkViewPlaceholder();
-
-        // --- CENTER: Now Playing metadata display ---
-        mChannelNameLabel = new Label("");
-        mChannelNameLabel.setStyle("-fx-text-fill: #F0F0F5; -fx-font-size: 13px; -fx-font-weight: bold;");
-        mChannelNameLabel.setMaxWidth(Double.MAX_VALUE);
-        mChannelNameLabel.setEllipsisString("…");
-
-        mAliasLabel = new Label("");
-        mAliasLabel.setStyle("-fx-text-fill: #A0A0B0; -fx-font-size: 11px;");
-        mAliasLabel.setMaxWidth(Double.MAX_VALUE);
-
-        mStreamingLabel = new Label("");
-        mStreamingLabel.setStyle("-fx-text-fill: #6060A0; -fx-font-size: 10px;");
-        mStreamingLabel.setMaxWidth(Double.MAX_VALUE);
-
-        VBox metaBox = new VBox(1, mChannelNameLabel, mAliasLabel, mStreamingLabel);
-        metaBox.setAlignment(Pos.CENTER_LEFT);
-        metaBox.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(metaBox, Priority.ALWAYS);
 
         // --- RIGHT: Mute + Volume Slider + Audio Channels ---
         mMuteButton = new MuteButton();
@@ -166,16 +118,16 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
         masterVolSlider.setPrefWidth(90);
         masterVolSlider.setTooltip(new Tooltip("Master Volume"));
 
-        mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel, mBroadcastModel);
+        mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel, mBroadcastModel, mPlaylistManager);
         mAudioChannelsScroller = new javafx.scene.control.ScrollPane(mAudioChannelsPanel);
         mAudioChannelsScroller.getStyleClass().add("audio-channels-scroller");
         mAudioChannelsScroller.setStyle("-fx-background-color: transparent;");
         mAudioChannelsScroller.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
         mAudioChannelsScroller.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
         mAudioChannelsScroller.setFitToHeight(true);
-        mAudioChannelsScroller.setPrefWidth(200);
-        mAudioChannelsScroller.setVisible(false);
-        mAudioChannelsScroller.setManaged(false);
+        mAudioChannelsScroller.setVisible(true);
+        mAudioChannelsScroller.setManaged(true);
+        HBox.setHgrow(mAudioChannelsScroller, Priority.ALWAYS);
 
         ToggleButton monoStereoButton = new ToggleButton();
         monoStereoButton.getStyleClass().add("mono-stereo-button");
@@ -205,107 +157,12 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
         rightControls.setPadding(new Insets(0, 12, 0, 8));
 
         // Assemble the header
-        getChildren().addAll(mArtworkContainer, metaBox, mAudioChannelsScroller, rightControls);
+        getChildren().addAll(mAudioChannelsScroller, rightControls);
     }
 
 
 
-    public static class ActiveCallUpdateEvent {
-        private String mChannelName;
-        private String mAliasName;
-        
-        public ActiveCallUpdateEvent(String channelName, String aliasName) {
-            mChannelName = channelName;
-            mAliasName = aliasName;
-        }
-        
-        public String getChannelName() { return mChannelName; }
-        public String getAliasName() { return mAliasName; }
-    }
 
-    @com.google.common.eventbus.Subscribe
-    public void onActiveCallUpdate(ActiveCallUpdateEvent event) {
-        updateNowPlaying(event.getChannelName(), event.getAliasName(), "");
-    }
-
-    @com.google.common.eventbus.Subscribe
-    public void onTwoToneDetected(io.github.dsheirer.dsp.tone.TwoToneDetectedEvent event) {
-        if (event.isShowNotification()) {
-            Platform.runLater(() -> {
-                mChannelNameLabel.setText("🚨 TWO-TONE ALERT 🚨");
-                mChannelNameLabel.setStyle("-fx-text-fill: #FF3B30; -fx-font-size: 13px; -fx-font-weight: bold;");
-                mAliasLabel.setText(event.getMessage());
-                mAliasLabel.setStyle("-fx-text-fill: #FF453A; -fx-font-size: 11px;");
-                mStreamingLabel.setText("Channel: " + event.getChannel());
-
-                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(Duration.seconds(10));
-                pause.setOnFinished(e -> {
-                    mChannelNameLabel.setStyle("-fx-text-fill: #F0F0F5; -fx-font-size: 13px; -fx-font-weight: bold;");
-                    mAliasLabel.setStyle("-fx-text-fill: #A0A0B0; -fx-font-size: 11px;");
-                    mChannelNameLabel.setText("");
-                    mAliasLabel.setText("");
-                    mStreamingLabel.setText("");
-                });
-                pause.play();
-            });
-        }
-    }
-
-    /**
-     * Updates the Now Playing display with channel information.
-     * Called from the audio playback manager or channel metadata updates.
-     */
-    public void updateNowPlaying(String channelName, String aliasName, String streamingInfo) {
-        Platform.runLater(() -> {
-            if (channelName != null && !channelName.isEmpty() && !channelName.equals("No Active Channel")) {
-                mChannelNameLabel.setText(channelName);
-                
-                // Lookup channel and load artwork
-                io.github.dsheirer.controller.channel.Channel chan = null;
-                if (mPlaylistManager != null && mPlaylistManager.getChannelModel() != null) {
-                    for (io.github.dsheirer.controller.channel.Channel c : mPlaylistManager.getChannelModel().getChannels()) {
-                        if (channelName.equals(c.getName())) {
-                            chan = c;
-                            break;
-                        }
-                    }
-                }
-                
-                if (chan != null && chan.getImagePath() != null && !chan.getImagePath().isEmpty()) {
-                    try {
-                        java.io.File file = new java.io.File(chan.getImagePath());
-                        if (file.exists()) {
-                            javafx.scene.image.Image img = new javafx.scene.image.Image(file.toURI().toString(), 46, 46, false, true);
-                            mArtworkView.setImage(img);
-                            mArtworkContainer.setVisible(true);
-                            mArtworkContainer.setManaged(true);
-                        } else {
-                            resetArtworkViewPlaceholder();
-                        }
-                    } catch (Exception ex) {
-                        resetArtworkViewPlaceholder();
-                    }
-                } else {
-                    resetArtworkViewPlaceholder();
-                }
-            } else {
-                if (!mChannelNameLabel.getText().equals("🚨 TWO-TONE ALERT 🚨")) {
-                    mChannelNameLabel.setText("");
-                }
-                resetArtworkViewPlaceholder();
-            }
-            if (!mChannelNameLabel.getText().equals("🚨 TWO-TONE ALERT 🚨")) {
-                mAliasLabel.setText(aliasName != null && !aliasName.equals("—") ? aliasName : "");
-                mStreamingLabel.setText(streamingInfo != null ? streamingInfo : "");
-            }
-        });
-    }
-
-    private void resetArtworkViewPlaceholder() {
-        mArtworkView.setImage(null);
-        mArtworkContainer.setVisible(false);
-        mArtworkContainer.setManaged(false);
-    }
 
     /**
      * Receive audio event notifications from the audio playback controller
@@ -321,19 +178,18 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
                 Platform.runLater(() -> {
                     getChildren().remove(mAudioChannelsScroller);
                     mAudioChannelsPanel.dispose();
-                    mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel, mBroadcastModel);
+                    mAudioChannelsPanel = new AudioChannelsPanel(mIconModel, mUserPreferences, mSettingsManager, mAudioPlaybackManager, mAliasModel, mBroadcastModel, mPlaylistManager);
                     mAudioChannelsScroller = new javafx.scene.control.ScrollPane(mAudioChannelsPanel);
                     mAudioChannelsScroller.getStyleClass().add("audio-channels-scroller");
                     mAudioChannelsScroller.setStyle("-fx-background-color: transparent;");
                     mAudioChannelsScroller.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
                     mAudioChannelsScroller.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
                     mAudioChannelsScroller.setFitToHeight(true);
-                    mAudioChannelsScroller.setPrefWidth(200);
-                    mAudioChannelsScroller.setVisible(false);
-                    mAudioChannelsScroller.setManaged(false);
+                    mAudioChannelsScroller.setVisible(true);
+                    mAudioChannelsScroller.setManaged(true);
+                    HBox.setHgrow(mAudioChannelsScroller, Priority.ALWAYS);
                     // Re-insert before the separator
-                    int sepIndex = getChildren().size() - 2;
-                    getChildren().add(Math.max(0, sepIndex), mAudioChannelsScroller);
+                    getChildren().add(0, mAudioChannelsScroller);
                     requestLayout();
                 });
                 break;
