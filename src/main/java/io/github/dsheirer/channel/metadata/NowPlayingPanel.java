@@ -105,12 +105,28 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
                 pane.getTabs().removeIf(tab -> tab.getContent() == mChannelSpectrumSquelchPanel);
                 mChannelSpectrumSquelchPanel.setPanelVisible(false);
             } else {
-                // Restore all tabs in correct order: Details, Events, Messages, Channel
+                // Restore all tabs in correct order: Details, Events, Messages, Channel Spectrum, Squelch, Power, Symbols, Log Settings
                 pane.getTabs().clear();
                 pane.getTabs().add(new javafx.scene.control.Tab("Details", mChannelDetailPanel));
                 pane.getTabs().add(new javafx.scene.control.Tab("Events", mDecodeEventPanel));
                 pane.getTabs().add(new javafx.scene.control.Tab("Messages", mMessageActivityPanel));
-                pane.getTabs().add(new javafx.scene.control.Tab("Channel", mChannelSpectrumSquelchPanel));
+                pane.getTabs().add(new javafx.scene.control.Tab("Channel Spectrum", mChannelSpectrumSquelchPanel));
+                
+                javafx.scene.control.Tab squelchTab = new javafx.scene.control.Tab("Squelch", mChannelSpectrumSquelchPanel.getNoiseSquelchView());
+                squelchTab.setContent(mChannelSpectrumSquelchPanel.getNoiseSquelchView());
+                pane.getTabs().add(squelchTab);
+                
+                javafx.scene.control.Tab powerTab = new javafx.scene.control.Tab("Power", mChannelSpectrumSquelchPanel.getSignalPowerView());
+                powerTab.setContent(mChannelSpectrumSquelchPanel.getSignalPowerView());
+                pane.getTabs().add(powerTab);
+                
+                javafx.scene.control.Tab symbolsTab = new javafx.scene.control.Tab("Symbols", mChannelSpectrumSquelchPanel.getSymbolView());
+                symbolsTab.setContent(mChannelSpectrumSquelchPanel.getSymbolView());
+                pane.getTabs().add(symbolsTab);
+                
+                javafx.scene.control.Tab logSettingsTab = new javafx.scene.control.Tab("Log Settings", mChannelSpectrumSquelchPanel.getLogSettingsNode());
+                logSettingsTab.setContent(mChannelSpectrumSquelchPanel.getLogSettingsNode());
+                pane.getTabs().add(logSettingsTab);
                 // visibility managed elsewhere
             }
         });
@@ -177,7 +193,11 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         mTabbedPane.getTabs().add(new Tab("Details", mChannelDetailPanel));
         mTabbedPane.getTabs().add(new Tab("Events", mDecodeEventPanel));
         mTabbedPane.getTabs().add(new Tab("Messages", mMessageActivityPanel));
-        mTabbedPane.getTabs().add(new Tab("Channel", mChannelSpectrumSquelchPanel));
+        mTabbedPane.getTabs().add(new Tab("Channel Spectrum", mChannelSpectrumSquelchPanel));
+        mTabbedPane.getTabs().add(new Tab("Squelch", mChannelSpectrumSquelchPanel.getNoiseSquelchView()));
+        mTabbedPane.getTabs().add(new Tab("Power", mChannelSpectrumSquelchPanel.getSignalPowerView()));
+        mTabbedPane.getTabs().add(new Tab("Symbols", mChannelSpectrumSquelchPanel.getSymbolView()));
+        mTabbedPane.getTabs().add(new Tab("Log Settings", mChannelSpectrumSquelchPanel.getLogSettingsNode()));
     }
     return mTabbedPane;
 }
@@ -245,7 +265,9 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
         if (mBroadcastStatusPanel != null) {
             Widget streamingWidget = new Widget("streaming", "Streaming Status", (Region) mBroadcastStatusPanel, mWidgetContainer, 40);
-            VBox.setVgrow(streamingWidget, Priority.ALWAYS);
+            int prefHeight = mNowPlayingPreference.getWidgetHeight("streaming", 130);
+            ((Region) mBroadcastStatusPanel).setPrefHeight(prefHeight);
+            VBox.setVgrow(streamingWidget, Priority.SOMETIMES);
             mWidgetContainer.addWidget(streamingWidget, false);
         }
 
