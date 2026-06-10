@@ -209,7 +209,7 @@ def jvmArgsLinux =
          '-Djdk.xml.maxAttributeSize=10000000'] // Increase XML attribute size limit
 
 application {
-    mainClass = "io.github.dsheirer.gui.SDRTrunk"
+    mainClass = "io.github.dsheirer.gui.SDRTrunkLauncher"
 
     if(os.isWindows()) {
         applicationDefaultJvmArgs = jvmArgsWindows
@@ -610,7 +610,7 @@ startScripts {
 }
 
 launch4j {
-    mainClassName = 'io.github.dsheirer.gui.SDRTrunk'
+    mainClassName = 'io.github.dsheirer.gui.SDRTrunkLauncher'
     outfile = 'SDRTrunk.exe'
     headerType = 'gui'
     icon = "${projectDir}/src/main/resources/images/SDRTrunk.ico"
@@ -750,7 +750,7 @@ tasks.register('createInstaller', Exec) {
             '--runtime-image', imageDir.absolutePath,
             '--input', libDir.absolutePath,
             '--main-jar', launcherJar != null ? launcherJar.name : 'sdr-trunk.jar',
-            '--main-class', 'io.github.dsheirer.gui.SDRTrunk']
+            '--main-class', 'io.github.dsheirer.gui.SDRTrunkLauncher']
 
         if (osName.contains("win")) {
             // Add Windows-specific options
