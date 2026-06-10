@@ -341,7 +341,11 @@ public class MapPanel extends BorderPane implements IPlottableUpdateListener {
 
     private Button getDeleteAllTracksButton() {
         if (mDeleteAllTracksButton == null) {
-            mDeleteAllTracksButton = new Button("Delete All");
+            mDeleteAllTracksButton = new Button("_Delete All");
+            mDeleteAllTracksButton.setMnemonicParsing(true);
+            mDeleteAllTracksButton.setTooltip(new Tooltip("Delete all plotted tracks. This action cannot be undone."));
+            mDeleteAllTracksButton.accessibleTextProperty().set("Delete All Tracks");
+            mDeleteAllTracksButton.accessibleHelpProperty().set("Deletes all plotted tracks from the map. This action cannot be undone.");
             mDeleteAllTracksButton.setOnAction(e -> {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Are you sure you want to delete all tracks?", ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                 alert.setTitle("Delete All Tracks");
@@ -359,7 +363,11 @@ public class MapPanel extends BorderPane implements IPlottableUpdateListener {
 
     private Button getDeleteTrackButton() {
         if (mDeleteTrackButton == null) {
-            mDeleteTrackButton = new Button("Delete");
+            mDeleteTrackButton = new Button("De_lete");
+            mDeleteTrackButton.setMnemonicParsing(true);
+            mDeleteTrackButton.setTooltip(new Tooltip("Delete selected tracks. This action cannot be undone."));
+            mDeleteTrackButton.accessibleTextProperty().set("Delete Selected Tracks");
+            mDeleteTrackButton.accessibleHelpProperty().set("Deletes the currently selected tracks from the map. This action cannot be undone.");
             mDeleteTrackButton.setDisable(true);
             mDeleteTrackButton.setOnAction(e -> {
                 List<PlottableEntityHistory> selected = getPlottedTracksTable().getSelectionModel().getSelectedItems();

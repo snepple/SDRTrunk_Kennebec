@@ -101,6 +101,9 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-06-08 - Adding Tooltips and A11y to Action Buttons
 **Learning:** Action buttons like "Send Test", "Add Recipient", and "Remove Selected" lack semantic meaning for screen readers without proper A11y bindings. For destructive actions, consequence warnings are required.
 **Action:** Always add `Tooltip`s with clear functionality, `accessibleTextProperty`, `accessibleHelpProperty`, and mnemonics to JavaFX action buttons. Include "This action cannot be undone." in tooltips for destructive actions.
+## 2026-06-09 - Add accessibility warnings to destructive track deletion buttons
+**Learning:** Destructive actions (like deleting tracks) in JavaFX applications need clear consequence warnings in tooltips and explicit accessible descriptions to comply with Apple HIG and ensure screen reader compatibility.
+**Action:** Always include a warning like 'This action cannot be undone.' in tooltips for destructive buttons, assign keyboard mnemonics, and set `accessibleTextProperty` and `accessibleHelpProperty`.
 ## 2024-06-10 - Sidebar Toggle Button Accessibility
 **Learning:** Icon-only buttons in JavaFX FXML, such as the toggle button in the Sidebar, lack clear meaning for screen readers and new users without proper accessible text and tooltips.
 **Action:** Always add `accessibleText` attributes and explicit `<tooltip>` elements for icon-only `<Button>` definitions in FXML files to improve both usability (mouse users) and accessibility (screen reader users).
