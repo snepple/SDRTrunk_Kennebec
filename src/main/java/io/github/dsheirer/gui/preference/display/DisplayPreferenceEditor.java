@@ -14,6 +14,12 @@ import javafx.geometry.Insets;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
+import javafx.scene.control.Tooltip;
+import javafx.scene.paint.Color;
+
+
 public class DisplayPreferenceEditor extends VBox {
 
     private DisplayPreference mDisplayPreference;
@@ -65,7 +71,7 @@ public class DisplayPreferenceEditor extends VBox {
                 mDisplayPreference.setFFTWindowType(newV);
             }
         });
-        card.getChildren().add(new SettingsRow("FFT Window Type", windowTypeCombo));
+        card.getChildren().add(new SettingsRow("FFT Window Type", createHelpIcon("Determines how the fast fourier transform samples data. Different window types affect frequency resolution and amplitude accuracy. For beginners, Hanning or Hamming are good defaults."), windowTypeCombo));
 
                   // GPU Acceleration
           javafx.scene.control.CheckBox openCLCheckBox = new javafx.scene.control.CheckBox("Enable GPU Acceleration (OpenCL)");
@@ -119,4 +125,18 @@ public class DisplayPreferenceEditor extends VBox {
           container.getChildren().addAll(title, card);
         return container;
     }
+
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
+    }
+
 }
