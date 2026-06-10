@@ -186,14 +186,26 @@ public class AudioRecordingsPanel extends VBox {
 
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
-                    for (RecordingItem item : selectedItems) {
-                        try {
-                            Files.deleteIfExists(item.getFile());
-                            mRecordings.remove(item);
-                        } catch (IOException ex) {
-                            mLog.error("Failed to delete recording: " + item.getFile(), ex);
+                    deleteSelectedButton.disableProperty().unbind();
+                    deleteSelectedButton.setDisable(true);
+                    deleteSelectedButton.setText("Deleting...");
+                    List<RecordingItem> snapshot = new ArrayList<>(selectedItems);
+                    io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
+                        List<RecordingItem> successfullyDeleted = new ArrayList<>();
+                        for (RecordingItem item : snapshot) {
+                            try {
+                                Files.deleteIfExists(item.getFile());
+                                successfullyDeleted.add(item);
+                            } catch (IOException ex) {
+                                mLog.error("Failed to delete recording: " + item.getFile(), ex);
+                            }
                         }
-                    }
+                        javafx.application.Platform.runLater(() -> {
+                            mRecordings.removeAll(successfullyDeleted);
+                            deleteSelectedButton.setText("Delete Selected");
+                            deleteSelectedButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(mTableView.getSelectionModel().getSelectedItems()));
+                        });
+                    });
                 }
             });
         });
@@ -214,14 +226,26 @@ public class AudioRecordingsPanel extends VBox {
 
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
-                    for (RecordingItem item : itemsToDelete) {
-                        try {
-                            Files.deleteIfExists(item.getFile());
-                            mRecordings.remove(item);
-                        } catch (IOException ex) {
-                            mLog.error("Failed to delete recording: " + item.getFile(), ex);
+                    deleteAllButton.disableProperty().unbind();
+                    deleteAllButton.setDisable(true);
+                    deleteAllButton.setText("Deleting...");
+                    List<RecordingItem> snapshot = new ArrayList<>(itemsToDelete);
+                    io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
+                        List<RecordingItem> successfullyDeleted = new ArrayList<>();
+                        for (RecordingItem item : snapshot) {
+                            try {
+                                Files.deleteIfExists(item.getFile());
+                                successfullyDeleted.add(item);
+                            } catch (IOException ex) {
+                                mLog.error("Failed to delete recording: " + item.getFile(), ex);
+                            }
                         }
-                    }
+                        javafx.application.Platform.runLater(() -> {
+                            mRecordings.removeAll(successfullyDeleted);
+                            deleteAllButton.setText("Delete All");
+                            deleteAllButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(mFilteredRecordings));
+                        });
+                    });
                 }
             });
         });
