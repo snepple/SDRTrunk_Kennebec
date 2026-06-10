@@ -1,8 +1,9 @@
-## 2025-02-14 - Swing to JavaFX Migration with proper Threading and MVC
-**Learning:** When using `JFXPanel` inside an existing Swing application to transition layout to JavaFX, strictly follow MVC separation. Don't build JavaFX controls directly inside the Swing class. Instead, create a separate `View` class (e.g. `HistoryManagementView`).
-**Action:** Also, carefully manage thread transitions. `Platform.runLater()` must be used to initialize or manipulate JavaFX elements from the Swing side, while `SwingUtilities.invokeLater()` must be used to trigger updates to Swing-based models (or showing legacy Swing dialogs) from JavaFX action event handlers. Never use `Platform.runAndWait()` to avoid deadlocks.
-## Swing-to-JavaFX Migration Insights
-* **Thread Safety**: When bridging Swing and JavaFX using `JFXPanel`, `Scene` creation and FXML loading (especially if FXML contains `Tooltip`s or `Window` subclasses) must happen exclusively on the JavaFX Application Thread via `Platform.runLater()`.
-* **State References**: Because `Platform.runLater()` executes asynchronously, any Swing code immediately requesting references to the newly instantiated JavaFX components must handle `null` states correctly.
-* **Event Dispatching**: Callbacks triggered by JavaFX input events (like `SidebarViewController` mouse clicks) execute on the JavaFX thread. If these callbacks update Swing UI states (like changing cards in `ControllerPanel`), they must be dispatched back to the EDT using `SwingUtilities.invokeLater()`.
-* **SwingNodes in JavaFX**: Legacy Swing custom components (e.g., `DbPowerMeter`) can be effectively embedded within JavaFX `VBox` or `GridPane` layouts using the `SwingNode` component. Ensure `setContent()` runs on the EDT if required by the component, or allow FX thread handling if strictly supported.
+## 2026-05-08 - Modernize MapPanel integration
+**Learning:** Legacy UI integration wrapped a Swing `MapPanel` in a `MapPanelFXWrapper` (which extended JavaFX `BorderPane` and embedded the Swing panel in a `SwingNode`), only to be later re-embedded in a `JFXPanel` inside `ControllerPanel`. This double-embedding (`Swing -> JFXPanel -> Scene -> MapPanelFXWrapper -> SwingNode -> Swing MapPanel`) caused rendering unreliability, delayed painting, and general content rendering issues.
+**Action:** Removed `MapPanelFXWrapper` and the intermediary `JFXPanel` in `ControllerPanel`. Attached the Swing `MapPanel` directly to the `mCardPanel` (which is a Swing `JPanel` using `CardLayout`), thus resolving the rendering issues and streamlining the component hierarchy.
+## $(date +%Y-%m-%d) - Modernize Standalone Frames and Dialogs
+**Learning:** Legacy UI integration heavily relied on `javax.swing.JOptionPane` for popups and `javax.swing.JFrame` for standalone windows.
+**Action:** Migrated `FilterEditor`, `SpectrumFrame`, `ChannelizerViewer`, `ChannelizerViewer2`, `HeterodyneChannelizerViewer`, and `SynthesizerViewer` to extend JavaFX `Stage` and use native `Scene` and `VBox` layouts. Systematically replaced all `JOptionPane` instances with `javafx.scene.control.Alert` and `TextInputDialog`, ensuring thread-safety by wrapping executions in `Platform.runLater()`.
+## 2026-05-17 - Migrated BroadcastStatusPanel and AudioChannelsPanel
+**Finding:** BroadcastStatusPanel and AudioChannelsPanel were using legacy Swing JTables and JPanels.
+**Action:** Created JavaFX VBox and HBox equivalents using FXML, wrapped them in JFXPanels, and updated controllers to use JavaFX properties and observable lists, decoupling Swing implementations.

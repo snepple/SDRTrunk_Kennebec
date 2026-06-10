@@ -76,7 +76,7 @@ import java.awt.event.ActionListener;
 /**
  * UI to wrap an audio channel and provide display of metadata and playback state information.
  */
-public class AudioChannelPanel extends VBox implements Listener<AudioEvent>, SettingChangeListener
+public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, SettingChangeListener
 {
     private static final long serialVersionUID = 1L;
     private static final Logger mLog = LoggerFactory.getLogger(AudioChannelPanel.class);
@@ -93,6 +93,7 @@ public class AudioChannelPanel extends VBox implements Listener<AudioEvent>, Set
     private final SettingsManager mSettingsManager;
     private final UserPreferences mUserPreferences;
     private final BroadcastModel mBroadcastModel;
+    private final io.github.dsheirer.playlist.PlaylistManager mPlaylistManager;
     private final TalkgroupFormatPreference mTalkgroupFormatPreference;
     private Identifier mIdentifier;
     private List<Alias> mAliases = Collections.EMPTY_LIST;
@@ -124,7 +125,7 @@ public class AudioChannelPanel extends VBox implements Listener<AudioEvent>, Set
      * @param userPreferences for lookup of tone and other preferences
      */
     public AudioChannelPanel(AudioChannel audioChannel, AliasModel aliasModel, IconModel iconModel,
-                             SettingsManager settingsManager, UserPreferences userPreferences, BroadcastModel broadcastModel)
+                             SettingsManager settingsManager, UserPreferences userPreferences, BroadcastModel broadcastModel, io.github.dsheirer.playlist.PlaylistManager playlistManager)
     {
         mIconModel = iconModel;
         mSettingsManager = settingsManager;
@@ -132,6 +133,7 @@ public class AudioChannelPanel extends VBox implements Listener<AudioEvent>, Set
         mAliasModel = aliasModel;
         mUserPreferences = userPreferences;
         mBroadcastModel = broadcastModel;
+        mPlaylistManager = playlistManager;
         mTalkgroupFormatPreference = mUserPreferences.getTalkgroupFormatPreference();
         mAudioChannel = audioChannel;
 
@@ -204,12 +206,44 @@ public class AudioChannelPanel extends VBox implements Listener<AudioEvent>, Set
         }
     }
 
+    private javafx.scene.image.ImageView mArtworkView;
+    private StackPane mArtworkContainer;
+
     private void init()
     {
         //Register to receive preference updates
         MyEventBus.getGlobalEventBus().register(this);
 
         getStyleClass().add("audio-channel-panel");
+        setAlignment(Pos.CENTER_LEFT);
+        setSpacing(6);
+        setPadding(new Insets(2, 6, 2, 6));
+
+        // Artwork
+        mArtworkView = new ImageView();
+        mArtworkView.setFitWidth(46);
+        mArtworkView.setFitHeight(46);
+        mArtworkView.setPreserveRatio(false);
+        mArtworkView.setSmooth(true);
+
+        javafx.scene.shape.Rectangle artClip = new javafx.scene.shape.Rectangle(46, 46);
+        artClip.setArcWidth(12);
+        artClip.setArcHeight(12);
+        mArtworkView.setClip(artClip);
+
+        javafx.scene.effect.DropShadow artShadow = new javafx.scene.effect.DropShadow();
+        artShadow.setRadius(8);
+        artShadow.setColor(Color.rgb(0, 0, 0, 0.5));
+        artShadow.setOffsetY(2);
+        mArtworkView.setEffect(artShadow);
+
+        mArtworkContainer = new StackPane(mArtworkView);
+        mArtworkContainer.setVisible(false);
+        mArtworkContainer.setManaged(false);
+
+        // Metadata VBox
+        VBox metaBox = new VBox(1);
+        metaBox.setAlignment(Pos.CENTER_LEFT);
 
         mMutedLabel.setFont(mFont);
         mMutedLabel.setTextFill(mMutedColor);
@@ -219,27 +253,27 @@ public class AudioChannelPanel extends VBox implements Listener<AudioEvent>, Set
         mChannelName.getStyleClass().add("audio-channel-name");
         mChannelName.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
         mChannelName.setTextFill(mLabelColor);
-        getChildren().add(mChannelName);
+        mChannelName.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
 
         mIconLabel.setFont(mFont);
         mIconLabel.setTextFill(mValueColor);
-        getChildren().add(mIconLabel);
-
 
         mIdentifierLabel.getStyleClass().add("audio-channel-identifier");
-        mIdentifierLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
+        mIdentifierLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.NORMAL, 11));
         mIdentifierLabel.setTextFill(mValueColor);
-        getChildren().add(mIdentifierLabel);
 
         mStreamIconsPanel.setBackground(javafx.scene.layout.Background.EMPTY);
-        getChildren().add(mStreamIconsPanel);
-
 
         mTwoToneAlertLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
         mTwoToneAlertLabel.setTextFill(javafx.scene.paint.Color.RED);
         mTwoToneAlertLabel.setVisible(false);
-        getChildren().add(mTwoToneAlertLabel);
 
+        HBox aliasLine = new HBox(4, mIconLabel, mIdentifierLabel, mStreamIconsPanel, mTwoToneAlertLabel);
+        aliasLine.setAlignment(Pos.CENTER_LEFT);
+
+        metaBox.getChildren().addAll(mChannelName, aliasLine);
+        
+        getChildren().addAll(mArtworkContainer, metaBox);
     }
 
     @Override
@@ -406,18 +440,46 @@ public class AudioChannelPanel extends VBox implements Listener<AudioEvent>, Set
                 }
                 mStreamIconsPanel.requestLayout();
                 mStreamIconsPanel.requestLayout();
+                
+                // Lookup channel and load artwork
+                io.github.dsheirer.controller.channel.Channel chan = null;
+                if (mAudioChannel != null && mAudioChannel.getChannelName() != null && !mAudioChannel.getChannelName().isEmpty() && mPlaylistManager != null && mPlaylistManager.getChannelModel() != null) {
+                    for (io.github.dsheirer.controller.channel.Channel c : mPlaylistManager.getChannelModel().getChannels()) {
+                        if (mAudioChannel.getChannelName().equals(c.getName())) {
+                            chan = c;
+                            break;
+                        }
+                    }
+                }
+                
+                if (chan != null && chan.getImagePath() != null && !chan.getImagePath().isEmpty()) {
+                    try {
+                        java.io.File file = new java.io.File(chan.getImagePath());
+                        if (file.exists()) {
+                            javafx.scene.image.Image img = new javafx.scene.image.Image(file.toURI().toString(), 46, 46, false, true);
+                            mArtworkView.setImage(img);
+                            mArtworkContainer.setVisible(true);
+                            mArtworkContainer.setManaged(true);
+                        } else {
+                            mArtworkView.setImage(null);
+                            mArtworkContainer.setVisible(false);
+                            mArtworkContainer.setManaged(false);
+                        }
+                    } catch (Exception ex) {
+                        mArtworkView.setImage(null);
+                        mArtworkContainer.setVisible(false);
+                        mArtworkContainer.setManaged(false);
+                    }
+                } else {
+                    mArtworkView.setImage(null);
+                    mArtworkContainer.setVisible(false);
+                    mArtworkContainer.setManaged(false);
+                }
             });
-
-            // Post active call metadata to the global event bus so the main AudioPanel displays it on the left!
-            if (mAudioChannel != null && mAudioChannel.getChannelName() != null) {
-                String displayChannel = identifierText.equals("-----") ? "" : mAudioChannel.getChannelName();
-                String displayAlias = identifierText.equals("-----") ? "" : identifierText;
-                MyEventBus.getGlobalEventBus().post(new AudioPanel.ActiveCallUpdateEvent(displayChannel, displayAlias));
-            }
         }
         finally
         {
-            mLock.unlock();
+            // mLock.unlock();
         }
     }
 

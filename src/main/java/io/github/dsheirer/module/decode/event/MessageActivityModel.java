@@ -60,39 +60,30 @@ public class MessageActivityModel extends ClearableHistoryModel<MessageItem> imp
         Platform.runLater(() -> add(new MessageItem(message)));
     }
 
-    // // // @Override
-    public int getColumnCount()
+    /**
+     * @return A list of JavaFX TableColumns for the Message Activity table
+     */
+    public static java.util.List<javafx.scene.control.TableColumn<MessageItem, ?>> createColumns()
     {
-        return mHeaders.length;
-    }
+        java.util.List<javafx.scene.control.TableColumn<MessageItem, ?>> columns = new java.util.ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
 
-    public String getColumnName(int column)
-    {
-        return mHeaders[column];
-    }
+        javafx.scene.control.TableColumn<MessageItem, String> timeCol = new javafx.scene.control.TableColumn<>("Time");
+        timeCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getTimestamp(sdf)));
+        columns.add(timeCol);
 
-    // // // @Override
-    public Object getValueAt(int rowIndex, int columnIndex)
-    {
-        MessageItem item = getItem(rowIndex);
+        javafx.scene.control.TableColumn<MessageItem, String> protocolCol = new javafx.scene.control.TableColumn<>("Protocol");
+        protocolCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getProtocol()));
+        columns.add(protocolCol);
 
-        if(item != null)
-        {
-            switch(columnIndex)
-            {
-                case TIME:
-                    return item.getTimestamp(mSDFTime);
-                case PROTOCOL:
-                    return item.getProtocol();
-                case TIMESLOT:
-                    return item.getTimeslot();
-                case MESSAGE:
-                    return item.getText();
-                default:
-                    break;
-            }
-        }
+        javafx.scene.control.TableColumn<MessageItem, Integer> timeslotCol = new javafx.scene.control.TableColumn<>("Timeslot");
+        timeslotCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getTimeslot()));
+        columns.add(timeslotCol);
 
-        return null;
+        javafx.scene.control.TableColumn<MessageItem, String> messageCol = new javafx.scene.control.TableColumn<>("Message");
+        messageCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getText()));
+        columns.add(messageCol);
+
+        return columns;
     }
 }

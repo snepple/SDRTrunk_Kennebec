@@ -1,20 +1,20 @@
 ## 📥 Download the Latest Release
 
-Not sure what to download? Here is a quick guide to getting started with **SDRTrunk Kennebec (vK.00.077)**:
+Not sure what to download? Here is a quick guide to getting started with **SDRTrunk Kennebec (vK.00.083)**:
 
 - **Windows Users (Recommended)**: Download the Native Windows Installer. This is the easiest way to install and manage SDRTrunk on Windows.
-  - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.077/SDRTrunk-K.00.077-windows-installer.exe)
+  - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.083/SDRTrunk-K.00.083-windows-installer.exe)
   
 - **Advanced Windows Users**: Download the Portable ZIP if you prefer to run the application without installing it.
-  - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.077/SDRTrunk-K.00.077-windows-x86_64.zip)
+  - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.083/SDRTrunk-K.00.083-windows-x86_64.zip)
 
 - **Mac Users**:
-  - [Download macOS Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.077/SDRTrunk-K.00.077-mac-x86_64.zip)
+  - [Download macOS Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.083/SDRTrunk-K.00.083-mac-x86_64.zip)
 
 - **Linux Users**:
-  - [Download Linux Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.077/SDRTrunk-K.00.077-linux-x86_64.zip)
+  - [Download Linux Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.083/SDRTrunk-K.00.083-linux-x86_64.zip)
 
-*(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.077))*
+*(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.083))*
 
 ---
 
@@ -32,7 +32,7 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 <ul>
   <li><strong>AI-Powered Transcriptions & Optimization:</strong> Real-time radio audio transcription (via OpenAI Whisper / Google Speech-to-Text) and NBFM AI audio noise filtering.</li>
   <li><strong>Advanced Integrations:</strong> Real-time UDP streaming specifically for the IAmResponding platform, plus enhanced OpenMHz and Broadcastify integration.</li>
-  <li><strong>Modern UX/UI Redesign:</strong> A beautiful macOS-style aesthetic with a custom collapsible left-hand sidebar, high-DPI SVG icons, and inline table editing.</li>
+  <li><strong>Modern UX/UI Redesign:</strong> A beautiful Apple-style aesthetic with a custom collapsible left-hand sidebar, high-DPI SVG icons, and inline table editing.</li>
   <li><strong>Resilience & Health:</strong> Automated tuner self-healing logic, Smart Bandwidth (auto-optimizing sample rate to save CPU), and built-in System Health notifications.</li>
   <li><strong>In-App Documentation:</strong> An embedded, fully searchable knowledge base right inside the application.</li>
 </ul>
@@ -52,48 +52,40 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 
 <p>No message is transmitted on the control channel when a conversation on a talkgroup is over. The monitoring process keeps track of transmissions and if there has been no activity for a specified period, it ends the recording.</p>
 <h2>What the Kennebec Version Adds (Versus the Source Fork)</h2>
-<p>The Kennebec version builds on the upstream sdrtrunk codebase with a focused set of improvements for operators who need reliable, unattended streaming and monitoring.</p>
+<p>The Kennebec version builds on the upstream <a href="https://github.com/actionpagezello/sdrtrunk">sdrtrunk</a> codebase with a massive set of improvements for operators who need reliable, unattended streaming and monitoring. Below is an in-depth comparison of features explicitly added or significantly overhauled in the Kennebec fork:</p>
+
+<h3>Performance & Resource Optimization</h3>
+<ul>
+  <li><strong>Reduced CPU & Memory Utilization:</strong> Major underlying engine optimizations aimed at reducing heap allocations, aggressive memory management, and smarter thread pooling.</li>
+  <li><strong>GPU Acceleration for Spectral Visuals:</strong> Waterfall and Spectrum displays now offload heavy rendering tasks to the GPU, producing much smoother frame rates while drastically reducing CPU tax.</li>
+  <li><strong>Smart Bandwidth:</strong> Automatically calculates and reduces SDR tuner sample rates when observing narrower bandwidths, further conserving CPU.</li>
+</ul>
 
 <h3>Modernized Interface and Workflow</h3>
 <ul>
-  <li>Refreshed GUI with updated icons and an improved Now Playing view</li>
-  <li>Consolidated settings in a single user preference area, eliminating the need to hunt across multiple menus</li>
-  <li>New interface for reviewing logs and browsing recorded audio files</li>
-  <li>Ability to set allocated memory directly via the user preferences Ux/GUI</li>
-  <li>AI Integration for Audio Monitoring and System Health Notifications</li>
-  <li>Automated Geographic ID generation for NBFM channels</li>
+  <li><strong>Unified User Preferences:</strong> We completely eliminated the need to hunt across multiple menus. <em>All</em> application settings, memory allocation configurations, and tuner preferences are now consolidated into a single, intuitive "User Preferences" area.</li>
+  <li><strong>New GUI for Logs & Recordings:</strong> Replaced the old file-system approach with a beautiful, in-app GUI for reviewing live application/tuner logs and browsing, filtering, and playing back recorded audio files natively.</li>
+  <li><strong>Refreshed Apple-Style Aesthetic:</strong> Updated icons, a collapsible left-hand navigation sidebar, and a highly polished "Now Playing" view for better visual ergonomics.</li>
+  <li><strong>Windows Native Installer & Friendly <code>.exe</code>:</strong> Added a seamless Windows native installer. No more launching via ugly batch scripts—SDRTrunk Kennebec installs cleanly to your Program Files and launches via a silent, Windows-friendly native <code>.exe</code> wrapper (no background terminal window!).</li>
+</ul>
+
+<h3>Advanced Monitoring & Integrations</h3>
+<ul>
+  <li><strong>Two-Tone Detection:</strong> Brand new, fully integrated Two-Tone paging detection for monitoring and dispatching fire/EMS alerts.</li>
+  <li><strong>IAmResponding Streaming:</strong> A custom-built, native UDP streaming integration designed specifically to route audio dispatches directly into the IAmResponding platform.</li>
+  <li><strong>Inactivity & Error Alerts:</strong> Receive alerts via Telegram or Email when a channel remains silent for a configurable duration or when the application/tuner faults.</li>
+</ul>
+
+<h3>Artificial Intelligence Integration</h3>
+<ul>
+  <li><strong>AI-Powered Audio Transcriptions:</strong> Real-time radio audio transcription capabilities via OpenAI Whisper and Google Speech-to-Text.</li>
+  <li><strong>NBFM AI Audio Optimization:</strong> AI-driven noise filtering specifically designed to clean up analog NBFM signals.</li>
+  <li><strong>Intelligent System Health Advisor:</strong> Optional AI assistant that can automatically review system logs, monitor application performance, and provide auto-remediation advice if a channel becomes unintelligible or a tuner locks up.</li>
 </ul>
 
 <h3>In-App Knowledge Base</h3>
 <ul>
-  <li>An embedded, searchable help viewer brings documentation directly into the application. You no longer need to switch to a browser to look up configuration details or protocol explanations.</li>
-  <li>Contextual DSP explanations and interactive configuration.</li>
-</ul>
-
-<h3>Streaming and Audio Reliability</h3>
-<ul>
-  <li>Automated audio recording, streaming, and metadata tagging</li>
-  <li>SDR tuner width auto-calculation to reduce manual configuration</li>
-  <li>New stream type for IamResponding (local UDP) using Two Tone Detect</li>
-  <li>Tuner self-healing logic that automatically attempts to recover from hardware errors</li>
-  <li>Automated tuner reset on Windows 10 and higher using PowerShell scripts for hard-reset of locked or failed SDR devices</li>
-</ul>
-
-<h3>Monitoring and Alerts</h3>
-<ul>
-  <li>Two Tone Detect functionality for paging and dispatch monitoring</li>
-  <li>Inactivity monitoring: alerts via Telegram or Email when a channel remains silent for a configurable duration</li>
-  <li>Configurable error notifications via Telegram or Email for application or tuner faults</li>
-</ul>
-
-<h3>Optional AI Integration</h3>
-<ul>
-  <li>When enabled, Gemini AI can automatically set channel filters, review logs, monitor application performance, assess audio quality, and notify you if a channel becomes unintelligible.</li>
-</ul>
-
-<h3>OS and Java Integration</h3>
-<ul>
-  <li>Deep OS integration via modern Java and JNA provides native backdrop effects, theme syncing with the system appearance, and DPI-aware rendering on Windows.</li>
+  <li>An embedded, searchable help viewer brings all documentation directly into the application. You no longer need to switch to a browser to look up configuration details or DSP explanations!</li>
 </ul>
 
 <h2>Core SDRTrunk Features</h2>
@@ -117,20 +109,36 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 <h2>📸 Updated Screenshots</h2>
 
 <p align="center">
-Refreshed macOS-style GUI & Side Navigation<br>
-<img src="images/media__1780864906236.png" alt="SDRTrunk Kennebec - Updated GUI" width="800">
+Refreshed Apple-style GUI & Side Navigation<br>
+<img src="images/now_playing_k78.png" alt="SDRTrunk Kennebec - Updated GUI" width="800">
 <br><br>
 
 Streamlined Aliases & Inline Editing<br>
-<img src="images/media__1780864764513.png" alt="SDRTrunk Kennebec - Aliases" width="800">
+<img src="images/playlist_editor_k78.png" alt="SDRTrunk Kennebec - Aliases" width="800">
 <br><br>
 
-Enhanced Channel Layouts & Graphs<br>
-<img src="images/media__1780864705827.png" alt="SDRTrunk Kennebec - Channels" width="800">
+Enhanced Two Tone Detect Configuration<br>
+<img src="images/two_tones_k78.png" alt="SDRTrunk Kennebec - Two Tones" width="800">
 <br><br>
 
 Streaming Integrations (IAmResponding & more)<br>
-<img src="images/media__1780864680301.png" alt="SDRTrunk Kennebec - Integrations" width="800">
+<img src="images/streaming_k78.png" alt="SDRTrunk Kennebec - Integrations" width="800">
+<br><br>
+
+AI Monitoring & Setup<br>
+<img src="images/ai_preferences_k78.png" alt="SDRTrunk Kennebec - AI Setup" width="800">
+<br><br>
+
+In-App Knowledge Base & Help Viewer<br>
+<img src="images/help_docs_k78.png" alt="SDRTrunk Kennebec - Help and Docs" width="800">
+<br><br>
+
+Audio Recordings Review<br>
+<img src="images/audio_recordings_k78.png" alt="SDRTrunk Kennebec - Audio Recordings" width="800">
+<br><br>
+
+Performance & Live Log Analysis<br>
+<img src="images/performance_logs_k78.png" alt="SDRTrunk Kennebec - Performance and Logs" width="800">
 </p>
 
 <h2>Historical Screenshots</h2>

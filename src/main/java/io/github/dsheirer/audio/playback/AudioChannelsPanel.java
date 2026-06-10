@@ -52,14 +52,14 @@ public class AudioChannelsPanel extends javafx.scene.layout.StackPane
      * @param aliasModel for accessing aliases
      */
     public AudioChannelsPanel(IconModel iconModel, UserPreferences userPreferences, SettingsManager settingsManager,
-                              IAudioController controller, AliasModel aliasModel, BroadcastModel broadcastModel)
+                              IAudioController controller, AliasModel aliasModel, BroadcastModel broadcastModel, io.github.dsheirer.playlist.PlaylistManager playlistManager)
     {
         Platform.runLater(() -> {
             try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/audio/playback/AudioChannelsPanel.fxml"));
                 Parent root = loader.load();
                 mController = loader.getController();
-                mController.init(iconModel, userPreferences, settingsManager, controller, aliasModel, broadcastModel);
+                mController.init(iconModel, userPreferences, settingsManager, controller, aliasModel, broadcastModel, playlistManager);
 
                 java.net.URL cssUrl = getClass().getResource("/sdrtrunk_style.css");
                 if (cssUrl != null) {

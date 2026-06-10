@@ -83,96 +83,76 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
         Platform.runLater(() -> add(event));
     }
 
-    // // // @Override
-    public int getColumnCount()
+    /**
+     * @return A list of JavaFX TableColumns for the Decode Events table
+     */
+    public static java.util.List<TableColumn<IDecodeEvent, ?>> createColumns()
     {
-        return mHeaders.length;
-    }
+        java.util.List<TableColumn<IDecodeEvent, ?>> columns = new java.util.ArrayList<>();
 
-    public String getColumnName(int column)
-    {
-        return mHeaders[column];
-    }
+        TableColumn<IDecodeEvent, Long> timeCol = new TableColumn<>("Time");
+        timeCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getTimeStart()));
+        columns.add(timeCol);
 
-    // // // @Override
-    public Object getValueAt(int rowIndex, int columnIndex)
-    {
-        IDecodeEvent event = getItem(rowIndex);
+        TableColumn<IDecodeEvent, Long> durationCol = new TableColumn<>("Duration");
+        durationCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getDuration()));
+        columns.add(durationCol);
 
-        if(event != null)
-        {
-            switch(columnIndex)
+        TableColumn<IDecodeEvent, String> eventCol = new TableColumn<>("Event");
+        eventCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getEventType().getLabel()));
+        columns.add(eventCol);
+
+        TableColumn<IDecodeEvent, IdentifierCollection> fromIdCol = new TableColumn<>("From");
+        fromIdCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getIdentifierCollection()));
+        columns.add(fromIdCol);
+
+        TableColumn<IDecodeEvent, IdentifierCollection> fromAliasCol = new TableColumn<>("Alias");
+        fromAliasCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getIdentifierCollection()));
+        columns.add(fromAliasCol);
+
+        TableColumn<IDecodeEvent, IdentifierCollection> toIdCol = new TableColumn<>("To");
+        toIdCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getIdentifierCollection()));
+        columns.add(toIdCol);
+
+        TableColumn<IDecodeEvent, IdentifierCollection> toAliasCol = new TableColumn<>("Alias");
+        toAliasCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getIdentifierCollection()));
+        columns.add(toAliasCol);
+
+        TableColumn<IDecodeEvent, String> channelCol = new TableColumn<>("Channel");
+        channelCol.setCellValueFactory(cellData -> {
+            IDecodeEvent event = cellData.getValue();
+            IChannelDescriptor channelDescriptor = event.getChannelDescriptor();
+            String value = null;
+            if(channelDescriptor != null)
             {
-                case COLUMN_TIME:
-                    return event.getTimeStart();
-                case COLUMN_DURATION:
-                    return event.getDuration();
-                case COLUMN_EVENT:
-                    return event.getEventType().getLabel();
-                case COLUMN_FROM_ID:
-                    return event.getIdentifierCollection();
-                case COLUMN_FROM_ALIAS:
-                    return event.getIdentifierCollection();
-                case COLUMN_TO_ID:
-                    return event.getIdentifierCollection();
-                case COLUMN_TO_ALIAS:
-                    return event.getIdentifierCollection();
-                case COLUMN_CHANNEL:
-                    IChannelDescriptor channelDescriptor = event.getChannelDescriptor();
-
-                    if(channelDescriptor != null)
-                    {
-                        if(event.hasTimeslot() && !event.toString().contains("TS"))
-                        {
-                            return channelDescriptor + " TS" + event.getTimeslot();
-                        }
-                        else
-                        {
-                            return channelDescriptor.toString();
-                        }
-                    }
-                    else
-                    {
-                        if(event.hasTimeslot() && !event.toString().contains("TS"))
-                        {
-                            return "TS" + event.getTimeslot();
-                        }
-                        else
-                        {
-                            return null;
-                        }
-                    }
-                case COLUMN_FREQUENCY:
-                    return event.getChannelDescriptor();
-                case COLUMN_DETAILS:
-                    return event.getDetails();
+                if(event.hasTimeslot() && !event.toString().contains("TS"))
+                {
+                    value = channelDescriptor + " TS" + event.getTimeslot();
+                }
+                else
+                {
+                    value = channelDescriptor.toString();
+                }
             }
-        }
+            else
+            {
+                if(event.hasTimeslot() && !event.toString().contains("TS"))
+                {
+                    value = "TS" + event.getTimeslot();
+                }
+            }
+            return new javafx.beans.property.ReadOnlyObjectWrapper<>(value);
+        });
+        columns.add(channelCol);
 
-        return null;
-    }
+        TableColumn<IDecodeEvent, IChannelDescriptor> freqCol = new TableColumn<>("Frequency");
+        freqCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getChannelDescriptor()));
+        columns.add(freqCol);
 
-    // // // @Override
-    public Class<?> getColumnClass(int columnIndex)
-    {
-        switch(columnIndex)
-        {
-            case COLUMN_DURATION:
-            case COLUMN_TIME:
-                return Long.class;
-            case COLUMN_DETAILS:
-            case COLUMN_EVENT:
-                return String.class;
-            case COLUMN_FREQUENCY:
-            case COLUMN_FROM_ALIAS:
-            case COLUMN_FROM_ID:
-            case COLUMN_TO_ALIAS:
-            case COLUMN_TO_ID:
-                return IdentifierCollection.class;
-            case COLUMN_CHANNEL:
-                return String.class;
-        }
+        TableColumn<IDecodeEvent, String> detailsCol = new TableColumn<>("Details");
+        detailsCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getDetails()));
+        columns.add(detailsCol);
 
-        return Object.class;
+        return columns;
     }
 }

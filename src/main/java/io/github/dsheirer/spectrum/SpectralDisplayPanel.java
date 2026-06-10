@@ -371,7 +371,7 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
         SplitPane splitPane = new SplitPane();
         splitPane.setOrientation(Orientation.VERTICAL);
         splitPane.getItems().addAll(mLayeredPanel, mWaterfallPanel);
-        splitPane.setDividerPositions(0.5);
+        splitPane.setDividerPositions(0.35);
 
         getChildren().add(splitPane);
 
@@ -691,8 +691,7 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
             }
 
             if(contextMenu != null) {
-                int yOffset = event.getSource() == mOverlayPanel ? 0 : (int)(getHeight() * 0.5);
-                contextMenu.show(SpectralDisplayPanel.this, (int)event.getX(), (int)event.getY() + yOffset);
+                contextMenu.show(SpectralDisplayPanel.this, event.getScreenX(), event.getScreenY());
             }
         }
     }

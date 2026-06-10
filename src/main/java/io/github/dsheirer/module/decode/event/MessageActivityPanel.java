@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.dsheirer.sample.Listener;
+import javafx.application.Platform;
 
 /**
  * Panel to display decoded messages/activity.
@@ -58,15 +59,49 @@ public class MessageActivityPanel extends javafx.scene.layout.VBox implements Li
     public MessageActivityPanel(UserPreferences userPreferences)
     {
         mUserPreferences = userPreferences;
-        // mTable.setFillsViewportHeight(true);
-        // mTableRowSorter = new TableRowSorter<>(mMessageModel);
-        // mTableRowSorter.setRowFilter(new MessageRowFilter());
-        // mTable.setRowSorter(mTableRowSorter);
-        // mTableColumnWidthMonitor = new TableViewColumnWidthMonitor(mUserPreferences, mTable, TABLE_PREFERENCE_KEY);
         
+        javafx.scene.control.Label placeholderLabel = new javafx.scene.control.Label("No messages — messages will appear when a channel is active");
+        javafx.scene.layout.VBox placeholderContainer = new javafx.scene.layout.VBox(placeholderLabel);
+        placeholderContainer.setAlignment(javafx.geometry.Pos.TOP_CENTER);
+        placeholderContainer.setPadding(new javafx.geometry.Insets(10, 0, 0, 0));
+        mTable.setPlaceholder(placeholderContainer);
+        
+        mTable.setTableMenuButtonVisible(true);
+        mTable.setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY);
+        mTable.getColumns().addAll(MessageActivityModel.createColumns());
+        mTable.setItems(mMessageModel.getItems());
+        
+        Runnable updateHeaderVisibility = () -> {
+            boolean singleColumn = mTable.getColumns().size() <= 1;
+            mTable.setTableMenuButtonVisible(!singleColumn);
+            javafx.scene.layout.Pane header = (javafx.scene.layout.Pane) mTable.lookup("TableHeaderRow");
+            if (header != null) {
+                if (singleColumn) {
+                    header.setMaxHeight(0);
+                    header.setMinHeight(0);
+                    header.setPrefHeight(0);
+                    header.setVisible(false);
+                } else {
+                    header.setMaxHeight(javafx.scene.layout.Region.USE_COMPUTED_SIZE);
+                    header.setMinHeight(javafx.scene.layout.Region.USE_COMPUTED_SIZE);
+                    header.setPrefHeight(javafx.scene.layout.Region.USE_COMPUTED_SIZE);
+                    header.setVisible(true);
+                }
+            }
+        };
+
+        mTable.getColumns().addListener((javafx.beans.InvalidationListener) obs -> {
+            updateHeaderVisibility.run();
+        });
+
+        mTable.skinProperty().addListener((obs, oldSkin, newSkin) -> {
+            Platform.runLater(updateHeaderVisibility);
+        });
+
         mHistoryManagementPanel = new HistoryManagementPanel<>(mMessageModel, "Message Filter Editor");
         getChildren().add(mHistoryManagementPanel);
-        getChildren().add(new javafx.scene.control.ScrollPane(mTable));
+        javafx.scene.layout.VBox.setVgrow(mTable, javafx.scene.layout.Priority.ALWAYS);
+        getChildren().add(mTable);
     }
 
     /**
