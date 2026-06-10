@@ -34,19 +34,13 @@ public class AudioChannelsPanelController {
 
         for (int x = 0; x < controller.getAudioChannels().size(); x++) {
             AudioChannelPanel panel = new AudioChannelPanel(controller.getAudioChannels().get(x), aliasModel, iconModel, settingsManager, userPreferences, broadcastModel, playlistManager);
+            panel.setMaxWidth(Double.MAX_VALUE);
             HBox.setHgrow(panel, Priority.ALWAYS);
             mainContainer.getChildren().add(panel);
 
             if (x < controller.getAudioChannels().size() - 1) {
                 mainContainer.getChildren().add(new Separator(Orientation.VERTICAL));
             }
-        }
-
-        if (controller.getAudioChannels().size() == 1) {
-            mainContainer.getChildren().add(new Separator(Orientation.VERTICAL));
-            AudioChannelPanel panel = new AudioChannelPanel(null, aliasModel, iconModel, settingsManager, userPreferences, broadcastModel, playlistManager);
-            HBox.setHgrow(panel, Priority.ALWAYS);
-            mainContainer.getChildren().add(panel);
         }
     }
 

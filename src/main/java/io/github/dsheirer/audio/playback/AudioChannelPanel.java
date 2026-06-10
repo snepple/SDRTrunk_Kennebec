@@ -214,7 +214,6 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         //Register to receive preference updates
         MyEventBus.getGlobalEventBus().register(this);
 
-        getStyleClass().add("audio-channel-panel");
         setAlignment(Pos.CENTER_LEFT);
         setSpacing(6);
         setPadding(new Insets(2, 6, 2, 6));
@@ -249,7 +248,11 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         mMutedLabel.setTextFill(mMutedColor);
         mMutedLabel.setVisible(false);
 
-        mChannelName = new Label(mAudioChannel != null ? mAudioChannel.getChannelName() : " ");
+        String cName = mAudioChannel != null ? mAudioChannel.getChannelName() : " ";
+        if ("MONO".equalsIgnoreCase(cName)) {
+            cName = " ";
+        }
+        mChannelName = new Label(cName);
         mChannelName.getStyleClass().add("audio-channel-name");
         mChannelName.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
         mChannelName.setTextFill(mLabelColor);
@@ -411,13 +414,20 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
 
             if(identifier == null)
             {
-                identifier = "-----";
+                identifier = " ";
             }
 
             final javafx.scene.image.Image icon = iconName != null ? mIconModel.getIcon(iconName, 18) : null;
             final String identifierText = identifier;
+            final boolean isIdle = (mIdentifier == null && mAliases.isEmpty());
 
             Platform.runLater(() -> {
+                if (isIdle) {
+                    getStyleClass().remove("audio-channel-panel");
+                } else if (!getStyleClass().contains("audio-channel-panel")) {
+                    getStyleClass().add("audio-channel-panel");
+                }
+
                 mIdentifierLabel.setText(identifierText);
                 if (icon != null) { mIconLabel.setGraphic(new javafx.scene.image.ImageView(icon)); } else { mIconLabel.setGraphic(null); }
 
