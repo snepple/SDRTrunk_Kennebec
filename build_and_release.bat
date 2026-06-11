@@ -126,16 +126,18 @@ if not exist "%FOLDER_NAME%" (
     cd /d "%ROOT_DIR%\%FOLDER_NAME%"
     git fetch origin master >nul 2>&1
     
-    :: Check if the build script itself will be updated
-    git diff --quiet HEAD origin/master -- build_and_release.bat
+    git diff --quiet HEAD origin/master
     if errorlevel 1 (
-        echo [INFO] Build script update detected. Restarting...
-        git checkout origin/master -- build_and_release.bat >nul 2>&1
-        start cmd /c "%ROOT_DIR%\%FOLDER_NAME%\build_and_release.bat"
-        exit
+        :: Check if the build script itself will be updated
+        git diff --quiet HEAD origin/master -- build_and_release.bat
+        if errorlevel 1 (
+            echo [INFO] Build script update detected. Restarting...
+            git checkout origin/master -- build_and_release.bat >nul 2>&1
+            start cmd /c "%ROOT_DIR%\%FOLDER_NAME%\build_and_release.bat"
+            exit
+        )
+        git reset --hard origin/master >nul 2>&1
     )
-    
-    git reset --hard origin/master >nul 2>&1
     cd /d "%ROOT_DIR%"
 )
 
