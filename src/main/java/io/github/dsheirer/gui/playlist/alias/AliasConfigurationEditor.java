@@ -802,12 +802,15 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
     {
         if(mNewAliasButton == null)
         {
-            mNewAliasButton = new Button("New");
+            mNewAliasButton = new Button("_New");
+            mNewAliasButton.setMnemonicParsing(true);
             mNewAliasButton.getStyleClass().add("kennebec-toolbar-button-primary");
             mNewAliasButton.setDisable(true);
             mNewAliasButton.setAlignment(Pos.CENTER);
             mNewAliasButton.setMaxWidth(Double.MAX_VALUE);
             mNewAliasButton.setTooltip(new Tooltip("Create a new alias"));
+            mNewAliasButton.accessibleTextProperty().set("New Alias");
+            mNewAliasButton.accessibleHelpProperty().set("Create a new alias");
             mNewAliasButton.setOnAction(event ->
             {
                 Alias alias = new Alias("New Alias");
@@ -831,11 +834,14 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
     {
         if(mDeleteAliasButton == null)
         {
-            mDeleteAliasButton = new Button("Delete");
+            mDeleteAliasButton = new Button("_Delete");
+            mDeleteAliasButton.setMnemonicParsing(true);
             mDeleteAliasButton.getStyleClass().add("kennebec-toolbar-button");
             mDeleteAliasButton.setDisable(true);
             mDeleteAliasButton.setMaxWidth(Double.MAX_VALUE);
-            mDeleteAliasButton.setTooltip(new Tooltip("Delete the currently selected aliases"));
+            mDeleteAliasButton.setTooltip(new Tooltip("Delete the currently selected aliases. This action cannot be undone."));
+            mDeleteAliasButton.accessibleTextProperty().set("Delete Alias");
+            mDeleteAliasButton.accessibleHelpProperty().set("Delete the currently selected aliases. This action cannot be undone.");
             mDeleteAliasButton.setOnAction(event ->
             {
                 int count = getAliasTableView().getSelectionModel().getSelectedItems().size();
@@ -864,11 +870,14 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
     {
         if(mCloneAliasButton == null)
         {
-            mCloneAliasButton = new Button("Clone");
+            mCloneAliasButton = new Button("_Clone");
+            mCloneAliasButton.setMnemonicParsing(true);
             mCloneAliasButton.getStyleClass().add("kennebec-toolbar-button");
             mCloneAliasButton.setDisable(true);
             mCloneAliasButton.setMaxWidth(Double.MAX_VALUE);
             mCloneAliasButton.setTooltip(new Tooltip("Create a clone (copy) of the currently selected alias"));
+            mCloneAliasButton.accessibleTextProperty().set("Clone Alias");
+            mCloneAliasButton.accessibleHelpProperty().set("Create a clone (copy) of the currently selected alias");
             mCloneAliasButton.setOnAction(event ->
             {
                 Alias original = getAliasTableView().getSelectionModel().getSelectedItem();
