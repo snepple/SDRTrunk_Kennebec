@@ -193,11 +193,13 @@ public class Widget extends VBox {
         mResizeHandle.setManaged(!minimized);
         
         if (minimized) {
+            this.setMaxHeight(Region.USE_PREF_SIZE);
             if (VBox.getVgrow(this) != Priority.NEVER) {
                 mSavedVgrow = VBox.getVgrow(this);
             }
             VBox.setVgrow(this, Priority.NEVER);
         } else {
+            this.setMaxHeight(Double.MAX_VALUE);
             if (mSavedVgrow != null) {
                 VBox.setVgrow(this, mSavedVgrow);
             }

@@ -159,10 +159,6 @@ public class ChannelMetadataPanel extends VBox
         });
     }
     
-    public void addToolbarButton(Button button) {
-        mToolbar.getChildren().add(0, button); // Add to the left of the Show Details button
-    }
-    
     private void setupActivityPolling() {
         mPollingTimeline = new Timeline(new KeyFrame(Duration.millis(500), e -> {
             boolean updated = false;

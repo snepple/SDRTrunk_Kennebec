@@ -28,6 +28,7 @@ import io.github.dsheirer.gui.widget.Widget;
 import io.github.dsheirer.gui.widget.WidgetContainer;
 import io.github.dsheirer.preference.NowPlayingPreference;
 import io.github.dsheirer.playlist.PlaylistManager;
+import javafx.geometry.Pos;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.settings.SettingsManager;
 import io.github.dsheirer.source.tuner.manager.TunerManager;
@@ -326,13 +327,17 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
         mWidgetContainer = new WidgetContainer(mNowPlayingPreference);
 
+        HBox topToolbar = new HBox(8);
+        topToolbar.setAlignment(Pos.CENTER_RIGHT);
+        topToolbar.setPadding(new javafx.geometry.Insets(4, 10, 4, 10));
+        topToolbar.setStyle("-fx-background-color: #FDFDFE; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
+        topToolbar.getChildren().add(getManageWidgetsButton());
+
         // Place WidgetContainer directly in VBox — no ScrollPane, no GridPane.
         // The WidgetContainer (extends VBox) handles drag-to-reorder natively.
         // Each widget gets VBox.setVgrow(Priority.ALWAYS) to share available space.
         VBox.setVgrow(mWidgetContainer, Priority.ALWAYS);
-        getChildren().add(mWidgetContainer);
-        
-        mChannelMetadataPanel.addToolbarButton(getManageWidgetsButton());
+        getChildren().addAll(topToolbar, mWidgetContainer);
     }
 
     private void setupWidgets() {
