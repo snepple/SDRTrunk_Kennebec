@@ -133,10 +133,13 @@ if not exist "%FOLDER_NAME%" (
         if errorlevel 1 (
             echo [INFO] Build script update detected. Restarting...
             git checkout origin/master -- build_and_release.bat >nul 2>&1
-            start cmd /c "%ROOT_DIR%\%FOLDER_NAME%\build_and_release.bat"
+            start cmd /c "%~f0"
             exit
         )
         git reset --hard origin/master >nul 2>&1
+        echo [INFO] Repository updated. Restarting script to prevent execution corruption...
+        start cmd /c "%~f0"
+        exit
     )
     cd /d "%ROOT_DIR%"
 )
