@@ -178,12 +178,26 @@ public class Widget extends VBox {
         requestLayout();
     }
 
+    private Priority mSavedVgrow = null;
+
     public void setMinimized(boolean minimized) {
         mMinimized = minimized;
         mContentComponent.setVisible(!minimized);
         mContentComponent.setManaged(!minimized);
         mResizeHandle.setVisible(!minimized);
         mResizeHandle.setManaged(!minimized);
+        
+        if (minimized) {
+            if (VBox.getVgrow(this) != Priority.NEVER) {
+                mSavedVgrow = VBox.getVgrow(this);
+            }
+            VBox.setVgrow(this, Priority.NEVER);
+        } else {
+            if (mSavedVgrow != null) {
+                VBox.setVgrow(this, mSavedVgrow);
+            }
+        }
+
         updateIcons();
         mMinimizeButton.setTooltip(new javafx.scene.control.Tooltip(minimized ? "Expand" : "Minimize"));
         mMinimizeButton.accessibleTextProperty().set(minimized ? "Expand Widget" : "Minimize Widget");
