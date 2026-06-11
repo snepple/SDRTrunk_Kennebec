@@ -67,20 +67,20 @@ public class SDRTrunkPreloader extends Preloader {
         contentBox.setAlignment(Pos.CENTER);
         contentBox.setMaxHeight(VBox.USE_PREF_SIZE);
 
-        // Logo
+        // Logo — use the same application icon shown in the taskbar and .exe
         ImageView logoView = new ImageView();
         try {
-            Image logoImage = new Image(SDRTrunkPreloader.class.getResourceAsStream("/images/sdrtrunk_logo.png"));
+            Image logoImage = new Image(SDRTrunkPreloader.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"));
             logoView.setImage(logoImage);
-            logoView.setFitWidth(500);
+            logoView.setFitHeight(280);
             logoView.setPreserveRatio(true);
             
             // Drop shadow for logo to stand out
             javafx.scene.effect.DropShadow dropShadow = new javafx.scene.effect.DropShadow();
-            dropShadow.setRadius(10);
+            dropShadow.setRadius(15);
             dropShadow.setOffsetX(0);
-            dropShadow.setOffsetY(0);
-            dropShadow.setColor(Color.color(0, 0, 0, 0.8));
+            dropShadow.setOffsetY(4);
+            dropShadow.setColor(Color.color(0, 0, 0, 0.7));
             
             logoView.setEffect(dropShadow);
         } catch (Exception e) {
