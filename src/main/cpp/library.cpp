@@ -1,6 +1,4 @@
 #include <jni.h>
-#include <volk/volk.h>
-
 extern "C" {
 
 JNIEXPORT void JNICALL Java_io_github_dsheirer_dsp_filter_fir_real_NativeRealFIRFilter_nativeFilter
@@ -11,7 +9,11 @@ JNIEXPORT void JNICALL Java_io_github_dsheirer_dsp_filter_fir_real_NativeRealFIR
     float* pFiltered = (float*)env->GetDirectBufferAddress(filtered);
 
     for(int i = 0; i < sampleLength; i++) {
-        volk_32f_x2_dot_prod_32f(&pFiltered[i], &pBuffer[i], pCoefficients, coefficientLength);
+        float sum = 0.0f;
+        for(int j = 0; j < coefficientLength; j++) {
+            sum += pBuffer[i + j] * pCoefficients[j];
+        }
+        pFiltered[i] = sum;
     }
 }
 
