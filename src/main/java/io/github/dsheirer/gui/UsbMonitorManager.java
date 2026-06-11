@@ -153,7 +153,7 @@ public class UsbMonitorManager {
                     outerEncodedCmd
             );
             Process process = pb.start();
-            process.waitFor();
+            process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
             userPreferences.getApplicationPreference().setUsbMonitorInstalled(false);
             return true;
         } catch (Exception e) {
@@ -211,7 +211,7 @@ public class UsbMonitorManager {
                     encodedCmd
             );
             Process process = pb.start();
-            int exitCode = process.waitFor();
+            process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS); int exitCode = process.isAlive() ? 1 : process.exitValue();
             return exitCode == 0;
         } catch (Exception e) {
             mLog.error("Error checking scheduled task '{}'", taskName, e);
@@ -259,7 +259,7 @@ public class UsbMonitorManager {
 
             Process process = pb.start();
             String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            int exitCode = process.waitFor();
+            process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS); int exitCode = process.isAlive() ? 1 : process.exitValue();
             mLog.info("Task creation process exited with code {}. Output: {}", exitCode, output.trim());
 
             Thread.sleep(1000);
@@ -284,7 +284,7 @@ public class UsbMonitorManager {
                     encodedCmd
             );
             Process process = pb.start();
-            int exitCode = process.waitFor();
+            process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS); int exitCode = process.isAlive() ? 1 : process.exitValue();
             return exitCode == 0;
         } catch (Exception e) {
             mLog.error("Error checking scheduled task '{}'", taskName, e);
@@ -306,7 +306,7 @@ public class UsbMonitorManager {
                     encodedCmd
             );
             Process process = pb.start();
-            process.waitFor();
+            process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
         } catch (Exception e) {
             mLog.error("Failed to start scheduled task '{}'", taskName, e);
         }

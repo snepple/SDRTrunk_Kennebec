@@ -257,6 +257,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private String mTitle;
 
     private Stage mPrimaryStage;
+    private AudioPlaybackManager mAudioPlaybackManager;
+    private MapService mMapService;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -271,6 +273,16 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         else
         {
             mLog.info("starting main application gui");
+
+            mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this::onViewChanged);
+            mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
+            mControllerPanel = new io.github.dsheirer.controller.ControllerPanel(mPlaylistManager, mAudioPlaybackManager, mIconModel, mMapService,
+                    mSettingsManager, mTunerManager, mUserPreferences, mNowPlayingDetailsVisible, this);
+            mControllerPanel.addView("playlist_editor", mJavaFxWindowManager.getView(ViewIdentifier.PLAYLIST_EDITOR));
+            mControllerPanel.addView("user_prefs", mJavaFxWindowManager.getView(ViewIdentifier.USER_PREFERENCES_EDITOR));
+            mControllerPanel.addView("msg_viewer", mJavaFxWindowManager.getView(ViewIdentifier.RECORDING_VIEWER));
+            mControllerPanel.addView("logs", mJavaFxWindowManager.getView(ViewIdentifier.LOGS));
+            mSpectralPanel = new SpectralDisplayPanel(mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
             
             java.util.prefs.Preferences p = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
             boolean wizardCompleted = p.getBoolean("sdrtrunk.first.time.wizard.completed", false);
@@ -391,6 +403,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             try
             {
                 TunerSpectralDisplayManager tunerSpectralDisplayManager = new TunerSpectralDisplayManager(mSpectralPanel, mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
+                mTunerManager.getDiscoveredTunerModel().addListener(tunerSpectralDisplayManager);
+                mTunerManager.getDiscoveredTunerModel().addListener(this);
                 Tuner tuner = tunerSpectralDisplayManager.showFirstTuner();
 
                 if(tuner != null)
@@ -428,9 +442,12 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         mTwoToneLog = new TwoToneLog(mUserPreferences);
         mTwoToneLog.start();
+        mLog.info("TRACER: Calling UsbMonitorManager");
         UsbMonitorManager.manage(mUserPreferences);
+        mLog.info("TRACER: Calling WindowsReliabilityManager");
         io.github.dsheirer.gui.WindowsReliabilityManager.manage(mUserPreferences);
 
+        mLog.info("TRACER: Calling SDRPlayLibraryHelper");
         //Note: invoke this early in the application lifecycle, before the TunerManager causes the sdrplay classes
         //to be loaded since the jextract auto-generated code attempts to load the library by name and that can fail
         //when the library was not installed into a normal/default location, particularly on windows OS systems.
@@ -439,6 +456,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mLog.debug("SDRPlay API native library preemptively loaded");
         }
 
+        mLog.info("TRACER: Calling DiagnosticMonitor");
         mResourceMonitor = new ResourceMonitor(mUserPreferences);
 
         ThreadPool.logSettings();
@@ -461,29 +479,15 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mPlaylistManager = new PlaylistManager(mUserPreferences, mTunerManager, aliasModel, eventLogManager, mIconModel);
 
         boolean headless = GraphicsEnvironment.isHeadless();
-
         mDiagnosticMonitor = new DiagnosticMonitor(mUserPreferences, mPlaylistManager.getChannelProcessingManager(),
                 mTunerManager, headless);
         mDiagnosticMonitor.start();
 
         io.github.dsheirer.monitor.RemoteSessionMonitor.init();
 
-        if(!headless)
-        {
-            mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this::onViewChanged);
+        
 
-            // Add Sidebar
-            try {
-                java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1); javafx.application.Platform.runLater(() -> {
-                    mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
-                latch.countDown(); }); latch.await();
-            } catch (Exception e) {
-                mLog.error("Error creating sidebar panel", e);
-                DiagnosticEngine.InsightCard card = DiagnosticEngine.mapError(e, "Sidebar panel init");
-                if (card != null) { mLog.warn("Diagnostic: {} - {}", card.title, card.remediation); }
-            }
-        }
-
+        io.github.dsheirer.monitor.RemoteSessionMonitor.init();
 
         CalibrationManager calibrationManager = CalibrationManager.getInstance(mUserPreferences);
         final boolean calibrating = !calibrationManager.isCalibrated() &&
@@ -491,7 +495,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         new ChannelSelectionManager(mPlaylistManager.getChannelModel());
 
-        AudioPlaybackManager audioPlaybackManager = new AudioPlaybackManager(mUserPreferences);
+        mAudioPlaybackManager = new AudioPlaybackManager(mUserPreferences);
 
         mAudioRecordingManager = new AudioRecordingManager(mUserPreferences);
         mChannelAlertMonitor = new ChannelAlertMonitor(mPlaylistManager.getChannelModel(), mPlaylistManager.getChannelProcessingManager(), mUserPreferences);
@@ -505,45 +509,15 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         DuplicateCallDetector duplicateCallDetector = new DuplicateCallDetector(mUserPreferences);
 
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(duplicateCallDetector);
-        mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(audioPlaybackManager);
+        mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(mAudioPlaybackManager);
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(mAudioRecordingManager);
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(mChannelAlertMonitor);
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(mAudioStreamingManager);
 
-        MapService mapService = new MapService(aliasModel, mIconModel);
-        mPlaylistManager.getChannelProcessingManager().addDecodeEventListener(mapService);
+        mMapService = new MapService(aliasModel, mIconModel);
+        mPlaylistManager.getChannelProcessingManager().addDecodeEventListener(mMapService);
 
         mNowPlayingDetailsVisible = mPreferences.getBoolean(PREFERENCE_NOW_PLAYING_DETAILS_VISIBLE, true);
-
-
-        if(!GraphicsEnvironment.isHeadless())
-        {
-            try {
-                java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1); javafx.application.Platform.runLater(() -> {
-                    mControllerPanel = new io.github.dsheirer.controller.ControllerPanel(mPlaylistManager, audioPlaybackManager, mIconModel, mapService,
-                            mSettingsManager, mTunerManager, mUserPreferences, mNowPlayingDetailsVisible, this);
-
-                    mControllerPanel.addView("playlist_editor", mJavaFxWindowManager.getView(ViewIdentifier.PLAYLIST_EDITOR));
-                    mControllerPanel.addView("user_prefs", mJavaFxWindowManager.getView(ViewIdentifier.USER_PREFERENCES_EDITOR));
-                    mControllerPanel.addView("msg_viewer", mJavaFxWindowManager.getView(ViewIdentifier.RECORDING_VIEWER));
-
-                    mControllerPanel.addView("logs", mJavaFxWindowManager.getView(ViewIdentifier.LOGS));
-
-                    mSpectralPanel = new SpectralDisplayPanel(mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
-                latch.countDown(); }); latch.await();
-            } catch (Exception e) {
-                mLog.error("Error creating controller panel", e);
-                DiagnosticEngine.InsightCard card = DiagnosticEngine.mapError(e, "Controller panel init");
-                if (card != null) { mLog.warn("Diagnostic: {} - {}", card.title, card.remediation); }
-            }
-        }
-
-
-
-        TunerSpectralDisplayManager tunerSpectralDisplayManager = new TunerSpectralDisplayManager(mSpectralPanel,
-            mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
-        mTunerManager.getDiscoveredTunerModel().addListener(tunerSpectralDisplayManager);
-        mTunerManager.getDiscoveredTunerModel().addListener(this);
 
         mPlaylistManager.init();
 
