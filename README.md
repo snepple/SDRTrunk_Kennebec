@@ -1,20 +1,20 @@
 ## 📥 Download the Latest Release
 
-Not sure what to download? Here is a quick guide to getting started with **SDRTrunk Kennebec (vK.00.085)**:
+Not sure what to download? Here is a quick guide to getting started with **SDRTrunk Kennebec (v00.086)**:
 
 - **Windows Users (Recommended)**: Download the Native Windows Installer. This is the easiest way to install and manage SDRTrunk on Windows.
-  - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.085/SDRTrunk-K.00.085-windows-installer.exe)
+  - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-windows-installer.exe)
   
 - **Advanced Windows Users**: Download the Portable ZIP if you prefer to run the application without installing it.
-  - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.085/SDRTrunk-K.00.085-windows-x86_64.zip)
+  - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-windows-x86_64.zip)
 
 - **Mac Users**:
-  - [Download macOS Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.085/SDRTrunk-K.00.085-mac-x86_64.zip)
+  - [Download macOS Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-mac-x86_64.zip)
 
 - **Linux Users**:
-  - [Download Linux Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/K.00.085/SDRTrunk-K.00.085-linux-x86_64.zip)
+  - [Download Linux Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-linux-x86_64.zip)
 
-*(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/K.00.085))*
+*(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/00.086))*
 
 ---
 
