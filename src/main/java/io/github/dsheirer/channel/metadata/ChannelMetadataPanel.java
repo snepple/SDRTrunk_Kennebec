@@ -125,14 +125,29 @@ public class ChannelMetadataPanel extends VBox
         
         VBox.setVgrow(mTable, Priority.ALWAYS);
         mTable.setPlaceholder(new Label("No active channels — start a channel to see activity here"));
-        getChildren().add(mTable);
+        
+        HBox toolbar = new HBox();
+        toolbar.setPadding(new Insets(2, 5, 2, 5));
+        toolbar.setAlignment(Pos.CENTER_RIGHT);
+        Button toggleDetailsBtn = new Button("Toggle Details");
+        toggleDetailsBtn.setOnAction(e -> {
+            for(Listener<ProcessingChain> listener : mListeners) {
+                if (listener instanceof io.github.dsheirer.channel.metadata.NowPlayingPanel) {
+                    ((io.github.dsheirer.channel.metadata.NowPlayingPanel) listener).toggleDetailsPane();
+                }
+            }
+        });
+        toolbar.getChildren().add(toggleDetailsBtn);
+
+        getChildren().addAll(toolbar, mTable);
         
         mTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            ProcessingChain pc = null;
             if (newSelection != null) {
-                ProcessingChain pc = mChannelProcessingManager.getProcessingChain(mChannelProcessingManager.getChannelMetadataModel().getChannelFromMetadata(newSelection));
-                for(Listener<ProcessingChain> listener : mListeners) {
-                    listener.receive(pc);
-                }
+                pc = mChannelProcessingManager.getProcessingChain(mChannelProcessingManager.getChannelMetadataModel().getChannelFromMetadata(newSelection));
+            }
+            for(Listener<ProcessingChain> listener : mListeners) {
+                listener.receive(pc);
             }
         });
     }

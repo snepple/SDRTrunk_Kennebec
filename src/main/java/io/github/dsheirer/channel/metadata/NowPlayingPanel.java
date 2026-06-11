@@ -147,6 +147,20 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         }
     }
 
+    public void toggleDetailsPane() {
+        Platform.runLater(() -> {
+            if (mChannelSplitPane != null) {
+                TabPane pane = getTabbedPane();
+                if (mChannelSplitPane.getItems().contains(pane)) {
+                    mChannelSplitPane.getItems().remove(pane);
+                } else {
+                    mChannelSplitPane.getItems().add(pane);
+                    mChannelSplitPane.setDividerPositions(0.40);
+                }
+            }
+        });
+    }
+
 
 
 
@@ -328,8 +342,9 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         if (mChannelMetadataPanel != null && getTabbedPane() != null) {
             mChannelSplitPane = new SplitPane();
             mChannelSplitPane.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
-            mChannelSplitPane.getItems().addAll(mChannelMetadataPanel, getTabbedPane());
-            mChannelSplitPane.setDividerPositions(0.40);
+            mChannelSplitPane.getItems().addAll(mChannelMetadataPanel);
+            // DO NOT add getTabbedPane() initially; it will be added when a channel is selected or toggled.
+            mChannelSplitPane.setDividerPositions(1.0);
             mChannelSplitPane.setMinHeight(0);
 
             Widget channelWidget = new Widget("channel", "Channel Table & Details", mChannelSplitPane, mWidgetContainer, 100);
