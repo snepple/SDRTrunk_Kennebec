@@ -110,3 +110,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-03-08 - Accessible Recording Buttons
 **Learning:** Destructive actions and key functionality in JavaFX lack mnemonics, accessible descriptions, and informative tooltips describing consequences.
 **Action:** When adding buttons, especially destructive ones like delete, provide descriptive tooltips including consequence warnings, add mnemonics to enable keyboard navigation, and set accessible properties (`accessibleTextProperty` and `accessibleHelpProperty`) for screen reader support.
+## 2026-06-11 - Adding Tooltips and Accessibility Attributes to Tuner Buttons
+**Learning:** Found multiple action buttons in TunerEditor missing tooltips and basic accessibility configuration, which degrades the UX and creates friction. Tooltips and mnemonic keys make actions explicit and discoverable.
+**Action:** Adding tooltips to `mResetFrequenciesButton` and `mInfoConfigButton` and defining mnemonic parsing for these buttons to boost keyboard accessibility and clarity.

@@ -381,7 +381,11 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     {
         if(mInfoConfigButton == null)
         {
-            mInfoConfigButton = new Button("Info/Config");
+            mInfoConfigButton = new Button("Info/Co_nfig");
+            mInfoConfigButton.setMnemonicParsing(true);
+            mInfoConfigButton.setTooltip(new javafx.scene.control.Tooltip("View additional tuner configuration, metadata and details"));
+            mInfoConfigButton.accessibleTextProperty().set("Info and Configuration");
+            mInfoConfigButton.accessibleHelpProperty().set("View additional tuner configuration, metadata and details.");
             mInfoConfigButton.setOnAction(e -> {
                 VBox panel = new VBox(new javafx.scene.layout.HBox(4));
                 String info = getTunerInfo();
@@ -620,7 +624,11 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     {
         if(mResetFrequenciesButton == null)
         {
-            mResetFrequenciesButton = new Button("Reset");
+            mResetFrequenciesButton = new Button("_Reset");
+            mResetFrequenciesButton.setMnemonicParsing(true);
+            mResetFrequenciesButton.setTooltip(new javafx.scene.control.Tooltip("Reset minimum and maximum tunability frequency limits to default hardware values"));
+            mResetFrequenciesButton.accessibleTextProperty().set("Reset Frequency Limits");
+            mResetFrequenciesButton.accessibleHelpProperty().set("Reset minimum and maximum tunability frequency limits to default hardware values.");
             mResetFrequenciesButton.setOnAction(e -> {
 
                 long min = getMinimumTunableFrequency();
