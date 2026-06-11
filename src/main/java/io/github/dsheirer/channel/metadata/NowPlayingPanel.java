@@ -93,40 +93,32 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     /**
      * Dispose method to clean up listeners
      */
-        @Override
+    @Override
     public void receive(ProcessingChain processingChain) {
         Platform.runLater(() -> {
             TabPane pane = getTabbedPane();
 
             if (processingChain == null) {
-                // Remove all tabs except Events
-                pane.getTabs().removeIf(tab -> tab.getContent() == mChannelDetailPanel);
-                pane.getTabs().removeIf(tab -> tab.getContent() == mMessageActivityPanel);
-                pane.getTabs().removeIf(tab -> tab.getContent() == mChannelSpectrumSquelchPanel);
+                // Remove TabPane from split pane to collapse it
+                if (mChannelSplitPane != null && mChannelSplitPane.getItems().contains(pane)) {
+                    mChannelSplitPane.getItems().remove(pane);
+                }
                 mChannelSpectrumSquelchPanel.setPanelVisible(false);
             } else {
-                // Restore all tabs in correct order: Details, Events, Messages, Channel Spectrum, Squelch, Power, Symbols, Log Settings
+                // Restore TabPane to split pane to expand it
+                if (mChannelSplitPane != null && !mChannelSplitPane.getItems().contains(pane)) {
+                    mChannelSplitPane.getItems().add(pane);
+                    mChannelSplitPane.setDividerPositions(0.40);
+                }
+                // Restore all tabs in correct order: Details, Events, Messages, Channel Spectrum, Advanced
                 pane.getTabs().clear();
                 pane.getTabs().add(new javafx.scene.control.Tab("Details", mChannelDetailPanel));
                 pane.getTabs().add(new javafx.scene.control.Tab("Events", mDecodeEventPanel));
                 pane.getTabs().add(new javafx.scene.control.Tab("Messages", mMessageActivityPanel));
                 pane.getTabs().add(new javafx.scene.control.Tab("Channel Spectrum", mChannelSpectrumSquelchPanel));
                 
-                javafx.scene.control.Tab squelchTab = new javafx.scene.control.Tab("Squelch", mChannelSpectrumSquelchPanel.getNoiseSquelchView());
-                squelchTab.setContent(mChannelSpectrumSquelchPanel.getNoiseSquelchView());
-                pane.getTabs().add(squelchTab);
-                
-                javafx.scene.control.Tab powerTab = new javafx.scene.control.Tab("Power", mChannelSpectrumSquelchPanel.getSignalPowerView());
-                powerTab.setContent(mChannelSpectrumSquelchPanel.getSignalPowerView());
-                pane.getTabs().add(powerTab);
-                
-                javafx.scene.control.Tab symbolsTab = new javafx.scene.control.Tab("Symbols", mChannelSpectrumSquelchPanel.getSymbolView());
-                symbolsTab.setContent(mChannelSpectrumSquelchPanel.getSymbolView());
-                pane.getTabs().add(symbolsTab);
-                
-                javafx.scene.control.Tab logSettingsTab = new javafx.scene.control.Tab("Log Settings", mChannelSpectrumSquelchPanel.getLogSettingsNode());
-                logSettingsTab.setContent(mChannelSpectrumSquelchPanel.getLogSettingsNode());
-                pane.getTabs().add(logSettingsTab);
+                javafx.scene.control.Tab advancedTab = new javafx.scene.control.Tab("Advanced", getAdvancedTabContent());
+                pane.getTabs().add(advancedTab);
                 // visibility managed elsewhere
             }
         });
@@ -190,17 +182,99 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     private TabPane getTabbedPane() {
     if (mTabbedPane == null) {
         mTabbedPane = new TabPane();
-        mTabbedPane.getTabs().add(new Tab("Details", mChannelDetailPanel));
-        mTabbedPane.getTabs().add(new Tab("Events", mDecodeEventPanel));
-        mTabbedPane.getTabs().add(new Tab("Messages", mMessageActivityPanel));
-        mTabbedPane.getTabs().add(new Tab("Channel Spectrum", mChannelSpectrumSquelchPanel));
-        mTabbedPane.getTabs().add(new Tab("Squelch", mChannelSpectrumSquelchPanel.getNoiseSquelchView()));
-        mTabbedPane.getTabs().add(new Tab("Power", mChannelSpectrumSquelchPanel.getSignalPowerView()));
-        mTabbedPane.getTabs().add(new Tab("Symbols", mChannelSpectrumSquelchPanel.getSymbolView()));
-        mTabbedPane.getTabs().add(new Tab("Log Settings", mChannelSpectrumSquelchPanel.getLogSettingsNode()));
+        
+        Tab detailsTab = new Tab("Details", mChannelDetailPanel);
+        Tab eventsTab = new Tab("Events", mDecodeEventPanel);
+        Tab messagesTab = new Tab("Messages", mMessageActivityPanel);
+        Tab spectrumTab = new Tab("Channel Spectrum", mChannelSpectrumSquelchPanel);
+        Tab advancedTab = new Tab("Advanced", getAdvancedTabContent());
+        
+        makeTabTearable(detailsTab);
+        makeTabTearable(eventsTab);
+        makeTabTearable(messagesTab);
+        makeTabTearable(spectrumTab);
+        makeTabTearable(advancedTab);
+        
+        mTabbedPane.getTabs().addAll(detailsTab, eventsTab, messagesTab, spectrumTab, advancedTab);
     }
     return mTabbedPane;
 }
+
+    private javafx.scene.Node getAdvancedTabContent() {
+        SplitPane advancedSplitPane = new SplitPane();
+        advancedSplitPane.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
+        
+        VBox navMenu = new VBox(5);
+        navMenu.setPadding(new javafx.geometry.Insets(10));
+        
+        javafx.scene.layout.StackPane contentPane = new javafx.scene.layout.StackPane();
+        contentPane.setPadding(new javafx.geometry.Insets(10));
+        
+        javafx.scene.Node squelchView = mChannelSpectrumSquelchPanel.getNoiseSquelchView();
+        javafx.scene.Node powerView = mChannelSpectrumSquelchPanel.getSignalPowerView();
+        javafx.scene.Node symbolView = mChannelSpectrumSquelchPanel.getSymbolView();
+        javafx.scene.Node logSettingsView = mChannelSpectrumSquelchPanel.getLogSettingsNode();
+        
+        contentPane.getChildren().addAll(squelchView, powerView, symbolView, logSettingsView);
+        squelchView.setVisible(true);
+        powerView.setVisible(false);
+        symbolView.setVisible(false);
+        logSettingsView.setVisible(false);
+        
+        Button squelchBtn = createNavButton("Squelch", contentPane, squelchView);
+        Button powerBtn = createNavButton("Power", contentPane, powerView);
+        Button symbolsBtn = createNavButton("Symbols", contentPane, symbolView);
+        Button logBtn = createNavButton("Log Settings", contentPane, logSettingsView);
+        
+        navMenu.getChildren().addAll(squelchBtn, powerBtn, symbolsBtn, logBtn);
+        
+        advancedSplitPane.getItems().addAll(navMenu, contentPane);
+        advancedSplitPane.setDividerPositions(0.2);
+        
+        return advancedSplitPane;
+    }
+    
+    private Button createNavButton(String text, javafx.scene.layout.StackPane contentPane, javafx.scene.Node targetView) {
+        Button btn = new Button(text);
+        btn.setMaxWidth(Double.MAX_VALUE);
+        btn.setOnAction(e -> {
+            for (javafx.scene.Node node : contentPane.getChildren()) {
+                node.setVisible(node == targetView);
+            }
+        });
+        return btn;
+    }
+
+    private void makeTabTearable(Tab tab) {
+        ContextMenu contextMenu = new ContextMenu();
+        javafx.scene.control.MenuItem popOutItem = new javafx.scene.control.MenuItem("Pop Out / Tear Off");
+        popOutItem.setOnAction(e -> {
+            TabPane parentPane = tab.getTabPane();
+            if (parentPane != null) {
+                parentPane.getTabs().remove(tab);
+            }
+            
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle(tab.getText());
+            
+            TabPane standalonePane = new TabPane();
+            standalonePane.getTabs().add(tab);
+            
+            javafx.scene.Scene scene = new javafx.scene.Scene(standalonePane, 800, 600);
+            stage.setScene(scene);
+            
+            stage.setOnCloseRequest(event -> {
+                standalonePane.getTabs().remove(tab);
+                if (mTabbedPane != null) {
+                    mTabbedPane.getTabs().add(tab);
+                }
+            });
+            
+            stage.show();
+        });
+        
+        tab.setContextMenu(contextMenu);
+    }
 
     public Button getManageWidgetsButton() {
         if (mManageWidgetsBtn == null) {
@@ -274,6 +348,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         if (mResourceStatusPanel != null) {
             Widget resourceWidget = new Widget("resource", "Resource Status", (Region) mResourceStatusPanel, mWidgetContainer, 30);
             resourceWidget.setMinimizeButtonVisible(false);
+            resourceWidget.setHeaderVisible(false); // Hide the title bar to save vertical space
             VBox.setVgrow(resourceWidget, Priority.SOMETIMES);
             mWidgetContainer.addWidget(resourceWidget, true);
         }

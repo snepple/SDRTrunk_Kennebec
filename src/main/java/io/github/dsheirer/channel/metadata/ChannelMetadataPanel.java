@@ -17,10 +17,18 @@ import io.github.dsheirer.sample.Listener;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableCell;
 import javafx.scene.layout.Priority;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.animation.Timeline;
+import javafx.animation.KeyFrame;
+import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class ChannelMetadataPanel extends VBox
 {
@@ -32,6 +40,9 @@ public class ChannelMetadataPanel extends VBox
     
     private TableView<ChannelMetadata> mTable;
     private List<Listener<ProcessingChain>> mListeners = new ArrayList<>();
+    
+    private Map<ChannelMetadata, List<Boolean>> mActivityHistory = new HashMap<>();
+    private Timeline mPollingTimeline;
 
     public ChannelMetadataPanel(ChannelProcessingManager channelProcessingManager, 
                                 PlaylistManager playlistManager, 
@@ -67,8 +78,46 @@ public class ChannelMetadataPanel extends VBox
         fromCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
             cellData.getValue().hasFromIdentifier() ? cellData.getValue().getFromIdentifier().toString() : ""));
             
-        mTable.getColumns().addAll(stateCol, channelCol, freqCol, toCol, fromCol);
+        TableColumn<ChannelMetadata, ChannelMetadata> activityCol = new TableColumn<>("Activity");
+        activityCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue()));
+        activityCol.setCellFactory(column -> new TableCell<ChannelMetadata, ChannelMetadata>() {
+            private Canvas canvas = new Canvas(60, 16);
+            {
+                setGraphic(canvas);
+            }
+            @Override
+            protected void updateItem(ChannelMetadata item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(canvas);
+                    GraphicsContext gc = canvas.getGraphicsContext2D();
+                    gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+                    List<Boolean> history = mActivityHistory.get(item);
+                    if (history != null) {
+                        double barWidth = 3;
+                        double spacing = 1;
+                        double x = canvas.getWidth() - barWidth;
+                        for (int i = history.size() - 1; i >= 0 && x >= 0; i--) {
+                            if (history.get(i)) {
+                                gc.setFill(Color.web("#00ffcc")); // active cyan
+                                gc.fillRect(x, 2, barWidth, canvas.getHeight() - 4);
+                            } else {
+                                gc.setFill(Color.web("#333333")); // idle dark gray
+                                gc.fillRect(x, canvas.getHeight() / 2 - 1, barWidth, 2);
+                            }
+                            x -= (barWidth + spacing);
+                        }
+                    }
+                }
+            }
+        });
+
+        mTable.getColumns().addAll(stateCol, activityCol, channelCol, freqCol, toCol, fromCol);
         mTable.setTableMenuButtonVisible(true);
+        
+        setupActivityPolling();
         
         if (mChannelProcessingManager != null && mChannelProcessingManager.getChannelMetadataModel() != null) {
             mTable.setItems(mChannelProcessingManager.getChannelMetadataModel().getObservableList());
@@ -86,6 +135,26 @@ public class ChannelMetadataPanel extends VBox
                 }
             }
         });
+    }
+    
+    private void setupActivityPolling() {
+        mPollingTimeline = new Timeline(new KeyFrame(Duration.millis(500), e -> {
+            boolean updated = false;
+            for (ChannelMetadata meta : mTable.getItems()) {
+                List<Boolean> history = mActivityHistory.computeIfAbsent(meta, k -> new ArrayList<>());
+                boolean isActive = meta.hasDecoderStateIdentifier() && meta.getChannelStateIdentifier().toString().equalsIgnoreCase("ACTIVE");
+                history.add(isActive);
+                if (history.size() > 20) {
+                    history.remove(0);
+                }
+                updated = true;
+            }
+            if (updated) {
+                mTable.refresh();
+            }
+        }));
+        mPollingTimeline.setCycleCount(Timeline.INDEFINITE);
+        mPollingTimeline.play();
     }
 
     public void addProcessingChainSelectionListener(Listener<ProcessingChain> listener)

@@ -141,6 +141,11 @@ public class Widget extends VBox {
         return mId;
     }
 
+    public void setHeaderVisible(boolean visible) {
+        mHeaderPanel.setVisible(visible);
+        mHeaderPanel.setManaged(visible);
+    }
+
     public HBox getHeaderPanel() {
         return mHeaderPanel;
     }

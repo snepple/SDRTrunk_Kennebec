@@ -354,6 +354,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
             primaryStage.setScene(scene);
             primaryStage.show();
+            
+            // Hide the preloader now that the main UI is visible
+            notifyPreloader(new SDRTrunkPreloader.HideNotification());
 
             // Wire up global hotkeys
             try {
@@ -436,6 +439,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         if(!GraphicsEnvironment.isHeadless())
         {
         }
+        
+        notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.1));
+        notifyPreloader(new SDRTrunkPreloader.TextNotification("Initializing Application Logs..."));
 
         mApplicationLog = new ApplicationLog(mUserPreferences);
         mApplicationLog.start();
@@ -446,6 +452,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         UsbMonitorManager.manage(mUserPreferences);
         mLog.info("TRACER: Calling WindowsReliabilityManager");
         io.github.dsheirer.gui.WindowsReliabilityManager.manage(mUserPreferences);
+        
+        notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.2));
+        notifyPreloader(new SDRTrunkPreloader.TextNotification("Loading SDRPlay API..."));
 
         mLog.info("TRACER: Calling SDRPlayLibraryHelper");
         //Note: invoke this early in the application lifecycle, before the TunerManager causes the sdrplay classes
@@ -460,6 +469,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mResourceMonitor = new ResourceMonitor(mUserPreferences);
 
         ThreadPool.logSettings();
+        
+        notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.4));
+        notifyPreloader(new SDRTrunkPreloader.TextNotification("Loading Preferences..."));
 
         //Load properties file
         loadProperties();
@@ -472,12 +484,17 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mTunerManager = new TunerManager(mUserPreferences);
         mTunerManager.start();
 
+        notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.5));
+        notifyPreloader(new SDRTrunkPreloader.TextNotification("Starting Tuner Manager..."));
+
         mSettingsManager = new SettingsManager();
 
         AliasModel aliasModel = new AliasModel();
         EventLogManager eventLogManager = new EventLogManager(aliasModel, mUserPreferences);
         mPlaylistManager = new PlaylistManager(mUserPreferences, mTunerManager, aliasModel, eventLogManager, mIconModel);
 
+        notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.7));
+        notifyPreloader(new SDRTrunkPreloader.TextNotification("Initializing Display Managers..."));
         boolean headless = GraphicsEnvironment.isHeadless();
         mDiagnosticMonitor = new DiagnosticMonitor(mUserPreferences, mPlaylistManager.getChannelProcessingManager(),
                 mTunerManager, headless);
@@ -506,6 +523,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mUserPreferences);
         mAudioStreamingManager.start();
 
+        notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.8));
+        notifyPreloader(new SDRTrunkPreloader.TextNotification("Initializing Audio Services..."));
         DuplicateCallDetector duplicateCallDetector = new DuplicateCallDetector(mUserPreferences);
 
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(duplicateCallDetector);
@@ -521,6 +540,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         mPlaylistManager.init();
 
+        notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.9));
+        notifyPreloader(new SDRTrunkPreloader.TextNotification("Finalizing Startup..."));
         // Initialize StateJournal for event recording
         try {
             mStateJournal = StateJournal.init(
@@ -530,6 +551,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         } catch (Exception e) {
             mLog.error("Failed to initialize StateJournal", e);
         }
+        
+        notifyPreloader(new javafx.application.Preloader.ProgressNotification(1.0));
+        notifyPreloader(new SDRTrunkPreloader.TextNotification("Starting UI..."));
     }
 
     /**
