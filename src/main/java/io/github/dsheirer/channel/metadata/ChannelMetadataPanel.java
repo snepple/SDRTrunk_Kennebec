@@ -43,6 +43,7 @@ public class ChannelMetadataPanel extends VBox
     
     private Map<ChannelMetadata, List<Boolean>> mActivityHistory = new HashMap<>();
     private Timeline mPollingTimeline;
+    private HBox mToolbar;
 
     public ChannelMetadataPanel(ChannelProcessingManager channelProcessingManager, 
                                 PlaylistManager playlistManager, 
@@ -126,10 +127,10 @@ public class ChannelMetadataPanel extends VBox
         VBox.setVgrow(mTable, Priority.ALWAYS);
         mTable.setPlaceholder(new Label("No active channels — start a channel to see activity here"));
         
-        HBox toolbar = new HBox(8);
-        toolbar.setPadding(new Insets(4, 10, 4, 10));
-        toolbar.setAlignment(Pos.CENTER_RIGHT);
-        toolbar.setStyle("-fx-background-color: #F9F9FB; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
+        mToolbar = new HBox(8);
+        mToolbar.setPadding(new Insets(4, 10, 4, 10));
+        mToolbar.setAlignment(Pos.CENTER_RIGHT);
+        mToolbar.setStyle("-fx-background-color: #F9F9FB; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
         Button toggleDetailsBtn = new Button("\u25B6 Show Details");
         toggleDetailsBtn.getStyleClass().add("kennebec-toolbar-button");
         toggleDetailsBtn.setTooltip(new javafx.scene.control.Tooltip("Show or hide the channel details panel"));
@@ -144,10 +145,9 @@ public class ChannelMetadataPanel extends VBox
                 }
             }
         });
-        toolbar.getChildren().add(toggleDetailsBtn);
+        mToolbar.getChildren().add(toggleDetailsBtn);
 
-        getChildren().addAll(toolbar, mTable);
-        
+        getChildren().addAll(mToolbar, mTable);
         mTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             ProcessingChain pc = null;
             if (newSelection != null) {
@@ -157,6 +157,10 @@ public class ChannelMetadataPanel extends VBox
                 listener.receive(pc);
             }
         });
+    }
+    
+    public void addToolbarButton(Button button) {
+        mToolbar.getChildren().add(0, button); // Add to the left of the Show Details button
     }
     
     private void setupActivityPolling() {

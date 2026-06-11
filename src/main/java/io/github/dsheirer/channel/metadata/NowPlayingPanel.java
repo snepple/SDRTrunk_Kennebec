@@ -308,6 +308,8 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         // Each widget gets VBox.setVgrow(Priority.ALWAYS) to share available space.
         VBox.setVgrow(mWidgetContainer, Priority.ALWAYS);
         getChildren().add(mWidgetContainer);
+        
+        mChannelMetadataPanel.addToolbarButton(getManageWidgetsButton());
     }
 
     private void setupWidgets() {
