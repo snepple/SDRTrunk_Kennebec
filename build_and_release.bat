@@ -23,31 +23,6 @@ set "ROOT_DIR=%CD%"
 set "LOG_FILE=%ROOT_DIR%\build_log.txt"
 set "VOLK_BASE=C:\SDR_Deps\include"
 
-:: ============================================================================
-:: STEP 0: Auto-Update Script
-:: ============================================================================
-:: Replace this URL with the exact raw URL of your script in the repository
-set "SCRIPT_URL=https://raw.githubusercontent.com/%GH_REPO%/master/build_and_release.bat" 
-set "NEW_SCRIPT=%ROOT_DIR%\build_script_new.bat"
-
-echo [INFO] Checking for script updates...
-curl -s -f -L "%SCRIPT_URL%" -o "%NEW_SCRIPT%"
-if exist "%NEW_SCRIPT%" (
-    fc "%~f0" "%NEW_SCRIPT%" >nul
-    if errorlevel 1 (
-        echo [INFO] A new version of the build script was found. Updating...
-        copy /y "%NEW_SCRIPT%" "%~f0" >nul
-        del "%NEW_SCRIPT%"
-        echo [INFO] Restarting updated script...
-        start cmd /k "%~f0"
-        exit
-    ) else (
-        del "%NEW_SCRIPT%"
-    )
-) else (
-    echo [WARNING] Could not check for script updates.
-)
-
 :: ---- API CONFIG ----
 if not exist api_keys.bat (
     echo @echo off > api_keys.bat
@@ -149,8 +124,18 @@ if not exist "%FOLDER_NAME%" (
     if !ERRORLEVEL! NEQ 0 goto ai_triage
 ) else (
     cd /d "%ROOT_DIR%\%FOLDER_NAME%"
-    git fetch --all 2>> "%LOG_FILE%"
-    git reset --hard origin/master 2>> "%LOG_FILE%"
+    git fetch origin master >nul 2>&1
+    
+    :: Check if the build script itself will be updated
+    git diff --quiet HEAD origin/master -- build_and_release.bat
+    if errorlevel 1 (
+        echo [INFO] Build script update detected. Restarting...
+        git checkout origin/master -- build_and_release.bat >nul 2>&1
+        start cmd /c "%ROOT_DIR%\%FOLDER_NAME%\build_and_release.bat"
+        exit
+    )
+    
+    git reset --hard origin/master >nul 2>&1
     cd /d "%ROOT_DIR%"
 )
 
