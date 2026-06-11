@@ -705,24 +705,25 @@
    ============================================================ */
 .sidebar-item {
     -fx-background-color: transparent;
-    -fx-background-radius: 6;
+    -fx-background-radius: 8;
 }
 .sidebar-item-active {
     -fx-background-color: #007AFF;
-    -fx-background-radius: 6;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,122,255,0.25), 4, 0, 0, 1);
 }
 .sidebar-item-hover {
-    -fx-background-color: #E5E5EA;
-    -fx-background-radius: 6;
+    -fx-background-color: rgba(0, 0, 0, 0.06);
+    -fx-background-radius: 8;
 }
 .sidebar-item-active .label {
     -fx-text-fill: white;
 }
 .sidebar-item .label {
-    -fx-text-fill: black;
+    -fx-text-fill: #1C1C1E;
 }
 .sidebar-item-hover .label {
-    -fx-text-fill: black;
+    -fx-text-fill: #1C1C1E;
 }
 
 /* macOS Style Scrollbars */

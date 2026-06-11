@@ -17,18 +17,19 @@
       fx:controller="io.github.dsheirer.gui.sidebar.SidebarController">
 
     <padding>
-        <Insets top="10" right="5" bottom="10" left="5"/>
+        <Insets top="8" right="8" bottom="8" left="8"/>
     </padding>
 
-    <HBox alignment="CENTER_LEFT">
+    <HBox alignment="CENTER_LEFT" spacing="8">
         <padding>
-            <Insets bottom="5"/>
+            <Insets bottom="4" left="2"/>
         </padding>
         <Button fx:id="toggleBtn" onAction="#handleToggle"
                 accessibleText="Toggle Sidebar"
-                style="-fx-background-color: transparent; -fx-padding: 5;">
+                styleClass="kennebec-toolbar-button"
+                style="-fx-padding: 6;">
             <tooltip><Tooltip text="Toggle Sidebar"/></tooltip>
-            <!-- Simple SVG for bars -->
+            <!-- Hamburger menu icon -->
             <graphic>
                 <SVGPath content="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
             </graphic>
@@ -38,7 +39,8 @@
         </Button>
     </HBox>
 
-    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;">
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;">
         <VBox fx:id="menuContainer" spacing="2" alignment="TOP_LEFT">
             <!-- Items injected by controller -->
         </VBox>
