@@ -131,6 +131,9 @@ if not exist "%VOLK_BASE%\volk\volk.h" (
 :: STEP 3 & 4: Workspace Cleanup & Clone/Update Repository
 :: ============================================================================
 call :drawProgressBar 10 "Updating Kennebec Fork..."
+:: Kill SDRTrunk if it's running in the background to prevent file lock errors during clean
+wmic process where "name='java.exe' and CommandLine like '%SDRTrunkLauncher%'" call terminate >nul 2>&1
+wmic process where "name='javaw.exe' and CommandLine like '%SDRTrunkLauncher%'" call terminate >nul 2>&1
 taskkill /F /FI "WINDOWTITLE eq SDRTrunk*" /T >nul 2>&1
 
 :: OPTIMIZATION: Stop Gradle daemon instead of killing all java processes
