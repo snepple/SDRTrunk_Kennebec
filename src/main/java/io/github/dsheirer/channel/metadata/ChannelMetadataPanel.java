@@ -126,14 +126,21 @@ public class ChannelMetadataPanel extends VBox
         VBox.setVgrow(mTable, Priority.ALWAYS);
         mTable.setPlaceholder(new Label("No active channels — start a channel to see activity here"));
         
-        HBox toolbar = new HBox();
-        toolbar.setPadding(new Insets(2, 5, 2, 5));
+        HBox toolbar = new HBox(8);
+        toolbar.setPadding(new Insets(4, 10, 4, 10));
         toolbar.setAlignment(Pos.CENTER_RIGHT);
-        Button toggleDetailsBtn = new Button("Toggle Details");
+        toolbar.setStyle("-fx-background-color: #F9F9FB; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
+        Button toggleDetailsBtn = new Button("\u25B6 Show Details");
+        toggleDetailsBtn.getStyleClass().add("kennebec-toolbar-button");
+        toggleDetailsBtn.setTooltip(new javafx.scene.control.Tooltip("Show or hide the channel details panel"));
         toggleDetailsBtn.setOnAction(e -> {
             for(Listener<ProcessingChain> listener : mListeners) {
                 if (listener instanceof io.github.dsheirer.channel.metadata.NowPlayingPanel) {
-                    ((io.github.dsheirer.channel.metadata.NowPlayingPanel) listener).toggleDetailsPane();
+                    io.github.dsheirer.channel.metadata.NowPlayingPanel np = (io.github.dsheirer.channel.metadata.NowPlayingPanel) listener;
+                    np.toggleDetailsPane();
+                    // Update button text based on new state
+                    boolean nowVisible = np.isDetailsPaneVisible();
+                    toggleDetailsBtn.setText(nowVisible ? "\u25C0 Hide Details" : "\u25B6 Show Details");
                 }
             }
         });

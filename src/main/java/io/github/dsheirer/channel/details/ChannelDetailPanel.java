@@ -33,6 +33,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.text.DecimalFormat;
@@ -58,25 +59,41 @@ public class ChannelDetailPanel extends VBox implements Listener<ProcessingChain
 
     private void init()
     {
-        setSpacing(5);
-        setPadding(new Insets(5));
+        setSpacing(8);
+        setPadding(new Insets(10));
 
         HBox buttonPanel = new HBox(10);
         buttonPanel.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        buttonPanel.setPadding(new Insets(4, 10, 4, 10));
+        buttonPanel.setStyle("-fx-background-color: #F9F9FB; -fx-background-radius: 8; -fx-border-color: #E5E5EA; -fx-border-radius: 8; -fx-border-width: 1;");
 
-        buttonPanel.getChildren().add(new Label("System:"));
+        Label systemTitle = new Label("System:");
+        systemTitle.setStyle("-fx-text-fill: #8E8E93; -fx-font-weight: bold; -fx-font-size: 12px;");
+        buttonPanel.getChildren().add(systemTitle);
         mSystemLabel = new Label(" ");
+        mSystemLabel.setStyle("-fx-text-fill: #1C1C1E; -fx-font-size: 13px;");
         buttonPanel.getChildren().add(mSystemLabel);
 
-        buttonPanel.getChildren().add(new Label("Site:"));
+        Label siteTitle = new Label("Site:");
+        siteTitle.setStyle("-fx-text-fill: #8E8E93; -fx-font-weight: bold; -fx-font-size: 12px;");
+        buttonPanel.getChildren().add(siteTitle);
         mSiteLabel = new Label(" ");
+        mSiteLabel.setStyle("-fx-text-fill: #1C1C1E; -fx-font-size: 13px;");
         buttonPanel.getChildren().add(mSiteLabel);
 
-        buttonPanel.getChildren().add(new Label("Channel Name:"));
+        Label nameTitle = new Label("Channel:");
+        nameTitle.setStyle("-fx-text-fill: #8E8E93; -fx-font-weight: bold; -fx-font-size: 12px;");
+        buttonPanel.getChildren().add(nameTitle);
         mNameLabel = new Label(" ");
+        mNameLabel.setStyle("-fx-text-fill: #1C1C1E; -fx-font-size: 13px;");
         buttonPanel.getChildren().add(mNameLabel);
 
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        buttonPanel.getChildren().add(spacer);
+
         Button refreshButton = new Button("Refresh");
+        refreshButton.getStyleClass().add("flat-button");
         refreshButton.setOnAction(e -> receive(mProcessingChain));
         buttonPanel.getChildren().add(refreshButton);
 
@@ -84,7 +101,7 @@ public class ChannelDetailPanel extends VBox implements Listener<ProcessingChain
 
         mDetailTextPane = new TextArea(EMPTY_DETAILS);
         mDetailTextPane.setEditable(false);
-        mDetailTextPane.setStyle("-fx-font-family: monospace;");
+        mDetailTextPane.setStyle("-fx-font-family: monospace; -fx-font-size: 12px; -fx-background-radius: 8; -fx-border-radius: 8;");
         VBox.setVgrow(mDetailTextPane, Priority.ALWAYS);
 
         getChildren().add(mDetailTextPane);

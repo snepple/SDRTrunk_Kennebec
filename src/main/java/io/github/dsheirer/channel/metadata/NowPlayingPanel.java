@@ -161,6 +161,13 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         });
     }
 
+    public boolean isDetailsPaneVisible() {
+        if (mChannelSplitPane != null) {
+            return mChannelSplitPane.getItems().contains(getTabbedPane());
+        }
+        return false;
+    }
+
 
 
 
@@ -209,54 +216,36 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         makeTabTearable(spectrumTab);
         makeTabTearable(advancedTab);
         
+        // Add tear-off hints to all tabs
+        for (Tab tab : new Tab[]{detailsTab, eventsTab, messagesTab, spectrumTab, advancedTab}) {
+            tab.setTooltip(new javafx.scene.control.Tooltip(tab.getText() + " — Right-click to pop out"));
+        }
+
         mTabbedPane.getTabs().addAll(detailsTab, eventsTab, messagesTab, spectrumTab, advancedTab);
     }
     return mTabbedPane;
 }
 
     private javafx.scene.Node getAdvancedTabContent() {
-        SplitPane advancedSplitPane = new SplitPane();
-        advancedSplitPane.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
-        
-        VBox navMenu = new VBox(5);
-        navMenu.setPadding(new javafx.geometry.Insets(10));
-        
-        javafx.scene.layout.StackPane contentPane = new javafx.scene.layout.StackPane();
-        contentPane.setPadding(new javafx.geometry.Insets(10));
-        
         javafx.scene.Node squelchView = mChannelSpectrumSquelchPanel.getNoiseSquelchView();
         javafx.scene.Node powerView = mChannelSpectrumSquelchPanel.getSignalPowerView();
         javafx.scene.Node symbolView = mChannelSpectrumSquelchPanel.getSymbolView();
         javafx.scene.Node logSettingsView = mChannelSpectrumSquelchPanel.getLogSettingsNode();
-        
-        contentPane.getChildren().addAll(squelchView, powerView, symbolView, logSettingsView);
-        squelchView.setVisible(true);
-        powerView.setVisible(false);
-        symbolView.setVisible(false);
-        logSettingsView.setVisible(false);
-        
-        Button squelchBtn = createNavButton("Squelch", contentPane, squelchView);
-        Button powerBtn = createNavButton("Power", contentPane, powerView);
-        Button symbolsBtn = createNavButton("Symbols", contentPane, symbolView);
-        Button logBtn = createNavButton("Log Settings", contentPane, logSettingsView);
-        
-        navMenu.getChildren().addAll(squelchBtn, powerBtn, symbolsBtn, logBtn);
-        
-        advancedSplitPane.getItems().addAll(navMenu, contentPane);
-        advancedSplitPane.setDividerPositions(0.2);
-        
-        return advancedSplitPane;
-    }
-    
-    private Button createNavButton(String text, javafx.scene.layout.StackPane contentPane, javafx.scene.Node targetView) {
-        Button btn = new Button(text);
-        btn.setMaxWidth(Double.MAX_VALUE);
-        btn.setOnAction(e -> {
-            for (javafx.scene.Node node : contentPane.getChildren()) {
-                node.setVisible(node == targetView);
-            }
-        });
-        return btn;
+
+        javafx.scene.control.TitledPane squelchPane = new javafx.scene.control.TitledPane("Squelch", squelchView);
+        javafx.scene.control.TitledPane powerPane = new javafx.scene.control.TitledPane("Signal Power", powerView);
+        javafx.scene.control.TitledPane symbolsPane = new javafx.scene.control.TitledPane("Symbols", symbolView);
+        javafx.scene.control.TitledPane logPane = new javafx.scene.control.TitledPane("Log Settings", logSettingsView);
+
+        javafx.scene.control.Accordion accordion = new javafx.scene.control.Accordion();
+        accordion.getPanes().addAll(squelchPane, powerPane, symbolsPane, logPane);
+        accordion.setExpandedPane(squelchPane);
+
+        javafx.scene.control.ScrollPane scrollWrapper = new javafx.scene.control.ScrollPane(accordion);
+        scrollWrapper.setFitToWidth(true);
+        scrollWrapper.setStyle("-fx-background-color: transparent;");
+
+        return scrollWrapper;
     }
 
     private void makeTabTearable(Tab tab) {
@@ -294,14 +283,8 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         if (mManageWidgetsBtn == null) {
             mManageWidgetsBtn = new Button("\u2699");
             mManageWidgetsBtn.setTooltip(new javafx.scene.control.Tooltip("Show or hide panels"));
-            mManageWidgetsBtn.setStyle("-fx-background-color: rgba(255,255,255,0.08); -fx-background-radius: 4; " +
-                                       "-fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 2 6 2 6;");
-            mManageWidgetsBtn.setOnMouseEntered(e -> mManageWidgetsBtn.setStyle(
-                "-fx-background-color: rgba(255,255,255,0.18); -fx-background-radius: 4; " +
-                "-fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 2 6 2 6;"));
-            mManageWidgetsBtn.setOnMouseExited(e -> mManageWidgetsBtn.setStyle(
-                "-fx-background-color: rgba(255,255,255,0.08); -fx-background-radius: 4; " +
-                "-fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 2 6 2 6;"));
+            mManageWidgetsBtn.getStyleClass().add("kennebec-toolbar-button");
+            mManageWidgetsBtn.setStyle("-fx-font-size: 14px;");
             mManageWidgetsBtn.setOnAction(e -> showManageWidgetsPopup());
             mManageWidgetsBtn.setPadding(new javafx.geometry.Insets(2, 6, 2, 6));
             mManageWidgetsBtn.setCursor(javafx.scene.Cursor.HAND);

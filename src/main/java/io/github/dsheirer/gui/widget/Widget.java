@@ -42,18 +42,25 @@ public class Widget extends VBox {
 
         this.setMinWidth(0);
 
-        setBackground(javafx.scene.layout.Background.EMPTY);
-        // setLayout(new javafx.scene.layout.HBox(4));
-        // setBorder(null.createEmptyBorder(0, 0, 0, 0));
+        // Apply card styling from the design system
+        getStyleClass().add("kennebec-card");
+        setStyle("-fx-padding: 0;");
 
+        // Header toolbar
         mHeaderPanel = new HBox(5);
         mHeaderPanel.setAlignment(Pos.CENTER_LEFT);
-        mHeaderPanel.setPadding(new javafx.geometry.Insets(2, 5, 2, 5));
-        mHeaderPanel.setBackground(javafx.scene.layout.Background.EMPTY);
+        mHeaderPanel.setPadding(new javafx.geometry.Insets(6, 10, 6, 10));
+        mHeaderPanel.setStyle("-fx-background-color: #F9F9FB; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0; -fx-background-radius: 10 10 0 0;");
+
+        // Drag handle indicator
+        Label dragHandle = new Label("\u22EE\u22EE");
+        dragHandle.setStyle("-fx-text-fill: #C7C7CC; -fx-cursor: move; -fx-font-size: 12px; -fx-padding: 0 4 0 0;");
+        dragHandle.setTooltip(new javafx.scene.control.Tooltip("Drag to reorder"));
+        mHeaderPanel.getChildren().add(dragHandle);
 
         mTitleLabel = new Label(title);
-        mTitleLabel.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 12));
-        mTitleLabel.setTextFill(javafx.scene.paint.Color.GRAY);
+        mTitleLabel.setFont(javafx.scene.text.Font.font("SansSerif", javafx.scene.text.FontWeight.BOLD, 13));
+        mTitleLabel.setTextFill(javafx.scene.paint.Color.web("#48484A"));
         mHeaderPanel.getChildren().add(mTitleLabel);
         
         Region spacer = new Region();
@@ -93,10 +100,14 @@ public class Widget extends VBox {
         mHeaderPanel.setMinWidth(0);
         VBox.setVgrow(mContentComponent, Priority.ALWAYS);
         getChildren().add(mContentComponent);
+
+        // Resize handle with hover feedback
         mResizeHandle = new VBox();
         mResizeHandle.setCursor(javafx.scene.Cursor.S_RESIZE);
-        mResizeHandle.setBackground(new javafx.scene.layout.Background(new javafx.scene.layout.BackgroundFill(javafx.scene.paint.Color.GRAY, javafx.scene.layout.CornerRadii.EMPTY, javafx.geometry.Insets.EMPTY)));
+        mResizeHandle.setStyle("-fx-background-color: #E5E5EA; -fx-background-radius: 0 0 10 10;");
         mResizeHandle.setPrefSize(0, 4);
+        mResizeHandle.setOnMouseEntered(e -> mResizeHandle.setStyle("-fx-background-color: #007AFF; -fx-background-radius: 0 0 10 10;"));
+        mResizeHandle.setOnMouseExited(e -> mResizeHandle.setStyle("-fx-background-color: #E5E5EA; -fx-background-radius: 0 0 10 10;"));
         mResizeHandle.setOnMousePressed(e -> {
             mResizeHandle.getProperties().put("startY", e.getScreenY());
             mResizeHandle.getProperties().put("startHeight", mContentComponent.getHeight());
@@ -160,11 +171,9 @@ public class Widget extends VBox {
 
     public void setDragging(boolean dragging) {
         if (dragging) {
-            mHeaderPanel.setBackground(new javafx.scene.layout.Background(new javafx.scene.layout.BackgroundFill(javafx.scene.paint.Color.GRAY, javafx.scene.layout.CornerRadii.EMPTY, javafx.geometry.Insets.EMPTY)));
-            ;
+            setStyle("-fx-padding: 0; -fx-effect: dropshadow(three-pass-box, rgba(0,122,255,0.3), 8, 0, 0, 2);");
         } else {
-            mHeaderPanel.setBackground(javafx.scene.layout.Background.EMPTY);
-            setBorder(null);
+            setStyle("-fx-padding: 0;");
         }
         requestLayout();
     }
@@ -173,10 +182,11 @@ public class Widget extends VBox {
         mMinimized = minimized;
         mContentComponent.setVisible(!minimized);
         mContentComponent.setManaged(!minimized);
+        mResizeHandle.setVisible(!minimized);
+        mResizeHandle.setManaged(!minimized);
         updateIcons();
         mMinimizeButton.setTooltip(new javafx.scene.control.Tooltip(minimized ? "Expand" : "Minimize"));
         mMinimizeButton.accessibleTextProperty().set(minimized ? "Expand Widget" : "Minimize Widget");
-        requestLayout();
         requestLayout();
     }
 
@@ -197,42 +207,19 @@ public class Widget extends VBox {
         }
     }
 
-    // // @Override
-    // protected void paintComponent(Graphics g) {
-    //     super.paintComponent(g);
-    //     Graphics2D g2 = (Graphics2D) g.create();
-    //     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-    //     int arc = 12;
-    //     Shape cardShape = new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, arc, arc);
-
-    //     g2.setColor(javafx.scene.paint.Color.GRAY);
-    //     g2.fill(cardShape);
-
-    //     g2.setColor(new Color(0, 0, 0, 25)); // 10% opacity black
-    //     g2.setStroke(new BasicStroke(1.0f));
-    //     g2.draw(cardShape);
-
-    //     g2.dispose();
-    // }
-
-    // // @Override
-    // // public void updateUI() {
-    //     super.updateUI();
-    //     updateIcons();
-    // }
 
     private void updateIcons() {
         if (mMinimizeButton != null) {
             jiconfont.javafx.IconNode icon = new jiconfont.javafx.IconNode(mMinimized ? FontAwesome.PLUS_SQUARE_O : FontAwesome.MINUS_SQUARE_O);
             icon.setIconSize(14);
-            icon.setFill(javafx.scene.paint.Color.GRAY);
+            icon.setFill(javafx.scene.paint.Color.web("#8E8E93"));
             mMinimizeButton.setGraphic(icon);
         }
         if (mCloseButton != null) {
             jiconfont.javafx.IconNode icon = new jiconfont.javafx.IconNode(FontAwesome.TIMES);
             icon.setIconSize(14);
-            icon.setFill(javafx.scene.paint.Color.GRAY);
+            icon.setFill(javafx.scene.paint.Color.web("#8E8E93"));
             mCloseButton.setGraphic(icon);
         }
     }

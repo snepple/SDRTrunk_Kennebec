@@ -35,7 +35,7 @@ public class WidgetContainer extends VBox {
 
     public WidgetContainer(NowPlayingPreference preference) {
         mPreference = preference;
-        setSpacing(4);
+        setSpacing(8);
 
         setOnDragOver(event -> {
             if (event.getGestureSource() != this && event.getDragboard().hasString() && mDraggingWidget != null) {
@@ -172,7 +172,6 @@ public class WidgetContainer extends VBox {
                 w.setVisible(visible);
                 w.setManaged(visible);
                 mPreference.setWidgetVisible(id, visible);
-                requestLayout();
                 requestLayout();
                 break;
             }

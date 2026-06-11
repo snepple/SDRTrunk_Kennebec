@@ -108,24 +108,34 @@ public class HistoryManagementPanel<T> extends javafx.scene.layout.StackPane
     }
 
     private void initJavaFX() {
-        HBox root = new HBox(5);
+        HBox root = new HBox(8);
         root.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        root.setPadding(new javafx.geometry.Insets(2, 5, 2, 5));
+        root.setPadding(new javafx.geometry.Insets(4, 10, 4, 10));
+        root.setStyle("-fx-background-color: #F9F9FB; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
         
         Button filterButton = new Button("Filter");
+        filterButton.getStyleClass().add("flat-button");
         filterButton.setOnAction(e -> handleFilterClick());
         
         Button clearButton = new Button("Clear");
+        clearButton.getStyleClass().add("flat-button");
         clearButton.setOnAction(e -> handleClearClick());
         
-        Label historyLabel = new Label("History:");
+        Label historyLabel = new Label("Max Events:");
+        historyLabel.setStyle("-fx-text-fill: #48484A; -fx-font-weight: bold; -fx-font-size: 12px;");
+        historyLabel.setTooltip(new javafx.scene.control.Tooltip("Maximum number of events to retain in the history buffer"));
         
         Slider historySlider = new Slider(0, 5000, mModel.getHistorySize());
         historySlider.setShowTickMarks(true);
-        historySlider.setBlockIncrement(10);
+        historySlider.setShowTickLabels(true);
+        historySlider.setMajorTickUnit(1000);
+        historySlider.setMinorTickCount(4);
+        historySlider.setBlockIncrement(100);
+        historySlider.setPrefWidth(200);
         
         Label historyValueLabel = new Label(String.valueOf(mModel.getHistorySize()));
-        historyValueLabel.setPrefWidth(40);
+        historyValueLabel.setPrefWidth(50);
+        historyValueLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
         
         historySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
             int size = newVal.intValue();
