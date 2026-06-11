@@ -49,18 +49,21 @@ public class Widget extends VBox {
         // Header toolbar
         mHeaderPanel = new HBox(5);
         mHeaderPanel.setAlignment(Pos.CENTER_LEFT);
-        mHeaderPanel.setPadding(new javafx.geometry.Insets(6, 10, 6, 10));
-        mHeaderPanel.setStyle("-fx-background-color: #F9F9FB; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0; -fx-background-radius: 10 10 0 0;");
+        mHeaderPanel.setPadding(new javafx.geometry.Insets(8, 12, 8, 12));
+        mHeaderPanel.setStyle("-fx-background-color: #FDFDFE; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0; -fx-background-radius: 10 10 0 0;");
 
         // Drag handle indicator
         Label dragHandle = new Label("\u22EE\u22EE");
-        dragHandle.setStyle("-fx-text-fill: #C7C7CC; -fx-cursor: move; -fx-font-size: 12px; -fx-padding: 0 4 0 0;");
+        dragHandle.setStyle("-fx-text-fill: #D1D1D6; -fx-cursor: move; -fx-font-size: 14px; -fx-padding: 0 6 0 0; -fx-opacity: 0.2;");
         dragHandle.setTooltip(new javafx.scene.control.Tooltip("Drag to reorder"));
         mHeaderPanel.getChildren().add(dragHandle);
+        
+        mHeaderPanel.setOnMouseEntered(e -> dragHandle.setStyle("-fx-text-fill: #8E8E93; -fx-cursor: move; -fx-font-size: 14px; -fx-padding: 0 6 0 0; -fx-opacity: 1.0;"));
+        mHeaderPanel.setOnMouseExited(e -> dragHandle.setStyle("-fx-text-fill: #D1D1D6; -fx-cursor: move; -fx-font-size: 14px; -fx-padding: 0 6 0 0; -fx-opacity: 0.2;"));
 
         mTitleLabel = new Label(title);
-        mTitleLabel.setFont(javafx.scene.text.Font.font("SansSerif", javafx.scene.text.FontWeight.BOLD, 13));
-        mTitleLabel.setTextFill(javafx.scene.paint.Color.web("#48484A"));
+        mTitleLabel.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.SEMI_BOLD, 14));
+        mTitleLabel.setTextFill(javafx.scene.paint.Color.web("#2C2C2E"));
         mHeaderPanel.getChildren().add(mTitleLabel);
         
         Region spacer = new Region();
@@ -131,8 +134,10 @@ public class Widget extends VBox {
 
     private Button createHeaderButton() {
         Button button = new Button();
-        button.setPadding(new javafx.geometry.Insets(0, 4, 0, 4));
-        button.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+        button.setPadding(new javafx.geometry.Insets(2, 6, 2, 6));
+        button.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-background-radius: 4;");
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: rgba(0,0,0,0.05); -fx-cursor: hand; -fx-background-radius: 4;"));
+        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-background-radius: 4;"));
         return button;
     }
 

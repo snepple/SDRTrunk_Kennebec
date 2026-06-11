@@ -513,6 +513,7 @@
     -fx-background-radius: 10;
     -fx-border-color: #E5E5EA;
     -fx-border-radius: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.06), 10, 0, 0, 4);
 }
 
 .kennebec-primary-button {
@@ -797,3 +798,13 @@
     -fx-fit-width: 16px;
     -fx-fit-height: 16px;
 }
+
+/* Modern TabPane Styling */
+.tab-pane { -fx-tab-min-height: 30px; -fx-tab-max-height: 30px; }
+.tab-pane *.tab-header-area { -fx-padding: 0 0 0 0; }
+.tab-pane *.tab-header-background { -fx-background-color: transparent; }
+.tab-pane *.tab { -fx-background-color: transparent; -fx-background-radius: 0; -fx-border-color: transparent transparent transparent transparent; -fx-border-width: 0 0 2 0; -fx-padding: 0 12 0 12; }
+.tab-pane *.tab:selected { -fx-background-color: transparent; -fx-border-color: transparent transparent #007AFF transparent; }
+.tab-pane *.tab:hover { -fx-background-color: rgba(0,0,0,0.04); }
+.tab-pane *.tab *.tab-label { -fx-text-fill: #8E8E93; -fx-font-weight: normal; -fx-font-size: 13px; }
+.tab-pane *.tab:selected *.tab-label { -fx-text-fill: #007AFF; -fx-font-weight: bold; }

@@ -130,7 +130,7 @@ public class ChannelMetadataPanel extends VBox
         mToolbar = new HBox(8);
         mToolbar.setPadding(new Insets(4, 10, 4, 10));
         mToolbar.setAlignment(Pos.CENTER_RIGHT);
-        mToolbar.setStyle("-fx-background-color: #F9F9FB; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
+        mToolbar.setStyle("-fx-background-color: #FDFDFE; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
         Button toggleDetailsBtn = new Button("\u25B6 Show Details");
         toggleDetailsBtn.getStyleClass().add("kennebec-toolbar-button");
         toggleDetailsBtn.setTooltip(new javafx.scene.control.Tooltip("Show or hide the channel details panel"));

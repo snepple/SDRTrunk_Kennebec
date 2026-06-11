@@ -49,6 +49,8 @@ import io.github.dsheirer.gui.VisibilityListener;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.module.ProcessingChain;
 import javafx.application.Platform;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 
 /**
  * Swing panel for Now Playing channels table and channel details tab set.
@@ -152,10 +154,20 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
             if (mChannelSplitPane != null) {
                 TabPane pane = getTabbedPane();
                 if (mChannelSplitPane.getItems().contains(pane)) {
-                    mChannelSplitPane.getItems().remove(pane);
+                    javafx.animation.Timeline timeline = new javafx.animation.Timeline();
+                    javafx.animation.KeyValue kv = new javafx.animation.KeyValue(mChannelSplitPane.getDividers().get(0).positionProperty(), 1.0, javafx.animation.Interpolator.EASE_BOTH);
+                    javafx.animation.KeyFrame kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(250), kv);
+                    timeline.getKeyFrames().add(kf);
+                    timeline.setOnFinished(e -> mChannelSplitPane.getItems().remove(pane));
+                    timeline.play();
                 } else {
                     mChannelSplitPane.getItems().add(pane);
-                    mChannelSplitPane.setDividerPositions(0.40);
+                    mChannelSplitPane.setDividerPositions(1.0);
+                    javafx.animation.Timeline timeline = new javafx.animation.Timeline();
+                    javafx.animation.KeyValue kv = new javafx.animation.KeyValue(mChannelSplitPane.getDividers().get(0).positionProperty(), 0.40, javafx.animation.Interpolator.EASE_BOTH);
+                    javafx.animation.KeyFrame kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(250), kv);
+                    timeline.getKeyFrames().add(kf);
+                    timeline.play();
                 }
             }
         });
@@ -216,9 +228,20 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         makeTabTearable(spectrumTab);
         makeTabTearable(advancedTab);
         
-        // Add tear-off hints to all tabs
+        // Add tear-off hints and icons to all tabs
         for (Tab tab : new Tab[]{detailsTab, eventsTab, messagesTab, spectrumTab, advancedTab}) {
             tab.setTooltip(new javafx.scene.control.Tooltip(tab.getText() + " — Right-click to pop out"));
+            IconNode popIcon = new IconNode(FontAwesome.EXTERNAL_LINK);
+            popIcon.setIconSize(10);
+            popIcon.setFill(javafx.scene.paint.Color.web("#C7C7CC"));
+            
+            javafx.scene.control.Label tabLabel = new javafx.scene.control.Label(tab.getText(), popIcon);
+            tabLabel.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
+            tabLabel.setGraphicTextGap(6);
+            tabLabel.getStyleClass().add("tab-label");
+            
+            tab.setText(""); // clear text, use custom label
+            tab.setGraphic(tabLabel);
         }
 
         mTabbedPane.getTabs().addAll(detailsTab, eventsTab, messagesTab, spectrumTab, advancedTab);
