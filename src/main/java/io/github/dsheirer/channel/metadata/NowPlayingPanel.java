@@ -347,7 +347,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
             Widget spectrumWidget = new Widget("spectrum_v2", "Spectrum/Waterfall", (Region) mSpectralPanel, mWidgetContainer, 100);
             int prefHeight = mNowPlayingPreference.getWidgetHeight("spectrum_v2", 120);
             ((Region) mSpectralPanel).setPrefHeight(prefHeight);
-            VBox.setVgrow(spectrumWidget, Priority.SOMETIMES);
+            VBox.setVgrow(spectrumWidget, Priority.NEVER);
             mWidgetContainer.addWidget(spectrumWidget, false);
         }
 
@@ -369,7 +369,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
             Widget streamingWidget = new Widget("streaming", "Streaming Status", (Region) mBroadcastStatusPanel, mWidgetContainer, 40);
             int prefHeight = mNowPlayingPreference.getWidgetHeight("streaming", 130);
             ((Region) mBroadcastStatusPanel).setPrefHeight(prefHeight);
-            VBox.setVgrow(streamingWidget, Priority.SOMETIMES);
+            VBox.setVgrow(streamingWidget, Priority.NEVER);
             mWidgetContainer.addWidget(streamingWidget, false);
         }
 
