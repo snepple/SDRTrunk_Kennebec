@@ -615,6 +615,7 @@ launch4j {
     headerType = 'gui'
     icon = "${projectDir}/src/main/resources/images/SDRTrunk.ico"
     jarTask = project.tasks.jar
+    jvmOptions = jvmArgsWindows
 }
 
 tasks.register('copyExeToDist', Copy) {
@@ -759,6 +760,9 @@ tasks.register('createInstaller', Exec) {
                 cmdList.addAll(['--icon', iconFile.absolutePath])
             }
             cmdList.addAll(['--win-shortcut', '--win-menu', '--win-menu-group', 'SDRTrunk'])
+            jvmArgsWindows.each { arg ->
+                cmdList.addAll(['--java-options', arg])
+            }
         }
 
         commandLine cmdList
