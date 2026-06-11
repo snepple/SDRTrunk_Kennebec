@@ -3,14 +3,6 @@ setlocal EnableDelayedExpansion
 
 :: ============================================================================
 ::  SDR Trunk Kennebec - Multi-Platform Build and Release Script
-::  Builds native packages for Windows, Linux, and macOS, then uploads
-::  all artifacts to a single GitHub Release.
-::
-::  Outputs:
-::    Windows  - Native .exe installer  (via jpackage)
-::    Windows  - Portable .zip runtime  (x86_64)
-::    Linux    - Portable .zip runtime  (x86_64 + aarch64)
-::    macOS    - Portable .zip runtime  (x86_64 + aarch64)
 :: ============================================================================
 
 :: Persistence Guard - keeps terminal open on failure
@@ -23,6 +15,39 @@ if not defined TERMINAL_FIXED (
 cd /d "%~dp0"
 title SDR Trunk Kennebec - Multi-Platform Builder
 
+:: ---- GITHUB CONFIG ----
+set "GH_REPO=snepple/SDRTrunk_Kennebec"
+set "REPO_URL=https://github.com/%GH_REPO%.git"
+set "FOLDER_NAME=SDRTrunk_Kennebec_Build"
+set "ROOT_DIR=%CD%"
+set "LOG_FILE=%ROOT_DIR%\build_log.txt"
+set "VOLK_BASE=C:\SDR_Deps\include"
+
+:: ============================================================================
+:: STEP 0: Auto-Update Script
+:: ============================================================================
+:: Replace this URL with the exact raw URL of your script in the repository
+set "SCRIPT_URL=https://raw.githubusercontent.com/%GH_REPO%/master/build_and_release.bat" 
+set "NEW_SCRIPT=%ROOT_DIR%\build_script_new.bat"
+
+echo [INFO] Checking for script updates...
+curl -s -f -L "%SCRIPT_URL%" -o "%NEW_SCRIPT%"
+if exist "%NEW_SCRIPT%" (
+    fc "%~f0" "%NEW_SCRIPT%" >nul
+    if errorlevel 1 (
+        echo [INFO] A new version of the build script was found. Updating...
+        copy /y "%NEW_SCRIPT%" "%~f0" >nul
+        del "%NEW_SCRIPT%"
+        echo [INFO] Restarting updated script...
+        start cmd /k "%~f0"
+        exit
+    ) else (
+        del "%NEW_SCRIPT%"
+    )
+) else (
+    echo [WARNING] Could not check for script updates.
+)
+
 :: ---- API CONFIG ----
 if not exist api_keys.bat (
     echo @echo off > api_keys.bat
@@ -32,20 +57,11 @@ if not exist api_keys.bat (
 )
 call api_keys.bat
 
-:: ---- GITHUB CONFIG ----
-set "GH_REPO=snepple/SDRTrunk_Kennebec"
-set "REPO_URL=https://github.com/%GH_REPO%.git"
-set "FOLDER_NAME=SDRTrunk_Kennebec_Build"
-set "ROOT_DIR=%CD%"
-set "LOG_FILE=%ROOT_DIR%\build_log.txt"
-set "VOLK_BASE=C:\SDR_Deps\include"
-
 if exist "%LOG_FILE%" del "%LOG_FILE%"
 
 echo.
 echo ==============================================================
 echo   SDR Trunk Kennebec - Multi-Platform Build and Release
-echo   Targets: Windows .exe installer + portable zips for all OSes
 echo ==============================================================
 echo.
 
@@ -60,7 +76,7 @@ where g++ >nul 2>&1 || (echo [ERROR] MinGW/g++ is not installed. & pause & exit)
 if "!JAVA_HOME!"=="" (echo [ERROR] JAVA_HOME is not set. & pause & exit)
 for %%I in ("!JAVA_HOME!") do set "JH=%%~sI"
 
-:: Check for jpackage (required for native installer)
+:: Check for jpackage
 set "JPACKAGE_EXE=!JAVA_HOME!\bin\jpackage.exe"
 if not exist "!JPACKAGE_EXE!" (
     echo [WARNING] jpackage.exe not found in JAVA_HOME. Native installer step will be skipped.
@@ -70,9 +86,9 @@ if not exist "!JPACKAGE_EXE!" (
     set "HAS_JPACKAGE=1"
 )
 
-:: Check for WiX Toolset (required by jpackage for .exe/.msi)
-if exist "C:\Users\default.LAPTOP-U0KBII5M\wix311\light.exe" (
-    set "PATH=C:\Users\default.LAPTOP-U0KBII5M\wix311;!PATH!"
+:: Check for WiX Toolset
+if exist "%USERPROFILE%\wix311\light.exe" (
+    set "PATH=%USERPROFILE%\wix311;!PATH!"
     echo [OK] WiX Toolset found locally and added to PATH.
 ) else if exist "C:\Program Files (x86)\WiX Toolset v3.11\bin\light.exe" (
     set "PATH=C:\Program Files (x86)\WiX Toolset v3.11\bin;!PATH!"
@@ -112,19 +128,28 @@ if not exist "%VOLK_BASE%\volk\volk.h" (
 )
 
 :: ============================================================================
-:: STEP 3: Workspace Cleanup
+:: STEP 3 & 4: Workspace Cleanup & Clone/Update Repository
 :: ============================================================================
-call :drawProgressBar 10 "Cleaning workspace..."
-taskkill /F /FI "IMAGENAME eq java.exe" /T >nul 2>&1
+call :drawProgressBar 10 "Updating Kennebec Fork..."
 taskkill /F /FI "WINDOWTITLE eq SDRTrunk*" /T >nul 2>&1
-if exist "%FOLDER_NAME%" rmdir /s /q "%FOLDER_NAME%"
 
-:: ============================================================================
-:: STEP 4: Clone Repository
-:: ============================================================================
-call :drawProgressBar 15 "Cloning Kennebec Fork..."
-git clone --progress %REPO_URL% "%FOLDER_NAME%" 2> "%LOG_FILE%"
-if !ERRORLEVEL! NEQ 0 goto ai_triage
+:: OPTIMIZATION: Stop Gradle daemon instead of killing all java processes
+if exist "%FOLDER_NAME%\gradlew.bat" (
+    cd /d "%ROOT_DIR%\%FOLDER_NAME%"
+    call gradlew.bat --stop >nul 2>&1
+    cd /d "%ROOT_DIR%"
+)
+
+:: OPTIMIZATION: Fetch and reset instead of re-cloning to save time & keep Gradle cache
+if not exist "%FOLDER_NAME%" (
+    git clone --progress %REPO_URL% "%FOLDER_NAME%" 2> "%LOG_FILE%"
+    if !ERRORLEVEL! NEQ 0 goto ai_triage
+) else (
+    cd /d "%ROOT_DIR%\%FOLDER_NAME%"
+    git fetch --all 2>> "%LOG_FILE%"
+    git reset --hard origin/master 2>> "%LOG_FILE%"
+    cd /d "%ROOT_DIR%"
+)
 
 cd /d "%ROOT_DIR%\%FOLDER_NAME%"
 
@@ -135,27 +160,24 @@ powershell -Command "Get-ChildItem -Path . -Recurse | Group-Object {$_.FullName.
 :: STEP 5: Read Project Version
 :: ============================================================================
 for /f "tokens=2 delims==" %%A in ('findstr /I "^projectVersion" gradle.properties') do set "PROJ_VER=%%A"
-:: Strip any leading/trailing whitespace
 for /f "tokens=* delims= " %%B in ("!PROJ_VER!") do set "PROJ_VER=%%B"
 echo [INFO] Project Version: !PROJ_VER!
 
-:: Derive a clean numeric version for jpackage (strips non-numeric prefixes like K.)
 set "APP_VER=!PROJ_VER!"
 for /f "tokens=* delims=ABCDEFGHIJKLMNOPQRSTUVWXYZ." %%V in ("!APP_VER!") do set "APP_VER=%%V"
 if "!APP_VER!"=="" set "APP_VER=0.0.1"
 
-:: Define the staging directory for release artifacts (created after Gradle clean)
 set "RELEASE_DIR=%ROOT_DIR%\%FOLDER_NAME%\build\releases"
 
 :: ============================================================================
 :: STEP 6: Gradle Init (Compile)
 :: ============================================================================
 call :drawProgressBar 25 "Initializing Gradle (compile)..."
-call gradlew.bat clean classes --no-daemon --console=plain > gradle_out.log 2>&1
+:: OPTIMIZATION: Removed --no-daemon for much faster consecutive builds
+call gradlew.bat clean classes --console=plain > gradle_out.log 2>&1
 type gradle_out.log >> "%LOG_FILE%"
 findstr /C:"BUILD SUCCESSFUL" gradle_out.log >nul || goto ai_triage
 
-:: Create the releases staging directory AFTER clean (clean wipes build\)
 if not exist "!RELEASE_DIR!" mkdir "!RELEASE_DIR!"
 
 :: ============================================================================
@@ -177,23 +199,21 @@ if !ERRORLEVEL! NEQ 0 (
 )
 
 :: ============================================================================
-:: STEP 8: Build Windows Runtime Package + Launch4j EXE
+:: STEP 8: Build Windows Runtime Package
 :: ============================================================================
 call :drawProgressBar 45 "Building Windows runtime package..."
-call gradlew.bat runtimeZipCurrent createExe -x test -x javadoc -x compileJni --no-daemon --console=plain > build_win.log 2>&1
+call gradlew.bat runtimeZipCurrent createExe -x test -x javadoc -x compileJni --console=plain > build_win.log 2>&1
 type build_win.log >> "%LOG_FILE%"
 findstr /C:"BUILD SUCCESSFUL" build_win.log >nul
 if !ERRORLEVEL! EQU 0 (
     echo [OK] Windows runtime package built.
-    :: Collect the zip produced and rename with platform identifier
     for %%F in (build\image\*.zip) do (
-        echo [INFO] Found: %%~nxF
         copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-windows-x86_64.zip" >nul
         echo [OK] Staged: SDRTrunk-!PROJ_VER!-windows-x86_64.zip
     )
 ) else (
     echo [WARNING] Windows runtime build failed. Falling back to distZip...
-    call gradlew.bat build distZip -x test -x javadoc -x compileJni --no-daemon --console=plain > build_fallback.log 2>&1
+    call gradlew.bat build distZip -x test -x javadoc -x compileJni --console=plain > build_fallback.log 2>&1
     type build_fallback.log >> "%LOG_FILE%"
     findstr /C:"BUILD SUCCESSFUL" build_fallback.log >nul || goto ai_triage
     for %%F in (build\distributions\*.zip) do (
@@ -206,7 +226,7 @@ if !ERRORLEVEL! EQU 0 (
 :: ============================================================================
 if "!HAS_JPACKAGE!"=="1" (
     call :drawProgressBar 55 "Creating Windows native installer..."
-    call gradlew.bat createInstaller -x test -x javadoc -x compileJni --no-daemon --console=plain > build_installer.log 2>&1
+    call gradlew.bat createInstaller -x test -x javadoc -x compileJni --console=plain > build_installer.log 2>&1
     type build_installer.log >> "%LOG_FILE%"
     findstr /C:"BUILD SUCCESSFUL" build_installer.log >nul
     if !ERRORLEVEL! EQU 0 (
@@ -229,17 +249,13 @@ if "!HAS_JPACKAGE!"=="1" (
 :: STEP 10: Build Cross-Platform Runtime Packages (Linux + macOS)
 :: ============================================================================
 call :drawProgressBar 65 "Building Linux and macOS runtime packages..."
-echo [INFO] This step downloads JDKs for each target platform (~200MB each).
-echo [INFO] This may take several minutes on the first run...
-call gradlew.bat runtimeZipOthers -x test -x javadoc -x compileJni --no-daemon --console=plain > build_others.log 2>&1
+call gradlew.bat runtimeZipOthers -x test -x javadoc -x compileJni --console=plain > build_others.log 2>&1
 type build_others.log >> "%LOG_FILE%"
 findstr /C:"BUILD SUCCESSFUL" build_others.log >nul
 if !ERRORLEVEL! EQU 0 (
     echo [OK] Cross-platform runtime packages built.
-    :: Collect all zips, naming them by platform
     for %%F in (build\image\*.zip) do (
         set "ZIPNAME=%%~nxF"
-        :: Determine platform from filename and copy with proper name
         echo !ZIPNAME! | findstr /I "linux.*aarch64" >nul
         if !ERRORLEVEL! EQU 0 (
             copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-linux-aarch64.zip" >nul
@@ -263,22 +279,19 @@ if !ERRORLEVEL! EQU 0 (
     )
 ) else (
     echo [WARNING] Cross-platform builds failed. Only Windows package will be released.
-    echo [INFO] This is normal if cross-platform JDK downloads were blocked.
 )
 
 :: ============================================================================
 :: STEP 11: Local Installation (Windows)
 :: ============================================================================
 call :drawProgressBar 80 "Installing locally..."
-call gradlew.bat installDist -x test -x javadoc -x compileJni --no-daemon --console=plain >> "%LOG_FILE%" 2>&1
+call gradlew.bat installDist -x test -x javadoc -x compileJni --console=plain >> "%LOG_FILE%" 2>&1
 if !ERRORLEVEL! NEQ 0 goto ai_triage
 
 :: ============================================================================
 :: STEP 12: Upload to GitHub Release
 :: ============================================================================
 call :drawProgressBar 90 "Creating GitHub Release..."
-
-:: Count staged artifacts
 set "ASSET_COUNT=0"
 set "ASSET_LIST="
 for %%F in ("!RELEASE_DIR!\*.*") do (
@@ -297,7 +310,6 @@ echo ==============================================================
 echo.
 
 if !ASSET_COUNT! GTR 0 (
-    :: Write release notes to a temp file (avoids batch escaping issues)
     > "!RELEASE_DIR!\release_notes.md" echo ## SDRTrunk Kennebec !PROJ_VER!
     >> "!RELEASE_DIR!\release_notes.md" echo.
     >> "!RELEASE_DIR!\release_notes.md" echo ### Downloads
@@ -331,12 +343,10 @@ if !ASSET_COUNT! GTR 0 (
     >> "!RELEASE_DIR!\release_notes.md" echo.
     >> "!RELEASE_DIR!\release_notes.md" echo Bundled with a complete Java runtime - no separate JDK installation required.
 
-    :: Delete existing release with same tag if it exists (to allow re-runs)
     gh release delete !PROJ_VER! --repo %GH_REPO% --yes >nul 2>&1
     git tag -d !PROJ_VER! >nul 2>&1
     git push origin :refs/tags/!PROJ_VER! >nul 2>&1
 
-    :: Create the release with all assets
     echo [INFO] Creating GitHub Release !PROJ_VER! with !ASSET_COUNT! assets...
     gh release create !PROJ_VER! !ASSET_LIST! --repo %GH_REPO% --title "SDRTrunk Kennebec !PROJ_VER!" --notes-file "!RELEASE_DIR!\release_notes.md"
 
@@ -345,8 +355,6 @@ if !ASSET_COUNT! GTR 0 (
     ) else (
         echo [WARNING] GitHub Release creation failed. Assets are in: !RELEASE_DIR!
     )
-
-    :: Clean up temp notes file
     del "!RELEASE_DIR!\release_notes.md" >nul 2>&1
 ) else (
     echo [WARNING] No release artifacts found. Skipping GitHub release.
@@ -382,7 +390,6 @@ echo   Local install: %ROOT_DIR%\%FOLDER_NAME%\build\install\sdr-trunk\
 echo ==============================================================
 echo.
 
-:: Launch the app
 cd /d "%ROOT_DIR%\%FOLDER_NAME%"
 for /d %%D in (build\install\*) do (
     if exist "%%D\bin\sdr-trunk.bat" (
@@ -392,7 +399,6 @@ for /d %%D in (build\install\*) do (
 )
 pause
 exit /b 0
-
 
 :: ============================================================================
 :: UTILITY: Progress Bar
@@ -409,7 +415,6 @@ echo Progress: [!bar!] %pc%%%
 echo Status: !status!
 echo ==========================================
 exit /b
-
 
 :: ============================================================================
 :: ERROR HANDLER: AI Triage
