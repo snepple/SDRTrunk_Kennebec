@@ -307,6 +307,7 @@ public class SystemTalkgroupSelectionEditor extends GridPane
         if(mImportAllTalkgroupsButton == null)
         {
             mImportAllTalkgroupsButton = new Button("Import All Talkgroups");
+            mImportAllTalkgroupsButton.getStyleClass().add("kennebec-toolbar-button-primary");
             mImportAllTalkgroupsButton.setOnAction(event -> {
 
                 String aliasList = getAliasListNameComboBox().getSelectionModel().getSelectedItem();
@@ -569,6 +570,7 @@ public class SystemTalkgroupSelectionEditor extends GridPane
         if(mNewAliasListButton == null)
         {
             mNewAliasListButton = new Button("New Alias List");
+            mNewAliasListButton.getStyleClass().add("kennebec-toolbar-button");
             mNewAliasListButton.setOnAction(event -> {
                 TextInputDialog dialog = new TextInputDialog();
                 dialog.setTitle("Create New Alias List");

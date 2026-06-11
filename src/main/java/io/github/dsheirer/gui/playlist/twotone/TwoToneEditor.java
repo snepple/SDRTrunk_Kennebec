@@ -94,6 +94,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         SortedList<TwoToneConfiguration> sortedConfigs = new SortedList<>(filteredConfigs);
         
         mTableView = new TableView<>(sortedConfigs);
+        mTableView.getStyleClass().add("preferences-table");
         sortedConfigs.comparatorProperty().bind(mTableView.comparatorProperty());
         mTableView.setPlaceholder(new Label("Click the New button to create a new Two Tone Detector"));
 
@@ -300,9 +301,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
 
         CheckBox textMessageCheck = new CheckBox("Enable Text Message");
         Label textMessageInfo = new Label("Messages are sent to the Zello Channel.");
-        textMessageInfo.setStyle("-fx-font-size: 10px; -fx-text-fill: gray;");
+        textMessageInfo.getStyleClass().add("hig-inline-help");
         Label fieldsInfo = new Label("Available Fields: {Alias}, {Channel Name}, {Frequency}, {Timestamp}");
-        fieldsInfo.setStyle("-fx-font-size: 10px; -fx-text-fill: gray;");
+        fieldsInfo.getStyleClass().add("hig-inline-help");
 
         TextField templateField = new TextField();
 
@@ -598,8 +599,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
 
         HBox topToolbar = new HBox(10);
         topToolbar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        topToolbar.getStyleClass().add("context-toolbar");
-        topToolbar.setPadding(new Insets(10, 10, 10, 10));
+        topToolbar.getStyleClass().addAll("kennebec-filter-toolbar");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         topToolbar.getChildren().addAll(filterSegmentedBtn, spacer, newBtn, cloneBtn, delBtn, refreshBtn);
@@ -618,13 +618,14 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         detailHeader.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         Label detailTitle = new Label("Detector Settings");
-        detailTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #3A3A3C;");
+        detailTitle.getStyleClass().add("kennebec-header");
+        detailTitle.setStyle("-fx-font-size: 15px;");
 
         Region headerSpacer = new Region();
         HBox.setHgrow(headerSpacer, Priority.ALWAYS);
 
         Button saveBtn = new Button("Save Settings");
-        saveBtn.getStyleClass().add("kennebec-primary-button");
+        saveBtn.getStyleClass().add("hig-primary-action");
         saveBtn.setOnAction(e -> {
             mPlaylistManager.schedulePlaylistSave();
             mTableView.refresh();
@@ -633,28 +634,30 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         detailHeader.getChildren().addAll(detailTitle, headerSpacer, saveBtn);
 
         TabPane tabPane = new TabPane();
-        tabPane.setStyle("-fx-tab-channel-bg: transparent;");
         VBox.setVgrow(tabPane, Priority.ALWAYS);
 
         Tab generalTab = new Tab("General Setup");
         generalTab.setClosable(false);
         ScrollPane generalScroll = new ScrollPane(generalGrid);
         generalScroll.setFitToWidth(true);
-        generalScroll.setStyle("-fx-background-color: transparent; -fx-padding: 10;");
+        generalScroll.setStyle("-fx-background-color: transparent;");
+        generalGrid.setPadding(new Insets(10));
         generalTab.setContent(generalScroll);
 
         Tab zelloTab = new Tab("Zello Integration");
         zelloTab.setClosable(false);
         ScrollPane zelloScroll = new ScrollPane(zelloGrid);
         zelloScroll.setFitToWidth(true);
-        zelloScroll.setStyle("-fx-background-color: transparent; -fx-padding: 10;");
+        zelloScroll.setStyle("-fx-background-color: transparent;");
+        zelloGrid.setPadding(new Insets(10));
         zelloTab.setContent(zelloScroll);
 
         Tab mqttTab = new Tab("MQTT Integration");
         mqttTab.setClosable(false);
         ScrollPane mqttScroll = new ScrollPane(mqttGrid);
         mqttScroll.setFitToWidth(true);
-        mqttScroll.setStyle("-fx-background-color: transparent; -fx-padding: 10;");
+        mqttScroll.setStyle("-fx-background-color: transparent;");
+        mqttGrid.setPadding(new Insets(10));
         mqttTab.setContent(mqttScroll);
 
         Tab aliasTab = new Tab("Aliases");

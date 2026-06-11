@@ -451,7 +451,7 @@ public class RadioReferenceEditor extends BorderPane implements Consumer<Authori
                             mRadioReference.availableProperty(),
                             mRadioReference.premiumAccountProperty().not()));
             mRRStatusText.setTextFill(Color.ORANGERED);
-            mRRStatusText.setStyle("-fx-font-weight: bold;"); // I guess
+            mRRStatusText.getStyleClass().add("kennebec-header");
         }
 
         return mRRStatusText;

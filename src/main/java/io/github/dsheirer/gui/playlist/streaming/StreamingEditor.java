@@ -413,7 +413,8 @@ public class StreamingEditor extends SplitPane
             mConfigAreaBox = new VBox();
 
             mHeaderLabel = new Label();
-            mHeaderLabel.setStyle("-fx-font-size: 1.5em; -fx-font-weight: bold;");
+            mHeaderLabel.getStyleClass().add("kennebec-header");
+            mHeaderLabel.setStyle("-fx-font-size: 1.5em;");
 
             mHeaderIcon = new javafx.scene.image.ImageView();
             mHeaderIcon.setFitWidth(24);
