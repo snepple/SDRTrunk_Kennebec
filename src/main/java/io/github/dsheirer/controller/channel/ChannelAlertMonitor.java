@@ -37,6 +37,11 @@ public class ChannelAlertMonitor implements Listener<AudioSegment> {
     private Map<String, Boolean> mAlertSentMap = new ConcurrentHashMap<>();
     private Map<String, Long> mLastAudioTimeMap = new ConcurrentHashMap<>();
 
+    //Maximum automatic channel restarts per inactivity episode before falling back to alerting only.
+    //The counter resets whenever audio is received on the channel.
+    private static final int MAX_AUTO_RESTARTS_PER_EPISODE = 2;
+    private Map<String, Integer> mAutoRestartCountMap = new ConcurrentHashMap<>();
+
     private ScheduledFuture<?> mMonitorFuture;
 
     private Map<String, Integer> mConsecutiveAIFailuresMap = new ConcurrentHashMap<>();
@@ -80,6 +85,7 @@ public class ChannelAlertMonitor implements Listener<AudioSegment> {
                         if(aliasListName.equals(channel.getAliasListName()) && mChannelProcessingManager.isProcessing(channel)) {
                             mLastAudioTimeMap.put(channel.getName(), currentTime);
                             mAlertSentMap.put(channel.getName(), false);
+                            mAutoRestartCountMap.put(channel.getName(), 0);
                         }
                     }
                 }
@@ -119,14 +125,45 @@ public class ChannelAlertMonitor implements Listener<AudioSegment> {
                 long inactivityMinutes = TimeUnit.MILLISECONDS.toMinutes(currentTime - lastActivity);
 
                 if (inactivityMinutes >= alertConfig.getInactivityDurationThresholdMinutes()) {
-                    boolean alertSent = mAlertSentMap.getOrDefault(channelName, false);
-                    if (!alertSent) {
-                        sendInactivityAlert(channel, inactivityMinutes);
-                        mAlertSentMap.put(channelName, true);
+                    int restarts = mAutoRestartCountMap.getOrDefault(channelName, 0);
+
+                    if (alertConfig.isInactivityAutoRestartEnabled() && restarts < MAX_AUTO_RESTARTS_PER_EPISODE) {
+                        //Auto-remediate first: restart the channel and give it a fresh inactivity window.
+                        //Only alert the user if restarts don't restore activity.
+                        mAutoRestartCountMap.put(channelName, restarts + 1);
+                        mLastAudioTimeMap.put(channelName, currentTime);
+                        restartChannel(channel, inactivityMinutes, restarts + 1);
+                    } else {
+                        boolean alertSent = mAlertSentMap.getOrDefault(channelName, false);
+                        if (!alertSent) {
+                            sendInactivityAlert(channel, inactivityMinutes);
+                            mAlertSentMap.put(channelName, true);
+                        }
                     }
                 }
                 }
             }
+        }
+    }
+
+    /**
+     * Automatically restarts an inactive channel - stop, then re-enable - as the first remediation
+     * step before alerting a human.
+     */
+    private void restartChannel(Channel channel, long inactivityMinutes, int attempt) {
+        mLog.warn("Channel '" + channel.getName() + "' inactive for " + inactivityMinutes +
+            " minutes - automatically restarting (attempt " + attempt + " of " + MAX_AUTO_RESTARTS_PER_EPISODE + ")");
+
+        try {
+            mChannelProcessingManager.receive(ChannelEvent.requestDisable(channel));
+            mChannelProcessingManager.receive(ChannelEvent.requestEnable(channel));
+
+            NotificationManager.getInstance().showNotification("Channel Auto-Restarted",
+                "Channel '" + channel.getName() + "' was inactive for " + inactivityMinutes +
+                    " minutes and has been automatically restarted (attempt " + attempt + ").",
+                TrayIcon.MessageType.INFO);
+        } catch (Exception e) {
+            mLog.error("Error auto-restarting inactive channel '" + channel.getName() + "'", e);
         }
     }
 

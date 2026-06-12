@@ -270,5 +270,30 @@ Highest-value additions, in rough priority order:
 
 ---
 
+## Implementation status (June 2026, this branch)
+
+Implemented on this branch following the review:
+
+- **Part 1:** cross-platform SSL fix (WINDOWS-ROOT applied Windows-only), CI workflow
+  (`.github/workflows/build.yml`), OpenMHz `equals()` cleanup, broadcaster queue caps with
+  drop-oldest, streaming temp directory creation + full error logging, IAmResponding DNS caching,
+  Gemini circuit breaker.
+- **Part 2:** U-1 zero-sample stall detection, U-2 never-give-up recovery (all error types, slow
+  cadence + health alerts instead of permanent failure), U-3 restart all channels after tuner
+  recovery, U-4 audio output auto-reopen every 10s, U-5 deep `/health` (tuners/channels/streams,
+  503 when degraded, GUI + headless, `SDRTRUNK_API_PORT`/`SDRTRUNK_API_TOKEN`), U-6 Windows
+  watchdog absolute paths + crash-loop guard + `deploy/sdrtrunk.service` systemd unit.
+- **Part 3:** A-1 per-channel inactivity auto-restart (editor toggle, max 2 attempts per episode),
+  A-2 partial (Gemini key via `GEMINI_API_KEY`, REST API via env), A-3 auto-PPM persistence
+  (converged corrections saved to tuner config via `TunerPPMCorrectedEvent`), A-6 disk space
+  manager with auto-prune, A-7 daily configuration backups (playlist + preferences zip, retain 10),
+  A-8 watchdog default-on.
+
+Deferred (larger features needing runtime validation): A-4 scheduled RadioReference sync,
+A-5 automatic multi-tuner channel re-balancing, U-7 streaming stuck-state supervisor,
+U-8 PPM-drift recovery trigger, U-9 Smart Bandwidth rollback.
+
+---
+
 *Review performed on branch `master` @ 9863566. Static analysis only; runtime behavior with live
 SDR hardware was not exercised in this environment.*

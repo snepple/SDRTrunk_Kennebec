@@ -114,6 +114,9 @@ public class TunerManager implements IDiscoveredTunerStatusListener
     {
         mLog.info("Discovering tuners ...");
 
+        //Register for tuner PPM correction events so converged auto-PPM values are persisted
+        MyEventBus.getGlobalEventBus().register(this);
+
         boolean libUsbAvailable = false;
 
         try
@@ -547,6 +550,31 @@ public class TunerManager implements IDiscoveredTunerStatusListener
     public List<DiscoveredTuner> getAvailableTuners()
     {
         return mDiscoveredTunerModel.getAvailableTuners();
+    }
+
+    /**
+     * Persists the converged auto-PPM correction value to the tuner's configuration so the tuner
+     * starts pre-corrected on the next application launch.
+     */
+    @com.google.common.eventbus.Subscribe
+    public void handleTunerPPMCorrected(TunerPPMCorrectedEvent event)
+    {
+        try
+        {
+            for(DiscoveredTuner discoveredTuner : getAvailableTuners())
+            {
+                if(discoveredTuner.hasTuner() &&
+                   discoveredTuner.getTuner().getTunerController() == event.getTunerController())
+                {
+                    mTunerConfigurationManager.updateTunerPPM(discoveredTuner);
+                    return;
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            mLog.error("Error persisting auto-corrected tuner PPM value", e);
+        }
     }
 
     /**

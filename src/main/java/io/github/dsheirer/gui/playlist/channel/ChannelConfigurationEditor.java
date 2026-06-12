@@ -71,6 +71,7 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -115,6 +116,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     private VBox mAlertsPane;
     private ToggleSwitch mInactivityAlertEnabledSwitch;
     private Spinner<Integer> mInactivityDurationSpinner;
+    private ToggleSwitch mInactivityAutoRestartSwitch;
     private ToggleSwitch mAiAudioMonitoringEnabledSwitch;
     private Spinner<Integer> mAiAudioMonitoringCheckIntervalSpinner;
     private ToggleSwitch mAiAudioMonitoringWaitNewAudioSwitch;
@@ -420,6 +422,9 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             getInactivityDurationSpinner().setDisable(!config.isInactivityAlertEnabled());
             getInactivityDurationSpinner().getValueFactory().setValue(config.getInactivityDurationThresholdMinutes());
 
+            getInactivityAutoRestartSwitch().setDisable(!config.isInactivityAlertEnabled());
+            getInactivityAutoRestartSwitch().setSelected(config.isInactivityAutoRestartEnabled());
+
             getAiAudioMonitoringEnabledSwitch().setDisable(false);
             getAiAudioMonitoringEnabledSwitch().setSelected(config.isAiAudioMonitoringEnabled());
 
@@ -435,6 +440,8 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             getInactivityAlertEnabledSwitch().setDisable(true);
             getInactivityAlertEnabledSwitch().setSelected(false);
             getInactivityDurationSpinner().setDisable(true);
+            getInactivityAutoRestartSwitch().setDisable(true);
+            getInactivityAutoRestartSwitch().setSelected(false);
 
             getAiAudioMonitoringEnabledSwitch().setDisable(true);
             getAiAudioMonitoringEnabledSwitch().setSelected(false);
@@ -454,6 +461,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             }
             config.setInactivityAlertEnabled(getInactivityAlertEnabledSwitch().isSelected());
             config.setInactivityDurationThresholdMinutes(getInactivityDurationSpinner().getValue());
+            config.setInactivityAutoRestartEnabled(getInactivityAutoRestartSwitch().isSelected());
             config.setAiAudioMonitoringEnabled(getAiAudioMonitoringEnabledSwitch().isSelected());
             config.setAiAudioMonitoringCheckInterval(getAiAudioMonitoringCheckIntervalSpinner().getValue());
             config.setAiAudioMonitoringWaitNewAudio(getAiAudioMonitoringWaitNewAudioSwitch().isSelected());
@@ -467,9 +475,21 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mInactivityAlertEnabledSwitch.selectedProperty().addListener((obs, old, newValue) -> {
                 modifiedProperty().set(true);
                 getInactivityDurationSpinner().setDisable(!newValue);
+                getInactivityAutoRestartSwitch().setDisable(!newValue);
             });
         }
         return mInactivityAlertEnabledSwitch;
+    }
+
+    private ToggleSwitch getInactivityAutoRestartSwitch() {
+        if(mInactivityAutoRestartSwitch == null) {
+            mInactivityAutoRestartSwitch = new ToggleSwitch("Auto-Restart Channel");
+            mInactivityAutoRestartSwitch.setTooltip(new Tooltip("Automatically restart this channel when the " +
+                "inactivity threshold is exceeded (up to 2 attempts), before alerting"));
+            mInactivityAutoRestartSwitch.selectedProperty().addListener((obs, old, newValue) ->
+                modifiedProperty().set(true));
+        }
+        return mInactivityAutoRestartSwitch;
     }
 
     private Spinner<Integer> getInactivityDurationSpinner() {
@@ -539,6 +559,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             inactivityGrid.add(getInactivityAlertEnabledSwitch(), 0, 0, 2, 1);
             inactivityGrid.add(new Label("Duration Threshold (minutes):"), 0, 1);
             inactivityGrid.add(getInactivityDurationSpinner(), 1, 1);
+            inactivityGrid.add(getInactivityAutoRestartSwitch(), 0, 2, 2, 1);
 
             inactivitySection.getChildren().addAll(inactivityHeader, inactivityGrid);
 

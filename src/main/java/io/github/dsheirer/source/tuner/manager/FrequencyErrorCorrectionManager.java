@@ -119,6 +119,11 @@ public class FrequencyErrorCorrectionManager
             {
                 mLog.info("Auto-Correcting Tuner PPM to [" + mDecimalFormat.format(frequencyCorrection) + "]");
                 mTunerController.setFrequencyCorrection(frequencyCorrection);
+                //Notify so the converged PPM value is persisted to the tuner configuration and the
+                //tuner starts pre-corrected on the next application launch - removes the need for
+                //manual PPM calibration on trunked systems.
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus()
+                    .post(new TunerPPMCorrectedEvent(mTunerController));
                 // Update the baseline with this accepted correction value using a slow EMA.
                 // This allows the baseline to track legitimate long-term drift while still
                 // rejecting sudden large jumps from poorly-locked decoders.
