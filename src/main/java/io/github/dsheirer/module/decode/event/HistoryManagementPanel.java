@@ -113,12 +113,20 @@ public class HistoryManagementPanel<T> extends javafx.scene.layout.StackPane
         root.setPadding(new javafx.geometry.Insets(4, 10, 4, 10));
         root.setStyle("-fx-background-color: #F9F9FB; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
         
-        Button filterButton = new Button("Filter");
+        Button filterButton = new Button("_Filter");
+        filterButton.setMnemonicParsing(true);
         filterButton.getStyleClass().add("flat-button");
+        filterButton.setTooltip(new javafx.scene.control.Tooltip("Filter the decode history events."));
+        filterButton.accessibleTextProperty().set("Filter History");
+        filterButton.accessibleHelpProperty().set("Apply filters to the current list of decoded events.");
         filterButton.setOnAction(e -> handleFilterClick());
         
-        Button clearButton = new Button("Clear");
+        Button clearButton = new Button("_Clear");
+        clearButton.setMnemonicParsing(true);
         clearButton.getStyleClass().add("flat-button");
+        clearButton.setTooltip(new javafx.scene.control.Tooltip("Clear the decode history events. This action cannot be undone."));
+        clearButton.accessibleTextProperty().set("Clear History");
+        clearButton.accessibleHelpProperty().set("Remove all currently logged decode events. This action cannot be undone.");
         clearButton.setOnAction(e -> handleClearClick());
         
         Label historyLabel = new Label("Max Events:");

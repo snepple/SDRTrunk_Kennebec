@@ -110,3 +110,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-03-08 - Accessible Recording Buttons
 **Learning:** Destructive actions and key functionality in JavaFX lack mnemonics, accessible descriptions, and informative tooltips describing consequences.
 **Action:** When adding buttons, especially destructive ones like delete, provide descriptive tooltips including consequence warnings, add mnemonics to enable keyboard navigation, and set accessible properties (`accessibleTextProperty` and `accessibleHelpProperty`) for screen reader support.
+## 2026-06-12 - Accessibility and Mnemonics for History Controls
+**Learning:** Interactive panel controls (like Filter and Clear in HistoryManagementPanel) lack accessibility properties, context-rich tooltips, and keyboard mnemonics, which hampers screen readers and power user navigation, violating HIG feedback and user control tenets. Destructive buttons like Clear need a "This action cannot be undone." warning in their tooltip.
+**Action:** Always add `setMnemonicParsing(true)`, comprehensive `Tooltip`s, `accessibleTextProperty`, and `accessibleHelpProperty` to standard action buttons, and ensure consequence warnings are explicit for destructive actions.
