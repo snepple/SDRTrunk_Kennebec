@@ -6,6 +6,7 @@ public class ChannelAlertConfiguration {
 
     private boolean mInactivityAlertEnabled = false;
     private int mInactivityDurationThresholdMinutes = 10;
+    private boolean mInactivityAutoRestartEnabled = false;
 
     private boolean mAiAudioMonitoringEnabled = false;
     private int mAiAudioMonitoringCheckInterval = 5;
@@ -31,6 +32,19 @@ public class ChannelAlertConfiguration {
 
     public void setInactivityDurationThresholdMinutes(int inactivityDurationThresholdMinutes) {
         mInactivityDurationThresholdMinutes = inactivityDurationThresholdMinutes;
+    }
+
+    /**
+     * When enabled, the channel is automatically restarted (up to 2 attempts per inactivity episode)
+     * when the inactivity threshold is exceeded, before alerting the user.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "inactivityAutoRestartEnabled")
+    public boolean isInactivityAutoRestartEnabled() {
+        return mInactivityAutoRestartEnabled;
+    }
+
+    public void setInactivityAutoRestartEnabled(boolean inactivityAutoRestartEnabled) {
+        mInactivityAutoRestartEnabled = inactivityAutoRestartEnabled;
     }
 
     @JacksonXmlProperty(isAttribute = true, localName = "aiAudioMonitoringEnabled")

@@ -231,6 +231,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private SystemTrayManager mSystemTrayManager;
     private AudioRecordingManager mAudioRecordingManager;
     private ChannelAlertMonitor mChannelAlertMonitor;
+    private io.github.dsheirer.monitor.DiskSpaceManager mDiskSpaceManager;
+    private io.github.dsheirer.monitor.ConfigurationBackupService mConfigurationBackupService;
     private AudioStreamingManager mAudioStreamingManager;
     private BroadcastStatusPanel mBroadcastStatusPanel;
     private ControllerPanel mControllerPanel;
@@ -533,6 +535,12 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mUserPreferences);
         mAudioStreamingManager.start();
 
+        //Automated disk space management and daily configuration backups for unattended operation
+        mDiskSpaceManager = new io.github.dsheirer.monitor.DiskSpaceManager(mUserPreferences);
+        mDiskSpaceManager.start();
+        mConfigurationBackupService = new io.github.dsheirer.monitor.ConfigurationBackupService(mUserPreferences);
+        mConfigurationBackupService.start();
+
         notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.8));
         notifyPreloader(new SDRTrunkPreloader.TextNotification("Initializing Audio Services..."));
         DuplicateCallDetector duplicateCallDetector = new DuplicateCallDetector(mUserPreferences);
@@ -737,6 +745,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mPlaylistManager.getChannelProcessingManager().shutdown();
         mAudioRecordingManager.stop();
         if(mChannelAlertMonitor != null) mChannelAlertMonitor.stop();
+        if(mDiskSpaceManager != null) mDiskSpaceManager.stop();
+        if(mConfigurationBackupService != null) mConfigurationBackupService.stop();
         mResourceMonitor.stop();
 
         mLog.info("Stopping spectral display ...");

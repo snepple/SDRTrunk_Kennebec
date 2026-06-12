@@ -49,7 +49,15 @@ public class AIPreference extends Preference {
     }
 
     public String getGeminiApiKey() {
-        return mPreferences.get(KEY_GEMINI_API_KEY, "");
+        String key = mPreferences.get(KEY_GEMINI_API_KEY, "");
+
+        //Support scripted/headless provisioning: fall back to environment variable or system
+        //property when no key has been configured through the GUI
+        if(key == null || key.isEmpty()) {
+            key = System.getProperty("sdrtrunk.gemini.api.key", System.getenv("GEMINI_API_KEY"));
+        }
+
+        return key == null ? "" : key;
     }
 
     public void setGeminiApiKey(String apiKey) {

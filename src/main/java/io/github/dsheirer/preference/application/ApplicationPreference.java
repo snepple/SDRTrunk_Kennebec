@@ -227,7 +227,9 @@ public class ApplicationPreference extends Preference
     {
         if(mWatchdogEnabled == null)
         {
-            mWatchdogEnabled = mPreferences.getBoolean(PREFERENCE_KEY_WATCHDOG_ENABLED, false);
+            //Default enabled: unattended systems should restart automatically after a crash.  The
+            //watchdog includes crash-loop protection and is disabled by a graceful exit marker.
+            mWatchdogEnabled = mPreferences.getBoolean(PREFERENCE_KEY_WATCHDOG_ENABLED, true);
         }
         return mWatchdogEnabled;
     }
