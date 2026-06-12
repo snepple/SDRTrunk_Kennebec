@@ -22,6 +22,7 @@ import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.settings.SettingsManager;
 import io.github.dsheirer.source.tuner.Tuner;
 import io.github.dsheirer.source.tuner.ui.DiscoveredTunerModel;
+import io.github.dsheirer.gui.JavaFxWindowManager;
 
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
@@ -40,6 +41,7 @@ public class SpectrumFrame extends Stage
                          DiscoveredTunerModel discoveredTunerModel, Tuner tuner)
     {
         setTitle("SDRTRunk [" + tuner.getPreferredName() + "]");
+        JavaFxWindowManager.applyApplicationIcon(this);
         setWidth(1280);
         setHeight(600);
         setX(100);

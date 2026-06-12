@@ -19,6 +19,7 @@ public class DockWindowManager {
 
         Stage stage = new Stage();
         stage.setTitle(title);
+        JavaFxWindowManager.applyApplicationIcon(stage);
         
         BorderPane root = new BorderPane();
         root.setCenter(node);

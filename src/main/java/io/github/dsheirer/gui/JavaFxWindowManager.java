@@ -200,6 +200,28 @@ public class JavaFxWindowManager extends Application
     }
 
     /**
+     * Applies the standard SDRTrunk application icon to the given stage so that
+     * all windows show a consistent icon in the taskbar and title bar.
+     */
+    public static void applyApplicationIcon(Stage stage)
+    {
+        try
+        {
+            stage.getIcons().addAll(
+                new Image(JavaFxWindowManager.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 16, 16, true, true),
+                new Image(JavaFxWindowManager.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 32, 32, true, true),
+                new Image(JavaFxWindowManager.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 64, 64, true, true),
+                new Image(JavaFxWindowManager.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"), 128, 128, true, true),
+                new Image(JavaFxWindowManager.class.getResourceAsStream("/images/SDRTrunk_Application_Icon.png"))
+            );
+        }
+        catch(Exception e)
+        {
+            mLog.warn("Could not apply application icon to stage", e);
+        }
+    }
+
+    /**
      * Removes monitoring for all JavaFX stages and shuts down the FX thread, killing all FX windows.
      */
     public void shutdown()
@@ -227,6 +249,7 @@ public class JavaFxWindowManager extends Application
             mRecordingViewerStage = new Stage();
             mRecordingViewerStage.setTitle("sdrtrunk - .bits Viewer");
             mRecordingViewerStage.setScene(scene);
+            applyApplicationIcon(mRecordingViewerStage);
             ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mRecordingViewerStage, STAGE_MONITOR_KEY_RECORDING_VIEWER);
         }
@@ -253,6 +276,7 @@ public class JavaFxWindowManager extends Application
             mIconManagerStage = new Stage();
             mIconManagerStage.setTitle("sdrtrunk - javafx.scene.image.Image Manager");
             mIconManagerStage.setScene(scene);
+            applyApplicationIcon(mIconManagerStage);
             ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mIconManagerStage, STAGE_MONITOR_KEY_ICON_MANAGER_EDITOR);
         }
@@ -302,6 +326,7 @@ public class JavaFxWindowManager extends Application
             mJmbeEditorStage = new Stage();
             mJmbeEditorStage.setTitle("sdrtrunk - JMBE Library Updater");
             mJmbeEditorStage.setScene(scene);
+            applyApplicationIcon(mJmbeEditorStage);
             ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mJmbeEditorStage, STAGE_MONITOR_KEY_JMBE_EDITOR);
         }
@@ -344,6 +369,7 @@ public class JavaFxWindowManager extends Application
             mPlaylistStage = new Stage();
             mPlaylistStage.setTitle("sdrtrunk - Playlist Editor");
             mPlaylistStage.setScene(scene);
+            applyApplicationIcon(mPlaylistStage);
             ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mPlaylistStage, STAGE_MONITOR_KEY_PLAYLIST_EDITOR);
         }
@@ -408,6 +434,7 @@ public class JavaFxWindowManager extends Application
             mUserPreferencesStage = new Stage();
             mUserPreferencesStage.setTitle("sdrtrunk - User Preferences");
             mUserPreferencesStage.setScene(scene);
+            applyApplicationIcon(mUserPreferencesStage);
             ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mUserPreferencesStage, STAGE_MONITOR_KEY_USER_PREFERENCES_EDITOR);
         }
@@ -452,6 +479,7 @@ public class JavaFxWindowManager extends Application
             mChannelMapStage = new Stage();
             mChannelMapStage.setTitle("sdrtrunk - Channel Map Editor");
             mChannelMapStage.setScene(scene);
+            applyApplicationIcon(mChannelMapStage);
             ThemeManager.registerScene(scene);
             mUserPreferences.getJavaFxPreferences().monitor(mChannelMapStage, STAGE_MONITOR_KEY_CHANNEL_MAP_EDITOR);
         }
