@@ -1,0 +1,11 @@
+# Runs the SDRTrunk liveness healthcheck every 2 minutes.
+# Install: sudo systemctl enable --now sdrtrunk-healthcheck.timer
+[Unit]
+Description=Run SDRTrunk liveness healthcheck periodically
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=2min
+
+[Install]
+WantedBy=timers.target

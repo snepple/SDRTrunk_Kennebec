@@ -439,6 +439,93 @@ public class DiagnosticMonitor
             {
                 LOG_SUPPRESSOR.error("Error", 3, "Error while checking for blocked threads", t);
             }
+
+            try
+            {
+                checkForMemoryPressure();
+            }
+            catch(Throwable t)
+            {
+                LOG_SUPPRESSOR.error("Memory Error", 3, "Error while checking memory pressure", t);
+            }
+        }
+    }
+
+    //Memory pressure detection: sustained near-full heap precedes OOM death-by-GC-thrash.
+    //Threshold checks run on the 30-second diagnostic cadence; ten consecutive over-threshold
+    //samples (~5 minutes) trigger remediation.
+    private static final double MEMORY_PRESSURE_THRESHOLD = 0.92;
+    private static final int MEMORY_PRESSURE_TRIGGER_COUNT = 10;
+    private int mMemoryPressureCount = 0;
+    private boolean mMemoryPressureAlerted = false;
+
+    /**
+     * Detects sustained heap exhaustion.  In headless mode the application performs a pre-emptive
+     * exit (non-zero code) so the watchdog/systemd restarts a fresh instance before the JVM
+     * degrades into a GC-thrashing zombie.  In GUI mode the user is alerted instead.
+     * Opt out with -Dsdrtrunk.memory.autoRestart=false or SDRTRUNK_MEMORY_AUTORESTART=false.
+     */
+    private void checkForMemoryPressure()
+    {
+        Runtime runtime = Runtime.getRuntime();
+        long max = runtime.maxMemory();
+        long used = runtime.totalMemory() - runtime.freeMemory();
+        double usage = (double)used / (double)max;
+
+        if(usage < MEMORY_PRESSURE_THRESHOLD)
+        {
+            mMemoryPressureCount = 0;
+            return;
+        }
+
+        //Confirm pressure is real by requesting a GC on the first over-threshold sample
+        if(mMemoryPressureCount == 0)
+        {
+            System.gc();
+        }
+
+        mMemoryPressureCount++;
+
+        if(mMemoryPressureCount < MEMORY_PRESSURE_TRIGGER_COUNT)
+        {
+            return;
+        }
+
+        mMemoryPressureCount = 0;
+
+        String autoRestart = System.getProperty("sdrtrunk.memory.autoRestart",
+            System.getenv("SDRTRUNK_MEMORY_AUTORESTART"));
+        boolean autoRestartEnabled = autoRestart == null || !autoRestart.equalsIgnoreCase("false");
+
+        LOGGER.error("Sustained memory pressure detected - heap usage [" + (int)(usage * 100) +
+            "%] of [" + (max / (1024 * 1024)) + "MB] for ~5 minutes");
+
+        if(mHeadless && autoRestartEnabled)
+        {
+            LOGGER.error("Performing pre-emptive restart before memory exhaustion - " +
+                "the watchdog/service manager will start a fresh instance");
+            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
+                new io.github.dsheirer.health.SystemHealthAlertEvent(
+                    io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.SYSTEM,
+                    "Pre-emptive Memory Restart",
+                    "Heap usage exceeded " + (int)(MEMORY_PRESSURE_THRESHOLD * 100) +
+                        "% for 5 minutes - restarting before memory exhaustion."));
+
+            new Thread(() -> {
+                try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+                System.exit(2);
+            }).start();
+        }
+        else if(!mMemoryPressureAlerted)
+        {
+            mMemoryPressureAlerted = true;
+            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
+                new io.github.dsheirer.health.SystemHealthAlertEvent(
+                    io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.SYSTEM,
+                    "Memory Pressure",
+                    "Heap usage has exceeded " + (int)(MEMORY_PRESSURE_THRESHOLD * 100) +
+                        "% for 5 minutes - consider increasing the memory allocation in " +
+                        "preferences or restarting the application."));
         }
     }
 }

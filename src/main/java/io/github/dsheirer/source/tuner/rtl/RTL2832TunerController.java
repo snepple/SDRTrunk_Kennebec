@@ -50,6 +50,23 @@ public class RTL2832TunerController extends USBTunerController implements ISampl
 {
     private static final Logger mLog = LoggerFactory.getLogger(RTL2832TunerController.class);
 
+    //Antenna-loss detection: RTL native samples are unsigned 8-bit I/Q centered on 127.5.  The mean
+    //absolute deviation from center is a broadband RF level - a sharp sustained drop versus the
+    //learned baseline indicates the antenna was disconnected (the noise floor collapses), which is
+    //distinguishable from weather fade (gradual/partial).
+    private static final long SIGNAL_MONITOR_INTERVAL_MS = 5000;
+    private static final int SIGNAL_MONITOR_SAMPLE_BYTES = 2048;
+    private static final int SIGNAL_BASELINE_MINIMUM_SAMPLES = 24;     //~2 minutes of learning
+    private static final double SIGNAL_LOSS_RATIO = 0.32;              //~10 dB below baseline
+    private static final double SIGNAL_RECOVERY_RATIO = 0.6;
+    private static final int SIGNAL_LOSS_TRIGGER_COUNT = 12;           //~60 seconds sustained
+    private long mSignalMonitorLastCheck = 0;
+    private double mSignalFastAverage = 0.0;
+    private double mSignalBaseline = 0.0;
+    private int mSignalSampleCount = 0;
+    private int mSignalLossCount = 0;
+    private boolean mAntennaLossAlerted = false;
+
     public static final int TWO_TO_22_POWER = 4194304;
     public static final int USB_TRANSFER_BUFFER_SIZE = 65_536;
     public static final byte CONTROL_ENDPOINT_IN = (byte) (LibUsb.ENDPOINT_IN | LibUsb.REQUEST_TYPE_VENDOR);
@@ -352,6 +369,79 @@ public class RTL2832TunerController extends USBTunerController implements ISampl
     public void setSampleRateFilters(int sampleRate) throws SourceException
     {
         getEmbeddedTuner().setSampleRateFilters(sampleRate);
+    }
+
+    /**
+     * Monitors the broadband RF level from raw transfer buffers for antenna-loss detection.
+     */
+    @Override
+    protected void monitorRawSignalLevel(java.nio.ByteBuffer buffer, int length)
+    {
+        long now = System.currentTimeMillis();
+
+        if(now - mSignalMonitorLastCheck < SIGNAL_MONITOR_INTERVAL_MS)
+        {
+            return;
+        }
+
+        mSignalMonitorLastCheck = now;
+
+        int count = Math.min(length, SIGNAL_MONITOR_SAMPLE_BYTES);
+
+        if(count <= 0)
+        {
+            return;
+        }
+
+        double sum = 0.0;
+
+        for(int i = 0; i < count; i++)
+        {
+            sum += Math.abs((buffer.get(i) & 0xFF) - 127.5);
+        }
+
+        double level = sum / count;
+
+        mSignalSampleCount++;
+        mSignalFastAverage = mSignalSampleCount == 1 ? level : (mSignalFastAverage * 0.7 + level * 0.3);
+
+        boolean low = mSignalSampleCount > SIGNAL_BASELINE_MINIMUM_SAMPLES && mSignalBaseline > 0.0 &&
+            mSignalFastAverage < mSignalBaseline * SIGNAL_LOSS_RATIO;
+
+        if(!low)
+        {
+            //Learn/track the baseline slowly, only while the signal is not in a loss state
+            mSignalBaseline = mSignalBaseline == 0.0 ? level : (mSignalBaseline * 0.98 + level * 0.02);
+
+            if(mSignalBaseline > 0.0 && mSignalFastAverage > mSignalBaseline * SIGNAL_RECOVERY_RATIO)
+            {
+                mSignalLossCount = 0;
+
+                if(mAntennaLossAlerted)
+                {
+                    mAntennaLossAlerted = false;
+                    mLog.info("RF signal level recovered on RTL-SDR tuner [" + getTunerType() + "]");
+                }
+            }
+        }
+        else
+        {
+            mSignalLossCount++;
+
+            if(mSignalLossCount >= SIGNAL_LOSS_TRIGGER_COUNT && !mAntennaLossAlerted)
+            {
+                mAntennaLossAlerted = true;
+                mLog.warn("Broadband RF level on RTL-SDR tuner [" + getTunerType() + "] dropped to [" +
+                    String.format("%.1f", mSignalFastAverage) + "] vs baseline [" +
+                    String.format("%.1f", mSignalBaseline) + "] for 60+ seconds - possible antenna disconnection");
+                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
+                    new io.github.dsheirer.health.SystemHealthAlertEvent(
+                        io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.HARDWARE,
+                        "Possible Antenna Disconnection",
+                        "The broadband RF level on RTL-SDR tuner [" + getTunerType() + "] dropped sharply and " +
+                            "has stayed low - check the antenna connection."));
+            }
+        }
     }
 
     /**

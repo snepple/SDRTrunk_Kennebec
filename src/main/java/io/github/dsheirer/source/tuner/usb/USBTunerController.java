@@ -71,6 +71,19 @@ public abstract class USBTunerController extends TunerController
     private int mAnomalousTransfersDetected = 0;
 
     /**
+     * Optional hook invoked with each completed (non-empty) raw USB transfer buffer, allowing tuner
+     * implementations that know their native sample format to monitor the broadband RF level (e.g.
+     * for antenna disconnection detection).  Implementations must be cheap, must not modify the
+     * buffer position, and should internally rate-limit their work.  Default: no-op.
+     * @param buffer raw transfer buffer (read with absolute indexing only)
+     * @param length valid byte count
+     */
+    protected void monitorRawSignalLevel(java.nio.ByteBuffer buffer, int length)
+    {
+        //no-op by default
+    }
+
+    /**
      * USB tuner controller class. Provides auto-start and auto-stop function when complex buffer listeners are added
      * or removed from this tuner controller.
      *
@@ -757,6 +770,7 @@ public abstract class USBTunerController extends TunerController
                     {
                         dispatchTransfer(transfer);
                         mConsecutiveZeroLengthTransfers = 0;
+                        monitorRawSignalLevel(transfer.buffer(), transferLength);
                     }
                     else if(mAutoResubmitTransfers)
                     {
