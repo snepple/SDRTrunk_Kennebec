@@ -808,3 +808,16 @@
 .tab-pane *.tab:hover { -fx-background-color: rgba(0,0,0,0.04); }
 .tab-pane *.tab *.tab-label { -fx-text-fill: #8E8E93; -fx-font-weight: normal; -fx-font-size: 13px; }
 .tab-pane *.tab:selected *.tab-label { -fx-text-fill: #007AFF; -fx-font-weight: bold; }
+.kennebec-widget-header {
+    -fx-background-color: #FDFDFE;
+    -fx-border-color: transparent transparent #E5E5EA transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-background-radius: 10 10 0 0;
+    -fx-padding: 8 12 8 12;
+}
+.kennebec-widget-title {
+    -fx-font-family: "System";
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-text-fill: #2C2C2E;
+}

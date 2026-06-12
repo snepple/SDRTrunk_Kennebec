@@ -188,3 +188,10 @@
 .secondary-label { -fx-text-fill: #b0b0b0; }
 
 .hig-separator .line { -fx-border-color: #3a3a5a transparent transparent transparent !important; }
+.kennebec-widget-header {
+    -fx-background-color: #1e1e3a;
+    -fx-border-color: transparent transparent #3a3a5a transparent;
+}
+.kennebec-widget-title {
+    -fx-text-fill: #e0e0e0;
+}

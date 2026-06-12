@@ -50,7 +50,7 @@ public class Widget extends VBox {
         mHeaderPanel = new HBox(5);
         mHeaderPanel.setAlignment(Pos.CENTER_LEFT);
         mHeaderPanel.setPadding(new javafx.geometry.Insets(8, 12, 8, 12));
-        mHeaderPanel.setStyle("-fx-background-color: #FDFDFE; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0; -fx-background-radius: 10 10 0 0;");
+        mHeaderPanel.getStyleClass().add("kennebec-widget-header");
 
         // Drag handle indicator
         Label dragHandle = new Label("\u22EE\u22EE");
@@ -62,8 +62,7 @@ public class Widget extends VBox {
         mHeaderPanel.setOnMouseExited(e -> dragHandle.setStyle("-fx-text-fill: #D1D1D6; -fx-cursor: move; -fx-font-size: 14px; -fx-padding: 0 6 0 0; -fx-opacity: 0.2;"));
 
         mTitleLabel = new Label(title);
-        mTitleLabel.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.SEMI_BOLD, 14));
-        mTitleLabel.setTextFill(javafx.scene.paint.Color.web("#2C2C2E"));
+        mTitleLabel.getStyleClass().add("kennebec-widget-title");
         mHeaderPanel.getChildren().add(mTitleLabel);
         
         Region spacer = new Region();

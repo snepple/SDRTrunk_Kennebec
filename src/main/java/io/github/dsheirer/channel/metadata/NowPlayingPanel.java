@@ -329,8 +329,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
         HBox topToolbar = new HBox(8);
         topToolbar.setAlignment(Pos.CENTER_RIGHT);
-        topToolbar.setPadding(new javafx.geometry.Insets(4, 10, 4, 10));
-        topToolbar.setStyle("-fx-background-color: #FDFDFE; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
+        topToolbar.getStyleClass().add("kennebec-filter-toolbar");
         topToolbar.getChildren().add(getManageWidgetsButton());
 
         // Place WidgetContainer directly in VBox — no ScrollPane, no GridPane.
