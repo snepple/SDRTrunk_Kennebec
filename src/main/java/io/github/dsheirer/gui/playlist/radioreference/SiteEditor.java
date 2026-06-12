@@ -499,8 +499,47 @@ public class SiteEditor extends GridPane
         channel.setState(String.valueOf(mCurrentSite.getCountyInfo().getStateId()));
         channel.setCounty(String.valueOf(mCurrentSite.getCountyInfo().getCountyId()));
         channel.setSystem(getSystemTextField().getText());
-        channel.setAliasListName(getAliasListNameComboBox().getSelectionModel().getSelectedItem());
+
+        //Auto-create an alias list named after the system when the user hasn't selected one, so
+        //imported channels are immediately wired for talkgroup aliases without a manual step.
+        String aliasListName = (String)getAliasListNameComboBox().getSelectionModel().getSelectedItem();
+
+        if(aliasListName == null || aliasListName.isEmpty())
+        {
+            aliasListName = getSystemTextField().getText();
+
+            if(aliasListName != null && !aliasListName.isEmpty())
+            {
+                mPlaylistManager.getAliasModel().addAliasList(aliasListName);
+            }
+        }
+
+        channel.setAliasListName(aliasListName);
+
+        //Imported channels default to auto-start so the system is live on the next application
+        //launch without requiring the user to discover the auto-start setting.
+        channel.setAutoStart(true);
+
         return channel;
+    }
+
+    /**
+     * Configures live-monitoring defaults for an imported control channel: inactivity alerting with
+     * automatic channel restart, so reception failures self-remediate without user setup.
+     */
+    private void applyControlChannelDefaults(Channel channel)
+    {
+        io.github.dsheirer.controller.channel.ChannelAlertConfiguration alertConfig =
+            channel.getAlertConfiguration();
+
+        if(alertConfig == null)
+        {
+            alertConfig = new io.github.dsheirer.controller.channel.ChannelAlertConfiguration();
+            channel.setAlertConfiguration(alertConfig);
+        }
+
+        alertConfig.setInactivityAlertEnabled(true);
+        alertConfig.setInactivityAutoRestartEnabled(true);
     }
 
     /**
@@ -596,6 +635,7 @@ public class SiteEditor extends GridPane
                 channel.setSourceConfiguration(sourceConfig);
             }
 
+            applyControlChannelDefaults(channel);
             mPlaylistManager.getChannelModel().addChannel(channel);
 
             if(getGoToChannelEditorSwitch().isSelected())
@@ -673,6 +713,7 @@ public class SiteEditor extends GridPane
                     channel.setSourceConfiguration(sourceConfig);
                 }
 
+                applyControlChannelDefaults(channel);
                 mPlaylistManager.getChannelModel().addChannel(channel);
 
                 if(getGoToChannelEditorSwitch().isSelected())

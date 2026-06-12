@@ -68,6 +68,7 @@ public class StreamAliasSelectionEditor extends VBox
     private TableView<Alias> mSelectedAliasTableView;
     private Button mAddButton;
     private Button mAddAllButton;
+    private Button mAddAllShownButton;
     private Button mRemoveButton;
     private Button mRemoveAllButton;
     private FilteredList<Alias> mAvailableFilteredList;
@@ -87,7 +88,8 @@ public class StreamAliasSelectionEditor extends VBox
         buttonBox.setMaxHeight(Double.MAX_VALUE);
         buttonBox.setAlignment(Pos.CENTER);
         buttonBox.setSpacing(5);
-        buttonBox.getChildren().addAll(getAddAllButton(), getAddButton(), getRemoveButton(), getRemoveAllButton());
+        buttonBox.getChildren().addAll(getAddAllShownButton(), getAddAllButton(), getAddButton(), getRemoveButton(),
+            getRemoveAllButton());
 
         VBox availableBox = new VBox();
         availableBox.setMaxHeight(Double.MAX_VALUE);
@@ -119,6 +121,7 @@ public class StreamAliasSelectionEditor extends VBox
         getSearchField().setDisable(mSelectedBroadcastConfiguration == null);
         getAvailableAliasTableView().setDisable(mSelectedBroadcastConfiguration == null);
         getSelectedAliasTableView().setDisable(mSelectedBroadcastConfiguration == null);
+        getAddAllShownButton().setDisable(mSelectedBroadcastConfiguration == null);
         updateListFilters();
     }
 
@@ -321,6 +324,43 @@ public class StreamAliasSelectionEditor extends VBox
         }
 
         return mAddButton;
+    }
+
+    /**
+     * Bulk-assigns every alias currently shown in the Available table (i.e. matching the search
+     * filter) to the selected stream.  With a search filter of the alias list / system name, this
+     * streams an entire imported system in two clicks instead of one click per talkgroup.
+     */
+    private Button getAddAllShownButton()
+    {
+        if(mAddAllShownButton == null)
+        {
+            mAddAllShownButton = new Button("All Shown");
+            mAddAllShownButton.setDisable(true);
+            mAddAllShownButton.setMaxWidth(Double.MAX_VALUE);
+            mAddAllShownButton.setGraphic(new IconNode(FontAwesome.FORWARD));
+            mAddAllShownButton.setTooltip(new Tooltip("Add ALL aliases currently shown in the Available list to " +
+                "this stream.  Tip: type an alias list or system name in the search box first to stream an " +
+                "entire system at once."));
+            mAddAllShownButton.setAlignment(Pos.CENTER);
+            mAddAllShownButton.setOnAction(event -> {
+                String stream = getSelectedStreamName();
+
+                if(stream != null)
+                {
+                    List<Alias> shown = new ArrayList<>(getAvailableFilteredList());
+
+                    for(Alias alias: shown)
+                    {
+                        alias.addAliasID(new BroadcastChannel(stream));
+                    }
+
+                    updateListFilters();
+                }
+            });
+        }
+
+        return mAddAllShownButton;
     }
 
     private Button getAddAllButton()
