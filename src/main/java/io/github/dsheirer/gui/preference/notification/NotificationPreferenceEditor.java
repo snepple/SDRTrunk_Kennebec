@@ -323,7 +323,7 @@ public class NotificationPreferenceEditor extends VBox {
 
         mDetailPane = new VBox(15);
         mDetailPane.setPadding(new Insets(15));
-        mDetailPane.setStyle("-fx-background-color: white; -fx-border-color: lightgray; -fx-border-radius: 5;");
+        mDetailPane.getStyleClass().add("hig-settings-card");
 
         mSplitPane = new SplitPane();
         mSplitPane.getItems().add(masterCard);

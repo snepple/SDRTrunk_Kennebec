@@ -668,6 +668,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         javafx.scene.control.SplitPane resizablePane = new javafx.scene.control.SplitPane();
         resizablePane.setOrientation(javafx.geometry.Orientation.VERTICAL);
         resizablePane.getItems().addAll(mTopContentPanel, mControllerPanel);
+        resizablePane.setDividerPositions(0.35);
         mRightContentPanel.getChildren().addAll(mControllerPanel.getAudioPanel(), resizablePane);
         VBox.setVgrow(resizablePane, Priority.ALWAYS);
 

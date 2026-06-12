@@ -433,6 +433,7 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         if(mChannelTableView == null)
         {
             mChannelTableView = new TableView<>();
+            mChannelTableView.getStyleClass().add("preferences-table");
             mChannelTableView.setEditable(true);
             mChannelTableView.setTableMenuButtonVisible(true);
 

@@ -74,7 +74,6 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
         mGraphicsContext = mCanvas.getGraphicsContext2D();
 
         this.getChildren().add(mCanvas);
-        this.setPrefHeight(mImageHeight);
         MyEventBus.getGlobalEventBus().register(this);
 
         // Bind canvas size to parent size so it resizes
@@ -198,8 +197,6 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
             if (prefHeight != mImageHeight) {
                 mImageHeight = prefHeight;
                 javafx.application.Platform.runLater(() -> {
-                    mCanvas.setHeight(mImageHeight);
-                    this.setPrefHeight(mImageHeight);
                     reset();
                 });
             }

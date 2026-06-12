@@ -625,7 +625,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         HBox.setHgrow(headerSpacer, Priority.ALWAYS);
 
         Button saveBtn = new Button("Save Settings");
-        saveBtn.getStyleClass().add("hig-primary-action");
+        saveBtn.getStyleClass().add("kennebec-toolbar-button-primary");
         saveBtn.setOnAction(e -> {
             mPlaylistManager.schedulePlaylistSave();
             mTableView.refresh();

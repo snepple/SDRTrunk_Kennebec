@@ -23,7 +23,7 @@
     -fx-background-color: #1a1a2e !important;
 }
 
-.preferences-card {
+.root .preferences-card {
     -fx-background-color: #16213e !important;
     -fx-border-color: #0f3460 !important;
 }
@@ -140,8 +140,8 @@
 .preferences-table .column-header-background { -fx-background-color: #16213e; }
 .preferences-table .column-header .label { -fx-text-fill: #b0b0b0; }
 
-.hig-settings-card { -fx-background-color: #1e1e3a !important; -fx-border-color: #3a3a5a !important; }
-.hig-form-group { -fx-background-color: #1e1e3a !important; -fx-border-color: #3a3a5a !important; }
+.root .hig-settings-card { -fx-background-color: #1e1e3a !important; -fx-border-color: #3a3a5a !important; }
+.root .hig-form-group { -fx-background-color: #1e1e3a !important; -fx-border-color: #3a3a5a !important; }
 .hig-page-title { -fx-text-fill: #e0e0e0 !important; }
 
 /* === Sidebar Dark Mode === */

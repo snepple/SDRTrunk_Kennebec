@@ -1107,6 +1107,7 @@ public class SiteEditor extends GridPane
         if(mSiteFrequencyTableView == null)
         {
             mSiteFrequencyTableView = new TableView<>();
+            mSiteFrequencyTableView.getStyleClass().add("preferences-table");
             mSiteFrequencyTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
             mSiteFrequencyTableView.setPlaceholder(new Label("Please select a site to view frequencies"));
 

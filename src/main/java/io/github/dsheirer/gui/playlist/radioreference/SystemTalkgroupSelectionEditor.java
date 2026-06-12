@@ -614,6 +614,7 @@ public class SystemTalkgroupSelectionEditor extends GridPane
         if(mTalkgroupTableView == null)
         {
             mTalkgroupTableView = new TableView<>();
+            mTalkgroupTableView.getStyleClass().add("preferences-table");
             mTalkgroupTableView.setMaxHeight(Double.MAX_VALUE);
             TableColumn<AliasedTalkgroup,String> talkgroupColumn = new TableColumn("Talkgroup");
             talkgroupColumn.setCellValueFactory(new PropertyValueFactory<>("talkgroup"));
