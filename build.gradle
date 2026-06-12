@@ -751,7 +751,8 @@ tasks.register('createInstaller', Exec) {
             '--runtime-image', imageDir.absolutePath,
             '--input', libDir.absolutePath,
             '--main-jar', launcherJar != null ? launcherJar.name : 'sdr-trunk.jar',
-            '--main-class', 'io.github.dsheirer.gui.SDRTrunkLauncher']
+            '--main-class', 'io.github.dsheirer.gui.SDRTrunkLauncher',
+            '--temp', "$buildDir/tmp/jpackage"]
 
         if (osName.contains("win")) {
             // Add Windows-specific options
