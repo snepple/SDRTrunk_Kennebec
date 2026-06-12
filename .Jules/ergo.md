@@ -39,3 +39,6 @@
 ## 2024-05-18 - Streaming Editor Tooltips
 **Learning:** Configurations for streaming servers like Icecast contain many backend-specific terms (Host, Port, Mount Point, Inline Metadata) that are confusing to users who aren't familiar with audio broadcasting software.
 **Action:** Always provide explicit tooltips to inputs in streaming editors (`AbstractStreamEditor`, `IcecastStreamEditor`) detailing the expected format and purpose (e.g., "Enter the server port number (e.g., 8000)") to lower the cognitive load.
+## 2024-05-18 - [Convert P25 Talkgroup Text Field to Smart Dropdown]
+**Learning:** Forcing users to manually enter numeric talkgroup identifiers into standard `TextField`s increases cognitive load. We can extract existing talkgroup aliases from the `AliasModel` and populate an editable `ComboBox`, which serves as a smart dropdown.
+**Action:** Convert manual text inputs for P25 Fully Qualified Talkgroups into an editable `ComboBox<IdentifierValue>`. Retain an editable `StringConverter` fallback to allow users to still input new unaliased IDs while getting suggestions for existing ones.

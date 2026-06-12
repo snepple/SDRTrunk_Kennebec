@@ -59,7 +59,7 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
     private Label mProtocolLabel;
     private ComboBox<IdentifierValue> mWacnField;
     private ComboBox<IdentifierValue> mSystemField;
-    private TextField mTalkgroupField;
+    private ComboBox<IdentifierValue> mTalkgroupField;
     private TextFormatter<Integer> mWacnTextFormatter;
     private TextFormatter<Integer> mSystemTextFormatter;
     private TextFormatter<Integer> mTalkgroupTextFormatter;
@@ -134,7 +134,7 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
             getWacnField().getEditor().setText("");
             getSystemField().setValue(null);
             getSystemField().getEditor().setText("");
-            getTalkgroupField().setText(null);
+            getTalkgroupField().setValue(null);
         }
 
         modifiedProperty().set(false);
@@ -178,10 +178,6 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
             mTalkgroupField.setTooltip(new Tooltip("Format: 0 - FFFF"));
         }
 
-
-
-        mTalkgroupField.setTextFormatter(mTalkgroupTextFormatter);
-
         if(getItem() != null) {
             mWacnTextFormatter.setValue(getItem().getWacn());
             mWacnField.setValue(new IdentifierValue(getItem().getWacn(), ""));
@@ -197,6 +193,11 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
             mSystemField.setValue(null);
         }
         mTalkgroupTextFormatter.setValue(getItem() != null ? getItem().getValue() : null);
+        if(getItem() != null) {
+            mTalkgroupField.setValue(new IdentifierValue(getItem().getValue(), ""));
+        } else {
+            mTalkgroupField.setValue(null);
+        }
 
         mWacnField.valueProperty().addListener((observable, oldValue, newValue) -> {
             if(getItem() != null && newValue != null && newValue.getValue() != null) {
@@ -213,6 +214,12 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
         });
         mSystemTextFormatter.valueProperty().addListener(mSystemValueChangeListener);
         mTalkgroupTextFormatter.valueProperty().addListener(mTalkgroupValueChangeListener);
+        mTalkgroupField.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if(getItem() != null && newValue != null && newValue.getValue() != null) {
+                getItem().setValue(newValue.getValue());
+                modifiedProperty().set(true);
+            }
+        });
         populateDropdowns();
     }
 
@@ -330,12 +337,47 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
         return mSystemField;
     }
 
-    private TextField getTalkgroupField()
+    private ComboBox<IdentifierValue> getTalkgroupField()
     {
         if(mTalkgroupField == null)
         {
-            mTalkgroupField = new TextField();
-            mTalkgroupField.setTextFormatter(mTalkgroupTextFormatter);
+            mTalkgroupField = new ComboBox<>();
+            mTalkgroupField.setEditable(true);
+            mTalkgroupField.getEditor().setTextFormatter(mTalkgroupTextFormatter);
+            mTalkgroupField.setCellFactory(new javafx.util.Callback<javafx.scene.control.ListView<IdentifierValue>, javafx.scene.control.ListCell<IdentifierValue>>() {
+                @Override
+                public javafx.scene.control.ListCell<IdentifierValue> call(javafx.scene.control.ListView<IdentifierValue> param) {
+                    return new javafx.scene.control.ListCell<IdentifierValue>() {
+                        @Override
+                        protected void updateItem(IdentifierValue item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (item == null || empty) {
+                                setText(null);
+                            } else {
+                                String valStr = Integer.toHexString(item.getValue()).toUpperCase();
+                                if (item.getLabel() != null && !item.getLabel().isEmpty()) {
+                                    setText(valStr + " - " + item.getLabel());
+                                } else {
+                                    setText(valStr);
+                                }
+                            }
+                        }
+                    };
+                }
+            });
+            mTalkgroupField.setConverter(new StringConverter<IdentifierValue>() {
+                @Override
+                public String toString(IdentifierValue object) {
+                    if (object == null || object.getValue() == null) return "";
+                    return Integer.toHexString(object.getValue()).toUpperCase();
+                }
+                @Override
+                public IdentifierValue fromString(String string) {
+                    if (string == null || string.isEmpty()) return null;
+                    return new IdentifierValue(mTalkgroupTextFormatter.getValueConverter().fromString(string), "");
+                }
+            });
+
         }
 
         return mTalkgroupField;
@@ -397,6 +439,28 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
                     }
                     if (systems.add(sp.getSystem())) {
                         mSystemField.getItems().add(new IdentifierValue(sp.getSystem(), channel.getName()));
+                    }
+                }
+            }
+        }
+
+        mTalkgroupField.getItems().clear();
+        Set<Integer> talkgroups = new HashSet<>();
+        if (mPlaylistManager != null && mPlaylistManager.getAliasModel() != null) {
+            for (io.github.dsheirer.alias.Alias alias : mPlaylistManager.getAliasModel().getAliases()) {
+                for (io.github.dsheirer.alias.id.AliasID id : alias.getAliasIdentifiers()) {
+                    if (id instanceof io.github.dsheirer.alias.id.talkgroup.P25FullyQualifiedTalkgroup) {
+                        int val = ((io.github.dsheirer.alias.id.talkgroup.P25FullyQualifiedTalkgroup)id).getValue();
+                        if (talkgroups.add(val)) {
+                            mTalkgroupField.getItems().add(new IdentifierValue(val, alias.getName()));
+                        }
+                    } else if (id instanceof io.github.dsheirer.alias.id.talkgroup.Talkgroup) {
+                        if (((io.github.dsheirer.alias.id.talkgroup.Talkgroup)id).getProtocol() == io.github.dsheirer.protocol.Protocol.APCO25) {
+                            int val = ((io.github.dsheirer.alias.id.talkgroup.Talkgroup)id).getValue();
+                            if (talkgroups.add(val)) {
+                                mTalkgroupField.getItems().add(new IdentifierValue(val, alias.getName()));
+                            }
+                        }
                     }
                 }
             }
