@@ -672,9 +672,9 @@ tasks.register('compileJni', Exec) {
         }
     } else {
         if (arch.contains("aarch64")) {
-            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-aarch64.so", "-I", "${javaHome}/include", "-I", "${javaHome}/include/linux", "-I", "${buildDir}/generated/jni", srcFile, "-lvolk"
+            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-aarch64.so", "-I", "${javaHome}/include", "-I", "${javaHome}/include/linux", "-I", "${buildDir}/generated/jni", srcFile
         } else {
-            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-x64.so", "-I", "${javaHome}/include", "-I", "${javaHome}/include/linux", "-I", "${buildDir}/generated/jni", srcFile, "-lvolk"
+            commandLine 'g++', '-shared', '-fPIC', '-o', "${outDir}/liblibrary-linux-x64.so", "-I", "${javaHome}/include", "-I", "${javaHome}/include/linux", "-I", "${buildDir}/generated/jni", srcFile
         }
     }
 }
