@@ -28,6 +28,40 @@ public class AIAudioOptimizer {
     private static final java.util.Map<String, AIAnalysisResult> mAnalysisCache = new java.util.concurrent.ConcurrentHashMap<>();
     private static final java.util.Map<String, AIAnalysisResult> mRawAnalysisCache = new java.util.concurrent.ConcurrentHashMap<>();
 
+    //Circuit breaker: after CIRCUIT_BREAKER_FAILURE_THRESHOLD consecutive API failures, fail fast for
+    //CIRCUIT_BREAKER_COOLDOWN_MS instead of blocking the caller for the full network timeout on every
+    //attempt.  This ensures a Gemini outage or invalid API key cannot repeatedly stall audio processing.
+    private static final int CIRCUIT_BREAKER_FAILURE_THRESHOLD = 3;
+    private static final long CIRCUIT_BREAKER_COOLDOWN_MS = 10 * 60 * 1000; //10 minutes
+    private static final java.util.concurrent.atomic.AtomicInteger mConsecutiveFailures =
+        new java.util.concurrent.atomic.AtomicInteger();
+    private static volatile long mCircuitOpenUntil = 0;
+
+    /**
+     * Throws immediately if the circuit breaker is open due to repeated API failures.
+     */
+    private static void checkCircuitBreaker() throws Exception {
+        if (System.currentTimeMillis() < mCircuitOpenUntil) {
+            throw new Exception("AI audio optimization is temporarily disabled after " +
+                CIRCUIT_BREAKER_FAILURE_THRESHOLD + " consecutive Gemini API failures - will retry after cooldown");
+        }
+    }
+
+    /**
+     * Records an API call outcome, opening the circuit breaker after repeated consecutive failures.
+     */
+    private static void recordApiOutcome(boolean success) {
+        if (success) {
+            mConsecutiveFailures.set(0);
+        }
+        else if (mConsecutiveFailures.incrementAndGet() >= CIRCUIT_BREAKER_FAILURE_THRESHOLD) {
+            mCircuitOpenUntil = System.currentTimeMillis() + CIRCUIT_BREAKER_COOLDOWN_MS;
+            mConsecutiveFailures.set(0);
+            mLog.warn("AI audio optimization disabled for " + (CIRCUIT_BREAKER_COOLDOWN_MS / 60000) +
+                " minutes after repeated Gemini API failures");
+        }
+    }
+
     private String getCacheKey(List<Path> audioFiles) {
         StringBuilder sb = new StringBuilder();
         for (Path path : audioFiles) {
@@ -70,6 +104,8 @@ public class AIAudioOptimizer {
             mLog.info("Returning cached audio analysis result.");
             return mAnalysisCache.get(cacheKey);
         }
+
+        checkCircuitBreaker();
 
         mLog.info("Analyzing audio with Gemini...");
 
@@ -178,9 +214,11 @@ public class AIAudioOptimizer {
             if (mAnalysisCache.size() > 100) {
                 mAnalysisCache.clear();
             }
+            recordApiOutcome(true);
             return result;
 
         } catch (Exception e) {
+            recordApiOutcome(false);
             mLog.error("Error calling Gemini API: " + e.getMessage(), e);
             throw new Exception("Error calling Gemini API: " + e.getMessage(), e);
         }
@@ -197,6 +235,8 @@ public class AIAudioOptimizer {
             mLog.info("Returning cached raw audio analysis result.");
             return mRawAnalysisCache.get(cacheKey);
         }
+
+        checkCircuitBreaker();
 
         String model = mUserPreferences.getAIPreference().getGeminiModel();
         if (model == null || model.isEmpty()) {
@@ -299,9 +339,11 @@ public class AIAudioOptimizer {
             if (mRawAnalysisCache.size() > 100) {
                 mRawAnalysisCache.clear();
             }
+            recordApiOutcome(true);
             return result;
 
         } catch (Exception e) {
+            recordApiOutcome(false);
             mLog.error("Error calling Gemini API: " + e.getMessage(), e);
             throw new Exception("Error calling Gemini API: " + e.getMessage(), e);
         }

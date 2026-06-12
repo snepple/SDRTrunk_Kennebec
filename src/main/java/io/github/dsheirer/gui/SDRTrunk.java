@@ -420,6 +420,16 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             {
                 mLog.error("Error during application startup", e);
             }
+
+            //Start the local REST health/restart API in GUI mode too (opt-out via
+            //-Dsdrtrunk.api.enabled=false or SDRTRUNK_API_ENABLED=false) so external monitors can
+            //observe application health without requiring headless mode.
+            String apiEnabled = System.getProperty("sdrtrunk.api.enabled", System.getenv("SDRTRUNK_API_ENABLED"));
+            if(apiEnabled == null || !apiEnabled.equalsIgnoreCase("false"))
+            {
+                RestApiWatchdog.start(this, mTunerManager, mPlaylistManager.getChannelProcessingManager(),
+                    mPlaylistManager.getBroadcastModel());
+            }
         }
     }
 
@@ -1024,7 +1034,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     {
         mLog.info("Starting SDRTrunk in HEADLESS mode");
         autoStartChannels();
-        RestApiWatchdog.start(this);
+        RestApiWatchdog.start(this, mTunerManager, mPlaylistManager.getChannelProcessingManager(),
+            mPlaylistManager.getBroadcastModel());
     }
 
     public void onViewChanged(String id) {

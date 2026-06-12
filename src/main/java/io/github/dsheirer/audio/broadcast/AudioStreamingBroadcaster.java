@@ -40,6 +40,15 @@ public abstract class AudioStreamingBroadcaster<T extends BroadcastConfiguration
     private final static Logger mLog = LoggerFactory.getLogger(AudioStreamingBroadcaster.class);
 
     public static final int PROCESSOR_RUN_INTERVAL_MS = 1000;
+
+    /**
+     * Maximum number of audio recordings allowed to accumulate in the broadcast queue.  Recordings are normally
+     * purged by age as they reach the head of the queue, but if the remote server stalls or call volume greatly
+     * exceeds real-time streaming throughput, this cap prevents unbounded queue growth (and eventual OOM) by
+     * dropping the oldest recording when a new one arrives.
+     */
+    public static final int MAXIMUM_QUEUE_SIZE = 500;
+
     private ScheduledFuture<?> mRecordingQueueProcessorFuture;
 
     private RecordingQueueProcessor mRecordingQueueProcessor = new RecordingQueueProcessor();
@@ -188,6 +197,19 @@ public abstract class AudioStreamingBroadcaster<T extends BroadcastConfiguration
     {
         if(connected())
         {
+            //Drop oldest recordings to enforce the queue size cap before adding the new recording
+            while(mAudioRecordingQueue.size() >= MAXIMUM_QUEUE_SIZE)
+            {
+                AudioRecording oldest = mAudioRecordingQueue.poll();
+
+                if(oldest != null)
+                {
+                    oldest.removePendingReplay();
+                    mAgedOffAudioCount++;
+                    broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_AGED_OFF_COUNT_CHANGE));
+                }
+            }
+
             mAudioRecordingQueue.offer(recording);
             broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_QUEUE_CHANGE));
         }

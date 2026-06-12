@@ -158,6 +158,14 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
     }
 
     /**
+     * Count of channels that are currently processing.
+     */
+    public int getProcessingChannelCount()
+    {
+        return mProcessingChainsMap.size();
+    }
+
+    /**
      * Returns the current processing chain associated with the channel, or
      * null if a processing chain is not currently setup for the channel
      */
@@ -961,8 +969,10 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
         List<Channel> channels = mTunerToChannelsMap.remove(tunerId);
         if (channels != null) {
             for (Channel channel : channels) {
-                if (!isProcessing(channel) && channel.isAutoStart()) {
-                    mLog.info("Auto-starting channel after tuner recovery: " + channel.getName());
+                //Restart every channel that was processing when the tuner failed, regardless of the
+                //auto-start flag - a manually started channel should not stay dead after recovery.
+                if (!isProcessing(channel)) {
+                    mLog.info("Restarting channel after tuner recovery: " + channel.getName());
                     receive(ChannelEvent.requestEnable(channel));
                 }
             }

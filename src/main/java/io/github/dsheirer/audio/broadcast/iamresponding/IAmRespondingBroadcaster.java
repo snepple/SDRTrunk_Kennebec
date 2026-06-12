@@ -47,6 +47,7 @@ public class IAmRespondingBroadcaster extends AbstractAudioBroadcaster<IAmRespon
     private AtomicBoolean mActive = new AtomicBoolean(false);
     private float[] mAccumulator = new float[SAMPLES_PER_CHUNK];
     private int mAccumulatorIndex = 0;
+    private InetAddress mResolvedAddress;
 
     public IAmRespondingBroadcaster(IAmRespondingConfiguration configuration, AliasModel aliasModel)
     {
@@ -82,6 +83,8 @@ public class IAmRespondingBroadcaster extends AbstractAudioBroadcaster<IAmRespon
             try
             {
                 mSocket = new DatagramSocket();
+                //Force re-resolution of the host on (re)start in case the configuration changed
+                mResolvedAddress = null;
             }
             catch(SocketException e)
             {
@@ -162,12 +165,20 @@ public class IAmRespondingBroadcaster extends AbstractAudioBroadcaster<IAmRespon
                 return; // Drop invalid sized packets to prevent backend issues
             }
 
-            InetAddress address = InetAddress.getByName(getBroadcastConfiguration().getHost());
-            DatagramPacket packet = new DatagramPacket(pcmBytes, pcmBytes.length, address, getBroadcastConfiguration().getPort());
+            //Cache the resolved address so we don't perform a DNS lookup for every 50ms audio chunk
+            if(mResolvedAddress == null)
+            {
+                mResolvedAddress = InetAddress.getByName(getBroadcastConfiguration().getHost());
+            }
+
+            DatagramPacket packet = new DatagramPacket(pcmBytes, pcmBytes.length, mResolvedAddress,
+                getBroadcastConfiguration().getPort());
             mSocket.send(packet);
         }
         catch(IOException | IndexOutOfBoundsException e)
         {
+            //Clear the cached address so the next attempt re-resolves DNS in case the host changed
+            mResolvedAddress = null;
             mLog.error("Error sending UDP packet for IAmResponding", e);
         }
     }

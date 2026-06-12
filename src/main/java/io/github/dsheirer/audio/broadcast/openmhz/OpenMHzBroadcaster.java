@@ -25,6 +25,7 @@ import io.github.dsheirer.alias.AliasList;
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.audio.broadcast.AbstractAudioBroadcaster;
 import io.github.dsheirer.audio.broadcast.AudioRecording;
+import io.github.dsheirer.audio.broadcast.AudioStreamingBroadcaster;
 import io.github.dsheirer.audio.broadcast.BroadcastEvent;
 import io.github.dsheirer.audio.broadcast.BroadcastState;
 import io.github.dsheirer.audio.convert.InputAudioFormat;
@@ -107,11 +108,11 @@ import org.slf4j.LoggerFactory;
          String response = testConnection(getBroadcastConfiguration());
          mLastConnectionAttempt = System.currentTimeMillis();
 
-         if(response == "OK")
+         if("OK".equals(response))
          {
              setBroadcastState(BroadcastState.CONNECTED);
          }
-         else if (response == "No Response")
+         else if("No Response".equals(response))
          {
             setBroadcastState(BroadcastState.NO_SERVER);
             mLog.error("Error connecting to OpenMHz server [Server not found or not reachable]");
@@ -174,11 +175,11 @@ import org.slf4j.LoggerFactory;
              String response = testConnection(getBroadcastConfiguration());
              mLastConnectionAttempt = System.currentTimeMillis();
 
-             if(response == "OK")
+             if("OK".equals(response))
              {
                  setBroadcastState(BroadcastState.CONNECTED);
              }
-             else if (response == "No Response")
+             else if("No Response".equals(response))
              {
                 setBroadcastState(BroadcastState.NO_SERVER);
                 mLog.error("Error reconnecting to OpenMHz server [Server not found or not reachable]");
@@ -203,6 +204,20 @@ import org.slf4j.LoggerFactory;
      @Override
      public void receive(AudioRecording audioRecording)
      {
+         //Drop oldest recordings to cap queue growth when the remote server stalls or call volume
+         //exceeds upload throughput, preventing unbounded memory growth.
+         while(mAudioRecordingQueue.size() >= AudioStreamingBroadcaster.MAXIMUM_QUEUE_SIZE)
+         {
+             AudioRecording oldest = mAudioRecordingQueue.poll();
+
+             if(oldest != null)
+             {
+                 oldest.removePendingReplay();
+                 mAgedOffAudioCount++;
+                 broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_AGED_OFF_COUNT_CHANGE));
+             }
+         }
+
          mAudioRecordingQueue.offer(audioRecording);
          broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_QUEUE_CHANGE));
      }
@@ -631,7 +646,7 @@ import org.slf4j.LoggerFactory;
             }
 
             mLog.error("Exception connecting to OpenMHz server [" + e.toString() + "]");
-            return "Uknown Exception";
+            return "Unknown Exception";
          }
      }
 

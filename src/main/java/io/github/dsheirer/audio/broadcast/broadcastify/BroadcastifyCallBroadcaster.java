@@ -25,6 +25,7 @@ import io.github.dsheirer.alias.AliasList;
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.audio.broadcast.AbstractAudioBroadcaster;
 import io.github.dsheirer.audio.broadcast.AudioRecording;
+import io.github.dsheirer.audio.broadcast.AudioStreamingBroadcaster;
 import io.github.dsheirer.audio.broadcast.BroadcastEvent;
 import io.github.dsheirer.audio.broadcast.BroadcastState;
 import io.github.dsheirer.audio.convert.InputAudioFormat;
@@ -216,6 +217,20 @@ public class BroadcastifyCallBroadcaster extends AbstractAudioBroadcaster<Broadc
     @Override
     public void receive(AudioRecording audioRecording)
     {
+        //Drop oldest recordings to cap queue growth when the remote server stalls or call volume
+        //exceeds upload throughput, preventing unbounded memory growth.
+        while(mAudioRecordingQueue.size() >= AudioStreamingBroadcaster.MAXIMUM_QUEUE_SIZE)
+        {
+            AudioRecording oldest = mAudioRecordingQueue.poll();
+
+            if(oldest != null)
+            {
+                oldest.removePendingReplay();
+                mAgedOffAudioCount++;
+                broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_AGED_OFF_COUNT_CHANGE));
+            }
+        }
+
         mAudioRecordingQueue.offer(audioRecording);
         broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_QUEUE_CHANGE));
     }
