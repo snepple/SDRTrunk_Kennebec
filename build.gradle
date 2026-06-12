@@ -53,6 +53,14 @@ plugins {
     id 'me.champeau.jmh' version '0.7.2'
 }
 
+//Use the Windows certificate store for SSL on Windows only, fixing SSLHandshakeException when
+//downloading cross-platform JDKs from download.bell-sw.com.  This must NOT be set on Linux/macOS
+//(e.g. globally via org.gradle.jvmargs) because WINDOWS-ROOT does not exist there and breaks all
+//SSL connections, including dependency resolution.
+if(org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+    System.setProperty('javax.net.ssl.trustStoreType', 'WINDOWS-ROOT')
+}
+
 repositories {
     mavenCentral()
     maven { url = "https://jitpack.io" }

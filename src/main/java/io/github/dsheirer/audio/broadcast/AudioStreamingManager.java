@@ -37,6 +37,7 @@ import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.util.ThreadPool;
 import io.github.dsheirer.util.TimeStamp;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -360,15 +361,19 @@ public class AudioStreamingManager implements Listener<AudioSegment>
 
         try
         {
+            //Ensure the streaming directory exists - it can be deleted or become unavailable at runtime
+            Files.createDirectories(path.getParent());
+
             AudioSegmentRecorder.record(audioSegment, path, RecordFormat.MP3, mUserPreferences, identifierCollection);
 
             AudioRecording audioRecording = new AudioRecording(path, broadcastChannels, identifierCollection,
                     audioSegment.getStartTimestamp(), length);
             mAudioRecordingListener.receive(audioRecording);
-}
+        }
         catch(Exception ioe)
         {
-            mLog.error("Error recording temporary stream MP3");
+            mLog.error("Error recording temporary stream MP3 to [" + path + "] - check that the streaming " +
+                "directory exists, is writable, and the disk is not full", ioe);
             MyEventBus.getGlobalEventBus().post(new SystemHealthAlertEvent(
                 SystemHealthAlertEvent.AlertType.INTEGRATION,
                 "Integration and Network Failure",
