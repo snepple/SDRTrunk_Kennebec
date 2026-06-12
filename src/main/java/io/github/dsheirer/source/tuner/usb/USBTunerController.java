@@ -543,12 +543,16 @@ public abstract class USBTunerController extends TunerController
      */
     class TransferManager implements TransferCallback
     {
+        //Number of consecutive zero-length transfer completions that indicates a stalled/locked-up tuner.
+        private static final int ZERO_LENGTH_TRANSFER_ERROR_THRESHOLD = 50;
+
         private List<Transfer> mAvailableTransfers;
         private LinkedTransferQueue<Transfer> mInProgressTransfers = new LinkedTransferQueue<>();
         private boolean mAutoResubmitTransfers = false;
         private int mTransferErrorCount = 0;
         private List<Transfer> mErrorTransfers = new ArrayList<>();
         private int mResubmitFailureLogCount = 0;
+        private int mConsecutiveZeroLengthTransfers = 0;
 
         /**
          * Creates USB Transfers to carry the streaming sample data.  Transfer buffers are backed by native memory
@@ -752,6 +756,21 @@ public abstract class USBTunerController extends TunerController
                     if(transferLength > 0)
                     {
                         dispatchTransfer(transfer);
+                        mConsecutiveZeroLengthTransfers = 0;
+                    }
+                    else if(mAutoResubmitTransfers)
+                    {
+                        //Detect a stalled/locked-up tuner that keeps completing transfers with no sample data.
+                        //Without this, channels continue running with zero signal and reception silently dies.
+                        mConsecutiveZeroLengthTransfers++;
+
+                        if(mConsecutiveZeroLengthTransfers >= ZERO_LENGTH_TRANSFER_ERROR_THRESHOLD)
+                        {
+                            mConsecutiveZeroLengthTransfers = 0;
+                            mLog.error("USB tuner has completed [" + ZERO_LENGTH_TRANSFER_ERROR_THRESHOLD +
+                                    "] consecutive transfers with no sample data - tuner appears stalled - restarting");
+                            ThreadPool.CACHED.submit(() -> setErrorMessage("USB Error - No Sample Data - Tuner Stalled"));
+                        }
                     }
 
                     transfer.buffer().rewind();

@@ -61,6 +61,11 @@ public class AudioOutput implements LineListener
     private boolean mCanProcessAudio = false;
     private boolean mRunning = false;
 
+    //Interval between automatic attempts to reopen the source data line after it becomes unavailable
+    //(e.g. USB audio device unplugged or Windows default device changed)
+    private static final long REOPEN_RETRY_INTERVAL_MS = 10_000;
+    private long mNextReopenAttempt = 0;
+
 
     /**
      * Audio output for the selected audio playback device and provider.  Opens a SourceDataLine from the miser for the
@@ -170,6 +175,8 @@ public class AudioOutput implements LineListener
                 {
                     audioChannel.setDisabled(false);
                 }
+
+                mNextReopenAttempt = 0;
             }
         }
         catch(LineUnavailableException e)
@@ -181,6 +188,10 @@ public class AudioOutput implements LineListener
             {
                 audioChannel.setDisabled(true);
             }
+
+            //Schedule an automatic reopen attempt so playback recovers without user intervention
+            //once the audio device becomes available again
+            mNextReopenAttempt = System.currentTimeMillis() + REOPEN_RETRY_INTERVAL_MS;
         }
     }
 
@@ -372,6 +383,15 @@ public class AudioOutput implements LineListener
             {
                 try
                 {
+                    //Periodically retry opening the data line after a device failure so that audio playback
+                    //automatically recovers when the device returns (USB replug, default device restored)
+                    if(mNextReopenAttempt > 0 && System.currentTimeMillis() >= mNextReopenAttempt &&
+                        mSourceDataLine != null && !mSourceDataLine.isOpen())
+                    {
+                        mNextReopenAttempt = System.currentTimeMillis() + REOPEN_RETRY_INTERVAL_MS;
+                        openSourceDataLine();
+                    }
+
                     processAudio();
                 }
                 catch(Throwable t)

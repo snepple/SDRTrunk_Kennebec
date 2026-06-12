@@ -289,45 +289,42 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
     @Override
     public void setErrorMessage(String errorMessage)
     {
-        if ("USB Error - Transfer Buffers Exhausted".equals(errorMessage)) {
-            mErrorMessage = errorMessage;
-            mLog.info("Tuner Error - Initiating Recovery - " + getId() + " Error: " + errorMessage);
-            stop();
-            setTunerStatus(TunerStatus.RECOVERING);
-
-            if (mRecoveryTask != null && !mRecoveryTask.isDone()) {
-                mRecoveryTask.cancel(true);
-            }
-
-            mRecoveryAttempts.set(0);
-            mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(new RecoveryRunnable(), 180, 180, TimeUnit.SECONDS);
-
-            if (this instanceof DiscoveredUSBTuner usbTuner) {
-                io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.source.tuner.ui.USBAlertEvent(
-                    "USB bus overload detected. Buffer overruns or dropped samples occurred on this bus. " +
-                    "Please reduce the sample rate of specific tuners on this overloaded bus or move one or more tuners to a different physical USB port on your computer."
-                ));
-            }
+        if(errorMessage == null)
+        {
+            mErrorMessage = null;
             return;
         }
 
-        if ("USB Error - Device Disconnected".equals(errorMessage)) {
+        //If a recovery task is already active, just record the latest error.  The active recovery task owns the
+        //retry schedule, and a re-entrant error from a failed restart attempt must not cancel or reset it.
+        if (mRecoveryTask != null && !mRecoveryTask.isDone()) {
             mErrorMessage = errorMessage;
-            mLog.info("Tuner Error - Device Disconnected - Initiating Recovery - " + getId());
-            stop();
-            setTunerStatus(TunerStatus.RECOVERING);
-
-            if (mRecoveryTask != null && !mRecoveryTask.isDone()) {
-                mRecoveryTask.cancel(true);
-            }
-            mRecoveryTask = ThreadPool.SCHEDULED.schedule(new DisconnectRecoveryRunnable(), 5, TimeUnit.SECONDS);
             return;
         }
 
         mErrorMessage = errorMessage;
-        mLog.info("Tuner Error - Stopping - " + getId() + " Error: " + errorMessage);
         stop();
-        setTunerStatus(TunerStatus.ERROR);
+        setTunerStatus(TunerStatus.RECOVERING);
+        mRecoveryAttempts.set(0);
+
+        if ("USB Error - Device Disconnected".equals(errorMessage)) {
+            mLog.info("Tuner Error - Device Disconnected - Initiating Recovery - " + getId());
+            mRecoveryTask = ThreadPool.SCHEDULED.schedule(new DisconnectRecoveryRunnable(), 5, TimeUnit.SECONDS);
+            return;
+        }
+
+        //All other errors (buffer exhaustion, tuner stall, driver/API errors): attempt automatic recovery rather
+        //than permanently disabling the tuner.  Restart attempts are cheap, and a transient error should not
+        //require a human to restart the application to restore reception.
+        mLog.info("Tuner Error - Initiating Recovery - " + getId() + " Error: " + errorMessage);
+        mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(new RecoveryRunnable(), 180, 180, TimeUnit.SECONDS);
+
+        if ("USB Error - Transfer Buffers Exhausted".equals(errorMessage) && this instanceof DiscoveredUSBTuner) {
+            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.source.tuner.ui.USBAlertEvent(
+                "USB bus overload detected. Buffer overruns or dropped samples occurred on this bus. " +
+                "Please reduce the sample rate of specific tuners on this overloaded bus or move one or more tuners to a different physical USB port on your computer."
+            ));
+        }
     }
 
     @Override
@@ -395,11 +392,29 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
         }
     }
 
+    /**
+     * Periodic tuner recovery task.  Attempts a restart every 3 minutes.  After 5 failed attempts it slows to a
+     * 10-minute retry cadence and posts a system health alert, but never permanently gives up - an unattended
+     * system should continue trying to restore reception indefinitely.
+     */
     private class RecoveryRunnable implements Runnable {
+        private static final int SLOW_MODE_ATTEMPT_THRESHOLD = 5;
+        private static final long SLOW_MODE_INTERVAL_SECONDS = 600;
+
         @Override
         public void run() {
+            TunerStatus status = getTunerStatus();
+
+            //Stop recovery if the tuner was removed or deliberately disabled
+            if (status == TunerStatus.REMOVED || status == TunerStatus.DISABLED) {
+                if (mRecoveryTask != null) {
+                    mRecoveryTask.cancel(false);
+                }
+                return;
+            }
+
             int attempt = mRecoveryAttempts.incrementAndGet();
-            mLog.info("Attempting tuner recovery for " + getId() + " - Attempt " + attempt + " of 5");
+            mLog.info("Attempting tuner recovery for " + getId() + " - Attempt " + attempt);
 
             try {
                 restart();
@@ -409,41 +424,49 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
                     if (mRecoveryTask != null) {
                         mRecoveryTask.cancel(false);
                     }
+                    mRecoveryAttempts.set(0);
                     MyEventBus.getGlobalEventBus().post(new TunerRecoveredEvent(DiscoveredTuner.this));
-                } else if (attempt >= 5) {
-                    mLog.error("Failed to recover tuner " + getId() + " after 5 attempts.");
+                } else if (attempt == SLOW_MODE_ATTEMPT_THRESHOLD) {
+                    mLog.error("Failed to recover tuner " + getId() + " after " + attempt +
+                        " attempts - continuing recovery attempts every " + (SLOW_MODE_INTERVAL_SECONDS / 60) + " minutes.");
+                    MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.health.SystemHealthAlertEvent(
+                        io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.HARDWARE,
+                        "Tuner Recovery Degraded",
+                        "Tuner " + getId() + " has failed " + attempt + " recovery attempts [" + getErrorMessage() +
+                            "] - recovery will continue every " + (SLOW_MODE_INTERVAL_SECONDS / 60) + " minutes."));
+
                     if (mRecoveryTask != null) {
                         mRecoveryTask.cancel(false);
                     }
-                    setErrorMessage("Permanent USB Error - Transfer Buffers Exhausted");
+                    mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(this, SLOW_MODE_INTERVAL_SECONDS,
+                        SLOW_MODE_INTERVAL_SECONDS, TimeUnit.SECONDS);
                 } else {
-                    mLog.warn("Tuner recovery attempt " + attempt + " of 5 failed for " + getId());
+                    mLog.warn("Tuner recovery attempt " + attempt + " failed for " + getId());
                 }
             } catch (Exception e) {
                 mLog.error("Error during tuner recovery attempt " + attempt + " for " + getId(), e);
-                if (attempt >= 5) {
-                    mLog.error("Failed to recover tuner " + getId() + " after 5 attempts.");
-                    if (mRecoveryTask != null) {
-                        mRecoveryTask.cancel(false);
-                    }
-                    setErrorMessage("Permanent USB Error - Transfer Buffers Exhausted");
-                }
             }
         }
     }
 
+    /**
+     * Device disconnect recovery task.  Retries every 5 seconds for the first 15 minutes, then every 5 minutes
+     * until 45 minutes, then every 10 minutes indefinitely - a tuner replugged at any point recovers without
+     * requiring an application restart.
+     */
     private class DisconnectRecoveryRunnable implements Runnable {
         private long mStartTime = System.currentTimeMillis();
-
-        public DisconnectRecoveryRunnable() {
-        }
-
-        public DisconnectRecoveryRunnable(long startTime) {
-            mStartTime = startTime;
-        }
+        private boolean mLongOutageNotified = false;
 
         @Override
         public void run() {
+            TunerStatus status = getTunerStatus();
+
+            //Stop recovery if the tuner was removed or deliberately disabled
+            if (status == TunerStatus.REMOVED || status == TunerStatus.DISABLED) {
+                return;
+            }
+
             long elapsedMillis = System.currentTimeMillis() - mStartTime;
             long elapsedMinutes = TimeUnit.MILLISECONDS.toMinutes(elapsedMillis);
 
@@ -455,24 +478,34 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
                 if (getTunerStatus() == TunerStatus.ENABLED) {
                     mLog.info("Successfully recovered disconnected tuner " + getId());
                     io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new TunerRecoveredEvent(DiscoveredTuner.this));
-                } else if (elapsedMinutes >= 45) {
-                    mLog.error("Failed to recover disconnected tuner " + getId() + " after 45 minutes.");
-                    setErrorMessage("Permanent USB Error - Device Disconnected");
-                } else {
-                    long nextDelay = (elapsedMinutes < 15) ? 5 : 300; // 5 seconds or 5 minutes (300 seconds)
-                    mLog.warn("Disconnect recovery failed for " + getId() + " - retrying in " + nextDelay + " seconds");
-                    mRecoveryTask = ThreadPool.SCHEDULED.schedule(new DisconnectRecoveryRunnable(mStartTime), nextDelay, TimeUnit.SECONDS);
+                    return;
                 }
             } catch (Exception e) {
                 mLog.error("Error during disconnect recovery attempt for " + getId(), e);
-                if (elapsedMinutes >= 45) {
-                    mLog.error("Failed to recover disconnected tuner " + getId() + " after 45 minutes due to exception.");
-                    setErrorMessage("Permanent USB Error - Device Disconnected");
-                } else {
-                    long nextDelay = (elapsedMinutes < 15) ? 5 : 300;
-                    mRecoveryTask = ThreadPool.SCHEDULED.schedule(new DisconnectRecoveryRunnable(mStartTime), nextDelay, TimeUnit.SECONDS);
-                }
             }
+
+            if (elapsedMinutes >= 45 && !mLongOutageNotified) {
+                mLongOutageNotified = true;
+                mLog.error("Failed to recover disconnected tuner " + getId() + " after 45 minutes - " +
+                    "recovery will continue every 10 minutes.");
+                MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.health.SystemHealthAlertEvent(
+                    io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.HARDWARE,
+                    "Tuner Disconnected",
+                    "Tuner " + getId() + " has been disconnected for over 45 minutes - recovery attempts will " +
+                        "continue every 10 minutes."));
+            }
+
+            long nextDelay;
+            if (elapsedMinutes < 15) {
+                nextDelay = 5;        //5 seconds
+            } else if (elapsedMinutes < 45) {
+                nextDelay = 300;      //5 minutes
+            } else {
+                nextDelay = 600;      //10 minutes
+            }
+
+            mLog.warn("Disconnect recovery failed for " + getId() + " - retrying in " + nextDelay + " seconds");
+            mRecoveryTask = ThreadPool.SCHEDULED.schedule(this, nextDelay, TimeUnit.SECONDS);
         }
     }
 }

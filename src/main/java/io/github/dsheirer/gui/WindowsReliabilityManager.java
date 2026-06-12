@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 public class WindowsReliabilityManager {
     private static final Logger mLog = LoggerFactory.getLogger(WindowsReliabilityManager.class);
     private static final String GRACEFUL_EXIT_FILE = "sdrtrunk_graceful_exit";
+    private static final String RESTART_MARKER_FILE = "sdrtrunk_watchdog_restart";
 
     public static boolean isWindows10OrNewer() {
         String osName = System.getProperty("os.name");
@@ -41,9 +42,23 @@ public class WindowsReliabilityManager {
         try {
             long currentPid = ProcessHandle.current().pid();
             String userDir = System.getProperty("user.dir");
+
+            //Use absolute paths and an explicit working directory: the watchdog-restarted instance
+            //(and instances launched from the registry Run key) may not inherit the install
+            //directory as the current directory, which would break a relative bin\sdrtrunk.bat.
+            //A restart marker file provides crash-loop protection: if the application died within
+            //120 seconds of the previous watchdog restart, do not restart again - a tight
+            //crash/restart loop cannot be fixed by restarting.
             String command = String.format(
-                "$pidToMonitor = %d; Wait-Process -Id $pidToMonitor; if (-not (Test-Path -Path '%s\\%s')) { Start-Process 'bin\\sdrtrunk.bat' }",
-                currentPid, userDir, GRACEFUL_EXIT_FILE
+                "$pidToMonitor = %d; " +
+                "Wait-Process -Id $pidToMonitor -ErrorAction SilentlyContinue; " +
+                "if (-not (Test-Path -Path '%s\\%s')) { " +
+                  "$marker = '%s\\%s'; " +
+                  "if ((Test-Path $marker) -and (((Get-Date) - (Get-Item $marker).LastWriteTime).TotalSeconds -lt 120)) { exit }; " +
+                  "New-Item -ItemType File -Path $marker -Force | Out-Null; " +
+                  "Start-Process -FilePath '%s\\bin\\sdrtrunk.bat' -WorkingDirectory '%s' " +
+                "}",
+                currentPid, userDir, GRACEFUL_EXIT_FILE, userDir, RESTART_MARKER_FILE, userDir, userDir
             );
 
             String encodedCmd = Base64.getEncoder().encodeToString(command.getBytes(StandardCharsets.UTF_16LE));
