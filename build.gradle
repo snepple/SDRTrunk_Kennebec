@@ -188,7 +188,7 @@ def jvmArgsWindows =
          "-Dsun.java2d.opengl=True",       //Hardware Acceleration OpenGL
          "-Dsun.java2d.dpiaware=true",     // Fix fuzzy UI scaling on Windows
          "-Dprism.allowhidpi=true",        // Fix fuzzy JavaFX scaling on Windows
-         "-Djava.library.path=c:/Program Files/SDRplay/API/x64"] //SDRPlay API library path
+         "-Djava.library.path=c:/PROGRA~1/SDRplay/API/x64"] //SDRPlay API library path (8.3 name avoids space-splitting in jpackage .cfg)
 
 /**
  * JVM Arguments for running the application on Linux.
