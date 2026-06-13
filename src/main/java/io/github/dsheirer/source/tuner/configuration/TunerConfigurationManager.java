@@ -330,6 +330,31 @@ public class TunerConfigurationManager implements IDiscoveredTunerStatusListener
             return optional.get();
         }
 
+        //Known-good profile cloning: when a new tuner of a type we already have a configuration for
+        //is plugged in, clone the existing (presumably tuned/working) configuration instead of
+        //starting from factory defaults - gain, PPM and sample rate carry over automatically.
+        TunerConfiguration donor = mTunerConfigurations.stream()
+            .filter(existing -> existing.getTunerType().equals(type)).findFirst().orElse(null);
+
+        if(donor != null)
+        {
+            try
+            {
+                ObjectMapper mapper = new ObjectMapper();
+                TunerConfiguration clone = mapper.readValue(mapper.writeValueAsBytes(donor), donor.getClass());
+                clone.setUniqueID(uniqueID);
+                mLog.info("New tuner [" + uniqueID + "] - cloned known-good " + type +
+                    " configuration from tuner [" + donor.getUniqueID() + "]");
+                addTunerConfiguration(clone);
+                return clone;
+            }
+            catch(Exception e)
+            {
+                mLog.warn("Unable to clone existing " + type + " configuration for new tuner [" + uniqueID +
+                    "] - using factory defaults", e);
+            }
+        }
+
         TunerConfiguration config = TunerFactory.getTunerConfiguration(type, uniqueID);
         addTunerConfiguration(config);
         return config;

@@ -1,10 +1,14 @@
 package io.github.dsheirer.transcription;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import io.github.dsheirer.audio.AudioSegment;
+import io.github.dsheirer.identifier.Form;
+import io.github.dsheirer.identifier.Identifier;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.ai.AIPreference;
-import io.github.dsheirer.module.log.EventLogManager;
-import io.github.dsheirer.audio.AudioFormats;
+import io.github.dsheirer.protocol.Protocol;
 import io.github.dsheirer.sample.ConversionUtils;
 
 import org.slf4j.Logger;
@@ -12,20 +16,44 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.io.OutputStream;
-import java.io.InputStream;
-import java.util.Scanner;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Base64;
+import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TranscriptionEngine {
     private static final Logger mLog = LoggerFactory.getLogger(TranscriptionEngine.class);
-    private static final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
+
+    private static final int CONNECT_TIMEOUT_MS = 10_000;
+    private static final int READ_TIMEOUT_MS = 30_000;
+
+    //Skip very short segments (squelch taps, noise bursts) - they cost API money and transcribe poorly
+    private static final int MINIMUM_SAMPLES = 2 * 8000; //2 seconds at 8 kHz
+
+    //Circuit breaker: after consecutive API failures, stop transcribing for a cooldown period so a
+    //failed/expired key or API outage doesn't stall the pipeline or burn quota indefinitely.
+    private static final int FAILURE_THRESHOLD = 3;
+    private static final long FAILURE_COOLDOWN_MS = 10 * 60 * 1000;
+    private static final AtomicInteger sConsecutiveFailures = new AtomicInteger();
+    private static volatile long sDisabledUntil = 0;
+
+    //Single worker with a bounded queue: when transcription falls behind (busy system or slow API),
+    //the oldest queued segments are dropped rather than growing memory without bound.
+    private static final ExecutorService mExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+        new LinkedBlockingQueue<>(20), r -> {
+            Thread t = new Thread(r, "sdrtrunk transcription");
+            t.setDaemon(true);
+            return t;
+        }, new ThreadPoolExecutor.DiscardOldestPolicy());
 
     public static void transcribeAsync(AudioSegment audioSegment, UserPreferences userPreferences) {
         if (audioSegment == null || !audioSegment.hasAudio() || userPreferences == null) {
@@ -37,11 +65,49 @@ public class TranscriptionEngine {
             return;
         }
 
+        if (System.currentTimeMillis() < sDisabledUntil) {
+            return;
+        }
+
         // Copy audio buffers because audioSegment might be cleared or modified asynchronously
         final java.util.List<float[]> audioBuffers = new java.util.ArrayList<>();
+        int totalSamples = 0;
         for (float[] buffer : audioSegment.getAudioBuffers()) {
             audioBuffers.add(buffer.clone());
+            totalSamples += buffer.length;
         }
+
+        if (totalSamples < MINIMUM_SAMPLES) {
+            return;
+        }
+
+        // Capture identifier values now - the segment is recycled asynchronously and may not be
+        // valid when downstream subscribers process the transcription event.  The FROM radio ID
+        // only exists for trunked/digital protocols (P25/DMR/etc.) - NBFM has none.
+        Integer fromRadioId = null;
+        Protocol protocol = null;
+        String aliasListName = null;
+
+        try {
+            if (audioSegment.getIdentifierCollection() != null) {
+                Identifier from = audioSegment.getIdentifierCollection().getFromIdentifier();
+
+                if (from != null && from.getForm() == Form.RADIO && from.getValue() instanceof Number) {
+                    fromRadioId = ((Number) from.getValue()).intValue();
+                    protocol = from.getProtocol();
+                }
+
+                if (audioSegment.getIdentifierCollection().getAliasListConfiguration() != null) {
+                    aliasListName = audioSegment.getIdentifierCollection().getAliasListConfiguration().getValue();
+                }
+            }
+        } catch (Exception e) {
+            mLog.debug("Unable to capture identifiers for transcription event - " + e.getMessage());
+        }
+
+        final Integer finalFromRadioId = fromRadioId;
+        final Protocol finalProtocol = protocol;
+        final String finalAliasListName = aliasListName;
 
         mExecutor.submit(() -> {
             try {
@@ -66,14 +132,23 @@ public class TranscriptionEngine {
                     }
                 }
 
+                sConsecutiveFailures.set(0);
+
                 if (transcript != null && !transcript.trim().isEmpty()) {
                     mLog.info("Transcription completed: " + transcript);
-                    // Emit transcript to event bus or save it somewhere.
-                    // For now, logging it as an info.
-                    io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new TranscriptionEvent(audioSegment, transcript));
+                    io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
+                        new TranscriptionEvent(audioSegment, transcript, finalFromRadioId, finalProtocol,
+                            finalAliasListName));
                 }
             } catch (Exception e) {
                 mLog.error("Error during audio transcription", e);
+
+                if (sConsecutiveFailures.incrementAndGet() >= FAILURE_THRESHOLD) {
+                    sConsecutiveFailures.set(0);
+                    sDisabledUntil = System.currentTimeMillis() + FAILURE_COOLDOWN_MS;
+                    mLog.warn("Transcription disabled for " + (FAILURE_COOLDOWN_MS / 60000) +
+                        " minutes after repeated API failures");
+                }
             }
         });
     }
@@ -82,6 +157,8 @@ public class TranscriptionEngine {
         String urlString = "https://speech.googleapis.com/v1/speech:recognize?key=" + apiKey;
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        conn.setReadTimeout(READ_TIMEOUT_MS);
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setDoOutput(true);
@@ -107,16 +184,33 @@ public class TranscriptionEngine {
         try (Scanner scanner = new Scanner(is, "UTF-8")) {
             String response = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
             if (responseCode >= 200 && responseCode < 300) {
-                // simple json parsing
-                if (response.contains("\"transcript\":")) {
-                    String[] parts = response.split("\"transcript\":");
-                    if (parts.length > 1) {
-                        String trans = parts[1].split("\"")[1];
-                        return trans;
+                //Google response: {"results":[{"alternatives":[{"transcript":"...","confidence":...}]}]}
+                try {
+                    JsonObject root = new Gson().fromJson(response, JsonObject.class);
+                    JsonArray results = root != null ? root.getAsJsonArray("results") : null;
+                    StringBuilder transcript = new StringBuilder();
+
+                    if (results != null) {
+                        for (int i = 0; i < results.size(); i++) {
+                            JsonArray alternatives = results.get(i).getAsJsonObject().getAsJsonArray("alternatives");
+
+                            if (alternatives != null && alternatives.size() > 0) {
+                                JsonObject best = alternatives.get(0).getAsJsonObject();
+
+                                if (best.has("transcript")) {
+                                    transcript.append(best.get("transcript").getAsString()).append(" ");
+                                }
+                            }
+                        }
                     }
+
+                    return transcript.toString().trim();
+                } catch (Exception e) {
+                    mLog.error("Error parsing Google STT response: " + e.getMessage());
                 }
             } else {
                 mLog.error("Google STT API Error: " + response);
+                throw new IOException("Google STT API error response code " + responseCode);
             }
         }
         return "";
@@ -126,9 +220,11 @@ public class TranscriptionEngine {
         String urlString = "https://api.openai.com/v1/audio/transcriptions";
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        conn.setReadTimeout(READ_TIMEOUT_MS);
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Authorization", "Bearer " + apiKey);
-        
+
         String boundary = "----WebKitFormBoundary" + System.currentTimeMillis();
         conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
         conn.setDoOutput(true);
@@ -148,15 +244,19 @@ public class TranscriptionEngine {
         try (Scanner scanner = new Scanner(is, "UTF-8")) {
             String response = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
             if (responseCode >= 200 && responseCode < 300) {
-                if (response.contains("\"text\":")) {
-                    String[] parts = response.split("\"text\":");
-                    if (parts.length > 1) {
-                        String trans = parts[1].split("\"")[1];
-                        return trans;
+                //Whisper response: {"text":"..."}
+                try {
+                    JsonObject root = new Gson().fromJson(response, JsonObject.class);
+
+                    if (root != null && root.has("text")) {
+                        return root.get("text").getAsString();
                     }
+                } catch (Exception e) {
+                    mLog.error("Error parsing Whisper response: " + e.getMessage());
                 }
             } else {
                 mLog.error("Whisper API Error: " + response);
+                throw new IOException("Whisper API error response code " + responseCode);
             }
         }
         return "";
@@ -164,15 +264,15 @@ public class TranscriptionEngine {
 
     private static byte[] createWavData(java.util.List<float[]> audioBuffers) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        
+
         int totalSamples = 0;
         for (float[] buffer : audioBuffers) {
             totalSamples += buffer.length;
         }
-        
+
         int dataSize = totalSamples * 2; // 16-bit
         int chunkSize = 36 + dataSize;
-        
+
         ByteBuffer header = ByteBuffer.allocate(44);
         header.order(ByteOrder.LITTLE_ENDIAN);
         header.put("RIFF".getBytes());
@@ -188,14 +288,14 @@ public class TranscriptionEngine {
         header.putShort((short) 16); // Bits per sample
         header.put("data".getBytes());
         header.putInt(dataSize);
-        
+
         baos.write(header.array());
-        
+
         for (float[] buffer : audioBuffers) {
             byte[] pcmBytes = ConversionUtils.convertToSigned16BitSamples(buffer).array();
             baos.write(pcmBytes);
         }
-        
+
         return baos.toByteArray();
     }
 }

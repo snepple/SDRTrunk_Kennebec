@@ -1,0 +1,10 @@
+# Companion to sdrtrunk-healthcheck.timer - see sdrtrunk-healthcheck.sh for install instructions.
+[Unit]
+Description=SDRTrunk liveness healthcheck
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sdrtrunk-healthcheck.sh
+# Optional overrides:
+#Environment=SDRTRUNK_API_PORT=8080
+#Environment=SDRTRUNK_UNIT=sdrtrunk

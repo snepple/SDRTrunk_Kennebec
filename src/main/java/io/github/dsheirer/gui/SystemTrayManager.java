@@ -9,9 +9,9 @@ import java.awt.Image;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.SystemTray;
-import java.awt.Toolkit;
 import java.awt.TrayIcon;
-import java.net.URL;
+import java.io.InputStream;
+import javax.imageio.ImageIO;
 
 public class SystemTrayManager {
     private static final Logger mLog = LoggerFactory.getLogger(SystemTrayManager.class);
@@ -37,13 +37,15 @@ public class SystemTrayManager {
 
             SystemTray tray = SystemTray.getSystemTray();
             
-            URL iconURL = getClass().getResource("/images/SDRTrunk_Application_Icon.png");
-            if (iconURL == null) {
-                mLog.warn("Could not find system tray icon.");
-                return;
+            // ImageIO.read preserves RGBA alpha; Toolkit.getImage() does not
+            Image image;
+            try (InputStream is = getClass().getResourceAsStream("/images/SDRTrunk_Application_Icon.png")) {
+                if (is == null) {
+                    mLog.warn("Could not find system tray icon.");
+                    return;
+                }
+                image = ImageIO.read(is);
             }
-            
-            Image image = Toolkit.getDefaultToolkit().getImage(iconURL);
             
             PopupMenu popup = new PopupMenu();
             MenuItem showItem = new MenuItem("Show SDRTrunk");

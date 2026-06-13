@@ -187,6 +187,7 @@ def jvmArgsWindows =
          '--enable-native-access=javafx.graphics', //Suppress unsafe warnings for native methods in this module
          '--enable-native-access=javafx.web', //Suppress unsafe warnings for native methods in this module
          '-XX:+EnableDynamicAgentLoading',
+         '-XX:+ExitOnOutOfMemoryError',    //Exit on OOM so the watchdog restarts a clean instance instead of leaving a zombie
          '-Xmx6g',                         //Set max heap size to 6GB
          '-Dnet.bytebuddy.experimental=true', // Allow Mockito/ByteBuddy on Java 23
          '-Dcom.github.weisj.jsvg.disableStax=true', // Disable StAX parser for SVG due to large attribute size limits
@@ -210,6 +211,7 @@ def jvmArgsLinux =
          '--enable-native-access=javafx.graphics', //JDK24 - suppress restricted java.lang.System calls
          '--enable-native-access=javafx.web', //Suppress unsafe warnings for native methods in this module
          '--enable-native-access=ALL-UNNAMED', //SDRPlay API library path
+         '-XX:+ExitOnOutOfMemoryError',    //Exit on OOM so the watchdog/systemd restarts a clean instance instead of leaving a zombie
          '-Xmx6g',                         //Set max heap size to 6GB
          '-Dnet.bytebuddy.experimental=true', // Allow Mockito/ByteBuddy on Java 23
          '-Dcom.github.weisj.jsvg.disableStax=true', // Disable StAX parser for SVG due to large attribute size limits

@@ -84,12 +84,13 @@ public class RestApiWatchdog {
     private static HttpServer createServer(SDRTrunk app, int port) throws IOException {
         HttpServer httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
         httpServer.createContext("/health", new HealthHandler());
+        httpServer.createContext("/metrics", new MetricsHandler());
         httpServer.createContext("/restart", new RestartHandler(app));
         httpServer.setExecutor(null); // creates a default executor
         return httpServer;
     }
 
-    private static int getConfiguredPort() {
+    public static int getConfiguredPort() {
         String value = System.getProperty("sdrtrunk.api.port", System.getenv("SDRTRUNK_API_PORT"));
 
         if (value != null) {
@@ -202,6 +203,90 @@ public class RestApiWatchdog {
             } catch (Exception e) {
                 mLog.error("Error building health response", e);
                 respond(t, 500, "{\"status\":\"ERROR\",\"message\":\"" + escapeJson(e.getMessage()) + "\"}");
+            }
+        }
+    }
+
+    /**
+     * Prometheus text exposition format metrics for external monitoring/dashboards (e.g. Prometheus,
+     * Grafana, uptime-kuma).  Exposes per-tuner status, channel processing count, and per-stream state
+     * and throughput counters so slow degradations are visible before they become outages.
+     */
+    static class MetricsHandler implements HttpHandler {
+        private static String label(String value) {
+            return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ");
+        }
+
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            try {
+                StringBuilder m = new StringBuilder();
+
+                m.append("# HELP sdrtrunk_up Application liveness (always 1 when responding)\n");
+                m.append("# TYPE sdrtrunk_up gauge\n");
+                m.append("sdrtrunk_up 1\n");
+
+                m.append("# HELP sdrtrunk_tuner_status Tuner status (1=reported state)\n");
+                m.append("# TYPE sdrtrunk_tuner_status gauge\n");
+                m.append("# HELP sdrtrunk_tuner_healthy Tuner is enabled and not in an error/recovering state\n");
+                m.append("# TYPE sdrtrunk_tuner_healthy gauge\n");
+                if (sTunerManager != null) {
+                    for (DiscoveredTuner tuner : sTunerManager.getAvailableTuners()) {
+                        TunerStatus status = tuner.getTunerStatus();
+                        boolean healthy = !tuner.isEnabled() ||
+                            (status != TunerStatus.ERROR && status != TunerStatus.RECOVERING);
+                        m.append("sdrtrunk_tuner_status{id=\"").append(label(tuner.getId()))
+                            .append("\",status=\"").append(status).append("\"} 1\n");
+                        m.append("sdrtrunk_tuner_healthy{id=\"").append(label(tuner.getId()))
+                            .append("\"} ").append(healthy ? 1 : 0).append("\n");
+                    }
+                }
+
+                m.append("# HELP sdrtrunk_channels_processing Number of channels currently processing\n");
+                m.append("# TYPE sdrtrunk_channels_processing gauge\n");
+                m.append("sdrtrunk_channels_processing ").append(sChannelProcessingManager != null ?
+                    sChannelProcessingManager.getProcessingChannelCount() : 0).append("\n");
+
+                m.append("# HELP sdrtrunk_stream_connected Stream is in the CONNECTED state\n");
+                m.append("# TYPE sdrtrunk_stream_connected gauge\n");
+                m.append("# HELP sdrtrunk_stream_queue_size Audio recordings queued for streaming\n");
+                m.append("# TYPE sdrtrunk_stream_queue_size gauge\n");
+                m.append("# HELP sdrtrunk_stream_streamed_total Audio recordings streamed since startup\n");
+                m.append("# TYPE sdrtrunk_stream_streamed_total counter\n");
+                m.append("# HELP sdrtrunk_stream_aged_off_total Audio recordings aged off without streaming since startup\n");
+                m.append("# TYPE sdrtrunk_stream_aged_off_total counter\n");
+                if (sBroadcastModel != null) {
+                    for (BroadcastConfiguration config : sBroadcastModel.getBroadcastConfigurations()) {
+                        if (!config.isEnabled()) {
+                            continue;
+                        }
+
+                        AbstractAudioBroadcaster<?> broadcaster = sBroadcastModel.getBroadcaster(config.getName());
+
+                        if (broadcaster != null) {
+                            String name = label(config.getName());
+                            BroadcastState state = broadcaster.getBroadcastState();
+                            m.append("sdrtrunk_stream_connected{name=\"").append(name).append("\"} ")
+                                .append(state == BroadcastState.CONNECTED ? 1 : 0).append("\n");
+                            m.append("sdrtrunk_stream_queue_size{name=\"").append(name).append("\"} ")
+                                .append(broadcaster.getAudioQueueSize()).append("\n");
+                            m.append("sdrtrunk_stream_streamed_total{name=\"").append(name).append("\"} ")
+                                .append(broadcaster.getStreamedAudioCount()).append("\n");
+                            m.append("sdrtrunk_stream_aged_off_total{name=\"").append(name).append("\"} ")
+                                .append(broadcaster.getAgedOffAudioCount()).append("\n");
+                        }
+                    }
+                }
+
+                byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
+                t.getResponseHeaders().add("Content-Type", "text/plain; version=0.0.4; charset=utf-8");
+                t.sendResponseHeaders(200, bytes.length);
+                try (OutputStream os = t.getResponseBody()) {
+                    os.write(bytes);
+                }
+            } catch (Exception e) {
+                mLog.error("Error building metrics response", e);
+                respond(t, 500, "{\"status\":\"ERROR\"}");
             }
         }
     }

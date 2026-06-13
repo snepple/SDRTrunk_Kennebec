@@ -166,6 +166,14 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
     }
 
     /**
+     * Snapshot of the channels that are currently processing.
+     */
+    public List<Channel> getProcessingChannels()
+    {
+        return new ArrayList<>(mProcessingChainsMap.keySet());
+    }
+
+    /**
      * Returns the current processing chain associated with the channel, or
      * null if a processing chain is not currently setup for the channel
      */

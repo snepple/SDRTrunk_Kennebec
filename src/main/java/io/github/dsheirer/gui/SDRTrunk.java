@@ -233,6 +233,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private ChannelAlertMonitor mChannelAlertMonitor;
     private io.github.dsheirer.monitor.DiskSpaceManager mDiskSpaceManager;
     private io.github.dsheirer.monitor.ConfigurationBackupService mConfigurationBackupService;
+    private io.github.dsheirer.monitor.StreamingCredentialPreflight mStreamingCredentialPreflight;
+    private io.github.dsheirer.transcription.RadioIdNameLearner mRadioIdNameLearner;
+    private io.github.dsheirer.controller.channel.ChannelResumeService mChannelResumeService;
     private AudioStreamingManager mAudioStreamingManager;
     private BroadcastStatusPanel mBroadcastStatusPanel;
     private ControllerPanel mControllerPanel;
@@ -542,6 +545,15 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mConfigurationBackupService = new io.github.dsheirer.monitor.ConfigurationBackupService(mUserPreferences);
         mConfigurationBackupService.start();
 
+        //Validate streaming credentials at startup and daily so expired keys alert before feeds die
+        mStreamingCredentialPreflight = new io.github.dsheirer.monitor.StreamingCredentialPreflight(
+            mPlaylistManager.getBroadcastModel());
+        mStreamingCredentialPreflight.start();
+
+        //Learn friendly names for radio IDs from audio transcriptions (digital protocols only)
+        mRadioIdNameLearner = new io.github.dsheirer.transcription.RadioIdNameLearner(aliasModel, mUserPreferences);
+        mRadioIdNameLearner.start();
+
         notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.8));
         notifyPreloader(new SDRTrunkPreloader.TextNotification("Initializing Audio Services..."));
         DuplicateCallDetector duplicateCallDetector = new DuplicateCallDetector(mUserPreferences);
@@ -558,6 +570,28 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mNowPlayingDetailsVisible = mPreferences.getBoolean(PREFERENCE_NOW_PLAYING_DETAILS_VISIBLE, true);
 
         mPlaylistManager.init();
+
+        //Deferred startup validation: receive-chain self-test and playlist lint, run after tuner
+        //discovery and channel auto-start have settled so results reflect steady state.
+        io.github.dsheirer.util.ThreadPool.SCHEDULED.schedule(() -> {
+            try
+            {
+                io.github.dsheirer.monitor.StartupSelfTest.run(mUserPreferences, mTunerManager);
+            }
+            catch(Throwable t)
+            {
+                mLog.error("Startup self-test error", t);
+            }
+
+            try
+            {
+                io.github.dsheirer.playlist.PlaylistLinter.lint(mPlaylistManager);
+            }
+            catch(Throwable t)
+            {
+                mLog.error("Playlist lint error", t);
+            }
+        }, 90, java.util.concurrent.TimeUnit.SECONDS);
 
         notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.9));
         notifyPreloader(new SDRTrunkPreloader.TextNotification("Finalizing Startup..."));
@@ -606,6 +640,14 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 new ChannelAutoStartFrame(mPlaylistManager.getChannelProcessingManager(), channels, mUserPreferences);
             }
         }
+
+        //Resume channels that were running when a previous session ended unexpectedly (crash/kill),
+        //including manually-started channels not flagged for auto-start, then begin tracking the
+        //current session's running channel state.
+        mChannelResumeService = new io.github.dsheirer.controller.channel.ChannelResumeService(
+            mPlaylistManager.getChannelProcessingManager(), mPlaylistManager.getChannelModel(), mUserPreferences);
+        mChannelResumeService.resume();
+        mChannelResumeService.start();
     }
 
     /**
@@ -744,10 +786,12 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mJavaFxWindowManager.shutdown();
         mLog.info("Stopping channels ...");
         mPlaylistManager.getChannelProcessingManager().shutdown();
+        if(mChannelResumeService != null) mChannelResumeService.shutdown();
         mAudioRecordingManager.stop();
         if(mChannelAlertMonitor != null) mChannelAlertMonitor.stop();
         if(mDiskSpaceManager != null) mDiskSpaceManager.stop();
         if(mConfigurationBackupService != null) mConfigurationBackupService.stop();
+        if(mStreamingCredentialPreflight != null) mStreamingCredentialPreflight.stop();
         mResourceMonitor.stop();
 
         mLog.info("Stopping spectral display ...");
