@@ -453,6 +453,8 @@ public class TunerFactory
                 return new RspDuoTuner2Configuration(uniqueID);
             case RSP_DX:
                 return new RspDxTunerConfiguration(uniqueID);
+            case UNKNOWN:
+                return null;
             default:
                 throw new IllegalArgumentException("Unrecognized tuner type [" + type.name() + "]");
         }
