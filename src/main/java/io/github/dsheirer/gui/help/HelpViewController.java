@@ -84,6 +84,7 @@ public class HelpViewController {
         channelsDecodingNode.getChildren().add(new TreeItem<>("Analog"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("Dmr"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("P25"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Channel Images"));
         guidesNode.getChildren().add(channelsDecodingNode);
 
         TreeItem<String> organizationPlaylistsNode = new TreeItem<>("Organization & Playlists");

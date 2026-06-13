@@ -40,3 +40,7 @@
 **Topic:** Smart Bandwidth Optimization
 **Learning:** The "Smart Bandwidth" feature lacked a comprehensive Mintlify-style guide with a Mermaid flow diagram and was missing from the Help Viewer navigation tree.
 **Action:** Rewrote `src/main/resources/docs/smart-bandwidth.md` with visual diagrams, and integrated it into `HelpViewController.java` under "Advanced & System".
+## 2026-06-13 - Topic Selection
+**Topic:** Custom Channel Images & Artwork
+**Learning:** The Channel Image & Custom Artwork Pipeline is listed as a major new feature in "What's New" (allowing image uploads with 64x64 validation, auto-optimization to 128x128, and display in audio panel) but lacks a dedicated guide under the "Guides & Documentation" section.
+**Action:** Created `src/main/resources/docs/channel-images.md` and integrated it into the navigation tree of `HelpViewController.java` under "Channels & Decoding".
