@@ -110,3 +110,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-03-08 - Accessible Recording Buttons
 **Learning:** Destructive actions and key functionality in JavaFX lack mnemonics, accessible descriptions, and informative tooltips describing consequences.
 **Action:** When adding buttons, especially destructive ones like delete, provide descriptive tooltips including consequence warnings, add mnemonics to enable keyboard navigation, and set accessible properties (`accessibleTextProperty` and `accessibleHelpProperty`) for screen reader support.
+## 2026-06-13 - Added explicit accessibility text to icon-only buttons
+**Learning:** JavaFX Tooltips on buttons aren't always reliably read by screen readers as the primary action name, especially for icon-only buttons. Setting `accessibleTextProperty` provides a robust ARIA-equivalent label for assistive technologies.
+**Action:** When adding or encountering icon-only buttons with FontAwesome graphics, explicitly set `accessibleTextProperty().set("Describe Action")` alongside the tooltip.

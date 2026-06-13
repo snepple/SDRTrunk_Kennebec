@@ -305,6 +305,7 @@ public class TwoToneAliasSelectionEditor extends VBox
             mAddButton.setMaxWidth(Double.MAX_VALUE);
             mAddButton.setGraphic(new IconNode(FontAwesome.ANGLE_RIGHT));
             mAddButton.setTooltip(new Tooltip("Add selected alias"));
+            mAddButton.accessibleTextProperty().set("Add selected alias");
             mAddButton.setAlignment(Pos.CENTER);
             mAddButton.setOnAction(event -> {
                 Alias selectedAlias = getAvailableAliasTableView().getSelectionModel().getSelectedItem();
@@ -330,6 +331,7 @@ public class TwoToneAliasSelectionEditor extends VBox
             mAddAllButton.setMaxWidth(Double.MAX_VALUE);
             mAddAllButton.setGraphic(new IconNode(FontAwesome.ANGLE_DOUBLE_RIGHT));
             mAddAllButton.setTooltip(new Tooltip("Add all aliases"));
+            mAddAllButton.accessibleTextProperty().set("Add all aliases");
             mAddAllButton.setAlignment(Pos.CENTER);
             mAddAllButton.setOnAction(new EventHandler<ActionEvent>()
             {
@@ -365,6 +367,7 @@ public class TwoToneAliasSelectionEditor extends VBox
             mRemoveButton.setMaxWidth(Double.MAX_VALUE);
             mRemoveButton.setGraphic(new IconNode(FontAwesome.ANGLE_LEFT));
             mRemoveButton.setTooltip(new Tooltip("Remove selected alias"));
+            mRemoveButton.accessibleTextProperty().set("Remove selected alias");
             mRemoveButton.setAlignment(Pos.CENTER);
             mRemoveButton.setOnAction(event -> {
                 Alias selectedAlias = getSelectedAliasTableView().getSelectionModel().getSelectedItem();
@@ -390,6 +393,7 @@ public class TwoToneAliasSelectionEditor extends VBox
             mRemoveAllButton.setMaxWidth(Double.MAX_VALUE);
             mRemoveAllButton.setGraphic(new IconNode(FontAwesome.ANGLE_DOUBLE_LEFT));
             mRemoveAllButton.setTooltip(new Tooltip("Remove all aliases"));
+            mRemoveAllButton.accessibleTextProperty().set("Remove all aliases");
             mRemoveAllButton.setAlignment(Pos.CENTER);
             mRemoveAllButton.setOnAction(event -> {
                 List<Alias> selectedAliases =
