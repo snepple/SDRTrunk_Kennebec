@@ -244,7 +244,8 @@ public class P25P1DemodulatorLSM
                 qCurrent = LinearInterpolator.calculate(mBufferQ[offset], mBufferQ[offset + 1], residual);
 
                 //Adjust sample gain based on highest magnitude and apply to both middle and current samples.
-                magnitude = (float)(Math.sqrt(Math.pow(iCurrent, 2.0) + Math.pow(qCurrent, 2.0)));
+                // Bolt: Direct multiplication is significantly faster than Math.pow(val, 2.0) in this high-frequency DSP loop.
+                magnitude = (float)(Math.sqrt(iCurrent * iCurrent + qCurrent * qCurrent));
 
                 if(magnitude > 0 && !Float.isInfinite(magnitude))
                 {

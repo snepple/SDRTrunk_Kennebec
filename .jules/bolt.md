@@ -9,3 +9,7 @@
 ## 2026-05-18 - Spectrum Analyzer and Waterfall Drawing Bugs
 **Learning:** Mathematical sign errors when refactoring audio spectrum math (e.g. log scaling `mDBScale`) can result in out-of-bounds metrics resulting in entire charts clamping to Y=0 or skipping the last bin (`update.length - 1`). Dynamic range (in decibels) is a negative value `20 * log10(1 / (2 ^ (bit_depth - 1)))`.
 **Action:** When updating spectrum code, ensure loop index logic accurately bounds the array size (`update.length`) rather than off-by-one offsets. Ensure that dynamically scaled bounds evaluate to their true negative values so UI scaling metrics (like `scalor = height / -mDBScale`) correctly map into positive view bounds.
+
+## 2026-06-13 - Overhead of Math.pow for Squaring
+**Learning:** Java's `Math.pow(val, 2.0)` and `FastMath.pow(val, 2.0)` have significant overhead compared to direct multiplication (`val * val`) when squaring numbers in tight DSP loops.
+**Action:** Always prefer direct multiplication over `Math.pow` for simple exponentiation like squaring, especially in high-frequency data paths.
