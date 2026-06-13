@@ -28,6 +28,9 @@ jobs:
           java-version: '25'
           distribution: 'liberica'
           java-package: 'jdk+fx'
+      - name: Install libvolk on Ubuntu
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libvolk-dev
       - name: Build with Gradle
         uses: gradle/gradle-build-action@v2
         with:
