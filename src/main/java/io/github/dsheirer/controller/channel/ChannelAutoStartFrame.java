@@ -195,10 +195,30 @@ public class ChannelAutoStartFrame
         {
             if(mChannelEventListener != null)
             {
-                for(Channel channel : mChannels)
-                {
-                    mChannelEventListener.receive(new ChannelEvent(channel, ChannelEvent.Event.REQUEST_ENABLE));
-                }
+                // Offload heavy channel-start work to a background thread so the JavaFX
+                // Application Thread is never blocked (avoids "Not Responding" freeze).
+                final List<Channel> channelsToStart = new java.util.ArrayList<>(mChannels);
+                ThreadPool.CACHED.submit(() -> {
+                    for(Channel channel : channelsToStart)
+                    {
+                        try
+                        {
+                            mChannelEventListener.receive(new ChannelEvent(channel, ChannelEvent.Event.REQUEST_ENABLE));
+                            // Small pause between each channel start to avoid overwhelming the tuner manager
+                            Thread.sleep(100);
+                        }
+                        catch(InterruptedException ie)
+                        {
+                            Thread.currentThread().interrupt();
+                            mLog.warn("Channel auto-start interrupted");
+                            break;
+                        }
+                        catch(Exception e)
+                        {
+                            mLog.error("Error starting channel [" + channel.getName() + "] during auto-start", e);
+                        }
+                    }
+                });
             }
         }
     }
