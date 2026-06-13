@@ -385,6 +385,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                         if(calibrating)
                         {
                             CalibrationDialog calibrationDialog = mJavaFxWindowManager.getCalibrationDialog(mUserPreferences);
+                            calibrationDialog.initOwner(primaryStage);
                             java.util.Optional<ButtonType> calibrate = calibrationDialog.showAndWait();
                             if(calibrate.isPresent() && calibrate.get().getText().equals("Calibrate"))
                             {
