@@ -94,7 +94,22 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     /** Default minimum gap (ms) between stop_stream and next start_stream. */
     private static final long DEFAULT_STREAM_GUARD_MS = 500;
 
-    private final HttpClient mHttpClient;
+    /**
+     * Maximum consecutive WebSocket handshake failures before marking as CONFIGURATION_ERROR
+     * and stopping reconnect attempts. Prevents misconfigured channels from endlessly leaking
+     * memory via failed TLS handshake buffers.
+     */
+    private static final int MAX_HANDSHAKE_FAILURES = 10;
+
+    /**
+     * Shared HttpClient across ALL ZelloBroadcaster instances.
+     * Using a single shared instance eliminates the N*thread-pool and N*SSL-context
+     * overhead that was causing memory to triple on each reconnect cycle when many
+     * Zello channels were configured.
+     */
+    private static final HttpClient SHARED_HTTP_CLIENT = HttpClient.newBuilder()
+        .connectTimeout(java.time.Duration.ofSeconds(15))
+        .build();
     private final Gson mGson = new Gson();
     private final AliasModel mAliasModel;
 
@@ -107,6 +122,8 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     private final AtomicBoolean mStopped = new AtomicBoolean(false);
     private final AtomicInteger mSequence = new AtomicInteger(1);
     private final AtomicInteger mKickedCount = new AtomicInteger(0);
+    /** Counts consecutive WebSocket handshake failures (reset on successful connection) */
+    private final AtomicInteger mHandshakeFailureCount = new AtomicInteger(0);
     private ScheduledFuture<?> mReconnectFuture;
     private ScheduledFuture<?> mKeepaliveFuture;
     private volatile boolean mKeepaliveAwaitingAck = false;
@@ -149,9 +166,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     {
         super(configuration);
         mAliasModel = aliasModel;
-        mHttpClient = HttpClient.newBuilder()
-            .connectTimeout(java.time.Duration.ofSeconds(15))
-            .build();
+        // Use the shared HttpClient — see SHARED_HTTP_CLIENT field comment.
     }
 
     /** Returns the configured channel name for log identification */
@@ -608,21 +623,35 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         mLog.debug("{}Connecting to Zello Work: {}", ch(), wsUrl);
         try
         {
-            mHttpClient.newWebSocketBuilder()
+            SHARED_HTTP_CLIENT.newWebSocketBuilder()
                 .buildAsync(URI.create(wsUrl), new ZelloWebSocketListener())
                 .thenAccept(ws -> {
                     mWebSocket = ws;
                     mSessionEpoch.incrementAndGet();
                     mReconnecting.set(false);
+                    mHandshakeFailureCount.set(0); // reset on successful connection
                     setLastErrorDetail(null);
                     sendLogon();
                 })
                 .exceptionally(ex -> {
-                    mLog.error("{}WebSocket connection failed: {}", ch(), ex.getMessage());
+                    int failures = mHandshakeFailureCount.incrementAndGet();
+                    mLog.error("{}WebSocket connection failed (attempt {}): {}", ch(), failures, ex.getMessage());
                     setLastErrorDetail("WebSocket handshake failed");
                     setBroadcastState(BroadcastState.TEMPORARY_BROADCAST_ERROR);
                     mReconnecting.set(false);
-                    scheduleReconnect();
+                    if(failures >= MAX_HANDSHAKE_FAILURES)
+                    {
+                        mLog.error("{}WebSocket handshake failed {} consecutive times - stopping reconnect. " +
+                            "Check Zello workspace URL and credentials.", ch(), failures);
+                        setBroadcastState(BroadcastState.CONFIGURATION_ERROR);
+                        // Don't schedule another reconnect — this channel is misconfigured
+                    }
+                    else
+                    {
+                        // Exponential backoff: 15s, 30s, 60s, 120s, 240s, then capped at 300s
+                        long backoffMs = Math.min(RECONNECT_INTERVAL_MS * (1L << Math.min(failures - 1, 4)), 300_000L);
+                        scheduleReconnectWithDelay(backoffMs);
+                    }
                     return null;
                 });
         }
