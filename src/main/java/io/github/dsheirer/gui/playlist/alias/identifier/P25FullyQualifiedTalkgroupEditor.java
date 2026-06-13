@@ -84,7 +84,7 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
         GridPane.setConstraints(getProtocolLabel(), 0, 0);
         gridPane.getChildren().add(getProtocolLabel());
 
-        Label valueLabel = new Label("WACN", createHelpIcon("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."));
+        Label valueLabel = new Label("WACN", createHelpIcon("Wide Area Communication Network (WACN). A unique code identifying a large regional radio system. This is usually provided by RadioReference and tells the software which network to follow."));
         GridPane.setHalignment(valueLabel, HPos.RIGHT);
         GridPane.setConstraints(valueLabel, 1, 0);
         gridPane.getChildren().add(valueLabel);
@@ -92,7 +92,7 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
         GridPane.setConstraints(getWacnField(), 2, 0);
         gridPane.getChildren().add(getWacnField());
 
-        Label systemLabel = new Label("System");
+        Label systemLabel = new Label("System", createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system."));
         GridPane.setHalignment(systemLabel, HPos.RIGHT);
         GridPane.setConstraints(systemLabel, 3, 0);
         gridPane.getChildren().add(systemLabel);
@@ -100,7 +100,7 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
         GridPane.setConstraints(getSystemField(), 4, 0);
         gridPane.getChildren().add(getSystemField());
 
-        Label radioLabel = new Label("Talkgroup");
+        Label radioLabel = new Label("Talkgroup", createHelpIcon("Talkgroup ID (TGID). Identifies a specific group of users sharing a channel on the network."));
         GridPane.setHalignment(radioLabel, HPos.RIGHT);
         GridPane.setConstraints(radioLabel, 5, 0);
         gridPane.getChildren().add(radioLabel);
