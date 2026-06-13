@@ -234,6 +234,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private io.github.dsheirer.monitor.DiskSpaceManager mDiskSpaceManager;
     private io.github.dsheirer.monitor.ConfigurationBackupService mConfigurationBackupService;
     private io.github.dsheirer.monitor.StreamingCredentialPreflight mStreamingCredentialPreflight;
+    private io.github.dsheirer.transcription.RadioIdNameLearner mRadioIdNameLearner;
     private io.github.dsheirer.controller.channel.ChannelResumeService mChannelResumeService;
     private AudioStreamingManager mAudioStreamingManager;
     private BroadcastStatusPanel mBroadcastStatusPanel;
@@ -547,6 +548,10 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mStreamingCredentialPreflight = new io.github.dsheirer.monitor.StreamingCredentialPreflight(
             mPlaylistManager.getBroadcastModel());
         mStreamingCredentialPreflight.start();
+
+        //Learn friendly names for radio IDs from audio transcriptions (digital protocols only)
+        mRadioIdNameLearner = new io.github.dsheirer.transcription.RadioIdNameLearner(aliasModel, mUserPreferences);
+        mRadioIdNameLearner.start();
 
         notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.8));
         notifyPreloader(new SDRTrunkPreloader.TextNotification("Initializing Audio Services..."));
