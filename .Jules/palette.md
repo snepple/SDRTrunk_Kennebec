@@ -110,3 +110,7 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-03-08 - Accessible Recording Buttons
 **Learning:** Destructive actions and key functionality in JavaFX lack mnemonics, accessible descriptions, and informative tooltips describing consequences.
 **Action:** When adding buttons, especially destructive ones like delete, provide descriptive tooltips including consequence warnings, add mnemonics to enable keyboard navigation, and set accessible properties (`accessibleTextProperty` and `accessibleHelpProperty`) for screen reader support.
+
+## 2026-06-13 - Adding accessibility to Channel Detail Refresh Button
+**Learning:** The 'Refresh' action button in the Channel Detail panel lacked keyboard mnemonics, a tooltip, and accessible text properties, which violates Apple HIG for clarity and feedback, and degrades the experience for keyboard or screen reader users.
+**Action:** Add mnemonics (e.g., `_Refresh`), descriptive `Tooltip`s, and accessibility properties (`accessibleTextProperty`, `accessibleHelpProperty`) to UI action buttons.

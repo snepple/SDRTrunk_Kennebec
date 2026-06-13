@@ -92,8 +92,12 @@ public class ChannelDetailPanel extends VBox implements Listener<ProcessingChain
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         buttonPanel.getChildren().add(spacer);
 
-        Button refreshButton = new Button("Refresh");
+        Button refreshButton = new Button("_Refresh");
+        refreshButton.setMnemonicParsing(true);
         refreshButton.getStyleClass().add("flat-button");
+        refreshButton.setTooltip(new javafx.scene.control.Tooltip("Refresh channel details and latest events"));
+        refreshButton.accessibleTextProperty().set("Refresh Channel Details");
+        refreshButton.accessibleHelpProperty().set("Refreshes the channel details and logs.");
         refreshButton.setOnAction(e -> receive(mProcessingChain));
         buttonPanel.getChildren().add(refreshButton);
 
