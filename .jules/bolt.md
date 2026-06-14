@@ -9,3 +9,6 @@
 ## 2026-05-18 - Spectrum Analyzer and Waterfall Drawing Bugs
 **Learning:** Mathematical sign errors when refactoring audio spectrum math (e.g. log scaling `mDBScale`) can result in out-of-bounds metrics resulting in entire charts clamping to Y=0 or skipping the last bin (`update.length - 1`). Dynamic range (in decibels) is a negative value `20 * log10(1 / (2 ^ (bit_depth - 1)))`.
 **Action:** When updating spectrum code, ensure loop index logic accurately bounds the array size (`update.length`) rather than off-by-one offsets. Ensure that dynamically scaled bounds evaluate to their true negative values so UI scaling metrics (like `scalor = height / -mDBScale`) correctly map into positive view bounds.
+## 2026-05-19 - Math.pow vs Direct Multiplication in DSP Paths
+**Learning:** Using `Math.pow(val, 2.0)` in high-frequency DSP code (like `P25P1DemodulatorLSM`) causes unnecessary overhead because it is designed for general exponentiation, making it significantly slower than simple multiplication.
+**Action:** Always replace `Math.pow(val, 2.0)` with direct multiplication (`val * val`) in hot paths to reduce CPU cycles and improve overall throughput.
