@@ -1,5 +1,6 @@
 package io.github.dsheirer.module.ai;
 
+import io.github.dsheirer.monitor.ResourceMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,14 +18,16 @@ public class PredictiveMaintenanceEngine
 
     private final ScheduledExecutorService mExecutor;
     private final ConcurrentHashMap<String, Double> mMetrics = new ConcurrentHashMap<>();
+    private final ResourceMonitor mResourceMonitor;
 
     private static final double CPU_WARN = 80.0;
     private static final double MEM_WARN = 85.0;
     private static final double TUNER_ERROR_RATE_WARN = 5.0;
     private static final double DISK_USAGE_WARN = 90.0;
 
-    public PredictiveMaintenanceEngine()
+    public PredictiveMaintenanceEngine(ResourceMonitor resourceMonitor)
     {
+        mResourceMonitor = resourceMonitor;
         mExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "PredictiveMaintenance");
             t.setDaemon(true);
@@ -48,6 +51,25 @@ public class PredictiveMaintenanceEngine
     {
         try
         {
+            // Pull live values from ResourceMonitor when available (reads are benign cross-thread
+            // for SimpleDoubleProperty — worst case we get a slightly stale value, acceptable for
+            // a 60-second warning system).
+            if (mResourceMonitor != null)
+            {
+                double cpuFraction = mResourceMonitor.cpuPercentageProperty().get();
+                if (cpuFraction > 0)
+                {
+                    mMetrics.put("cpu_percent", cpuFraction * 100.0);
+                }
+
+                double memFraction = mResourceMonitor.javaMemoryUsedPercentageProperty().get();
+                mMetrics.put("memory_percent", memFraction * 100.0);
+
+                double diskEventLogs = mResourceMonitor.directoryUsePercentEventLogsProperty().get();
+                double diskRecordings = mResourceMonitor.directoryUsePercentRecordingsProperty().get();
+                mMetrics.put("disk_usage_percent", Math.max(diskEventLogs, diskRecordings) * 100.0);
+            }
+
             Double cpu = mMetrics.get("cpu_percent");
             if(cpu != null && cpu > CPU_WARN)
             {

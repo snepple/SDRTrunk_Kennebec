@@ -86,23 +86,30 @@ public class AIPreferenceEditor extends VBox {
         enableToneDiscoverySwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
             mUserPreferences.getAIPreference().setAIToneDiscoveryEnabled(newValue);
         });
-        
+
         Button manageIgnoredBtn = new Button("Manage Ignored Tones");
         manageIgnoredBtn.setOnAction(e -> {
             SmartIgnoreListDialog dialog = new SmartIgnoreListDialog(getScene().getWindow());
             dialog.showAndWait();
         });
         manageIgnoredBtn.disableProperty().bind(enableToneDiscoverySwitch.selectedProperty().not());
-        
+
         HBox toneDiscoveryControls = new HBox(10, enableToneDiscoverySwitch, manageIgnoredBtn);
         toneDiscoveryControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        ToggleSwitch enableNbfmAutoOptimizeSwitch = new ToggleSwitch();
+        enableNbfmAutoOptimizeSwitch.setSelected(mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled());
+        enableNbfmAutoOptimizeSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setNBFMAudioAutoOptimizeEnabled(newValue);
+        });
 
         SettingsCard featuresCard = new SettingsCard();
         featuresCard.getChildren().addAll(
             new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
             new SettingsRow("System Health Advisor & Auto-Remediation", enableSystemHealthSwitch),
             new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch),
-            new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls)
+            new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls),
+            new SettingsRow("Auto-Optimize NBFM Audio Filters (every 5th call)", enableNbfmAutoOptimizeSwitch)
         );
 
         // API Key Card with Embedded Scaffolding

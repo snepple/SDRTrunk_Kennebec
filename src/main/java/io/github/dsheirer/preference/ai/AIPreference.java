@@ -19,6 +19,7 @@ public class AIPreference extends Preference {
     public static final String KEY_TRANSCRIPTION_ENGINE = "ai.transcription.engine";
     public static final String KEY_GOOGLE_STT_API_KEY = "ai.transcription.google.key";
     public static final String KEY_WHISPER_API_KEY = "ai.transcription.whisper.key";
+    public static final String KEY_NBFM_AUTO_OPTIMIZE = "ai.nbfm.auto.optimize";
 
     private Preferences mPreferences = Preferences.userNodeForPackage(AIPreference.class);
 
@@ -134,6 +135,19 @@ public class AIPreference extends Preference {
 
     public void setWhisperApiKey(String apiKey) {
         mPreferences.put(KEY_WHISPER_API_KEY, apiKey);
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Whether to automatically optimize NBFM audio DSP settings using Gemini after every 5th completed call.
+     * Requires AI to be enabled and a Gemini API key to be configured.
+     */
+    public boolean isNBFMAudioAutoOptimizeEnabled() {
+        return isAIEnabled() && mPreferences.getBoolean(KEY_NBFM_AUTO_OPTIMIZE, false);
+    }
+
+    public void setNBFMAudioAutoOptimizeEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_NBFM_AUTO_OPTIMIZE, enabled);
         notifyPreferenceUpdated();
     }
 }

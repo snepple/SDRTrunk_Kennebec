@@ -48,17 +48,18 @@ import io.github.dsheirer.sample.complex.IComplexSamplesListener;
 import io.github.dsheirer.sample.real.IRealBufferProvider;
 import io.github.dsheirer.source.ISourceEventListener;
 import io.github.dsheirer.source.SourceEvent;
+import io.github.dsheirer.module.decode.nbfm.ai.AIAnalysisResult;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAudioOptimizer;
-
 import io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager;
-
 import io.github.dsheirer.preference.UserPreferences;
+import io.github.dsheirer.util.ThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * NBFM decoder with integrated noise squelch, CTCSS tone filtering, and squelch tail removal.
@@ -125,6 +126,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     private AudioBufferManager mAudioBufferManager;
     private AIAudioOptimizer mAIAudioOptimizer;
     private final DecodeConfigNBFM mNBFMConfig;
+    private final UserPreferences mUserPreferences;
+    private int mCallEventCount = 0;
+    private final AtomicBoolean mOptimizationRunning = new AtomicBoolean(false);
 
     /**
      * Constructs an instance
@@ -137,6 +141,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
         //Save config reference for audio filter initialization (deferred until sample rate is known)
         mNBFMConfig = config;
+        mUserPreferences = userPreferences;
         mAIAudioOptimizer = new AIAudioOptimizer(userPreferences);
         mAudioBufferManager = new AudioBufferManager(userPreferences, channelName);
 
@@ -582,12 +587,90 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     }
 
     /**
-     * Broadcasts a call end state event
+     * Broadcasts a call end state event.  Every 5th completed call, if the user has enabled
+     * AI audio auto-optimization, the optimizer runs in the background and applies its
+     * recommendations to the live filter chain and the channel configuration.
      */
     private void notifyCallEnd()
     {
         mAudioBufferManager.endEvent();
         broadcast(new DecoderStateEvent(this, DecoderStateEvent.Event.END, State.CALL, 0));
+
+        mCallEventCount++;
+
+        if(mCallEventCount % 5 == 0 && mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled()
+                && mOptimizationRunning.compareAndSet(false, true))
+        {
+            final DecodeConfigNBFM configSnapshot = mNBFMConfig;
+            ThreadPool.CACHED.submit(() -> {
+                try
+                {
+                    List<List<float[]>> events = mAudioBufferManager.getBufferedEvents();
+                    if(!events.isEmpty())
+                    {
+                        AIAnalysisResult result = mAIAudioOptimizer.analyzeRawAudio(configSnapshot, events);
+                        applyAIOptimizationResult(result);
+                        mLog.info("AI auto-optimization applied to NBFM channel: {}", result.getImprovements());
+                    }
+                }
+                catch(Exception e)
+                {
+                    mLog.warn("NBFM auto-optimization failed: {}", e.getMessage());
+                }
+                finally
+                {
+                    mOptimizationRunning.set(false);
+                }
+            });
+        }
+    }
+
+    /**
+     * Applies an AI analysis result to both the live audio filter chain and the persisted
+     * channel configuration so the improved settings survive a restart.
+     */
+    private void applyAIOptimizationResult(AIAnalysisResult result)
+    {
+        // Persist to config so settings survive channel restart / playlist save
+        mNBFMConfig.setHissReductionEnabled(result.isHissReductionEnabled());
+        mNBFMConfig.setHissReductionDb(result.getHissReductionDb());
+        mNBFMConfig.setHissReductionCornerHz(result.getHissReductionCorner());
+        mNBFMConfig.setLowPassEnabled(result.isLowPassEnabled());
+        mNBFMConfig.setLowPassCutoff(result.getLowPassCutoff());
+        mNBFMConfig.setDeemphasisEnabled(result.isDeemphasisEnabled());
+        mNBFMConfig.setBassBoostEnabled(result.isBassBoostEnabled());
+        mNBFMConfig.setBassBoostDb(result.getBassBoostDb());
+        mNBFMConfig.setAgcEnabled(result.isAgcEnabled());
+        mNBFMConfig.setAgcTargetLevel(result.getAgcTargetLevel());
+        mNBFMConfig.setNoiseGateEnabled(result.isNoiseGateEnabled());
+        mNBFMConfig.setNoiseGateThreshold(result.getNoiseGateThreshold());
+        mNBFMConfig.setNoiseGateReduction(result.getNoiseGateReduction());
+        mNBFMConfig.setNoiseGateHoldTime(result.getNoiseGateHoldTime());
+        mNBFMConfig.setAgcMaxGain(result.getAgcMaxGain());
+        mNBFMConfig.setSquelchTailRemovalEnabled(result.isSquelchTailRemovalEnabled());
+        mNBFMConfig.setSquelchTailRemovalMs(result.getSquelchTailRemovalMs());
+        mNBFMConfig.setSquelchHeadRemovalMs(result.getSquelchHeadRemovalMs());
+
+        // Apply to live filter chain immediately (no restart needed)
+        if(mAudioFilters != null)
+        {
+            mAudioFilters.setHissReductionEnabled(result.isHissReductionEnabled());
+            mAudioFilters.setHissReductionDb(result.getHissReductionDb());
+            mAudioFilters.setHissReductionCornerHz(result.getHissReductionCorner());
+            mAudioFilters.setLowPassEnabled(result.isLowPassEnabled());
+            mAudioFilters.setLowPassCutoff(result.getLowPassCutoff());
+            mAudioFilters.setDeemphasisEnabled(result.isDeemphasisEnabled());
+            mAudioFilters.setBassBoostEnabled(result.isBassBoostEnabled());
+            mAudioFilters.setBassBoost(result.getBassBoostDb());
+            mAudioFilters.setVoiceEnhanceEnabled(result.isAgcEnabled());
+            mAudioFilters.setVoiceEnhancement(mapAgcTargetToVoiceEnhancement(result.getAgcTargetLevel()));
+            float inputGainLinear = (float)Math.pow(10.0, result.getAgcMaxGain() / 40.0);
+            mAudioFilters.setInputGain(inputGainLinear);
+            mAudioFilters.setNoiseGateEnabled(result.isNoiseGateEnabled());
+            mAudioFilters.setSquelchThreshold(result.getNoiseGateThreshold());
+            mAudioFilters.setSquelchReduction(result.getNoiseGateReduction());
+            mAudioFilters.setHoldTime(result.getNoiseGateHoldTime());
+        }
     }
 
     /**

@@ -236,6 +236,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private io.github.dsheirer.monitor.StreamingCredentialPreflight mStreamingCredentialPreflight;
     private io.github.dsheirer.transcription.RadioIdNameLearner mRadioIdNameLearner;
     private io.github.dsheirer.controller.channel.ChannelResumeService mChannelResumeService;
+    private io.github.dsheirer.module.ai.PredictiveMaintenanceEngine mPredictiveMaintenanceEngine;
     private AudioStreamingManager mAudioStreamingManager;
     private BroadcastStatusPanel mBroadcastStatusPanel;
     private ControllerPanel mControllerPanel;
@@ -751,6 +752,12 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
 
         mResourceMonitor.start();
+
+        if(mUserPreferences.getAIPreference().isSystemHealthAdvisorEnabled())
+        {
+            mPredictiveMaintenanceEngine = new io.github.dsheirer.module.ai.PredictiveMaintenanceEngine(mResourceMonitor);
+        }
+
         mControllerPanel.setResourcePanel(mControllerResourceStatusPanel);
 
         // Ensure the initial view is shown
@@ -790,6 +797,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mLog.info("Stopping channels ...");
         mPlaylistManager.getChannelProcessingManager().shutdown();
         if(mChannelResumeService != null) mChannelResumeService.shutdown();
+        if(mPredictiveMaintenanceEngine != null) mPredictiveMaintenanceEngine.stop();
         mAudioRecordingManager.stop();
         if(mChannelAlertMonitor != null) mChannelAlertMonitor.stop();
         if(mDiskSpaceManager != null) mDiskSpaceManager.stop();
