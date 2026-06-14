@@ -113,3 +113,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-06-14 - Adding Tooltips and A11y to Calibration Buttons
 **Learning:** Action buttons for operations like "Reset All Calibrations" lack semantic meaning for screen readers without proper A11y bindings. For destructive actions like reset, consequence warnings are required.
 **Action:** Always add `accessibleTextProperty`, `accessibleHelpProperty`, and mnemonics to JavaFX action buttons. Include "This action cannot be undone." in tooltips for destructive actions.
+## 2026-06-14 - Adding Tooltips and Mnemonics to Audio Output Device Editor
+**Learning:** Legacy UI FXML definitions often lack accessibility support, specifically missing keyboard mnemonics on Labels/Checkboxes, not utilizing `labelFor` binding for ComboBoxes/Sliders, and lacking descriptive tooltips. This makes keyboard navigation impossible and obscures functionality for screen readers and new users.
+**Action:** When updating FXML-based editors (like `AudioOutputDeviceEditor.fxml`), always add `mnemonicParsing="true"` with underscores on text elements, correctly link `<Label>` to inputs using `labelFor="$fxid"`, and embed `<tooltip><Tooltip text="..."/></tooltip>` definitions to explain specific technical settings.
