@@ -195,22 +195,27 @@ public class ChannelAutoStartFrame
         {
             if(mChannelEventListener != null)
             {
-                //Start channels on a background thread.  Channel startup acquires a tuner source and
-                //builds the processing chain (decoder, recorder and event-logger setup), which is far
-                //too heavy to run on the JavaFX Application thread - doing so freezes the UI
-                //("Not Responding") until every channel has finished starting.  startProcessing()
-                //already marshals its UI updates back onto the FX thread via Platform.runLater().
-                final java.util.List<Channel> channels = new java.util.ArrayList<>(mChannels);
+                // Offload heavy channel-start work to a background thread so the JavaFX
+                // Application Thread is never blocked (avoids "Not Responding" freeze).
+                final List<Channel> channelsToStart = new java.util.ArrayList<>(mChannels);
                 ThreadPool.CACHED.submit(() -> {
-                    for(Channel channel : channels)
+                    for(Channel channel : channelsToStart)
                     {
                         try
                         {
                             mChannelEventListener.receive(new ChannelEvent(channel, ChannelEvent.Event.REQUEST_ENABLE));
+                            // Small pause between each channel start to avoid overwhelming the tuner manager
+                            Thread.sleep(100);
                         }
-                        catch(Throwable t)
+                        catch(InterruptedException ie)
                         {
-                            mLog.error("Error auto-starting channel [" + channel.getName() + "]", t);
+                            Thread.currentThread().interrupt();
+                            mLog.warn("Channel auto-start interrupted");
+                            break;
+                        }
+                        catch(Exception e)
+                        {
+                            mLog.error("Error starting channel [" + channel.getName() + "] during auto-start", e);
                         }
                     }
                 });
