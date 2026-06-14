@@ -333,6 +333,7 @@ if !ASSET_COUNT! GTR 0 (
     >> "!RELEASE_DIR!\release_notes.md" echo ### Installation
     >> "!RELEASE_DIR!\release_notes.md" echo.
     >> "!RELEASE_DIR!\release_notes.md" echo - **Windows Installer**: Download the .exe installer and double-click to install.
+    >> "!RELEASE_DIR!\release_notes.md" echo   - ^> **Note**: Because this is an open-source project without a paid code signing certificate, Windows SmartScreen may show an "Unknown Publisher" warning. To proceed, click **"More info"**, then click **"Run anyway"**.
     >> "!RELEASE_DIR!\release_notes.md" echo - **Portable Zip**: Extract the zip and run `bin\sdr-trunk.bat` ^(Windows^) or `bin/sdr-trunk` ^(Linux/macOS^).
     >> "!RELEASE_DIR!\release_notes.md" echo - **Windows Portable**: You can also launch via `SDRTrunk.exe` in the extracted folder.
     >> "!RELEASE_DIR!\release_notes.md" echo.

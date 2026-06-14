@@ -4,6 +4,7 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 
 - **Windows Users (Recommended)**: Download the Native Windows Installer. This is the easiest way to install and manage SDRTrunk on Windows.
   - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-windows-installer.exe)
+  - ⚠️ **Note**: Because this is an open-source project without a paid code signing certificate, Windows SmartScreen may show an "Unknown Publisher" warning. To proceed, click **"More info"**, then click **"Run anyway"**.
   
 - **Advanced Windows Users**: Download the Portable ZIP if you prefer to run the application without installing it.
   - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-windows-x86_64.zip)
