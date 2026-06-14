@@ -1,6 +1,8 @@
 package io.github.dsheirer.gui.wizard;
 
 import io.github.dsheirer.gui.UsbMonitorManager;
+import io.github.dsheirer.preference.ai.GeminiModel;
+import java.util.List;
 import io.github.dsheirer.gui.preference.calibration.CalibrationDialog;
 import io.github.dsheirer.jmbe.JmbeCreator;
 import io.github.dsheirer.preference.UserPreferences;
@@ -1022,12 +1024,12 @@ public class FirstTimeWizard
             statusLabel.setManaged(true);
             setTaskRunning(true);
 
-            Task<Boolean> task = new Task<>()
+            Task<List<GeminiModel>> task = new Task<>()
             {
                 @Override
-                protected Boolean call() throws Exception
+                protected List<GeminiModel> call() throws Exception
                 {
-                    return testApiKey(key);
+                    return io.github.dsheirer.preference.ai.GeminiApiHelper.fetchAvailableModels(key);
                 }
             };
 
@@ -1036,17 +1038,33 @@ public class FirstTimeWizard
                 progressBar.setManaged(false);
                 setTaskRunning(false);
 
-                if (task.getValue())
+                List<GeminiModel> models = task.getValue();
+
+                if (models != null && !models.isEmpty())
                 {
-                    mUserPreferences.getAIPreference().setGeminiApiKey(key);
-                    mUserPreferences.getAIPreference().setAIEnabled(enableAiChk.isSelected());
                     statusLabel.setText("✓  API Key validated successfully!");
                     statusLabel.setTextFill(Color.web(ACCENT_GREEN));
+                    
+                    // Prompt user to select a model
+                    java.util.Optional<String> selectedModel = io.github.dsheirer.gui.preference.ai.GeminiModelSelectionDialog.promptUserForModel(models, mUserPreferences.getAIPreference().getGeminiModel());
+                    
+                    if (selectedModel.isPresent()) {
+                        mUserPreferences.getAIPreference().setGeminiApiKey(key);
+                        mUserPreferences.getAIPreference().setGeminiApiKeyTested(true);
+                        mUserPreferences.getAIPreference().setGeminiModel(selectedModel.get());
+                        mUserPreferences.getAIPreference().setAIEnabled(enableAiChk.isSelected());
+                        statusLabel.setText("✓  API Key & Model (" + selectedModel.get() + ") saved!");
+                    } else {
+                        statusLabel.setText("⚠  API Key validated, but no model selected.");
+                        statusLabel.setTextFill(Color.web("#FFCC00"));
+                    }
+                    testBtn.setDisable(false);
                 }
                 else
                 {
                     apiKeyField.setText("");
                     mUserPreferences.getAIPreference().setGeminiApiKey("");
+                    mUserPreferences.getAIPreference().setGeminiApiKeyTested(false);
                     mUserPreferences.getAIPreference().setAIEnabled(false);
                     enableAiChk.setSelected(false);
                     statusLabel.setText("✗  API Key test failed — check the key and try again");
@@ -1114,30 +1132,7 @@ public class FirstTimeWizard
         return new WizardStep("AI Features", layout);
     }
 
-    private boolean testApiKey(String key)
-    {
-        try
-        {
-            java.net.URL url = new java.net.URI("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + key).toURL();
-            java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setDoOutput(true);
 
-            String jsonInputString = "{\"contents\":[{\"parts\":[{\"text\":\"Hello\"}]}]}";
-            try (java.io.OutputStream os = con.getOutputStream())
-            {
-                byte[] input = jsonInputString.getBytes("utf-8");
-                os.write(input, 0, input.length);
-            }
-            int code = con.getResponseCode();
-            return code == 200;
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
-    }
 
     // ── Radio Reference ──
 

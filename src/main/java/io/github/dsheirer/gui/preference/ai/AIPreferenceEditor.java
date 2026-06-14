@@ -190,54 +190,41 @@ public class AIPreferenceEditor extends VBox {
                 return;
             }
 
-            HttpClient client = HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_2)
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .build();
+            java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                return io.github.dsheirer.preference.ai.GeminiApiHelper.fetchAvailableModels(apiKey);
+            }).thenAccept(models -> {
+                Platform.runLater(() -> {
+                    if (models != null && !models.isEmpty()) {
+                        mUserPreferences.getAIPreference().setGeminiApiKeyTested(true);
+                        testResultLabel.setText("Passed");
+                        testResultLabel.setTextFill(javafx.scene.paint.Color.GREEN);
+                        
+                        // Populate combobox with filtered models
+                        modelComboBox.getItems().clear();
+                        for (io.github.dsheirer.preference.ai.GeminiModel model : models) {
+                            modelComboBox.getItems().add(model.getName());
+                        }
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models?key=" + apiKey.trim()))
-                    .GET()
-                    .build();
-
-            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                    .thenAccept(response -> {
-                        Platform.runLater(() -> {
-                            if (response.statusCode() == 200) {
-                                mUserPreferences.getAIPreference().setGeminiApiKeyTested(true);
-                                testResultLabel.setText("Passed");
-                                testResultLabel.setTextFill(javafx.scene.paint.Color.GREEN);
-                                try {
-                                    ObjectMapper mapper = new ObjectMapper();
-                                    JsonNode root = mapper.readTree(response.body());
-                                    JsonNode models = root.get("models");
-                                    if (models != null && models.isArray()) {
-                                        modelComboBox.getItems().clear();
-                                        for (JsonNode model : models) {
-                                            JsonNode nameNode = model.get("name");
-                                            if (nameNode != null) {
-                                                modelComboBox.getItems().add(nameNode.asText());
-                                            }
-                                        }
-                                        if (!modelComboBox.getItems().contains(modelComboBox.getValue()) && !modelComboBox.getItems().isEmpty()) {
-                                            modelComboBox.setValue(modelComboBox.getItems().get(0));
-                                        }
-                                    }
-                                } catch (Exception ex) { }
-                            } else {
-                                mUserPreferences.getAIPreference().setGeminiApiKeyTested(false);
-                                apiKeyField.setText("");
-                                testResultLabel.setText("Invalid API Key, please retry.");
-                                testResultLabel.setTextFill(javafx.scene.paint.Color.RED);
-                            }
-                        });
-                    }).exceptionally(ex -> {
-                        Platform.runLater(() -> {
-                            testResultLabel.setText("Error");
-                            testResultLabel.setTextFill(javafx.scene.paint.Color.RED);
-                        });
-                        return null;
-                    });
+                        // Prompt user
+                        java.util.Optional<String> selectedModel = GeminiModelSelectionDialog.promptUserForModel(models, modelComboBox.getValue());
+                        if (selectedModel.isPresent()) {
+                            modelComboBox.setValue(selectedModel.get());
+                            mUserPreferences.getAIPreference().setGeminiModel(selectedModel.get());
+                        }
+                    } else {
+                        mUserPreferences.getAIPreference().setGeminiApiKeyTested(false);
+                        apiKeyField.setText("");
+                        testResultLabel.setText("Invalid API Key, please retry.");
+                        testResultLabel.setTextFill(javafx.scene.paint.Color.RED);
+                    }
+                });
+            }).exceptionally(ex -> {
+                Platform.runLater(() -> {
+                    testResultLabel.setText("Error");
+                    testResultLabel.setTextFill(javafx.scene.paint.Color.RED);
+                });
+                return null;
+            });
         });
 
         settingsBox.getChildren().addAll(featuresLabel, featuresCard, transcriptionHeaderLabel, transcriptionCard, apiHeaderLabel, apiCard, scaffoldingBox);
