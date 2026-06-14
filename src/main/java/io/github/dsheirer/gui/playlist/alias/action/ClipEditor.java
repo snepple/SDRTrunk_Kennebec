@@ -226,7 +226,6 @@ public class ClipEditor extends ActionEditor<ClipAction>
             mTestButton.setMaxWidth(Double.MAX_VALUE);
             mTestButton.setDisable(true);
             mTestButton.setOnAction(event -> test());
-            mTestButton.setTooltip(new javafx.scene.control.Tooltip("Click to test the audio clip playback."));
         }
 
         return mTestButton;
@@ -239,7 +238,6 @@ public class ClipEditor extends ActionEditor<ClipAction>
             mFileChooser = new Button(("Select ..."));
             mFileChooser.setMaxWidth(Double.MAX_VALUE);
             mFileChooser.setDisable(true);
-            mFileChooser.setTooltip(new javafx.scene.control.Tooltip("Click to browse and select an audio file."));
             mFileChooser.setOnAction(event -> {
                 FileChooser fileChooser = new FileChooser();
                 fileChooser.setTitle("Select Audio File");
@@ -282,7 +280,6 @@ public class ClipEditor extends ActionEditor<ClipAction>
             mFilePath = new TextField(PLEASE_SELECT_A_FILE);
             mFilePath.setDisable(true);
             mFilePath.setMaxWidth(Double.MAX_VALUE);
-            mFilePath.setTooltip(new javafx.scene.control.Tooltip("The path to the audio file that will be played."));
             mFilePath.textProperty().addListener((observable, oldValue, newValue) -> {
                 if(newValue != null && !newValue.isEmpty() && !newValue.contentEquals(PLEASE_SELECT_A_FILE))
                 {
@@ -323,7 +320,6 @@ public class ClipEditor extends ActionEditor<ClipAction>
             mIntervalComboBox.setDisable(true);
             mIntervalComboBox.getItems().setAll(RecurringAction.Interval.values());
             mIntervalComboBox.getSelectionModel().selectedItemProperty().addListener(mComboBoxChangeListener);
-            mIntervalComboBox.setTooltip(new javafx.scene.control.Tooltip("Select how often the audio clip should play."));
         }
 
         return mIntervalComboBox;
@@ -337,7 +333,6 @@ public class ClipEditor extends ActionEditor<ClipAction>
             mPeriodTextField.setPrefWidth(40);
             mPeriodTextField.setVisible(false);
             mPeriodTextField.setTextFormatter(getPeriodFormatter());
-            mPeriodTextField.setTooltip(new javafx.scene.control.Tooltip("Enter the interval length in seconds (1-60)."));
         }
 
         return mPeriodTextField;

@@ -26,9 +26,6 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 <p>Welcome to <strong>SDRTrunk Kennebec</strong>—a highly customized, feature-rich fork of the original SDRTrunk application. Engineered for robust decoding, monitoring, recording, and streaming of trunked mobile and related radio protocols using Software Defined Radios (SDR).</p>
 
 <p>While the original SDRTrunk provides an excellent decoding engine, the Kennebec build is explicitly designed for the modern public safety listening environment. It layers an extensive suite of new capabilities on top of the original engine to provide a highly refined, context-aware, and automated user experience.</p>
-## 🆕 Recent Updates (Week of June 14, 2026)
-* **UI/UX Improvement:** Fixed an issue where streaming server icons were not displaying correctly in the status panel.
-
 
 <h2>🌟 Kennebec Highlights</h2>
 <p>Kennebec introduces features not found in any other SDR software:</p>

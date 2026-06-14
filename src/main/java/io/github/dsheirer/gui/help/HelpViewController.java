@@ -106,7 +106,6 @@ public class HelpViewController {
         TreeItem<String> advancedSystemNode = new TreeItem<>("Advanced & System");
         advancedSystemNode.getChildren().add(new TreeItem<>("Audio Recordings"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Diagnostics"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Application Watchdog"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Gemini Ai"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Ignore Unwanted Talkgroups"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Inactivity Monitoring"));
