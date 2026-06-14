@@ -157,6 +157,7 @@ public class BeepEditor extends ActionEditor<BeepAction>
             mTestButton = new Button("Test");
             mTestButton.setMaxWidth(Double.MAX_VALUE);
             mTestButton.setOnAction(event -> test());
+            mTestButton.setTooltip(new javafx.scene.control.Tooltip("Click to test the beep action."));
         }
 
         return mTestButton;
@@ -183,6 +184,7 @@ public class BeepEditor extends ActionEditor<BeepAction>
             mIntervalComboBox.setDisable(true);
             mIntervalComboBox.getItems().setAll(RecurringAction.Interval.values());
             mIntervalComboBox.getSelectionModel().selectedItemProperty().addListener(mComboBoxChangeListener);
+            mIntervalComboBox.setTooltip(new javafx.scene.control.Tooltip("Select how often the beep should sound."));
         }
 
         return mIntervalComboBox;
@@ -196,6 +198,7 @@ public class BeepEditor extends ActionEditor<BeepAction>
             mPeriodTextField.setPrefWidth(40);
             mPeriodTextField.setVisible(false);
             mPeriodTextField.setTextFormatter(getPeriodFormatter());
+            mPeriodTextField.setTooltip(new javafx.scene.control.Tooltip("Enter the interval length in seconds (1-60)."));
         }
 
         return mPeriodTextField;
