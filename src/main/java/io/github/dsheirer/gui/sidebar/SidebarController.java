@@ -171,6 +171,7 @@ public class SidebarController implements Initializable {
 
         SVGPath icon = new SVGPath();
         icon.setContent(item.iconPath);
+        icon.setFillRule(javafx.scene.shape.FillRule.EVEN_ODD);
         icon.setFill(isActive ? Color.WHITE : inactiveIconColor);
         icon.setScaleX(0.75);
         icon.setScaleY(0.75);
@@ -271,6 +272,7 @@ public class SidebarController implements Initializable {
             if (sub.iconPath != null && !sub.iconPath.isEmpty()) {
                 SVGPath subIcon = new SVGPath();
                 subIcon.setContent(sub.iconPath);
+                subIcon.setFillRule(javafx.scene.shape.FillRule.EVEN_ODD);
                 subIcon.setFill(isActive ? Color.WHITE : inactiveIconColor);
                 subIcon.setScaleX(0.6);
                 subIcon.setScaleY(0.6);
