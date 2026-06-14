@@ -1,16 +1,17 @@
 package io.github.dsheirer.gui.playlist.channel;
 
 import io.github.dsheirer.controller.channel.Channel;
-import javax.swing.JPanel;
-import javax.swing.JLabel;
-import java.awt.BorderLayout;
 
-public class TetraConfigPanel extends JPanel {
+public class TetraConfigPanel extends javafx.embed.swing.JFXPanel {
     private Channel mChannel;
 
     public TetraConfigPanel(Channel channel) {
         mChannel = channel;
-        setLayout(new BorderLayout());
-        add(new JLabel("TETRA Configuration (Placeholder)"), BorderLayout.CENTER);
+        javafx.application.Platform.runLater(() -> {
+            javafx.scene.layout.VBox vbox = new javafx.scene.layout.VBox();
+            vbox.setPadding(new javafx.geometry.Insets(16));
+            vbox.getChildren().add(new javafx.scene.control.Label("TETRA Configuration (Placeholder)"));
+            setScene(new javafx.scene.Scene(vbox));
+        });
     }
 }
