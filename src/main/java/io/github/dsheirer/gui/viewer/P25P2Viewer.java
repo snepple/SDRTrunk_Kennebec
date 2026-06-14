@@ -62,6 +62,10 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
+import javafx.scene.paint.Color;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
@@ -133,9 +137,9 @@ public class P25P2Viewer extends VBox
         HBox scrambleSettingsBox = new HBox();
         scrambleSettingsBox.setAlignment(Pos.BASELINE_LEFT);
         scrambleSettingsBox.setSpacing(5);
-        Label wacnLabel = new Label("WACN:");
-        Label systemLabel = new Label("SYSTEM:");
-        Label nacLabel = new Label("NAC:");
+        Label wacnLabel = new Label("WACN:", createHelpIcon("Wide Area Communication Network (WACN):\nA unique identifier for cross-system P25 calls where the raw ID alone is not unique."));
+        Label systemLabel = new Label("SYSTEM:", createHelpIcon("System Identifier:\nCombined with the WACN, uniquely identifies a P25 system."));
+        Label nacLabel = new Label("NAC:", createHelpIcon("Network Access Code (NAC):\nA unique code identifying a specific radio system to follow."));
         scrambleSettingsBox.getChildren().addAll(wacnLabel, getWACNTextField(), systemLabel, getSystemTextField(),
                 nacLabel, getNACTextField(), getReloadButton());
 
@@ -757,5 +761,17 @@ public class P25P2Viewer extends VBox
         }
 
         return mFindNextButton;
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 }
