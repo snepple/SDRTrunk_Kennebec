@@ -821,3 +821,122 @@
     -fx-font-size: 14px;
     -fx-text-fill: #2C2C2E;
 }
+
+/* ============================================================
+   FIRST TIME WIZARD — Installer-style layout
+   ============================================================ */
+
+.wizard-dialog-pane {
+    -fx-padding: 0;
+    -fx-background-color: #FFFFFF;
+}
+
+.wizard-dialog-pane > .button-bar {
+    -fx-padding: 0;
+    -fx-min-height: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+}
+
+.wizard-sidebar {
+    -fx-background-radius: 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8, 0, 2, 0);
+}
+
+.wizard-content-area {
+    -fx-background-color: #FFFFFF;
+}
+
+.wizard-step-content {
+    -fx-background-color: #FFFFFF;
+}
+
+.wizard-step-title {
+    -fx-text-fill: #1C1C1E;
+}
+
+.wizard-step-description {
+    -fx-text-fill: #8E8E93;
+}
+
+.wizard-button-bar {
+    -fx-background-color: #F2F2F7;
+    -fx-border-color: #E5E5EA transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.wizard-nav-button {
+    -fx-background-color: #E5E5EA;
+    -fx-text-fill: #3A3A3C;
+    -fx-background-radius: 8;
+    -fx-padding: 8 20 8 20;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+}
+.wizard-nav-button:hover {
+    -fx-background-color: #D1D1D6;
+}
+.wizard-nav-button:disabled {
+    -fx-opacity: 0.4;
+}
+
+.wizard-nav-button-primary {
+    -fx-background-color: #007AFF;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+}
+.wizard-nav-button-primary:hover {
+    -fx-background-color: #0066DD;
+}
+
+.wizard-progress {
+    -fx-accent: #007AFF;
+    -fx-pref-height: 6;
+    -fx-background-radius: 3;
+}
+.wizard-progress .bar {
+    -fx-background-color: #007AFF;
+    -fx-background-radius: 3;
+    -fx-background-insets: 0;
+}
+.wizard-progress .track {
+    -fx-background-color: #E5E5EA;
+    -fx-background-radius: 3;
+    -fx-background-insets: 0;
+}
+
+.wizard-console {
+    -fx-background-color: #1C1C1E;
+    -fx-text-fill: #00FF00;
+    -fx-control-inner-background: #1C1C1E;
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 11px;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: #3A3A3C;
+}
+
+.wizard-feature-card {
+    -fx-background-color: #F2F2F7;
+    -fx-background-radius: 12;
+}
+
+.wizard-feature-title {
+    -fx-text-fill: #1C1C1E;
+}
+
+.wizard-feature-subtitle {
+    -fx-text-fill: #8E8E93;
+}
+
+.wizard-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+.wizard-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.wizard-status-label {
+    -fx-font-weight: bold;
+}

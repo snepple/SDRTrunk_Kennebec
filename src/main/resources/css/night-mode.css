@@ -195,3 +195,22 @@
 .kennebec-widget-title {
     -fx-text-fill: #e0e0e0;
 }
+
+/* === First Time Wizard Dark Mode === */
+.wizard-dialog-pane { -fx-background-color: #1a1a2e; }
+.wizard-content-area { -fx-background-color: #1a1a2e; }
+.wizard-step-content { -fx-background-color: #1a1a2e; }
+.wizard-step-content .scroll-pane { -fx-background-color: transparent; -fx-background: transparent; }
+.wizard-step-content .scroll-pane > .viewport { -fx-background-color: transparent; }
+.wizard-step-title { -fx-text-fill: #e0e0e0; }
+.wizard-step-description { -fx-text-fill: #8899AA; }
+.wizard-button-bar { -fx-background-color: #16213e; -fx-border-color: #3a3a5a transparent transparent transparent; }
+.wizard-nav-button { -fx-background-color: #0f3460; -fx-text-fill: #e0e0e0; }
+.wizard-nav-button:hover { -fx-background-color: #1a4a70; }
+.wizard-nav-button-primary { -fx-background-color: #007AFF; -fx-text-fill: white; }
+.wizard-nav-button-primary:hover { -fx-background-color: #0066DD; }
+.wizard-progress .track { -fx-background-color: #3a3a5a; }
+.wizard-console { -fx-background-color: #0a0a1a; -fx-control-inner-background: #0a0a1a; -fx-border-color: #3a3a5a; }
+.wizard-feature-card { -fx-background-color: #1e1e3a; }
+.wizard-feature-title { -fx-text-fill: #e0e0e0; }
+.wizard-feature-subtitle { -fx-text-fill: #8899AA; }
