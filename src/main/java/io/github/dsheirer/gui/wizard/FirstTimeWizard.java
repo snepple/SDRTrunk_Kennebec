@@ -10,6 +10,8 @@ import io.github.dsheirer.jmbe.github.GitHub;
 import io.github.dsheirer.jmbe.github.Release;
 import io.github.dsheirer.dsp.opencl.GpuDetector;
 import io.github.dsheirer.preference.display.DisplayPreference;
+import io.github.dsheirer.preference.record.RecordPreference;
+import io.github.dsheirer.record.RecordFormat;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -30,9 +32,11 @@ import javafx.scene.shape.SVGPath;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -443,6 +447,9 @@ public class FirstTimeWizard
 
         mSteps.add(buildRemoteDesktopStep());
         mSteps.add(buildAIStep());
+        mSteps.add(buildRadioReferenceStep());
+        mSteps.add(buildNotificationsStep());
+        mSteps.add(buildAudioRecordingStep());
         mSteps.add(buildGpuStep());
         mSteps.add(buildMemoryStep());
     }
@@ -494,6 +501,52 @@ public class FirstTimeWizard
         return layout;
     }
 
+    /**
+     * Creates a styled info box with an icon prefix for important notes.
+     */
+    private HBox createInfoBox(String icon, String text)
+    {
+        HBox box = new HBox(8);
+        box.setPadding(new Insets(10, 14, 10, 14));
+        box.setStyle("-fx-background-color: #E8F0FE; -fx-background-radius: 8; -fx-border-color: #C2D8F0; -fx-border-radius: 8;");
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setFont(Font.font(16));
+        iconLabel.setMinWidth(24);
+
+        Label textLabel = new Label(text);
+        textLabel.setFont(Font.font("SansSerif", FontWeight.NORMAL, 12));
+        textLabel.setTextFill(Color.web("#1C1C1E"));
+        textLabel.setWrapText(true);
+        HBox.setHgrow(textLabel, Priority.ALWAYS);
+
+        box.getChildren().addAll(iconLabel, textLabel);
+        return box;
+    }
+
+    /**
+     * Creates a styled warning box for skip consequences.
+     */
+    private HBox createWarningBox(String text)
+    {
+        HBox box = new HBox(8);
+        box.setPadding(new Insets(10, 14, 10, 14));
+        box.setStyle("-fx-background-color: #FFF3CD; -fx-background-radius: 8; -fx-border-color: #FFE69C; -fx-border-radius: 8;");
+
+        Label iconLabel = new Label("⚠️");
+        iconLabel.setFont(Font.font(16));
+        iconLabel.setMinWidth(24);
+
+        Label textLabel = new Label(text);
+        textLabel.setFont(Font.font("SansSerif", FontWeight.NORMAL, 12));
+        textLabel.setTextFill(Color.web("#664D03"));
+        textLabel.setWrapText(true);
+        HBox.setHgrow(textLabel, Priority.ALWAYS);
+
+        box.getChildren().addAll(iconLabel, textLabel);
+        return box;
+    }
+
     // ── Welcome ──
 
     private WizardStep buildWelcomeStep()
@@ -512,9 +565,10 @@ public class FirstTimeWizard
         mainMsg.getStyleClass().add("wizard-step-title");
 
         Label subMsg = new Label(
-            "This wizard will guide you through the essential first-time setup.\n\n" +
-            "We'll configure your audio libraries, calibration, system optimizations,\n" +
-            "AI features, and memory settings.\n\n" +
+            "This wizard will guide you through the essential first-time setup.\n" +
+            "It takes approximately 3–5 minutes to complete.\n\n" +
+            "We'll configure your audio libraries, SDR tuner calibration, system\n" +
+            "optimizations, AI features, notifications, recording, and memory.\n\n" +
             "You can skip any step and configure it later in User Preferences.");
         subMsg.setWrapText(true);
         subMsg.setTextFill(Color.web("#3A3A3C"));
@@ -586,17 +640,22 @@ public class FirstTimeWizard
     private WizardStep buildJmbeStep()
     {
         ToggleGroup group = new ToggleGroup();
-        RadioButton regularBtn = new RadioButton("Regular (dsheirer)");
+        RadioButton regularBtn = new RadioButton("Regular (dsheirer) — Standard, well-tested JMBE library");
         regularBtn.setToggleGroup(group);
         regularBtn.setSelected(true);
-        RadioButton bazinetaBtn = new RadioButton("Bazineta Fork (Alternative)");
+        RadioButton bazinetaBtn = new RadioButton("Bazineta Fork — Alternative with enhanced AMBE+ support");
         bazinetaBtn.setToggleGroup(group);
-        HBox radioBox = new HBox(12, regularBtn, bazinetaBtn);
+        VBox radioBox = new VBox(8, regularBtn, bazinetaBtn);
         radioBox.setPadding(new Insets(4, 0, 4, 0));
+
+        HBox infoBox = createInfoBox("ℹ️",
+            "The Regular (dsheirer) library is the upstream default and recommended for most users. " +
+            "The Bazineta Fork is a community alternative that may provide improved audio quality " +
+            "in some P25 Phase II scenarios. Both are free and open-source.");
 
         TextArea consoleArea = new TextArea();
         consoleArea.setEditable(false);
-        consoleArea.setPrefRowCount(6);
+        consoleArea.setPrefRowCount(5);
         consoleArea.setWrapText(true);
         consoleArea.setStyle("-fx-font-family: 'Consolas', 'Courier New', monospace; -fx-font-size: 11px;");
         consoleArea.getStyleClass().add("wizard-console");
@@ -675,17 +734,23 @@ public class FirstTimeWizard
             new Thread(task).start();
         });
 
+        HBox skipBox = createWarningBox(
+            "If you skip this step, P25 Phase I/II digital audio will not play. " +
+            "You can build the JMBE library later from User Preferences → JMBE Library.");
+
         VBox layout = createStepLayout(
             "JMBE Audio Library",
             "The JMBE (Java Multi-Band Excitation) library is required to decode P25 Phase I/II digital audio. " +
-            "Due to patent/licensing restrictions, this library cannot be distributed with the application and must be compiled.",
+            "Due to patent/licensing restrictions, this library cannot be distributed with the application and must be compiled on your machine.",
             new Label("Select library source:"),
             radioBox,
+            infoBox,
             createBtn,
             progressBar,
             statusLabel,
             new Label("Build Output:"),
-            consoleArea
+            consoleArea,
+            skipBox
         );
 
         return new WizardStep("JMBE Library", layout);
@@ -722,12 +787,29 @@ public class FirstTimeWizard
             }
         });
 
+        HBox prerequisiteBox = createInfoBox("📡",
+            "Prerequisites: You need an SDR tuner plugged into a USB port and a known " +
+            "reference signal (e.g., an NOAA weather radio station at a known frequency) " +
+            "to perform calibration.");
+
+        HBox whyBox = createInfoBox("🎯",
+            "Why calibrate? Without calibration, your tuner may be off-frequency by several kHz, " +
+            "causing missed transmissions, garbled audio, or failure to lock onto trunked control channels.");
+
+        HBox skipBox = createWarningBox(
+            "If you skip this step, your tuner will use the default 0 PPM correction. You can " +
+            "calibrate later from User Preferences → SDR Tuner Calibration.");
+
         VBox layout = createStepLayout(
             "SDR Tuner Calibration",
-            "SDR hardware tuners often have frequency offsets (PPM error). " +
-            "SDRTrunk can automatically calculate and apply this correction factor for accurate tuning.",
+            "SDR hardware tuners have manufacturing variations that cause slight frequency offsets " +
+            "(measured in PPM — parts per million). SDRTrunk can automatically calculate and " +
+            "apply this correction factor so your tuner is precisely on-frequency.",
+            prerequisiteBox,
+            whyBox,
             calBtn,
-            statusLabel
+            statusLabel,
+            skipBox
         );
 
         return new WizardStep("Calibration", layout);
@@ -825,15 +907,31 @@ public class FirstTimeWizard
             new Thread(task).start();
         });
 
+        HBox usbInfo = createInfoBox("🔌",
+            "USB Monitor: Monitors connected SDR hardware and automatically power-cycles devices " +
+            "that stop responding. This prevents lockups that would otherwise require you to " +
+            "physically unplug and re-plug the USB dongle.");
+
+        HBox ecoInfo = createInfoBox("⚡",
+            "Windows EcoQoS Fix: Windows 11 aggressively throttles CPU-intensive apps to save " +
+            "power via the EcoQoS API. This causes audio dropouts and missed radio packets in " +
+            "SDRTrunk. This fix tells Windows to treat SDRTrunk as a high-priority application.");
+
+        HBox skipBox = createWarningBox(
+            "If you skip this step, the application will still work, but you may experience " +
+            "occasional SDR hardware lockups requiring manual intervention, and audio quality " +
+            "may degrade on laptops running on battery.");
+
         VBox layout = createStepLayout(
             "System Optimizations",
-            "SDRTrunk Kennebec requires two system optimizations for maximum performance and stability on Windows:\n\n" +
-            "• USB Monitor — automatically resets crashed/locked SDR hardware\n" +
-            "• Windows EcoQoS Fix — disables power throttling that causes audio dropouts\n\n" +
-            "Applying these requires Administrator permissions. You will receive one UAC prompt for both.",
+            "SDRTrunk Kennebec requires two system optimizations for maximum performance and stability on Windows. " +
+            "Applying these requires Administrator permissions — you will receive one UAC prompt for both.",
+            usbInfo,
+            ecoInfo,
             installBtn,
             progressBar,
-            statusLabel
+            statusLabel,
+            skipBox
         );
 
         return new WizardStep("Optimizations", layout);
@@ -849,11 +947,30 @@ public class FirstTimeWizard
         optimizeChk.setSelected(appPrefs.getBoolean("sdrtrunk.rdp.optimizations", false));
         optimizeChk.setOnAction(e -> appPrefs.putBoolean("sdrtrunk.rdp.optimizations", optimizeChk.isSelected()));
 
+        HBox whenBox = createInfoBox("🖥️",
+            "Enable this if you primarily access SDRTrunk via RustDesk, TeamViewer, " +
+            "Windows Remote Desktop (RDP), VNC, or AnyDesk.");
+
+        HBox whatBox = createInfoBox("🔧",
+            "When enabled, the following optimizations are applied:\n" +
+            "• Spectrum waterfall updates are reduced to lower frame rates\n" +
+            "• Smooth animations are replaced with instant transitions\n" +
+            "• Transparency effects and drop shadows are removed\n" +
+            "• Chart rendering complexity is reduced\n\n" +
+            "This significantly reduces bandwidth usage and improves responsiveness.");
+
+        HBox skipBox = createWarningBox(
+            "If you run SDRTrunk locally (not via remote desktop), leave this disabled. " +
+            "Enabling it unnecessarily will reduce visual quality.");
+
         VBox layout = createStepLayout(
             "Remote Desktop Optimizations",
-            "When connecting via RustDesk or other remote desktop tools, this option will disable some animations " +
-            "and simplify the GUI to improve responsiveness over slow connections.",
-            optimizeChk
+            "When connecting via remote desktop tools, SDRTrunk can simplify its " +
+            "GUI rendering to improve responsiveness over slow network connections.",
+            optimizeChk,
+            whenBox,
+            whatBox,
+            skipBox
         );
 
         return new WizardStep("Remote Desktop", layout);
@@ -950,16 +1067,48 @@ public class FirstTimeWizard
             new Thread(task).start();
         });
 
+        HBox featuresBox = createInfoBox("🤖",
+            "AI features include:\n" +
+            "• Automatic transcript summarization of decoded radio traffic\n" +
+            "• Activity pattern detection across channels\n" +
+            "• Intelligent channel prioritization based on content");
+
+        Label howToLabel = new Label("How to get a free API Key:");
+        howToLabel.setFont(Font.font("SansSerif", FontWeight.BOLD, 13));
+
+        Label stepsLabel = new Label(
+            "1. Go to https://aistudio.google.com/apikey\n" +
+            "2. Sign in with your Google account (free)\n" +
+            "3. Click \"Create API Key\" and select a project\n" +
+            "4. Copy the key and paste it in the field above");
+        stepsLabel.setWrapText(true);
+        stepsLabel.setFont(Font.font("SansSerif", 12));
+        stepsLabel.setTextFill(Color.web("#3A3A3C"));
+
+        HBox costBox = createInfoBox("💰",
+            "The Gemini API has a generous free tier. For typical SDRTrunk usage " +
+            "(summarizing a few hundred transcripts per day), the free tier is more than " +
+            "sufficient. Check Google's Gemini pricing page for heavy usage details.");
+
+        HBox skipBox = createWarningBox(
+            "If you skip this step, AI-powered features will be disabled. You can add " +
+            "an API key later from User Preferences → AI Features.");
+
         VBox layout = createStepLayout(
             "Gemini AI Features",
-            "SDRTrunk Kennebec features AI integrations using Google's Gemini API to summarize " +
-            "transcripts and identify channel activity. A valid API Key is required — you can get one for free from Google AI Studio.",
+            "SDRTrunk Kennebec features AI integrations powered by Google's Gemini API for " +
+            "automatic transcript summarization and activity analysis.",
             enableAiChk,
+            featuresBox,
+            howToLabel,
+            stepsLabel,
             new Label("API Key:"),
             apiKeyField,
             testBtn,
             progressBar,
-            statusLabel
+            statusLabel,
+            costBox,
+            skipBox
         );
 
         return new WizardStep("AI Features", layout);
@@ -990,6 +1139,299 @@ public class FirstTimeWizard
         }
     }
 
+    // ── Radio Reference ──
+
+    private WizardStep buildRadioReferenceStep()
+    {
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("RadioReference.com username");
+        usernameField.setMaxWidth(420);
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("RadioReference.com password or API key");
+        passwordField.setMaxWidth(420);
+
+        CheckBox storeCredentials = new CheckBox("Store credentials for future sessions");
+        storeCredentials.setSelected(true);
+
+        Label statusLabel = new Label("");
+        statusLabel.setFont(Font.font("SansSerif", FontWeight.SEMI_BOLD, 12));
+        statusLabel.setVisible(false);
+        statusLabel.setManaged(false);
+
+        Button saveBtn = new Button("▶  Save Credentials");
+        saveBtn.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 8 20 8 20; -fx-font-weight: bold; -fx-cursor: hand;");
+
+        saveBtn.setOnAction(e -> {
+            String username = usernameField.getText();
+            String password = passwordField.getText();
+
+            if (username != null && !username.isBlank() && password != null && !password.isBlank())
+            {
+                try
+                {
+                    mUserPreferences.getRadioReferencePreference().setStoreCredentials(storeCredentials.isSelected());
+                    mUserPreferences.getRadioReferencePreference().setUserName(username);
+                    mUserPreferences.getRadioReferencePreference().setPassword(password);
+
+                    statusLabel.setText("✓  Credentials saved successfully!");
+                    statusLabel.setTextFill(Color.web(ACCENT_GREEN));
+                    statusLabel.setVisible(true);
+                    statusLabel.setManaged(true);
+                }
+                catch (Exception ex)
+                {
+                    statusLabel.setText("✗  Failed to save credentials");
+                    statusLabel.setTextFill(Color.web("#FF3B30"));
+                    statusLabel.setVisible(true);
+                    statusLabel.setManaged(true);
+                }
+            }
+            else
+            {
+                statusLabel.setText("✗  Please enter both username and password/API key");
+                statusLabel.setTextFill(Color.web("#FF3B30"));
+                statusLabel.setVisible(true);
+                statusLabel.setManaged(true);
+            }
+        });
+
+        HBox whatBox = createInfoBox("📡",
+            "RadioReference.com is the largest database of radio system information in North " +
+            "America. SDRTrunk can import talkgroup IDs, system configurations, and frequency " +
+            "data directly from RadioReference, dramatically simplifying channel setup.");
+
+        HBox whyBox = createInfoBox("⭐",
+            "Why set this up? Instead of manually entering hundreds of talkgroup IDs and " +
+            "frequencies, you can import entire radio systems in a few clicks. This is the " +
+            "fastest way to get started monitoring P25, DMR, and LTR systems.");
+
+        Label howToLabel = new Label("How to get credentials:");
+        howToLabel.setFont(Font.font("SansSerif", FontWeight.BOLD, 13));
+
+        Label stepsLabel = new Label(
+            "1. Go to https://www.radioreference.com\n" +
+            "2. Create an account (free) or sign in\n" +
+            "3. Subscribe to a Premium membership ($15/6 months)\n" +
+            "   — Premium is required for API access\n" +
+            "4. Enter your username and password below");
+        stepsLabel.setWrapText(true);
+        stepsLabel.setFont(Font.font("SansSerif", 12));
+        stepsLabel.setTextFill(Color.web("#3A3A3C"));
+
+        HBox skipBox = createWarningBox(
+            "If you skip this step, you can still use SDRTrunk but will need to manually " +
+            "configure all channels, talkgroups, and frequencies. You can add RadioReference " +
+            "credentials later from the Radio Reference tab in the Playlist Editor.");
+
+        VBox layout = createStepLayout(
+            "RadioReference Integration",
+            "Connect your RadioReference.com premium account to import radio system data, " +
+            "talkgroup IDs, and frequencies automatically.",
+            whatBox,
+            whyBox,
+            howToLabel,
+            stepsLabel,
+            new Label("Username:"),
+            usernameField,
+            new Label("Password / API Key:"),
+            passwordField,
+            storeCredentials,
+            saveBtn,
+            statusLabel,
+            skipBox
+        );
+
+        return new WizardStep("Radio Reference", layout);
+    }
+
+    // ── Notifications ──
+
+    private WizardStep buildNotificationsStep()
+    {
+        CheckBox enableTelegramChk = new CheckBox("Enable Telegram Notifications");
+
+        TextField botTokenField = new TextField();
+        botTokenField.setPromptText("Telegram Bot Token (e.g., 123456:ABC-DEF...)");
+        botTokenField.setMaxWidth(420);
+
+        Label statusLabel = new Label("");
+        statusLabel.setFont(Font.font("SansSerif", FontWeight.SEMI_BOLD, 12));
+        statusLabel.setVisible(false);
+        statusLabel.setManaged(false);
+
+        Button saveBtn = new Button("▶  Save Notification Settings");
+        saveBtn.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 8 20 8 20; -fx-font-weight: bold; -fx-cursor: hand;");
+
+        saveBtn.setOnAction(e -> {
+            try
+            {
+                mUserPreferences.getNotificationPreference().setTelegramEnabled(enableTelegramChk.isSelected());
+                String token = botTokenField.getText();
+                if (token != null && !token.isBlank())
+                {
+                    mUserPreferences.getNotificationPreference().setTelegramBotToken(token);
+                }
+
+                statusLabel.setText("✓  Notification settings saved!");
+                statusLabel.setTextFill(Color.web(ACCENT_GREEN));
+                statusLabel.setVisible(true);
+                statusLabel.setManaged(true);
+            }
+            catch (Exception ex)
+            {
+                statusLabel.setText("✗  Failed to save notification settings");
+                statusLabel.setTextFill(Color.web("#FF3B30"));
+                statusLabel.setVisible(true);
+                statusLabel.setManaged(true);
+            }
+        });
+
+        HBox whatBox = createInfoBox("🔔",
+            "SDRTrunk can send you real-time notifications when specific events occur — " +
+            "for example, when a specific talkgroup becomes active, when a priority call " +
+            "is detected, or when certain keywords appear in decoded traffic.");
+
+        HBox whyBox = createInfoBox("📱",
+            "Telegram notifications let you monitor important radio activity from your " +
+            "phone or tablet, even when you're away from the computer. You can set up " +
+            "alerts per talkgroup or keyword in the Alias/Notifications editor.");
+
+        Label howToLabel = new Label("How to create a Telegram Bot:");
+        howToLabel.setFont(Font.font("SansSerif", FontWeight.BOLD, 13));
+
+        Label stepsLabel = new Label(
+            "1. Open Telegram and search for @BotFather\n" +
+            "2. Send /newbot and follow the prompts to name your bot\n" +
+            "3. BotFather will give you a Bot Token (a long string)\n" +
+            "4. Copy the token and paste it in the field below\n" +
+            "5. Add recipients (Chat IDs) later in User Preferences → Notifications");
+        stepsLabel.setWrapText(true);
+        stepsLabel.setFont(Font.font("SansSerif", 12));
+        stepsLabel.setTextFill(Color.web("#3A3A3C"));
+
+        HBox skipBox = createWarningBox(
+            "If you skip this step, no external notifications will be sent. You can " +
+            "configure Telegram (and email) notifications later from User Preferences → Notifications.");
+
+        VBox layout = createStepLayout(
+            "Notifications",
+            "Set up Telegram notifications so SDRTrunk can alert you about important " +
+            "radio activity on your phone or other devices.",
+            whatBox,
+            whyBox,
+            enableTelegramChk,
+            howToLabel,
+            stepsLabel,
+            new Label("Bot Token:"),
+            botTokenField,
+            saveBtn,
+            statusLabel,
+            skipBox
+        );
+
+        return new WizardStep("Notifications", layout);
+    }
+
+    // ── Audio Recording ──
+
+    private WizardStep buildAudioRecordingStep()
+    {
+        // Recording format selection
+        ToggleGroup formatGroup = new ToggleGroup();
+        RadioButton mp3Btn = new RadioButton("MP3 (Recommended) — Smaller files, good quality, widely compatible");
+        mp3Btn.setToggleGroup(formatGroup);
+        mp3Btn.setSelected(true);
+        RadioButton wavBtn = new RadioButton("WAVE (.wav) — Lossless audio, larger files (10x larger than MP3)");
+        wavBtn.setToggleGroup(formatGroup);
+        VBox formatBox = new VBox(8, mp3Btn, wavBtn);
+        formatBox.setPadding(new Insets(4, 0, 4, 0));
+
+        // Recording directory
+        Path currentDir = mUserPreferences.getDirectoryPreference().getDirectoryRecording();
+        TextField dirField = new TextField(currentDir.toAbsolutePath().toString());
+        dirField.setMaxWidth(420);
+        dirField.setEditable(false);
+
+        Button browseBtn = new Button("Browse...");
+        browseBtn.setStyle("-fx-background-color: #E5E5EA; -fx-text-fill: #3A3A3C; -fx-background-radius: 6; -fx-padding: 6 14 6 14;");
+
+        HBox dirRow = new HBox(8, dirField, browseBtn);
+        dirRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(dirField, Priority.ALWAYS);
+
+        browseBtn.setOnAction(e -> {
+            DirectoryChooser chooser = new DirectoryChooser();
+            chooser.setTitle("Select Recording Directory");
+            File initial = new File(dirField.getText());
+            if (initial.exists()) chooser.setInitialDirectory(initial);
+            File selected = chooser.showDialog(mOwner);
+            if (selected != null)
+            {
+                dirField.setText(selected.getAbsolutePath());
+                mUserPreferences.getDirectoryPreference().setDirectoryRecording(selected.toPath());
+            }
+        });
+
+        Label statusLabel = new Label("");
+        statusLabel.setFont(Font.font("SansSerif", FontWeight.SEMI_BOLD, 12));
+        statusLabel.setVisible(false);
+        statusLabel.setManaged(false);
+
+        Button saveBtn = new Button("▶  Save Recording Settings");
+        saveBtn.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 8 20 8 20; -fx-font-weight: bold; -fx-cursor: hand;");
+
+        saveBtn.setOnAction(e -> {
+            try
+            {
+                RecordFormat format = mp3Btn.isSelected() ? RecordFormat.MP3 : RecordFormat.WAVE;
+                mUserPreferences.getRecordPreference().setAudioRecordFormat(format);
+
+                statusLabel.setText("✓  Recording settings saved! Format: " + format.name());
+                statusLabel.setTextFill(Color.web(ACCENT_GREEN));
+                statusLabel.setVisible(true);
+                statusLabel.setManaged(true);
+            }
+            catch (Exception ex)
+            {
+                statusLabel.setText("✗  Failed to save recording settings");
+                statusLabel.setTextFill(Color.web("#FF3B30"));
+                statusLabel.setVisible(true);
+                statusLabel.setManaged(true);
+            }
+        });
+
+        HBox whatBox = createInfoBox("🔊",
+            "SDRTrunk can automatically record all decoded audio calls. Recordings are " +
+            "organized by date and channel, and can be played back or exported later. " +
+            "You can enable/disable recording per-channel in the Playlist Editor.");
+
+        HBox formatInfo = createInfoBox("💾",
+            "MP3 is recommended for most users — files are about 10x smaller than WAV " +
+            "with minimal quality loss. Choose WAV only if you need lossless audio for " +
+            "forensic analysis or archival purposes.");
+
+        HBox skipBox = createWarningBox(
+            "If you skip this step, the default settings (MP3 format, standard directory) " +
+            "will be used. You can change these later from User Preferences → Recording.");
+
+        VBox layout = createStepLayout(
+            "Audio Recording",
+            "Configure how SDRTrunk records decoded audio from monitored channels.",
+            whatBox,
+            new Label("Recording Format:"),
+            formatBox,
+            formatInfo,
+            new Label("Recording Directory:"),
+            dirRow,
+            saveBtn,
+            statusLabel,
+            skipBox
+        );
+
+        return new WizardStep("Recording", layout);
+    }
+
     // ── GPU ──
 
     private WizardStep buildGpuStep()
@@ -1011,13 +1453,32 @@ public class FirstTimeWizard
             p.putBoolean("opencl.enabled", enableGpuBox.isSelected());
         });
 
+        HBox whatBox = createInfoBox("🖥️",
+            "GPU acceleration offloads intensive DSP (Digital Signal Processing) math " +
+            "operations from your CPU to your graphics card via OpenCL. This can reduce " +
+            "CPU utilization by 30-60%, allowing you to monitor more channels simultaneously.");
+
+        HBox warningBox = createInfoBox("⚠️",
+            "When NOT to enable: If you experience graphical glitches, application crashes, " +
+            "or audio artifacts after enabling GPU acceleration, disable this option. Some " +
+            "older GPU drivers have buggy OpenCL implementations. Intel integrated graphics " +
+            "sometimes have compatibility issues.");
+
+        HBox skipBox = createWarningBox(
+            "If you skip or leave this disabled, all DSP processing will use CPU only. " +
+            "This works fine for most setups but may limit the number of simultaneous " +
+            "channels you can monitor on slower hardware.");
+
         VBox layout = createStepLayout(
             "Hardware Acceleration (GPU)",
             "SDRTrunk can offload massive DSP math operations to your GPU via OpenCL. " +
             "This dramatically lowers CPU utilization, but requires stable graphics drivers.",
+            whatBox,
             progressBar,
             statusLabel,
-            enableGpuBox
+            enableGpuBox,
+            warningBox,
+            skipBox
         );
 
         // The auto-start task that runs when this step becomes visible
@@ -1121,12 +1582,41 @@ public class FirstTimeWizard
         HBox memRow = new HBox(10, new Label("Max Memory (GB):"), memoryCombo);
         memRow.setAlignment(Pos.CENTER_LEFT);
 
+        // Recommendation table
+        Label guideTitle = new Label("Recommended Settings:");
+        guideTitle.setFont(Font.font("SansSerif", FontWeight.BOLD, 13));
+
+        VBox guideTable = new VBox(2);
+        guideTable.setPadding(new Insets(8, 0, 8, 0));
+        String[] rows = {
+            "  1–5 channels, waterfall off    →  4 GB",
+            "  1–5 channels, waterfall on     →  6 GB",
+            "  6–20 channels, waterfall on    →  8 GB",
+            "  20+ channels, waterfall on     →  12–16 GB",
+            "  Extreme (50+ channels)         →  24–32 GB"
+        };
+        for (String row : rows)
+        {
+            Label rowLabel = new Label(row);
+            rowLabel.setFont(Font.font("Consolas", 12));
+            rowLabel.setTextFill(Color.web("#3A3A3C"));
+            guideTable.getChildren().add(rowLabel);
+        }
+
+        HBox warningBox = createInfoBox("⚠️",
+            "Do not set memory higher than your system's physical RAM. Setting " +
+            "it too high can cause the OS to use swap memory, which will make " +
+            "the application much slower. Leave at least 2 GB for Windows/macOS.");
+
         VBox layout = createStepLayout(
             "System Memory Allocation",
             "SDRTrunk is memory intensive when monitoring many channels or using the waterfall display. " +
-            "Select the maximum memory (RAM) the application is allowed to use. A minimum of 4GB is recommended.\n\n" +
+            "Select the maximum memory (RAM) the application is allowed to use.\n\n" +
             "This is the final step. Applying this setting will prompt a restart of the application.",
+            guideTitle,
+            guideTable,
             memRow,
+            warningBox,
             applyBtn,
             statusLabel
         );
