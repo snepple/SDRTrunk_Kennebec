@@ -78,44 +78,56 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new javafx.geometry.Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        VBox labelAndButtonPanel = new VBox();
-        labelAndButtonPanel.getChildren().add(getTunerIdLabel());
-        labelAndButtonPanel.getChildren().add(getTunerPreferencesButton());
-        getChildren().add(labelAndButtonPanel);
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(getTunerPreferencesButton(), 1, 1);
+        infoGrid.add(new Label("Status:"), 0, 2);
+        infoGrid.add(getTunerStatusLabel(), 1, 2);
+        getChildren().add(infoGrid);
+
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
-
-        getChildren().add(new Label("Gain:"));
-        getChildren().add(getGainPanel());
-        getChildren().add(new Label("LNA:"));
-        getChildren().add(getLNASlider());
-        getChildren().add(new Label("IF:"));
-        getChildren().add(getIfGainSlider());
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("Gain:"), 0, 0);
+        gainGrid.add(getGainPanel(), 1, 0);
+        gainGrid.add(new Label("LNA:"), 0, 1);
+        gainGrid.add(getLNASlider(), 1, 1);
+        gainGrid.add(new Label("IF:"), 0, 2);
+        gainGrid.add(getIfGainSlider(), 1, 2);
+        getChildren().add(gainGrid);
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label());
         getChildren().add(getExternalReferenceOutputCheckBox());
-        getChildren().add(new Label());
         getChildren().add(getAmNotchCheckBox());
-        getChildren().add(new Label());
         getChildren().add(getRfDabNotchCheckBox());
-        getChildren().add(new Label());
         getChildren().add(getRfNotchCheckBox());
-        getChildren().add(new Label("AM Port:"));
-        getChildren().add(getAmPortCombo());
+
+        GridPane amPortGrid = new GridPane();
+        amPortGrid.setHgap(10);
+        amPortGrid.setVgap(4);
+        amPortGrid.add(new Label("AM Port:"), 0, 0);
+        amPortGrid.add(getAmPortCombo(), 1, 0);
+        getChildren().add(amPortGrid);
     }
 
     /**

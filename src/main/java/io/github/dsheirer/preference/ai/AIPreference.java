@@ -20,6 +20,7 @@ public class AIPreference extends Preference {
     public static final String KEY_GOOGLE_STT_API_KEY = "ai.transcription.google.key";
     public static final String KEY_WHISPER_API_KEY = "ai.transcription.whisper.key";
     public static final String KEY_NBFM_AUTO_OPTIMIZE = "ai.nbfm.auto.optimize";
+    public static final String KEY_GAIN_ADVISOR_ENABLED = "ai.gain.advisor.enabled";
 
     private Preferences mPreferences = Preferences.userNodeForPackage(AIPreference.class);
 
@@ -148,6 +149,21 @@ public class AIPreference extends Preference {
 
     public void setNBFMAudioAutoOptimizeEnabled(boolean enabled) {
         mPreferences.putBoolean(KEY_NBFM_AUTO_OPTIMIZE, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Whether to enable the Adaptive Gain Advisor, which monitors I/Q signal power levels
+     * across all active channels and logs recommendations when gain appears sub-optimal.
+     * Works with or without AI; when AI is enabled, provides hourly Gemini-assisted analysis
+     * that accounts for propagation patterns and multi-channel interactions.
+     */
+    public boolean isGainAdvisorEnabled() {
+        return mPreferences.getBoolean(KEY_GAIN_ADVISOR_ENABLED, true);
+    }
+
+    public void setGainAdvisorEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_GAIN_ADVISOR_ENABLED, enabled);
         notifyPreferenceUpdated();
     }
 }

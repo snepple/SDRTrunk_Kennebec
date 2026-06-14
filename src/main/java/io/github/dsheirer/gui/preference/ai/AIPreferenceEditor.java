@@ -103,13 +103,20 @@ public class AIPreferenceEditor extends VBox {
             mUserPreferences.getAIPreference().setNBFMAudioAutoOptimizeEnabled(newValue);
         });
 
+        ToggleSwitch enableGainAdvisorSwitch = new ToggleSwitch();
+        enableGainAdvisorSwitch.setSelected(mUserPreferences.getAIPreference().isGainAdvisorEnabled());
+        enableGainAdvisorSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setGainAdvisorEnabled(newValue);
+        });
+
         SettingsCard featuresCard = new SettingsCard();
         featuresCard.getChildren().addAll(
             new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
             new SettingsRow("System Health Advisor & Auto-Remediation", enableSystemHealthSwitch),
             new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch),
             new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls),
-            new SettingsRow("Auto-Optimize NBFM Audio Filters (every 5th call)", enableNbfmAutoOptimizeSwitch)
+            new SettingsRow("Auto-Optimize NBFM Audio Filters (every 5th call)", enableNbfmAutoOptimizeSwitch),
+            new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels, recommends tuner gain changes)", enableGainAdvisorSwitch)
         );
 
         // API Key Card with Embedded Scaffolding

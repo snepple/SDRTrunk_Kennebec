@@ -61,7 +61,7 @@ import java.util.Optional;
 /**
  * Custom frequency controller for displaying or editing frequency values in MHz.
  */
-public class FrequencyControl extends VBox implements ISourceEventProcessor
+public class FrequencyControl extends HBox implements ISourceEventProcessor
 {
     private static final long serialVersionUID = 1L;
     private final static Logger mLog = LoggerFactory.getLogger(FrequencyControl.class);
@@ -83,9 +83,10 @@ public class FrequencyControl extends VBox implements ISourceEventProcessor
      */
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(1);
+        setAlignment(Pos.CENTER_LEFT);
 
-        javafx.scene.text.Font font = javafx.scene.text.Font.font("Monospaced", javafx.scene.text.FontWeight.BOLD, 18);
+        javafx.scene.text.Font digitFont = javafx.scene.text.Font.font("Monospaced", javafx.scene.text.FontWeight.BOLD, 16);
 
         for(int x = 9; x >= 0; x--)
         {
@@ -102,15 +103,19 @@ public class FrequencyControl extends VBox implements ISourceEventProcessor
 
             if(digit != null)
             {
+                digit.setFont(digitFont);
+                digit.setPrefColumnCount(1);
+                digit.setMaxWidth(Region.USE_PREF_SIZE);
                 mDigits.put(x, digit);
 
                 getChildren().add(digit);
 
-                // digit.setFont(font);
-
                 if(x == 6)
                 {
-                    getChildren().add(new Label(". "));
+                    Label dot = new Label(".");
+                    dot.setFont(digitFont);
+                    dot.setPadding(new Insets(0, 1, 0, 1));
+                    getChildren().add(dot);
                 }
             }
         }

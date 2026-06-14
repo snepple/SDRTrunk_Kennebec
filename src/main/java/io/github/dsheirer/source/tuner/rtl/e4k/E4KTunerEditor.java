@@ -123,41 +123,55 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
 
     private void init()
     {
-        
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
         getChildren().add(getBiasTButton());
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
-
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
         getChildren().add(new Separator());
         getChildren().add(new Label("Mixer/LNA Gain Control"));
 
-        getChildren().add(new Label("Master:"));
-        getChildren().add(getMasterGainCombo());
-
-        getChildren().add(new Label("Mixer:"));
-        getChildren().add(getMixerGainCombo());
-
-        getChildren().add(new Label("LNA:"));
-        getChildren().add(getLNAGainCombo());
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("Master:"), 0, 0);
+        gainGrid.add(getMasterGainCombo(), 1, 0);
+        gainGrid.add(new Label("Mixer:"), 0, 1);
+        gainGrid.add(getMixerGainCombo(), 1, 1);
+        gainGrid.add(new Label("LNA:"), 0, 2);
+        gainGrid.add(getLNAGainCombo(), 1, 2);
+        getChildren().add(gainGrid);
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("IF Gain:"));
-        getChildren().add(getIfGainCombo());
+        GridPane ifGrid = new GridPane();
+        ifGrid.setHgap(10);
+        ifGrid.setVgap(4);
+        ifGrid.add(new Label("IF Gain:"), 0, 0);
+        ifGrid.add(getIfGainCombo(), 1, 0);
+        getChildren().add(ifGrid);
     }
 
     @Override

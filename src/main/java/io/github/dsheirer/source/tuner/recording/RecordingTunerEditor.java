@@ -26,6 +26,8 @@ import io.github.dsheirer.source.tuner.ui.TunerEditor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javafx.geometry.Insets;
+import javafx.scene.layout.GridPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 
@@ -101,25 +103,30 @@ public class RecordingTunerEditor extends TunerEditor<RecordingTuner,RecordingTu
 
     private void init()
     {
-        // HIG inspired layout: standardized 8pt grid with gaps
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
-
-        getChildren().add(new Label("File:"));
-        getChildren().add(getRecordingPath());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        infoGrid.add(new Label("File:"), 0, 2);
+        infoGrid.add(getRecordingPath(), 1, 2);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 
-        // Use empty space instead of a separator for HIG deference
-        getChildren().add(new Label(""));
+        getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        getChildren().add(freqGrid);
     }
     private Label getRecordingPath()
     {

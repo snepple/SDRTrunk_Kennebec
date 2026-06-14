@@ -51,7 +51,9 @@ import io.github.dsheirer.source.SourceEvent;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAnalysisResult;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAudioOptimizer;
 import io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager;
+import io.github.dsheirer.module.decode.nbfm.ai.AudioWatchdogService;
 import io.github.dsheirer.preference.UserPreferences;
+import io.github.dsheirer.source.tuner.manager.AdaptiveGainAdvisor;
 import io.github.dsheirer.util.ThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,10 +127,16 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     private NBFMAudioFilters mAudioFilters;
     private AudioBufferManager mAudioBufferManager;
     private AIAudioOptimizer mAIAudioOptimizer;
+    private AudioWatchdogService mAudioWatchdog;
     private final DecodeConfigNBFM mNBFMConfig;
     private final UserPreferences mUserPreferences;
+    private final String mChannelName;
     private int mCallEventCount = 0;
     private final AtomicBoolean mOptimizationRunning = new AtomicBoolean(false);
+
+    // Signal level sampling for AdaptiveGainAdvisor (sample every 50th buffer for efficiency)
+    private int mIQSampleCounter = 0;
+    private static final int IQ_SAMPLE_INTERVAL = 50;
 
     /**
      * Constructs an instance
@@ -142,8 +150,15 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         //Save config reference for audio filter initialization (deferred until sample rate is known)
         mNBFMConfig = config;
         mUserPreferences = userPreferences;
+        mChannelName = channelName;
         mAIAudioOptimizer = new AIAudioOptimizer(userPreferences);
         mAudioBufferManager = new AudioBufferManager(userPreferences, channelName);
+
+        // Wire audio watchdog (silence detection + Gemini triage when enabled)
+        if(userPreferences.getAIPreference().isSystemHealthAdvisorEnabled())
+        {
+            mAudioWatchdog = new AudioWatchdogService(userPreferences);
+        }
 
         //Save channel bandwidth to setup channel baseband filter.
         mChannelBandwidth = config.getBandwidth().getValue();
@@ -442,7 +457,14 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     public void start() {}
 
     @Override
-    public void stop() {}
+    public void stop()
+    {
+        // Remove channel from gain advisor so its stale stats don't skew future recommendations
+        if(mUserPreferences.getAIPreference().isGainAdvisorEnabled())
+        {
+            AdaptiveGainAdvisor.getInstance(mUserPreferences).removeChannel(mChannelName);
+        }
+    }
 
     /**
      * Broadcasts the demodulated, resampled to 8 kHz audio samples to the registered listener.
@@ -486,6 +508,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
         // Step 3: Apply VoxSend audio filter chain (low-pass, de-emphasis, bass boost,
         //         voice enhancement, noise gate) — processes samples in-place
+        if(mAudioWatchdog != null)
+        {
+            mAudioWatchdog.feedAudioData(resampledAudio);
+        }
         mAudioBufferManager.addAudioSamples(resampledAudio);
         if(mAudioFilters != null)
         {
@@ -549,6 +575,29 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         {
             throw new IllegalStateException("NBFM demodulator module must receive a sample rate change source event " +
                     "before it can process complex sample buffers");
+        }
+
+        // Feed I/Q data to watchdog for silence detection (checks every buffer, lightweight)
+        if(mAudioWatchdog != null)
+        {
+            mAudioWatchdog.feedIQData(samples.i());
+        }
+
+        // Sample I/Q power every IQ_SAMPLE_INTERVAL-th buffer for AdaptiveGainAdvisor
+        if(mUserPreferences.getAIPreference().isGainAdvisorEnabled() &&
+                ++mIQSampleCounter >= IQ_SAMPLE_INTERVAL)
+        {
+            mIQSampleCounter = 0;
+            float[] rawI = samples.i();
+            float[] rawQ = samples.q();
+            double sumSquared = 0.0;
+            for(int idx = 0; idx < rawI.length; idx++)
+            {
+                sumSquared += rawI[idx] * (double)rawI[idx] + rawQ[idx] * (double)rawQ[idx];
+            }
+            double power = sumSquared / rawI.length;
+            double powerDbfs = 10.0 * Math.log10(Math.max(power, 1e-20));
+            AdaptiveGainAdvisor.getInstance(mUserPreferences).reportSignalLevel(mChannelName, powerDbfs);
         }
 
         float[] decimatedI = mIDecimationFilter.decimateReal(samples.i());

@@ -30,6 +30,7 @@ import io.github.dsheirer.source.tuner.sdrplay.api.parameter.control.AgcMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javafx.scene.layout.GridPane;
 import javafx.scene.control.CheckBox;
 import io.github.dsheirer.gui.control.ToggleSwitch;
 import javafx.scene.control.ComboBox;
@@ -64,38 +65,46 @@ public class Rsp1bTunerEditor extends RspTunerEditor<Rsp1bTunerConfiguration>
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new javafx.geometry.Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
-
-        getChildren().add(new Label("Gain:"));
-        getChildren().add(getGainPanel());
-        getChildren().add(new Label("LNA:"));
-        getChildren().add(getLNASlider());
-        getChildren().add(new Label("IF:"));
-        getChildren().add(getIfGainSlider());
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("Gain:"), 0, 0);
+        gainGrid.add(getGainPanel(), 1, 0);
+        gainGrid.add(new Label("LNA:"), 0, 1);
+        gainGrid.add(getLNASlider(), 1, 1);
+        gainGrid.add(new Label("IF:"), 0, 2);
+        gainGrid.add(getIfGainSlider(), 1, 2);
+        getChildren().add(gainGrid);
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label());
         getChildren().add(getBiasTCheckBox());
-        getChildren().add(new Label());
         getChildren().add(getRfNotchCheckBox());
-        getChildren().add(new Label());
         getChildren().add(getRfDabNotchCheckBox());
     }
 

@@ -108,10 +108,9 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
     {
         if(mGainPanel == null)
         {
-            mGainPanel = new VBox();
+            mGainPanel = new VBox(4);
             mGainPanel.getChildren().add(getGainValueLabel());
             mGainPanel.getChildren().add(getGainOverloadButton());
-            mGainPanel.getChildren().add(new Label()); //empty label to grow to fill space
             mGainPanel.getChildren().add(new Label("IF Gain Mode:"));
             mGainPanel.getChildren().add(getAgcButton());
         }
