@@ -226,6 +226,7 @@ public class ScriptEditor extends ActionEditor<ScriptAction>
             mTestButton.setMaxWidth(Double.MAX_VALUE);
             mTestButton.setDisable(true);
             mTestButton.setOnAction(event -> test());
+            mTestButton.setTooltip(new javafx.scene.control.Tooltip("Click to test the script execution."));
         }
 
         return mTestButton;
@@ -238,6 +239,7 @@ public class ScriptEditor extends ActionEditor<ScriptAction>
             mFileChooser = new Button(("Select ..."));
             mFileChooser.setMaxWidth(Double.MAX_VALUE);
             mFileChooser.setDisable(true);
+            mFileChooser.setTooltip(new javafx.scene.control.Tooltip("Click to browse and select a script file."));
             mFileChooser.setOnAction(event -> {
                 FileChooser fileChooser = new FileChooser();
                 fileChooser.setTitle("Select Script File");
@@ -280,6 +282,7 @@ public class ScriptEditor extends ActionEditor<ScriptAction>
             mFilePath = new TextField(PLEASE_SELECT_A_FILE);
             mFilePath.setDisable(true);
             mFilePath.setMaxWidth(Double.MAX_VALUE);
+            mFilePath.setTooltip(new javafx.scene.control.Tooltip("The path to the script file that will be executed."));
             mFilePath.textProperty().addListener((observable, oldValue, newValue) -> {
                 if(newValue != null && !newValue.isEmpty() && !newValue.contentEquals(PLEASE_SELECT_A_FILE))
                 {
@@ -320,6 +323,7 @@ public class ScriptEditor extends ActionEditor<ScriptAction>
             mIntervalComboBox.setDisable(true);
             mIntervalComboBox.getItems().setAll(RecurringAction.Interval.values());
             mIntervalComboBox.getSelectionModel().selectedItemProperty().addListener(mComboBoxChangeListener);
+            mIntervalComboBox.setTooltip(new javafx.scene.control.Tooltip("Select how often the script should run."));
         }
 
         return mIntervalComboBox;
@@ -333,6 +337,7 @@ public class ScriptEditor extends ActionEditor<ScriptAction>
             mPeriodTextField.setPrefWidth(40);
             mPeriodTextField.setVisible(false);
             mPeriodTextField.setTextFormatter(getPeriodFormatter());
+            mPeriodTextField.setTooltip(new javafx.scene.control.Tooltip("Enter the interval length in seconds (1-60)."));
         }
 
         return mPeriodTextField;
