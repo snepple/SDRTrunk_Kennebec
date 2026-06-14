@@ -40,3 +40,7 @@
 **Topic:** Smart Bandwidth Optimization
 **Learning:** The "Smart Bandwidth" feature lacked a comprehensive Mintlify-style guide with a Mermaid flow diagram and was missing from the Help Viewer navigation tree.
 **Action:** Rewrote `src/main/resources/docs/smart-bandwidth.md` with visual diagrams, and integrated it into `HelpViewController.java` under "Advanced & System".
+## 2026-06-14 - Topic Selection
+**Topic:** Application Watchdog
+**Learning:** The built-in Application Watchdog and its REST API endpoints for external monitoring were undocumented.
+**Action:** Created `src/main/resources/docs/application-watchdog.md` with Mermaid diagram and integrated it into the `HelpViewController.java` under "Advanced & System".
