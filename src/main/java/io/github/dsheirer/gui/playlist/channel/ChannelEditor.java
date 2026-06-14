@@ -641,11 +641,15 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                 playItem.setOnAction(event -> {
                     Channel channel = row.getItem();
                     if (channel != null) {
-                        try {
-                            mPlaylistManager.getChannelProcessingManager().start(channel);
-                        } catch (Exception e) {
-                            mLog.error("Couldn't start channel [" + channel.getName() + "]", e);
-                        }
+                        //Start on a background thread - channel startup acquires a tuner source and builds
+                        //the processing chain, which freezes the UI if run on the FX thread.
+                        io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
+                            try {
+                                mPlaylistManager.getChannelProcessingManager().start(channel);
+                            } catch (Exception e) {
+                                mLog.error("Couldn't start channel [" + channel.getName() + "]", e);
+                            }
+                        });
                     }
                 });
 
@@ -653,11 +657,15 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                 stopItem.setOnAction(event -> {
                     Channel channel = row.getItem();
                     if (channel != null) {
-                        try {
-                            mPlaylistManager.getChannelProcessingManager().stop(channel);
-                        } catch (Exception e) {
-                            mLog.error("Couldn't stop channel [" + channel.getName() + "]", e);
-                        }
+                        //Stop on a background thread - teardown of the processing chain should not block
+                        //the FX thread.
+                        io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
+                            try {
+                                mPlaylistManager.getChannelProcessingManager().stop(channel);
+                            } catch (Exception e) {
+                                mLog.error("Couldn't stop channel [" + channel.getName() + "]", e);
+                            }
+                        });
                     }
                 });
 
