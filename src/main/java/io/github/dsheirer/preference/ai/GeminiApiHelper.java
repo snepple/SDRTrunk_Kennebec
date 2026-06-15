@@ -97,7 +97,17 @@ public class GeminiApiHelper {
                     .connectTimeout(Duration.ofSeconds(10))
                     .build();
 
-            String prompt = "A dispatch paging tone was just transmitted. The resulting transcript is: \\\"" + transcript.replace("\"", "\\\"") + "\\\". What specific fire, EMS, or police unit/agency is being dispatched? Respond with ONLY the unit/agency name (e.g., 'Engine 52' or 'Springfield Fire'), or 'UNKNOWN' if unclear.";
+            String prompt = "A dispatch paging tone was just transmitted. The resulting transcript is: \\\"" + transcript.replace("\"", "\\\"").replace("\n", " ").replace("\r", " ") + "\\\". " +
+                    "Identify and extract the specific field units, departments, or agencies that are transmitting, receiving a message, or being dispatched. " +
+                    "CRITICAL RULE: Distinguishing Dispatch Centers from Field Units. " +
+                    "Public safety communications constantly reference the dispatch center handling the radio traffic. You must completely ignore the names of dispatch centers. Do not extract, output, or confuse a dispatch center name with a field unit or dispatched agency. " +
+                    "Common dispatch center identifiers that you must ignore include: Dispatch, Fire Alarm or Alarm, Comm Center, Communications, or Med-Comm, Control or County Control, Central or Central Dispatch, Base, Geographic names acting as the dispatch entity. " +
+                    "Examples to guide your extraction: " +
+                    "Transcript: 'Fire Alarm, Engine 4 is responding.' Correct Extraction: 'Engine 4'. " +
+                    "Transcript: 'County Control paging Topsham Fire for a motor vehicle accident.' Correct Extraction: 'Topsham Fire'. " +
+                    "Transcript: 'Augusta Dispatch, Medic 3 is on scene.' Correct Extraction: 'Medic 3'. " +
+                    "Focus exclusively on identifying the operational units, stations, or departments responding to or mitigating the incident. " +
+                    "Respond with ONLY the unit/agency name (e.g. 'Engine 52' or 'Springfield Fire'), or 'UNKNOWN' if unclear.";
             
             String jsonPayload = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt + "\"}]}]}";
 
