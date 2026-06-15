@@ -42,3 +42,6 @@
 ## 2026-06-14 - Adding Tooltips to Alias Action Editors
 **Learning:** Users can be confused by the bare controls in alias action editors (Beep, Clip, Script), particularly the text fields, combos, and buttons.
 **Action:** Apply `setTooltip` with a descriptive message to clarify the function of each interactive element, reducing cognitive load during setup.
+## 2026-06-15 - Channel Configuration Tooltips
+**Learning:** The Channel Configuration Editor UI previously lacked basic inline guidance for core text fields (System, Site, Name, and Alias List), relying on the user to already know what these fields represent in radio terminology.
+**Action:** Add setTooltip to all TextField and ComboBox inputs during initialization to provide beginner-friendly context and examples.

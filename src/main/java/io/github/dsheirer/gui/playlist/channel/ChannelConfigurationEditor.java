@@ -1095,6 +1095,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSystemField = new TextField();
             mSystemField.setDisable(true);
             mSystemField.setMaxWidth(Double.MAX_VALUE);
+            mSystemField.setTooltip(new javafx.scene.control.Tooltip("System Name/ID (e.g. 'Statewide Trunking')"));
             mSystemField.textProperty().addListener(mEditorModificationListener);
         }
 
@@ -1108,6 +1109,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSiteField = new TextField();
             mSiteField.setDisable(true);
             mSiteField.setMaxWidth(Double.MAX_VALUE);
+            mSiteField.setTooltip(new javafx.scene.control.Tooltip("Site Name/ID for this specific location (e.g. 'North Tower')"));
             mSiteField.textProperty().addListener(mEditorModificationListener);
         }
 
@@ -1121,6 +1123,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mNameField = new TextField();
             mNameField.setDisable(true);
             mNameField.setMaxWidth(Double.MAX_VALUE);
+            mNameField.setTooltip(new javafx.scene.control.Tooltip("A memorable name for this channel (e.g. 'Police Dispatch')"));
             mNameField.textProperty().addListener(mEditorModificationListener);
         }
 
@@ -1139,6 +1142,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mAliasListComboBox.setDisable(true);
             mAliasListComboBox.setEditable(false);
             mAliasListComboBox.setMaxWidth(Double.MAX_VALUE);
+            mAliasListComboBox.setTooltip(new javafx.scene.control.Tooltip("Select the alias list containing known talkgroups and radio IDs to automatically identify them."));
             mAliasListComboBox.setOnAction(event -> modifiedProperty().set(true));
         }
 
