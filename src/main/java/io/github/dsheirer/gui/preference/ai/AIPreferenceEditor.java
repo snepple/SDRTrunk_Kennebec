@@ -81,11 +81,18 @@ public class AIPreferenceEditor extends VBox {
             mUserPreferences.getAIPreference().setTranscriptionEnabled(newValue);
         });
 
+        ToggleSwitch enableToneDiscoverySwitch = new ToggleSwitch();
+        enableToneDiscoverySwitch.setSelected(mUserPreferences.getAIPreference().isAIToneDiscoveryEnabled());
+        enableToneDiscoverySwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setAIToneDiscoveryEnabled(newValue);
+        });
+
         SettingsCard featuresCard = new SettingsCard();
         featuresCard.getChildren().addAll(
             new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
             new SettingsRow("System Health Advisor & Auto-Remediation", enableSystemHealthSwitch),
-            new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch)
+            new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch),
+            new SettingsRow("AI Two-Tone Paging Discovery", enableToneDiscoverySwitch)
         );
 
         // API Key Card with Embedded Scaffolding

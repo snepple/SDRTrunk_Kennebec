@@ -13,6 +13,7 @@ public class AIPreference extends Preference {
     public static final String KEY_SYSTEM_HEALTH_ENABLED = "ai.system.health.enabled";
     public static final String KEY_GEMINI_MODEL = "gemini.model";
     public static final String KEY_AI_LOG_ANALYSIS_ENABLED = "ai.log.analysis.enabled";
+    public static final String KEY_AI_TONE_DISCOVERY_ENABLED = "ai.tone.discovery.enabled";
     
     public static final String KEY_TRANSCRIPTION_ENABLED = "ai.transcription.enabled";
     public static final String KEY_TRANSCRIPTION_ENGINE = "ai.transcription.engine";
@@ -45,6 +46,15 @@ public class AIPreference extends Preference {
 
     public void setAILogAnalysisEnabled(boolean enabled) {
         mPreferences.putBoolean(KEY_AI_LOG_ANALYSIS_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public boolean isAIToneDiscoveryEnabled() {
+        return mPreferences.getBoolean(KEY_AI_TONE_DISCOVERY_ENABLED, false);
+    }
+
+    public void setAIToneDiscoveryEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_AI_TONE_DISCOVERY_ENABLED, enabled);
         notifyPreferenceUpdated();
     }
 

@@ -242,6 +242,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private DiagnosticMonitor mDiagnosticMonitor;
     private IconModel mIconModel = new IconModel();
     private PlaylistManager mPlaylistManager;
+    private io.github.dsheirer.preference.ai.ToneDiscoveryManager mToneDiscoveryManager;
     private SettingsManager mSettingsManager;
     private SpectralDisplayPanel mSpectralPanel;
     private BorderPane mMainContentPanel;
@@ -570,6 +571,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mNowPlayingDetailsVisible = mPreferences.getBoolean(PREFERENCE_NOW_PLAYING_DETAILS_VISIBLE, true);
 
         mPlaylistManager.init();
+        
+        mToneDiscoveryManager = new io.github.dsheirer.preference.ai.ToneDiscoveryManager(mUserPreferences, mPlaylistManager);
 
         //Deferred startup validation: receive-chain self-test and playlist lint, run after tuner
         //discovery and channel auto-start have settled so results reflect steady state.

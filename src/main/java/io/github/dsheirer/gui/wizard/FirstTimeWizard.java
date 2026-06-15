@@ -1087,9 +1087,10 @@ public class FirstTimeWizard
 
         HBox featuresBox = createInfoBox("🤖",
             "AI features include:\n" +
-            "• Automatic transcript summarization of decoded radio traffic\n" +
-            "• Activity pattern detection across channels\n" +
-            "• Intelligent channel prioritization based on content");
+            "  • Automatic transcript summarization of decoded radio traffic\n" +
+            "  • Activity pattern detection across channels\n" +
+            "  • Intelligent channel prioritization based on content\n" +
+            "  • Automatic discovery and naming of two-tone paging targets");
 
         Label howToLabel = new Label("How to get a free API Key:");
         howToLabel.setFont(Font.font("SansSerif", FontWeight.BOLD, 13));
