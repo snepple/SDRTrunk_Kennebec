@@ -145,6 +145,7 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         mChannelProcessingManager.addDecodeEventListener(mGlobalEventListener);
         mGlobalEventModel.setHistorySize(mUserPreferences.getNowPlayingPreference().getEventHistorySize());
         mTable = new TableView();
+        mTable.getStyleClass().add("preferences-table");
         
         Label placeholderLabel = new Label("No decode events — events will appear when a channel is active");
         VBox placeholderContainer = new VBox(placeholderLabel);
