@@ -18,6 +18,9 @@ public class ToneDiscoveryState {
     // Set of "ToneA_ToneB" that have been finalized or blocklisted
     private Set<String> mFinalizedTones = new HashSet<>();
 
+    // Key: "ToneA_ToneB", Value: The agency name AI figured out
+    private Map<String, String> mFinalizedToneNames = new HashMap<>();
+
     public ToneDiscoveryState() {
     }
 
@@ -35,5 +38,13 @@ public class ToneDiscoveryState {
 
     public void setFinalizedTones(Set<String> finalizedTones) {
         mFinalizedTones = finalizedTones;
+    }
+
+    public Map<String, String> getFinalizedToneNames() {
+        return mFinalizedToneNames;
+    }
+
+    public void setFinalizedToneNames(Map<String, String> finalizedToneNames) {
+        mFinalizedToneNames = finalizedToneNames;
     }
 }

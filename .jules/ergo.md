@@ -39,3 +39,6 @@
 ## 2024-05-18 - Streaming Editor Tooltips
 **Learning:** Configurations for streaming servers like Icecast contain many backend-specific terms (Host, Port, Mount Point, Inline Metadata) that are confusing to users who aren't familiar with audio broadcasting software.
 **Action:** Always provide explicit tooltips to inputs in streaming editors (`AbstractStreamEditor`, `IcecastStreamEditor`) detailing the expected format and purpose (e.g., "Enter the server port number (e.g., 8000)") to lower the cognitive load.
+## 2026-06-14 - Adding Tooltips to Alias Action Editors
+**Learning:** Users can be confused by the bare controls in alias action editors (Beep, Clip, Script), particularly the text fields, combos, and buttons.
+**Action:** Apply `setTooltip` with a descriptive message to clarify the function of each interactive element, reducing cognitive load during setup.

@@ -55,6 +55,12 @@ public class SmartIgnoreListDialog extends Dialog<Void> {
                     if (parts.length == 2) {
                         display = "Tone A: " + parts[0] + " Hz | Tone B: " + parts[1] + " Hz";
                     }
+                    if (manager != null) {
+                        String name = manager.getFinalizedToneName(item);
+                        if (name != null && !name.trim().isEmpty()) {
+                            display = name + " (" + display + ")";
+                        }
+                    }
                     Label label = new Label(display);
                     
                     Pane spacer = new Pane();

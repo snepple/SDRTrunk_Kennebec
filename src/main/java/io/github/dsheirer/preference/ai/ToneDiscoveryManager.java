@@ -59,8 +59,16 @@ public class ToneDiscoveryManager {
     public void unignoreTone(String toneKey) {
         if (mState != null && mState.getFinalizedTones().contains(toneKey)) {
             mState.getFinalizedTones().remove(toneKey);
+            mState.getFinalizedToneNames().remove(toneKey);
             saveState();
         }
+    }
+
+    public String getFinalizedToneName(String toneKey) {
+        if (mState != null && mState.getFinalizedToneNames() != null) {
+            return mState.getFinalizedToneNames().get(toneKey);
+        }
+        return null;
     }
 
     private void loadState() {
@@ -217,6 +225,7 @@ public class ToneDiscoveryManager {
         // Mark as finalized so we never process it again (even if user deletes it)
         mState.getPendingDiscoveries().remove(toneKey);
         mState.getFinalizedTones().add(toneKey);
+        mState.getFinalizedToneNames().put(toneKey, bestAgency);
         saveState();
     }
 }
