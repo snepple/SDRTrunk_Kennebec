@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ToneDiscoveryManager {
     private static final Logger mLog = LoggerFactory.getLogger(ToneDiscoveryManager.class);
 
+    private static ToneDiscoveryManager mInstance;
+
     private static final int CONFIDENCE_THRESHOLD = 3;
     private static final double TONE_TOLERANCE_HZ = 5.0;
     private static final String STATE_FILE_PATH = "ai_tone_discovery_state.json";
@@ -40,6 +42,25 @@ public class ToneDiscoveryManager {
         mPlaylistManager = playlistManager;
         loadState();
         MyEventBus.getGlobalEventBus().register(this);
+        mInstance = this;
+    }
+
+    public static ToneDiscoveryManager getInstance() {
+        return mInstance;
+    }
+
+    public Set<String> getFinalizedTones() {
+        if (mState != null) {
+            return mState.getFinalizedTones();
+        }
+        return Collections.emptySet();
+    }
+
+    public void unignoreTone(String toneKey) {
+        if (mState != null && mState.getFinalizedTones().contains(toneKey)) {
+            mState.getFinalizedTones().remove(toneKey);
+            saveState();
+        }
     }
 
     private void loadState() {
