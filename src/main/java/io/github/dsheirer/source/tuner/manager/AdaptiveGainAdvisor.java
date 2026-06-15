@@ -261,6 +261,9 @@ public class AdaptiveGainAdvisor
 
         String apiKey = mUserPreferences.getAIPreference().getGeminiApiKey();
         String model = mUserPreferences.getAIPreference().getGeminiModel();
+        if(model == null || model.isEmpty()) model = "models/gemini-1.5-flash";
+        //Normalize so the path has exactly one "models/" segment regardless of how it is stored.
+        if(!model.startsWith("models/")) model = "models/" + model;
         String url = "https://generativelanguage.googleapis.com/v1beta/" + model +
                 ":generateContent?key=" + apiKey;
 

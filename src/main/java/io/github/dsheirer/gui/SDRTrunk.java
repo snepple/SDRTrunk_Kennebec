@@ -520,10 +520,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         io.github.dsheirer.monitor.RemoteSessionMonitor.init();
 
-        
-
-        io.github.dsheirer.monitor.RemoteSessionMonitor.init();
-
         CalibrationManager calibrationManager = CalibrationManager.getInstance(mUserPreferences);
         final boolean calibrating = !calibrationManager.isCalibrated() &&
             !mUserPreferences.getVectorCalibrationPreference().isHideCalibrationDialog();
@@ -780,7 +776,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     {
         mLog.info("Application shutdown started ...");
         io.github.dsheirer.gui.WindowsReliabilityManager.stopWatchdog();
-        mDiagnosticMonitor.stop();
+        if(mDiagnosticMonitor != null) mDiagnosticMonitor.stop();
         if (mPrimaryStage != null) {
             if (!mPrimaryStage.isMaximized() || mNormalBounds == null) {
                 mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, new javafx.geometry.Point2D((int)mPrimaryStage.getX(), (int)mPrimaryStage.getY()));
@@ -791,31 +787,31 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             }
             mUserPreferences.getSwingPreference().setMaximized(WINDOW_FRAME_IDENTIFIER, mPrimaryStage.isMaximized());
         }
-        mUserPreferences.getSwingPreference().setDimension(SPECTRAL_PANEL_IDENTIFIER, new javafx.geometry.Dimension2D((int)mSpectralPanel.getWidth(), (int)mSpectralPanel.getHeight()));
-        mUserPreferences.getSwingPreference().setDimension(CONTROLLER_PANEL_IDENTIFIER, new javafx.geometry.Dimension2D((int)mControllerPanel.getWidth(), (int)mControllerPanel.getHeight()));
-        mJavaFxWindowManager.shutdown();
+        if(mSpectralPanel != null) mUserPreferences.getSwingPreference().setDimension(SPECTRAL_PANEL_IDENTIFIER, new javafx.geometry.Dimension2D((int)mSpectralPanel.getWidth(), (int)mSpectralPanel.getHeight()));
+        if(mControllerPanel != null) mUserPreferences.getSwingPreference().setDimension(CONTROLLER_PANEL_IDENTIFIER, new javafx.geometry.Dimension2D((int)mControllerPanel.getWidth(), (int)mControllerPanel.getHeight()));
+        if(mJavaFxWindowManager != null) mJavaFxWindowManager.shutdown();
         mLog.info("Stopping channels ...");
-        mPlaylistManager.getChannelProcessingManager().shutdown();
+        if(mPlaylistManager != null) mPlaylistManager.getChannelProcessingManager().shutdown();
         if(mChannelResumeService != null) mChannelResumeService.shutdown();
         if(mPredictiveMaintenanceEngine != null) mPredictiveMaintenanceEngine.stop();
-        mAudioRecordingManager.stop();
+        if(mAudioRecordingManager != null) mAudioRecordingManager.stop();
         if(mChannelAlertMonitor != null) mChannelAlertMonitor.stop();
         if(mDiskSpaceManager != null) mDiskSpaceManager.stop();
         if(mConfigurationBackupService != null) mConfigurationBackupService.stop();
         if(mStreamingCredentialPreflight != null) mStreamingCredentialPreflight.stop();
-        mResourceMonitor.stop();
+        if(mResourceMonitor != null) mResourceMonitor.stop();
 
         mLog.info("Stopping spectral display ...");
-        mSpectralPanel.clearTuner();
+        if(mSpectralPanel != null) mSpectralPanel.clearTuner();
         mLog.info("Stopping tuners ...");
-        mTunerManager.stop();
+        if(mTunerManager != null) mTunerManager.stop();
         mLog.info("Shutdown complete.");
         if(mStateJournal != null) {
             mStateJournal.record("application_shutdown");
             mStateJournal.stop();
         }
-        mApplicationLog.stop();
-        mTwoToneLog.stop();
+        if(mApplicationLog != null) mApplicationLog.stop();
+        if(mTwoToneLog != null) mTwoToneLog.stop();
     }
 
     /**
