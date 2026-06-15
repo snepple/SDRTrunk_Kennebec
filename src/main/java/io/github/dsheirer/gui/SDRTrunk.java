@@ -32,6 +32,7 @@ import io.github.dsheirer.audio.DuplicateCallDetector;
 import io.github.dsheirer.audio.broadcast.AudioStreamingManager;
 import io.github.dsheirer.audio.broadcast.BroadcastFormat;
 import io.github.dsheirer.audio.broadcast.BroadcastStatusPanel;
+import io.github.dsheirer.audio.broadcast.StreamingWatchdog;
 import io.github.dsheirer.audio.playback.AudioPlaybackManager;
 import io.github.dsheirer.controller.ControllerPanel;
 import io.github.dsheirer.controller.channel.Channel;
@@ -237,6 +238,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private io.github.dsheirer.transcription.RadioIdNameLearner mRadioIdNameLearner;
     private io.github.dsheirer.controller.channel.ChannelResumeService mChannelResumeService;
     private AudioStreamingManager mAudioStreamingManager;
+    private StreamingWatchdog mStreamingWatchdog;
     private BroadcastStatusPanel mBroadcastStatusPanel;
     private ControllerPanel mControllerPanel;
     private DiagnosticMonitor mDiagnosticMonitor;
@@ -539,6 +541,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mAudioStreamingManager = new AudioStreamingManager(mPlaylistManager.getBroadcastModel(), BroadcastFormat.MP3,
             mUserPreferences);
         mAudioStreamingManager.start();
+
+        mStreamingWatchdog = new StreamingWatchdog(mPlaylistManager.getBroadcastModel());
+        mStreamingWatchdog.start();
 
         //Automated disk space management and daily configuration backups for unattended operation
         mDiskSpaceManager = new io.github.dsheirer.monitor.DiskSpaceManager(mUserPreferences);
