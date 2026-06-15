@@ -12,6 +12,8 @@ import io.github.dsheirer.audio.broadcast.zello.NodeOfflinePlaceholder;
 import io.github.dsheirer.source.tuner.manager.ControlChannelHunt;
 import io.github.dsheirer.source.tuner.manager.SignalVotingOrchestrator;
 import io.github.dsheirer.module.ai.PredictiveMaintenanceEngine;
+import io.github.dsheirer.monitor.ResourceMonitor;
+import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.module.ai.SquelchAIAdvisor;
 import io.github.dsheirer.dsp.ZGCWarmupSequence;
 import io.github.dsheirer.dsp.filter.AdjacentChannelInterferenceRejector;
@@ -186,7 +188,9 @@ public class KennebecFeatureTest {
 
     @Test
     public void testPredictiveMaintenanceEngine_AcceptsMetrics() {
-        PredictiveMaintenanceEngine engine = new PredictiveMaintenanceEngine();
+        UserPreferences prefs = new UserPreferences();
+        ResourceMonitor monitor = new ResourceMonitor(prefs);
+        PredictiveMaintenanceEngine engine = new PredictiveMaintenanceEngine(monitor);
         engine.reportMetric("cpu_percent", 45.0);
         engine.reportMetric("memory_percent", 60.0);
         assertEquals(45.0, engine.getMetrics().get("cpu_percent"), 0.1);
