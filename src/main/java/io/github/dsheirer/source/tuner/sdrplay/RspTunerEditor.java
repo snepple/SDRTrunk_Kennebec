@@ -144,15 +144,9 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
             mAgcButton.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setAgcMode(mAgcButton.isSelected() ? AgcMode.ENABLE : AgcMode.DISABLE);
-                        updateGainLabel();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Error setting AGC mode on RSP device");
-                    }
+                    final AgcMode agcModeToApply = mAgcButton.isSelected() ? AgcMode.ENABLE : AgcMode.DISABLE;
+                    applyDeviceControl("rsp-agc", () -> getTunerController().getControlRsp().setAgcMode(agcModeToApply), "Error setting AGC mode on RSP device");
+                    updateGainLabel();
                     save();
                 }
 
@@ -282,17 +276,11 @@ public abstract class RspTunerEditor<C extends RspTunerConfiguration> extends Tu
 
         if(hasTuner() && !isLoading())
         {
-            try
-            {
-                getTunerController().getControlRsp().setGain(lna, gr);
-                save();
-                updateGainLabel();
-            }
-            catch(Exception e)
-            {
-                mLog.error("Couldn't set RSP gain to LNA:" + lna + " Gain Reduction:" + gr, e);
-                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set RSP gain value to LNA:" + lna + " Gain Reduction:" + gr)); alert.showAndWait(); });
-            }
+            final int lnaToApply = lna;
+            final int grToApply = gr;
+            applyDeviceControl("rsp-gain", () -> getTunerController().getControlRsp().setGain(lnaToApply, grToApply), "Couldn't set RSP gain to LNA:" + lna + " Gain Reduction:" + gr);
+            save();
+            updateGainLabel();
         }
     }
 

@@ -208,16 +208,10 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
             {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setLNAAGC(getLNAAGCCheckBox().isSelected());
-                        getLNAGainSlider().setDisable(!getLNAAGCCheckBox().isSelected());
-                        save();
-                    }
-                    catch(Exception e1)
-                    {
-                        mLog.error("Error setting LNA AGC Enabled");
-                    }
+                    final boolean lnaAGC = getLNAAGCCheckBox().isSelected();
+                    getLNAGainSlider().setDisable(!lnaAGC);
+                    save();
+                    applyDeviceControl("airspy-lna-agc", () -> getTuner().getController().setLNAAGC(lnaAGC), "Error setting LNA AGC Enabled");
                 }
             });
         }
@@ -235,16 +229,10 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
             {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setMixerAGC(getMixerAGCCheckBox().isSelected());
-                        getMixerGainSlider().setDisable(!getMixerAGCCheckBox().isSelected());
-                        save();
-                    }
-                    catch(Exception e1)
-                    {
-                        mLog.error("Error setting Mixer AGC Enabled");
-                    }
+                    final boolean mixerAGC = getMixerAGCCheckBox().isSelected();
+                    getMixerGainSlider().setDisable(!mixerAGC);
+                    save();
+                    applyDeviceControl("airspy-mixer-agc", () -> getTuner().getController().setMixerAGC(mixerAGC), "Error setting Mixer AGC Enabled");
                 }
             });
         }
@@ -277,16 +265,8 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
 
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setLNAGain(gain);
-                        save();
-                    }
-                    catch(Exception e)
-                    {
-                        mLog.error("Couldn't set airspy LNA gain to:" + gain, e);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set LNA gain value to " + gain)); alert.showAndWait(); });
-                    }
+                    save();
+                    applyDeviceControl("airspy-lna-gain", () -> getTuner().getController().setLNAGain(gain), "Couldn't set airspy LNA gain to " + gain);
                 }
 
                 getLNAGainValueLabel().setText(String.valueOf(gain));
@@ -321,16 +301,8 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
 
                     if(hasTuner() && !isLoading())
                     {
-                        try
-                        {
-                            getTuner().getController().setMixerGain(gain);
-                            save();
-                        }
-                        catch(Exception e)
-                        {
-                            mLog.error("Couldn't set airspy Mixer gain to:" + gain, e);
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set Mixer gain value to " + gain)); alert.showAndWait(); });
-                        }
+                        save();
+                        applyDeviceControl("airspy-mixer-gain", () -> getTuner().getController().setMixerGain(gain), "Couldn't set airspy Mixer gain to " + gain);
                     }
 
                     getMixerGainValueLabel().setText(String.valueOf(gain));
@@ -375,16 +347,8 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
 
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setIFGain(gain);
-                        save();
-                    }
-                    catch(Exception e)
-                    {
-                        mLog.error("Couldn't set airspy IF gain to:" + gain, e);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set IF gain value to " + gain)); alert.showAndWait(); });
-                    }
+                    save();
+                    applyDeviceControl("airspy-if-gain", () -> getTuner().getController().setIFGain(gain), "Couldn't set airspy IF gain to " + gain);
                 }
 
                 getIFGainValueLabel().setText(String.valueOf(gain));
@@ -432,17 +396,8 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
 
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setGain(gain);
-                        save();
-                    }
-                    catch(Exception e)
-                    {
-                        mLog.error("Couldn't set airspy gain to:" + gain.name(), e);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set gain value to " +
-                                gain.getValue())); alert.showAndWait(); });
-                    }
+                    save();
+                    applyDeviceControl("airspy-master-gain", () -> getTuner().getController().setGain(gain), "Couldn't set airspy gain to " + gain.name());
                 }
 
                 getMasterGainValueLabel().setText(String.valueOf(value));
@@ -487,22 +442,13 @@ public class AirspyTunerEditor extends TunerEditor<AirspyTuner, AirspyTunerConfi
                 {
                     if(hasTuner() && !isLoading())
                     {
-                        AirspySampleRate rate = (AirspySampleRate)mSampleRateCombo.getValue();
+                        final AirspySampleRate rate = (AirspySampleRate)mSampleRateCombo.getValue();
 
-                        try
-                        {
-                            getTuner().getController().setSampleRate(rate);
+                        //Adjust the min/max values for the sample rate.
+                        adjustForSampleRate(rate.getRate());
 
-                            //Adjust the min/max values for the sample rate.
-                            adjustForSampleRate(rate.getRate());
-
-                            save();
-                        }
-                        catch(Exception e1)
-                        {
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set sample rate to " + rate.getLabel())); alert.showAndWait(); });
-                            mLog.error("Error setting airspy sample rate", e1);
-                        }
+                        save();
+                        applyDeviceControl("airspy-sample-rate", () -> getTuner().getController().setSampleRate(rate), "Error setting airspy sample rate");
                     }
                 }
             });

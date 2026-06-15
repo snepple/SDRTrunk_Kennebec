@@ -211,22 +211,14 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
             mLnaGainCombo.setTooltip(new javafx.scene.control.Tooltip("Adjust the low noise amplifier gain setting."));
             mLnaGainCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
                     LNAGain gain = (LNAGain) mLnaGainCombo.getValue();
-
-                    try
-                    {
-                        getController().setLNAGain(gain);
-                        save();
-                    }
-                    catch(Exception e)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("FCD Pro Tuner " +
-                                "Controller - error setting LNA gain [" + gain + "]")); alert.showAndWait(); });
-
-                        mLog.error("FuncubeDonglePro Controller - error setting gain [" + gain + "]", e);
-                    }
+                    save();
+                    applyDeviceControl("fcd1-lna-gain", () -> {
+                        try { getController().setLNAGain(gain); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "FuncubeDonglePro Controller - error setting LNA gain [" + gain + "]");
                 }
             });
         }
@@ -243,22 +235,14 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
             mLnaEnhanceCombo.setTooltip(new javafx.scene.control.Tooltip("Adjust the LNA enhance setting.  Default value is OFF"));
             mLnaEnhanceCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
                     LNAEnhance enhance = (LNAEnhance) mLnaEnhanceCombo.getValue();
-
-                    try
-                    {
-                        getController().setLNAEnhance(enhance);
-                        save();
-                    }
-                    catch(Exception e1)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("FCD Pro Tuner"
-                                + " error setting LNA enhance gain [" + enhance + "]")); alert.showAndWait(); });
-
-                        mLog.error("FCDPro - error setting LNA enhance  [" + enhance + "]", e1);
-                    }
+                    save();
+                    applyDeviceControl("fcd1-lna-enhance", () -> {
+                        try { getController().setLNAEnhance(enhance); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "FCDPro - error setting LNA enhance [" + enhance + "]");
                 }
             });
         }
@@ -275,22 +259,14 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
             mMixerGainCombo.setTooltip(new javafx.scene.control.Tooltip("Adjust mixer gain setting"));
             mMixerGainCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
                     MixerGain gain = (MixerGain) mMixerGainCombo.getValue();
-
-                    try
-                    {
-                        getController().setMixerGain(gain);
-                        save();
-                    }
-                    catch(Exception e1)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("FCDPro - error setting"
-                                + " mixer gain [" + gain + "]")); alert.showAndWait(); });
-
-                        mLog.error("FCDPro - error setting mixer gain [" + gain + "]", e1);
-                    }
+                    save();
+                    applyDeviceControl("fcd1-mixer-gain", () -> {
+                        try { getController().setMixerGain(gain); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "FCDPro - error setting mixer gain [" + gain + "]");
                 }
             });
         }
