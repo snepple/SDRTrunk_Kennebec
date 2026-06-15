@@ -129,41 +129,52 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
 
     private void init()
     {
-        
+        setSpacing(8);
+        setPadding(new javafx.geometry.Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
-
-        getChildren().add(new Label("Bias-T:"));
-        getChildren().add(getBiasTButton());
+        // Tuner info grid
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        infoGrid.add(new Label("Bias-T:"), 0, 2);
+        infoGrid.add(getBiasTButton(), 1, 2);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
-
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
+        // Frequency section
+        HBox freqLabelRow = new HBox(new Label("Frequency (MHz):"));
+        freqLabelRow.setAlignment(Pos.CENTER_LEFT);
+        getChildren().add(freqLabelRow);
         getChildren().add(getFrequencyPanel());
 
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
+        // Sample rate row
+        HBox sampleRateRow = new HBox(10);
+        sampleRateRow.setAlignment(Pos.CENTER_LEFT);
+        sampleRateRow.getChildren().addAll(new Label("Sample Rate:"), getSampleRateCombo());
+        getChildren().add(sampleRateRow);
 
         getChildren().add(new Separator());
 
-        VBox gainPanel = new VBox(new javafx.scene.layout.HBox(4));
-        gainPanel.getChildren().add(new Label("Master:"));
-        gainPanel.getChildren().add(getMasterGainCombo());
-        gainPanel.getChildren().add(new Label("Mixer:"));
-        gainPanel.getChildren().add(getMixerGainCombo());
-        gainPanel.getChildren().add(new Label("LNA:"));
-        gainPanel.getChildren().add(getLNAGainCombo());
-        gainPanel.getChildren().add(new Label("VGA:"));
-        gainPanel.getChildren().add(getVGAGainCombo());
-
-        getChildren().add(new Label("Gain:"));
-        getChildren().add(gainPanel);
+        // Gain section as a grid
+        Label gainLabel = new Label("Gain:");
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("Master:"), 0, 0);
+        gainGrid.add(getMasterGainCombo(), 1, 0);
+        gainGrid.add(new Label("Mixer:"), 0, 1);
+        gainGrid.add(getMixerGainCombo(), 1, 1);
+        gainGrid.add(new Label("LNA:"), 0, 2);
+        gainGrid.add(getLNAGainCombo(), 1, 2);
+        gainGrid.add(new Label("VGA:"), 0, 3);
+        gainGrid.add(getVGAGainCombo(), 1, 3);
+        getChildren().addAll(gainLabel, gainGrid);
     }
 
     @Override

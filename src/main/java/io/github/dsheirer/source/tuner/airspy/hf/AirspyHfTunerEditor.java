@@ -89,34 +89,42 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
-
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
         getChildren().add(new Separator());
 
-        VBox buttonPanel = new VBox();
-        buttonPanel.getChildren().add(getAgcToggleButton());
-        buttonPanel.getChildren().add(getLnaToggleButton());
-        getChildren().add(new Label(" "));
-        getChildren().add(buttonPanel);
+        getChildren().add(getAgcToggleButton());
+        getChildren().add(getLnaToggleButton());
 
-        getChildren().add(new Label("Attenuation:"));
-        getChildren().add(getAttenuationCombo());
+        GridPane attGrid = new GridPane();
+        attGrid.setHgap(10);
+        attGrid.setVgap(4);
+        attGrid.add(new Label("Attenuation:"), 0, 0);
+        attGrid.add(getAttenuationCombo(), 1, 0);
+        getChildren().add(attGrid);
     }
 
     @Override

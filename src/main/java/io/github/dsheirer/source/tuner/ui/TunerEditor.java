@@ -928,20 +928,17 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
          */
                 public ButtonPanel()
         {
-            
-            VBox row1 = new VBox(new javafx.scene.layout.HBox(4));
-            row1.getChildren().add(getEnabledButton());
-            row1.getChildren().add(getRecordButton());
-            row1.getChildren().add(getViewSpectrumButton());
-            row1.getChildren().add(getNewSpectrumButton());
+            setSpacing(6);
 
-            VBox row2 = new VBox(new javafx.scene.layout.HBox(4));
-            row2.getChildren().add(getInfoConfigButton());
-            row2.getChildren().add(getRestartTunerButton());
+            HBox row1 = new HBox(6);
+            row1.setAlignment(Pos.CENTER_LEFT);
+            row1.getChildren().addAll(getEnabledButton(), getRecordButton(), getViewSpectrumButton(), getNewSpectrumButton());
 
-            getChildren().add(row1);
-            getChildren().add(row2);
-            getChildren().add(getRecordingStatusLabel());
+            HBox row2 = new HBox(6);
+            row2.setAlignment(Pos.CENTER_LEFT);
+            row2.getChildren().addAll(getInfoConfigButton(), getRestartTunerButton());
+
+            getChildren().addAll(row1, row2, getRecordingStatusLabel());
         }
 
         /**
@@ -975,28 +972,34 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     {
         public FrequencyPanel()
         {
-            
-            getChildren().add(getFrequencyControl());
-            getChildren().add(new Label("PPM:"));
-            Button helpButton = createHelpIcon("?");
-            helpButton.setTooltip(new javafx.scene.control.Tooltip("<html><b>PPM (Parts Per Million):</b> Adjusts your tuner to match the exact frequency.<br>If your hardware gets warm and signals shift, adjust this until the signal is centered.</html>"));
-            getChildren().add(helpButton);
-            getChildren().add(getFrequencyCorrectionSpinner());
-            getChildren().add(getMeasuredPPMLabel());
-            getChildren().add(getAutoPPMCheckBox());
-            getChildren().add(getAutoOptimizeSampleRateCheckBox());
+            setSpacing(6);
+            setPadding(new javafx.geometry.Insets(4, 0, 4, 0));
 
-            VBox minMaxPanel = new VBox();
-            minMaxPanel.getChildren().add(new Label("Min:"));
-            minMaxPanel.getChildren().add(getMinimumFrequencyTextField());
-            minMaxPanel.getChildren().add(new Label("Max:"));
-            minMaxPanel.getChildren().add(getMaximumFrequencyTextField());
-            minMaxPanel.getChildren().add(getResetFrequenciesButton());
-            getChildren().add(minMaxPanel);
+            getChildren().add(getFrequencyControl());
+
+            // PPM row: label + help + spinner + measured value
+            HBox ppmRow = new HBox(6);
+            ppmRow.setAlignment(Pos.CENTER_LEFT);
+            Button helpButton = createHelpIcon("?");
+            helpButton.setTooltip(new javafx.scene.control.Tooltip("PPM (Parts Per Million): Adjusts your tuner to match the exact frequency. If your hardware gets warm and signals shift, adjust this until the signal is centered."));
+            ppmRow.getChildren().addAll(new Label("PPM:"), helpButton, getFrequencyCorrectionSpinner(), getMeasuredPPMLabel());
+            getChildren().add(ppmRow);
+
+            getChildren().addAll(getAutoPPMCheckBox(), getAutoOptimizeSampleRateCheckBox());
+
+            // Min / Max frequency range grid
+            GridPane minMaxGrid = new GridPane();
+            minMaxGrid.setHgap(8);
+            minMaxGrid.setVgap(4);
+            minMaxGrid.add(new Label("Min:"), 0, 0);
+            minMaxGrid.add(getMinimumFrequencyTextField(), 1, 0);
+            minMaxGrid.add(new Label("Max:"), 0, 1);
+            minMaxGrid.add(getMaximumFrequencyTextField(), 1, 1);
+            HBox resetBox = new HBox(getResetFrequenciesButton());
+            minMaxGrid.add(resetBox, 1, 2);
+            getChildren().add(minMaxGrid);
 
             getChildren().add(getTunerLockedStatusLabel());
-
-
         }
 
         /**

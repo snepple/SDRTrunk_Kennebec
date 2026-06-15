@@ -56,7 +56,6 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
     private TunerManager mTunerManager;
     private javafx.scene.layout.Region mEmptyEditor = new EmptyTunerEditor();
     private javafx.scene.layout.Region mEditor = mEmptyEditor;
-    private javafx.scene.control.ScrollPane mEditorScroller;
 
     /**
      * Constructs an instance
@@ -84,9 +83,9 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
 
     public void init()
     {
-        
-        mEditorScroller = new javafx.scene.control.ScrollPane(mEditor);
-        getChildren().add(mEditorScroller);
+        setMaxWidth(Double.MAX_VALUE);
+        VBox.setVgrow(mEditor, Priority.ALWAYS);
+        getChildren().add(mEditor);
     }
 
     @Override
@@ -111,7 +110,7 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
 
         super.setItem(tuner);
 
-        mEditorScroller.setContent(null);
+        getChildren().clear();
 
         if(hasItem())
         {
@@ -123,10 +122,8 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
             mEditor = mEmptyEditor;
         }
 
-        getChildren().remove(mEditorScroller);
-        mEditorScroller = new javafx.scene.control.ScrollPane(mEditor);
-        getChildren().add(mEditorScroller);
-        requestLayout();
+        VBox.setVgrow(mEditor, Priority.ALWAYS);
+        getChildren().add(mEditor);
         requestLayout();
     }
 

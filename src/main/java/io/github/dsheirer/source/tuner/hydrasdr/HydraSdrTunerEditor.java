@@ -156,48 +156,54 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
 
     private void init()
     {
-        
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
-
-        getChildren().add(new Label());
         getChildren().add(getBiasTCheckBox());
 
         getChildren().add(new Separator());
         getChildren().add(new Label("Gain Control"));
 
-        getChildren().add(new Label("Mode:"));
-        getChildren().add(getGainModeCombo());
-
-        getChildren().add(getMasterGainLabel());
-        getChildren().add(getMasterGainSlider());
-        getChildren().add(getMasterGainValueLabel());
-
-        getChildren().add(getIFGainLabel());
-        getChildren().add(getIFGainSlider());
-        getChildren().add(getIFGainValueLabel());
-
-        getChildren().add(getMixerAGCCheckBox());
-        getChildren().add(getMixerGainSlider());
-        getChildren().add(getMixerGainValueLabel());
-
-        getChildren().add(getLNAAGCCheckBox());
-        getChildren().add(getLNAGainSlider());
-        getChildren().add(getLNAGainValueLabel());
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("Mode:"), 0, 0);
+        gainGrid.add(getGainModeCombo(), 1, 0);
+        gainGrid.add(getMasterGainLabel(), 0, 1);
+        gainGrid.add(getMasterGainSlider(), 1, 1);
+        gainGrid.add(getMasterGainValueLabel(), 2, 1);
+        gainGrid.add(getIFGainLabel(), 0, 2);
+        gainGrid.add(getIFGainSlider(), 1, 2);
+        gainGrid.add(getIFGainValueLabel(), 2, 2);
+        gainGrid.add(getMixerAGCCheckBox(), 0, 3);
+        gainGrid.add(getMixerGainSlider(), 1, 3);
+        gainGrid.add(getMixerGainValueLabel(), 2, 3);
+        gainGrid.add(getLNAAGCCheckBox(), 0, 4);
+        gainGrid.add(getLNAGainSlider(), 1, 4);
+        gainGrid.add(getLNAGainValueLabel(), 2, 4);
+        getChildren().add(gainGrid);
     }
 
     private CheckBox getLNAAGCCheckBox()
