@@ -44,6 +44,9 @@ public class BroadcastStatusPanelController {
     private FilteredList<BroadcastModelRow> filteredData;
     private boolean hideDisabled = false;
 
+    private final java.util.concurrent.atomic.AtomicBoolean mRefreshDirty = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private javafx.animation.Timeline mRefreshTimer;
+
     public static class BroadcastModelRow {
         private final String streamName;
 
@@ -70,21 +73,38 @@ public class BroadcastStatusPanelController {
         mUserPreferences = userPreferences;
         mPreferenceKey = preferenceKey;
 
-        for (int i = 0; i < mBroadcastModel.getRowCount(); i++) {
-            String name = (String) mBroadcastModel.getValueAt(i, BroadcastModel.COLUMN_STREAM_NAME);
-            rowData.add(new BroadcastModelRow(name));
-        }
+        rebuildRows();
 
+        //Rebuild the row list only when streams are actually added/removed/reordered.  Property
+        //updates (name, state, etc.) are handled by the throttled refresh below so we don't pay
+        //the cost of clearing and re-adding every row on each event.
         mBroadcastModel.getConfiguredBroadcasts().addListener((javafx.collections.ListChangeListener<ConfiguredBroadcast>) c -> {
-            Platform.runLater(() -> {
-                rowData.clear();
-                for (int i = 0; i < mBroadcastModel.getRowCount(); i++) {
-                    String name = (String) mBroadcastModel.getValueAt(i, BroadcastModel.COLUMN_STREAM_NAME);
-                    rowData.add(new BroadcastModelRow(name));
+            boolean structural = false;
+            while (c.next()) {
+                if (c.wasAdded() || c.wasRemoved() || c.wasPermutated()) {
+                    structural = true;
                 }
-                tableView.refresh();
-            });
+            }
+            if (structural) {
+                Platform.runLater(this::rebuildRows);
+            } else {
+                scheduleRefresh();
+            }
         });
+
+        //The streamed/users/queue/error columns are read on-demand from the model and are not part
+        //of the observable extractor, so the table is never told they changed.  Subscribe to the
+        //model's broadcast events and refresh the visible cells on a throttled cadence.  Coalescing
+        //to once per second keeps cost bounded no matter how many streams are reporting updates.
+        mBroadcastModel.addListener((io.github.dsheirer.sample.Listener<BroadcastEvent>) event -> scheduleRefresh());
+
+        mRefreshTimer = new javafx.animation.Timeline(new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1), e -> {
+            if (mRefreshDirty.getAndSet(false) && tableView != null) {
+                tableView.refresh();
+            }
+        }));
+        mRefreshTimer.setCycleCount(javafx.animation.Timeline.INDEFINITE);
+        mRefreshTimer.play();
 
         filteredData = new FilteredList<>(rowData, p -> true);
         SortedList<BroadcastModelRow> sortedData = new SortedList<>(filteredData);
@@ -253,5 +273,29 @@ public class BroadcastStatusPanelController {
 
     public TableView<BroadcastModelRow> getTable() {
         return tableView;
+    }
+
+    /**
+     * Rebuilds the backing row list from the model.  Called on initial load and whenever streams
+     * are added, removed, or reordered.  Must run on the JavaFX Application Thread.
+     */
+    private void rebuildRows() {
+        rowData.clear();
+        for (int i = 0; i < mBroadcastModel.getRowCount(); i++) {
+            String name = (String) mBroadcastModel.getValueAt(i, BroadcastModel.COLUMN_STREAM_NAME);
+            rowData.add(new BroadcastModelRow(name));
+        }
+        if (tableView != null) {
+            tableView.refresh();
+        }
+    }
+
+    /**
+     * Marks the table as needing a cell refresh.  The actual refresh is performed at most once per
+     * second by the refresh timer, so a burst of model events from many streams collapses into a
+     * single re-render rather than one per event.
+     */
+    private void scheduleRefresh() {
+        mRefreshDirty.set(true);
     }
 }

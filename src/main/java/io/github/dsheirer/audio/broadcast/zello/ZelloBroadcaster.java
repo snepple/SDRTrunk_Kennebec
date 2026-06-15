@@ -238,6 +238,16 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         return mUsersOnline.get();
     }
 
+    /**
+     * Zello tracks completed streams in its own counter rather than the base-class field, so the
+     * streaming status table reads the count through this override.
+     */
+    @Override
+    public int getStreamedAudioCount()
+    {
+        return mStreamedCount.get();
+    }
+
     @Override
     public synchronized void startRealTimeStream(IdentifierCollection identifiers)
     {
