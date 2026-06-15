@@ -186,7 +186,7 @@ public class KennebecFeatureTest {
 
     @Test
     public void testPredictiveMaintenanceEngine_AcceptsMetrics() {
-        PredictiveMaintenanceEngine engine = new PredictiveMaintenanceEngine();
+        PredictiveMaintenanceEngine engine = new PredictiveMaintenanceEngine(null);
         engine.reportMetric("cpu_percent", 45.0);
         engine.reportMetric("memory_percent", 60.0);
         assertEquals(45.0, engine.getMetrics().get("cpu_percent"), 0.1);
