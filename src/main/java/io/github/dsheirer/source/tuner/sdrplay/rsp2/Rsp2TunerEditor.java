@@ -291,15 +291,10 @@ public class Rsp2TunerEditor extends RspTunerEditor<Rsp2TunerConfiguration>
             mBiasTCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setBiasT(mBiasTCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSP2 Bias-T enabled to " + mBiasTCheckBox.isSelected(), se);
-                    }
+                    final boolean biasTOn = mBiasTCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rsp2-bias-t", () -> getTunerController().getControlRsp().setBiasT(biasTOn),
+                            "Unable to set RSP2 Bias-T enabled to " + biasTOn);
                 }
             });
         }
@@ -319,15 +314,10 @@ public class Rsp2TunerEditor extends RspTunerEditor<Rsp2TunerConfiguration>
             mRfNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfNotch(mRfNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSP2 RF notch enabled to " + mRfNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfNotchOn = mRfNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rsp2-rf-notch", () -> getTunerController().getControlRsp().setRfNotch(rfNotchOn),
+                            "Unable to set RSP2 RF notch enabled to " + rfNotchOn);
                 }
             });
         }
@@ -347,16 +337,11 @@ public class Rsp2TunerEditor extends RspTunerEditor<Rsp2TunerConfiguration>
             mExternalReferenceOutputCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setExternalReferenceOutput(mExternalReferenceOutputCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSP2 external reference output notch enabled to " +
-                                mExternalReferenceOutputCheckBox.isSelected(), se);
-                    }
+                    final boolean externalReferenceOn = mExternalReferenceOutputCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rsp2-external-reference",
+                            () -> getTunerController().getControlRsp().setExternalReferenceOutput(externalReferenceOn),
+                            "Unable to set RSP2 external reference output notch enabled to " + externalReferenceOn);
                 }
             });
         }
@@ -376,17 +361,11 @@ public class Rsp2TunerEditor extends RspTunerEditor<Rsp2TunerConfiguration>
             mAntennaSelectionCombo.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    Rsp2AntennaSelection selected = (Rsp2AntennaSelection)mAntennaSelectionCombo.getValue();
-
-                    try
-                    {
-                        getTunerController().getControlRsp().setAntennaSelection(selected);
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Error setting Antenna selection for RSP2", se);
-                    }
+                    final Rsp2AntennaSelection selected = (Rsp2AntennaSelection)mAntennaSelectionCombo.getValue();
+                    save();
+                    applyDeviceControl("rsp2-antenna",
+                            () -> getTunerController().getControlRsp().setAntennaSelection(selected),
+                            "Error setting Antenna selection for RSP2");
                 }
             });
         }

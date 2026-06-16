@@ -159,17 +159,14 @@ public CheckBox getLnaGainCheckBox()
             mLnaGainCheckBox.setDisable(!(false));
             mLnaGainCheckBox.setOnAction(event ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getController().setLNAGain(getLnaGainCheckBox().isSelected());
-                        save();
-                    }
-                    catch(SourceException e)
-                    {
-                        mLog.error("Couldn't set LNA gain for FCD2", e);
-                    }
+                    boolean lnaGain = getLnaGainCheckBox().isSelected();
+                    save();
+                    applyDeviceControl("fcd2-lna-gain", () -> {
+                        try { getController().setLNAGain(lnaGain); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "Couldn't set LNA gain for FCD2");
                 }
             });
         }
@@ -185,17 +182,14 @@ public CheckBox getLnaGainCheckBox()
             mMixerGainCheckBox.setDisable(!(false));
             mMixerGainCheckBox.setOnAction(event ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getController().setMixerGain(getMixerGainCheckBox().isSelected());
-                        save();
-                    }
-                    catch(SourceException e)
-                    {
-                        mLog.error("Couldn't set mixer gain for FCD2", e);
-                    }
+                    boolean mixerGain = getMixerGainCheckBox().isSelected();
+                    save();
+                    applyDeviceControl("fcd2-mixer-gain", () -> {
+                        try { getController().setMixerGain(mixerGain); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "Couldn't set mixer gain for FCD2");
                 }
             });
         }

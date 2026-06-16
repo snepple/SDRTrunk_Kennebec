@@ -317,15 +317,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mBiasTCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setBiasT(mBiasTCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSP2 Bias-T enabled to " + mBiasTCheckBox.isSelected(), se);
-                    }
+                    final boolean biasTOn = mBiasTCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspdx-bias-t",
+                            () -> getTunerController().getControlRsp().setBiasT(biasTOn),
+                            "Unable to set RSPdx Bias-T enabled to " + biasTOn);
                 }
             });
         }
@@ -345,15 +341,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mHdrModeCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setHighDynamicRange(mHdrModeCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPd HDR mode enabled to " + mHdrModeCheckBox.isSelected(), se);
-                    }
+                    final boolean hdrModeOn = mHdrModeCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspdx-hdr",
+                            () -> getTunerController().getControlRsp().setHighDynamicRange(hdrModeOn),
+                            "Unable to set RSPd HDR mode enabled to " + hdrModeOn);
                 }
             });
         }
@@ -373,15 +365,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mRfNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfNotch(mRfNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSP2 RF notch enabled to " + mRfNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfNotchOn = mRfNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspdx-rf-notch",
+                            () -> getTunerController().getControlRsp().setRfNotch(rfNotchOn),
+                            "Unable to set RSPdx RF notch enabled to " + rfNotchOn);
                 }
             });
         }
@@ -401,15 +389,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mRfDabNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfDabNotch(mRfDabNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPdx RF DAB notch enabled to " + mRfDabNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfDabNotchOn = mRfDabNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspdx-rf-dab-notch",
+                            () -> getTunerController().getControlRsp().setRfDabNotch(rfDabNotchOn),
+                            "Unable to set RSPdx RF DAB notch enabled to " + rfDabNotchOn);
                 }
             });
         }
@@ -429,17 +413,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mAntennaCombo.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    RspDxAntenna selected = (RspDxAntenna) mAntennaCombo.getValue();
-
-                    try
-                    {
-                        getTunerController().getControlRsp().setAntenna(selected);
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Error setting Antenna selection for RSPdx", se);
-                    }
+                    final RspDxAntenna selected = (RspDxAntenna) mAntennaCombo.getValue();
+                    save();
+                    applyDeviceControl("rspdx-antenna",
+                            () -> getTunerController().getControlRsp().setAntenna(selected),
+                            "Error setting Antenna selection for RSPdx");
                 }
             });
         }
@@ -459,17 +437,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mHdrModeBandwidthCombo.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    HdrModeBandwidth selected = (HdrModeBandwidth) mHdrModeBandwidthCombo.getValue();
-
-                    try
-                    {
-                        getTunerController().getControlRsp().setHdrModeBandwidth(selected);
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Error setting HDR mode bandwidth for RSPdx", se);
-                    }
+                    final HdrModeBandwidth selected = (HdrModeBandwidth) mHdrModeBandwidthCombo.getValue();
+                    save();
+                    applyDeviceControl("rspdx-hdr-bandwidth",
+                            () -> getTunerController().getControlRsp().setHdrModeBandwidth(selected),
+                            "Error setting HDR mode bandwidth for RSPdx");
                 }
             });
         }

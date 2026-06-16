@@ -572,7 +572,7 @@ public class BroadcastModel implements Listener<AudioRecording>
     {
         try
         {
-            if(rowIndex <= mConfiguredBroadcasts.size())
+            if(rowIndex >= 0 && rowIndex < mConfiguredBroadcasts.size())
             {
                 ConfiguredBroadcast configuredBroadcast = mConfiguredBroadcasts.get(rowIndex);
 

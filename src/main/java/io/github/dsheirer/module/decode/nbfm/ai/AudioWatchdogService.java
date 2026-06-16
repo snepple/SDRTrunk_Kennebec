@@ -120,9 +120,12 @@ public class AudioWatchdogService {
             }
             
             String model = mUserPreferences.getAIPreference().getGeminiModel();
-            if (model == null || model.isEmpty()) model = "gemini-2.5-pro";
-            
-            String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+            if (model == null || model.isEmpty()) model = "models/gemini-2.5-pro";
+            //Normalize so the path has exactly one "models/" segment regardless of how the
+            //model id is stored (the preference default already includes the "models/" prefix).
+            if (!model.startsWith("models/")) model = "models/" + model;
+
+            String url = "https://generativelanguage.googleapis.com/v1beta/" + model + ":generateContent?key=" + apiKey;
             
             byte[] wavBytes = WavUtil.floatsToWav(snapshot, 48000);
             String base64Data = Base64.getEncoder().encodeToString(wavBytes);

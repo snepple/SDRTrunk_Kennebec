@@ -347,15 +347,11 @@ public class RspDuoTuner2Editor extends RspTunerEditor<RspDuoTuner2Configuration
             mRfDabNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfDabNotch(mRfDabNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 2 RF DAB notch enabled to " + mRfDabNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfDabNotchOn = mRfDabNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo2-rf-dab-notch",
+                            () -> getTunerController().getControlRsp().setRfDabNotch(rfDabNotchOn),
+                            "Unable to set RSPduo tuner 2 RF DAB notch enabled to " + rfDabNotchOn);
                 }
             });
         }
@@ -375,15 +371,11 @@ public class RspDuoTuner2Editor extends RspTunerEditor<RspDuoTuner2Configuration
             mRfNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfNotch(mRfNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 2 RF notch enabled to " + mRfNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfNotchOn = mRfNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo2-rf-notch",
+                            () -> getTunerController().getControlRsp().setRfNotch(rfNotchOn),
+                            "Unable to set RSPduo tuner 2 RF notch enabled to " + rfNotchOn);
                 }
             });
         }
@@ -403,15 +395,11 @@ public class RspDuoTuner2Editor extends RspTunerEditor<RspDuoTuner2Configuration
             mBiasTCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setBiasT(mBiasTCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 2 AM notch enabled to " + mBiasTCheckBox.isSelected(), se);
-                    }
+                    final boolean biasTOn = mBiasTCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo2-bias-t",
+                            () -> getTunerController().getControlRsp().setBiasT(biasTOn),
+                            "Unable to set RSPduo tuner 2 Bias-T enabled to " + biasTOn);
                 }
             });
         }
@@ -431,16 +419,11 @@ public class RspDuoTuner2Editor extends RspTunerEditor<RspDuoTuner2Configuration
             mExternalReferenceOutputCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setExternalReferenceOutput(mExternalReferenceOutputCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 2 external reference output notch enabled to " +
-                                mExternalReferenceOutputCheckBox.isSelected(), se);
-                    }
+                    final boolean externalReferenceOn = mExternalReferenceOutputCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo2-external-reference",
+                            () -> getTunerController().getControlRsp().setExternalReferenceOutput(externalReferenceOn),
+                            "Unable to set RSPduo tuner 2 external reference output notch enabled to " + externalReferenceOn);
                 }
             });
         }
