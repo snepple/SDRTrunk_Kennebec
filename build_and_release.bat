@@ -135,8 +135,8 @@ if not exist "%FOLDER_NAME%" (
     :: Sync the build workspace to origin/master when it is behind. Use 'git reset --hard', which
     :: advances HEAD - the previous code only 'git checkout'-ed the build script into the working tree
     :: without moving HEAD, so the 'git diff HEAD origin/master' check below stayed dirty forever and
-    :: the script restarted itself in an endless close/reopen loop. No restart is needed: the running
-    :: script is the outer copy (%~f0), not this clone, so resetting the clone cannot corrupt execution.
+    :: the script restarted itself in an endless close/reopen loop. Resetting the clone does not touch
+    :: the launcher the user actually ran (the outer %~f0); that is handled by the SELF-UPDATE step below.
     git diff --quiet HEAD origin/master 2>nul
     if errorlevel 1 (
         echo [INFO] Updates found on origin/master - syncing the build workspace...
@@ -144,6 +144,34 @@ if not exist "%FOLDER_NAME%" (
     )
     cd /d "%ROOT_DIR%" 2>nul
 )
+
+:: ============================================================================
+:: SELF-UPDATE: keep THIS launcher in sync with origin/master's build_and_release.bat
+:: ============================================================================
+:: The user runs the OUTER copy of this script (%~f0), which lives outside the cloned
+:: workspace, so the workspace sync above never updates the launcher. Compare the
+:: launcher against the freshly-synced master copy; if it differs, replace the launcher
+:: in place and relaunch with the new version. SELF_UPDATE_DONE is inherited by the
+:: relaunched process so the update can happen at most once per invocation - a locked or
+:: failed copy can therefore never produce an endless update/restart loop.
+if defined SELF_UPDATE_DONE goto :after_self_update
+set "MASTER_BAR=%ROOT_DIR%\%FOLDER_NAME%\build_and_release.bat"
+if not exist "%MASTER_BAR%" goto :after_self_update
+fc /b "%MASTER_BAR%" "%~f0" >nul 2>&1
+if not errorlevel 1 goto :after_self_update
+if errorlevel 2 goto :after_self_update
+echo [INFO] build_and_release.bat changed on origin/master - updating this launcher and restarting...
+set "SELF_UPDATE_DONE=1"
+set "UPDATER=%TEMP%\sdrtrunk_selfupdate_%RANDOM%.bat"
+> "%UPDATER%" echo @echo off
+>> "%UPDATER%" echo timeout /t 2 /nobreak ^>nul
+>> "%UPDATER%" echo copy /Y "%MASTER_BAR%" "%~f0" ^>nul
+>> "%UPDATER%" echo set "TERMINAL_FIXED="
+>> "%UPDATER%" echo start "" "%~f0"
+>> "%UPDATER%" echo del "%%~f0"
+start "" cmd /c "%UPDATER%"
+exit
+:after_self_update
 
 cd /d "%ROOT_DIR%\%FOLDER_NAME%"
 
