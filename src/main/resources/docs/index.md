@@ -90,6 +90,13 @@
 
 
       )
+      [/hardware/gpu-acceleration](
+
+          GPU Acceleration
+
+            Offload signal processing to your OpenCL-compatible GPU to free up CPU resources.
+
+      )
       [/hardware/tuner-self-healing](
 
 

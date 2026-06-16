@@ -61,7 +61,7 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 <h3>Performance & Resource Optimization</h3>
 <ul>
   <li><strong>Reduced CPU & Memory Utilization:</strong> Major underlying engine optimizations aimed at reducing heap allocations, aggressive memory management, and smarter thread pooling.</li>
-  <li><strong>GPU Acceleration for Spectral Visuals:</strong> Waterfall and Spectrum displays now offload heavy rendering tasks to the GPU, producing much smoother frame rates while drastically reducing CPU tax.</li>
+  <li><strong>OpenCL GPU Acceleration (Aparapi):</strong> Offloads complex digital signal processing math (like FFT calculations) and spectral visualization rendering to the GPU. Requires an OpenCL 1.2+ compatible graphics card (Intel, AMD, or NVIDIA). This produces much smoother frame rates while drastically reducing CPU tax.</li>
   <li><strong>Smart Bandwidth:</strong> Automatically calculates and reduces SDR tuner sample rates when observing narrower bandwidths, further conserving CPU.</li>
 </ul>
 
