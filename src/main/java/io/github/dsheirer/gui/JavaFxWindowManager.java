@@ -117,6 +117,8 @@ public class JavaFxWindowManager extends Application
         mPlaylistManager = playlistManager;
         mViewChangedListener = viewChangedListener;
 
+        RuntimeModelRegistry.register(mTunerManager, mPlaylistManager);
+
         setup();
     }
 

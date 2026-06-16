@@ -36,6 +36,14 @@ public class BroadcastStatusPanelController {
     @FXML
     private TableView<BroadcastModelRow> tableView;
 
+    @FXML
+    private VBox mainContainer;
+
+    //Transient "connecting" progress indicator shown only while one or more streams are connecting.
+    private HBox mConnectingIndicator;
+    private ProgressIndicator mConnectingProgress;
+    private Label mConnectingLabel;
+
     private BroadcastModel mBroadcastModel;
     private UserPreferences mUserPreferences;
     private String mPreferenceKey;
@@ -75,6 +83,23 @@ public class BroadcastStatusPanelController {
 
         rebuildRows();
 
+        //Build the (initially hidden) connecting-progress indicator above the table.
+        mConnectingProgress = new ProgressIndicator();
+        mConnectingProgress.setPrefSize(16, 16);
+        mConnectingProgress.setMinSize(16, 16);
+        mConnectingLabel = new Label("Connecting streams…");
+        mConnectingLabel.getStyleClass().add("kennebec-secondary-text");
+        mConnectingIndicator = new HBox(8, mConnectingProgress, mConnectingLabel);
+        mConnectingIndicator.setAlignment(Pos.CENTER_LEFT);
+        mConnectingIndicator.setPadding(new Insets(4, 10, 4, 10));
+        mConnectingIndicator.setVisible(false);
+        mConnectingIndicator.setManaged(false);
+
+        if(mainContainer != null)
+        {
+            mainContainer.getChildren().add(0, mConnectingIndicator);
+        }
+
         //Rebuild the row list only when streams are actually added/removed/reordered.  Property
         //updates (name, state, etc.) are handled by the throttled refresh below so we don't pay
         //the cost of clearing and re-adding every row on each event.
@@ -102,6 +127,7 @@ public class BroadcastStatusPanelController {
             if (mRefreshDirty.getAndSet(false) && tableView != null) {
                 tableView.refresh();
             }
+            updateConnectingIndicator();
         }));
         mRefreshTimer.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         mRefreshTimer.play();
@@ -114,6 +140,36 @@ public class BroadcastStatusPanelController {
 
         setupColumns();
         setupContextMenu();
+    }
+
+    /**
+     * Updates the connecting-progress indicator: visible only while one or more streams are in the CONNECTING state,
+     * hidden once all streams have settled (connected or errored).
+     */
+    private void updateConnectingIndicator() {
+        if (mConnectingIndicator == null || mBroadcastModel == null) {
+            return;
+        }
+
+        int connecting = 0;
+
+        for (ConfiguredBroadcast configuredBroadcast : mBroadcastModel.getConfiguredBroadcasts()) {
+            try {
+                if (configuredBroadcast.broadcastStateProperty().get() == BroadcastState.CONNECTING) {
+                    connecting++;
+                }
+            } catch (Throwable t) {
+                //Ignore an individual broadcaster whose state can't be read
+            }
+        }
+
+        boolean show = connecting > 0;
+        mConnectingIndicator.setVisible(show);
+        mConnectingIndicator.setManaged(show);
+
+        if (show) {
+            mConnectingLabel.setText("Connecting streams… " + connecting + " remaining");
+        }
     }
 
     private void setupColumns() {

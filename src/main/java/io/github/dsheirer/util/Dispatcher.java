@@ -29,6 +29,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +50,20 @@ public class Dispatcher<E> implements Listener<E>
     private ScheduledFuture<?> mScheduledFuture;
     private final long mInterval;
     private HeartbeatManager mHeartbeatManager;
+
+    //Optional overflow protection.  When mMaximumQueueSize > 0 the queue is bounded: once the backlog reaches the
+    //maximum, inbound elements are dropped (drop-newest) until the backlog drains below mResetThreshold.  This
+    //converts a consumer that cannot keep up (e.g. the polyphase channelizer at high sample rates) from an
+    //unbounded memory-growth freeze into survivable, logged sample dropping.  Default 0 = unbounded (legacy
+    //behavior, no change for existing callers).
+    private volatile int mMaximumQueueSize = 0;
+    private int mResetThreshold = 0;
+    private final AtomicInteger mQueueSize = new AtomicInteger(0);
+    private final AtomicBoolean mOverflow = new AtomicBoolean(false);
+    private long mDroppedSinceLastLog = 0;
+    private long mDroppedTotal = 0;
+    private long mLastOverflowLogTimestamp = 0;
+    private static final long OVERFLOW_LOG_INTERVAL_MS = 5000;
 
     /**
      * Constructs an instance of a Dispatcher with integrated heartbeat support.
@@ -92,6 +107,19 @@ public class Dispatcher<E> implements Listener<E>
     }
 
     /**
+     * Bounds the internal queue to enable overflow protection.  When the backlog reaches maximumQueueSize, inbound
+     * elements are dropped until the backlog drains below half of that value, and a throttled warning is logged.
+     * This prevents an overwhelmed consumer (e.g. the polyphase channelizer at high sample rates) from growing the
+     * queue without limit and freezing the application.  Set to 0 (default) for an unbounded queue.
+     * @param maximumQueueSize maximum number of queued elements, or 0 for unbounded.
+     */
+    public void setMaximumQueueSize(int maximumQueueSize)
+    {
+        mMaximumQueueSize = Math.max(0, maximumQueueSize);
+        mResetThreshold = mMaximumQueueSize / 2;
+    }
+
+    /**
      * Primary input method for adding buffers to this processor.  Note: incoming buffers will be ignored if this
      * processor is in a stopped state.  You must invoke start() to allow incoming buffers and initiate buffer
      * processing.
@@ -102,7 +130,60 @@ public class Dispatcher<E> implements Listener<E>
     {
         if(mRunning.get())
         {
-            mQueue.add(e);
+            if(mMaximumQueueSize > 0)
+            {
+                int size = mQueueSize.get();
+
+                if(mOverflow.get())
+                {
+                    //Shedding load: keep dropping until the backlog drains below the reset threshold (hysteresis).
+                    if(size <= mResetThreshold)
+                    {
+                        mOverflow.set(false);
+                        mLog.warn("[{}] recovered from processor overload - resumed after dropping {} element(s) total",
+                                mThreadName, mDroppedTotal);
+                    }
+                    else
+                    {
+                        recordDrop();
+                        return;
+                    }
+                }
+                else if(size >= mMaximumQueueSize)
+                {
+                    mOverflow.set(true);
+                    recordDrop();
+                    return;
+                }
+
+                mQueue.add(e);
+                mQueueSize.incrementAndGet();
+            }
+            else
+            {
+                mQueue.add(e);
+            }
+        }
+    }
+
+    /**
+     * Records a dropped element and emits a throttled overload warning.  Only ever called from the producer thread
+     * (via {@link #receive(Object)}), so the drop counters require no additional synchronization.
+     */
+    private void recordDrop()
+    {
+        mDroppedTotal++;
+        mDroppedSinceLastLog++;
+
+        long now = System.currentTimeMillis();
+
+        if(now - mLastOverflowLogTimestamp >= OVERFLOW_LOG_INTERVAL_MS)
+        {
+            mLastOverflowLogTimestamp = now;
+            mLog.warn("[{}] processor overloaded - dropped {} element(s) in the last ~{}ms (queue limit {}). The " +
+                    "consumer cannot keep up with the input rate - reduce sample rate or channel count, or free up CPU.",
+                    mThreadName, mDroppedSinceLastLog, OVERFLOW_LOG_INTERVAL_MS, mMaximumQueueSize);
+            mDroppedSinceLastLog = 0;
         }
     }
 
@@ -127,6 +208,8 @@ public class Dispatcher<E> implements Listener<E>
             }
 
             mQueue.clear();
+            mQueueSize.set(0);
+            mOverflow.set(false);
             mExecutorService = Executors.newSingleThreadScheduledExecutor(new NamingThreadFactory(mThreadName));
 
             Runnable r = (mHeartbeatManager != null ? new ProcessorWithHeartbeat() : new Processor());
@@ -148,6 +231,8 @@ public class Dispatcher<E> implements Listener<E>
                 mScheduledFuture.cancel(false);
                 mScheduledFuture = null;
                 mQueue.clear();
+                mQueueSize.set(0);
+                mOverflow.set(false);
             }
 
             if(mExecutorService != null)
@@ -183,6 +268,11 @@ public class Dispatcher<E> implements Listener<E>
 
             mQueue.drainTo(elements);
 
+            if(mMaximumQueueSize > 0 && !elements.isEmpty())
+            {
+                mQueueSize.addAndGet(-elements.size());
+            }
+
             for(E element: elements)
             {
                 if(mListener != null)
@@ -217,6 +307,11 @@ public class Dispatcher<E> implements Listener<E>
         List<E> elements = new ArrayList<>();
 
         mQueue.drainTo(elements);
+
+        if(mMaximumQueueSize > 0 && !elements.isEmpty())
+        {
+            mQueueSize.addAndGet(-elements.size());
+        }
 
         for(E element: elements)
         {

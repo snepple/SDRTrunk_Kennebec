@@ -81,6 +81,14 @@ public class BroadcastModel implements Listener<AudioRecording>
     private Map<Integer,AbstractAudioBroadcaster> mBroadcasterMap = new HashMap<>();
     private IconModel mIconModel;
     private AliasModel mAliasModel;
+
+    //Staggers broadcaster start()/connect() so a large playlist (e.g. dozens of Zello streams) does not open all
+    //connections simultaneously at startup, which spikes CPU/GC and hammers the streaming APIs.  Holds the next
+    //available start timestamp; bursts are spaced BROADCASTER_START_STAGGER_MS apart, while a lone later add starts
+    //immediately because the timestamp is already in the past.
+    private static final long BROADCASTER_START_STAGGER_MS = 250;
+    private final java.util.concurrent.atomic.AtomicLong mNextBroadcasterStartTime =
+        new java.util.concurrent.atomic.AtomicLong(0);
     private Broadcaster<BroadcastEvent> mBroadcastEventBroadcaster = new Broadcaster<>();
     private BroadcastEventListener mBroadcastEventListener = new BroadcastEventListener();
     private UserPreferences mUserPreferences;
@@ -361,7 +369,21 @@ public class BroadcastModel implements Listener<AudioRecording>
                 }
 
                 broadcast(new BroadcastEvent(audioBroadcaster, BroadcastEvent.Event.BROADCASTER_ADD));
-                ThreadPool.CACHED.submit(audioBroadcaster::start);
+
+                //Stagger the start so simultaneous startup of many streams doesn't bombard the network/CPU at once.
+                long now = System.currentTimeMillis();
+                long slot = mNextBroadcasterStartTime.updateAndGet(prev -> Math.max(now, prev) + BROADCASTER_START_STAGGER_MS)
+                        - BROADCASTER_START_STAGGER_MS;
+                long delay = Math.max(0, slot - now);
+
+                if(delay <= 0)
+                {
+                    ThreadPool.CACHED.submit(audioBroadcaster::start);
+                }
+                else
+                {
+                    ThreadPool.SCHEDULED.schedule(audioBroadcaster::start, delay, TimeUnit.MILLISECONDS);
+                }
             }
         }
     }

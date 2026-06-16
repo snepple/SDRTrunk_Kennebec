@@ -24,13 +24,15 @@ set "LOG_FILE=%ROOT_DIR%\build_log.txt"
 set "VOLK_BASE=C:\SDR_Deps\include"
 
 :: ---- API CONFIG ----
+:: AI build triage uses Anthropic's Claude. Put your key in api_keys.bat (created on first run).
 if not exist api_keys.bat (
     echo @echo off > api_keys.bat
-    echo set "JULES_API_KEY=YOUR_JULES_KEY_HERE" >> api_keys.bat
-    echo set "GEMINI_API_KEY=YOUR_GEMINI_KEY_HERE" >> api_keys.bat
-    echo set "GEMINI_MODEL=gemini-1.5-flash" >> api_keys.bat
+    echo set "ANTHROPIC_API_KEY=YOUR_ANTHROPIC_KEY_HERE" >> api_keys.bat
+    echo set "CLAUDE_MODEL=claude-opus-4-8" >> api_keys.bat
 )
 call api_keys.bat
+:: Default the model when an older api_keys.bat does not define it.
+if "%CLAUDE_MODEL%"=="" set "CLAUDE_MODEL=claude-opus-4-8"
 
 if exist "%LOG_FILE%" del "%LOG_FILE%"
 
@@ -170,10 +172,33 @@ set "RELEASE_DIR=%ROOT_DIR%\%FOLDER_NAME%\build\releases"
 :: STEP 6: Gradle Init (Compile)
 :: ============================================================================
 call :drawProgressBar 25 "Initializing Gradle (compile)..."
+
+:: Best-effort: exclude the build workspace from Windows Defender real-time scanning. Defender
+:: (or another AV) holding freshly-written jars open is the most common cause of 'gradle clean'
+:: failing with "New files were found ... a process is still writing to the target directory".
+:: Requires admin; ignored silently if it cannot be applied.
+powershell -NoProfile -Command "try { Add-MpPreference -ExclusionPath '%ROOT_DIR%\%FOLDER_NAME%' -ErrorAction Stop; Write-Host '[OK] Added Windows Defender exclusion for the build workspace.' } catch { Write-Host '[INFO] Could not add a Defender exclusion (run as administrator to enable) - continuing.' }" 2>nul
+
+:: Clean + compile with automatic retry. If 'clean' cannot delete build\install\sdr-trunk\lib
+:: jars because a process or antivirus is locking them, release the locks and retry.
 :: OPTIMIZATION: Removed --no-daemon for much faster consecutive builds
+set "CLEAN_ATTEMPT=0"
+:clean_retry
+set /a CLEAN_ATTEMPT+=1
+echo [INFO] Clean/compile attempt !CLEAN_ATTEMPT! of 3...
 call gradlew.bat clean classes --console=plain > gradle_out.log 2>&1
+findstr /C:"BUILD SUCCESSFUL" gradle_out.log >nul
+if !ERRORLEVEL! EQU 0 goto clean_ok
+if !CLEAN_ATTEMPT! GEQ 3 (
+    type gradle_out.log >> "%LOG_FILE%"
+    echo [ERROR] Clean/compile failed after !CLEAN_ATTEMPT! attempts.
+    goto ai_triage
+)
+echo [WARNING] Attempt !CLEAN_ATTEMPT! failed - releasing file locks on the build directory and retrying...
+call :releaseBuildLocks
+goto clean_retry
+:clean_ok
 type gradle_out.log >> "%LOG_FILE%"
-findstr /C:"BUILD SUCCESSFUL" gradle_out.log >nul || goto ai_triage
 
 if not exist "!RELEASE_DIR!" mkdir "!RELEASE_DIR!"
 
@@ -415,6 +440,27 @@ echo ==========================================
 exit /b
 
 :: ============================================================================
+:: UTILITY: Release file locks on the build directory
+:: ============================================================================
+:releaseBuildLocks
+:: Stop the Gradle daemon and kill any process that may hold build\install jars open
+:: (a previously launched build, a stray JVM, the packaged app, or an indexer).
+call gradlew.bat --stop >nul 2>&1
+taskkill /F /IM java.exe /T >nul 2>&1
+taskkill /F /IM javaw.exe /T >nul 2>&1
+taskkill /F /IM sdr-trunk.exe /T >nul 2>&1
+taskkill /F /IM SDRTrunk.exe /T >nul 2>&1
+taskkill /F /FI "WINDOWTITLE eq SDRTrunk*" /T >nul 2>&1
+:: Give the OS / antivirus a moment to release file handles
+powershell -NoProfile -Command "Start-Sleep -Seconds 3" >nul 2>&1
+:: Force-remove the directories that hold the locked, previously-built application jars so the
+:: next 'gradle clean' has less to delete.
+for %%D in (build\install build\image build\installer build\distributions) do (
+    if exist "%%D" rmdir /s /q "%%D" >nul 2>&1
+)
+exit /b
+
+:: ============================================================================
 :: ERROR HANDLER: AI Triage
 :: ============================================================================
 :ai_triage
@@ -422,28 +468,42 @@ cd /d "%ROOT_DIR%"
 echo ==========================================
 echo BUILD FAILED - VIEWING RECENT LOGS
 echo ==========================================
-powershell -Command "if (Test-Path 'build_log.txt') { Get-Content 'build_log.txt' -Tail 15 }"
+powershell -Command "if (Test-Path 'build_log.txt') { Get-Content 'build_log.txt' -Tail 20 }"
 echo ==========================================
-echo Attempting AI Triage...
+echo Attempting AI Triage (Claude)...
 echo ==========================================
 
-echo [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 > triage.ps1
-echo $log = if (Test-Path 'build_log.txt') { Get-Content 'build_log.txt' -Tail 30 ^| Out-String } else { 'No log' } >> triage.ps1
-echo $log = $log -replace '[^^^\x20-\x7E]', '' -replace [char]34, ' ' -replace '\\', '/' >> triage.ps1
-echo $instr = 'SDRTrunk build failed. Log: ' + $log + '. Return JSON ONLY: {"target":"REPO|SCRIPT","content":"Fix advice"}' >> triage.ps1
-echo $body = @{ contents = @( @{ parts = @( @{ text = $instr } ) } ) } ^| ConvertTo-Json -Depth 10 >> triage.ps1
-echo try { >> triage.ps1
-echo   $gUrl = "https://generativelanguage.googleapis.com/v1/models/%GEMINI_MODEL%:generateContent?key=%GEMINI_API_KEY%" >> triage.ps1
-echo   $res = Invoke-RestMethod -Method Post -Uri $gUrl -ContentType 'application/json' -Body $body >> triage.ps1
-echo   $json = $res.candidates[0].content.parts[0].text -replace '```json', '' -replace '```', '' >> triage.ps1
-echo   $dec = $json ^| ConvertFrom-Json >> triage.ps1
-echo   Write-Host "[AI DECISION] Target: $($dec.target)" -ForegroundColor Cyan >> triage.ps1
-echo   if ($dec.target -eq 'REPO') { >> triage.ps1
-echo     $jBody = @{ prompt=$dec.content; sourceContext=@{source="sources/github/%GH_REPO%"; githubRepoContext=@{startingBranch='master'}}; automationMode='AUTO_CREATE_PR'; title='Fix Build' } ^| ConvertTo-Json -Depth 10 >> triage.ps1
-echo     $jRes = Invoke-RestMethod -Method Post -Uri 'https://jules.googleapis.com/v1alpha/sessions' -Headers @{'X-Goog-Api-Key'='%JULES_API_KEY%'; 'Content-Type'='application/json'} -Body $jBody >> triage.ps1
-echo     Write-Host "[SUCCESS] Jules ID: $($jRes.id)" -ForegroundColor Green >> triage.ps1
-echo   } else { Write-Host '[ADVICE]' -ForegroundColor Yellow; Write-Host $dec.content } >> triage.ps1
-echo } catch { Write-Host "AI Error: $($_.Exception.Message)" } >> triage.ps1
+if "%ANTHROPIC_API_KEY%"=="" (
+    echo [INFO] ANTHROPIC_API_KEY is not set - skipping AI triage.
+    echo [INFO] Add  set "ANTHROPIC_API_KEY=sk-ant-..."  to api_keys.bat to enable Claude triage.
+    pause
+    exit /b 1
+)
+if "%ANTHROPIC_API_KEY%"=="YOUR_ANTHROPIC_KEY_HERE" (
+    echo [INFO] ANTHROPIC_API_KEY is still the placeholder - skipping AI triage.
+    echo [INFO] Edit api_keys.bat and set your real Anthropic API key to enable Claude triage.
+    pause
+    exit /b 1
+)
+
+:: Build a PowerShell script that asks Claude (Anthropic Messages API) to triage the build log.
+> triage.ps1 echo [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+>> triage.ps1 echo $log = if (Test-Path 'build_log.txt') { Get-Content 'build_log.txt' -Tail 60 ^| Out-String } else { 'No log available.' }
+>> triage.ps1 echo $log = $log -replace '[^^^\x20-\x7E\r\n\t]', ''
+>> triage.ps1 echo $prompt = "You are a senior build engineer for the SDRTrunk Kennebec project (Java 23 / Gradle / JavaFX, built on Windows with jpackage and the Beryx runtime plugin). A build run failed. Analyze the tail of the build log below and respond with a concise, numbered, actionable diagnosis and fix. State clearly whether the root cause is the repository code or the local build environment/script. Build log:`n`n" + $log
+>> triage.ps1 echo $body = @{ model = '%CLAUDE_MODEL%'; max_tokens = 1024; messages = @( @{ role = 'user'; content = $prompt } ) } ^| ConvertTo-Json -Depth 10
+>> triage.ps1 echo $headers = @{ 'x-api-key' = '%ANTHROPIC_API_KEY%'; 'anthropic-version' = '2023-06-01' }
+>> triage.ps1 echo try {
+>> triage.ps1 echo   $res = Invoke-RestMethod -Method Post -Uri 'https://api.anthropic.com/v1/messages' -Headers $headers -ContentType 'application/json' -Body ([System.Text.Encoding]::UTF8.GetBytes($body))
+>> triage.ps1 echo   $text = ($res.content ^| Where-Object { $_.type -eq 'text' } ^| ForEach-Object { $_.text }) -join "`n"
+>> triage.ps1 echo   Write-Host ''
+>> triage.ps1 echo   Write-Host '===== CLAUDE BUILD TRIAGE =====' -ForegroundColor Cyan
+>> triage.ps1 echo   Write-Host $text
+>> triage.ps1 echo   Write-Host '===============================' -ForegroundColor Cyan
+>> triage.ps1 echo } catch {
+>> triage.ps1 echo   Write-Host "AI Error: $($_.Exception.Message)" -ForegroundColor Red
+>> triage.ps1 echo   if ($_.ErrorDetails.Message) { Write-Host $_.ErrorDetails.Message -ForegroundColor DarkGray }
+>> triage.ps1 echo }
 
 powershell -NoProfile -ExecutionPolicy Bypass -File triage.ps1
 if exist triage.ps1 del triage.ps1
