@@ -355,7 +355,7 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
                             getMixerGainCombo().setDisable(!(true));
                             getLNAGainCombo().setValue(getEmbeddedTuner().getLNAGain(true));
                             getLNAGainCombo().setDisable(!(true));
-                        } catch (UsbException ex) {
+                        } catch (Exception ex) {
                             mLog.error("Error communicating with E4K tuner", ex);
                         }
                     }
