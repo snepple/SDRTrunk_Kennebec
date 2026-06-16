@@ -328,7 +328,7 @@ public class LogsViewController {
         actionCol.setMaxWidth(250);
         actionCol.setMinWidth(150);
         actionCol.setCellFactory(param -> new TableCell<>() {
-            private final Button analyzeBtn = new Button("AI Review");
+            private final Button analyzeBtn = new Button("_AI Review");
             private final Button openBtn = new Button("O_pen");
             private final HBox container = new HBox(5, openBtn, analyzeBtn);
 
@@ -336,6 +336,9 @@ public class LogsViewController {
                 openBtn.setMnemonicParsing(true);
                 openBtn.accessibleTextProperty().set("Open Log");
                 openBtn.accessibleHelpProperty().set("Opens the log file in the system default text editor.");
+                analyzeBtn.setMnemonicParsing(true);
+                analyzeBtn.accessibleTextProperty().set("AI Review Log");
+                analyzeBtn.accessibleHelpProperty().set("Analyzes the log file using the configured AI.");
                 analyzeBtn.getStyleClass().add("kennebec-primary-button");
                 analyzeBtn.setOnAction(event -> {
                     LogFile logFile = getTableView().getItems().get(getIndex());

@@ -363,9 +363,13 @@ public class AudioRecordingsPanel extends VBox {
         TableColumn<RecordingItem, RecordingItem> actionCol = new TableColumn<>("Action");
         actionCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue()));
         actionCol.setCellFactory(col -> new TableCell<>() {
-            private final Button playBtn = new Button("Play");
+            private final Button playBtn = new Button("_Play");
 
             {
+                playBtn.setMnemonicParsing(true);
+                playBtn.accessibleTextProperty().set("Play Recording");
+                playBtn.accessibleHelpProperty().set("Plays the audio for this recording.");
+                playBtn.setTooltip(new Tooltip("Play the audio for this recording."));
                 playBtn.setOnAction(e -> {
                     RecordingItem item = getItem();
                     if (item != null) {

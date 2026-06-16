@@ -122,3 +122,7 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2026-06-15 - Adding Mnemonics and Accessibility to TableCell Action Buttons
 **Learning:** Buttons dynamically generated inside `TableCell` (like those in `LogsViewController`) often lack proper keyboard mnemonics and accessibility text properties, which violates Apple HIG's Consistency and Feedback guidelines and makes them difficult for screen reader users.
 **Action:** When creating inline action buttons inside JavaFX `TableView` rows, ensure they have `setMnemonicParsing(true)`, `accessibleTextProperty`, and `accessibleHelpProperty` set within the cell's constructor block.
+
+## 2026-06-16 - TableCell Action Buttons Accessibility
+**Learning:** In JavaFX `TableView` components, action buttons dynamically generated inside `TableCell` factories often lack proper keyboard mnemonics and accessibility text.
+**Action:** Ensure they have `setMnemonicParsing(true)`, `accessibleTextProperty()`, and `accessibleHelpProperty()` set directly within the cell's initialization block.
