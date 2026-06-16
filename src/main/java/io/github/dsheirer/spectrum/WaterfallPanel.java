@@ -275,8 +275,12 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
 
         if (mCursorVisible) {
             mGraphicsContext.strokeLine(mCursorLocation.getX(), 0, mCursorLocation.getX(), height);
-            String frequency = CURSOR_FORMAT.format(mCursorFrequency / 1000000.0D);
-            mGraphicsContext.fillText(frequency, mCursorLocation.getX() + 5, mCursorLocation.getY());
+            //Only show the frequency when it is a sane RF value; guards against an out-of-range/garbage value
+            //(e.g. from a zero-width overlay canvas) rendering as a huge negative number.
+            if (mCursorFrequency > 0 && mCursorFrequency < 30_000_000_000L) {
+                String frequency = CURSOR_FORMAT.format(mCursorFrequency / 1000000.0D);
+                mGraphicsContext.fillText(frequency, mCursorLocation.getX() + 5, mCursorLocation.getY());
+            }
         }
 
         if (mDisabled) {

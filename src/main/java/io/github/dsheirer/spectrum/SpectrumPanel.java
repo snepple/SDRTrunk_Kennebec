@@ -51,6 +51,13 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
     private float mDBScale = -120.0f;
     private int mAveraging = 1;
 
+    //Smoothed auto-range of the displayed dB window so the trace fills the full vertical space (noise floor near the
+    //bottom, peaks near the top) instead of being compressed into the top by the fixed full-scale mDBScale. NaN until
+    //the first frame establishes a baseline.
+    private double mDisplayMaxDb = Double.NaN;
+    private double mDisplayMinDb = Double.NaN;
+    private static final double DISPLAY_RANGE_SMOOTHING = 0.2;
+
     private Color mColorSpectrumBackground;
     private Color mColorSpectrumGradientBottom;
     private Color mColorSpectrumGradientTop;
@@ -162,7 +169,7 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
         double insideHeight = height - mSpectrumInset;
 
         LinearGradient gradient = new LinearGradient(
-            0, insideHeight / 2.0,
+            0, 0,
             0, height,
             false,
             CycleMethod.NO_CYCLE,
@@ -177,11 +184,44 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
         float[] bins = getBins();
 
         if (bins != null && bins.length > 0) {
-            float scalor = (float) insideHeight / -mDBScale;
+            //Determine the live data range and smooth it across frames to avoid vertical jitter.
+            float frameMin = Float.MAX_VALUE;
+            float frameMax = -Float.MAX_VALUE;
+            for (float b : bins) {
+                if (Float.isFinite(b)) {
+                    if (b < frameMin) frameMin = b;
+                    if (b > frameMax) frameMax = b;
+                }
+            }
+
+            double displayMin;
+            double displayMax;
+
+            if (frameMax > frameMin) {
+                //Add headroom so the noise floor sits just above the bottom and peaks just below the top.
+                double paddedMin = frameMin - 6.0;
+                double paddedMax = frameMax + 3.0;
+                mDisplayMinDb = Double.isNaN(mDisplayMinDb) ? paddedMin
+                        : mDisplayMinDb + DISPLAY_RANGE_SMOOTHING * (paddedMin - mDisplayMinDb);
+                mDisplayMaxDb = Double.isNaN(mDisplayMaxDb) ? paddedMax
+                        : mDisplayMaxDb + DISPLAY_RANGE_SMOOTHING * (paddedMax - mDisplayMaxDb);
+                displayMin = mDisplayMinDb;
+                displayMax = mDisplayMaxDb;
+            } else {
+                //Degenerate (flat) frame - fall back to the fixed full-scale window.
+                displayMax = 0.0;
+                displayMin = mDBScale;
+            }
+
+            double range = displayMax - displayMin;
+            if (range <= 0) range = 1.0;
+
             float binSize = (float) width / ((float) (bins.length));
 
             for (int x = 0; x < bins.length; x++) {
-                float h = -bins[x] * scalor;
+                float value = Float.isFinite(bins[x]) ? bins[x] : (float) displayMin;
+                //Map strongest (displayMax) to the top (h=0) and weakest (displayMin) to the baseline (insideHeight).
+                float h = (float) (insideHeight * (displayMax - value) / range);
                 if (h > insideHeight) h = (float) insideHeight;
                 if (h < 0) h = 0;
 
