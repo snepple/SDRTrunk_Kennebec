@@ -113,9 +113,9 @@ taskkill /F /FI "WINDOWTITLE eq SDRTrunk*" /T >nul 2>&1
 
 :: Gracefully stop Gradle daemon first
 if exist "%FOLDER_NAME%\gradlew.bat" (
-    cd /d "%ROOT_DIR%\%FOLDER_NAME%"
+    cd /d "%ROOT_DIR%\%FOLDER_NAME%" 2>nul
     call gradlew.bat --stop >nul 2>&1
-    cd /d "%ROOT_DIR%"
+    cd /d "%ROOT_DIR%" 2>nul
 )
 
 :: Aggressively kill any remaining Java processes to ensure no file locks interfere with compilation
@@ -129,7 +129,7 @@ if not exist "%FOLDER_NAME%" (
     git clone --progress %REPO_URL% "%FOLDER_NAME%" 2> "%LOG_FILE%"
     if !ERRORLEVEL! NEQ 0 goto ai_triage
 ) else (
-    cd /d "%ROOT_DIR%\%FOLDER_NAME%"
+    cd /d "%ROOT_DIR%\%FOLDER_NAME%" 2>nul
     git fetch origin master >nul 2>&1
 
     :: Sync the build workspace to origin/master when it is behind. Use 'git reset --hard', which
@@ -137,12 +137,12 @@ if not exist "%FOLDER_NAME%" (
     :: without moving HEAD, so the 'git diff HEAD origin/master' check below stayed dirty forever and
     :: the script restarted itself in an endless close/reopen loop. No restart is needed: the running
     :: script is the outer copy (%~f0), not this clone, so resetting the clone cannot corrupt execution.
-    git diff --quiet HEAD origin/master
+    git diff --quiet HEAD origin/master 2>nul
     if errorlevel 1 (
         echo [INFO] Updates found on origin/master - syncing the build workspace...
         git reset --hard origin/master >nul 2>&1
     )
-    cd /d "%ROOT_DIR%"
+    cd /d "%ROOT_DIR%" 2>nul
 )
 
 cd /d "%ROOT_DIR%\%FOLDER_NAME%"
