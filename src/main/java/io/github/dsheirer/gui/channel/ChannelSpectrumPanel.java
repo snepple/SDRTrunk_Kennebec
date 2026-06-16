@@ -121,9 +121,9 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
 
         VBox fftPanel = new VBox();
 
-        javafx.scene.layout.FlowPane fftControls = new javafx.scene.layout.FlowPane(5, 5);
+        javafx.scene.layout.FlowPane fftControls = new javafx.scene.layout.FlowPane(8, 8);
         fftControls.setAlignment(Pos.CENTER_LEFT);
-        fftControls.setPadding(new Insets(2, 5, 2, 5));
+        fftControls.setPadding(new Insets(8, 16, 8, 16));
         fftControls.getChildren().add(new Label("Channel Spectrum"));
 
         mEstimatedCarrierOffsetFrequencyTitleLabel = new Label("Carrier Offset:");
@@ -205,8 +205,8 @@ public class ChannelSpectrumPanel extends HBox implements Listener<ProcessingCha
             }
         });
         
-        mLogSettingsNode = new VBox(5, logIndexesButton, mLogTextArea);
-        mLogSettingsNode.setPadding(new Insets(5));
+        mLogSettingsNode = new VBox(8, logIndexesButton, mLogTextArea);
+        mLogSettingsNode.setPadding(new Insets(16));
 
         mFrequencyOverlayPanel = new FrequencyOverlayPanel(settingsManager);
         mSpectrumPanel = new SpectrumPanel(settingsManager);

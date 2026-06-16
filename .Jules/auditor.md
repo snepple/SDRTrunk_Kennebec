@@ -4,3 +4,5 @@
 
 ## 2025-02-28 - [RecordingTunerEditor HIG Consistency]
 **Global UI Constant:** All editor panels should strictly use the 8pt grid with standardized MigLayout gaps/insets for consistency, specifically adopting "insets 16 16 16 16, gapy 8" where explicit padding is required instead of arbitrary magic numbers.
+## 2025-03-01 - [ChannelSpectrumPanel HIG Consistency]
+**Global UI Constant:** Enforce Apple HIG consistency on channel configuration panels (e.g. ChannelSpectrumPanel) by standardizing internal gaps to 8px and panel padding to 16px (e.g., Insets(16) and Insets(8, 16, 8, 16)). No magic numbers like 2 or 5 should be used.
