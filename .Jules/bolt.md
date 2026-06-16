@@ -9,3 +9,6 @@
 ## 2026-05-18 - Spectrum Analyzer and Waterfall Drawing Bugs
 **Learning:** Mathematical sign errors when refactoring audio spectrum math (e.g. log scaling `mDBScale`) can result in out-of-bounds metrics resulting in entire charts clamping to Y=0 or skipping the last bin (`update.length - 1`). Dynamic range (in decibels) is a negative value `20 * log10(1 / (2 ^ (bit_depth - 1)))`.
 **Action:** When updating spectrum code, ensure loop index logic accurately bounds the array size (`update.length`) rather than off-by-one offsets. Ensure that dynamically scaled bounds evaluate to their true negative values so UI scaling metrics (like `scalor = height / -mDBScale`) correctly map into positive view bounds.
+## 2026-06-16 - CI Toolchain Resolution
+**Learning:** `JvmVendorSpec.AZUL` can sometimes fail downloading via foojay on windows due to 400 Bad Request. When this happens, changing the toolchain to `JvmVendorSpec.BELLSOFT` can resolve the CI build failure.
+**Action:** Always check the `build.gradle` `toolchain` vendor if foojay download errors occur.
