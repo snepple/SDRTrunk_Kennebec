@@ -530,6 +530,13 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
     {
         double width = mCanvas.getWidth();
 
+        //Guard against an unlaid-out/zero-width canvas or non-finite input, which would otherwise divide by zero,
+        //round Infinity to Long.MAX_VALUE, and overflow to a garbage (~Long.MIN_VALUE) frequency on the cursor.
+        if(width <= 0 || !Double.isFinite(xAxis))
+        {
+            return getMinDisplayFrequency();
+        }
+
         double offset = xAxis / width;
 
         long frequency = getMinDisplayFrequency() + FastMath.round((double)getDisplayBandwidth() * offset);
@@ -537,6 +544,11 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
         if(frequency > (getMaxFrequency()))
         {
             frequency = getMaxFrequency();
+        }
+
+        if(frequency < getMinDisplayFrequency())
+        {
+            frequency = getMinDisplayFrequency();
         }
 
         return frequency;
