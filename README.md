@@ -145,29 +145,6 @@ Performance & Live Log Analysis<br>
 <img src="images/performance_logs_k78.png" alt="SDRTrunk Kennebec - Performance and Logs" width="800">
 </p>
 
-<h2>Historical Screenshots</h2>
-
-<p align="center">
-Refreshed GUI (Now Playing)<br>
-<img src="images/nowplayingscreenshot.png" alt="SDRTrunk Kennebec - Now Playing" width="800">
-<br><br>
-
-In-App Knowledge Base &amp; Help Viewer<br>
-<img src="images/HelpScreenshot.png" alt="SDRTrunk Kennebec - Help and Docs" width="800">
-<br><br>
-
-Two Tone Detect Functionality<br>
-<img src="images/TwoToneDetectScreenShot.png" alt="SDRTrunk Kennebec - Two Tone Detect" width="800">
-<br><br>
-
-Audio Recordings Review<br>
-<img src="images/AudioRecordingScreenshot.png" alt="SDRTrunk Kennebec - Audio Recordings" width="800">
-<br><br>
-
-Consolidated User Preferences<br>
-<img src="images/UserPreferencesScreenshot.png" alt="SDRTrunk Kennebec - User Preferences" width="800">
-</p>
-
 <h2>Minimum System Requirements</h2>
 <ul>
   <li>Operating System: Windows (64-bit), Linux (64-bit) or Mac (64-bit, 12.x or higher)</li>
