@@ -170,7 +170,14 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
         gainGrid.add(getMasterGainCombo(), 1, 0);
         gainGrid.add(new Label("Mixer:"), 0, 1);
         gainGrid.add(getMixerGainCombo(), 1, 1);
-        gainGrid.add(new Label("LNA:"), 0, 2);
+        javafx.scene.layout.HBox lnaLabelBox = new javafx.scene.layout.HBox(4);
+        javafx.scene.control.Button lnaHelp = new javafx.scene.control.Button("?");
+        lnaHelp.setBackground(javafx.scene.layout.Background.EMPTY);
+        lnaHelp.setPadding(new javafx.geometry.Insets(0, 4, 0, 4));
+        lnaHelp.setTooltip(new javafx.scene.control.Tooltip("LNA Gain: The power of the signal amplifier.\nIncrease this for distant signals, but lower it if you see a lot of static/noise."));
+        lnaLabelBox.getChildren().addAll(new Label("LNA:"), lnaHelp);
+        lnaLabelBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        gainGrid.add(lnaLabelBox, 0, 2);
         gainGrid.add(getLNAGainCombo(), 1, 2);
         gainGrid.add(new Label("VGA:"), 0, 3);
         gainGrid.add(getVGAGainCombo(), 1, 3);

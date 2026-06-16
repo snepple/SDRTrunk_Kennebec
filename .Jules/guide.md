@@ -36,3 +36,7 @@
 ## 2026-06-14 - P25P2Viewer Scramble Settings Tooltips
 **Learning:** Users need to understand the WACN, SYSTEM, and NAC acronyms.
 **Action:** Added help icons to WACN, SYSTEM, and NAC labels in P25P2Viewer.java explaining their roles in cross-system calls and radio system identification.
+
+## 2026-06-16 - LNA Gain (R8x Tuner Editor)
+**Learning:** Added a tooltip for LNA Gain in R8xTunerEditor to help beginners understand its role in signal amplification.
+**Action:** Added a help icon with tooltip explaining LNA Gain next to the LNA dropdown.
