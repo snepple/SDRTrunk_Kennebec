@@ -112,7 +112,7 @@ public class AIAudioOptimizer {
         try {
             String model = mUserPreferences.getAIPreference().getGeminiModel();
             String baseUrl = System.getProperty("gemini.api.url", "https://generativelanguage.googleapis.com");
-            String url = baseUrl + "/v1beta/" + model + ":generateContent?key=" + apiKey;
+            String url = baseUrl + "/v1beta/" + normalizeModelPath(model) + ":generateContent?key=" + apiKey;
 
             String promptText = "Role & Objective\n" +
                 "You are an expert audio engineer specializing in LMR (Land Mobile Radio) and NBFM communication systems. Your task is to analyze an array of the 5 most recent audio recordings from a specific radio channel and determine the optimal DSP (Digital Signal Processing) filter settings to maximize human vocal clarity and eliminate background noise.\n\n" +
@@ -243,7 +243,7 @@ public class AIAudioOptimizer {
             model = "gemini-2.5-pro";
         }
         String baseUrl = System.getProperty("gemini.api.url", "https://generativelanguage.googleapis.com");
-        String url = baseUrl + "/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+        String url = baseUrl + "/v1beta/" + normalizeModelPath(model) + ":generateContent?key=" + apiKey;
 
         try {
             String promptText = "You are an expert RF DSP engineer and Audio DSP specialist configuring settings for an SDRTrunk Narrow-Band FM channel.\n" +
@@ -347,6 +347,21 @@ public class AIAudioOptimizer {
             mLog.error("Error calling Gemini API: " + e.getMessage(), e);
             throw new Exception("Error calling Gemini API: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Normalizes a Gemini model id into the exactly-one-"models/"-prefix path segment the REST API expects,
+     * regardless of whether the stored preference already includes the prefix. Avoids 404s caused by either
+     * a missing prefix or a doubled "models/models/" path.
+     */
+    private static String normalizeModelPath(String model) {
+        if (model == null || model.isEmpty()) {
+            model = "gemini-2.5-pro";
+        }
+        while (model.startsWith("models/")) {
+            model = model.substring("models/".length());
+        }
+        return "models/" + model;
     }
 
     private String getFallbackModel(String currentModel) {

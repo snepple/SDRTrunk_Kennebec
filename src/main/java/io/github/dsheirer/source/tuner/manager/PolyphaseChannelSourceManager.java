@@ -116,6 +116,14 @@ public class PolyphaseChannelSourceManager extends ChannelSourceManager
         }
 
         if (bestRate != mTunerController.getSampleRate()) {
+            //The polyphase channelizer cannot change its sample rate while channels are currently sourced.
+            //Attempting it throws IllegalStateException, which (in the deferred/scheduled path) previously
+            //escaped and was logged in a tight loop during channel resume. Only optimize when no channels
+            //are sourced yet (e.g. the very first channel being allocated), otherwise skip silently.
+            if (mPolyphaseChannelManager.getTunerChannelCount() > 0) {
+                return;
+            }
+
             try {
                 boolean wasLocked = mTunerController.isLockedSampleRate();
                 if (wasLocked) {
@@ -132,6 +140,9 @@ public class PolyphaseChannelSourceManager extends ChannelSourceManager
                 mLog.info("Auto-optimized sample rate to " + bestRate + " Hz");
             } catch (SourceException e) {
                 mLog.error("Failed to auto-optimize sample rate", e);
+            } catch (IllegalStateException ise) {
+                //Channels became sourced between the count check and the rate change - skip quietly.
+                mLog.debug("Skipped sample rate auto-optimization; channels are currently sourced.");
             }
         }
     }
