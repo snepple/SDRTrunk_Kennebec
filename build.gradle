@@ -77,8 +77,8 @@ javafx {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(23)
-        vendor = JvmVendorSpec.AZUL
+        languageVersion = JavaLanguageVersion.of(25)
+        vendor = JvmVendorSpec.BELLSOFT
     }
 }
 
