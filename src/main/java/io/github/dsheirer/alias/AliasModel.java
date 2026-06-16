@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -248,12 +249,41 @@ public class AliasModel
     }
 
     /**
+     * Runs the given mutation on the JavaFX Application Thread.  The alias list is an
+     * ObservableList bound to UI tables, so all mutations must occur on the FX thread to avoid
+     * "Not on FX application thread" errors and SortedList corruption.  Runs inline when already
+     * on the FX thread (preserving synchronous behavior for UI-thread callers) or when the JavaFX
+     * toolkit is not running (headless mode); otherwise dispatches via Platform.runLater.
+     */
+    private void runOnFxThread(Runnable r)
+    {
+        if(Platform.isFxApplicationThread())
+        {
+            r.run();
+        }
+        else
+        {
+            try
+            {
+                Platform.runLater(r);
+            }
+            catch(IllegalStateException toolkitNotStarted)
+            {
+                //Headless mode — no FX thread and the list has no UI bindings, so run inline.
+                r.run();
+            }
+        }
+    }
+
+    /**
      * Bulk loading of aliases
      */
     public void addAliases(List<Alias> aliases)
     {
-        removeAliases(aliases);
-        mAliases.addAll(aliases);
+        runOnFxThread(() -> {
+            removeAliases(aliases);
+            mAliases.addAll(aliases);
+        });
     }
 
     /**
@@ -261,12 +291,14 @@ public class AliasModel
      */
     public void addAlias(Alias alias)
     {
-        if(mAliases.contains(alias))
-        {
-            removeAlias(alias);
-        }
+        runOnFxThread(() -> {
+            if(mAliases.contains(alias))
+            {
+                removeAlias(alias);
+            }
 
-        mAliases.add(alias);
+            mAliases.add(alias);
+        });
     }
 
     private boolean hasAliasList(String aliasListName)
@@ -297,15 +329,17 @@ public class AliasModel
      */
     public void removeAlias(Alias alias)
     {
-        if(alias != null)
-        {
-            mAliases.remove(alias);
-
-            if(hasAliasList(alias.getAliasListName()))
+        runOnFxThread(() -> {
+            if(alias != null)
             {
-                getAliasList(alias.getAliasListName()).removeAlias(alias);
+                mAliases.remove(alias);
+
+                if(hasAliasList(alias.getAliasListName()))
+                {
+                    getAliasList(alias.getAliasListName()).removeAlias(alias);
+                }
             }
-        }
+        });
     }
 
     /**
@@ -314,18 +348,20 @@ public class AliasModel
      */
     public void removeAliases(List<Alias> aliases)
     {
-        if(aliases != null && !aliases.isEmpty())
-        {
-            mAliases.removeAll(aliases);
-
-            for(Alias alias: aliases)
+        runOnFxThread(() -> {
+            if(aliases != null && !aliases.isEmpty())
             {
-                if(hasAliasList(alias.getAliasListName()))
+                mAliases.removeAll(aliases);
+
+                for(Alias alias: aliases)
                 {
-                    getAliasList(alias.getAliasListName()).removeAlias(alias);
+                    if(hasAliasList(alias.getAliasListName()))
+                    {
+                        getAliasList(alias.getAliasListName()).removeAlias(alias);
+                    }
                 }
             }
-        }
+        });
     }
 
     /**

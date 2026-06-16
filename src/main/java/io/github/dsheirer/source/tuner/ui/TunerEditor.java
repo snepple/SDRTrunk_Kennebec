@@ -85,6 +85,22 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         implements IDiscoveredTunerStatusListener, Listener<TunerEvent>
 {
     private Logger mLog = LoggerFactory.getLogger(TunerEditor.class);
+
+    /**
+     * Single background thread for applying blocking hardware (USB) control calls off the JavaFX
+     * Application Thread, plus per-control debouncing so a rapid slider/combo drag coalesces into
+     * a single device write instead of freezing the UI with one libusb transfer per pixel.
+     */
+    private final java.util.concurrent.ScheduledExecutorService mDeviceControlExecutor =
+            java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "TunerEditor-DeviceControl");
+                t.setDaemon(true);
+                return t;
+            });
+    private final java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.ScheduledFuture<?>>
+            mPendingDeviceControls = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long DEVICE_CONTROL_DEBOUNCE_MS = 120;
+
     private static final long DEFAULT_MINIMUM_FREQUENCY = 1;
     private static final long DEFAULT_MAXIMUM_FREQUENCY = 9_999_999_999l;
     private static final String BUTTON_STATUS_ENABLE = "Enable";
@@ -862,6 +878,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
      */
     public void dispose()
     {
+        mDeviceControlExecutor.shutdownNow();
         turnOffRecorder();
 
         getFrequencyControl().clearListeners();
@@ -907,6 +924,74 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     protected void saveConfiguration()
     {
         mTunerManager.saveConfigurations();
+    }
+
+    /**
+     * Action that performs a blocking hardware control call.  Unlike {@link Runnable} its method
+     * may throw a checked exception (device setters declare {@code UsbException},
+     * {@code SDRPlayException}, etc.); {@link #applyDeviceControl} catches and reports it.
+     */
+    @FunctionalInterface
+    protected interface DeviceAction
+    {
+        void run() throws Exception;
+    }
+
+    /**
+     * Applies a blocking hardware (USB) control action on a background thread, debounced per
+     * control key so rapid slider/combo changes during a drag coalesce into a single device
+     * write.  This keeps the JavaFX Application Thread responsive — blocking libusb control
+     * transfers must never run on the FX thread.
+     *
+     * Read JavaFX control values and call save() on the FX thread BEFORE invoking this; the
+     * supplied action should only perform the device call and must not touch JavaFX controls.
+     *
+     * @param controlKey unique identifier for the control (e.g. "lna-gain"); successive calls
+     *                   with the same key cancel any still-pending write for that control
+     * @param deviceAction blocking device call to run on the background thread
+     * @param errorMessage user-facing message logged and shown if the action throws
+     */
+    protected void applyDeviceControl(String controlKey, DeviceAction deviceAction, String errorMessage)
+    {
+        java.util.concurrent.ScheduledFuture<?> previous = mPendingDeviceControls.get(controlKey);
+
+        if(previous != null)
+        {
+            previous.cancel(false);
+        }
+
+        try
+        {
+            java.util.concurrent.ScheduledFuture<?> future = mDeviceControlExecutor.schedule(() -> {
+                mPendingDeviceControls.remove(controlKey);
+
+                if(!hasTuner())
+                {
+                    return;
+                }
+
+                try
+                {
+                    deviceAction.run();
+                }
+                catch(Exception e)
+                {
+                    mLog.error(errorMessage, e);
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
+                        alert.setContentText(errorMessage);
+                        alert.showAndWait();
+                    });
+                }
+            }, DEVICE_CONTROL_DEBOUNCE_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+
+            mPendingDeviceControls.put(controlKey, future);
+        }
+        catch(java.util.concurrent.RejectedExecutionException ree)
+        {
+            //Editor disposed - executor shut down; ignore the late control change.
+        }
     }
 
     /**

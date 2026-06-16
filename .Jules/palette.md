@@ -119,3 +119,6 @@ Action: Add `setMnemonic(KeyEvent.VK_XX)` to frequently accessed checkboxes, str
 ## 2024-06-16 - Adding Accessibility and Tooltips to History Management Panel
 **Learning:** Action buttons for operations like "Filter" and "Clear" in history management panels lack semantic meaning for screen readers without proper A11y bindings. For destructive actions like clear, consequence warnings are required.
 **Action:** Always add `accessibleTextProperty`, `accessibleHelpProperty`, descriptive `Tooltip` objects, and enable keyboard mnemonics for JavaFX action buttons. Include "This action cannot be undone." in tooltips for destructive actions.
+## 2026-06-15 - Adding Mnemonics and Accessibility to TableCell Action Buttons
+**Learning:** Buttons dynamically generated inside `TableCell` (like those in `LogsViewController`) often lack proper keyboard mnemonics and accessibility text properties, which violates Apple HIG's Consistency and Feedback guidelines and makes them difficult for screen reader users.
+**Action:** When creating inline action buttons inside JavaFX `TableView` rows, ensure they have `setMnemonicParsing(true)`, `accessibleTextProperty`, and `accessibleHelpProperty` set within the cell's constructor block.

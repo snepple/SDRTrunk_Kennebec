@@ -340,17 +340,11 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
             mAmPortCombo.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    RspDuoAmPort selected = (RspDuoAmPort)mAmPortCombo.getValue();
-
-                    try
-                    {
-                        getTunerController().getControlRsp().setAmPort(selected);
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Error setting AM port for RSPduo tuner 1", se);
-                    }
+                    final RspDuoAmPort selected = (RspDuoAmPort)mAmPortCombo.getValue();
+                    save();
+                    applyDeviceControl("rspduo1-am-port",
+                            () -> getTunerController().getControlRsp().setAmPort(selected),
+                            "Error setting AM port for RSPduo tuner 1");
                 }
             });
         }
@@ -370,15 +364,11 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
             mRfDabNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfDabNotch(mRfDabNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 1 RF DAB notch enabled to " + mRfDabNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfDabNotchOn = mRfDabNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo1-rf-dab-notch",
+                            () -> getTunerController().getControlRsp().setRfDabNotch(rfDabNotchOn),
+                            "Unable to set RSPduo tuner 1 RF DAB notch enabled to " + rfDabNotchOn);
                 }
             });
         }
@@ -398,15 +388,11 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
             mRfNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfNotch(mRfNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 1 RF notch enabled to " + mRfNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfNotchOn = mRfNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo1-rf-notch",
+                            () -> getTunerController().getControlRsp().setRfNotch(rfNotchOn),
+                            "Unable to set RSPduo tuner 1 RF notch enabled to " + rfNotchOn);
                 }
             });
         }
@@ -426,15 +412,11 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
             mAmNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setAmNotch(mAmNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 1 AM notch enabled to " + mAmNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean amNotchOn = mAmNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo1-am-notch",
+                            () -> getTunerController().getControlRsp().setAmNotch(amNotchOn),
+                            "Unable to set RSPduo tuner 1 AM notch enabled to " + amNotchOn);
                 }
             });
         }
@@ -454,16 +436,11 @@ public class RspDuoTuner1Editor extends RspTunerEditor<RspDuoTuner1Configuration
             mExternalReferenceOutputCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setExternalReferenceOutput(mExternalReferenceOutputCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 1 external reference output notch enabled to " +
-                                mExternalReferenceOutputCheckBox.isSelected(), se);
-                    }
+                    final boolean externalReferenceOn = mExternalReferenceOutputCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo1-external-reference",
+                            () -> getTunerController().getControlRsp().setExternalReferenceOutput(externalReferenceOn),
+                            "Unable to set RSPduo tuner 1 external reference output notch enabled to " + externalReferenceOn);
                 }
             });
         }

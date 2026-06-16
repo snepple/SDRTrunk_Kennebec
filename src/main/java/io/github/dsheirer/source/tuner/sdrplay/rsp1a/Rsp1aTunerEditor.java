@@ -272,15 +272,9 @@ public class Rsp1aTunerEditor extends RspTunerEditor<Rsp1aTunerConfiguration>
             mBiasTCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setBiasT(mBiasTCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSP1A Bias-T enabled to " + mBiasTCheckBox.isSelected(), se);
-                    }
+                    final boolean biasTToApply = mBiasTCheckBox.isSelected();
+                    applyDeviceControl("rsp1a-bias-t", () -> getTunerController().getControlRsp().setBiasT(biasTToApply), "Unable to set RSP1A Bias-T enabled to " + biasTToApply);
+                    save();
                 }
             });
         }
@@ -300,15 +294,9 @@ public class Rsp1aTunerEditor extends RspTunerEditor<Rsp1aTunerConfiguration>
             mRfDabNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfDabNotch(mRfDabNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSP1A RF DAB notch enabled to " + mRfDabNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfDabNotchToApply = mRfDabNotchCheckBox.isSelected();
+                    applyDeviceControl("rsp1a-dab-notch", () -> getTunerController().getControlRsp().setRfDabNotch(rfDabNotchToApply), "Unable to set RSP1A RF DAB notch enabled to " + rfDabNotchToApply);
+                    save();
                 }
             });
         }
@@ -328,15 +316,9 @@ public class Rsp1aTunerEditor extends RspTunerEditor<Rsp1aTunerConfiguration>
             mRfNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfNotch(mRfNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSP1A RF notch enabled to " + mRfNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfNotchToApply = mRfNotchCheckBox.isSelected();
+                    applyDeviceControl("rsp1a-rf-notch", () -> getTunerController().getControlRsp().setRfNotch(rfNotchToApply), "Unable to set RSP1A RF notch enabled to " + rfNotchToApply);
+                    save();
                 }
             });
         }
