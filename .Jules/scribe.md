@@ -44,3 +44,7 @@
 **Topic:** Application Watchdog
 **Learning:** The built-in Application Watchdog and its REST API endpoints for external monitoring were undocumented.
 **Action:** Created `src/main/resources/docs/application-watchdog.md` with Mermaid diagram and integrated it into the `HelpViewController.java` under "Advanced & System".
+## 2024-06-15 - Topic Selection
+**Topic:** IAmResponding Integration
+**Learning:** The "IAmResponding" feature was added but lacked its entry in the `HelpViewer` navigation tree under "Integrations & Streaming".
+**Action:** Added `Iamresponding` node to `HelpViewController.java` to match the existing `iamresponding.md` file.

@@ -12,6 +12,8 @@ import io.github.dsheirer.audio.broadcast.zello.NodeOfflinePlaceholder;
 import io.github.dsheirer.source.tuner.manager.ControlChannelHunt;
 import io.github.dsheirer.source.tuner.manager.SignalVotingOrchestrator;
 import io.github.dsheirer.module.ai.PredictiveMaintenanceEngine;
+import io.github.dsheirer.monitor.ResourceMonitor;
+import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.module.ai.SquelchAIAdvisor;
 import io.github.dsheirer.dsp.ZGCWarmupSequence;
 import io.github.dsheirer.dsp.filter.AdjacentChannelInterferenceRejector;
