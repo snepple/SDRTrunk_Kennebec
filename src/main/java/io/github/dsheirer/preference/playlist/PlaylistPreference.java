@@ -110,6 +110,16 @@ public class PlaylistPreference extends Preference
     }
 
     /**
+     * Kennebec-only sidecar file holding two-tone detector assignments for the current playlist.  Kept separate so
+     * the main playlist file remains compatible with the upstream sdrtrunk application.  The path travels with the
+     * active playlist so each playlist gets its own sidecar.
+     */
+    public Path getPlaylistTwoToneSidecar()
+    {
+        return Paths.get(getPlaylist().toString() + ".kennebec");
+    }
+
+    /**
      * Sets the path to the playlist
      */
     public void setPlaylist(Path path)
