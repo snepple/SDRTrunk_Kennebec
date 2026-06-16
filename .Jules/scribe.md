@@ -48,3 +48,7 @@
 **Topic:** IAmResponding Integration
 **Learning:** The "IAmResponding" feature was added but lacked its entry in the `HelpViewer` navigation tree under "Integrations & Streaming".
 **Action:** Added `Iamresponding` node to `HelpViewController.java` to match the existing `iamresponding.md` file.
+## 2026-06-16 - Topic Selection
+**Topic:** Channel Images
+**Learning:** The premium image upload pipeline was listed in "What's New" but lacked a dedicated Markdown guide.
+**Action:** Created src/main/resources/docs/channel-images.md with visual diagrams and integrated it into the HelpViewer navigation tree.
