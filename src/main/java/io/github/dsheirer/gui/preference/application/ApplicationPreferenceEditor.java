@@ -22,10 +22,15 @@ package io.github.dsheirer.gui.preference.application;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.application.ApplicationPreference;
 import javafx.geometry.Insets;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
+import io.github.dsheirer.gui.RestartManager;
+import io.github.dsheirer.gui.RuntimeModelRegistry;
 import javafx.scene.layout.Region;
 import javafx.util.StringConverter;
 import java.lang.management.ManagementFactory;
@@ -143,6 +148,48 @@ public class ApplicationPreferenceEditor extends HBox
             getMemoryWarningLabel().getStyleClass().add("kennebec-secondary-text");
             getMemoryWarningLabel().setPadding(new Insets(5, 15, 5, 15));
 
+            //Usage-based recommendation + one-click apply + restart, derived from the current tuners/channels/streams.
+            Label recommendationLabel = new Label(buildRecommendationText());
+            recommendationLabel.getStyleClass().add("kennebec-secondary-text");
+            recommendationLabel.setWrapText(true);
+            recommendationLabel.setPadding(new Insets(0, 15, 5, 15));
+
+            Button applyRecommendedButton = new Button("Apply Recommended");
+            applyRecommendedButton.setTooltip(new Tooltip("Set the allocated memory to the recommended value for your current tuners, channels, and streams."));
+            applyRecommendedButton.setOnAction(e -> {
+                int recommended = computeRecommendedMemoryGb();
+                if(recommended > 0)
+                {
+                    mApplicationPreference.setAllocatedMemory(recommended);
+                    selectMemoryOption(recommended);
+                }
+            });
+
+            Button restartButton = new Button("Restart Now");
+            restartButton.setTooltip(new Tooltip("Restart SDRTrunk now so memory and other changes take effect."));
+            restartButton.setOnAction(e -> {
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Restart SDRTrunk now to apply changes?",
+                        ButtonType.OK, ButtonType.CANCEL);
+                io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(confirm.getDialogPane());
+                confirm.setHeaderText("Restart SDRTrunk");
+                confirm.setTitle("Restart Required");
+                confirm.showAndWait().ifPresent(buttonType -> {
+                    if(buttonType == ButtonType.OK)
+                    {
+                        if(!RestartManager.restart())
+                        {
+                            Alert error = new Alert(Alert.AlertType.ERROR, "Could not locate the SDRTrunk launcher to " +
+                                    "restart automatically. Please close and reopen SDRTrunk manually.", ButtonType.OK);
+                            io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(error.getDialogPane());
+                            error.showAndWait();
+                        }
+                    }
+                });
+            });
+
+            HBox memoryButtonBox = new HBox(10, applyRecommendedButton, restartButton);
+            memoryButtonBox.setPadding(new Insets(0, 15, 10, 15));
+
             // Card 4: USB Monitor (Only on Windows 10/11)
             Label usbLabel = null;
             io.github.dsheirer.gui.preference.layout.SettingsCard usbMonitorCard = null;
@@ -190,7 +237,7 @@ public class ApplicationPreferenceEditor extends HBox
                 );
             }
 
-            mEditorPane.getChildren().addAll(monitoringLabel, diagCard, themeLabel, themeCard, audioLabel, audioCard, autoStartLabel, autoStartCard, memoryLabel, memoryCard, getMemoryWarningLabel());
+            mEditorPane.getChildren().addAll(monitoringLabel, diagCard, themeLabel, themeCard, audioLabel, audioCard, autoStartLabel, autoStartCard, memoryLabel, memoryCard, getMemoryWarningLabel(), recommendationLabel, memoryButtonBox);
             if (usbMonitorCard != null) {
                 mEditorPane.getChildren().addAll(usbLabel, usbMonitorCard, usbDesc);
             }
@@ -444,5 +491,114 @@ public class ApplicationPreferenceEditor extends HBox
         }
 
         return mMemoryWarningLabel;
+    }
+
+    /**
+     * Total physical system RAM in GB, or 0 if it cannot be determined.
+     */
+    private long systemRamGb()
+    {
+        try
+        {
+            long bytes = ((com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean()).getTotalMemorySize();
+            return Math.round(bytes / (1024.0 * 1024.0 * 1024.0));
+        }
+        catch(Throwable t)
+        {
+            return 0;
+        }
+    }
+
+    /**
+     * Computes a recommended heap allocation (GB) from the current workload: more tuners, channels, and streams
+     * require more heap.  Capped to leave headroom for the OS and never exceeds 16 GB or available system RAM.
+     */
+    private int computeRecommendedMemoryGb()
+    {
+        int tuners = Math.max(0, RuntimeModelRegistry.getActiveTunerCount());
+        int channels = Math.max(0, RuntimeModelRegistry.getTotalChannelCount());
+        int streams = Math.max(0, RuntimeModelRegistry.getStreamCount());
+
+        //Base 2 GB, +1 GB per additional tuner, +1 GB per 50 channels, +1 GB for heavy streaming.
+        double gb = 2.0;
+        if(tuners > 1)
+        {
+            gb += (tuners - 1);
+        }
+        gb += channels / 50.0;
+        if(streams > 10)
+        {
+            gb += 1.0;
+        }
+        if(streams > 30)
+        {
+            gb += 1.0;
+        }
+
+        int recommended = Math.max(2, (int) Math.ceil(gb));
+
+        long systemGb = systemRamGb();
+        int cap = 16;
+        if(systemGb > 0)
+        {
+            //Leave ~2 GB for the OS.
+            cap = (int) Math.min(16, Math.max(2, systemGb - 2));
+        }
+
+        return Math.min(recommended, cap);
+    }
+
+    /**
+     * Builds the human-readable recommendation, including a CPU-saturation caveat for multi-tuner setups on
+     * low-core machines (a common cause of UI freezes that more RAM will not fix).
+     */
+    private String buildRecommendationText()
+    {
+        int tuners = RuntimeModelRegistry.getActiveTunerCount();
+        int channels = RuntimeModelRegistry.getTotalChannelCount();
+        int streams = RuntimeModelRegistry.getStreamCount();
+        int cores = Runtime.getRuntime().availableProcessors();
+        int recommended = computeRecommendedMemoryGb();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Recommended: ").append(recommended).append(" GB  (based on ");
+        sb.append(tuners < 0 ? "?" : tuners).append(" tuner(s), ");
+        sb.append(channels < 0 ? "?" : channels).append(" channel(s), ");
+        sb.append(streams < 0 ? "?" : streams).append(" stream(s), ");
+        sb.append(cores).append(" CPU cores).");
+
+        if(tuners >= 2 && cores <= 4)
+        {
+            sb.append("  Note: running multiple tuners on ").append(cores).append(" CPU cores can saturate the CPU " +
+                    "and freeze the UI - this is a CPU limit that more memory will not fix. Consider lowering each " +
+                    "tuner's sample rate (e.g. 2.5 MSPS) or reducing the number of active tuners/channels.");
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Selects the given memory value in the combo box, inserting it in sorted order if it is not already present.
+     */
+    private void selectMemoryOption(int gb)
+    {
+        ComboBox<MemoryOption> combo = getMemoryComboBox();
+        MemoryOption target = new MemoryOption(gb, gb + " GB");
+
+        if(!combo.getItems().contains(target))
+        {
+            int index = 0;
+            for(MemoryOption option : combo.getItems())
+            {
+                if(gb < option.getValue())
+                {
+                    break;
+                }
+                index++;
+            }
+            combo.getItems().add(Math.min(index, combo.getItems().size()), target);
+        }
+
+        combo.getSelectionModel().select(target);
     }
 }
