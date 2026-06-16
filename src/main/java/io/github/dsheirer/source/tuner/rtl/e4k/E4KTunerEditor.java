@@ -350,10 +350,14 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
 
                     if(gain == E4KGain.MANUAL)
                     {
-                        getMixerGainCombo().setValue(getEmbeddedTuner().getMixerGain(true));
-                        getMixerGainCombo().setDisable(!(true));
-                        getLNAGainCombo().setValue(getEmbeddedTuner().getLNAGain(true));
-                        getLNAGainCombo().setDisable(!(true));
+                        try {
+                            getMixerGainCombo().setValue(getEmbeddedTuner().getMixerGain(true));
+                            getMixerGainCombo().setDisable(!(true));
+                            getLNAGainCombo().setValue(getEmbeddedTuner().getLNAGain(true));
+                            getLNAGainCombo().setDisable(!(true));
+                        } catch (UsbException e) {
+                            mLog.error("Error setting combo value from embedded tuner", e);
+                        }
                     }
                     else
                     {
