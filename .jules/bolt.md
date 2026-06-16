@@ -17,3 +17,7 @@
 ## 2026-06-16 - CI Build Failures with JDK 25 Toolchain
 **Learning:** If SDRTrunk GitHub Actions CI builds fail with "Unsupported class file major version 69" (Java 25), it indicates a mismatch between the CI runner's JDK and the Gradle toolchain.
 **Action:** Fix it by updating `build.gradle` to use `languageVersion = JavaLanguageVersion.of(25)` and `vendor = JvmVendorSpec.BELLSOFT`.
+
+## 2026-06-16 - CI Build Failures with JDK 25 Toolchain
+**Learning:** If SDRTrunk GitHub Actions CI builds fail with "Unsupported class file major version 69" (Java 25), it indicates a mismatch between the CI runner's JDK and the Gradle toolchain.
+**Action:** Fix it by updating `build.gradle` to use `languageVersion = JavaLanguageVersion.of(25)` and `vendor = JvmVendorSpec.BELLSOFT`.
