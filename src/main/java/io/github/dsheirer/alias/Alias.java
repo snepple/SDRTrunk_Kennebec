@@ -398,14 +398,20 @@ public class Alias
     }
 
     /**
-     * List of alias identifiers for this alias.
+     * Full in-memory list of alias identifiers for this alias, including identifier types (such as the two-tone
+     * detector) that this fork persists outside the standard polymorphic {@code <id>} list for backwards
+     * compatibility.  This accessor is for internal use and is intentionally excluded from XML serialization;
+     * see {@link #getSerializedAliasIdentifiers()} for the persisted {@code <id>} view.  Two-tone detectors are
+     * persisted to a separate Kennebec-only sidecar file (see PlaylistManager) and merged back into this list on
+     * load, so that the standard playlist remains readable by the upstream sdrtrunk application.
      */
-    @JacksonXmlProperty(isAttribute = false, localName = "id")
+    @JsonIgnore
     public List<AliasID> getAliasIdentifiers()
     {
         return mAliasIDs;
     }
 
+    @JsonIgnore
     public void setAliasIdentifiers(List<AliasID> id)
     {
         mAliasIDs.clear();
@@ -417,10 +423,51 @@ public class Alias
     }
 
     /**
+     * Polymorphic {@code <id>} list persisted to the playlist.  Two-tone detector identifiers are deliberately
+     * excluded here and persisted to a separate Kennebec-only sidecar file instead, so that the original
+     * (upstream) sdrtrunk application — which does not register the {@code twoToneDetector} subtype — can read a
+     * playlist saved by this fork without aborting the entire load on an unknown polymorphic type id.
+     */
+    @JacksonXmlProperty(isAttribute = false, localName = "id")
+    public List<AliasID> getSerializedAliasIdentifiers()
+    {
+        List<AliasID> serialized = new ArrayList<>();
+
+        for(AliasID aliasID : mAliasIDs)
+        {
+            if(!(aliasID instanceof TwoToneDetectorID))
+            {
+                serialized.add(aliasID);
+            }
+        }
+
+        return serialized;
+    }
+
+    @JacksonXmlProperty(isAttribute = false, localName = "id")
+    public void setSerializedAliasIdentifiers(List<AliasID> id)
+    {
+        if(id != null)
+        {
+            for(AliasID aliasID : id)
+            {
+                addAliasID(aliasID);
+            }
+        }
+    }
+
+    /**
      * Adds an alias identifier to this alias and updates the recordable and streamable attributes.
      */
     public void addAliasID(AliasID id)
     {
+        //Defensive null guard: a loader configured with FAIL_ON_INVALID_SUBTYPE=false yields a null entry for an
+        //unrecognized polymorphic id type rather than throwing.  Dropping it keeps the rest of the alias intact.
+        if(id == null)
+        {
+            return;
+        }
+
         mAliasIDs.add(id);
         validate();
         updateOverlapBinding();

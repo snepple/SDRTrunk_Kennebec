@@ -25,6 +25,7 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.AliasModel;
+import io.github.dsheirer.alias.id.twotone.TwoToneDetectorID;
 import io.github.dsheirer.audio.broadcast.BroadcastModel;
 import io.github.dsheirer.controller.channel.Channel.ChannelType;
 import io.github.dsheirer.controller.channel.ChannelEvent;
@@ -57,7 +58,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -325,7 +328,8 @@ public class PlaylistManager implements Listener<ChannelEvent>
         JacksonXmlModule xmlModule = new JacksonXmlModule();
         xmlModule.setDefaultUseWrapper(false);
         ObjectMapper objectMapper = new XmlMapper(xmlModule)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE, false);
 
         try(InputStream in = Files.newInputStream(path))
         {
@@ -540,6 +544,10 @@ public class PlaylistManager implements Listener<ChannelEvent>
             objectMapper.writeValue(out, playlist);
             out.flush();
 
+            //Persist fork-only two-tone detector data to the Kennebec sidecar file so the main playlist remains
+            //compatible with the upstream sdrtrunk application.
+            writeTwoToneSidecar(playlist, playlistPreference.getPlaylistTwoToneSidecar());
+
             //Remove the playlist lock file to indicate that we successfully saved the file
             if(Files.exists(playlistPreference.getPlaylistLock()))
             {
@@ -602,11 +610,15 @@ public class PlaylistManager implements Listener<ChannelEvent>
             JacksonXmlModule xmlModule = new JacksonXmlModule();
             xmlModule.setDefaultUseWrapper(false);
             ObjectMapper objectMapper = new XmlMapper(xmlModule)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE, false);
 
             try(InputStream in = Files.newInputStream(files.getPlaylist()))
             {
                 playlist = objectMapper.readValue(in, PlaylistV2.class);
+
+                //Merge fork-only two-tone detector data from the Kennebec sidecar back into the loaded aliases.
+                readAndMergeTwoToneSidecar(playlist, files.getPlaylistTwoToneSidecar());
 
                 if(PlaylistUpdater.update(playlist))
                 {
@@ -643,11 +655,15 @@ public class PlaylistManager implements Listener<ChannelEvent>
             JacksonXmlModule xmlModule = new JacksonXmlModule();
             xmlModule.setDefaultUseWrapper(false);
             ObjectMapper objectMapper = new XmlMapper(xmlModule)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE, false);
 
             try(InputStream in = Files.newInputStream(files.getLegacyPlaylist()))
             {
                 playlist = objectMapper.readValue(in, PlaylistV2.class);
+
+                //Merge fork-only two-tone detector data from the Kennebec sidecar back into the loaded aliases.
+                readAndMergeTwoToneSidecar(playlist, twoToneSidecarFor(files.getLegacyPlaylist()));
 
                 //Perform any updates that may be needed for the playist.
                 if(PlaylistUpdater.update(playlist))
@@ -725,6 +741,153 @@ public class PlaylistManager implements Listener<ChannelEvent>
             {
                 mLog.error("Failed to delete corrupt playlist file", deleteIoe);
             }
+        }
+    }
+
+    /**
+     * Derives the Kennebec two-tone sidecar path for the given playlist file (same directory, ".kennebec" suffix).
+     */
+    private Path twoToneSidecarFor(Path playlist)
+    {
+        return playlist.resolveSibling(playlist.getFileName().toString() + ".kennebec");
+    }
+
+    /**
+     * Builds a stable key that identifies an alias within a playlist using its (list, group, name) tuple.  This is
+     * the alias's effective display identity and is used to match sidecar entries back to their owning alias.
+     */
+    private static String aliasKey(String list, String group, String name)
+    {
+        return (list == null ? "" : list) + " " + (group == null ? "" : group) + " " +
+            (name == null ? "" : name);
+    }
+
+    /**
+     * Writes fork-only two-tone detector data to the Kennebec sidecar file.  Two-tone detectors are deliberately
+     * kept out of the main playlist so that file remains readable by the upstream sdrtrunk application.  When no
+     * alias has a two-tone detector the sidecar is removed so it does not linger with stale data.  Sidecar failures
+     * are logged but never propagated — they must not interfere with saving the main playlist.
+     */
+    private void writeTwoToneSidecar(PlaylistV2 playlist, Path sidecarPath)
+    {
+        try
+        {
+            TwoToneSidecar sidecar = new TwoToneSidecar();
+
+            for(Alias alias : playlist.getAliases())
+            {
+                List<String> detectorNames = new ArrayList<>();
+
+                for(TwoToneDetectorID detector : alias.getTwoToneDetectors())
+                {
+                    if(detector.getDetectorName() != null && !detector.getDetectorName().isEmpty())
+                    {
+                        detectorNames.add(detector.getDetectorName());
+                    }
+                }
+
+                if(!detectorNames.isEmpty())
+                {
+                    sidecar.getEntries().add(new TwoToneSidecar.Entry(alias.getAliasListName(), alias.getGroup(),
+                        alias.getName(), detectorNames));
+                }
+            }
+
+            if(sidecar.getEntries().isEmpty())
+            {
+                //Nothing to persist - remove any stale sidecar so it does not re-introduce deleted detectors.
+                Files.deleteIfExists(sidecarPath);
+                return;
+            }
+
+            JacksonXmlModule xmlModule = new JacksonXmlModule();
+            xmlModule.setDefaultUseWrapper(false);
+            ObjectMapper objectMapper = new XmlMapper(xmlModule);
+            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+
+            //Write to a temporary file then atomically move it into place so a partial write cannot corrupt it.
+            Path temp = sidecarPath.resolveSibling(sidecarPath.getFileName().toString() + ".tmp");
+            try(OutputStream out = Files.newOutputStream(temp))
+            {
+                objectMapper.writeValue(out, sidecar);
+                out.flush();
+            }
+
+            try
+            {
+                Files.move(temp, sidecarPath, StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            }
+            catch(Exception atomicFailed)
+            {
+                //Some filesystems do not support atomic move - fall back to a regular replace.
+                Files.move(temp, sidecarPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+        catch(Exception e)
+        {
+            mLog.error("Error writing two-tone sidecar file [" + sidecarPath + "] - two-tone detector assignments " +
+                "may not persist, but the main playlist was saved", e);
+        }
+    }
+
+    /**
+     * Reads the Kennebec two-tone sidecar (if present) and merges its two-tone detector assignments back into the
+     * matching aliases of the loaded playlist.  Matching is by the (list, group, name) tuple.  Failures are logged
+     * but never propagated so that a missing or damaged sidecar cannot prevent the playlist from loading.
+     */
+    private void readAndMergeTwoToneSidecar(PlaylistV2 playlist, Path sidecarPath)
+    {
+        if(playlist == null || sidecarPath == null || !Files.exists(sidecarPath))
+        {
+            return;
+        }
+
+        try
+        {
+            JacksonXmlModule xmlModule = new JacksonXmlModule();
+            xmlModule.setDefaultUseWrapper(false);
+            ObjectMapper objectMapper = new XmlMapper(xmlModule)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            TwoToneSidecar sidecar;
+            try(InputStream in = Files.newInputStream(sidecarPath))
+            {
+                sidecar = objectMapper.readValue(in, TwoToneSidecar.class);
+            }
+
+            if(sidecar == null || sidecar.getEntries().isEmpty())
+            {
+                return;
+            }
+
+            Map<String,List<String>> detectorsByAlias = new HashMap<>();
+            for(TwoToneSidecar.Entry entry : sidecar.getEntries())
+            {
+                detectorsByAlias.put(aliasKey(entry.getList(), entry.getGroup(), entry.getName()),
+                    entry.getDetectorNames());
+            }
+
+            for(Alias alias : playlist.getAliases())
+            {
+                List<String> detectorNames = detectorsByAlias.get(aliasKey(alias.getAliasListName(),
+                    alias.getGroup(), alias.getName()));
+
+                if(detectorNames != null)
+                {
+                    for(String detectorName : detectorNames)
+                    {
+                        if(detectorName != null && !detectorName.isEmpty() && !alias.hasTwoToneDetector(detectorName))
+                        {
+                            alias.addAliasID(new TwoToneDetectorID(detectorName));
+                        }
+                    }
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            mLog.error("Error reading two-tone sidecar file [" + sidecarPath + "] - two-tone detector assignments " +
+                "may be missing for this session", e);
         }
     }
 
