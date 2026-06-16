@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.Base64;
 import com.google.gson.Gson;
@@ -32,8 +33,26 @@ public class AudioWatchdogService {
     // Configurable thresholds
     private static final long IQ_SILENCE_THRESHOLD_MS = 10000;
     private static final long AUDIO_ZERO_THRESHOLD_MS = 3000;
-    
+
+    //Once a watchdog fires it backs off before it can fire again, so a channel that is simply idle
+    //(no traffic) does not generate a continuous storm of triggers/log spam/Gemini calls.
+    private static final long TRIGGER_BACKOFF_MS = 60000;
+
+    //After this many consecutive Gemini failures (e.g. 404/bad model/no network) stop calling the
+    //API entirely and fall back to local handling. Prevents a synchronous-HTTP retry storm.
+    private static final int GEMINI_FAILURE_LIMIT = 3;
+
     private List<float[]> mRecentAudioSnapshot = new ArrayList<>();
+
+    //The watchdog only watches for the disappearance of signal that was previously present. Until a
+    //channel has actually produced non-zero audio/IQ at least once, startup/idle silence is expected
+    //and must not trigger USB resets or JMBE flushes.
+    private volatile boolean mHasReceivedAudio = false;
+    private volatile boolean mHasReceivedIQ = false;
+
+    private final AtomicLong mLastTriggerTime = new AtomicLong(0);
+    private final AtomicInteger mGeminiFailureCount = new AtomicInteger(0);
+    private volatile boolean mGeminiDisabled = false;
 
     public AudioWatchdogService(UserPreferences prefs) {
         mUserPreferences = prefs;
@@ -60,6 +79,7 @@ public class AudioWatchdogService {
         }
         if (!isSilent) {
             mLastIQDataTime.set(System.currentTimeMillis());
+            mHasReceivedIQ = true;
         }
     }
 
@@ -74,8 +94,9 @@ public class AudioWatchdogService {
         
         if (!isZero) {
             mLastAudioDataTime.set(System.currentTimeMillis());
+            mHasReceivedAudio = true;
         }
-        
+
         synchronized(mRecentAudioSnapshot) {
             mRecentAudioSnapshot.add(audioSamples);
             if (mRecentAudioSnapshot.size() > 50) { // Keep recent context
@@ -85,27 +106,56 @@ public class AudioWatchdogService {
     }
 
     private void checkWatchdogs() {
-        long now = System.currentTimeMillis();
-        long iqSilenceDuration = now - mLastIQDataTime.get();
-        long audioZeroDuration = now - mLastAudioDataTime.get();
+        try {
+            long now = System.currentTimeMillis();
 
-        if (iqSilenceDuration > IQ_SILENCE_THRESHOLD_MS) {
-            mLog.warn("Hardware Resiliency Watchdog: I/Q Data silence detected for >10s. Triggering Soft USB Reset.");
-            triggerSoftUsbReset();
-            mLastIQDataTime.set(now); // Reset timer to prevent spam
-        } else if (audioZeroDuration > AUDIO_ZERO_THRESHOLD_MS) {
-            mLog.warn("Hardware Resiliency Watchdog: Audio buffer zero amplitude detected for >3s.");
-            List<float[]> snapshot;
-            synchronized(mRecentAudioSnapshot) {
-                snapshot = new ArrayList<>(mRecentAudioSnapshot);
+            //Back off after any trigger so an idle channel doesn't generate a continuous storm of
+            //resets/flushes/Gemini calls and the associated log spam + GC churn.
+            if (now - mLastTriggerTime.get() < TRIGGER_BACKOFF_MS) {
+                return;
             }
-            if (snapshot.size() > 0) {
-                analyzeFailureWithGemini(snapshot);
-            } else {
-                mLog.warn("No audio data to analyze. Triggering JMBE flush fallback.");
-                triggerJmbeFlush();
+
+            long iqSilenceDuration = now - mLastIQDataTime.get();
+            long audioZeroDuration = now - mLastAudioDataTime.get();
+
+            //Only react to signal that was previously present and then disappeared. Channels that have
+            //never produced data (startup, never-active channels) must not trigger anything.
+            if (mHasReceivedIQ && iqSilenceDuration > IQ_SILENCE_THRESHOLD_MS) {
+                mLog.warn("Hardware Resiliency Watchdog: I/Q Data silence detected for >10s. Triggering Soft USB Reset.");
+                triggerSoftUsbReset();
+                mLastTriggerTime.set(now);
+                mLastIQDataTime.set(now); // Reset timer to prevent spam
+            } else if (mHasReceivedAudio && audioZeroDuration > AUDIO_ZERO_THRESHOLD_MS) {
+                mLog.warn("Hardware Resiliency Watchdog: Audio buffer zero amplitude detected for >3s.");
+                List<float[]> snapshot;
+                synchronized(mRecentAudioSnapshot) {
+                    snapshot = new ArrayList<>(mRecentAudioSnapshot);
+                }
+                if (snapshot.size() > 0 && !mGeminiDisabled) {
+                    analyzeFailureWithGemini(snapshot);
+                } else {
+                    mLog.warn("No audio data to analyze. Triggering JMBE flush fallback.");
+                    triggerJmbeFlush();
+                }
+                mLastTriggerTime.set(now);
+                mLastAudioDataTime.set(now); // Reset timer
             }
-            mLastAudioDataTime.set(now); // Reset timer
+        } catch (Exception e) {
+            //A watchdog must never let an exception kill its own scheduler.
+            mLog.error("AudioWatchdogService check failed", e);
+        }
+    }
+
+    /**
+     * Records a Gemini call failure and disables further calls once the failure limit is reached so a
+     * misconfigured/unreachable endpoint (e.g. HTTP 404) cannot drive a synchronous-HTTP retry storm.
+     */
+    private void noteGeminiFailure(String reason) {
+        int failures = mGeminiFailureCount.incrementAndGet();
+        if (failures >= GEMINI_FAILURE_LIMIT && !mGeminiDisabled) {
+            mGeminiDisabled = true;
+            mLog.warn("Disabling Gemini audio triage after {} consecutive failures ({}). Using local JMBE flush fallback from now on.",
+                    failures, reason);
         }
     }
 
@@ -114,7 +164,8 @@ public class AudioWatchdogService {
         try {
             String apiKey = mUserPreferences.getAIPreference().getGeminiApiKey();
             if (apiKey == null || apiKey.isEmpty()) {
-                mLog.warn("No Gemini API key. Defaulting to JMBE Flush.");
+                mLog.warn("No Gemini API key. Disabling Gemini audio triage; using local JMBE Flush.");
+                mGeminiDisabled = true;
                 triggerJmbeFlush();
                 return;
             }
@@ -155,6 +206,7 @@ public class AudioWatchdogService {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
+                    .timeout(java.time.Duration.ofSeconds(15))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
@@ -162,13 +214,14 @@ public class AudioWatchdogService {
             HttpResponse<String> response = mHttpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
+                mGeminiFailureCount.set(0);
                 JsonObject responseJson = gson.fromJson(response.body(), JsonObject.class);
                 JsonArray candidates = responseJson.getAsJsonArray("candidates");
                 if (candidates != null && candidates.size() > 0) {
                     JsonObject content = candidates.get(0).getAsJsonObject().getAsJsonObject("content");
                     String resultText = content.getAsJsonArray("parts").get(0).getAsJsonObject().get("text").getAsString().trim();
                     mLog.info("Gemini analysis result: " + resultText);
-                    
+
                     if (resultText.contains("TERMINAL_FAILURE")) {
                         mLog.error("Terminal failure confirmed by AI. Triggering JMBE flush.");
                         triggerJmbeFlush();
@@ -177,12 +230,14 @@ public class AudioWatchdogService {
                     }
                 }
             } else {
-                mLog.warn("Gemini API error. Defaulting to JMBE Flush.");
+                mLog.warn("Gemini API error (HTTP {}). Defaulting to JMBE Flush.", response.statusCode());
+                noteGeminiFailure("HTTP " + response.statusCode());
                 triggerJmbeFlush();
             }
 
         } catch (Exception e) {
             mLog.error("Error analyzing failure with Gemini", e);
+            noteGeminiFailure(e.getClass().getSimpleName());
             triggerJmbeFlush();
         }
     }

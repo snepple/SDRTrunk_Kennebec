@@ -152,6 +152,18 @@ if not exist "%FOLDER_NAME%" (
 
 cd /d "%ROOT_DIR%\%FOLDER_NAME%"
 
+:: Absolute path to the cloned project + its Gradle wrapper. Every Gradle step below re-asserts this
+:: working directory and invokes the wrapper by absolute path, so a restart, a standalone launch folder
+:: (where ROOT_DIR has no gradlew.bat), or a stray cwd change can no longer cause
+:: "'gradlew.bat' is not recognized as an internal or external command".
+set "PROJ_DIR=%ROOT_DIR%\%FOLDER_NAME%"
+set "GRADLEW=%PROJ_DIR%\gradlew.bat"
+if not exist "%GRADLEW%" (
+    echo [ERROR] Gradle wrapper not found at "%GRADLEW%".
+    echo [ERROR] The repository clone appears incomplete - delete the "%FOLDER_NAME%" folder and re-run.
+    goto ai_triage
+)
+
 echo [INFO] Performing case-sensitivity sweep...
 powershell -Command "Get-ChildItem -Path . -Recurse | Group-Object {$_.FullName.ToLower()} | Where-Object {$_.Count -gt 1} | ForEach-Object { $_.Group[1] | Remove-Item -Force }" >nul 2>&1
 
@@ -186,7 +198,8 @@ set "CLEAN_ATTEMPT=0"
 :clean_retry
 set /a CLEAN_ATTEMPT+=1
 echo [INFO] Clean/compile attempt !CLEAN_ATTEMPT! of 3...
-call gradlew.bat clean classes --console=plain > gradle_out.log 2>&1
+cd /d "%PROJ_DIR%"
+call "%GRADLEW%" clean classes --console=plain > gradle_out.log 2>&1
 findstr /C:"BUILD SUCCESSFUL" gradle_out.log >nul
 if !ERRORLEVEL! EQU 0 goto clean_ok
 if !CLEAN_ATTEMPT! GEQ 3 (
@@ -224,7 +237,8 @@ if !ERRORLEVEL! NEQ 0 (
 :: STEP 8: Build Windows Runtime Package
 :: ============================================================================
 call :drawProgressBar 45 "Building Windows runtime package..."
-call gradlew.bat runtimeZipCurrent createExe -x test -x javadoc -x compileJni --console=plain > build_win.log 2>&1
+cd /d "%PROJ_DIR%"
+call "%GRADLEW%" runtimeZipCurrent createExe -x test -x javadoc -x compileJni --console=plain > build_win.log 2>&1
 type build_win.log >> "%LOG_FILE%"
 findstr /C:"BUILD SUCCESSFUL" build_win.log >nul
 if !ERRORLEVEL! EQU 0 (
@@ -235,7 +249,8 @@ if !ERRORLEVEL! EQU 0 (
     )
 ) else (
     echo [WARNING] Windows runtime build failed. Falling back to distZip...
-    call gradlew.bat build distZip -x test -x javadoc -x compileJni --console=plain > build_fallback.log 2>&1
+    cd /d "%PROJ_DIR%"
+    call "%GRADLEW%" build distZip -x test -x javadoc -x compileJni --console=plain > build_fallback.log 2>&1
     type build_fallback.log >> "%LOG_FILE%"
     findstr /C:"BUILD SUCCESSFUL" build_fallback.log >nul || goto ai_triage
     for %%F in (build\distributions\*.zip) do (
@@ -248,7 +263,8 @@ if !ERRORLEVEL! EQU 0 (
 :: ============================================================================
 if "!HAS_JPACKAGE!"=="1" (
     call :drawProgressBar 55 "Creating Windows native installer..."
-    call gradlew.bat createInstaller -x test -x javadoc -x compileJni --console=plain > build_installer.log 2>&1
+    cd /d "%PROJ_DIR%"
+    call "%GRADLEW%" createInstaller -x test -x javadoc -x compileJni --console=plain > build_installer.log 2>&1
     type build_installer.log >> "%LOG_FILE%"
     findstr /C:"BUILD SUCCESSFUL" build_installer.log >nul
     if !ERRORLEVEL! EQU 0 (
@@ -271,7 +287,8 @@ if "!HAS_JPACKAGE!"=="1" (
 :: STEP 10: Build Cross-Platform Runtime Packages (Linux + macOS)
 :: ============================================================================
 call :drawProgressBar 65 "Building Linux and macOS runtime packages..."
-call gradlew.bat runtimeZipOthers -x test -x javadoc -x compileJni --console=plain > build_others.log 2>&1
+cd /d "%PROJ_DIR%"
+call "%GRADLEW%" runtimeZipOthers -x test -x javadoc -x compileJni --console=plain > build_others.log 2>&1
 type build_others.log >> "%LOG_FILE%"
 findstr /C:"BUILD SUCCESSFUL" build_others.log >nul
 if !ERRORLEVEL! EQU 0 (
@@ -307,7 +324,8 @@ if !ERRORLEVEL! EQU 0 (
 :: STEP 11: Local Installation (Windows)
 :: ============================================================================
 call :drawProgressBar 80 "Installing locally..."
-call gradlew.bat installDist -x test -x javadoc -x compileJni --console=plain >> "%LOG_FILE%" 2>&1
+cd /d "%PROJ_DIR%"
+call "%GRADLEW%" installDist -x test -x javadoc -x compileJni --console=plain >> "%LOG_FILE%" 2>&1
 if !ERRORLEVEL! NEQ 0 goto ai_triage
 
 :: ============================================================================
@@ -445,7 +463,7 @@ exit /b
 :releaseBuildLocks
 :: Stop the Gradle daemon and kill any process that may hold build\install jars open
 :: (a previously launched build, a stray JVM, the packaged app, or an indexer).
-call gradlew.bat --stop >nul 2>&1
+if defined GRADLEW (call "%GRADLEW%" --stop >nul 2>&1) else (call gradlew.bat --stop >nul 2>&1)
 taskkill /F /IM java.exe /T >nul 2>&1
 taskkill /F /IM javaw.exe /T >nul 2>&1
 taskkill /F /IM sdr-trunk.exe /T >nul 2>&1
