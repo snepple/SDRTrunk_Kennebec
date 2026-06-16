@@ -33,3 +33,6 @@
 ## 2024-05-23 - FFT Window Type Help
 **Learning:** Adding a help icon with clear explanation for "FFT Window Type" helps beginners understand that different window types affect frequency resolution and amplitude accuracy, and recommends Hanning or Hamming as good defaults.
 **Action:** Added a `createHelpIcon` to `DisplayPreferenceEditor.java` and applied it to the "FFT Window Type" `SettingsRow`.
+## 2026-06-14 - P25P2Viewer Scramble Settings Tooltips
+**Learning:** Users need to understand the WACN, SYSTEM, and NAC acronyms.
+**Action:** Added help icons to WACN, SYSTEM, and NAC labels in P25P2Viewer.java explaining their roles in cross-system calls and radio system identification.
