@@ -25,6 +25,7 @@ import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
 import javafx.util.Duration;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,9 @@ import java.util.HashMap;
 
 public class ChannelMetadataPanel extends VBox
 {
+    //Displays channel frequency in MHz with up to 4 decimal places (e.g. 155.1252).
+    private static final DecimalFormat FREQUENCY_MHZ_FORMAT = new DecimalFormat("0.0###");
+
     private ChannelProcessingManager mChannelProcessingManager;
     private PlaylistManager mPlaylistManager;
     private SettingsManager mSettingsManager;
@@ -42,6 +46,8 @@ public class ChannelMetadataPanel extends VBox
     private List<Listener<ProcessingChain>> mListeners = new ArrayList<>();
     
     private Map<ChannelMetadata, List<Boolean>> mActivityHistory = new HashMap<>();
+    //Running tally of receive events (idle->active transitions) per channel for the "Received" column.
+    private Map<ChannelMetadata, Integer> mReceivedCount = new HashMap<>();
     private Timeline mPollingTimeline;
     private HBox mToolbar;
 
@@ -70,7 +76,11 @@ public class ChannelMetadataPanel extends VBox
             
         TableColumn<ChannelMetadata, String> freqCol = new TableColumn<>("Frequency");
         freqCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
-            cellData.getValue().hasFrequencyConfigurationIdentifier() ? cellData.getValue().getFrequencyConfigurationIdentifier().toString() : ""));
+            formatFrequencyMhz(cellData.getValue())));
+
+        TableColumn<ChannelMetadata, String> receivedCol = new TableColumn<>("Received");
+        receivedCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
+            String.valueOf(mReceivedCount.getOrDefault(cellData.getValue(), 0))));
 
         TableColumn<ChannelMetadata, String> toCol = new TableColumn<>("To");
         toCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
@@ -116,7 +126,7 @@ public class ChannelMetadataPanel extends VBox
             }
         });
 
-        mTable.getColumns().addAll(stateCol, activityCol, channelCol, freqCol, toCol, fromCol);
+        mTable.getColumns().addAll(stateCol, activityCol, channelCol, freqCol, receivedCol, toCol, fromCol);
         mTable.setTableMenuButtonVisible(true);
         
         setupActivityPolling();
@@ -160,12 +170,43 @@ public class ChannelMetadataPanel extends VBox
         });
     }
     
+    /**
+     * Formats the channel's frequency (stored in Hz) as MHz with up to 4 decimal places, e.g. 155.1252.
+     */
+    private static String formatFrequencyMhz(ChannelMetadata metadata)
+    {
+        try
+        {
+            if(metadata != null && metadata.hasFrequencyConfigurationIdentifier())
+            {
+                Object value = metadata.getFrequencyConfigurationIdentifier().getValue();
+
+                if(value instanceof Number)
+                {
+                    return FREQUENCY_MHZ_FORMAT.format(((Number) value).doubleValue() / 1_000_000.0d);
+                }
+            }
+        }
+        catch(Throwable t)
+        {
+            //Fall through to empty string
+        }
+
+        return "";
+    }
+
     private void setupActivityPolling() {
         mPollingTimeline = new Timeline(new KeyFrame(Duration.millis(500), e -> {
             boolean updated = false;
             for (ChannelMetadata meta : mTable.getItems()) {
                 List<Boolean> history = mActivityHistory.computeIfAbsent(meta, k -> new ArrayList<>());
                 boolean isActive = meta.hasDecoderStateIdentifier() && meta.getChannelStateIdentifier().toString().equalsIgnoreCase("ACTIVE");
+                //Count each transition from idle to active as one received event.
+                boolean wasActive = !history.isEmpty() && history.get(history.size() - 1);
+                if(isActive && !wasActive)
+                {
+                    mReceivedCount.merge(meta, 1, Integer::sum);
+                }
                 history.add(isActive);
                 if (history.size() > 20) {
                     history.remove(0);
