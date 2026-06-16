@@ -42,3 +42,6 @@
 ## 2026-06-14 - Adding Tooltips to Alias Action Editors
 **Learning:** Users can be confused by the bare controls in alias action editors (Beep, Clip, Script), particularly the text fields, combos, and buttons.
 **Action:** Apply `setTooltip` with a descriptive message to clarify the function of each interactive element, reducing cognitive load during setup.
+## 2024-10-27 - Convert TextField to Smart ComboBox
+**Learning:** Manual ID fields (like P25 Talkgroups) often force users to memorize IDs when defining aliases.
+**Action:** Converted the `TextField` for P25 Talkgroups in `P25FullyQualifiedTalkgroupEditor` to a `ComboBox` populated with existing known IDs from the `AliasModel`, saving typing and cognitive load.
