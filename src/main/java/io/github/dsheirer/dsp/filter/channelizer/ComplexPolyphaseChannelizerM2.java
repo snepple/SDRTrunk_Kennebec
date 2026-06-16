@@ -67,6 +67,9 @@ public class ComplexPolyphaseChannelizerM2 extends AbstractComplexPolyphaseChann
      * Determines how many processed channel results to dispatch for threaded IFFT processing per batch
      */
     private static final int PROCESSED_CHANNEL_RESULTS_THRESHOLD = 1024;
+    //Maximum backlog of channel-results buffers before the IFFT stage sheds load (safety net against unbounded
+    //queue growth / UI freeze when the CPU cannot keep up). Generous so it never trips under normal load.
+    private static final int IFFT_MAX_QUEUE_SIZE = 300;
 
     //Sized to process 40 times per second
     private IFFTProcessorDispatcher mIFFTProcessorDispatcher = new IFFTProcessorDispatcher(25);
@@ -558,6 +561,10 @@ public class ComplexPolyphaseChannelizerM2 extends AbstractComplexPolyphaseChann
         public IFFTProcessorDispatcher(long interval)
         {
             super("sdrtrunk polyphase ifft processor", interval);
+
+            //Bound the queue so a CPU-starved IFFT stage sheds channel-results buffers with a logged warning
+            //instead of growing the queue without limit and freezing the application.
+            setMaximumQueueSize(IFFT_MAX_QUEUE_SIZE);
 
             //We create a listener interface to receive the batched channel results arrays from the scheduled thread pool
             //dispatcher thread that is part of this continuous buffer processor.  We perform an IFFT on each

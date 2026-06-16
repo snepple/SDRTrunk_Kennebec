@@ -20,6 +20,7 @@
 package io.github.dsheirer.source.tuner.airspy;
 import io.github.dsheirer.source.tuner.ISampleRateConfigurable;
 
+import io.github.dsheirer.buffer.DecimatingNativeBufferFactory;
 import io.github.dsheirer.buffer.INativeBufferFactory;
 import io.github.dsheirer.buffer.sample.SampleNativeBufferFactory;
 import io.github.dsheirer.source.SourceException;
@@ -70,7 +71,15 @@ public class AirspyTunerController extends USBTunerController implements ISample
     private static final byte USB_REQUEST_OUT = (byte) (LibUsb.ENDPOINT_OUT | LibUsb.REQUEST_TYPE_VENDOR | LibUsb.RECIPIENT_DEVICE);
     public static final DecimalFormat MHZ_FORMATTER = new DecimalFormat("#.00 MHz");
     public static final AirspySampleRate DEFAULT_SAMPLE_RATE = new AirspySampleRate(0, 10000000, "10.00 MHz");
+    //Software "middle" sample rate: the R2 only supports 2.5 and 10 MSPS in firmware, so 5 MSPS is produced by
+    //running the hardware at 10 MSPS and decimating the complex stream by two in software.
+    public static final int HARDWARE_SAMPLE_RATE_FOR_DECIMATION = 10000000;
+    public static final int DECIMATED_SAMPLE_RATE = 5000000;
+    private static final int DECIMATION_FACTOR = 2;
     private SampleNativeBufferFactory mNativeBufferFactory = new SampleNativeBufferFactory();
+    private DecimatingNativeBufferFactory mDecimatingBufferFactory =
+            new DecimatingNativeBufferFactory(mNativeBufferFactory, DECIMATION_FACTOR);
+    private boolean mDecimateBy2 = false;
     private AirspyDeviceInformation mDeviceInfo;
     private List<AirspySampleRate> mSampleRates = new ArrayList<>();
     private int mSampleRate = 0;
@@ -95,7 +104,8 @@ public class AirspyTunerController extends USBTunerController implements ISample
     @Override
     protected INativeBufferFactory getNativeBufferFactory()
     {
-        return mNativeBufferFactory;
+        //In 5 MSPS mode the hardware runs at 10 MSPS and we decimate by two in software before dispatch.
+        return mDecimateBy2 ? mDecimatingBufferFactory : mNativeBufferFactory;
     }
 
     @Override
@@ -107,8 +117,11 @@ public class AirspyTunerController extends USBTunerController implements ISample
     @Override
     public int getBufferSampleCount()
     {
-        //Each airspy complex sample is 4 bytes, so sample count is buffer size / 4
-        return USB_TRANSFER_BUFFER_SIZE / 4;
+        //Each airspy complex sample is 4 bytes, so sample count is buffer size / 4.  When software decimation is
+        //engaged the dispatched buffers hold half as many samples; report that so getBufferDuration() (sampleCount
+        /// sampleRate) stays correct against the decimated (advertised) sample rate.
+        int count = USB_TRANSFER_BUFFER_SIZE / 4;
+        return mDecimateBy2 ? count / DECIMATION_FACTOR : count;
     }
 
     @Override
@@ -272,6 +285,18 @@ public class AirspyTunerController extends USBTunerController implements ISample
      */
     public void setSampleRate(AirspySampleRate rate) throws LibUsbException, UsbException, SourceException
     {
+        //Engage software 2x decimation for the synthetic 5 MSPS rate (hardware runs at 10 MSPS).  Set the flag
+        //before resolving the native buffer factory so the correct (decimating) factory is configured below.
+        boolean decimate = (rate.getRate() == DECIMATED_SAMPLE_RATE);
+
+        if(decimate && !mDecimateBy2)
+        {
+            //Reset the half-band filter history when (re)entering decimation mode.
+            mDecimatingBufferFactory.reset();
+        }
+
+        mDecimateBy2 = decimate;
+
         getNativeBufferFactory().setSamplesPerMillisecond((float)rate.getRate() / 1000.0f);
         if(rate.getRate() != mSampleRate)
         {
@@ -296,6 +321,10 @@ public class AirspyTunerController extends USBTunerController implements ISample
                         break;
                     case 6000000:
                         super.setUsableBandwidthPercentage(0.83);
+                        break;
+                    case 5000000:
+                        //Software-decimated from 10 MSPS; keep usable bandwidth clear of the half-band rolloff.
+                        super.setUsableBandwidthPercentage(0.80);
                         break;
                     case 3000000:
                         super.setUsableBandwidthPercentage(0.66);
@@ -551,6 +580,27 @@ public class AirspyTunerController extends USBTunerController implements ISample
         if(mSampleRates.isEmpty())
         {
             mSampleRates.add(DEFAULT_SAMPLE_RATE);
+        }
+
+        //Offer a software-decimated 5 MSPS "middle" rate when the hardware supports 10 MSPS.  It commands the
+        //firmware to 10 MSPS (reusing that entry's index) but advertises 5 MSPS; the controller decimates by two
+        //in software.  This is a lighter-weight option than 10 MSPS for CPU-limited setups that still need more
+        //than 2.5 MHz of span.
+        AirspySampleRate hardwareTenMsps = null;
+
+        for(AirspySampleRate availableRate : mSampleRates)
+        {
+            if(availableRate.getRate() == HARDWARE_SAMPLE_RATE_FOR_DECIMATION)
+            {
+                hardwareTenMsps = availableRate;
+                break;
+            }
+        }
+
+        if(hardwareTenMsps != null && getSampleRate(DECIMATED_SAMPLE_RATE) == null)
+        {
+            mSampleRates.add(new AirspySampleRate(hardwareTenMsps.getIndex(), DECIMATED_SAMPLE_RATE,
+                    formatSampleRate(DECIMATED_SAMPLE_RATE)));
         }
     }
 

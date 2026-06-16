@@ -71,6 +71,10 @@ public class PolyphaseChannelManager implements ISourceEventProcessor
     private static final double MINIMUM_CHANNEL_BANDWIDTH = 25000.0;
     private static final double CHANNEL_OVERSAMPLING = 2.0;
     private static final int POLYPHASE_CHANNELIZER_TAPS_PER_CHANNEL = 9;
+    //Maximum backlog of inbound native buffers before the channelizer sheds load. At ~150 buffers/sec for a
+    //10 MSPS tuner this is roughly a third of a second of slack - enough to absorb transient GC pauses while
+    //still bounding memory so a sustained overload degrades to dropped buffers instead of an OOM/UI freeze.
+    private static final int MAX_BUFFER_QUEUE_SIZE = 50;
 
     private Broadcaster<SourceEvent> mSourceEventBroadcaster = new Broadcaster<>();
     private INativeBufferProvider mNativeBufferProvider;
@@ -111,6 +115,9 @@ public class PolyphaseChannelManager implements ISourceEventProcessor
 
         mChannelCalculator = new ChannelCalculator(sampleRate, channelCount, frequency, CHANNEL_OVERSAMPLING);
         mBufferDispatcher = new Dispatcher("sdrtrunk polyphase buffer processor", 10);
+        //Bound the queue so an overwhelmed channelizer (e.g. at high sample rates / many channels) sheds buffers
+        //with a logged warning instead of growing the queue without limit and freezing the application.
+        mBufferDispatcher.setMaximumQueueSize(MAX_BUFFER_QUEUE_SIZE);
         mBufferDispatcher.setListener(mNativeBufferReceiver);
     }
 
