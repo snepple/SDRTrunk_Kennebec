@@ -775,6 +775,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     @Override
     public void stop() throws Exception {
         processShutdown();
+        System.exit(0);
     }
 
     private void processShutdown()

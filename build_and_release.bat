@@ -119,6 +119,8 @@ if exist "%FOLDER_NAME%\gradlew.bat" (
 :: Aggressively kill any remaining Java processes to ensure no file locks interfere with compilation
 taskkill /F /IM java.exe /T >nul 2>&1
 taskkill /F /IM javaw.exe /T >nul 2>&1
+taskkill /F /IM SDRTrunk.exe /T >nul 2>&1
+taskkill /F /IM sdr-trunk.exe /T >nul 2>&1
 
 :: OPTIMIZATION: Fetch and reset instead of re-cloning to save time & keep Gradle cache
 if not exist "%FOLDER_NAME%" (
