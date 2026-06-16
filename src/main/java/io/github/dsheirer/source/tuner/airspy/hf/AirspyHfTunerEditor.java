@@ -89,34 +89,42 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
-
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
         getChildren().add(new Separator());
 
-        VBox buttonPanel = new VBox();
-        buttonPanel.getChildren().add(getAgcToggleButton());
-        buttonPanel.getChildren().add(getLnaToggleButton());
-        getChildren().add(new Label(" "));
-        getChildren().add(buttonPanel);
+        getChildren().add(getAgcToggleButton());
+        getChildren().add(getLnaToggleButton());
 
-        getChildren().add(new Label("Attenuation:"));
-        getChildren().add(getAttenuationCombo());
+        GridPane attGrid = new GridPane();
+        attGrid.setHgap(10);
+        attGrid.setVgap(4);
+        attGrid.add(new Label("Attenuation:"), 0, 0);
+        attGrid.add(getAttenuationCombo(), 1, 0);
+        getChildren().add(attGrid);
     }
 
     @Override
@@ -234,25 +242,15 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
             {
                 if(!isLoading())
                 {
-                    AirspyHfSampleRate sampleRate = (AirspyHfSampleRate)mSampleRateCombo.getValue();
+                    final AirspyHfSampleRate sampleRate = (AirspyHfSampleRate)mSampleRateCombo.getValue();
 
                     if(sampleRate != null)
                     {
-                        try
-                        {
-                            getTuner().getController().setSampleRate(sampleRate);
+                        //Adjust the min/max values for the sample rate.
+                        adjustForSampleRate(sampleRate.getSampleRate());
 
-                            //Adjust the min/max values for the sample rate.
-                            adjustForSampleRate(sampleRate.getSampleRate());
-
-                            save();
-                        }
-                        catch(SourceException se)
-                        {
-                            mLog.error("Error setting Airspy Hf Sample Rate [" + sampleRate + "]", se);
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Airspy Tuner Controller - couldn't apply the sample rate setting [" +
-                                            sampleRate + "] " + se.getLocalizedMessage())); alert.showAndWait(); });
-                        }
+                        save();
+                        applyDeviceControl("airspyhf-sample-rate", () -> getTuner().getController().setSampleRate(sampleRate), "Error setting Airspy Hf Sample Rate [" + sampleRate + "]");
                     }
                 }
             });
@@ -274,18 +272,9 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
             mAttenuationCombo.setOnAction(e -> {
                 if(!isLoading())
                 {
-                    Attenuation selected = (Attenuation)mAttenuationCombo.getValue();
-                    try
-                    {
-                        getTuner().getController().setAttenuation(selected);
-                        save();
-                    }
-                    catch(IOException ioe)
-                    {
-                        mLog.error("Error setting Airspy Hf attenuation [" + selected + "]", ioe);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Airspy Tuner Controller - couldn't apply attenuation setting [" +
-                                        selected + "] " + ioe.getLocalizedMessage())); alert.showAndWait(); });
-                    }
+                    final Attenuation selected = (Attenuation)mAttenuationCombo.getValue();
+                    save();
+                    applyDeviceControl("airspyhf-attenuation", () -> getTuner().getController().setAttenuation(selected), "Error setting Airspy Hf attenuation [" + selected + "]");
                 }
             });
         }
@@ -306,16 +295,9 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
             mAgcToggleButton.setOnAction(e -> {
                 if(!isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setAgc(mAgcToggleButton.isSelected());
-                        save();
-                    }
-                    catch(IOException ioe)
-                    {
-                        mLog.error("Error setting Airspy HF AGC", ioe);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Airspy HF Tuner Controller - couldn't change AGC setting" + ioe.getLocalizedMessage())); alert.showAndWait(); });
-                    }
+                    final boolean agc = mAgcToggleButton.isSelected();
+                    save();
+                    applyDeviceControl("airspyhf-agc", () -> getTuner().getController().setAgc(agc), "Error setting Airspy HF AGC");
                 }
             });
         }
@@ -336,16 +318,9 @@ public class AirspyHfTunerEditor extends TunerEditor<AirspyHfTuner,AirspyHfTuner
             mLnaToggleButton.setOnAction(e -> {
                 if(!isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setLna(mLnaToggleButton.isSelected());
-                        save();
-                    }
-                    catch(IOException ioe)
-                    {
-                        mLog.error("Error setting Airspy HF LNA", ioe);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Airspy HF Tuner Controller - couldn't change LNA setting" + ioe.getLocalizedMessage())); alert.showAndWait(); });
-                    }
+                    final boolean lna = mLnaToggleButton.isSelected();
+                    save();
+                    applyDeviceControl("airspyhf-lna", () -> getTuner().getController().setLna(lna), "Error setting Airspy HF LNA");
                 }
             });
         }

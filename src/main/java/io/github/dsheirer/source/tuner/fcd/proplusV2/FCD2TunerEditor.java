@@ -28,6 +28,8 @@ import io.github.dsheirer.source.tuner.ui.TunerEditor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javafx.geometry.Insets;
+import javafx.scene.layout.GridPane;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import io.github.dsheirer.gui.control.ToggleSwitch;
@@ -121,19 +123,28 @@ public class FCD2TunerEditor extends TunerEditor<FCDTuner, FCD2TunerConfiguratio
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
+
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        getChildren().add(freqGrid);
 
         getChildren().add(new Separator());
         getChildren().add(getLnaGainCheckBox());
@@ -148,17 +159,14 @@ public CheckBox getLnaGainCheckBox()
             mLnaGainCheckBox.setDisable(!(false));
             mLnaGainCheckBox.setOnAction(event ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getController().setLNAGain(getLnaGainCheckBox().isSelected());
-                        save();
-                    }
-                    catch(SourceException e)
-                    {
-                        mLog.error("Couldn't set LNA gain for FCD2", e);
-                    }
+                    boolean lnaGain = getLnaGainCheckBox().isSelected();
+                    save();
+                    applyDeviceControl("fcd2-lna-gain", () -> {
+                        try { getController().setLNAGain(lnaGain); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "Couldn't set LNA gain for FCD2");
                 }
             });
         }
@@ -174,17 +182,14 @@ public CheckBox getLnaGainCheckBox()
             mMixerGainCheckBox.setDisable(!(false));
             mMixerGainCheckBox.setOnAction(event ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getController().setMixerGain(getMixerGainCheckBox().isSelected());
-                        save();
-                    }
-                    catch(SourceException e)
-                    {
-                        mLog.error("Couldn't set mixer gain for FCD2", e);
-                    }
+                    boolean mixerGain = getMixerGainCheckBox().isSelected();
+                    save();
+                    applyDeviceControl("fcd2-mixer-gain", () -> {
+                        try { getController().setMixerGain(mixerGain); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "Couldn't set mixer gain for FCD2");
                 }
             });
         }

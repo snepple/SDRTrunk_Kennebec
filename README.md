@@ -4,6 +4,7 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 
 - **Windows Users (Recommended)**: Download the Native Windows Installer. This is the easiest way to install and manage SDRTrunk on Windows.
   - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-windows-installer.exe)
+  - ⚠️ **Note**: Because this is an open-source project without a paid code signing certificate, Windows SmartScreen may show an "Unknown Publisher" warning. To proceed, click **"More info"**, then click **"Run anyway"**.
   
 - **Advanced Windows Users**: Download the Portable ZIP if you prefer to run the application without installing it.
   - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-windows-x86_64.zip)
@@ -26,6 +27,9 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
 <p>Welcome to <strong>SDRTrunk Kennebec</strong>—a highly customized, feature-rich fork of the original SDRTrunk application. Engineered for robust decoding, monitoring, recording, and streaming of trunked mobile and related radio protocols using Software Defined Radios (SDR).</p>
 
 <p>While the original SDRTrunk provides an excellent decoding engine, the Kennebec build is explicitly designed for the modern public safety listening environment. It layers an extensive suite of new capabilities on top of the original engine to provide a highly refined, context-aware, and automated user experience.</p>
+## 🆕 Recent Updates (Week of June 14, 2026)
+* **UI/UX Improvement:** Fixed an issue where streaming server icons were not displaying correctly in the status panel.
+
 
 <h2>🌟 Kennebec Highlights</h2>
 <p>Kennebec introduces features not found in any other SDR software:</p>

@@ -156,48 +156,54 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
 
     private void init()
     {
-        
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
-
-        getChildren().add(new Label());
         getChildren().add(getBiasTCheckBox());
 
         getChildren().add(new Separator());
         getChildren().add(new Label("Gain Control"));
 
-        getChildren().add(new Label("Mode:"));
-        getChildren().add(getGainModeCombo());
-
-        getChildren().add(getMasterGainLabel());
-        getChildren().add(getMasterGainSlider());
-        getChildren().add(getMasterGainValueLabel());
-
-        getChildren().add(getIFGainLabel());
-        getChildren().add(getIFGainSlider());
-        getChildren().add(getIFGainValueLabel());
-
-        getChildren().add(getMixerAGCCheckBox());
-        getChildren().add(getMixerGainSlider());
-        getChildren().add(getMixerGainValueLabel());
-
-        getChildren().add(getLNAAGCCheckBox());
-        getChildren().add(getLNAGainSlider());
-        getChildren().add(getLNAGainValueLabel());
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("Mode:"), 0, 0);
+        gainGrid.add(getGainModeCombo(), 1, 0);
+        gainGrid.add(getMasterGainLabel(), 0, 1);
+        gainGrid.add(getMasterGainSlider(), 1, 1);
+        gainGrid.add(getMasterGainValueLabel(), 2, 1);
+        gainGrid.add(getIFGainLabel(), 0, 2);
+        gainGrid.add(getIFGainSlider(), 1, 2);
+        gainGrid.add(getIFGainValueLabel(), 2, 2);
+        gainGrid.add(getMixerAGCCheckBox(), 0, 3);
+        gainGrid.add(getMixerGainSlider(), 1, 3);
+        gainGrid.add(getMixerGainValueLabel(), 2, 3);
+        gainGrid.add(getLNAAGCCheckBox(), 0, 4);
+        gainGrid.add(getLNAGainSlider(), 1, 4);
+        gainGrid.add(getLNAGainValueLabel(), 2, 4);
+        getChildren().add(gainGrid);
     }
 
     private CheckBox getLNAAGCCheckBox()
@@ -210,16 +216,10 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
             {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setLNAAGC(getLNAAGCCheckBox().isSelected());
-                        getLNAGainSlider().setDisable(!getLNAAGCCheckBox().isSelected());
-                        save();
-                    }
-                    catch(Exception e1)
-                    {
-                        mLog.error("Error setting LNA AGC Enabled");
-                    }
+                    final boolean lnaAGC = getLNAAGCCheckBox().isSelected();
+                    getLNAGainSlider().setDisable(!lnaAGC);
+                    save();
+                    applyDeviceControl("hydra-lna-agc", () -> getTuner().getController().setLNAAGC(lnaAGC), "Error setting LNA AGC Enabled");
                 }
             });
         }
@@ -237,16 +237,10 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
             {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setMixerAGC(getMixerAGCCheckBox().isSelected());
-                        getMixerGainSlider().setDisable(!getMixerAGCCheckBox().isSelected());
-                        save();
-                    }
-                    catch(Exception e1)
-                    {
-                        mLog.error("Error setting Mixer AGC Enabled");
-                    }
+                    final boolean mixerAGC = getMixerAGCCheckBox().isSelected();
+                    getMixerGainSlider().setDisable(!mixerAGC);
+                    save();
+                    applyDeviceControl("hydra-mixer-agc", () -> getTuner().getController().setMixerAGC(mixerAGC), "Error setting Mixer AGC Enabled");
                 }
             });
         }
@@ -268,16 +262,9 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
             {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setBiasT(mBiasTCheckBox.isSelected());
-                        save();
-                    }
-                    catch(Exception e1)
-                    {
-                        mLog.error("Error setting Bias-T", e1);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set Bias-T: " + e1.getMessage())); alert.showAndWait(); });
-                    }
+                    final boolean biasT = mBiasTCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("hydra-bias-t", () -> getTuner().getController().setBiasT(biasT), "Error setting Bias-T");
                 }
             });
         }
@@ -310,16 +297,8 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
 
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setLNAGain(gain);
-                        save();
-                    }
-                    catch(Exception e)
-                    {
-                        mLog.error("Couldn't set HydraSDR LNA gain to:" + gain, e);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set LNA gain value to " + gain)); alert.showAndWait(); });
-                    }
+                    save();
+                    applyDeviceControl("hydra-lna-gain", () -> getTuner().getController().setLNAGain(gain), "Couldn't set HydraSDR LNA gain to " + gain);
                 }
 
                 getLNAGainValueLabel().setText(String.valueOf(gain));
@@ -354,16 +333,8 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
 
                     if(hasTuner() && !isLoading())
                     {
-                        try
-                        {
-                            getTuner().getController().setMixerGain(gain);
-                            save();
-                        }
-                        catch(Exception e)
-                        {
-                            mLog.error("Couldn't set HydraSDR Mixer gain to:" + gain, e);
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set Mixer gain value to " + gain)); alert.showAndWait(); });
-                        }
+                        save();
+                        applyDeviceControl("hydra-mixer-gain", () -> getTuner().getController().setMixerGain(gain), "Couldn't set HydraSDR Mixer gain to " + gain);
                     }
 
                     getMixerGainValueLabel().setText(String.valueOf(gain));
@@ -408,16 +379,8 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
 
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setIFGain(gain);
-                        save();
-                    }
-                    catch(Exception e)
-                    {
-                        mLog.error("Couldn't set HydraSDR IF gain to:" + gain, e);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set IF gain value to " + gain)); alert.showAndWait(); });
-                    }
+                    save();
+                    applyDeviceControl("hydra-if-gain", () -> getTuner().getController().setIFGain(gain), "Couldn't set HydraSDR IF gain to " + gain);
                 }
 
                 getIFGainValueLabel().setText(String.valueOf(gain));
@@ -465,17 +428,8 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
 
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setGain(gain);
-                        save();
-                    }
-                    catch(Exception e)
-                    {
-                        mLog.error("Couldn't set HydraSDR gain to:" + gain.name(), e);
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set gain value to " +
-                                gain.getValue())); alert.showAndWait(); });
-                    }
+                    save();
+                    applyDeviceControl("hydra-master-gain", () -> getTuner().getController().setGain(gain), "Couldn't set HydraSDR gain to " + gain.name());
                 }
 
                 getMasterGainValueLabel().setText(String.valueOf(value));
@@ -520,22 +474,13 @@ public class HydraSdrTunerEditor extends TunerEditor<HydraSdrTuner, HydraSdrTune
                 {
                     if(hasTuner() && !isLoading())
                     {
-                        HydraSdrSampleRate rate = (HydraSdrSampleRate)mSampleRateCombo.getValue();
+                        final HydraSdrSampleRate rate = (HydraSdrSampleRate)mSampleRateCombo.getValue();
 
-                        try
-                        {
-                            getTuner().getController().setSampleRate(rate);
+                        //Adjust the min/max values for the sample rate.
+                        adjustForSampleRate(rate.getRate());
 
-                            //Adjust the min/max values for the sample rate.
-                            adjustForSampleRate(rate.getRate());
-
-                            save();
-                        }
-                        catch(Exception e1)
-                        {
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't set sample rate to " + rate.getLabel())); alert.showAndWait(); });
-                            mLog.error("Error setting HydraSDR sample rate", e1);
-                        }
+                        save();
+                        applyDeviceControl("hydra-sample-rate", () -> getTuner().getController().setSampleRate(rate), "Error setting HydraSDR sample rate");
                     }
                 }
             });

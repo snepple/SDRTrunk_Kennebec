@@ -32,6 +32,7 @@ import io.github.dsheirer.audio.DuplicateCallDetector;
 import io.github.dsheirer.audio.broadcast.AudioStreamingManager;
 import io.github.dsheirer.audio.broadcast.BroadcastFormat;
 import io.github.dsheirer.audio.broadcast.BroadcastStatusPanel;
+import io.github.dsheirer.audio.broadcast.StreamingWatchdog;
 import io.github.dsheirer.audio.playback.AudioPlaybackManager;
 import io.github.dsheirer.controller.ControllerPanel;
 import io.github.dsheirer.controller.channel.Channel;
@@ -236,12 +237,15 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private io.github.dsheirer.monitor.StreamingCredentialPreflight mStreamingCredentialPreflight;
     private io.github.dsheirer.transcription.RadioIdNameLearner mRadioIdNameLearner;
     private io.github.dsheirer.controller.channel.ChannelResumeService mChannelResumeService;
+    private io.github.dsheirer.module.ai.PredictiveMaintenanceEngine mPredictiveMaintenanceEngine;
     private AudioStreamingManager mAudioStreamingManager;
+    private StreamingWatchdog mStreamingWatchdog;
     private BroadcastStatusPanel mBroadcastStatusPanel;
     private ControllerPanel mControllerPanel;
     private DiagnosticMonitor mDiagnosticMonitor;
     private IconModel mIconModel = new IconModel();
     private PlaylistManager mPlaylistManager;
+    private io.github.dsheirer.preference.ai.ToneDiscoveryManager mToneDiscoveryManager;
     private SettingsManager mSettingsManager;
     private SpectralDisplayPanel mSpectralPanel;
     private BorderPane mMainContentPanel;
@@ -518,10 +522,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         io.github.dsheirer.monitor.RemoteSessionMonitor.init();
 
-        
-
-        io.github.dsheirer.monitor.RemoteSessionMonitor.init();
-
         CalibrationManager calibrationManager = CalibrationManager.getInstance(mUserPreferences);
         final boolean calibrating = !calibrationManager.isCalibrated() &&
             !mUserPreferences.getVectorCalibrationPreference().isHideCalibrationDialog();
@@ -538,6 +538,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mAudioStreamingManager = new AudioStreamingManager(mPlaylistManager.getBroadcastModel(), BroadcastFormat.MP3,
             mUserPreferences);
         mAudioStreamingManager.start();
+
+        mStreamingWatchdog = new StreamingWatchdog(mPlaylistManager.getBroadcastModel());
+        mStreamingWatchdog.start();
 
         //Automated disk space management and daily configuration backups for unattended operation
         mDiskSpaceManager = new io.github.dsheirer.monitor.DiskSpaceManager(mUserPreferences);
@@ -570,6 +573,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mNowPlayingDetailsVisible = mPreferences.getBoolean(PREFERENCE_NOW_PLAYING_DETAILS_VISIBLE, true);
 
         mPlaylistManager.init();
+        
+        mToneDiscoveryManager = new io.github.dsheirer.preference.ai.ToneDiscoveryManager(mUserPreferences, mPlaylistManager);
 
         //Deferred startup validation: receive-chain self-test and playlist lint, run after tuner
         //discovery and channel auto-start have settled so results reflect steady state.
@@ -748,6 +753,12 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
 
         mResourceMonitor.start();
+
+        if(mUserPreferences.getAIPreference().isSystemHealthAdvisorEnabled())
+        {
+            mPredictiveMaintenanceEngine = new io.github.dsheirer.module.ai.PredictiveMaintenanceEngine(mResourceMonitor);
+        }
+
         mControllerPanel.setResourcePanel(mControllerResourceStatusPanel);
 
         // Ensure the initial view is shown
@@ -770,7 +781,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     {
         mLog.info("Application shutdown started ...");
         io.github.dsheirer.gui.WindowsReliabilityManager.stopWatchdog();
-        mDiagnosticMonitor.stop();
+        if(mDiagnosticMonitor != null) mDiagnosticMonitor.stop();
         if (mPrimaryStage != null) {
             if (!mPrimaryStage.isMaximized() || mNormalBounds == null) {
                 mUserPreferences.getSwingPreference().setLocation(WINDOW_FRAME_IDENTIFIER, new javafx.geometry.Point2D((int)mPrimaryStage.getX(), (int)mPrimaryStage.getY()));
@@ -781,30 +792,31 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             }
             mUserPreferences.getSwingPreference().setMaximized(WINDOW_FRAME_IDENTIFIER, mPrimaryStage.isMaximized());
         }
-        mUserPreferences.getSwingPreference().setDimension(SPECTRAL_PANEL_IDENTIFIER, new javafx.geometry.Dimension2D((int)mSpectralPanel.getWidth(), (int)mSpectralPanel.getHeight()));
-        mUserPreferences.getSwingPreference().setDimension(CONTROLLER_PANEL_IDENTIFIER, new javafx.geometry.Dimension2D((int)mControllerPanel.getWidth(), (int)mControllerPanel.getHeight()));
-        mJavaFxWindowManager.shutdown();
+        if(mSpectralPanel != null) mUserPreferences.getSwingPreference().setDimension(SPECTRAL_PANEL_IDENTIFIER, new javafx.geometry.Dimension2D((int)mSpectralPanel.getWidth(), (int)mSpectralPanel.getHeight()));
+        if(mControllerPanel != null) mUserPreferences.getSwingPreference().setDimension(CONTROLLER_PANEL_IDENTIFIER, new javafx.geometry.Dimension2D((int)mControllerPanel.getWidth(), (int)mControllerPanel.getHeight()));
+        if(mJavaFxWindowManager != null) mJavaFxWindowManager.shutdown();
         mLog.info("Stopping channels ...");
-        mPlaylistManager.getChannelProcessingManager().shutdown();
+        if(mPlaylistManager != null) mPlaylistManager.getChannelProcessingManager().shutdown();
         if(mChannelResumeService != null) mChannelResumeService.shutdown();
-        mAudioRecordingManager.stop();
+        if(mPredictiveMaintenanceEngine != null) mPredictiveMaintenanceEngine.stop();
+        if(mAudioRecordingManager != null) mAudioRecordingManager.stop();
         if(mChannelAlertMonitor != null) mChannelAlertMonitor.stop();
         if(mDiskSpaceManager != null) mDiskSpaceManager.stop();
         if(mConfigurationBackupService != null) mConfigurationBackupService.stop();
         if(mStreamingCredentialPreflight != null) mStreamingCredentialPreflight.stop();
-        mResourceMonitor.stop();
+        if(mResourceMonitor != null) mResourceMonitor.stop();
 
         mLog.info("Stopping spectral display ...");
-        mSpectralPanel.clearTuner();
+        if(mSpectralPanel != null) mSpectralPanel.clearTuner();
         mLog.info("Stopping tuners ...");
-        mTunerManager.stop();
+        if(mTunerManager != null) mTunerManager.stop();
         mLog.info("Shutdown complete.");
         if(mStateJournal != null) {
             mStateJournal.record("application_shutdown");
             mStateJournal.stop();
         }
-        mApplicationLog.stop();
-        mTwoToneLog.stop();
+        if(mApplicationLog != null) mApplicationLog.stop();
+        if(mTwoToneLog != null) mTwoToneLog.stop();
     }
 
     /**

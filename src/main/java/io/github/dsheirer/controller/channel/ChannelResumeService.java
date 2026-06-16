@@ -20,6 +20,7 @@ package io.github.dsheirer.controller.channel;
 
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.sample.Listener;
+import io.github.dsheirer.util.ThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,6 +86,12 @@ public class ChannelResumeService implements Listener<ChannelEvent>
 
     /**
      * Restarts channels recorded as processing by a previous run that ended unexpectedly.
+     *
+     * The (small) state file is read synchronously so it reflects the pre-crash state before any new
+     * channel events overwrite it, but the channels themselves are started on a background thread:
+     * channel startup acquires a tuner source and builds a processing chain, which must not run on the
+     * JavaFX Application thread (this method is invoked from the FX thread during application startup)
+     * or the UI freezes until every channel has started.
      */
     public void resume()
     {
@@ -93,15 +100,26 @@ public class ChannelResumeService implements Listener<ChannelEvent>
             return;
         }
 
+        final List<String> lines;
+
         try
         {
-            List<String> lines = Files.readAllLines(mStateFile, StandardCharsets.UTF_8);
+            lines = Files.readAllLines(mStateFile, StandardCharsets.UTF_8);
+        }
+        catch(Exception e)
+        {
+            mLog.error("Error reading channel resume state from previous session", e);
+            return;
+        }
 
-            if(!lines.isEmpty())
-            {
-                mLog.info("Previous run ended unexpectedly - resuming [" + lines.size() + "] channel(s)");
-            }
+        if(lines.isEmpty())
+        {
+            return;
+        }
 
+        mLog.info("Previous run ended unexpectedly - resuming [" + lines.size() + "] channel(s)");
+
+        ThreadPool.CACHED.submit(() -> {
             for(String line : lines)
             {
                 String[] fields = line.split(FIELD_SEPARATOR, -1);
@@ -119,33 +137,50 @@ public class ChannelResumeService implements Listener<ChannelEvent>
                        !mChannelProcessingManager.isProcessing(channel))
                     {
                         mLog.info("Resuming channel after unexpected shutdown: " + channel.getName());
-                        mChannelProcessingManager.receive(ChannelEvent.requestEnable(channel));
+
+                        try
+                        {
+                            mChannelProcessingManager.receive(ChannelEvent.requestEnable(channel));
+                        }
+                        catch(Throwable t)
+                        {
+                            mLog.error("Error resuming channel [" + channel.getName() + "]", t);
+                        }
+
                         break;
                     }
                 }
             }
-        }
-        catch(Exception e)
-        {
-            mLog.error("Error resuming channels from previous session", e);
-        }
+        });
     }
 
     @Override
     public void receive(ChannelEvent channelEvent)
     {
-        //Rewrite the state file on every channel event - events are infrequent and the file is tiny
+        //Rewrite the state file on every channel event - events are infrequent and the file is tiny.
+        //Snapshot the processing channels on the calling thread (cheap list iteration), but perform the
+        //file write on a background thread so disk I/O never runs on the JavaFX Application thread when a
+        //channel event originates from the GUI.  Writes are serialized so the file is never corrupted.
+        final List<String> lines = new ArrayList<>();
+
+        for(Channel channel : mChannelProcessingManager.getProcessingChannels())
+        {
+            lines.add(emptyIfNull(channel.getSystem()) + FIELD_SEPARATOR +
+                      emptyIfNull(channel.getSite()) + FIELD_SEPARATOR +
+                      emptyIfNull(channel.getName()));
+        }
+
+        ThreadPool.CACHED.submit(() -> writeState(lines));
+    }
+
+    /**
+     * Serializes the snapshot to disk via an atomic temp-file replace.  Synchronized so concurrent
+     * channel events can't interleave writes and corrupt the state file.
+     */
+    private synchronized void writeState(List<String> lines)
+    {
         try
         {
-            List<String> lines = new ArrayList<>();
-
-            for(Channel channel : mChannelProcessingManager.getProcessingChannels())
-            {
-                lines.add(emptyIfNull(channel.getSystem()) + FIELD_SEPARATOR +
-                          emptyIfNull(channel.getSite()) + FIELD_SEPARATOR +
-                          emptyIfNull(channel.getName()));
-            }
-
             Path temp = mStateFile.resolveSibling(STATE_FILE + ".tmp");
             Files.write(temp, lines, StandardCharsets.UTF_8);
             Files.move(temp, mStateFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);

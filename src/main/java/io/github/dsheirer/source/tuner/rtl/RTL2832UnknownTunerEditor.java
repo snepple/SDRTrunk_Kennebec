@@ -69,13 +69,17 @@ public class RTL2832UnknownTunerEditor extends TunerEditor<RTL2832Tuner, RTL2832
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 

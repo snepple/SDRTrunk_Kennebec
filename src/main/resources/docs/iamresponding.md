@@ -1,3 +1,8 @@
+## Goal
+
+The goal of this guide is to explain how to stream Two-Tone detection audio from SDRTrunk to IAmResponding.
+
+
 # 🚒 IAmResponding Integration
 
 > Send live paging audio from SDRTrunk Kennebec directly to the IAmResponding app for first responders!
@@ -5,6 +10,15 @@
 If you use IAmResponding (IAR) for your fire department or EMS squad, you can link SDRTrunk Kennebec directly to it! When a dispatch page goes out over the radio, Kennebec can instantly send that audio snippet to the IAmResponding servers, so it pops up on everyone's phones.
 
 ## 🧠 How It Works
+
+
+```mermaid
+flowchart LR
+    A[SDRTrunk Tuner] --> B[Two-Tone Detector]
+    B -->|Detects Page Beeps| C[Record Dispatcher Voice]
+    C -->|Zip & Send| D[IAmResponding Server]
+    D --> E[Responders' Phones]
+```
 
 Think of this like a smart voice mailbox for your dispatchers.
 1. SDRTrunk listens for the specific "beeps" (Two-Tone pages) that wake up the pagers.

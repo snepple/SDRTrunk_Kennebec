@@ -76,41 +76,48 @@ public class RspDuoTuner2Editor extends RspTunerEditor<RspDuoTuner2Configuration
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new javafx.geometry.Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        VBox labelAndButtonPanel = new VBox();
-        labelAndButtonPanel.getChildren().add(getTunerIdLabel());
-        labelAndButtonPanel.getChildren().add(getTunerPreferencesButton());
-        getChildren().add(labelAndButtonPanel);
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(getTunerPreferencesButton(), 1, 1);
+        infoGrid.add(new Label("Status:"), 0, 2);
+        infoGrid.add(getTunerStatusLabel(), 1, 2);
+        getChildren().add(infoGrid);
+
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
-
-        getChildren().add(new Label("Gain:"));
-        getChildren().add(getGainPanel());
-        getChildren().add(new Label("LNA:"));
-        getChildren().add(getLNASlider());
-        getChildren().add(new Label("IF:"));
-        getChildren().add(getIfGainSlider());
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("Gain:"), 0, 0);
+        gainGrid.add(getGainPanel(), 1, 0);
+        gainGrid.add(new Label("LNA:"), 0, 1);
+        gainGrid.add(getLNASlider(), 1, 1);
+        gainGrid.add(new Label("IF:"), 0, 2);
+        gainGrid.add(getIfGainSlider(), 1, 2);
+        getChildren().add(gainGrid);
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label());
         getChildren().add(getExternalReferenceOutputCheckBox());
-        getChildren().add(new Label());
         getChildren().add(getBiasTCheckBox());
-        getChildren().add(new Label());
         getChildren().add(getRfDabNotchCheckBox());
-        getChildren().add(new Label());
         getChildren().add(getRfNotchCheckBox());
     }
 
@@ -340,15 +347,11 @@ public class RspDuoTuner2Editor extends RspTunerEditor<RspDuoTuner2Configuration
             mRfDabNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfDabNotch(mRfDabNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 2 RF DAB notch enabled to " + mRfDabNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfDabNotchOn = mRfDabNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo2-rf-dab-notch",
+                            () -> getTunerController().getControlRsp().setRfDabNotch(rfDabNotchOn),
+                            "Unable to set RSPduo tuner 2 RF DAB notch enabled to " + rfDabNotchOn);
                 }
             });
         }
@@ -368,15 +371,11 @@ public class RspDuoTuner2Editor extends RspTunerEditor<RspDuoTuner2Configuration
             mRfNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfNotch(mRfNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 2 RF notch enabled to " + mRfNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfNotchOn = mRfNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo2-rf-notch",
+                            () -> getTunerController().getControlRsp().setRfNotch(rfNotchOn),
+                            "Unable to set RSPduo tuner 2 RF notch enabled to " + rfNotchOn);
                 }
             });
         }
@@ -396,15 +395,11 @@ public class RspDuoTuner2Editor extends RspTunerEditor<RspDuoTuner2Configuration
             mBiasTCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setBiasT(mBiasTCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 2 AM notch enabled to " + mBiasTCheckBox.isSelected(), se);
-                    }
+                    final boolean biasTOn = mBiasTCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo2-bias-t",
+                            () -> getTunerController().getControlRsp().setBiasT(biasTOn),
+                            "Unable to set RSPduo tuner 2 Bias-T enabled to " + biasTOn);
                 }
             });
         }
@@ -424,16 +419,11 @@ public class RspDuoTuner2Editor extends RspTunerEditor<RspDuoTuner2Configuration
             mExternalReferenceOutputCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setExternalReferenceOutput(mExternalReferenceOutputCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPduo tuner 2 external reference output notch enabled to " +
-                                mExternalReferenceOutputCheckBox.isSelected(), se);
-                    }
+                    final boolean externalReferenceOn = mExternalReferenceOutputCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspduo2-external-reference",
+                            () -> getTunerController().getControlRsp().setExternalReferenceOutput(externalReferenceOn),
+                            "Unable to set RSPduo tuner 2 external reference output notch enabled to " + externalReferenceOn);
                 }
             });
         }

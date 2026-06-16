@@ -58,6 +58,7 @@ public class ChannelMetadataPanel extends VBox
         mNowPlayingPreference = nowPlayingPreference;
         
         mTable = new TableView<>();
+        mTable.getStyleClass().add("preferences-table");
         
         TableColumn<ChannelMetadata, String> stateCol = new TableColumn<>("State");
         stateCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(

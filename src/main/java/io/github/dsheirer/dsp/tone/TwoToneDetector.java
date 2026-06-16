@@ -516,26 +516,8 @@ public class TwoToneDetector
         }
         
         if (!exists) {
-            TwoToneConfiguration newConfig = new TwoToneConfiguration();
-            newConfig.setToneA((float) toneA);
-            newConfig.setToneB((float) toneB);
-            newConfig.setAlias("Discovered: " + Math.round(toneA) + " / " + Math.round(toneB));
-            newConfig.setEnabled(false); // disabled until manually activated
-            newConfig.setAutoDiscovered(true);
-            
-            // Add to PlaylistManager
-            javafx.application.Platform.runLater(() -> {
-                try {
-                    // Update the active PlaylistManager memory
-                    mPlaylistManager.getTwoToneConfigurations().add(newConfig);
-                    mPlaylistManager.schedulePlaylistSave();
-                    
-                    // Force a UI refresh by triggering an event or the editor might refresh on next load
-                    // It's sufficient to add to the configurations list. The UI binds to it when opened.
-                } catch (Exception e) {
-                    mLog.error("Failed to add discovered Two-Tone configuration", e);
-                }
-            });
+            // Emit event for AI Tone Discovery Manager
+            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new ToneDiscoveredEvent(toneA, toneB, segment));
         }
         
         String channel = "Unknown";

@@ -119,34 +119,44 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
         getChildren().add(getBiasTButton());
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
-
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
         getChildren().add(new Separator());
+        getChildren().add(new Label("Gain"));
 
-        VBox gainPanel = new VBox();
-        gainPanel.getChildren().add(new Label("Gain"));
-        gainPanel.getChildren().add(getAgcToggleButton());
-        gainPanel.getChildren().add(new Label("LNA:"));
-        getChildren().add(gainPanel);
-        getChildren().add(getLNAGainCombo());
+        getChildren().add(getAgcToggleButton());
+
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("LNA:"), 0, 0);
+        gainGrid.add(getLNAGainCombo(), 1, 0);
+        getChildren().add(gainGrid);
     }
 
     @Override
@@ -208,10 +218,12 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
             mBiasTButton = new ToggleButton("Bias-T");
             mBiasTButton.setDisable(!(false));
             mBiasTButton.setOnAction(e -> {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    getTuner().getController().setBiasT(mBiasTButton.isSelected());
+                    boolean biasT = mBiasTButton.isSelected();
                     save();
+                    applyDeviceControl("fc0013-bias-t", () -> getTuner().getController().setBiasT(biasT),
+                            getLogPrefix() + "couldn't set Bias-T");
                }
             });
         }
@@ -230,29 +242,25 @@ private ComboBox getLNAGainCombo()
             mLNAGainCombo.setDisable(!(false));
             mLNAGainCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
+                    FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain) mLNAGainCombo.getValue();
+
+                    if(lnaGain == null)
                     {
-                        FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain) mLNAGainCombo.getValue();
-
-                        if(lnaGain == null)
-                        {
-                            lnaGain = DEFAULT_LNA_GAIN;
-                        }
-
-                        if(!mLNAGainCombo.isDisabled())
-                        {
-                            getEmbeddedTuner().setGain(getAgcToggleButton().isSelected(), lnaGain);
-                        }
-
-                        save();
+                        lnaGain = DEFAULT_LNA_GAIN;
                     }
-                    catch(Exception e)
+
+                    final FC0013EmbeddedTuner.LNAGain finalLnaGain = lnaGain;
+                    final boolean agc = getAgcToggleButton().isSelected();
+                    final boolean apply = !mLNAGainCombo.isDisabled();
+
+                    save();
+
+                    if(apply)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() +
-                                "couldn't apply the LNA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
-                        mLog.error(getLogPrefix() + "couldn't apply LNA gain setting - ", e);
+                        applyDeviceControl("fc0013-lna-gain", () -> getEmbeddedTuner().setGain(agc, finalLnaGain),
+                                getLogPrefix() + "couldn't apply LNA gain setting");
                     }
                 }
             });
@@ -270,25 +278,16 @@ private ComboBox getLNAGainCombo()
             mSampleRateCombo.setDisable(!(false));
             mSampleRateCombo.setOnAction(e ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
                     SampleRate sampleRate = (SampleRate) mSampleRateCombo.getValue();
-
-                    try
-                    {
-                        getTuner().getController().setSampleRate(sampleRate);
-                        //Adjust the min/max values for the sample rate.
-                        adjustForSampleRate(sampleRate.getRate());
-                        save();
-                    }
-                    catch(SourceException | LibUsbException eSampleRate)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() + "couldn't apply the sample rate setting [" +
-                                        sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage())); alert.showAndWait(); });
-
-                        mLog.error(getLogPrefix() + "couldn't apply sample rate setting [" + sampleRate.getLabel() +
-                                "]", eSampleRate);
-                    }
+                    //Adjust the min/max values for the sample rate.
+                    adjustForSampleRate(sampleRate.getRate());
+                    save();
+                    applyDeviceControl("fc0013-sample-rate", () -> {
+                        try { getTuner().getController().setSampleRate(sampleRate); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, getLogPrefix() + "couldn't apply sample rate setting [" + sampleRate.getLabel() + "]");
                 }
             });
         }
@@ -304,22 +303,14 @@ private ComboBox getLNAGainCombo()
             mAgcToggleButton.setDisable(!(false));
             mAgcToggleButton.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        boolean agc = getAgcToggleButton().isSelected();
-                        FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain)getLNAGainCombo().getValue();
-                        getEmbeddedTuner().setGain(agc, lnaGain);
-                        getLNAGainCombo().setDisable(!(!agc));
-                        save();
-                    }
-                    catch(Exception e)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() +
-                                "couldn't set AGC" + e.getLocalizedMessage())); alert.showAndWait(); });
-                        mLog.error(getLogPrefix() + "couldn't set AGC", e);
-                    }
+                    boolean agc = getAgcToggleButton().isSelected();
+                    FC0013EmbeddedTuner.LNAGain lnaGain = (FC0013EmbeddedTuner.LNAGain)getLNAGainCombo().getValue();
+                    getLNAGainCombo().setDisable(!(!agc));
+                    save();
+                    applyDeviceControl("fc0013-agc", () -> getEmbeddedTuner().setGain(agc, lnaGain),
+                            getLogPrefix() + "couldn't set AGC");
                 }
             });
             mAgcToggleButton.setTooltip(new javafx.scene.control.Tooltip("<html>Automatic Gain Control (AGC). </html>"));

@@ -94,6 +94,7 @@ public class HelpViewController {
 
         TreeItem<String> integrationsStreamingNode = new TreeItem<>("Integrations & Streaming");
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Broadcastify"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Iamresponding"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Mqtt"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Openmhz"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Other Platforms"));
@@ -106,6 +107,7 @@ public class HelpViewController {
         TreeItem<String> advancedSystemNode = new TreeItem<>("Advanced & System");
         advancedSystemNode.getChildren().add(new TreeItem<>("Audio Recordings"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Diagnostics"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Application Watchdog"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Gemini Ai"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Ignore Unwanted Talkgroups"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Inactivity Monitoring"));

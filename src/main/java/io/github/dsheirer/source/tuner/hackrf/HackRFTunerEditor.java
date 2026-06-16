@@ -87,34 +87,43 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
-
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
         getChildren().add(new Separator());
-
         getChildren().add(new Label("Gain Control"));
         getChildren().add(getAmplifierToggle());
 
-        getChildren().add(new Label("LNA:"));
-        getChildren().add(getLnaGainCombo());
-
-        getChildren().add(new Label("VGA:"));
-        getChildren().add(getVgaGainCombo());
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("LNA:"), 0, 0);
+        gainGrid.add(getLnaGainCombo(), 1, 0);
+        gainGrid.add(new Label("VGA:"), 0, 1);
+        gainGrid.add(getVgaGainCombo(), 1, 1);
+        getChildren().add(gainGrid);
     }
 
     @Override
@@ -167,25 +176,16 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
             {
                 if(!isLoading())
                 {
-                    try
+                    HackRFVGAGain vgaGain = (HackRFVGAGain) mVgaGainCombo.getValue();
+
+                    if(vgaGain == null)
                     {
-                        HackRFVGAGain vgaGain = (HackRFVGAGain) mVgaGainCombo.getValue();
-
-                        if(vgaGain == null)
-                        {
-                            vgaGain = HackRFVGAGain.GAIN_16;
-                        }
-
-                        getTuner().getController().setVGAGain(vgaGain);
-                        save();
+                        vgaGain = HackRFVGAGain.GAIN_16;
                     }
-                    catch(UsbException e)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("HackRF Tuner Controller"
-                                + " - couldn't apply the VGA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
 
-                        mLog.error("HackRF Tuner Controller - couldn't apply VGA gain setting", e);
-                    }
+                    final HackRFVGAGain selectedVgaGain = vgaGain;
+                    save();
+                    applyDeviceControl("hackrf-vga-gain", () -> getTuner().getController().setVGAGain(selectedVgaGain), "HackRF Tuner Controller - couldn't apply VGA gain setting");
                 }
             });
         }
@@ -204,24 +204,16 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
             {
                 if(!isLoading())
                 {
-                    try
-                    {
-                        HackRFLNAGain lnaGain = (HackRFLNAGain) mLnaGainCombo.getValue();
+                    HackRFLNAGain lnaGain = (HackRFLNAGain) mLnaGainCombo.getValue();
 
-                        if(lnaGain == null)
-                        {
-                            lnaGain = HackRFLNAGain.GAIN_16;
-                        }
-
-                        getTuner().getController().setLNAGain(lnaGain);
-                        save();
-                    }
-                    catch(UsbException e)
+                    if(lnaGain == null)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("HackRF Tuner Controller"
-                                + " - couldn't apply the LNA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
-                        mLog.error("HackRF Tuner Controller - couldn't apply LNA gain setting - ", e);
+                        lnaGain = HackRFLNAGain.GAIN_16;
                     }
+
+                    final HackRFLNAGain selectedLnaGain = lnaGain;
+                    save();
+                    applyDeviceControl("hackrf-lna-gain", () -> getTuner().getController().setLNAGain(selectedLnaGain), "HackRF Tuner Controller - couldn't apply LNA gain setting");
                 }
             });
         }
@@ -240,17 +232,9 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
             {
                 if(!isLoading())
                 {
-                    try
-                    {
-                        getTuner().getController().setAmplifierEnabled(mAmplifier.isSelected());
-                        save();
-                    }
-                    catch(UsbException e)
-                    {
-                        mLog.error("couldn't enable/disable amplifier", e);
-
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.ERROR); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("Couldn't change amplifier setting")); alert.showAndWait(); });
-                    }
+                    final boolean amplifierEnabled = mAmplifier.isSelected();
+                    save();
+                    applyDeviceControl("hackrf-amplifier", () -> getTuner().getController().setAmplifierEnabled(amplifierEnabled), "couldn't enable/disable amplifier");
                 }
             });
         }
@@ -269,24 +253,12 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
             {
                 if(!isLoading())
                 {
-                    HackRFSampleRate sampleRate = (HackRFSampleRate)getSampleRateCombo().getValue();
+                    final HackRFSampleRate sampleRate = (HackRFSampleRate)getSampleRateCombo().getValue();
 
-                    try
-                    {
-                        getTuner().getController().setSampleRate(sampleRate);
-                        //Adjust the min/max values for the sample rate.
-                        adjustForSampleRate(sampleRate.getRate());
-                        save();
-                    }
-                    catch(SourceException | UsbException e2)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("HackRF Tuner Controller"
-                                + " - couldn't apply the sample rate setting [" + sampleRate.getLabel() +
-                                "] " + e2.getLocalizedMessage())); alert.showAndWait(); });
-
-                        mLog.error("HackRF Tuner Controller - couldn't apply sample rate setting [" +
-                                sampleRate.getLabel() + "]", e);
-                    }
+                    //Adjust the min/max values for the sample rate.
+                    adjustForSampleRate(sampleRate.getRate());
+                    save();
+                    applyDeviceControl("hackrf-sample-rate", () -> getTuner().getController().setSampleRate(sampleRate), "HackRF Tuner Controller - couldn't apply sample rate setting [" + sampleRate.getLabel() + "]");
                 }
             });
         }

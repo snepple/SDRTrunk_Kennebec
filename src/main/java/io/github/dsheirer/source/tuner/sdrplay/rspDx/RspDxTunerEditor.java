@@ -32,6 +32,7 @@ import io.github.dsheirer.source.tuner.sdrplay.api.parameter.tuner.RspDxAntenna;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javafx.scene.layout.GridPane;
 import javafx.scene.control.CheckBox;
 import io.github.dsheirer.gui.control.ToggleSwitch;
 import javafx.scene.control.Button;
@@ -70,50 +71,68 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new javafx.geometry.Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        freqGrid.add(new Label("Sample Rate:"), 0, 1);
+        freqGrid.add(getSampleRateCombo(), 1, 1);
+        getChildren().add(freqGrid);
 
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
-
-        getChildren().add(new Label("Gain:"));
-        getChildren().add(getGainPanel());
-        getChildren().add(new Label("LNA:"));
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
         Button lnaHelp = createHelpIcon("?");
         lnaHelp.setTooltip(new javafx.scene.control.Tooltip("<html><b>LNA Gain:</b> The power of the signal amplifier.<br>Increase this for distant signals, but lower it if you see a lot of static/noise.</html>"));
-        getChildren().add(lnaHelp);
-        getChildren().add(getLNASlider());
-        getChildren().add(new Label("IF:"));
-        getChildren().add(getIfGainSlider());
+        gainGrid.add(new Label("Gain:"), 0, 0);
+        gainGrid.add(getGainPanel(), 1, 0);
+        gainGrid.add(new Label("LNA:"), 0, 1);
+        gainGrid.add(lnaHelp, 1, 1);
+        gainGrid.add(getLNASlider(), 2, 1);
+        gainGrid.add(new Label("IF:"), 0, 2);
+        gainGrid.add(getIfGainSlider(), 1, 2);
+        getChildren().add(gainGrid);
 
         getChildren().add(new Separator());
 
-        getChildren().add(new Label());
-        getChildren().add(getAntennaCombo());
-        getChildren().add(new Label());
+        GridPane antennaGrid = new GridPane();
+        antennaGrid.setHgap(10);
+        antennaGrid.setVgap(4);
+        antennaGrid.add(new Label("Antenna:"), 0, 0);
+        antennaGrid.add(getAntennaCombo(), 1, 0);
+        getChildren().add(antennaGrid);
+
         getChildren().add(getBiasTCheckBox());
-        getChildren().add(new Label());
         getChildren().add(getRfDabNotchCheckBox());
-        getChildren().add(new Label());
         getChildren().add(getRfNotchCheckBox());
 
         getChildren().add(new Separator());
-        getChildren().add(new Label());
+
         getChildren().add(getHdrModeCheckBox());
-        getChildren().add(new Label("HDR Mode Bandwidth"));
-        getChildren().add(getHdrModeBandwidthCombo());
+
+        GridPane hdrGrid = new GridPane();
+        hdrGrid.setHgap(10);
+        hdrGrid.setVgap(4);
+        hdrGrid.add(new Label("HDR Mode Bandwidth:"), 0, 0);
+        hdrGrid.add(getHdrModeBandwidthCombo(), 1, 0);
+        getChildren().add(hdrGrid);
     }
 
     /**
@@ -298,15 +317,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mBiasTCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setBiasT(mBiasTCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSP2 Bias-T enabled to " + mBiasTCheckBox.isSelected(), se);
-                    }
+                    final boolean biasTOn = mBiasTCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspdx-bias-t",
+                            () -> getTunerController().getControlRsp().setBiasT(biasTOn),
+                            "Unable to set RSPdx Bias-T enabled to " + biasTOn);
                 }
             });
         }
@@ -326,15 +341,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mHdrModeCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setHighDynamicRange(mHdrModeCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPd HDR mode enabled to " + mHdrModeCheckBox.isSelected(), se);
-                    }
+                    final boolean hdrModeOn = mHdrModeCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspdx-hdr",
+                            () -> getTunerController().getControlRsp().setHighDynamicRange(hdrModeOn),
+                            "Unable to set RSPd HDR mode enabled to " + hdrModeOn);
                 }
             });
         }
@@ -354,15 +365,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mRfNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfNotch(mRfNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSP2 RF notch enabled to " + mRfNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfNotchOn = mRfNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspdx-rf-notch",
+                            () -> getTunerController().getControlRsp().setRfNotch(rfNotchOn),
+                            "Unable to set RSPdx RF notch enabled to " + rfNotchOn);
                 }
             });
         }
@@ -382,15 +389,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mRfDabNotchCheckBox.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        getTunerController().getControlRsp().setRfDabNotch(mRfDabNotchCheckBox.isSelected());
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Unable to set RSPdx RF DAB notch enabled to " + mRfDabNotchCheckBox.isSelected(), se);
-                    }
+                    final boolean rfDabNotchOn = mRfDabNotchCheckBox.isSelected();
+                    save();
+                    applyDeviceControl("rspdx-rf-dab-notch",
+                            () -> getTunerController().getControlRsp().setRfDabNotch(rfDabNotchOn),
+                            "Unable to set RSPdx RF DAB notch enabled to " + rfDabNotchOn);
                 }
             });
         }
@@ -410,17 +413,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mAntennaCombo.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    RspDxAntenna selected = (RspDxAntenna) mAntennaCombo.getValue();
-
-                    try
-                    {
-                        getTunerController().getControlRsp().setAntenna(selected);
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Error setting Antenna selection for RSPdx", se);
-                    }
+                    final RspDxAntenna selected = (RspDxAntenna) mAntennaCombo.getValue();
+                    save();
+                    applyDeviceControl("rspdx-antenna",
+                            () -> getTunerController().getControlRsp().setAntenna(selected),
+                            "Error setting Antenna selection for RSPdx");
                 }
             });
         }
@@ -440,17 +437,11 @@ public class RspDxTunerEditor extends RspTunerEditor<RspDxTunerConfiguration>
             mHdrModeBandwidthCombo.setOnAction(e -> {
                 if(hasTuner() && !isLoading())
                 {
-                    HdrModeBandwidth selected = (HdrModeBandwidth) mHdrModeBandwidthCombo.getValue();
-
-                    try
-                    {
-                        getTunerController().getControlRsp().setHdrModeBandwidth(selected);
-                        save();
-                    }
-                    catch(SDRPlayException se)
-                    {
-                        mLog.error("Error setting HDR mode bandwidth for RSPdx", se);
-                    }
+                    final HdrModeBandwidth selected = (HdrModeBandwidth) mHdrModeBandwidthCombo.getValue();
+                    save();
+                    applyDeviceControl("rspdx-hdr-bandwidth",
+                            () -> getTunerController().getControlRsp().setHdrModeBandwidth(selected),
+                            "Error setting HDR mode bandwidth for RSPdx");
                 }
             });
         }

@@ -148,39 +148,58 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
 
     private void init()
     {
-        // setLayout(new javafx.scene.layout.HBox(4));
+        setSpacing(8);
+        setPadding(new Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
 
         getChildren().add(new Separator());
-        getChildren().add(new Label("Frequency (MHz):"));
-        getChildren().add(getFrequencyPanel());
+
+        GridPane freqGrid = new GridPane();
+        freqGrid.setHgap(10);
+        freqGrid.setVgap(4);
+        freqGrid.add(new Label("Frequency (MHz):"), 0, 0);
+        freqGrid.add(getFrequencyPanel(), 1, 0);
+        getChildren().add(freqGrid);
 
         getChildren().add(new Separator());
         getChildren().add(new Label("Gain"));
-        getChildren().add(new Label("LNA:"));
-        getChildren().add(getLnaGainCombo());
-        getChildren().add(new Label("Enhance:"));
-        getChildren().add(getLnaEnhanceCombo());
-        getChildren().add(new Label("Mixer:"));
-        getChildren().add(getMixerGainCombo());
+
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("LNA:"), 0, 0);
+        gainGrid.add(getLnaGainCombo(), 1, 0);
+        gainGrid.add(new Label("Enhance:"), 0, 1);
+        gainGrid.add(getLnaEnhanceCombo(), 1, 1);
+        gainGrid.add(new Label("Mixer:"), 0, 2);
+        gainGrid.add(getMixerGainCombo(), 1, 2);
+        getChildren().add(gainGrid);
 
         getChildren().add(new Separator());
         getChildren().add(new Label("Correction"));
-        getChildren().add(new Label("DC Inphase:"));
-        getChildren().add(getDcCorrectionSpinnerI());
-        getChildren().add(new Label("DC Quadrature:"));
-        getChildren().add(getDcCorrectionSpinnerQ());
-        getChildren().add(new Label("Gain:"));
-        getChildren().add(getGainCorrectionSpinner());
-        getChildren().add(new Label("Phase:"));
-        getChildren().add(getPhaseCorrectionSpinner());
+
+        GridPane corrGrid = new GridPane();
+        corrGrid.setHgap(10);
+        corrGrid.setVgap(4);
+        corrGrid.add(new Label("DC Inphase:"), 0, 0);
+        corrGrid.add(getDcCorrectionSpinnerI(), 1, 0);
+        corrGrid.add(new Label("DC Quadrature:"), 0, 1);
+        corrGrid.add(getDcCorrectionSpinnerQ(), 1, 1);
+        corrGrid.add(new Label("Gain:"), 0, 2);
+        corrGrid.add(getGainCorrectionSpinner(), 1, 2);
+        corrGrid.add(new Label("Phase:"), 0, 3);
+        corrGrid.add(getPhaseCorrectionSpinner(), 1, 3);
+        getChildren().add(corrGrid);
     }
 
     public ComboBox getLnaGainCombo()
@@ -192,22 +211,14 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
             mLnaGainCombo.setTooltip(new javafx.scene.control.Tooltip("Adjust the low noise amplifier gain setting."));
             mLnaGainCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
                     LNAGain gain = (LNAGain) mLnaGainCombo.getValue();
-
-                    try
-                    {
-                        getController().setLNAGain(gain);
-                        save();
-                    }
-                    catch(Exception e)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("FCD Pro Tuner " +
-                                "Controller - error setting LNA gain [" + gain + "]")); alert.showAndWait(); });
-
-                        mLog.error("FuncubeDonglePro Controller - error setting gain [" + gain + "]", e);
-                    }
+                    save();
+                    applyDeviceControl("fcd1-lna-gain", () -> {
+                        try { getController().setLNAGain(gain); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "FuncubeDonglePro Controller - error setting LNA gain [" + gain + "]");
                 }
             });
         }
@@ -224,22 +235,14 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
             mLnaEnhanceCombo.setTooltip(new javafx.scene.control.Tooltip("Adjust the LNA enhance setting.  Default value is OFF"));
             mLnaEnhanceCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
                     LNAEnhance enhance = (LNAEnhance) mLnaEnhanceCombo.getValue();
-
-                    try
-                    {
-                        getController().setLNAEnhance(enhance);
-                        save();
-                    }
-                    catch(Exception e1)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("FCD Pro Tuner"
-                                + " error setting LNA enhance gain [" + enhance + "]")); alert.showAndWait(); });
-
-                        mLog.error("FCDPro - error setting LNA enhance  [" + enhance + "]", e1);
-                    }
+                    save();
+                    applyDeviceControl("fcd1-lna-enhance", () -> {
+                        try { getController().setLNAEnhance(enhance); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "FCDPro - error setting LNA enhance [" + enhance + "]");
                 }
             });
         }
@@ -256,22 +259,14 @@ public class FCD1TunerEditor extends TunerEditor<FCDTuner,FCD1TunerConfiguration
             mMixerGainCombo.setTooltip(new javafx.scene.control.Tooltip("Adjust mixer gain setting"));
             mMixerGainCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
                     MixerGain gain = (MixerGain) mMixerGainCombo.getValue();
-
-                    try
-                    {
-                        getController().setMixerGain(gain);
-                        save();
-                    }
-                    catch(Exception e1)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("FCDPro - error setting"
-                                + " mixer gain [" + gain + "]")); alert.showAndWait(); });
-
-                        mLog.error("FCDPro - error setting mixer gain [" + gain + "]", e1);
-                    }
+                    save();
+                    applyDeviceControl("fcd1-mixer-gain", () -> {
+                        try { getController().setMixerGain(gain); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "FCDPro - error setting mixer gain [" + gain + "]");
                 }
             });
         }

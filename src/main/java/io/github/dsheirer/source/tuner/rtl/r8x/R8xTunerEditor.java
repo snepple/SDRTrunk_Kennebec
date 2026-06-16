@@ -129,41 +129,52 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
 
     private void init()
     {
-        
+        setSpacing(8);
+        setPadding(new javafx.geometry.Insets(10));
 
-        getChildren().add(new Label("Tuner:"));
-        getChildren().add(getTunerIdLabel());
-
-        getChildren().add(new Label("Status:"));
-        getChildren().add(getTunerStatusLabel());
-
-        getChildren().add(new Label("Bias-T:"));
-        getChildren().add(getBiasTButton());
+        // Tuner info grid
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(10);
+        infoGrid.setVgap(4);
+        infoGrid.add(new Label("Tuner:"), 0, 0);
+        infoGrid.add(getTunerIdLabel(), 1, 0);
+        infoGrid.add(new Label("Status:"), 0, 1);
+        infoGrid.add(getTunerStatusLabel(), 1, 1);
+        infoGrid.add(new Label("Bias-T:"), 0, 2);
+        infoGrid.add(getBiasTButton(), 1, 2);
+        getChildren().add(infoGrid);
 
         getChildren().add(getButtonPanel());
-
         getChildren().add(new Separator());
 
-        getChildren().add(new Label("Frequency (MHz):"));
+        // Frequency section
+        HBox freqLabelRow = new HBox(new Label("Frequency (MHz):"));
+        freqLabelRow.setAlignment(Pos.CENTER_LEFT);
+        getChildren().add(freqLabelRow);
         getChildren().add(getFrequencyPanel());
 
-        getChildren().add(new Label("Sample Rate:"));
-        getChildren().add(getSampleRateCombo());
+        // Sample rate row
+        HBox sampleRateRow = new HBox(10);
+        sampleRateRow.setAlignment(Pos.CENTER_LEFT);
+        sampleRateRow.getChildren().addAll(new Label("Sample Rate:"), getSampleRateCombo());
+        getChildren().add(sampleRateRow);
 
         getChildren().add(new Separator());
 
-        VBox gainPanel = new VBox(new javafx.scene.layout.HBox(4));
-        gainPanel.getChildren().add(new Label("Master:"));
-        gainPanel.getChildren().add(getMasterGainCombo());
-        gainPanel.getChildren().add(new Label("Mixer:"));
-        gainPanel.getChildren().add(getMixerGainCombo());
-        gainPanel.getChildren().add(new Label("LNA:"));
-        gainPanel.getChildren().add(getLNAGainCombo());
-        gainPanel.getChildren().add(new Label("VGA:"));
-        gainPanel.getChildren().add(getVGAGainCombo());
-
-        getChildren().add(new Label("Gain:"));
-        getChildren().add(gainPanel);
+        // Gain section as a grid
+        Label gainLabel = new Label("Gain:");
+        GridPane gainGrid = new GridPane();
+        gainGrid.setHgap(10);
+        gainGrid.setVgap(4);
+        gainGrid.add(new Label("Master:"), 0, 0);
+        gainGrid.add(getMasterGainCombo(), 1, 0);
+        gainGrid.add(new Label("Mixer:"), 0, 1);
+        gainGrid.add(getMixerGainCombo(), 1, 1);
+        gainGrid.add(new Label("LNA:"), 0, 2);
+        gainGrid.add(getLNAGainCombo(), 1, 2);
+        gainGrid.add(new Label("VGA:"), 0, 3);
+        gainGrid.add(getVGAGainCombo(), 1, 3);
+        getChildren().addAll(gainLabel, gainGrid);
     }
 
     @Override
@@ -250,10 +261,12 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
             mBiasTButton = new ToggleButton("Bias-T");
             mBiasTButton.setDisable(!(false));
             mBiasTButton.setOnAction(e -> {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    getTuner().getController().setBiasT(mBiasTButton.isSelected());
+                    boolean biasT = mBiasTButton.isSelected();
                     save();
+                    applyDeviceControl("r8x-bias-t", () -> getTuner().getController().setBiasT(biasT),
+                            getLogPrefix() + "couldn't set Bias-T");
                }
             });
         }
@@ -269,7 +282,7 @@ private ComboBox getVGAGainCombo()
             mVGAGainCombo.setDisable(!(false));
             mVGAGainCombo.setOnAction(arg0 ->
             {
-                try
+                if(hasTuner() && !isLoading())
                 {
                     R8xEmbeddedTuner.VGAGain vgaGain = (R8xEmbeddedTuner.VGAGain) mVGAGainCombo.getValue();
 
@@ -278,18 +291,18 @@ private ComboBox getVGAGainCombo()
                         vgaGain = DEFAULT_GAIN.getVGAGain();
                     }
 
-                    if(!mVGAGainCombo.isDisabled())
-                    {
-                        getEmbeddedTuner().setVGAGain(vgaGain, true);
-                    }
+                    final R8xEmbeddedTuner.VGAGain finalVgaGain = vgaGain;
+                    final boolean apply = !mVGAGainCombo.isDisabled();
 
                     save();
-                }
-                catch(UsbException e)
-                {
-                    Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() +
-                            "couldn't apply the VGA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
-                    mLog.error(getLogPrefix() + "couldn't apply VGA gain setting", e);
+
+                    if(apply)
+                    {
+                        applyDeviceControl("r8x-vga-gain", () -> {
+                            try { getEmbeddedTuner().setVGAGain(finalVgaGain, true); }
+                            catch(Exception ex) { throw new RuntimeException(ex); }
+                        }, getLogPrefix() + "couldn't apply VGA gain setting");
+                    }
                 }
             });
             mVGAGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>VGA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>"));
@@ -306,7 +319,7 @@ private ComboBox getVGAGainCombo()
             mLNAGainCombo.setDisable(!(false));
             mLNAGainCombo.setOnAction(arg0 ->
             {
-                try
+                if(hasTuner() && !isLoading())
                 {
                     R8xEmbeddedTuner.LNAGain lnaGain = (R8xEmbeddedTuner.LNAGain) mLNAGainCombo.getValue();
 
@@ -315,18 +328,18 @@ private ComboBox getVGAGainCombo()
                         lnaGain = DEFAULT_GAIN.getLNAGain();
                     }
 
-                    if(!mLNAGainCombo.isDisabled())
-                    {
-                        getEmbeddedTuner().setLNAGain(lnaGain, true);
-                    }
+                    final R8xEmbeddedTuner.LNAGain finalLnaGain = lnaGain;
+                    final boolean apply = !mLNAGainCombo.isDisabled();
 
                     save();
-                }
-                catch(UsbException e)
-                {
-                    Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() +
-                            "couldn't apply the LNA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
-                    mLog.error(getLogPrefix() + "couldn't apply LNA " + "gain setting - ", e);
+
+                    if(apply)
+                    {
+                        applyDeviceControl("r8x-lna-gain", () -> {
+                            try { getEmbeddedTuner().setLNAGain(finalLnaGain, true); }
+                            catch(Exception ex) { throw new RuntimeException(ex); }
+                        }, getLogPrefix() + "couldn't apply LNA gain setting");
+                    }
                 }
             });
             mLNAGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>LNA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>"));
@@ -343,25 +356,16 @@ private ComboBox getVGAGainCombo()
             mSampleRateCombo.setDisable(!(false));
             mSampleRateCombo.setOnAction(e ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
                     SampleRate sampleRate = (SampleRate) mSampleRateCombo.getValue();
-
-                    try
-                    {
-                        getTuner().getController().setSampleRate(sampleRate);
-                        //Adjust the min/max values for the sample rate.
-                        adjustForSampleRate(sampleRate.getRate());
-                        save();
-                    }
-                    catch(SourceException | LibUsbException eSampleRate)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() + "couldn't apply the sample rate setting [" +
-                                        sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage())); alert.showAndWait(); });
-
-                        mLog.error(getLogPrefix() + "couldn't apply sample rate setting [" + sampleRate.getLabel() +
-                                "]", eSampleRate);
-                    }
+                    //Adjust the min/max values for the sample rate.
+                    adjustForSampleRate(sampleRate.getRate());
+                    save();
+                    applyDeviceControl("r8x-sample-rate", () -> {
+                        try { getTuner().getController().setSampleRate(sampleRate); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, getLogPrefix() + "couldn't apply sample rate setting [" + sampleRate.getLabel() + "]");
                 }
             });
         }
@@ -377,30 +381,26 @@ private ComboBox getVGAGainCombo()
             mMixerGainCombo.setDisable(!(false));
             mMixerGainCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
+                    R8xEmbeddedTuner.MixerGain mixerGain = (R8xEmbeddedTuner.MixerGain) mMixerGainCombo.getValue();
+
+                    if(mixerGain == null)
                     {
-                        R8xEmbeddedTuner.MixerGain mixerGain = (R8xEmbeddedTuner.MixerGain) mMixerGainCombo.getValue();
-
-                        if(mixerGain == null)
-                        {
-                            mixerGain = DEFAULT_GAIN.getMixerGain();
-                        }
-
-                        if(!mMixerGainCombo.isDisabled())
-                        {
-                            getEmbeddedTuner().setMixerGain(mixerGain, true);
-                        }
-
-                        save();
+                        mixerGain = DEFAULT_GAIN.getMixerGain();
                     }
-                    catch(UsbException e)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() +
-                                "couldn't apply the mixer gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
 
-                        mLog.error(getLogPrefix() + "couldn't apply mixer gain setting - ", e);
+                    final R8xEmbeddedTuner.MixerGain finalMixerGain = mixerGain;
+                    final boolean apply = !mMixerGainCombo.isDisabled();
+
+                    save();
+
+                    if(apply)
+                    {
+                        applyDeviceControl("r8x-mixer-gain", () -> {
+                            try { getEmbeddedTuner().setMixerGain(finalMixerGain, true); }
+                            catch(Exception ex) { throw new RuntimeException(ex); }
+                        }, getLogPrefix() + "couldn't apply mixer gain setting");
                     }
                 }
             });
@@ -418,44 +418,38 @@ private ComboBox getVGAGainCombo()
             mMasterGainCombo.setDisable(!(false));
             mMasterGainCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
+                    R8xEmbeddedTuner.MasterGain gain = (R8xEmbeddedTuner.MasterGain)getMasterGainCombo().getValue();
+
+                    if(gain == R8xEmbeddedTuner.MasterGain.MANUAL)
                     {
-                        R8xEmbeddedTuner.MasterGain gain = (R8xEmbeddedTuner.MasterGain)getMasterGainCombo().getValue();
-                        getEmbeddedTuner().setGain((R8xEmbeddedTuner.MasterGain)getMasterGainCombo().getValue(), true);
+                        getMixerGainCombo().setValue(gain.getMixerGain());
+                        getMixerGainCombo().setDisable(!(true));
 
-                        if(gain == R8xEmbeddedTuner.MasterGain.MANUAL)
-                        {
-                            getMixerGainCombo().setValue(gain.getMixerGain());
-                            getMixerGainCombo().setDisable(!(true));
+                        getLNAGainCombo().setValue(gain.getLNAGain());
+                        getLNAGainCombo().setDisable(!(true));
 
-                            getLNAGainCombo().setValue(gain.getLNAGain());
-                            getLNAGainCombo().setDisable(!(true));
-
-                            getVGAGainCombo().setValue(gain.getVGAGain());
-                            getVGAGainCombo().setDisable(!(true));
-                        }
-                        else
-                        {
-                            getMixerGainCombo().setDisable(!(false));
-                            getMixerGainCombo().setValue(gain.getMixerGain());
-
-                            getLNAGainCombo().setDisable(!(false));
-                            getLNAGainCombo().setValue(gain.getLNAGain());
-
-                            getVGAGainCombo().setDisable(!(false));
-                            getVGAGainCombo().setValue(gain.getVGAGain());
-                        }
-
-                        save();
+                        getVGAGainCombo().setValue(gain.getVGAGain());
+                        getVGAGainCombo().setDisable(!(true));
                     }
-                    catch(UsbException e)
+                    else
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(getLogPrefix() +
-                                "couldn't apply the gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
-                        mLog.error(getLogPrefix() + "couldn't apply gain setting - ", e);
+                        getMixerGainCombo().setDisable(!(false));
+                        getMixerGainCombo().setValue(gain.getMixerGain());
+
+                        getLNAGainCombo().setDisable(!(false));
+                        getLNAGainCombo().setValue(gain.getLNAGain());
+
+                        getVGAGainCombo().setDisable(!(false));
+                        getVGAGainCombo().setValue(gain.getVGAGain());
                     }
+
+                    save();
+                    applyDeviceControl("r8x-master-gain", () -> {
+                        try { getEmbeddedTuner().setGain(gain, true); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, getLogPrefix() + "couldn't apply gain setting");
                 }
             });
             mMasterGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>Select <b>AUTOMATIC</b> for auto gain, <b>MANUAL</b> to enable<br> " +

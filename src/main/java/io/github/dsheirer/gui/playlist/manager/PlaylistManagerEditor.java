@@ -279,29 +279,36 @@ public class PlaylistManagerEditor extends BorderPane
                 alert.showAndWait().ifPresent(buttonType -> {
                     if(buttonType == ButtonType.YES)
                     {
-                        boolean error = false;
+                        //Start channels on a background thread - channel startup acquires tuner sources and
+                        //builds processing chains, which freezes the UI if looped over on the FX thread.
+                        final java.util.List<Channel> channels = new java.util.ArrayList<>(autoStartChannels);
+                        io.github.dsheirer.util.ThreadPool.CACHED.execute(() -> {
+                            boolean error = false;
 
-                        for(Channel channel: autoStartChannels)
-                        {
-                            try
+                            for(Channel channel: channels)
                             {
-                                mPlaylistManager.getChannelProcessingManager().start(channel);
+                                try
+                                {
+                                    mPlaylistManager.getChannelProcessingManager().start(channel);
+                                }
+                                catch(Throwable ce)
+                                {
+                                    error = true;
+                                }
                             }
-                            catch(ChannelException ce)
-                            {
-                                error = true;
-                            }
-                        }
 
-                        if(error)
-                        {
-                            Alert errorAlert = new Alert(Alert.AlertType.ERROR,
-                                    "Unable to start some or all of the auto-start channels",
-                                    ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(errorAlert.getDialogPane());
-                            errorAlert.setTitle("Channel Auto-Start Error(s)");
-                            errorAlert.setHeaderText("Auto-Start Error");
-                            errorAlert.showAndWait();
-                        }
+                            if(error)
+                            {
+                                javafx.application.Platform.runLater(() -> {
+                                    Alert errorAlert = new Alert(Alert.AlertType.ERROR,
+                                            "Unable to start some or all of the auto-start channels",
+                                            ButtonType.OK); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(errorAlert.getDialogPane());
+                                    errorAlert.setTitle("Channel Auto-Start Error(s)");
+                                    errorAlert.setHeaderText("Auto-Start Error");
+                                    errorAlert.showAndWait();
+                                });
+                            }
+                        });
                     }
                 });
             }

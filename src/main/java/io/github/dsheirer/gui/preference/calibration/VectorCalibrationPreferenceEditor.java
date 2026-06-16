@@ -171,8 +171,11 @@ public class VectorCalibrationPreferenceEditor extends VBox
     {
         if(mResetAllButton == null)
         {
-            mResetAllButton = new Button("Reset All Calibrations");
-            mResetAllButton.setTooltip(new Tooltip("Reset all calibrations to an Uncalibrated state"));
+            mResetAllButton = new Button("_Reset All Calibrations");
+            mResetAllButton.setMnemonicParsing(true);
+            mResetAllButton.accessibleTextProperty().set("Reset All Calibrations");
+            mResetAllButton.accessibleHelpProperty().set("Reset all calibrations to an Uncalibrated state. This action cannot be undone.");
+            mResetAllButton.setTooltip(new Tooltip("Reset all calibrations to an Uncalibrated state. This action cannot be undone."));
             mResetAllButton.setOnAction(event ->
             {
                 CalibrationManager.getInstance().reset();
@@ -187,7 +190,10 @@ public class VectorCalibrationPreferenceEditor extends VBox
     {
         if(mCalibrateButton == null)
         {
-            mCalibrateButton = new Button("Calibrate");
+            mCalibrateButton = new Button("_Calibrate");
+            mCalibrateButton.setMnemonicParsing(true);
+            mCalibrateButton.accessibleTextProperty().set("Calibrate");
+            mCalibrateButton.accessibleHelpProperty().set("Calibrate the items that need calibrated.");
             mCalibrateButton.setTooltip(new Tooltip("Calibrate the items that need calibrated"));
             mCalibrateButton.setOnAction(event ->
             {

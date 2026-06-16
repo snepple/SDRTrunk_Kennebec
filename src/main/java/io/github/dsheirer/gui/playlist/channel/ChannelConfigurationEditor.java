@@ -1256,15 +1256,20 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
                     if(result.get() == ButtonType.YES)
                     {
-                        try
-                        {
-                            mPlaylistManager.getChannelProcessingManager().stop(getItem());
-                            mPlaylistManager.getChannelProcessingManager().start(getItem());
-                        }
-                        catch(ChannelException se)
-                        {
-                            mLog.error("Error restarting channel", se);
-                        }
+                        //Restart on a background thread - channel stop/start rebuilds the processing chain
+                        //and must not run on the FX thread or the UI freezes during the restart.
+                        final Channel restartChannel = getItem();
+                        ThreadPool.CACHED.execute(() -> {
+                            try
+                            {
+                                mPlaylistManager.getChannelProcessingManager().stop(restartChannel);
+                                mPlaylistManager.getChannelProcessingManager().start(restartChannel);
+                            }
+                            catch(ChannelException se)
+                            {
+                                mLog.error("Error restarting channel", se);
+                            }
+                        });
                     }
                 }
             });

@@ -303,17 +303,40 @@ public class LoginDialog extends Dialog<AuthorizationInformation>
                         return;
                     }
 
-                    Platform.runLater(new Runnable()
+                    //Run the blocking RadioReference web-service call on a background thread so the
+                    //JavaFX Application Thread is not frozen during the network round-trip; then
+                    //marshal all UI updates back onto the FX thread using the prefetched result.
+                    io.github.dsheirer.util.ThreadPool.CACHED.submit(() ->
                     {
-                        @Override
-                        public void run()
+                        RadioReference.LoginStatus prefetchedStatus = null;
+                        RadioReferenceException prefetchedError = null;
+                        try
                         {
-                            boolean success = false;
-                            RadioReference.LoginStatus loginStatus;
+                            prefetchedStatus = RadioReference.testConnectionWithExp(userName, password);
+                        }
+                        catch(RadioReferenceException rreBackground)
+                        {
+                            prefetchedError = rreBackground;
+                        }
 
-                            try
+                        final RadioReference.LoginStatus bgStatus = prefetchedStatus;
+                        final RadioReferenceException bgError = prefetchedError;
+
+                        Platform.runLater(new Runnable()
+                        {
+                            @Override
+                            public void run()
                             {
-                                loginStatus = RadioReference.testConnectionWithExp(userName, password);
+                                boolean success = false;
+                                RadioReference.LoginStatus loginStatus;
+
+                                try
+                                {
+                                    if(bgError != null)
+                                    {
+                                        throw bgError;
+                                    }
+                                    loginStatus = bgStatus;
 
                                 if(loginStatus == RadioReference.LoginStatus.VALID_PREMIUM)
                                 {
@@ -391,8 +414,9 @@ public class LoginDialog extends Dialog<AuthorizationInformation>
                             }
 
 
-                            getTestConnectionButton().setDisable(false);
-                        }
+                                getTestConnectionButton().setDisable(false);
+                            }
+                        });
                     });
                 }
             });

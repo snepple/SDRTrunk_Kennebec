@@ -106,17 +106,19 @@ if not exist "%VOLK_BASE%\volk\volk.h" (
 :: STEP 3 & 4: Workspace Cleanup & Clone/Update Repository
 :: ============================================================================
 call :drawProgressBar 10 "Updating Kennebec Fork..."
-:: Kill SDRTrunk if it's running in the background to prevent file lock errors during clean
-wmic process where "name='java.exe' and CommandLine like '%SDRTrunkLauncher%'" call terminate >nul 2>&1
-wmic process where "name='javaw.exe' and CommandLine like '%SDRTrunkLauncher%'" call terminate >nul 2>&1
+:: Kill SDRTrunk window if open
 taskkill /F /FI "WINDOWTITLE eq SDRTrunk*" /T >nul 2>&1
 
-:: OPTIMIZATION: Stop Gradle daemon instead of killing all java processes
+:: Gracefully stop Gradle daemon first
 if exist "%FOLDER_NAME%\gradlew.bat" (
     cd /d "%ROOT_DIR%\%FOLDER_NAME%"
     call gradlew.bat --stop >nul 2>&1
     cd /d "%ROOT_DIR%"
 )
+
+:: Aggressively kill any remaining Java processes to ensure no file locks interfere with compilation
+taskkill /F /IM java.exe /T >nul 2>&1
+taskkill /F /IM javaw.exe /T >nul 2>&1
 
 :: OPTIMIZATION: Fetch and reset instead of re-cloning to save time & keep Gradle cache
 if not exist "%FOLDER_NAME%" (
@@ -331,6 +333,7 @@ if !ASSET_COUNT! GTR 0 (
     >> "!RELEASE_DIR!\release_notes.md" echo ### Installation
     >> "!RELEASE_DIR!\release_notes.md" echo.
     >> "!RELEASE_DIR!\release_notes.md" echo - **Windows Installer**: Download the .exe installer and double-click to install.
+    >> "!RELEASE_DIR!\release_notes.md" echo   - ^> **Note**: Because this is an open-source project without a paid code signing certificate, Windows SmartScreen may show an "Unknown Publisher" warning. To proceed, click **"More info"**, then click **"Run anyway"**.
     >> "!RELEASE_DIR!\release_notes.md" echo - **Portable Zip**: Extract the zip and run `bin\sdr-trunk.bat` ^(Windows^) or `bin/sdr-trunk` ^(Linux/macOS^).
     >> "!RELEASE_DIR!\release_notes.md" echo - **Windows Portable**: You can also launch via `SDRTrunk.exe` in the extracted folder.
     >> "!RELEASE_DIR!\release_notes.md" echo.
