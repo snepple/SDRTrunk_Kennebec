@@ -329,10 +329,13 @@ public class LogsViewController {
         actionCol.setMinWidth(150);
         actionCol.setCellFactory(param -> new TableCell<>() {
             private final Button analyzeBtn = new Button("AI Review");
-            private final Button openBtn = new Button("Open");
+            private final Button openBtn = new Button("O_pen");
             private final HBox container = new HBox(5, openBtn, analyzeBtn);
 
             {
+                openBtn.setMnemonicParsing(true);
+                openBtn.accessibleTextProperty().set("Open Log");
+                openBtn.accessibleHelpProperty().set("Opens the log file in the system default text editor.");
                 analyzeBtn.getStyleClass().add("kennebec-primary-button");
                 analyzeBtn.setOnAction(event -> {
                     LogFile logFile = getTableView().getItems().get(getIndex());
