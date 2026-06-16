@@ -1,0 +1,7 @@
+.config-panel {
+    -fx-background-color: transparent;
+}
+.config-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #333333;
+}
