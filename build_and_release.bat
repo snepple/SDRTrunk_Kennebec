@@ -131,21 +131,16 @@ if not exist "%FOLDER_NAME%" (
 ) else (
     cd /d "%ROOT_DIR%\%FOLDER_NAME%"
     git fetch origin master >nul 2>&1
-    
+
+    :: Sync the build workspace to origin/master when it is behind. Use 'git reset --hard', which
+    :: advances HEAD - the previous code only 'git checkout'-ed the build script into the working tree
+    :: without moving HEAD, so the 'git diff HEAD origin/master' check below stayed dirty forever and
+    :: the script restarted itself in an endless close/reopen loop. No restart is needed: the running
+    :: script is the outer copy (%~f0), not this clone, so resetting the clone cannot corrupt execution.
     git diff --quiet HEAD origin/master
     if errorlevel 1 (
-        :: Check if the build script itself will be updated
-        git diff --quiet HEAD origin/master -- build_and_release.bat
-        if errorlevel 1 (
-            echo [INFO] Build script update detected. Restarting...
-            git checkout origin/master -- build_and_release.bat >nul 2>&1
-            start cmd /c "%~f0"
-            exit
-        )
+        echo [INFO] Updates found on origin/master - syncing the build workspace...
         git reset --hard origin/master >nul 2>&1
-        echo [INFO] Repository updated. Restarting script to prevent execution corruption...
-        start cmd /c "%~f0"
-        exit
     )
     cd /d "%ROOT_DIR%"
 )
