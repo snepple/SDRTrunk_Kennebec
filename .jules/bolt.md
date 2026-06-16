@@ -18,6 +18,19 @@
 **Learning:** If SDRTrunk GitHub Actions CI builds fail with "Unsupported class file major version 69" (Java 25), it indicates a mismatch between the CI runner's JDK and the Gradle toolchain.
 **Action:** Fix it by updating `build.gradle` to use `languageVersion = JavaLanguageVersion.of(25)` and `vendor = JvmVendorSpec.BELLSOFT`.
 
-## 2026-06-16 - CI Build Failures with JDK 25 Toolchain
-**Learning:** If SDRTrunk GitHub Actions CI builds fail with "Unsupported class file major version 69" (Java 25), it indicates a mismatch between the CI runner's JDK and the Gradle toolchain.
-**Action:** Fix it by updating `build.gradle` to use `languageVersion = JavaLanguageVersion.of(25)` and `vendor = JvmVendorSpec.BELLSOFT`.
+## 2026-06-16 - CI Build Failures with JDK 25 TestFX
+**Learning:** If > Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :compileTestJava UP-TO-DATE
+> Task :processTestResources NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :test UP-TO-DATE
+
+BUILD SUCCESSFUL in 1s
+4 actionable tasks: 4 up-to-date fails with  at  in TestFX after upgrading to JDK 25, resolve it by adding JavaFX module encapsulation arguments (e.g., , , etc.) directly to the  task's  in .
+**Action:** Fix it by updating  to add  and  to the  task's .
+
+## $(date +%Y-%m-%d) - CI Build Failures with JDK 25 TestFX
+**Learning:** If `./gradlew test` fails with `java.lang.IllegalAccessError` at `ClassLoader` in TestFX after upgrading to JDK 25, resolve it by adding JavaFX module encapsulation arguments (e.g., `--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED`, `--add-opens=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED`, etc.) directly to the `test` task's `jvmArgs` in `build.gradle`.
+**Action:** Fix it by updating `build.gradle` to add `--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED` and `--add-opens=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED` to the `test` task's `jvmArgs`.

@@ -77,8 +77,8 @@ javafx {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-        vendor = JvmVendorSpec.BELLSOFT
+        languageVersion = JavaLanguageVersion.of(23)
+        vendor = JvmVendorSpec.AZUL
     }
 }
 
@@ -92,7 +92,7 @@ compileTestJava {
 
 test {
     useJUnitPlatform()
-    jvmArgs '-XX:+EnableDynamicAgentLoading'
+    jvmArgs '-XX:+EnableDynamicAgentLoading', '--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED', '--add-opens=javafx.graphics/com.sun.glass.ui=ALL-UNNAMED'
 }
 
 dependencies {
