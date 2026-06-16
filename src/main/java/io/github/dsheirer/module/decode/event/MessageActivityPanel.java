@@ -59,6 +59,8 @@ public class MessageActivityPanel extends javafx.scene.layout.VBox implements Li
     public MessageActivityPanel(UserPreferences userPreferences)
     {
         mUserPreferences = userPreferences;
+        mMessageModel.setHistorySize(mUserPreferences.getNowPlayingPreference().getMessageHistorySize());
+        mTable.getStyleClass().add("preferences-table");
         
         javafx.scene.control.Label placeholderLabel = new javafx.scene.control.Label("No messages — messages will appear when a channel is active");
         javafx.scene.layout.VBox placeholderContainer = new javafx.scene.layout.VBox(placeholderLabel);

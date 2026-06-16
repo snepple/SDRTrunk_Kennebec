@@ -249,10 +249,12 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
             mBiasTButton = new ToggleButton("Bias-T");
             mBiasTButton.setDisable(!(false));
             mBiasTButton.setOnAction(e -> {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    getTuner().getController().setBiasT(mBiasTButton.isSelected());
+                    boolean biasT = mBiasTButton.isSelected();
                     save();
+                    applyDeviceControl("e4k-bias-t", () -> getTuner().getController().setBiasT(biasT),
+                            "E4000 Tuner Controller - couldn't set Bias-T");
                 }
             });
         }
@@ -270,20 +272,12 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
                 @Override
                 public void handle(ActionEvent e)
                 {
-                    if(!isLoading())
+                    if(hasTuner() && !isLoading())
                     {
-                        try
-                        {
-                            E4KEmbeddedTuner.IFGain selected = (E4KEmbeddedTuner.IFGain) getIfGainCombo().getValue();
-                            getEmbeddedTuner().setIFGain(selected, true);
-                            save();
-                        }
-                        catch(LibUsbException lue)
-                        {
-                            Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("E4000 Tuner Controller - "
-                                    + "couldn't apply the IF setting - " + lue.getLocalizedMessage())); alert.showAndWait(); });
-                            mLog.error("E4000 Tuner Controller - couldn't apply IF gain setting", e);
-                        }
+                        E4KEmbeddedTuner.IFGain selected = (E4KEmbeddedTuner.IFGain) getIfGainCombo().getValue();
+                        save();
+                        applyDeviceControl("e4k-if-gain", () -> getEmbeddedTuner().setIFGain(selected, true),
+                                "E4000 Tuner Controller - couldn't apply IF gain setting");
                     }
                 }
             });
@@ -301,20 +295,14 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
             mLNAGainCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(E4KLNAGain.values())))));
             mLNAGainCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        E4KLNAGain lnaGain = (E4KLNAGain) mLNAGainCombo.getValue();
-                        getEmbeddedTuner().setLNAGain(lnaGain, true);
-                        save();
-                    }
-                    catch(UsbException e)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("E4000 Tuner Controller - "
-                                + "couldn't apply the LNA gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
-                        mLog.error("E4000 Tuner Controller - couldn't apply LNA gain setting - ", e);
-                    }
+                    E4KLNAGain lnaGain = (E4KLNAGain) mLNAGainCombo.getValue();
+                    save();
+                    applyDeviceControl("e4k-lna-gain", () -> {
+                        try { getEmbeddedTuner().setLNAGain(lnaGain, true); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "E4000 Tuner Controller - couldn't apply LNA gain setting");
                 }
             });
             mLNAGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>LNA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>"));
@@ -331,20 +319,14 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
             mMixerGainCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(javafx.collections.FXCollections.observableArrayList(E4KMixerGain.values())))));
             mMixerGainCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        E4KMixerGain mixerGain = (E4KMixerGain) mMixerGainCombo.getValue();
-                        getEmbeddedTuner().setMixerGain(mixerGain, true);
-                        save();
-                    }
-                    catch(UsbException e)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("E4000 Tuner Controller - "
-                                + "couldn't apply the mixer gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
-                        mLog.error("E4000 Tuner Controller - couldn't apply mixer gain setting", e);
-                    }
+                    E4KMixerGain mixerGain = (E4KMixerGain) mMixerGainCombo.getValue();
+                    save();
+                    applyDeviceControl("e4k-mixer-gain", () -> {
+                        try { getEmbeddedTuner().setMixerGain(mixerGain, true); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "E4000 Tuner Controller - couldn't apply mixer gain setting");
                 }
             });
             mMixerGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>Mixer Gain.  Set master gain to <b>MASTER</b> to enable adjustment</html>"));
@@ -362,35 +344,30 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
             mMasterGainCombo.setDisable(!(false));
             mMasterGainCombo.setOnAction(arg0 ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
-                    try
-                    {
-                        E4KGain gain = (E4KGain) mMasterGainCombo.getValue();
-                        getEmbeddedTuner().setGain((E4KGain) mMasterGainCombo.getValue(), true);
-                        if(gain == E4KGain.MANUAL)
-                        {
-                            getMixerGainCombo().setValue(getEmbeddedTuner().getMixerGain(true));
-                            getMixerGainCombo().setDisable(!(true));
-                            getLNAGainCombo().setValue(getEmbeddedTuner().getLNAGain(true));
-                            getLNAGainCombo().setDisable(!(true));
-                        }
-                        else
-                        {
-                            getMixerGainCombo().setDisable(!(false));
-                            getMixerGainCombo().setValue(gain.getMixerGain());
-                            getLNAGainCombo().setDisable(!(false));
-                            getLNAGainCombo().setValue(gain.getLNAGain());
-                        }
+                    E4KGain gain = (E4KGain) mMasterGainCombo.getValue();
 
-                        save();
-                    }
-                    catch(UsbException e)
+                    if(gain == E4KGain.MANUAL)
                     {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("E4000 Tuner Controller - "
-                                + "couldn't apply the gain setting - " + e.getLocalizedMessage())); alert.showAndWait(); });
-                        mLog.error("E4000 Tuner Controller - couldn't apply gain setting", e);
+                        getMixerGainCombo().setValue(getEmbeddedTuner().getMixerGain(true));
+                        getMixerGainCombo().setDisable(!(true));
+                        getLNAGainCombo().setValue(getEmbeddedTuner().getLNAGain(true));
+                        getLNAGainCombo().setDisable(!(true));
                     }
+                    else
+                    {
+                        getMixerGainCombo().setDisable(!(false));
+                        getMixerGainCombo().setValue(gain.getMixerGain());
+                        getLNAGainCombo().setDisable(!(false));
+                        getLNAGainCombo().setValue(gain.getLNAGain());
+                    }
+
+                    save();
+                    applyDeviceControl("e4k-master-gain", () -> {
+                        try { getEmbeddedTuner().setGain(gain, true); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "E4000 Tuner Controller - couldn't apply gain setting");
                 }
             });
 
@@ -410,25 +387,16 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
             mSampleRateCombo.setDisable(!(false));
             mSampleRateCombo.setOnAction(e ->
             {
-                if(!isLoading())
+                if(hasTuner() && !isLoading())
                 {
                     SampleRate sampleRate = (SampleRate) mSampleRateCombo.getValue();
-
-                    try
-                    {
-                        getTuner().getController().setSampleRate(sampleRate);
-                        //Adjust the min/max values for the sample rate.
-                        adjustForSampleRate(sampleRate.getRate());
-                        save();
-                    }
-                    catch(SourceException | LibUsbException eSampleRate)
-                    {
-                        Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf("E4000 Tuner Controller - couldn't apply the sample rate setting [" +
-                                        sampleRate.getLabel() + "] " + eSampleRate.getLocalizedMessage())); alert.showAndWait(); });
-
-                        mLog.error("E4000 Tuner Controller - couldn't apply sample rate setting [" +
-                                sampleRate.getLabel() + "]", eSampleRate);
-                    }
+                    //Adjust the min/max values for the sample rate.
+                    adjustForSampleRate(sampleRate.getRate());
+                    save();
+                    applyDeviceControl("e4k-sample-rate", () -> {
+                        try { getTuner().getController().setSampleRate(sampleRate); }
+                        catch(Exception ex) { throw new RuntimeException(ex); }
+                    }, "E4000 Tuner Controller - couldn't apply sample rate setting [" + sampleRate.getLabel() + "]");
                 }
             });
         }

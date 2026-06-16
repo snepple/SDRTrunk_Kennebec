@@ -655,7 +655,39 @@ public class StreamingEditor extends SplitPane
             nameColumn.setId("name");
             nameColumn.setPrefWidth(300);
             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-            nameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+            nameColumn.setCellFactory(column -> new TextFieldTableCell<ConfiguredBroadcast, String>(new javafx.util.converter.DefaultStringConverter()) {
+                @Override
+                public void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setGraphic(null);
+                        setText(null);
+                    } else {
+                        if (!isEditing()) {
+                            setText(item);
+                            ConfiguredBroadcast broadcast = getTableRow() != null ? getTableRow().getItem() : null;
+                            if (broadcast != null && broadcast.getBroadcastServerType() != null && broadcast.getBroadcastServerType().getIconPath() != null) {
+                                io.github.dsheirer.icon.Icon icon = new io.github.dsheirer.icon.Icon("empty", broadcast.getBroadcastServerType().getIconPath());
+                                javafx.scene.image.Image fxImage = icon.getFxImage();
+                                if (fxImage != null) {
+                                    javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(fxImage);
+                                    imageView.setFitWidth(16);
+                                    imageView.setFitHeight(16);
+                                    // Add a little padding right of the image
+                                    HBox box = new HBox(5, imageView, new Label(item));
+                                    box.setAlignment(Pos.CENTER_LEFT);
+                                    setGraphic(box);
+                                    setText(null); // Text is inside the box now
+                                } else {
+                                    setGraphic(null);
+                                }
+                            } else {
+                                setGraphic(null);
+                            }
+                        }
+                    }
+                }
+            });
             nameColumn.setOnEditCommit(event -> {
                 ConfiguredBroadcast broadcast = event.getRowValue();
                 String oldName = event.getOldValue();
