@@ -1315,9 +1315,26 @@ public class BinaryMessage extends BitSet
      * @param message - string containing only zeros and ones
      * @return - loaded buffer
      */
+
+    private static boolean validateBinaryString(String message) {
+        for(int i = 0; i < message.length(); i++) {
+            char c = message.charAt(i);
+            if(c != '0' && c != '1') return false;
+        }
+        return true;
+    }
+
+    private static boolean validateHexString(String hex) {
+        for(int i = 0; i < hex.length(); i++) {
+            char c = hex.charAt(i);
+            if(!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F'))) return false;
+        }
+        return true;
+    }
+
     public static BinaryMessage load(String message)
     {
-        if(!message.matches("[01]*"))
+        if(!validateBinaryString(message))
         {
             throw new IllegalArgumentException(
                     "Message must contain only zeros and ones");
@@ -1343,7 +1360,7 @@ public class BinaryMessage extends BitSet
      */
     public static BinaryMessage loadHex(String hex)
     {
-        if(!hex.matches("[0-9A-F]*"))
+        if(!validateHexString(hex))
         {
             throw new IllegalArgumentException("Message must contain only 0-9 and A-F hexadecimal characters");
         }
