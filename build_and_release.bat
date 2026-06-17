@@ -220,16 +220,21 @@ echo [INFO] Performing case-sensitivity sweep...
 powershell -Command "Get-ChildItem -Path . -Recurse | Group-Object {$_.FullName.ToLower()} | Where-Object {$_.Count -gt 1} | ForEach-Object { $_.Group[1] | Remove-Item -Force }" >nul 2>&1
 
 :: ============================================================================
-:: STEP 4.5: Auto-increment the project version on origin/master
+:: STEP 4.5: Auto-increment the project version (monotonic every run)
 :: ============================================================================
-:: The workspace was just synced to origin/master, so gradle.properties holds the current published
-:: version. Increment it by one, push the bump back to master, and build with the new version - so
-:: every build run produces a fresh, monotonically increasing version. cwd is the cloned project here.
-call :drawProgressBar 22 "Bumping project version on origin/master..."
-:: Single-line call (no for/f, parens block, or delayed expansion) so cmd cannot mis-parse it. The
-:: PowerShell script increments gradle.properties and commits/pushes the bump to master itself. The
-:: new version is then read normally by STEP 5 below.
-if exist ".github\bump_version.ps1" powershell -NoProfile -ExecutionPolicy Bypass -File ".github\bump_version.ps1" -GradleProperties "gradle.properties" -PushToMaster >nul 2>&1
+:: The workspace was just 'git reset --hard origin/master', so gradle.properties holds the current
+:: published version. bump_version.ps1 increments it AND records the new version in a counter file kept
+:: OUTSIDE this workspace (in ROOT_DIR). That counter survives the reset, so the version keeps advancing
+:: every run even when the bump cannot be pushed to origin/master (no push credentials, protected branch,
+:: offline) - previously a failed push let the next reset discard the bump and froze the version. The
+:: push is still attempted (best-effort) to publish the bump; the build version no longer depends on it.
+call :drawProgressBar 22 "Bumping project version..."
+:: Counter lives in ROOT_DIR (the launcher folder), NOT in %FOLDER_NAME% (the workspace that gets reset).
+set "VERSION_COUNTER=%ROOT_DIR%\sdrtrunk_build_version.txt"
+:: Single-line call (no for/f, parens block, or delayed expansion) so cmd cannot mis-parse it. Output is
+:: intentionally NOT suppressed so a bump failure is visible instead of silently freezing the version.
+if not exist ".github\bump_version.ps1" echo [WARN] .github\bump_version.ps1 not found - version will NOT increment this run.
+if exist ".github\bump_version.ps1" powershell -NoProfile -ExecutionPolicy Bypass -File ".github\bump_version.ps1" -GradleProperties "gradle.properties" -CounterFile "%VERSION_COUNTER%" -PushToMaster
 
 :: ============================================================================
 :: STEP 5: Read Project Version
