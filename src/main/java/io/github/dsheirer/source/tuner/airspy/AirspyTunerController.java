@@ -70,7 +70,11 @@ public class AirspyTunerController extends USBTunerController implements ISample
     private static final byte USB_REQUEST_IN = (byte) (LibUsb.ENDPOINT_IN | LibUsb.REQUEST_TYPE_VENDOR | LibUsb.RECIPIENT_DEVICE);
     private static final byte USB_REQUEST_OUT = (byte) (LibUsb.ENDPOINT_OUT | LibUsb.REQUEST_TYPE_VENDOR | LibUsb.RECIPIENT_DEVICE);
     public static final DecimalFormat MHZ_FORMATTER = new DecimalFormat("#.00 MHz");
-    public static final AirspySampleRate DEFAULT_SAMPLE_RATE = new AirspySampleRate(0, 10000000, "10.00 MHz");
+    //Default to 2.5 MSPS rather than the Airspy's 10 MSPS maximum. A 10 MSPS stream produces a
+    //400-channel polyphase channelizer; running two Airspys at 10 MSPS overwhelms typical (e.g. 4-core)
+    //hosts, causing dropped samples and an unresponsive UI. 2.5 MSPS cuts channelizer load ~4x and is
+    //ample for the narrowband channels SDRTrunk monitors. Users who need more span can raise it per-tuner.
+    public static final AirspySampleRate DEFAULT_SAMPLE_RATE = new AirspySampleRate(0, 2500000, "2.50 MHz");
     //Software "middle" sample rate: the R2 only supports 2.5 and 10 MSPS in firmware, so 5 MSPS is produced by
     //running the hardware at 10 MSPS and decimating the complex stream by two in software.
     public static final int HARDWARE_SAMPLE_RATE_FOR_DECIMATION = 10000000;
@@ -158,7 +162,10 @@ public class AirspyTunerController extends USBTunerController implements ISample
 
         try
         {
-            setSampleRate(mSampleRates.get(0));
+            //Prefer the default (2.5 MSPS) when the device advertises it; fall back to the first
+            //advertised rate (older firmware that only reports a single rate).
+            AirspySampleRate initialRate = getSampleRate(DEFAULT_SAMPLE_RATE.getRate());
+            setSampleRate(initialRate != null ? initialRate : mSampleRates.get(0));
         }
         catch(IllegalArgumentException | LibUsbException | UsbException e)
         {
