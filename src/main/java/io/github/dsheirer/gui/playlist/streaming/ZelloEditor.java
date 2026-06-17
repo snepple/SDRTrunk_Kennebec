@@ -25,10 +25,17 @@ import io.github.dsheirer.gui.control.IntegerTextField;
 import io.github.dsheirer.playlist.PlaylistManager;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.shape.SVGPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +58,8 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
     private TextField mChannelTextField;
     private TextField mUsernameTextField;
     private PasswordField mPasswordField;
+    private TextField mUnmaskedPasswordField;
+    private ToggleButton mShowPasswordButton;
     private IntegerTextField mMaxAgeTextField;
     private IntegerTextField mStreamGuardTextField;
     private IntegerTextField mPauseTimeTextField;
@@ -70,6 +79,9 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
     public void setItem(ZelloConfiguration item)
     {
         super.setItem(item);
+
+        //Never leave the password revealed when loading/clearing a configuration (navigating away).
+        getShowPasswordButton().setSelected(false);
 
         getNetworkNameTextField().setDisable(item == null);
         getChannelTextField().setDisable(item == null);
@@ -125,6 +137,9 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             getItem().setPauseTimeMs(getPauseTimeTextField().get());
             getItem().setRelaxationTimeMs(getRelaxationTimeTextField().get());
         }
+
+        //Re-hide the password once the configuration is saved.
+        getShowPasswordButton().setSelected(false);
 
         super.save();
     }
@@ -204,8 +219,13 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             GridPane.setConstraints(passwordLabel, 0, ++row);
             mEditorPane.getChildren().add(passwordLabel);
 
-            GridPane.setConstraints(getPasswordField(), 1, row);
-            mEditorPane.getChildren().add(getPasswordField());
+            StackPane passwordStack = new StackPane(getPasswordField(), getUnmaskedPasswordField());
+            passwordStack.setAlignment(Pos.CENTER_LEFT);
+            HBox.setHgrow(passwordStack, Priority.ALWAYS);
+            HBox passwordBox = new HBox(4, passwordStack, getShowPasswordButton());
+            passwordBox.setAlignment(Pos.CENTER_LEFT);
+            GridPane.setConstraints(passwordBox, 1, row);
+            mEditorPane.getChildren().add(passwordBox);
 
             // Row 6: Max Recording Age
             Label maxAgeLabel = new Label("Max Recording Age (seconds)");
@@ -303,8 +323,53 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             mPasswordField = new PasswordField();
             mPasswordField.setDisable(true);
             mPasswordField.textProperty().addListener(mEditorModificationListener);
+            mPasswordField.setMaxWidth(Double.MAX_VALUE);
+            //Masked field is shown unless the eye toggle is selected.
+            mPasswordField.visibleProperty().bind(getShowPasswordButton().selectedProperty().not());
+            mPasswordField.managedProperty().bind(getShowPasswordButton().selectedProperty().not());
         }
         return mPasswordField;
+    }
+
+    /**
+     * Plain-text view of the password, shown in place of the masked field while the eye toggle is on.
+     * Shares the password text so edits in either field stay in sync.
+     */
+    private TextField getUnmaskedPasswordField()
+    {
+        if(mUnmaskedPasswordField == null)
+        {
+            mUnmaskedPasswordField = new TextField();
+            mUnmaskedPasswordField.setMaxWidth(Double.MAX_VALUE);
+            mUnmaskedPasswordField.textProperty().bindBidirectional(getPasswordField().textProperty());
+            mUnmaskedPasswordField.disableProperty().bind(getPasswordField().disableProperty());
+            mUnmaskedPasswordField.visibleProperty().bind(getShowPasswordButton().selectedProperty());
+            mUnmaskedPasswordField.managedProperty().bind(getShowPasswordButton().selectedProperty());
+        }
+        return mUnmaskedPasswordField;
+    }
+
+    /**
+     * Eye toggle that reveals the password in plain text. It is reset (re-hidden) whenever a
+     * configuration is loaded/cleared (setItem) or saved, so the password is never left exposed
+     * after the user saves or navigates away.
+     */
+    private ToggleButton getShowPasswordButton()
+    {
+        if(mShowPasswordButton == null)
+        {
+            mShowPasswordButton = new ToggleButton();
+            SVGPath eye = new SVGPath();
+            eye.setContent("M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 " +
+                    "12 4.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 " +
+                    "3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z");
+            eye.setScaleX(0.7);
+            eye.setScaleY(0.7);
+            mShowPasswordButton.setGraphic(eye);
+            mShowPasswordButton.setFocusTraversable(false);
+            mShowPasswordButton.setTooltip(new Tooltip("Show/hide the password"));
+        }
+        return mShowPasswordButton;
     }
 
     private IntegerTextField getMaxAgeTextField()
