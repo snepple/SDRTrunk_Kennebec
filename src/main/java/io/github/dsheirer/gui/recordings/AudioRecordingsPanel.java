@@ -278,27 +278,25 @@ public class AudioRecordingsPanel extends VBox {
         HBox controlsBox1 = new HBox(16);
         controlsBox1.getStyleClass().add("kennebec-filter-toolbar");
         
-        HBox dateBox = new HBox(8);
-        dateBox.setAlignment(Pos.CENTER_LEFT);
-        Label dateLabel = new Label("Date Range:");
-        dateLabel.getStyleClass().add("kennebec-toolbar-label");
-        dateLabel.setMinWidth(Region.USE_PREF_SIZE);
-        Label dateToLabel = new Label("to");
-        dateToLabel.getStyleClass().add("kennebec-toolbar-label");
-        dateBox.getChildren().addAll(dateLabel, mStartDatePicker, dateToLabel, mEndDatePicker);
+        //Group each date with its time so it reads as "Start = this date at this time" and
+        //"End = this date at this time", rather than a separate date range and time range.
+        HBox startBox = new HBox(8);
+        startBox.setAlignment(Pos.CENTER_LEFT);
+        Label startLabel = new Label("Start:");
+        startLabel.getStyleClass().add("kennebec-toolbar-label");
+        startLabel.setMinWidth(Region.USE_PREF_SIZE);
+        Label startColon = new Label(":");
+        startBox.getChildren().addAll(startLabel, mStartDatePicker, mStartHourSpinner, startColon, mStartMinuteSpinner);
 
-        HBox timeBox = new HBox(8);
-        timeBox.setAlignment(Pos.CENTER_LEFT);
-        Label timeLabel = new Label("Time Range:");
-        timeLabel.getStyleClass().add("kennebec-toolbar-label");
-        timeLabel.setMinWidth(Region.USE_PREF_SIZE);
-        Label timeColon1 = new Label(":");
-        Label timeTo = new Label("to");
-        timeTo.getStyleClass().add("kennebec-toolbar-label");
-        Label timeColon2 = new Label(":");
-        timeBox.getChildren().addAll(timeLabel, mStartHourSpinner, timeColon1, mStartMinuteSpinner, timeTo, mEndHourSpinner, timeColon2, mEndMinuteSpinner);
-        
-        controlsBox1.getChildren().addAll(dateBox, timeBox);
+        HBox endBox = new HBox(8);
+        endBox.setAlignment(Pos.CENTER_LEFT);
+        Label endLabel = new Label("End:");
+        endLabel.getStyleClass().add("kennebec-toolbar-label");
+        endLabel.setMinWidth(Region.USE_PREF_SIZE);
+        Label endColon = new Label(":");
+        endBox.getChildren().addAll(endLabel, mEndDatePicker, mEndHourSpinner, endColon, mEndMinuteSpinner);
+
+        controlsBox1.getChildren().addAll(startBox, endBox);
 
         // Row 2: Alias, Channel filters + action buttons
         HBox controlsBox2 = new HBox(16);
