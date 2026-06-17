@@ -197,10 +197,12 @@ powershell -Command "Get-ChildItem -Path . -Recurse | Group-Object {$_.FullName.
 :: version. Increment it by one, push the bump back to master, and build with the new version - so
 :: every build run produces a fresh, monotonically increasing version. cwd is the cloned project here.
 call :drawProgressBar 22 "Bumping project version on origin/master..."
-set "NEW_VER="
-for /f "delims=" %%V in ('powershell -NoProfile -ExecutionPolicy Bypass -File ".github\bump_version.ps1" -GradleProperties "gradle.properties" 2^>nul') do set "NEW_VER=%%V"
-if defined NEW_VER (
-    echo [INFO] Version bumped to !NEW_VER! - pushing to origin/master...
+if exist ".github\bump_version.ps1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File ".github\bump_version.ps1" -GradleProperties "gradle.properties" >nul 2>&1
+    set "NEW_VER="
+    for /f "tokens=2 delims==" %%A in ('findstr /I "^projectVersion" gradle.properties') do set "NEW_VER=%%A"
+    for /f "tokens=* delims= " %%B in ("!NEW_VER!") do set "NEW_VER=%%B"
+    echo [INFO] Version is now !NEW_VER! - pushing to origin/master...
     git add gradle.properties >nul 2>&1
     git commit -m "Bump version to !NEW_VER!" >nul 2>&1
     git push origin HEAD:master >nul 2>&1
