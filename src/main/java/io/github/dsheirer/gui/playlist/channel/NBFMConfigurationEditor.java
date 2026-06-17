@@ -148,6 +148,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private Label mAIOptimizeStatusLabel;
 
     private boolean mLoadingConfiguration = false;
+    //True only while AI-suggested values are being applied programmatically, so that does not get
+    //mistaken for a manual filter edit.
+    private boolean mApplyingAiResult = false;
+    //Notification shown in the Audio Filters pane when AI auto-optimization is paused due to manual edits.
+    private HBox mAiLockoutBanner;
 
     private SourceConfigurationEditor mSourceConfigurationEditor;
     private AuxDecoderConfigurationEditor mAuxDecoderConfigurationEditor;
@@ -331,6 +336,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             VBox contentBox = new VBox(10);
             contentBox.setPadding(new Insets(10,10,10,10));
 
+            //Notification banner shown when AI auto-optimization is paused because filters were edited.
+            contentBox.getChildren().add(getAiLockoutBanner());
+
             // Add AI Optimization if enabled
             if (mUserPreferences.getAIPreference().isAIEnabled() &&
                 !mUserPreferences.getAIPreference().getGeminiApiKey().trim().isEmpty()) {
@@ -408,6 +416,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
             contentBox.getChildren().addAll(advancedToggle, advancedContent);
 
+            //All filter controls now exist; track manual edits to pause AI auto-optimization.
+            installFilterEditTracking();
 
             javafx.scene.control.ScrollPane mAudioFiltersPaneSp = new javafx.scene.control.ScrollPane(contentBox);
             mAudioFiltersPaneSp.setFitToWidth(true);
@@ -416,6 +426,114 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mAudioFiltersPane = mAudioFiltersPaneSp;
         }
         return mAudioFiltersPane;
+    }
+
+    /**
+     * Notification banner shown in the Audio Filters pane when the user has manually edited a filter,
+     * which pauses automatic AI filter optimization for this channel.  Hidden until that happens.
+     */
+    private HBox getAiLockoutBanner()
+    {
+        if(mAiLockoutBanner == null)
+        {
+            Label message = new Label("You manually edited the audio filters, so automatic AI filter " +
+                    "optimization is paused for this channel — it will not change these (or any other) " +
+                    "filter settings. You can re-enable automatic AI filter changes at any time.");
+            message.setWrapText(true);
+            HBox.setHgrow(message, javafx.scene.layout.Priority.ALWAYS);
+            message.setMaxWidth(Double.MAX_VALUE);
+
+            Button reenable = new Button("Re-enable AI Auto Filter Changes");
+            reenable.setOnAction(e -> {
+                if(getItem() != null && getItem().getDecodeConfiguration() instanceof DecodeConfigNBFM nbfm)
+                {
+                    nbfm.setAiAutoOptimizeOptedOut(false);
+                    modifiedProperty().set(true);
+                }
+                updateAiLockoutBanner();
+            });
+
+            mAiLockoutBanner = new HBox(10, message, reenable);
+            mAiLockoutBanner.setAlignment(Pos.CENTER_LEFT);
+            mAiLockoutBanner.setPadding(new Insets(8));
+            //Amber warning styling that reads in both light and dark themes.
+            mAiLockoutBanner.setStyle("-fx-background-color: rgba(255,193,7,0.18); " +
+                    "-fx-border-color: rgba(255,193,7,0.6); -fx-border-radius: 4; -fx-background-radius: 4;");
+            mAiLockoutBanner.setVisible(false);
+            mAiLockoutBanner.setManaged(false);
+        }
+        return mAiLockoutBanner;
+    }
+
+    /**
+     * Shows or hides the AI lockout banner based on the current channel's opt-out state.
+     */
+    private void updateAiLockoutBanner()
+    {
+        if(mAiLockoutBanner == null)
+        {
+            return;
+        }
+        boolean optedOut = getItem() != null
+                && getItem().getDecodeConfiguration() instanceof DecodeConfigNBFM nbfm
+                && nbfm.isAiAutoOptimizeOptedOut();
+        mAiLockoutBanner.setVisible(optedOut);
+        mAiLockoutBanner.setManaged(optedOut);
+    }
+
+    /**
+     * Attaches change listeners to every audio-filter control so that a manual edit pauses automatic
+     * AI filter optimization (and shows the notification banner).  Programmatic changes during config
+     * load or while applying AI suggestions are ignored.
+     */
+    private void installFilterEditTracking()
+    {
+        addManualEditHook(mLowPassEnabledSwitch.selectedProperty());
+        addManualEditHook(mLowPassCutoffSlider.valueProperty());
+        addManualEditHook(mHissReductionEnabledSwitch.selectedProperty());
+        addManualEditHook(mHissReductionDbSlider.valueProperty());
+        addManualEditHook(mHissReductionCornerSlider.valueProperty());
+        addManualEditHook(mBassBoostEnabledSwitch.selectedProperty());
+        addManualEditHook(mBassBoostSlider.valueProperty());
+        addManualEditHook(mVoiceEnhanceEnabledSwitch.selectedProperty());
+        addManualEditHook(mVoiceEnhanceSlider.valueProperty());
+        addManualEditHook(mSquelchTailEnabledSwitch.selectedProperty());
+        addManualEditHook(mTailRemovalSpinner.valueProperty());
+        addManualEditHook(mHeadRemovalSpinner.valueProperty());
+        addManualEditHook(mSquelchEnabledSwitch.selectedProperty());
+        addManualEditHook(mSquelchThresholdSlider.valueProperty());
+        addManualEditHook(mSquelchReductionSlider.valueProperty());
+        addManualEditHook(mHoldTimeSlider.valueProperty());
+        addManualEditHook(mInputGainSlider.valueProperty());
+    }
+
+    private void addManualEditHook(javafx.beans.value.ObservableValue<?> property)
+    {
+        if(property == null)
+        {
+            return;
+        }
+        property.addListener((obs, ov, nv) -> {
+            if(!mLoadingConfiguration && !mApplyingAiResult)
+            {
+                markFiltersManuallyEdited();
+            }
+        });
+    }
+
+    /**
+     * Records that the user manually edited a filter: opts this channel out of automatic AI filter
+     * optimization and shows the notification banner.
+     */
+    private void markFiltersManuallyEdited()
+    {
+        if(getItem() != null && getItem().getDecodeConfiguration() instanceof DecodeConfigNBFM nbfm
+                && !nbfm.isAiAutoOptimizeOptedOut())
+        {
+            nbfm.setAiAutoOptimizeOptedOut(true);
+            modifiedProperty().set(true);
+        }
+        updateAiLockoutBanner();
     }
 
     private javafx.scene.Node getEventLogPane(){
@@ -1481,6 +1599,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
         dialog.showAndWait().ifPresent(accepted -> {
             if (accepted) {
+                //Applying AI suggestions from the manual button is not a manual filter edit.
+                mApplyingAiResult = true;
                 mLowPassEnabledSwitch.setSelected(result.isLowPassEnabled());
                 mLowPassCutoffSlider.setValue(result.getLowPassCutoff());
                 mHissReductionEnabledSwitch.setSelected(result.isHissReductionEnabled());
@@ -1496,6 +1616,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mHeadRemovalSpinner.getValueFactory().setValue(result.getSquelchHeadRemovalMs());
                 mHoldTimeSlider.setValue(result.getNoiseGateHoldTime());
                 modifiedProperty().set(true);
+                mApplyingAiResult = false;
             }
         });
     }
@@ -1543,6 +1664,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         mLoadingConfiguration = true;
         super.setItem(channel);
         mLoadingConfiguration = false;
+        //Reflect this channel's AI auto-optimize opt-out state in the notification banner.
+        updateAiLockoutBanner();
         if (mAIOptimizeButton != null && mAIOptimizeStatusLabel != null) {
             if (channel == null) {
                 mAIOptimizeButton.setDisable(true);

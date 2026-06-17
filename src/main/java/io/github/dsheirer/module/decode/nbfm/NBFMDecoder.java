@@ -714,6 +714,12 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             return false;
         }
 
+        //Respect a manual opt-out: if the user has edited any filter, leave all filters alone.
+        if(mNBFMConfig.isAiAutoOptimizeOptedOut())
+        {
+            return false;
+        }
+
         if(mQualifyingCallCount < MIN_QUALIFYING_CALLS)
         {
             return false;

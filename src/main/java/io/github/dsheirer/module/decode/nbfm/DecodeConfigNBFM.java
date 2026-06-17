@@ -71,6 +71,11 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     private float mHissReductionDb = -6.0f; // -12 to 0 dB (shelf cut)
     private double mHissReductionCornerHz = 2000.0; // Shelf pivot frequency
 
+    //Set true once the user manually edits any audio filter.  While true, the automatic AI filter
+    //optimizer leaves all of this channel's filters untouched.  The user can re-enable it from the
+    //channel's Audio Filters editor.
+    private boolean mAiAutoOptimizeOptedOut = false;
+
     /**
      * Constructs an instance
      */
@@ -642,6 +647,26 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     public void setHissReductionCornerHz(double hz)
     {
         mHissReductionCornerHz = Math.max(500.0, Math.min(3800.0, hz));
+    }
+
+    /**
+     * Indicates whether automatic AI filter optimization has been opted out because the user
+     * manually edited one or more of this channel's audio filters.  When true, the automatic
+     * optimizer leaves all of this channel's filters unchanged.
+     * @return opt-out status, defaults to false.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "aiAutoOptimizeOptedOut")
+    public boolean isAiAutoOptimizeOptedOut()
+    {
+        return mAiAutoOptimizeOptedOut;
+    }
+
+    /**
+     * Sets whether automatic AI filter optimization is opted out for this channel.
+     */
+    public void setAiAutoOptimizeOptedOut(boolean optedOut)
+    {
+        mAiAutoOptimizeOptedOut = optedOut;
     }
 
 }
