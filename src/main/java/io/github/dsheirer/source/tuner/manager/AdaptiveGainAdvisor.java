@@ -331,18 +331,22 @@ public class AdaptiveGainAdvisor
     private String buildStatsCsv(int minSamples, java.util.function.Predicate<ChannelStats> filter)
     {
         StringJoiner csv = new StringJoiner("\n");
-        csv.add("channel,avg_dbfs,min_dbfs,max_dbfs,sample_count");
+        csv.add("channel,freq_mhz,avg_dbfs,noise_floor_dbfs,peak_dbfs,snr_estimate_db,sample_count");
         for(ChannelStats stats : mChannelStats.values())
         {
             if(stats.getSampleCount() < minSamples || !filter.test(stats))
             {
                 continue;
             }
-            csv.add(String.format("%s,%.1f,%.1f,%.1f,%d",
+            //Estimate SNR as the spread between peak (signal) and the minimum observed (≈ noise floor).
+            double snrEstimate = stats.getMaxPowerDbfs() - stats.getMinPowerDbfs();
+            csv.add(String.format("%s,%.4f,%.1f,%.1f,%.1f,%.1f,%d",
                     stats.getChannelName(),
+                    stats.getFrequencyHz() / 1_000_000.0,
                     stats.getAveragePowerDbfs(),
                     stats.getMinPowerDbfs(),
                     stats.getMaxPowerDbfs(),
+                    snrEstimate,
                     stats.getSampleCount()));
         }
         return csv.toString();
@@ -362,12 +366,14 @@ public class AdaptiveGainAdvisor
                 continue;
             }
             double avg = stats.getAveragePowerDbfs();
+            double snrEstimate = stats.getMaxPowerDbfs() - stats.getMinPowerDbfs();
             String verdict;
             if(avg > GAIN_TOO_HIGH_DBFS) { verdict = "too strong — reduce gain"; tooHigh++; }
             else if(avg < GAIN_TOO_LOW_DBFS) { verdict = "too weak — increase gain"; tooLow++; }
             else { verdict = "optimal"; optimal++; }
-            sb.append(String.format("• %s: %.1f dBFS avg (%.1f to %.1f) — %s%n",
-                    stats.getChannelName(), avg, stats.getMinPowerDbfs(), stats.getMaxPowerDbfs(), verdict));
+            sb.append(String.format("• %s: %.1f dBFS avg, peak %.1f, floor %.1f, ~%.0f dB SNR — %s%n",
+                    stats.getChannelName(), avg, stats.getMaxPowerDbfs(), stats.getMinPowerDbfs(),
+                    snrEstimate, verdict));
         }
 
         String headline;
@@ -399,14 +405,23 @@ public class AdaptiveGainAdvisor
     private void sendGeminiConsultation(String csv, java.util.function.Consumer<String> onText, Runnable onFailure)
     {
         String prompt = "You are an RF engineer advising on SDR receiver gain settings.\n" +
-                "The following table shows I/Q signal power statistics (dBFS) for active receive channels. " +
-                "Each channel may share a physical SDR tuner with others.\n\n" +
+                "The following table shows I/Q signal power statistics for active receive channels, sampled " +
+                "over time. Each channel may share a physical SDR tuner with others. Columns:\n" +
+                "  freq_mhz         - channel center frequency\n" +
+                "  avg_dbfs         - average I/Q power (mix of signal and idle)\n" +
+                "  noise_floor_dbfs - minimum observed power (approximate noise floor)\n" +
+                "  peak_dbfs        - maximum observed power (approximate peak signal)\n" +
+                "  snr_estimate_db  - peak minus noise floor (rough usable dynamic range / SNR)\n" +
+                "  sample_count     - number of measurements\n\n" +
                 csv + "\n\n" +
-                "Optimal ADC utilization is -25 to -6 dBFS. Levels above -3 dBFS risk clipping. " +
-                "Levels below -35 dBFS indicate poor SNR.\n" +
-                "Respond with a brief (2-3 sentence) plain-English gain adjustment recommendation, " +
-                "noting whether gain should increase, decrease, or stay the same, and why. " +
-                "Consider that all channels on the same tuner share the same hardware gain.";
+                "Guidance: optimal ADC utilization keeps peaks in the -25 to -6 dBFS window. peak_dbfs above " +
+                "-3 dBFS risks clipping (reduce gain). noise_floor_dbfs below about -35 dBFS with low " +
+                "snr_estimate_db suggests the signal is weak relative to the noise (increase gain). A healthy " +
+                "snr_estimate_db is roughly 20 dB or more. Because all channels on one tuner share the same " +
+                "hardware gain, recommend a single setting that keeps the strongest channel below clipping " +
+                "while giving the weakest channel acceptable SNR.\n" +
+                "Respond with a brief (2-4 sentence) plain-English recommendation: whether to increase, " +
+                "decrease, or keep the tuner gain, by roughly how much, and why.";
 
         String apiKey = mUserPreferences.getAIPreference().getGeminiApiKey();
         String model = mUserPreferences.getAIPreference().getGeminiModel();
