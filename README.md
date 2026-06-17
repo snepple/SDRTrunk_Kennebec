@@ -1,25 +1,3 @@
-## 📥 Download the Latest Release
-
-Not sure what to download? Here is a quick guide to getting started with **SDRTrunk Kennebec (v00.086)**:
-
-- **Windows Users (Recommended)**: Download the Native Windows Installer. This is the easiest way to install and manage SDRTrunk on Windows.
-  - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-windows-installer.exe)
-  - ⚠️ **Note**: Because this is an open-source project without a paid code signing certificate, Windows SmartScreen may show an "Unknown Publisher" warning. To proceed, click **"More info"**, then click **"Run anyway"**.
-  
-- **Advanced Windows Users**: Download the Portable ZIP if you prefer to run the application without installing it.
-  - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-windows-x86_64.zip)
-
-- **Mac Users**:
-  - [Download macOS Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-mac-x86_64.zip)
-
-- **Linux Users**:
-  - [Download Linux Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.086/SDRTrunk-00.086-linux-x86_64.zip)
-
-*(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/00.086))*
-
----
-
-
 <h1>sdrtrunk - Kennebec Version</h1>
 
 
@@ -152,3 +130,24 @@ Performance & Live Log Analysis<br>
   <li>RAM: 8GB or more (preferred). Depending on usage, 4GB may be sufficient.</li>
   <li>Java: Requires Java 23+ (automatically provisioned via Gradle Toolchains).</li>
 </ul>
+
+---
+
+<!-- DOWNLOADS:START -->
+<!-- This section is regenerated automatically by build_and_release.bat after each GitHub release. Do not edit by hand. -->
+## Download the Latest Release
+
+Not sure what to download? Here is a quick guide to getting started with **SDRTrunk Kennebec (v00.095)**:
+
+- **Windows Users (Recommended)**: Download the Native Windows Installer. This is the easiest way to install and manage SDRTrunk on Windows.
+  - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.095/SDRTrunk-00.095-windows-installer.exe)
+  - **Note**: Because this is an open-source project without a paid code signing certificate, Windows SmartScreen may show an "Unknown Publisher" warning. To proceed, click **"More info"**, then click **"Run anyway"**.
+- **Advanced Windows Users**: Download the Portable ZIP if you prefer to run the application without installing it.
+  - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.095/SDRTrunk-00.095-windows-x86_64.zip)
+- **Mac Users**:
+  - [Download macOS Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.095/SDRTrunk-00.095-macos-x86_64.zip)
+- **Linux Users**:
+  - [Download Linux Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.095/SDRTrunk-00.095-linux-x86_64.zip)
+
+*(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/00.095))*
+<!-- DOWNLOADS:END -->

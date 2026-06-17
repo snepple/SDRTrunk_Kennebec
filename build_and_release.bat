@@ -427,11 +427,13 @@ if !ASSET_COUNT! GTR 0 (
 :: ============================================================================
 :: STEP 13: Update README.md
 :: ============================================================================
-call :drawProgressBar 95 "Updating README..."
-cd /d "%ROOT_DIR%\%FOLDER_NAME%"
-powershell -Command "(Get-Content README.md) -replace 'K\.\d{2}\.\d{3}', '!PROJ_VER!' | Set-Content README.md"
+call :drawProgressBar 95 "Updating README download links..."
+cd /d "%PROJ_DIR%"
+:: Regenerate the README download-links block (between the DOWNLOADS markers) to point at this
+:: release's assets. The markdown/markers/URLs live in the committed .ps1 to avoid batch escaping.
+powershell -NoProfile -ExecutionPolicy Bypass -File ".github\update_readme_downloads.ps1" -Version "!PROJ_VER!" -Repo "%GH_REPO%" -ReadmePath "README.md"
 git add README.md
-git commit -m "Update README.md with release !PROJ_VER!" >nul 2>&1
+git diff --cached --quiet || git commit -m "Update README download links for release !PROJ_VER!" >nul 2>&1
 git push origin HEAD >nul 2>&1
 
 :: ============================================================================
