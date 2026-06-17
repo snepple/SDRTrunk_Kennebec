@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
-public class SpectrumPanel extends StackPane implements DFTResultsListener, SettingChangeListener, SpectralDisplayAdjuster {
+public class SpectrumPanel extends StackPane implements DFTResultsListener, SettingChangeListener, SpectralDisplayAdjuster, Pausable {
     private static final long serialVersionUID = 1L;
 
     private final static Logger mLog = LoggerFactory.getLogger(SpectrumPanel.class);
@@ -69,6 +69,7 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
 
     private AnimationTimer mAnimationTimer;
     private volatile boolean mNeedsRedraw = false;
+    private volatile boolean mPaused = false;
     private final Object mBinsLock = new Object();
 
     public SpectrumPanel(SettingsManager settingsManager) {
@@ -131,7 +132,22 @@ public class SpectrumPanel extends StackPane implements DFTResultsListener, Sett
         }
     }
 
+    @Override
+    public void setPaused(boolean paused) {
+        mPaused = paused;
+    }
+
+    @Override
+    public boolean isPaused() {
+        return mPaused;
+    }
+
     public void receive(float[] currentFFTBins) {
+        //When paused, ignore incoming FFT updates so the displayed trace freezes on the last frame.
+        if (mPaused) {
+            return;
+        }
+
         if (Float.isInfinite(currentFFTBins[0]) || Float.isNaN(currentFFTBins[0])) {
             currentFFTBins = new float[currentFFTBins.length];
         }
