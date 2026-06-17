@@ -59,8 +59,19 @@ import org.apache.commons.math3.util.FastMath;
 public class FrequencyOverlayPanel extends Pane implements ISourceEventProcessor, SettingChangeListener
 {
     private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
+    //Cache the overlay label sizing so the repaint path never reads the (Windows registry-backed)
+    //Preferences on every label/frame.  Reading getDouble() per paint pinned the JavaFX thread in
+    //WindowsRegQueryValueEx and froze the UI.  These rarely change, so a one-time read is sufficient.
+    private double mLabelWidth = mPreferences.getDouble("overlay.label.width", 50.0);
+    private double mLabelHeight = mPreferences.getDouble("overlay.label.height", 12.0);
     private Canvas mCanvas = new Canvas();
     private static final long serialVersionUID = 1L;
+
+    //Upper bound on the number of frequency ticks drawn in a single pass.  Caps the drawFrequencies()
+    //loop so a degenerate (e.g. 0-width canvas or 0-bandwidth) increment can never make it iterate
+    //millions of times and freeze the JavaFX thread.
+    private static final int MAX_FREQUENCY_TICKS = 4000;
+
     private final DecimalFormat PPM_FORMATTER = new DecimalFormat( "#.0" );
 
     private static DecimalFormat CURSOR_FORMAT = new DecimalFormat("000.00000");
@@ -152,8 +163,20 @@ public class FrequencyOverlayPanel extends Pane implements ISourceEventProcessor
     }
 
 
+    private final java.util.concurrent.atomic.AtomicBoolean mRepaintPending =
+        new java.util.concurrent.atomic.AtomicBoolean(false);
+
     private void requestRedraw() {
-        javafx.application.Platform.runLater(() -> draw(mCanvas.getGraphicsContext2D()));
+        //Coalesce redraws: a burst of cursor/visibility updates (e.g. rapid mouse-move) would otherwise
+        //post one full repaint per event and flood the JavaFX queue.  Collapse them to a single pending
+        //repaint until the queued draw runs.
+        if(mRepaintPending.compareAndSet(false, true))
+        {
+            javafx.application.Platform.runLater(() -> {
+                mRepaintPending.set(false);
+                draw(mCanvas.getGraphicsContext2D());
+            });
+        }
     }
 
     public void setCursorLocation(Point2D point)
@@ -243,8 +266,8 @@ public class FrequencyOverlayPanel extends Pane implements ISourceEventProcessor
         {
             drawFrequencyLine(graphics, mCursorLocation.getX(), mColorSpectrumCursor);
             String frequency = CURSOR_FORMAT.format(getFrequencyFromAxis(mCursorLocation.getX()) / 1E6D);
-            double stringWidth = mPreferences.getDouble("overlay.label.width", 50.0); double stringHeight = mPreferences.getDouble("overlay.label.height", 12.0);
-            
+            double stringWidth = mLabelWidth; double stringHeight = mLabelHeight;
+
 
             if(mCursorLocation.getY() > stringHeight)
             {
@@ -261,19 +284,48 @@ public class FrequencyOverlayPanel extends Pane implements ISourceEventProcessor
         long minFrequency = getMinDisplayFrequency();
         long maxFrequency = getMaxDisplayFrequency();
 
-        //Frequency increments for label and tick spacing
-        int label = mLabelSizeMonitor.getLabelIncrement(graphics);
+        //Frequency increments for label and tick spacing.  Read the major increment first: it forces the
+        //spacing recalculation so all three increments come from the same pass (the label/minor getters
+        //would otherwise return stale values from a previous layout).
         int major = mLabelSizeMonitor.getMajorTickIncrement(graphics);
+        int label = mLabelSizeMonitor.getLabelIncrement(graphics);
         int minor = mLabelSizeMonitor.getMinorTickIncrement(graphics);
 
         //Avoid divide by zero error
-        if(minor == 0)
+        if(minor <= 0)
         {
             minor = 1;
         }
-        if(label == 0)
+        if(label <= 0)
         {
             label = 1;
+        }
+        if(major <= 0)
+        {
+            major = 1;
+        }
+
+        //Defensive cap: regardless of how the increment math turned out, never step finer than the span
+        //divided by MAX_FREQUENCY_TICKS.  Without this, a degenerate increment (e.g. from a not-yet
+        //laid-out 0-width canvas or a 0 bandwidth) makes this loop advance 1 Hz at a time across the whole
+        //bandwidth, pinning the JavaFX thread for millions of strokeText() calls and freezing the UI.
+        long span = maxFrequency - minFrequency;
+        if(span > 0)
+        {
+            int minimumStep = (int)Math.min(Integer.MAX_VALUE, (span / MAX_FREQUENCY_TICKS) + 1);
+
+            if(minor < minimumStep)
+            {
+                minor = minimumStep;
+            }
+            if(label < minor)
+            {
+                label = minor;
+            }
+            if(major < minor)
+            {
+                major = minor;
+            }
         }
 
         //Adjust the start frequency to a multiple of the minor tick spacing
@@ -433,8 +485,8 @@ graphics.setStroke(Color.GREEN);
     private void drawFrequencyLabel(GraphicsContext graphics, double xaxis, long frequency)
     {
         String label = mLabelSizeMonitor.format(frequency);
-        double stringWidth = mPreferences.getDouble("overlay.label.width", 50.0); double stringHeight = mPreferences.getDouble("overlay.label.height", 12.0);
-        
+        double stringWidth = mLabelWidth; double stringHeight = mLabelHeight;
+
         float xOffset = (float)stringWidth / 2;
         graphics.fillText(label, (float)(xaxis - xOffset), (float)(getHeight() - 2.0f));
     }
@@ -547,17 +599,45 @@ graphics.setStroke(Color.GREEN);
         {
             if(mUpdateRequired)
             {
+                double canvasWidth = FrequencyOverlayPanel.this.getWidth();
+                int displayBandwidth = getDisplayBandwidth();
+
+                //Until the canvas has actually been laid out (width 0) and the bandwidth is known, the
+                //spacing math below divides by zero.  (int)log10(bandwidth/0) is (int)+Infinity =
+                //Integer.MAX_VALUE, which then overflows the pow() calls to a 0 increment.  The draw loop
+                //turns that into a 1 Hz step and renders one line + label per Hz across the entire
+                //bandwidth, pinning the JavaFX thread and freezing the UI.  Fall back to a single
+                //whole-bandwidth increment and leave the update pending so it recomputes once valid
+                //dimensions arrive.
+                if(canvasWidth <= 0 || displayBandwidth <= 0)
+                {
+                    int safe = Math.max(1, displayBandwidth);
+                    mLabelIncrement = safe;
+                    mMajorTickIncrement = safe;
+                    mMinorTickIncrement = safe;
+                    return;
+                }
+
                 //Set maximum precision as a starting point
                 setPrecision(5);
 
-                double stringWidth = mPreferences.getDouble("overlay.label.width", 50.0);
+                int maxLabelWidth = Math.max(1, (int)mLabelWidth);
 
-                int maxLabelWidth = (int)mPreferences.getDouble("overlay.label.width", 50.0);
+                double maxLabels = (canvasWidth * LABEL_FILL_THRESHOLD) / (double)maxLabelWidth;
 
-                double maxLabels = ((double) FrequencyOverlayPanel.this.getWidth() * LABEL_FILL_THRESHOLD) / (double)maxLabelWidth;
+                if(maxLabels < 1.0d)
+                {
+                    maxLabels = 1.0d;
+                }
 
-                //Calculate the next smallest base 10 value for the major increment
-                int power = (int)FastMath.log10((double)getDisplayBandwidth() / maxLabels);
+                //Calculate the next smallest base 10 value for the major increment.  Clamp to >= 0 so the
+                //pow() brackets below can never collapse to a 0 minimum (and therefore a 0 increment).
+                int power = (int)FastMath.log10((double)displayBandwidth / maxLabels);
+
+                if(power < 0)
+                {
+                    power = 0;
+                }
 
                 //Set the number of decimal places to display in frequency labels
                 int precision = 5 - power;
@@ -568,7 +648,7 @@ graphics.setStroke(Color.GREEN);
 
                 int labelIncrement = start;
 
-                while(((double)getDisplayBandwidth() / (double)labelIncrement) < maxLabels && labelIncrement >= minimum)
+                while(((double)displayBandwidth / (double)labelIncrement) < maxLabels && labelIncrement >= minimum)
                 {
                     labelIncrement /= 2;
                     precision++;
@@ -581,9 +661,10 @@ graphics.setStroke(Color.GREEN);
 
                 setPrecision(precision);
 
-                mLabelIncrement = labelIncrement;
-                mMajorTickIncrement = labelIncrement / 2;
-                mMinorTickIncrement = labelIncrement / 10;
+                //Clamp every increment to >= 1 so the draw loop can never be handed a 0 (or negative) step.
+                mLabelIncrement = Math.max(1, labelIncrement);
+                mMajorTickIncrement = Math.max(1, labelIncrement / 2);
+                mMinorTickIncrement = Math.max(1, labelIncrement / 10);
 
                 mUpdateRequired = false;
             }
@@ -608,11 +689,17 @@ graphics.setStroke(Color.GREEN);
 
         public int getMinorTickIncrement(GraphicsContext graphics)
         {
+            //Force a recalculation if one is pending so this never returns a stale increment.
+            recalculate();
+
             return mMinorTickIncrement;
         }
 
         public int getLabelIncrement(GraphicsContext graphics)
         {
+            //Force a recalculation if one is pending so this never returns a stale increment.
+            recalculate();
+
             return mLabelIncrement;
         }
 

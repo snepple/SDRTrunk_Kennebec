@@ -21,6 +21,11 @@ public abstract class SmoothingFilter
 	private float[] mCoefficients;
 	private float[] mNewCoefficients;
 	private boolean mNewCoefficientsAvailable;
+	//Reusable output buffer so filter() does not allocate a new float[] on every DFT frame.  At the FFT
+	//frame rate this allocation was steady GC pressure on the dispatch thread.  Reused safely because the
+	//caller copies the result immediately and does not retain the returned array; filter() is only called
+	//single-threaded from a panel's receive().
+	private float[] mFiltered;
 	
 	public SmoothingFilter( Map<Integer,float[]> coefficients, int index )
 	{
@@ -70,8 +75,13 @@ public abstract class SmoothingFilter
 		}
 
 		int middle = mCoefficients.length / 2;
-		
-		float[] filtered = new float[ data.length ];
+
+		if( mFiltered == null || mFiltered.length != data.length )
+		{
+			mFiltered = new float[ data.length ];
+		}
+
+		float[] filtered = mFiltered;
 
 		int toCopy = middle;
 		
