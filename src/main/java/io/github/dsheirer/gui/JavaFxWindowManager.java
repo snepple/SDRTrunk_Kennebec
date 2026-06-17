@@ -48,6 +48,7 @@ import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.jmbe.JmbeEditor;
 import io.github.dsheirer.jmbe.JmbeEditorRequest;
 import io.github.dsheirer.module.log.EventLogManager;
+import io.github.dsheirer.monitor.DiagnosticMonitor;
 import io.github.dsheirer.monitor.ResourceMonitor;
 import io.github.dsheirer.monitor.StatusBox;
 import io.github.dsheirer.playlist.PlaylistManager;
@@ -106,6 +107,7 @@ public class JavaFxWindowManager extends Application
     private Stage mRecordingViewerStage;
     private Consumer<String> mViewChangedListener;
     private javafx.scene.layout.Pane mStatusPanel;
+    private DiagnosticMonitor mDiagnosticMonitor;
 
     /**
      * Constructs an instance.  Note: this constructor is used for Swing applications.
@@ -600,6 +602,11 @@ public class JavaFxWindowManager extends Application
     }
 
 
+    public void setDiagnosticMonitor(DiagnosticMonitor diagnosticMonitor)
+    {
+        mDiagnosticMonitor = diagnosticMonitor;
+    }
+
     private java.util.Map<ViewIdentifier, javafx.scene.layout.Pane> mViewMap = new java.util.HashMap<>();
 
     public javafx.scene.layout.Pane getView(ViewIdentifier viewIdentifier) {
@@ -621,7 +628,7 @@ public class JavaFxWindowManager extends Application
                     content = getUserPreferencesEditor();
                     break;
                 case LOGS:
-                    content = new LogsPanel(mUserPreferences);
+                    content = new LogsPanel(mUserPreferences, mDiagnosticMonitor);
                     break;
                 case RECORDING_VIEWER:
                     content = getRecordingViewer();

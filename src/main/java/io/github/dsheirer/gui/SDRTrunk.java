@@ -577,6 +577,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         mDiagnosticMonitor = new DiagnosticMonitor(mUserPreferences, mPlaylistManager.getChannelProcessingManager(),
                 mTunerManager, headless);
         mDiagnosticMonitor.start();
+        if (mJavaFxWindowManager != null) mJavaFxWindowManager.setDiagnosticMonitor(mDiagnosticMonitor);
 
         io.github.dsheirer.monitor.RemoteSessionMonitor.init();
 
