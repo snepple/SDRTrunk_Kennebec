@@ -241,7 +241,9 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
                         setText(null);
                     } else {
                         String label = Integer.toUnsignedString(item);
-                        Protocol protocol = getItem() != null ? getItem().getProtocol() : null;
+                        //Use the editor's identifier (the outer class), not the ListCell's Integer item.
+                        Talkgroup editing = TalkgroupEditor.this.getItem();
+                        Protocol protocol = editing != null ? editing.getProtocol() : null;
                         if (protocol == Protocol.NBFM) {
                             for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
                                 if (channel.getDecodeConfiguration() instanceof DecodeConfigNBFM nbfmConfig && nbfmConfig.getTalkgroup() == item) {
