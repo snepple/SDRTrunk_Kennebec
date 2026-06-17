@@ -394,19 +394,10 @@ public abstract class TunerController implements Tunable, ISourceEventProcessor,
      */
     public long getMinimumFrequency()
     {
-        long minimum;
-
-        try
-        {
-            getLock().lock();
-            minimum = mFrequencyController.getMinimumFrequency();
-        }
-        finally
-        {
-            getLock().unlock();
-        }
-
-        return minimum;
+        //Not protected by the device lock: the minimum tunable frequency is a static per-tuner constant.
+        //Acquiring the lock here stalled the JavaFX thread (tuner editor / table render) behind the USB
+        //control/streaming path that holds the same lock across blocking libusb transfers.
+        return mFrequencyController.getMinimumFrequency();
     }
 
     /**
@@ -432,19 +423,10 @@ public abstract class TunerController implements Tunable, ISourceEventProcessor,
      */
     public long getMaximumFrequency()
     {
-        long maximum;
-
-        try
-        {
-            getLock().lock();
-            maximum = mFrequencyController.getMaximumFrequency();
-        }
-        finally
-        {
-            getLock().unlock();
-        }
-
-        return maximum;
+        //Not protected by the device lock: the maximum tunable frequency is a static per-tuner constant.
+        //Acquiring the lock here stalled the JavaFX thread (tuner editor / table render) behind the USB
+        //control/streaming path that holds the same lock across blocking libusb transfers.
+        return mFrequencyController.getMaximumFrequency();
     }
 
     /**
