@@ -779,9 +779,26 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                     "current I/Q signal levels across active channels."));
             mGainAdvisorButton.setOnAction(e ->
             {
+                long minFreq = 0;
+                long maxFreq = Long.MAX_VALUE;
+                try
+                {
+                    if(hasTuner())
+                    {
+                        //Limit the advisor to channels within this tuner's currently tuned passband.
+                        minFreq = getTuner().getTunerController().getMinTunedFrequency();
+                        maxFreq = getTuner().getTunerController().getMaxTunedFrequency();
+                    }
+                }
+                catch(Exception ex)
+                {
+                    minFreq = 0;
+                    maxFreq = Long.MAX_VALUE;
+                }
+
                 mGainAdvisorButton.setDisable(true);
                 io.github.dsheirer.source.tuner.manager.AdaptiveGainAdvisor.getInstance(mUserPreferences)
-                        .requestManualConsultation(
+                        .requestManualConsultation(minFreq, maxFreq,
                                 recommendation -> Platform.runLater(() -> {
                                     mGainAdvisorButton.setDisable(false);
                                     Alert alert = new Alert(Alert.AlertType.INFORMATION);

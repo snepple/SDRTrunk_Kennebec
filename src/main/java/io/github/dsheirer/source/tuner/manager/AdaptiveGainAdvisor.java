@@ -102,11 +102,17 @@ public class AdaptiveGainAdvisor
      * Called from NBFMDecoder on a sampled basis (not every buffer).
      *
      * @param channelName unique channel identifier
+     * @param frequencyHz channel center frequency, used to attribute the channel to a tuner (0 if unknown)
      * @param powerDbfs   complex I/Q signal power in dBFS (10·log₁₀(mean(I²+Q²)))
      */
-    public void reportSignalLevel(String channelName, double powerDbfs)
+    public void reportSignalLevel(String channelName, long frequencyHz, double powerDbfs)
     {
-        mChannelStats.computeIfAbsent(channelName, ChannelStats::new).update(powerDbfs);
+        ChannelStats stats = mChannelStats.computeIfAbsent(channelName, ChannelStats::new);
+        if(frequencyHz > 0)
+        {
+            stats.setFrequencyHz(frequencyHz);
+        }
+        stats.update(powerDbfs);
     }
 
     /**
@@ -234,38 +240,50 @@ public class AdaptiveGainAdvisor
     {
         mLastAiConsultationMs.set(System.currentTimeMillis());
 
-        if(countChannels(MIN_SAMPLES_FOR_ADVICE) == 0)
+        java.util.function.Predicate<ChannelStats> all = s -> true;
+        if(countChannels(MIN_SAMPLES_FOR_ADVICE, all) == 0)
         {
             return;
         }
 
-        sendGeminiConsultation(buildStatsCsv(MIN_SAMPLES_FOR_ADVICE),
+        sendGeminiConsultation(buildStatsCsv(MIN_SAMPLES_FOR_ADVICE, all),
                 recommendation -> mLog.info("AdaptiveGain AI recommendation: {}", recommendation),
                 () -> { /* scheduled run: failures are non-fatal and already logged */ });
     }
 
     /**
-     * Runs the gain advisor on demand (e.g. from the tuner editor) and delivers a recommendation.
-     * When AI is enabled and configured, consults Gemini; otherwise returns the local heuristic
-     * summary so the button is useful even without an API key.
+     * Runs the gain advisor on demand for the channels falling within a tuner's passband (e.g. from
+     * the tuner editor) and delivers a recommendation.  When AI is enabled and configured, consults
+     * Gemini; otherwise returns the local heuristic summary so the button is useful without an API key.
      *
-     * @param onResult receives the recommendation text (called off the FX thread)
-     * @param onError  receives a user-facing message when no recommendation could be produced
+     * @param minFrequencyHz lower bound of the tuner's tuned passband (inclusive)
+     * @param maxFrequencyHz upper bound of the tuner's tuned passband (inclusive)
+     * @param onResult       receives the recommendation text (called off the FX thread)
+     * @param onError        receives a user-facing message when no recommendation could be produced
      */
-    public void requestManualConsultation(java.util.function.Consumer<String> onResult,
+    public void requestManualConsultation(long minFrequencyHz, long maxFrequencyHz,
+                                          java.util.function.Consumer<String> onResult,
                                           java.util.function.Consumer<String> onError)
     {
+        //A channel belongs to this tuner when its (known) center frequency falls within the passband.
+        java.util.function.Predicate<ChannelStats> onThisTuner = s ->
+        {
+            long f = s.getFrequencyHz();
+            return f > 0 && f >= minFrequencyHz && f <= maxFrequencyHz;
+        };
+
         try
         {
             //Relax the sample gate for manual runs so the button works shortly after channels start.
-            if(countChannels(1) == 0)
+            if(countChannels(1, onThisTuner) == 0)
             {
-                onError.accept("No active channels are reporting I/Q signal levels yet. Start one or more " +
-                        "NBFM channels on this tuner and let them receive traffic for a minute, then try again.");
+                onError.accept("No active channels on this tuner are reporting I/Q signal levels yet. " +
+                        "Start one or more NBFM channels on this tuner and let them receive traffic for a " +
+                        "minute, then try again. (The advisor monitors NBFM channels.)");
                 return;
             }
 
-            String heuristic = buildHeuristicSummary(1);
+            String heuristic = buildHeuristicSummary(1, onThisTuner);
 
             var aiPref = mUserPreferences != null ? mUserPreferences.getAIPreference() : null;
             boolean aiAvailable = aiPref != null && aiPref.isAIEnabled() && aiPref.isGainAdvisorEnabled()
@@ -280,7 +298,7 @@ public class AdaptiveGainAdvisor
             }
 
             mLastAiConsultationMs.set(System.currentTimeMillis());
-            sendGeminiConsultation(buildStatsCsv(1),
+            sendGeminiConsultation(buildStatsCsv(1, onThisTuner),
                     onResult,
                     () -> onResult.accept(heuristic +
                             "\n\n(AI consultation was unavailable, so the local heuristic analysis is shown instead.)"));
@@ -292,14 +310,14 @@ public class AdaptiveGainAdvisor
     }
 
     /**
-     * Number of channels with at least {@code minSamples} accumulated samples.
+     * Number of channels with at least {@code minSamples} accumulated samples that match the filter.
      */
-    private int countChannels(int minSamples)
+    private int countChannels(int minSamples, java.util.function.Predicate<ChannelStats> filter)
     {
         int count = 0;
         for(ChannelStats stats : mChannelStats.values())
         {
-            if(stats.getSampleCount() >= minSamples)
+            if(stats.getSampleCount() >= minSamples && filter.test(stats))
             {
                 count++;
             }
@@ -308,15 +326,15 @@ public class AdaptiveGainAdvisor
     }
 
     /**
-     * Builds the per-channel CSV of power statistics for channels meeting the sample threshold.
+     * Builds the per-channel CSV of power statistics for channels meeting the sample threshold and filter.
      */
-    private String buildStatsCsv(int minSamples)
+    private String buildStatsCsv(int minSamples, java.util.function.Predicate<ChannelStats> filter)
     {
         StringJoiner csv = new StringJoiner("\n");
         csv.add("channel,avg_dbfs,min_dbfs,max_dbfs,sample_count");
         for(ChannelStats stats : mChannelStats.values())
         {
-            if(stats.getSampleCount() < minSamples)
+            if(stats.getSampleCount() < minSamples || !filter.test(stats))
             {
                 continue;
             }
@@ -331,15 +349,15 @@ public class AdaptiveGainAdvisor
     }
 
     /**
-     * Builds a plain-English, no-AI recommendation summary from the current statistics.
+     * Builds a plain-English, no-AI recommendation summary from the current statistics matching the filter.
      */
-    private String buildHeuristicSummary(int minSamples)
+    private String buildHeuristicSummary(int minSamples, java.util.function.Predicate<ChannelStats> filter)
     {
         StringBuilder sb = new StringBuilder();
         int tooHigh = 0, tooLow = 0, optimal = 0;
         for(ChannelStats stats : mChannelStats.values())
         {
-            if(stats.getSampleCount() < minSamples)
+            if(stats.getSampleCount() < minSamples || !filter.test(stats))
             {
                 continue;
             }
@@ -461,10 +479,21 @@ public class AdaptiveGainAdvisor
         private double mMin = Double.MAX_VALUE;
         private double mMax = Double.MIN_VALUE;
         private int mCount = 0;
+        private volatile long mFrequencyHz = 0;
 
         ChannelStats(String channelName)
         {
             mChannelName = channelName;
+        }
+
+        void setFrequencyHz(long frequencyHz)
+        {
+            mFrequencyHz = frequencyHz;
+        }
+
+        long getFrequencyHz()
+        {
+            return mFrequencyHz;
         }
 
         synchronized void update(double powerDbfs)

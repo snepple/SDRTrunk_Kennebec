@@ -5,10 +5,16 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.Cursor;
+import javafx.scene.Group;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -35,6 +41,10 @@ public class SidebarController implements Initializable {
     private SidebarListener listener;
     private List<SidebarItemModel> items = new ArrayList<>();
     private String activeId;
+
+    //Flyout shown when a collapsed item that has sub-items is clicked, so its sub-pages remain
+    //reachable without expanding the whole sidebar.
+    private ContextMenu collapsedFlyout;
 
     // Section separator indices — items after these indices get a divider before them
     private static final String SECTION_MAIN = "main";
@@ -100,6 +110,9 @@ public class SidebarController implements Initializable {
 
     @FXML
     private void handleToggle() {
+        if (collapsedFlyout != null && collapsedFlyout.isShowing()) {
+            collapsedFlyout.hide();
+        }
         collapsed = !collapsed;
         
         javafx.animation.Timeline timeline = new javafx.animation.Timeline();
@@ -237,7 +250,8 @@ public class SidebarController implements Initializable {
                 }
             } else if (!item.subItems.isEmpty()) {
                 if (collapsed) {
-                    handleToggle();
+                    //Collapsed: show a flyout of the sub-pages instead of expanding the sidebar.
+                    showCollapsedFlyout(box, item);
                 } else {
                     item.expanded = !item.expanded;
                     if (item.expanded && !item.subItems.isEmpty() && listener != null) {
@@ -254,6 +268,64 @@ public class SidebarController implements Initializable {
 
         wrapper.getChildren().add(box);
         return wrapper;
+    }
+
+    /**
+     * Shows a popup flyout listing a collapsed item's sub-pages, anchored to the right of the
+     * sidebar icon, so the user can jump straight to a sub-page without expanding the sidebar.
+     */
+    private void showCollapsedFlyout(javafx.scene.Node anchor, SidebarItemModel item) {
+        if (collapsedFlyout != null && collapsedFlyout.isShowing()) {
+            collapsedFlyout.hide();
+        }
+
+        ContextMenu menu = new ContextMenu();
+        menu.getStyleClass().add("sidebar-flyout");
+
+        boolean isDark = ThemeManager.isNightModeEnabled();
+        Color headerColor = isDark ? Color.web("#e0e0e0") : Color.web("#1C1C1E");
+        Color iconColor = isDark ? Color.web("#b0b0b0") : Color.web("#636366");
+        Color activeIconColor = isDark ? Color.web("#0a84ff") : Color.web("#007aff");
+
+        // Non-clickable header showing which menu this flyout belongs to
+        Label header = new Label(item.label);
+        header.setFont(Font.font("SansSerif", FontWeight.BOLD, 13));
+        header.setTextFill(headerColor);
+        header.setPadding(new Insets(2, 8, 2, 4));
+        CustomMenuItem headerItem = new CustomMenuItem(header, false);
+        headerItem.setHideOnClick(false);
+        menu.getItems().add(headerItem);
+        menu.getItems().add(new SeparatorMenuItem());
+
+        for (SidebarItemModel.SubItem sub : item.subItems) {
+            MenuItem mi = new MenuItem(sub.label);
+            boolean subActive = sub.id.equals(activeId);
+
+            if (sub.iconPath != null && !sub.iconPath.isEmpty()) {
+                SVGPath subIcon = new SVGPath();
+                subIcon.setContent(sub.iconPath);
+                subIcon.setFillRule(javafx.scene.shape.FillRule.EVEN_ODD);
+                subIcon.setFill(subActive ? activeIconColor : iconColor);
+                subIcon.setScaleX(0.6);
+                subIcon.setScaleY(0.6);
+                //Wrap in a Group so the scale also shrinks the layout bounds for tidy spacing.
+                mi.setGraphic(new Group(subIcon));
+            }
+
+            mi.setOnAction(ev -> {
+                if (listener != null) {
+                    if (sub.id.startsWith("vis_")) {
+                        Platform.runLater(() -> listener.onActionRequested(sub.id));
+                    } else {
+                        Platform.runLater(() -> listener.onItemSelected(sub.id));
+                    }
+                }
+            });
+            menu.getItems().add(mi);
+        }
+
+        collapsedFlyout = menu;
+        menu.show(anchor, Side.RIGHT, 0, 0);
     }
 
     private HBox createSubItemView(SidebarItemModel.SubItem sub) {

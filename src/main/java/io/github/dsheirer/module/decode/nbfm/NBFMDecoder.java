@@ -137,6 +137,19 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     // Signal level sampling for AdaptiveGainAdvisor (sample every 50th buffer for efficiency)
     private int mIQSampleCounter = 0;
     private static final int IQ_SAMPLE_INTERVAL = 50;
+    //Current channel center frequency (Hz), tracked from source events so the gain advisor can
+    //attribute this channel to the tuner whose passband contains it.
+    private long mChannelFrequency = 0;
+
+    //AI auto-optimize readiness: the optimizer should run as soon as possible after startup, but only
+    //once the channel has accumulated enough good audio (at least MIN_QUALIFYING_CALLS calls that are
+    //each at least 5 seconds long) for the AI to make sound filter choices.  After that first
+    //"startup" run, subsequent runs follow the twice-daily cadence in AIPreference.
+    private int mCurrentCallSamples = 0;
+    private int mQualifyingCallCount = 0;
+    private boolean mStartupOptimizeDone = false;
+    private static final int MIN_QUALIFYING_CALLS = 5;
+    private static final int MIN_QUALIFYING_CALL_SAMPLES = (int)(5 * DEMODULATED_AUDIO_SAMPLE_RATE);
 
     /**
      * Constructs an instance
@@ -513,6 +526,8 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             mAudioWatchdog.feedAudioData(resampledAudio);
         }
         mAudioBufferManager.addAudioSamples(resampledAudio);
+        //Accumulate this call's audio length (8 kHz) to decide whether it is a "qualifying" call.
+        mCurrentCallSamples += resampledAudio.length;
         if(mAudioFilters != null)
         {
             mAudioFilters.process(resampledAudio);
@@ -597,7 +612,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             }
             double power = sumSquared / rawI.length;
             double powerDbfs = 10.0 * Math.log10(Math.max(power, 1e-20));
-            AdaptiveGainAdvisor.getInstance(mUserPreferences).reportSignalLevel(mChannelName, powerDbfs);
+            AdaptiveGainAdvisor.getInstance(mUserPreferences).reportSignalLevel(mChannelName, mChannelFrequency, powerDbfs);
         }
 
         float[] decimatedI = mIDecimationFilter.decimateReal(samples.i());
@@ -623,6 +638,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
      */
     private void notifyCallStart()
     {
+        mCurrentCallSamples = 0;
         mAudioBufferManager.startEvent();
         broadcast(new DecoderStateEvent(this, DecoderStateEvent.Event.START, State.CALL, 0));
     }
@@ -637,8 +653,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
     /**
      * Broadcasts a call end state event.  If the user has enabled AI audio auto-optimization, the
-     * optimizer runs in the background at most twice a day per channel (to limit Gemini token usage)
-     * and applies its recommendations to the live filter chain and the channel configuration.
+     * optimizer runs in the background once enough good audio has accumulated.  It runs as soon as
+     * possible after startup (after MIN_QUALIFYING_CALLS calls of at least 5 seconds each) to get good
+     * filters in place quickly, then follows the twice-daily cadence in AIPreference to limit token use.
      */
     private void notifyCallEnd()
     {
@@ -647,11 +664,18 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
         mCallEventCount++;
 
-        if(mUserPreferences.getAIPreference().isNBFMAutoOptimizeDue(mChannelName)
-                && mOptimizationRunning.compareAndSet(false, true))
+        //Count this as a "qualifying" call only if it contained at least 5 seconds of audio.
+        if(mCurrentCallSamples >= MIN_QUALIFYING_CALL_SAMPLES)
         {
-            //Record the attempt time up-front so a failure or empty buffer still respects the
-            //twice-daily cadence and we never hammer the API.
+            mQualifyingCallCount++;
+        }
+        mCurrentCallSamples = 0;
+
+        if(shouldAutoOptimizeNow() && mOptimizationRunning.compareAndSet(false, true))
+        {
+            //Mark the startup priming run done and record the time up-front so a failure or empty
+            //buffer still respects the twice-daily cadence and we never hammer the API.
+            mStartupOptimizeDone = true;
             mUserPreferences.getAIPreference().setNBFMLastOptimizeMs(mChannelName, System.currentTimeMillis());
             final DecodeConfigNBFM configSnapshot = mNBFMConfig;
             ThreadPool.CACHED.submit(() -> {
@@ -675,6 +699,34 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                 }
             });
         }
+    }
+
+    /**
+     * Decides whether an automatic NBFM filter optimization should run now.  Requires the feature to
+     * be enabled and at least {@link #MIN_QUALIFYING_CALLS} qualifying calls (>= 5 seconds each) of
+     * buffered audio.  The first ("startup") run fires as soon as that audio is available so good
+     * filters are applied quickly; afterward it falls back to the twice-daily cadence in AIPreference.
+     */
+    private boolean shouldAutoOptimizeNow()
+    {
+        if(!mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled())
+        {
+            return false;
+        }
+
+        if(mQualifyingCallCount < MIN_QUALIFYING_CALLS)
+        {
+            return false;
+        }
+
+        if(!mStartupOptimizeDone)
+        {
+            //Startup priming: optimize as soon as enough good audio has accumulated this session.
+            return true;
+        }
+
+        //Ongoing: at most twice a day per channel.
+        return mUserPreferences.getAIPreference().isNBFMAutoOptimizeDue(mChannelName);
     }
 
     /**
@@ -1051,6 +1103,11 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             if(sourceEvent.getEvent() == SourceEvent.Event.NOTIFICATION_SAMPLE_RATE_CHANGE)
             {
                 setSampleRate(sourceEvent.getValue().doubleValue());
+            }
+            else if(sourceEvent.getEvent() == SourceEvent.Event.NOTIFICATION_FREQUENCY_CHANGE)
+            {
+                //Track the channel's center frequency so the gain advisor can attribute it to a tuner.
+                mChannelFrequency = sourceEvent.getValue().longValue();
             }
         }
     }
