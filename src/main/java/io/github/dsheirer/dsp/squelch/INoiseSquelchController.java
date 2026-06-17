@@ -51,4 +51,24 @@ public interface INoiseSquelchController
      * @param override (true) or (false) to turn off squelch override.
      */
     void setSquelchOverride(boolean override);
+
+    /**
+     * Marks this channel's squelch settings as having been manually adjusted by the user, locking out the
+     * automatic squelch calibrator so it leaves the manual thresholds unchanged.  Default no-op for
+     * controllers that do not support automatic calibration.
+     */
+    default void markSquelchManuallyAdjusted() {}
+
+    /**
+     * Clears the manual-adjustment lock, re-enabling automatic squelch calibration for this channel.
+     * Default no-op.
+     */
+    default void clearSquelchManualAdjustment() {}
+
+    /**
+     * Indicates whether the user has manually adjusted this channel's squelch settings (locking out the
+     * automatic squelch calibrator).  Default false.
+     * @return true when manually adjusted.
+     */
+    default boolean isSquelchManuallyAdjusted() { return false; }
 }

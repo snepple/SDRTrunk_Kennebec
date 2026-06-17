@@ -41,6 +41,12 @@ public class SquelchAIAdvisor
      */
     private static final float MINIMUM_CLUSTER_SEPARATION = 0.03f;
 
+    //Tail-removal recommendation bounds (milliseconds) and the noise-floor-to-tail scaling factor.
+    private static final int DEFAULT_TAIL_REMOVAL_MS = 100;
+    private static final int MIN_TAIL_REMOVAL_MS = 50;
+    private static final int MAX_TAIL_REMOVAL_MS = 250;
+    private static final float TAIL_NOISE_SCALE_MS = 400f;
+
     private final float[] mNoiseHistory = new float[HISTORY_SIZE];
     private int mHistoryIndex = 0;
     private float mRecommendedThreshold = -80.0f;
@@ -217,6 +223,27 @@ public class SquelchAIAdvisor
                 mVarianceSamples.size(), fmt(low), fmt(median), fmt(high), fmt(open), fmt(close));
 
         return new Recommendation(open, close);
+    }
+
+    /**
+     * Recommends a squelch tail-removal duration (milliseconds) based on the measured noise floor.  Noisier
+     * channels get a longer tail to cut the squelch-tail noise burst after a transmission ends, while
+     * cleaner channels get a shorter tail to avoid clipping the end of audio.
+     * @return recommended tail removal in milliseconds, clamped to a sensible range.
+     */
+    public int getRecommendedTailRemovalMs()
+    {
+        if(!hasSufficientCalibrationData())
+        {
+            return DEFAULT_TAIL_REMOVAL_MS;
+        }
+
+        List<Float> sorted = new ArrayList<>(mVarianceSamples);
+        Collections.sort(sorted);
+        float high = percentile(sorted, 90); //~noise-floor variance
+
+        int tail = Math.round(MIN_TAIL_REMOVAL_MS + (high * TAIL_NOISE_SCALE_MS));
+        return Math.max(MIN_TAIL_REMOVAL_MS, Math.min(MAX_TAIL_REMOVAL_MS, tail));
     }
 
     /**

@@ -123,6 +123,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     private final int mSquelchHeadRemovalMs;
     private SquelchTailRemover mSquelchTailRemover;
 
+    // Automatic squelch calibration (auto-calibrate on start + continuous drift + tail optimization)
+    private final io.github.dsheirer.dsp.squelch.SquelchAutoCalibrator mSquelchAutoCalibrator;
+    private Listener<NoiseSquelchState> mExternalNoiseSquelchStateListener;
+
     // VoxSend audio filter chain (low-pass, de-emphasis, bass boost, voice enhancement, noise gate)
     private NBFMAudioFilters mAudioFilters;
     private AudioBufferManager mAudioBufferManager;
@@ -177,6 +181,28 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         mChannelBandwidth = config.getBandwidth().getValue();
         mNoiseSquelch = new NoiseSquelch(config.getSquelchNoiseOpenThreshold(), config.getSquelchNoiseCloseThreshold(),
                 config.getSquelchHysteresisOpenThreshold(), config.getSquelchHysteresisCloseThreshold());
+
+        //Automatic squelch calibration: gated by the Squelch Advisor preference and locked out when the user
+        //has manually adjusted this channel's squelch.  Applies thresholds (and a tail-removal duration) to
+        //the live squelch and persisted config without marking the change as a manual adjustment.
+        mSquelchAutoCalibrator = new io.github.dsheirer.dsp.squelch.SquelchAutoCalibrator(channelName,
+                () -> mUserPreferences.getAIPreference().isSquelchAdvisorEnabled(),
+                () -> getDecodeConfiguration().isSquelchManuallyAdjusted(),
+                (open, close) -> {
+                    mNoiseSquelch.setNoiseThreshold(open, close);
+                    getDecodeConfiguration().setSquelchNoiseOpenThreshold(open);
+                    getDecodeConfiguration().setSquelchNoiseCloseThreshold(close);
+                },
+                tailMs -> {
+                    if(mSquelchTailRemover != null)
+                    {
+                        mSquelchTailRemover.setTailRemovalMs(tailMs);
+                    }
+                    getDecodeConfiguration().setSquelchTailRemovalMs(tailMs);
+                });
+
+        //Register an internal squelch-state listener that feeds the auto-calibrator and forwards to the UI.
+        mNoiseSquelch.setNoiseSquelchStateListener(this::onNoiseSquelchState);
 
 // Extract CTCSS/DCS tone filter configuration
         mToneFilterEnabled = config.hasToneFiltering();
@@ -410,7 +436,43 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     @Override
     public void setNoiseSquelchStateListener(Listener<NoiseSquelchState> listener)
     {
-        mNoiseSquelch.setNoiseSquelchStateListener(listener);
+        //Store the external (UI) listener.  The decoder keeps its own internal listener registered with the
+        //squelch so the auto-calibrator always receives state, even when no UI is attached.
+        mExternalNoiseSquelchStateListener = listener;
+    }
+
+    /**
+     * Internal squelch-state handler: feeds the automatic calibrator and forwards to the external (UI)
+     * listener when one is registered.
+     * @param state latest noise squelch state.
+     */
+    private void onNoiseSquelchState(NoiseSquelchState state)
+    {
+        mSquelchAutoCalibrator.process(state);
+
+        Listener<NoiseSquelchState> external = mExternalNoiseSquelchStateListener;
+        if(external != null)
+        {
+            external.receive(state);
+        }
+    }
+
+    @Override
+    public void markSquelchManuallyAdjusted()
+    {
+        getDecodeConfiguration().setSquelchManuallyAdjusted(true);
+    }
+
+    @Override
+    public void clearSquelchManualAdjustment()
+    {
+        getDecodeConfiguration().setSquelchManuallyAdjusted(false);
+    }
+
+    @Override
+    public boolean isSquelchManuallyAdjusted()
+    {
+        return getDecodeConfiguration().isSquelchManuallyAdjusted();
     }
 
     /**

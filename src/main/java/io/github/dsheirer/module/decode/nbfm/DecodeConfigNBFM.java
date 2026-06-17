@@ -75,6 +75,7 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     //optimizer leaves all of this channel's filters untouched.  The user can re-enable it from the
     //channel's Audio Filters editor.
     private boolean mAiAutoOptimizeOptedOut = false;
+    private boolean mSquelchManuallyAdjusted = false;
 
     /**
      * Constructs an instance
@@ -667,6 +668,27 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     public void setAiAutoOptimizeOptedOut(boolean optedOut)
     {
         mAiAutoOptimizeOptedOut = optedOut;
+    }
+
+    /**
+     * Indicates whether the user has manually adjusted this channel's squelch settings.  When true, the
+     * automatic squelch calibrator (auto-calibrate on start and continuous drift correction) leaves this
+     * channel's squelch thresholds unchanged so manual settings are respected.  The user can clear this
+     * lock from the squelch view to re-enable automatic squelch adjustment.
+     * @return manual-adjustment lock status, defaults to false.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "squelchManuallyAdjusted")
+    public boolean isSquelchManuallyAdjusted()
+    {
+        return mSquelchManuallyAdjusted;
+    }
+
+    /**
+     * Sets whether the user has manually adjusted this channel's squelch settings.
+     */
+    public void setSquelchManuallyAdjusted(boolean manuallyAdjusted)
+    {
+        mSquelchManuallyAdjusted = manuallyAdjusted;
     }
 
 }

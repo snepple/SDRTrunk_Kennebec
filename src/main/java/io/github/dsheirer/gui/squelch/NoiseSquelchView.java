@@ -126,6 +126,12 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
     private volatile SquelchAIAdvisor mCalibratingAdvisor;
     private ScheduledFuture<?> mCalibrationFuture;
 
+    //True while the view is applying slider values programmatically (init/reset/calibration) so those
+    //changes are not mistaken for manual user adjustments that would lock out automatic calibration.
+    private boolean mProgrammaticChange = false;
+    private Label mLockLabel;
+    private Button mUnlockButton;
+
     private ToggleButton mSquelchOverrideButton;
     private Slider mOpenNoiseSlider;
     private Slider mCloseNoiseSlider;
@@ -223,7 +229,8 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
         HBox.setHgrow(getSquelchOverrideButton(), Priority.ALWAYS);
         HBox.setHgrow(getResetButton(), Priority.ALWAYS);
         HBox.setHgrow(getCalibrateButton(), Priority.ALWAYS);
-        buttonsBox.getChildren().addAll(getSquelchOverrideButton(), getResetButton(), getCalibrateButton());
+        buttonsBox.getChildren().addAll(getSquelchOverrideButton(), getResetButton(), getCalibrateButton(),
+                getLockLabel(), getUnlockButton());
 
         GridPane.setHalignment(buttonsBox,  HPos.LEFT);
         GridPane.setHgrow(buttonsBox, Priority.SOMETIMES);
@@ -331,6 +338,9 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
     {
         Platform.runLater(() -> {
 
+            //These are programmatic initial values from the decoder, not user edits - don't lock auto-calibration.
+            mProgrammaticChange = true;
+
             getOpenNoiseSlider().setDisable(false);
             getCloseNoiseSlider().setDisable(false);
             getNoiseValueLabel().setDisable(false);
@@ -342,6 +352,9 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
             getOpenHysteresisSlider().setValue(noiseSquelchState.hysteresisOpenThreshold());
 
             getCloseHysteresisSlider().setValue(noiseSquelchState.hysteresisCloseThreshold() - noiseSquelchState.hysteresisOpenThreshold());
+
+            mProgrammaticChange = false;
+            refreshLockIndicator();
 
             getSquelchStateLabel().setDisable(false);
             getActivityChart().setDisable(false);
@@ -407,6 +420,12 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
         //Cancel any in-progress calibration when the view is reset (e.g. controller change).
         cancelCalibration();
         getCalibrateButton().setDisable(true);
+
+        //Hide the auto-squelch lock indicator until a controller is attached.
+        getLockLabel().setVisible(false);
+        getLockLabel().setManaged(false);
+        getUnlockButton().setVisible(false);
+        getUnlockButton().setManaged(false);
 
         mControlsUpdated = false;
     }
@@ -675,8 +694,11 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
             }
 
             //Apply the recommended thresholds.  Setting the slider values propagates to the controller and
-            //schedules a playlist save through the existing slider change listeners.
+            //schedules a playlist save through the existing slider change listeners.  This is an advisor
+            //action, not a manual edit, so guard it from marking the channel as manually adjusted.
+            mProgrammaticChange = true;
             setNoiseSliderValues(recommendation.openThreshold(), recommendation.closeThreshold());
+            mProgrammaticChange = false;
 
             LOGGER.info("Squelch calibrated from {} samples: open={}, close={}", sampleCount,
                     recommendation.openThreshold(), recommendation.closeThreshold());
@@ -701,6 +723,68 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
         {
             mCalibrateButton.setText("Calibrate");
         }
+    }
+
+    /**
+     * Label shown when automatic squelch calibration is locked out by a manual adjustment.
+     */
+    private Label getLockLabel()
+    {
+        if(mLockLabel == null)
+        {
+            mLockLabel = new Label("Auto-squelch locked");
+            mLockLabel.setStyle("-fx-text-fill: #ff9500;");
+            mLockLabel.setTooltip(new Tooltip("You have manually adjusted this channel's squelch, so " +
+                    "automatic calibration is disabled. Click Unlock to re-enable it."));
+            mLockLabel.setVisible(false);
+            mLockLabel.setManaged(false);
+        }
+
+        return mLockLabel;
+    }
+
+    /**
+     * Button that clears the manual-adjustment lock and re-enables automatic squelch calibration.
+     */
+    private Button getUnlockButton()
+    {
+        if(mUnlockButton == null)
+        {
+            mUnlockButton = new Button("Unlock");
+            mUnlockButton.setTooltip(new Tooltip("Re-enable automatic squelch calibration for this channel"));
+            mUnlockButton.setVisible(false);
+            mUnlockButton.setManaged(false);
+            mUnlockButton.setOnAction(event -> {
+                if(mController != null)
+                {
+                    mController.clearSquelchManualAdjustment();
+
+                    if(mPlaylistManager != null)
+                    {
+                        mPlaylistManager.schedulePlaylistSave();
+                    }
+
+                    refreshLockIndicator();
+                }
+            });
+        }
+
+        return mUnlockButton;
+    }
+
+    /**
+     * Updates the visibility of the auto-squelch lock indicator and Unlock button based on the Squelch
+     * Advisor preference and the channel's manual-adjustment state.
+     */
+    private void refreshLockIndicator()
+    {
+        boolean advisorEnabled = mUserPreferences.getAIPreference().isSquelchAdvisorEnabled();
+        boolean locked = advisorEnabled && mController != null && mController.isSquelchManuallyAdjusted();
+
+        getLockLabel().setVisible(locked);
+        getLockLabel().setManaged(locked);
+        getUnlockButton().setVisible(locked);
+        getUnlockButton().setManaged(locked);
     }
 
     /**
@@ -760,12 +844,32 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
             close = Math.min(close, NoiseSquelch.MAXIMUM_NOISE_THRESHOLD);
             close = Math.max(close, NoiseSquelch.MINIMUM_NOISE_THRESHOLD);
             mController.setNoiseThreshold(open, close);
+            markManualIfUserChange();
 
             //The controller updates the channel configuration so schedule a playlist save
             if(mPlaylistManager != null)
             {
                 mPlaylistManager.schedulePlaylistSave();
             }
+        }
+    }
+
+    /**
+     * Marks the channel's squelch as manually adjusted (locking out automatic calibration) when the change
+     * originated from a genuine user interaction rather than a programmatic update (init/reset/calibration).
+     */
+    private void markManualIfUserChange()
+    {
+        if(!mProgrammaticChange && mController != null && !mController.isSquelchManuallyAdjusted())
+        {
+            mController.markSquelchManuallyAdjusted();
+
+            if(mPlaylistManager != null)
+            {
+                mPlaylistManager.schedulePlaylistSave();
+            }
+
+            refreshLockIndicator();
         }
     }
 
@@ -826,6 +930,7 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
                 mOpenHysteresisShadow = open;
                 mCloseHysteresisShadow = close;
                 mController.setHysteresisThreshold(open, close);
+                markManualIfUserChange();
 
                 //The controller updates the channel configuration so schedule a playlist save
                 if(mPlaylistManager != null)
