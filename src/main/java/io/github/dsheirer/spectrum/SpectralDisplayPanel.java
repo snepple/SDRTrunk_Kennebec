@@ -656,6 +656,10 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
             displayMenu.getItems().add(fftWindowType);
             for(WindowType type : WindowType.values()) fftWindowType.getItems().add(new FFTWindowTypeItem(mComplexDftProcessor, type));
 
+            //Spectrum/Waterfall + Overlay layout sizing - editable here via right-click instead of only
+            //in User Preferences.
+            addDisplayLayoutMenu(displayMenu);
+
             if(event.getSource() != mWaterfallPanel) {
                 Menu smoothingMenu = new Menu("Smoothing");
                 if(mSpectrumPanel.getSmoothingType() != SmoothingType.NONE) {
@@ -755,5 +759,48 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
                 });
             });
         }
+    }
+
+    /**
+     * Adds a "Layout" submenu exposing the Spectrum/Waterfall and Overlay sizing settings that
+     * previously lived only in User Preferences, so they can be changed directly from the display's
+     * right-click menu. Each setter updates the DisplayPreference, which persists and notifies the
+     * panels to refresh.
+     */
+    private void addDisplayLayoutMenu(Menu displayMenu)
+    {
+        io.github.dsheirer.preference.display.DisplayPreference dp = mUserPreferences.getDisplayPreference();
+        Menu layoutMenu = new Menu("Layout");
+        layoutMenu.getItems().add(buildPresetMenu("Waterfall Height (px)",
+            dp.waterfallImageHeightProperty().get(), new double[]{300, 500, 700, 900, 1200},
+            v -> dp.waterfallImageHeightProperty().set((int) v)));
+        layoutMenu.getItems().add(buildPresetMenu("Spectrum Inset (px)",
+            dp.spectrumInsetProperty().get(), new double[]{0, 10, 20, 30, 40},
+            v -> dp.spectrumInsetProperty().set(v)));
+        layoutMenu.getItems().add(buildPresetMenu("Label Width (px)",
+            dp.overlayLabelWidthProperty().get(), new double[]{40, 50, 60, 80, 100},
+            v -> dp.overlayLabelWidthProperty().set(v)));
+        layoutMenu.getItems().add(buildPresetMenu("Label Height (px)",
+            dp.overlayLabelHeightProperty().get(), new double[]{10, 12, 14, 16, 18},
+            v -> dp.overlayLabelHeightProperty().set(v)));
+        displayMenu.getItems().add(layoutMenu);
+    }
+
+    private Menu buildPresetMenu(String title, double current, double[] values,
+                                 java.util.function.DoubleConsumer setter)
+    {
+        Menu menu = new Menu(title);
+        javafx.scene.control.ToggleGroup group = new javafx.scene.control.ToggleGroup();
+        for(double value : values)
+        {
+            javafx.scene.control.RadioMenuItem item =
+                new javafx.scene.control.RadioMenuItem(String.valueOf((int) value));
+            item.setToggleGroup(group);
+            if(Math.abs(value - current) < 0.001) item.setSelected(true);
+            final double selected = value;
+            item.setOnAction(e -> setter.accept(selected));
+            menu.getItems().add(item);
+        }
+        return menu;
     }
 }
