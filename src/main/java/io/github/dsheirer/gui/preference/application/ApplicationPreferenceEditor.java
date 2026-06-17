@@ -229,6 +229,13 @@ public class ApplicationPreferenceEditor extends HBox
                 watchdogToggle.setSelected(mApplicationPreference.isWatchdogEnabled());
                 watchdogToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
                     mApplicationPreference.setWatchdogEnabled(newValue);
+                    //Start the watchdog immediately when enabled so the toggle takes effect without a
+                    //restart. (Disabling takes effect on the next launch; the running watchdog will not
+                    //restart the app after a normal exit.)
+                    if(newValue)
+                    {
+                        WindowsReliabilityManager.startWatchdogIfEnabled(mUserPreferences);
+                    }
                 });
 
                 systemReliabilityCard.getChildren().addAll(
