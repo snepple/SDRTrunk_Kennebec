@@ -166,6 +166,11 @@ public class UsbMonitorManager {
         try {
             Path appRoot = userPreferences.getDirectoryPreference().getDirectoryApplicationRoot();
             Path scriptDir = appRoot.resolve("scripts");
+            //Ensure the scripts directory exists before copying/writing into it. The monitor can be
+            //flagged "installed" in preferences while the directory is absent (e.g. a fresh application
+            //root), in which case Files.copy/writeString would throw NoSuchFileException on the missing
+            //parent. createDirectories is a no-op when it already exists.
+            Files.createDirectories(scriptDir);
             Path scriptPath = scriptDir.resolve(SCRIPT_NAME);
             Path configPath = scriptDir.resolve(CONFIG_NAME);
 
