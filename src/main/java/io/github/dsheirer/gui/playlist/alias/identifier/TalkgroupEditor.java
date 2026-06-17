@@ -19,6 +19,8 @@
 
 package io.github.dsheirer.gui.playlist.alias.identifier;
 
+import io.github.dsheirer.alias.Alias;
+import io.github.dsheirer.alias.id.AliasID;
 import io.github.dsheirer.alias.id.talkgroup.Talkgroup;
 import io.github.dsheirer.gui.control.HexFormatter;
 import io.github.dsheirer.playlist.PlaylistManager;
@@ -154,6 +156,21 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
                         }
                     }
                     mTalkgroupField.getItems().addAll(talkgroups);
+                } else if (getItem().getProtocol() == Protocol.APCO25) {
+                    //Populate with APCO-25 talkgroups already configured in the alias list so the user can
+                    //pick from known talkgroups instead of cross-referencing channels by hand.
+                    mTalkgroupField.getItems().clear();
+                    List<Integer> talkgroups = new ArrayList<>();
+                    for (Alias alias : mPlaylistManager.getAliasModel().getAliases()) {
+                        for (AliasID id : alias.getAliasIdentifiers()) {
+                            if (id instanceof Talkgroup tg && tg.getProtocol() == Protocol.APCO25
+                                    && !talkgroups.contains(tg.getValue())) {
+                                talkgroups.add(tg.getValue());
+                            }
+                        }
+                    }
+                    java.util.Collections.sort(talkgroups);
+                    mTalkgroupField.getItems().addAll(talkgroups);
                 } else {
                     mTalkgroupField.getItems().clear();
                 }
@@ -224,10 +241,24 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
                         setText(null);
                     } else {
                         String label = Integer.toUnsignedString(item);
-                        for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
-                            if (channel.getDecodeConfiguration() instanceof DecodeConfigNBFM nbfmConfig && nbfmConfig.getTalkgroup() == item) {
-                                label = String.format("%s (%s, %s, %s)", Integer.toUnsignedString(item), channel.getSystem() != null ? channel.getSystem() : "", channel.getSite() != null ? channel.getSite() : "", channel.getName() != null ? channel.getName() : "");
-                                break;
+                        Protocol protocol = getItem() != null ? getItem().getProtocol() : null;
+                        if (protocol == Protocol.NBFM) {
+                            for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
+                                if (channel.getDecodeConfiguration() instanceof DecodeConfigNBFM nbfmConfig && nbfmConfig.getTalkgroup() == item) {
+                                    label = String.format("%s (%s, %s, %s)", Integer.toUnsignedString(item), channel.getSystem() != null ? channel.getSystem() : "", channel.getSite() != null ? channel.getSite() : "", channel.getName() != null ? channel.getName() : "");
+                                    break;
+                                }
+                            }
+                        } else if (protocol == Protocol.APCO25) {
+                            //Show the alias name alongside the configured APCO-25 talkgroup value.
+                            outer:
+                            for (Alias alias : mPlaylistManager.getAliasModel().getAliases()) {
+                                for (AliasID id : alias.getAliasIdentifiers()) {
+                                    if (id instanceof Talkgroup tg && tg.getProtocol() == Protocol.APCO25 && tg.getValue() == item) {
+                                        label = Integer.toUnsignedString(item) + " (" + (alias.getName() != null ? alias.getName() : "") + ")";
+                                        break outer;
+                                    }
+                                }
                             }
                         }
                         setText(label);
