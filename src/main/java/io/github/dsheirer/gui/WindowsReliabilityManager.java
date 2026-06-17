@@ -16,6 +16,34 @@ public class WindowsReliabilityManager {
     private static final String GRACEFUL_EXIT_FILE = "sdrtrunk_graceful_exit";
     private static final String RESTART_MARKER_FILE = "sdrtrunk_watchdog_restart";
 
+    //Guards against starting more than one watchdog process per run (e.g. started at launch and then
+    //toggled on again at runtime).
+    private static volatile boolean mWatchdogStarted = false;
+
+    /**
+     * Resolves the launcher used to (re)start the application: the native jpackage executable
+     * (SDRTrunk.exe) when present, otherwise the runtime-image launcher (bin\sdrtrunk.bat). This makes
+     * auto-start and watchdog-restart work for both the installer and the portable/runtime-zip layouts.
+     */
+    private static String resolveLauncher() {
+        String dir = System.getProperty("user.dir");
+        Path exe = Paths.get(dir, "SDRTrunk.exe");
+        if (Files.exists(exe)) {
+            return exe.toString();
+        }
+        return Paths.get(dir, "bin", "sdrtrunk.bat").toString();
+    }
+
+    /**
+     * Starts the watchdog immediately if it is enabled and not already running. Lets the runtime toggle
+     * take effect without requiring a restart.
+     */
+    public static void startWatchdogIfEnabled(UserPreferences prefs) {
+        if (isWindows10OrNewer() && prefs != null && prefs.getApplicationPreference().isWatchdogEnabled()) {
+            startWatchdog();
+        }
+    }
+
     public static boolean isWindows10OrNewer() {
         String osName = System.getProperty("os.name");
         return osName != null && (osName.startsWith("Windows 10") || osName.startsWith("Windows 11"));
@@ -38,10 +66,14 @@ public class WindowsReliabilityManager {
         }
     }
 
-    private static void startWatchdog() {
+    private static synchronized void startWatchdog() {
+        if (mWatchdogStarted) {
+            return;
+        }
         try {
             long currentPid = ProcessHandle.current().pid();
             String userDir = System.getProperty("user.dir");
+            String launcher = resolveLauncher();
             int healthPort = RestApiWatchdog.getConfiguredPort();
 
             //Use absolute paths and an explicit working directory: the watchdog-restarted instance
@@ -72,15 +104,16 @@ public class WindowsReliabilityManager {
                   "$marker = '%s\\%s'; " +
                   "if ((Test-Path $marker) -and (((Get-Date) - (Get-Item $marker).LastWriteTime).TotalSeconds -lt 120)) { exit }; " +
                   "New-Item -ItemType File -Path $marker -Force | Out-Null; " +
-                  "Start-Process -FilePath '%s\\bin\\sdrtrunk.bat' -WorkingDirectory '%s' " +
+                  "Start-Process -FilePath '%s' -WorkingDirectory '%s' " +
                 "}",
-                currentPid, healthPort, userDir, GRACEFUL_EXIT_FILE, userDir, RESTART_MARKER_FILE, userDir, userDir
+                currentPid, healthPort, userDir, GRACEFUL_EXIT_FILE, userDir, RESTART_MARKER_FILE, launcher, userDir
             );
 
             String encodedCmd = Base64.getEncoder().encodeToString(command.getBytes(StandardCharsets.UTF_16LE));
 
             new ProcessBuilder("powershell.exe", "-WindowStyle", "Hidden", "-EncodedCommand", encodedCmd).start();
-            mLog.info("Windows Watchdog started monitoring PID {}", currentPid);
+            mWatchdogStarted = true;
+            mLog.info("Windows Watchdog started monitoring PID {} (restart launcher: {})", currentPid, launcher);
         } catch (Exception e) {
             mLog.error("Failed to start Windows Watchdog", e);
         }
@@ -92,7 +125,7 @@ public class WindowsReliabilityManager {
         }
 
         try {
-            String scriptPath = System.getProperty("user.dir") + "\\bin\\sdrtrunk.bat";
+            String scriptPath = resolveLauncher();
             ProcessBuilder pb;
             if (enable) {
                 pb = new ProcessBuilder("reg", "add", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "SDRTrunk", "/t", "REG_SZ", "/d", "\"" + scriptPath + "\"", "/f");
