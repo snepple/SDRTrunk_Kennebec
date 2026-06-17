@@ -156,7 +156,11 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         mTable.setTableMenuButtonVisible(true);
         mTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         mTable.getColumns().addAll(DecodeEventModel.createColumns());
-        mTable.setItems(mActiveModelWrapper.getItems());
+        //Bind the table to the global event model so events are visible before any channel is selected.
+        //When a channel is selected, receive(ProcessingChain) rebinds to that channel's per-channel model.
+        //(Previously the table was bound to mActiveModelWrapper, which is never populated with events - the
+        //two real models below feed the table - so the table always showed the empty placeholder.)
+        mTable.setItems(mGlobalEventModel.getItems());
         
         Runnable updateHeaderVisibility = () -> {
             boolean singleColumn = mTable.getColumns().size() <= 1;
@@ -279,15 +283,15 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
                 mCurrentEventHistory = processingChain.getDecodeEventHistory();
                 mEventModel.clearAndSet(mCurrentEventHistory.getItems());
                 processingChain.getDecodeEventHistory().addListener(mEventModel);
-                // mTable.setModel(mEventModel);
-                // Row sorter removed during JavaFX migration
+                //Show the selected channel's events.
+                mTable.setItems(mEventModel.getItems());
                 mHistoryManagementPanel.setEnabled(true);
             }
             else
             {
                 mCurrentEventHistory = null;
-                // mTable.setModel(mGlobalEventModel);
-                // Row sorter removed during JavaFX migration
+                //No channel selected - fall back to the global (all-channels) event stream.
+                mTable.setItems(mGlobalEventModel.getItems());
                 mHistoryManagementPanel.setEnabled(true);
             }
 
