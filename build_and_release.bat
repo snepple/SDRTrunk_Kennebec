@@ -187,6 +187,35 @@ if not exist "%GRADLEW%" (
     goto ai_triage
 )
 
+:: ============================================================================
+:: BUILD MODE SELECTION
+:: ============================================================================
+:: Ask up front what kind of build to run. TEST mode produces only the Windows
+:: .exe installer (and the Windows portable zip) and still publishes a GitHub
+:: release - it skips the cross-platform runtime packages (Linux + macOS), which
+:: are the slowest part of a full run because they download 4 foreign JDKs, run
+:: jlink 4 more times, and upload ~4 extra large (JRE-bundled) zips.
+echo.
+echo ==============================================================
+echo   Select Build Mode
+echo ==============================================================
+echo.
+echo   [1] TEST build   - Windows .exe installer only (much faster).
+echo                      Still publishes a GitHub release for testing.
+echo.
+echo   [2] FULL release - All platforms: Windows, Linux, macOS.
+echo                      Use this for an actual public release.
+echo.
+set "BUILD_MODE_CHOICE="
+set /p "BUILD_MODE_CHOICE=Enter choice [1 or 2, default 1]: "
+if "!BUILD_MODE_CHOICE!"=="2" (
+    set "BUILD_MODE=FULL"
+    echo [INFO] FULL multi-platform release selected.
+) else (
+    set "BUILD_MODE=TEST"
+    echo [INFO] TEST build selected - Windows installer only ^(faster^).
+)
+
 echo [INFO] Performing case-sensitivity sweep...
 powershell -Command "Get-ChildItem -Path . -Recurse | Group-Object {$_.FullName.ToLower()} | Where-Object {$_.Count -gt 1} | ForEach-Object { $_.Group[1] | Remove-Item -Force }" >nul 2>&1
 
@@ -321,38 +350,44 @@ if "!HAS_JPACKAGE!"=="1" (
 :: ============================================================================
 :: STEP 10: Build Cross-Platform Runtime Packages (Linux + macOS)
 :: ============================================================================
-call :drawProgressBar 65 "Building Linux and macOS runtime packages..."
-cd /d "%PROJ_DIR%"
-call "%GRADLEW%" runtimeZipOthers -x test -x javadoc -x compileJni --console=plain > build_others.log 2>&1
-type build_others.log >> "%LOG_FILE%"
-findstr /C:"BUILD SUCCESSFUL" build_others.log >nul
-if !ERRORLEVEL! EQU 0 (
-    echo [OK] Cross-platform runtime packages built.
-    for %%F in (build\image\*.zip) do (
-        set "ZIPNAME=%%~nxF"
-        echo !ZIPNAME! | findstr /I "linux.*aarch64" >nul
-        if !ERRORLEVEL! EQU 0 (
-            copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-linux-aarch64.zip" >nul
-            echo [OK] Staged: SDRTrunk-!PROJ_VER!-linux-aarch64.zip
-        )
-        echo !ZIPNAME! | findstr /I "linux.*x86_64 linux.*amd64" >nul
-        if !ERRORLEVEL! EQU 0 (
-            copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-linux-x86_64.zip" >nul
-            echo [OK] Staged: SDRTrunk-!PROJ_VER!-linux-x86_64.zip
-        )
-        echo !ZIPNAME! | findstr /I "osx.*aarch64" >nul
-        if !ERRORLEVEL! EQU 0 (
-            copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-macos-aarch64.zip" >nul
-            echo [OK] Staged: SDRTrunk-!PROJ_VER!-macos-aarch64.zip
-        )
-        echo !ZIPNAME! | findstr /I "osx.*x86_64 osx.*amd64" >nul
-        if !ERRORLEVEL! EQU 0 (
-            copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-macos-x86_64.zip" >nul
-            echo [OK] Staged: SDRTrunk-!PROJ_VER!-macos-x86_64.zip
-        )
-    )
+if "!BUILD_MODE!"=="TEST" (
+    call :drawProgressBar 65 "TEST build - skipping Linux/macOS packages..."
+    echo [INFO] TEST build: skipping cross-platform ^(Linux/macOS^) runtime packages.
+    echo [INFO] This is the slowest step - skipping it is the main time savings.
 ) else (
-    echo [WARNING] Cross-platform builds failed. Only Windows package will be released.
+    call :drawProgressBar 65 "Building Linux and macOS runtime packages..."
+    cd /d "%PROJ_DIR%"
+    call "%GRADLEW%" runtimeZipOthers -x test -x javadoc -x compileJni --console=plain > build_others.log 2>&1
+    type build_others.log >> "%LOG_FILE%"
+    findstr /C:"BUILD SUCCESSFUL" build_others.log >nul
+    if !ERRORLEVEL! EQU 0 (
+        echo [OK] Cross-platform runtime packages built.
+        for %%F in (build\image\*.zip) do (
+            set "ZIPNAME=%%~nxF"
+            echo !ZIPNAME! | findstr /I "linux.*aarch64" >nul
+            if !ERRORLEVEL! EQU 0 (
+                copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-linux-aarch64.zip" >nul
+                echo [OK] Staged: SDRTrunk-!PROJ_VER!-linux-aarch64.zip
+            )
+            echo !ZIPNAME! | findstr /I "linux.*x86_64 linux.*amd64" >nul
+            if !ERRORLEVEL! EQU 0 (
+                copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-linux-x86_64.zip" >nul
+                echo [OK] Staged: SDRTrunk-!PROJ_VER!-linux-x86_64.zip
+            )
+            echo !ZIPNAME! | findstr /I "osx.*aarch64" >nul
+            if !ERRORLEVEL! EQU 0 (
+                copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-macos-aarch64.zip" >nul
+                echo [OK] Staged: SDRTrunk-!PROJ_VER!-macos-aarch64.zip
+            )
+            echo !ZIPNAME! | findstr /I "osx.*x86_64 osx.*amd64" >nul
+            if !ERRORLEVEL! EQU 0 (
+                copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-macos-x86_64.zip" >nul
+                echo [OK] Staged: SDRTrunk-!PROJ_VER!-macos-x86_64.zip
+            )
+        )
+    ) else (
+        echo [WARNING] Cross-platform builds failed. Only Windows package will be released.
+    )
 )
 
 :: ============================================================================
