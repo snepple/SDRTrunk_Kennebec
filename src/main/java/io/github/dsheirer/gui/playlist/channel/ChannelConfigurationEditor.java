@@ -107,6 +107,8 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     protected UserPreferences mUserPreferences;
     protected EditorModificationListener mEditorModificationListener = new EditorModificationListener();
     private Button mPlayButton;
+    private HBox mJmbeWarningBanner;
+    private Button mJmbeSetupButton;
     private TextField mSystemField;
     private TextField mSiteField;
     private TextField mNameField;
@@ -186,7 +188,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         headerBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         VBox.setVgrow(getSplitPane(), Priority.ALWAYS);
-        inspectorCard.getChildren().addAll(headerBox, getSplitPane());
+        inspectorCard.getChildren().addAll(headerBox, getJmbeWarningBanner(), getSplitPane());
 
 
         // Setup General Pane
@@ -267,6 +269,9 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         getNewAliasListButton().setDisable(disable);
         getAutoStartSwitch().setDisable(disable);
         if (mChooseImageBtn != null) mChooseImageBtn.setDisable(disable);
+
+        //Warn + disable Play when this channel needs the (missing) JMBE library for digital voice.
+        updateJmbeWarningState();
 
         if(channel != null)
         {
@@ -716,6 +721,66 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         }
 
         return mPlayButton;
+    }
+
+    /**
+     * Warning banner shown when the selected channel needs the JMBE library for digital voice but it is
+     * not configured. Includes a button that opens JMBE setup directly.
+     */
+    private HBox getJmbeWarningBanner()
+    {
+        if(mJmbeWarningBanner == null)
+        {
+            IconNode warnIcon = new IconNode(FontAwesome.EXCLAMATION_TRIANGLE);
+            warnIcon.setIconSize(16);
+            warnIcon.setFill(Color.web("#B8860B"));
+
+            Label warnLabel = new Label("This channel needs the optional JMBE library to produce digital " +
+                    "voice (P25/DMR) audio, and it is not set up. Audio will be silent until JMBE is installed.");
+            warnLabel.setWrapText(true);
+            HBox.setHgrow(warnLabel, Priority.ALWAYS);
+
+            mJmbeWarningBanner = new HBox(8, warnIcon, warnLabel, getJmbeSetupButton());
+            mJmbeWarningBanner.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            mJmbeWarningBanner.setPadding(new Insets(8));
+            mJmbeWarningBanner.setStyle("-fx-background-color: rgba(255,193,7,0.18); -fx-background-radius: 4; " +
+                    "-fx-border-color: rgba(184,134,11,0.6); -fx-border-radius: 4;");
+            //Hidden (and not taking layout space) unless a JMBE-dependent channel is selected and JMBE is missing.
+            mJmbeWarningBanner.setVisible(false);
+            mJmbeWarningBanner.setManaged(false);
+        }
+
+        return mJmbeWarningBanner;
+    }
+
+    private Button getJmbeSetupButton()
+    {
+        if(mJmbeSetupButton == null)
+        {
+            mJmbeSetupButton = new Button("Set Up JMBE");
+            mJmbeSetupButton.setOnAction(e ->
+                MyEventBus.getGlobalEventBus().post(new ViewUserPreferenceEditorRequest(PreferenceEditorType.JMBE_LIBRARY)));
+        }
+
+        return mJmbeSetupButton;
+    }
+
+    /**
+     * Shows/hides the JMBE warning banner and disables the Play button when the selected channel needs
+     * the JMBE library but it is not configured. A channel that is already processing keeps Play enabled
+     * (so it can still be stopped).
+     */
+    private void updateJmbeWarningState()
+    {
+        boolean needsJmbe = requiresJmbeLibrarySetup();
+        getJmbeWarningBanner().setVisible(needsJmbe);
+        getJmbeWarningBanner().setManaged(needsJmbe);
+
+        boolean processing = getItem() != null && getItem().processingProperty().get();
+        if(needsJmbe && !processing)
+        {
+            getPlayButton().setDisable(true);
+        }
     }
 
     /**
