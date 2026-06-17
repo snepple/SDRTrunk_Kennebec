@@ -406,6 +406,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
             mNewAliasListButton.setOnAction(event ->
             {
                 TextInputDialog dialog = new TextInputDialog();
+                io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(dialog.getDialogPane());
                 dialog.setTitle("Create New Alias List");
                 dialog.setHeaderText("Please enter an alias list name (max 25 chars).");
                 dialog.setContentText("Name:");
@@ -448,6 +449,7 @@ public class AliasConfigurationEditor extends VBox implements IAliasListRefreshL
                 }
 
                 TextInputDialog dialog = new TextInputDialog();
+                io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(dialog.getDialogPane());
                 dialog.setTitle("Renaming Alias List: " + aliasListName);
                 dialog.setHeaderText("Please enter the new alias list name (max 25 chars).");
                 dialog.setContentText("Name:");
