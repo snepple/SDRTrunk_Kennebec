@@ -8,7 +8,8 @@
 #   powershell -NoProfile -ExecutionPolicy Bypass -File bump_version.ps1 -GradleProperties gradle.properties
 
 param(
-    [string]$GradleProperties = "gradle.properties"
+    [string]$GradleProperties = "gradle.properties",
+    [switch]$PushToMaster
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,5 +43,16 @@ $newContent = [regex]::Replace($content, '(?m)^projectVersion=\d+\.\d+[ \t]*$', 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 [System.IO.File]::WriteAllText((Resolve-Path -LiteralPath $GradleProperties).Path, $newContent, $utf8)
 
-# Print only the new version so the caller can capture it.
+# Optionally commit and push the bump straight to origin/master (best-effort).
+if ($PushToMaster) {
+    try {
+        & git add gradle.properties 2>$null | Out-Null
+        & git commit -m "Bump version to $newVersion" 2>$null | Out-Null
+        & git push origin HEAD:master 2>$null | Out-Null
+    } catch {
+        # Non-fatal: building with the bumped local version is still fine.
+    }
+}
+
+# Print the new version so the caller can use it if desired.
 Write-Output $newVersion
