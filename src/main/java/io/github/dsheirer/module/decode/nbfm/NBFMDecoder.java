@@ -636,9 +636,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     }
 
     /**
-     * Broadcasts a call end state event.  Every 5th completed call, if the user has enabled
-     * AI audio auto-optimization, the optimizer runs in the background and applies its
-     * recommendations to the live filter chain and the channel configuration.
+     * Broadcasts a call end state event.  If the user has enabled AI audio auto-optimization, the
+     * optimizer runs in the background at most twice a day per channel (to limit Gemini token usage)
+     * and applies its recommendations to the live filter chain and the channel configuration.
      */
     private void notifyCallEnd()
     {
@@ -647,9 +647,12 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
         mCallEventCount++;
 
-        if(mCallEventCount % 5 == 0 && mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled()
+        if(mUserPreferences.getAIPreference().isNBFMAutoOptimizeDue(mChannelName)
                 && mOptimizationRunning.compareAndSet(false, true))
         {
+            //Record the attempt time up-front so a failure or empty buffer still respects the
+            //twice-daily cadence and we never hammer the API.
+            mUserPreferences.getAIPreference().setNBFMLastOptimizeMs(mChannelName, System.currentTimeMillis());
             final DecodeConfigNBFM configSnapshot = mNBFMConfig;
             ThreadPool.CACHED.submit(() -> {
                 try

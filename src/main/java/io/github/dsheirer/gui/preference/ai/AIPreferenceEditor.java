@@ -115,7 +115,7 @@ public class AIPreferenceEditor extends VBox {
             new SettingsRow("System Health Advisor & Auto-Remediation", enableSystemHealthSwitch),
             new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch),
             new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls),
-            new SettingsRow("Auto-Optimize NBFM Audio Filters (every 5th call)", enableNbfmAutoOptimizeSwitch),
+            new SettingsRow("Auto-Optimize NBFM Audio Filters (runs up to twice a day per channel)", enableNbfmAutoOptimizeSwitch),
             new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels, recommends tuner gain changes)", enableGainAdvisorSwitch)
         );
 
