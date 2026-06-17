@@ -215,6 +215,13 @@ public class AgencyFrequencyEditor extends GridPane
             descriptionColumn.setCellValueFactory(new PropertyValueFactory<>("description"));
             descriptionColumn.setPrefWidth(300);
 
+            //Alpha Tag (from the Radio Reference API, when available) so users can see it in the table
+            //without opening each entry's details.
+            TableColumn alphaTagColumn = new TableColumn();
+            alphaTagColumn.setText("Alpha Tag");
+            alphaTagColumn.setCellValueFactory(new PropertyValueFactory<>("alphaTag"));
+            alphaTagColumn.setPrefWidth(150);
+
             TableColumn frequencyColumn = new TableColumn();
             frequencyColumn.setText("Frequency");
             frequencyColumn.setCellValueFactory(new FrequencyCellValueFactory());
@@ -225,7 +232,7 @@ public class AgencyFrequencyEditor extends GridPane
             modeColumn.setCellValueFactory(new ModeCellValueFactory());
             modeColumn.setPrefWidth(100);
 
-            mFrequencyTableView.getColumns().addAll(descriptionColumn, frequencyColumn, modeColumn);
+            mFrequencyTableView.getColumns().addAll(descriptionColumn, alphaTagColumn, frequencyColumn, modeColumn);
             mFrequencyTableView.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldValue, selected) -> {
                     if(selected != null)
