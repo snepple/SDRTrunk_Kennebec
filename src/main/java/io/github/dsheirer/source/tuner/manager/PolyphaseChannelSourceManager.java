@@ -101,14 +101,26 @@ public class PolyphaseChannelSourceManager extends ChannelSourceManager
         long maxActive = tunerChannels.last().getMaxFrequency();
         long requiredBandwidth = (long) ((maxActive - minActive) / 0.8);
 
+        //Tuners with a blocked DC-spike region in the middle of the spectrum can only use one usable half
+        //bandwidth for a contiguous channel span, so the sample rate must be high enough that HALF of the
+        //usable bandwidth covers the active span.  Double the requirement in that case.
+        if (mTunerController.hasMiddleUnusableBandwidth()) {
+            requiredBandwidth *= 2;
+        }
+
         List<Integer> availableRates = sampleRateConfigurable.getAvailableSampleRatesInHz();
         if (availableRates == null || availableRates.isEmpty()) {
             return;
         }
 
+        //The usable fraction of the sample rate (after filter rolloff) is constant across candidate rates,
+        //so compute it once outside the loop.
+        double usablePercent = (double)mTunerController.getUsableBandwidth() / (double)mTunerController.getBandwidth();
+
+        //availableRates is assumed ascending; pick the lowest rate whose usable bandwidth covers the span
+        //(falling back to the highest available rate when none is sufficient).
         int bestRate = availableRates.get(availableRates.size() - 1);
         for (int rate : availableRates) {
-            double usablePercent = (double)mTunerController.getUsableBandwidth() / (double)mTunerController.getBandwidth();
             if (rate * usablePercent >= requiredBandwidth) {
                 bestRate = rate;
                 break;
