@@ -20,7 +20,12 @@ public class AIPreference extends Preference {
     public static final String KEY_GOOGLE_STT_API_KEY = "ai.transcription.google.key";
     public static final String KEY_WHISPER_API_KEY = "ai.transcription.whisper.key";
     public static final String KEY_NBFM_AUTO_OPTIMIZE = "ai.nbfm.auto.optimize";
+    public static final String KEY_NBFM_LAST_OPTIMIZE_PREFIX = "ai.nbfm.last.optimize.";
     public static final String KEY_GAIN_ADVISOR_ENABLED = "ai.gain.advisor.enabled";
+
+    //Auto-optimize a given NBFM channel at most this often.  Running every few calls burns Gemini
+    //tokens very quickly when many channels are configured, so the cadence is time-based (twice a day).
+    private static final long NBFM_AUTO_OPTIMIZE_INTERVAL_MS = 12L * 60L * 60L * 1000L;
 
     private Preferences mPreferences = Preferences.userNodeForPackage(AIPreference.class);
 
@@ -140,7 +145,9 @@ public class AIPreference extends Preference {
     }
 
     /**
-     * Whether to automatically optimize NBFM audio DSP settings using Gemini after every 5th completed call.
+     * Whether to automatically optimize NBFM audio DSP settings using Gemini.  When enabled, each
+     * channel is optimized at most twice a day (see {@link #isNBFMAutoOptimizeDue(String)}) to keep
+     * Gemini token usage reasonable even with many channels configured.
      * Requires AI to be enabled and a Gemini API key to be configured.
      */
     public boolean isNBFMAudioAutoOptimizeEnabled() {
@@ -150,6 +157,39 @@ public class AIPreference extends Preference {
     public void setNBFMAudioAutoOptimizeEnabled(boolean enabled) {
         mPreferences.putBoolean(KEY_NBFM_AUTO_OPTIMIZE, enabled);
         notifyPreferenceUpdated();
+    }
+
+    /**
+     * Preferences keys are length-limited, so long channel names are hashed to stay within bounds.
+     */
+    private static String nbfmOptimizeKey(String channelName) {
+        String safe = channelName == null ? "" : channelName;
+        if((KEY_NBFM_LAST_OPTIMIZE_PREFIX.length() + safe.length()) <= Preferences.MAX_KEY_LENGTH) {
+            return KEY_NBFM_LAST_OPTIMIZE_PREFIX + safe;
+        }
+        return KEY_NBFM_LAST_OPTIMIZE_PREFIX + Integer.toHexString(safe.hashCode());
+    }
+
+    /**
+     * Epoch-millis of the last automatic NBFM optimization for the given channel (0 if never).
+     */
+    public long getNBFMLastOptimizeMs(String channelName) {
+        return mPreferences.getLong(nbfmOptimizeKey(channelName), 0L);
+    }
+
+    public void setNBFMLastOptimizeMs(String channelName, long timestampMs) {
+        mPreferences.putLong(nbfmOptimizeKey(channelName), timestampMs);
+    }
+
+    /**
+     * Whether an automatic NBFM optimization is due for the given channel.  True only when
+     * auto-optimize is enabled and at least the twice-daily interval has elapsed since the last run.
+     */
+    public boolean isNBFMAutoOptimizeDue(String channelName) {
+        if(!isNBFMAudioAutoOptimizeEnabled()) {
+            return false;
+        }
+        return (System.currentTimeMillis() - getNBFMLastOptimizeMs(channelName)) >= NBFM_AUTO_OPTIMIZE_INTERVAL_MS;
     }
 
     /**

@@ -27,8 +27,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * antenna repositioning, propagation shifts, and weather-driven path loss.
  *
  * Without AI: pure heuristic based on average I/Q power vs threshold bands.
- * With AI: hourly Gemini consultation for deeper pattern recognition that distinguishes
- * propagation fades from incorrect hardware gain settings.
+ * With AI: twice-daily Gemini consultation for deeper pattern recognition that distinguishes
+ * propagation fades from incorrect hardware gain settings.  The user can also trigger an
+ * on-demand consultation from the tuner editor at any time.
  *
  * Recommended I/Q power range: -25 to -6 dBFS (leaves headroom below clipping while
  * keeping signals well above the noise floor).
@@ -48,8 +49,8 @@ public class AdaptiveGainAdvisor
     // Minimum sample count before issuing any recommendation (avoids false alarms on startup)
     private static final int MIN_SAMPLES_FOR_ADVICE = 50;
 
-    // AI consultation rate limiting
-    private static final long AI_CONSULTATION_INTERVAL_MS = 3_600_000L; // 1 hour
+    // AI consultation rate limiting — twice a day to keep Gemini token usage modest
+    private static final long AI_CONSULTATION_INTERVAL_MS = 43_200_000L; // 12 hours
 
     private final ConcurrentHashMap<String, ChannelStats> mChannelStats = new ConcurrentHashMap<>();
     private final ScheduledExecutorService mScheduler;
@@ -194,7 +195,7 @@ public class AdaptiveGainAdvisor
                         optimal, tooHigh, tooLow, total);
             }
 
-            // Hourly AI consultation when AI is available
+            // Periodic (twice-daily) AI consultation when AI is available
             if(shouldConsultAI())
             {
                 consultGemini();
@@ -233,11 +234,89 @@ public class AdaptiveGainAdvisor
     {
         mLastAiConsultationMs.set(System.currentTimeMillis());
 
+        if(countChannels(MIN_SAMPLES_FOR_ADVICE) == 0)
+        {
+            return;
+        }
+
+        sendGeminiConsultation(buildStatsCsv(MIN_SAMPLES_FOR_ADVICE),
+                recommendation -> mLog.info("AdaptiveGain AI recommendation: {}", recommendation),
+                () -> { /* scheduled run: failures are non-fatal and already logged */ });
+    }
+
+    /**
+     * Runs the gain advisor on demand (e.g. from the tuner editor) and delivers a recommendation.
+     * When AI is enabled and configured, consults Gemini; otherwise returns the local heuristic
+     * summary so the button is useful even without an API key.
+     *
+     * @param onResult receives the recommendation text (called off the FX thread)
+     * @param onError  receives a user-facing message when no recommendation could be produced
+     */
+    public void requestManualConsultation(java.util.function.Consumer<String> onResult,
+                                          java.util.function.Consumer<String> onError)
+    {
+        try
+        {
+            //Relax the sample gate for manual runs so the button works shortly after channels start.
+            if(countChannels(1) == 0)
+            {
+                onError.accept("No active channels are reporting I/Q signal levels yet. Start one or more " +
+                        "NBFM channels on this tuner and let them receive traffic for a minute, then try again.");
+                return;
+            }
+
+            String heuristic = buildHeuristicSummary(1);
+
+            var aiPref = mUserPreferences != null ? mUserPreferences.getAIPreference() : null;
+            boolean aiAvailable = aiPref != null && aiPref.isAIEnabled() && aiPref.isGainAdvisorEnabled()
+                    && aiPref.getGeminiApiKey() != null && !aiPref.getGeminiApiKey().isEmpty();
+
+            if(!aiAvailable)
+            {
+                onResult.accept(heuristic +
+                        "\n\nEnable AI and set a Gemini API key in Preferences for a deeper, " +
+                        "propagation-aware recommendation.");
+                return;
+            }
+
+            mLastAiConsultationMs.set(System.currentTimeMillis());
+            sendGeminiConsultation(buildStatsCsv(1),
+                    onResult,
+                    () -> onResult.accept(heuristic +
+                            "\n\n(AI consultation was unavailable, so the local heuristic analysis is shown instead.)"));
+        }
+        catch(Exception e)
+        {
+            onError.accept("Gain advisor error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Number of channels with at least {@code minSamples} accumulated samples.
+     */
+    private int countChannels(int minSamples)
+    {
+        int count = 0;
+        for(ChannelStats stats : mChannelStats.values())
+        {
+            if(stats.getSampleCount() >= minSamples)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Builds the per-channel CSV of power statistics for channels meeting the sample threshold.
+     */
+    private String buildStatsCsv(int minSamples)
+    {
         StringJoiner csv = new StringJoiner("\n");
         csv.add("channel,avg_dbfs,min_dbfs,max_dbfs,sample_count");
         for(ChannelStats stats : mChannelStats.values())
         {
-            if(stats.getSampleCount() < MIN_SAMPLES_FOR_ADVICE)
+            if(stats.getSampleCount() < minSamples)
             {
                 continue;
             }
@@ -248,10 +327,62 @@ public class AdaptiveGainAdvisor
                     stats.getMaxPowerDbfs(),
                     stats.getSampleCount()));
         }
+        return csv.toString();
+    }
 
+    /**
+     * Builds a plain-English, no-AI recommendation summary from the current statistics.
+     */
+    private String buildHeuristicSummary(int minSamples)
+    {
+        StringBuilder sb = new StringBuilder();
+        int tooHigh = 0, tooLow = 0, optimal = 0;
+        for(ChannelStats stats : mChannelStats.values())
+        {
+            if(stats.getSampleCount() < minSamples)
+            {
+                continue;
+            }
+            double avg = stats.getAveragePowerDbfs();
+            String verdict;
+            if(avg > GAIN_TOO_HIGH_DBFS) { verdict = "too strong — reduce gain"; tooHigh++; }
+            else if(avg < GAIN_TOO_LOW_DBFS) { verdict = "too weak — increase gain"; tooLow++; }
+            else { verdict = "optimal"; optimal++; }
+            sb.append(String.format("• %s: %.1f dBFS avg (%.1f to %.1f) — %s%n",
+                    stats.getChannelName(), avg, stats.getMinPowerDbfs(), stats.getMaxPowerDbfs(), verdict));
+        }
+
+        String headline;
+        if(tooHigh > 0 && tooLow == 0)
+        {
+            headline = "Overall: signals are running hot. Lower the tuner gain to keep peaks below -3 dBFS.";
+        }
+        else if(tooLow > 0 && tooHigh == 0)
+        {
+            headline = "Overall: signals are weak. Raise the tuner gain to improve SNR (aim for -25 to -6 dBFS).";
+        }
+        else if(tooHigh > 0 && tooLow > 0)
+        {
+            headline = "Overall: mixed levels across channels on this tuner. Since all channels share one hardware " +
+                    "gain, pick a setting that keeps the strongest channel below -3 dBFS without burying the weakest.";
+        }
+        else
+        {
+            headline = "Overall: all monitored channels are within the optimal -25 to -6 dBFS range. No change needed.";
+        }
+
+        return headline + "\n\nPer-channel detail:\n" + sb.toString().trim();
+    }
+
+    /**
+     * Sends a Gemini consultation for the given stats CSV, invoking {@code onText} with the
+     * recommendation on success or {@code onFailure} when no usable response is obtained.
+     */
+    private void sendGeminiConsultation(String csv, java.util.function.Consumer<String> onText, Runnable onFailure)
+    {
         String prompt = "You are an RF engineer advising on SDR receiver gain settings.\n" +
-                "The following table shows I/Q signal power statistics (dBFS) for active receive channels " +
-                "monitored over the last hour. Each channel may share a physical SDR tuner with others.\n\n" +
+                "The following table shows I/Q signal power statistics (dBFS) for active receive channels. " +
+                "Each channel may share a physical SDR tuner with others.\n\n" +
                 csv + "\n\n" +
                 "Optimal ADC utilization is -25 to -6 dBFS. Levels above -3 dBFS risk clipping. " +
                 "Levels below -35 dBFS indicate poor SNR.\n" +
@@ -293,23 +424,29 @@ public class AdaptiveGainAdvisor
                                 {
                                     String recommendation = responseBody.substring(contentStart, contentEnd)
                                             .replace("\\n", " ").replace("\\\"", "\"");
-                                    mLog.info("AdaptiveGain AI recommendation: {}", recommendation);
+                                    onText.accept(recommendation);
+                                    return;
                                 }
                             }
+                            mLog.debug("AdaptiveGain AI consultation returned no text part");
+                            onFailure.run();
                         }
                         else
                         {
                             mLog.debug("AdaptiveGain AI consultation returned HTTP {}", response.statusCode());
+                            onFailure.run();
                         }
                     })
                     .exceptionally(ex -> {
                         mLog.debug("AdaptiveGain AI consultation failed: {}", ex.getMessage());
+                        onFailure.run();
                         return null;
                     });
         }
         catch(Exception e)
         {
             mLog.debug("AdaptiveGain AI consultation error: {}", e.getMessage());
+            onFailure.run();
         }
     }
 

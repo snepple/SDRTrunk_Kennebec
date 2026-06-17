@@ -117,6 +117,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     private Button mViewSpectrumButton;
     private Button mNewSpectrumButton;
     private Button mRestartTunerButton;
+    private Button mGainAdvisorButton;
     private ToggleButton mRecordButton;
     private ButtonPanel mButtonsPanel;
     private FrequencyPanel mFrequencyPanel;
@@ -764,6 +765,52 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
     }
 
     /**
+     * On-demand Adaptive Gain Advisor button.  Runs the advisor immediately and shows its gain
+     * recommendation for the currently active channels (Gemini-assisted when AI is configured,
+     * otherwise a local heuristic summary).
+     */
+    protected Button getGainAdvisorButton()
+    {
+        if(mGainAdvisorButton == null)
+        {
+            mGainAdvisorButton = new Button("Gain Advisor");
+            mGainAdvisorButton.setTooltip(new javafx.scene.control.Tooltip(
+                    "Run the Adaptive Gain Advisor now and show a tuner gain recommendation based on " +
+                    "current I/Q signal levels across active channels."));
+            mGainAdvisorButton.setOnAction(e ->
+            {
+                mGainAdvisorButton.setDisable(true);
+                io.github.dsheirer.source.tuner.manager.AdaptiveGainAdvisor.getInstance(mUserPreferences)
+                        .requestManualConsultation(
+                                recommendation -> Platform.runLater(() -> {
+                                    mGainAdvisorButton.setDisable(false);
+                                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                                    io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
+                                    alert.setTitle("Adaptive Gain Advisor");
+                                    alert.setHeaderText("Gain recommendation");
+                                    javafx.scene.control.TextArea area = new javafx.scene.control.TextArea(recommendation);
+                                    area.setEditable(false);
+                                    area.setWrapText(true);
+                                    area.setPrefSize(520, 220);
+                                    alert.getDialogPane().setContent(area);
+                                    alert.showAndWait();
+                                }),
+                                message -> Platform.runLater(() -> {
+                                    mGainAdvisorButton.setDisable(false);
+                                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                                    io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
+                                    alert.setTitle("Adaptive Gain Advisor");
+                                    alert.setHeaderText("No recommendation available");
+                                    alert.setContentText(message);
+                                    alert.showAndWait();
+                                }));
+            });
+        }
+
+        return mGainAdvisorButton;
+    }
+
+    /**
      * Turns off the recorder, if it's currently recording.
      */
     protected void turnOffRecorder()
@@ -1021,7 +1068,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
 
             HBox row2 = new HBox(6);
             row2.setAlignment(Pos.CENTER_LEFT);
-            row2.getChildren().addAll(getInfoConfigButton(), getRestartTunerButton());
+            row2.getChildren().addAll(getInfoConfigButton(), getGainAdvisorButton(), getRestartTunerButton());
 
             getChildren().addAll(row1, row2, getRecordingStatusLabel());
         }
