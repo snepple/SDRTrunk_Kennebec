@@ -37,6 +37,13 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
     private static final String PAUSED = "PAUSED - Right Click to Unpause";
     private static final String DISABLED = "DISABLED - Right Click to Select a Tuner";
 
+    //Bounds for the constant status strings, measured once and cached.  Constructing a Text node every
+    //frame just to measure it triggered CSS/layout machinery and churned while idle (mDisabled starts true).
+    private static double sDisabledTextWidth = -1;
+    private static double sDisabledTextHeight;
+    private static double sPausedTextWidth = -1;
+    private static double sPausedTextHeight;
+
     private Canvas mCanvas;
     private GraphicsContext mGraphicsContext;
     private WritableImage mWaterfallImage;
@@ -284,21 +291,25 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
         }
 
         if (mDisabled) {
-            javafx.scene.text.Text measureText = new javafx.scene.text.Text(DISABLED);
-            double textWidth = measureText.getBoundsInLocal().getWidth();
-            double textHeight = measureText.getBoundsInLocal().getHeight();
+            if (sDisabledTextWidth < 0) {
+                javafx.scene.text.Text measureText = new javafx.scene.text.Text(DISABLED);
+                sDisabledTextWidth = measureText.getBoundsInLocal().getWidth();
+                sDisabledTextHeight = measureText.getBoundsInLocal().getHeight();
+            }
             mGraphicsContext.setFill(Color.color(0, 0, 0, 0.6));
-            mGraphicsContext.fillRoundRect(15, 8, textWidth + 10, textHeight + 6, 6, 6);
+            mGraphicsContext.fillRoundRect(15, 8, sDisabledTextWidth + 10, sDisabledTextHeight + 6, 6, 6);
             mGraphicsContext.setFill(Color.WHITE);
-            mGraphicsContext.fillText(DISABLED, 20, 20 + textHeight * 0.3);
+            mGraphicsContext.fillText(DISABLED, 20, 20 + sDisabledTextHeight * 0.3);
         } else if (mPaused) {
-            javafx.scene.text.Text measureText = new javafx.scene.text.Text(PAUSED);
-            double textWidth = measureText.getBoundsInLocal().getWidth();
-            double textHeight = measureText.getBoundsInLocal().getHeight();
+            if (sPausedTextWidth < 0) {
+                javafx.scene.text.Text measureText = new javafx.scene.text.Text(PAUSED);
+                sPausedTextWidth = measureText.getBoundsInLocal().getWidth();
+                sPausedTextHeight = measureText.getBoundsInLocal().getHeight();
+            }
             mGraphicsContext.setFill(Color.color(0, 0, 0, 0.6));
-            mGraphicsContext.fillRoundRect(15, 8, textWidth + 10, textHeight + 6, 6, 6);
+            mGraphicsContext.fillRoundRect(15, 8, sPausedTextWidth + 10, sPausedTextHeight + 6, 6, 6);
             mGraphicsContext.setFill(Color.WHITE);
-            mGraphicsContext.fillText(PAUSED, 20, 20 + textHeight * 0.3);
+            mGraphicsContext.fillText(PAUSED, 20, 20 + sPausedTextHeight * 0.3);
         }
 
         paintZoomIndicator(mGraphicsContext, width, height);

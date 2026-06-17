@@ -53,6 +53,9 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
     //The Cosine and Hann windows seem to offer the best spectral display with minimal bin leakage/smearing
     private WindowType mWindowType = WindowType.BLACKMAN_HARRIS_7;
         private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
+    //Cached so calculate() does not read the (registry-backed) preference on every FFT.  Refreshed on
+    //DISPLAY preference updates via onPreferenceUpdate().
+    private boolean mOpenCLEnabled = mPreferences.getBoolean("opencl.enabled", false);
     private io.github.dsheirer.dsp.opencl.OpenCLFFTKernel mOpenCLFFTKernel;
     private float[] mWindow;
     private DFTSize mDFTSize = DFTSize.FFT04096;
@@ -94,6 +97,7 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
     @Subscribe
     public void onPreferenceUpdate(PreferenceType preferenceType) {
         if (preferenceType == PreferenceType.DISPLAY) {
+            mOpenCLEnabled = mPreferences.getBoolean("opencl.enabled", false);
             String windowPref = mPreferences.get("fft.window.type", "BLACKMAN_HARRIS_7");
             try {
                 WindowType newType = WindowType.valueOf(windowPref);
@@ -243,7 +247,7 @@ public class ComplexDftProcessor implements Listener<INativeBuffer>, IDFTWidthCh
                 mDftBufferManager.get(mDFTSize.getSize(), mCurrentSamples);
                 WindowFactory.apply(mWindow, mCurrentSamples);
 
-                if (mPreferences.getBoolean("opencl.enabled", false)) {
+                if (mOpenCLEnabled) {
                     if (mOpenCLFFTKernel == null) {
                         mOpenCLFFTKernel = new io.github.dsheirer.dsp.opencl.OpenCLFFTKernel();
                     }
