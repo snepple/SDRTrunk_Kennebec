@@ -111,7 +111,7 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
     private final Label mIdentifierLabel = new Label("-----");
 
     private final Label mTwoToneAlertLabel = new Label("");
-    private final VBox mStreamIconsPanel = new VBox(new javafx.scene.layout.HBox(4));
+    private final HBox mStreamIconsPanel = new HBox(4);
 
     private javafx.animation.PauseTransition mTwoToneClearTimer;
 
@@ -256,7 +256,7 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         mChannelName.getStyleClass().add("audio-channel-name");
         mChannelName.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
         mChannelName.setTextFill(mLabelColor);
-        mChannelName.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
+        mChannelName.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
 
         mIconLabel.setFont(mFont);
         mIconLabel.setTextFill(mValueColor);
@@ -271,11 +271,16 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         mTwoToneAlertLabel.setTextFill(javafx.scene.paint.Color.RED);
         mTwoToneAlertLabel.setVisible(false);
 
-        HBox aliasLine = new HBox(4, mIconLabel, mIdentifierLabel, mStreamIconsPanel, mTwoToneAlertLabel);
-        aliasLine.setAlignment(Pos.CENTER_LEFT);
+        //Mockup layout: channel artwork on the left; to its right the channel name on top, the live
+        //talkgroup/alias identifier next, and the streaming-service icons in a horizontal row below.
+        HBox identifierLine = new HBox(4, mIconLabel, mIdentifierLabel, mTwoToneAlertLabel);
+        identifierLine.setAlignment(Pos.CENTER_LEFT);
 
-        metaBox.getChildren().addAll(mChannelName, aliasLine);
-        
+        mStreamIconsPanel.setAlignment(Pos.CENTER_LEFT);
+
+        metaBox.getChildren().addAll(mChannelName, identifierLine, mStreamIconsPanel);
+        HBox.setHgrow(metaBox, Priority.ALWAYS);
+
         getChildren().addAll(mArtworkContainer, metaBox);
     }
 
