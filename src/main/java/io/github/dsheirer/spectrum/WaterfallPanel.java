@@ -228,6 +228,18 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
         return offset;
     }
 
+    /**
+     * Solid background color used when the waterfall is disabled.  Derived from the lowest ("no signal")
+     * color of the active waterfall palette so it matches the live display, with a navy-blue fallback.
+     */
+    private Color getDisabledBackgroundColor() {
+        if (mColorMap != null && mColorMap.length > 0) {
+            int argb = mColorMap[0];
+            return Color.rgb((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF);
+        }
+        return Color.rgb(0, 0, 128);
+    }
+
     private double getBinPixelWidth(int multiplier) {
         return ((double) mCanvas.getWidth() * (double) multiplier) / (double) mDFTSize;
     }
@@ -296,10 +308,13 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
                 sDisabledTextWidth = measureText.getBoundsInLocal().getWidth();
                 sDisabledTextHeight = measureText.getBoundsInLocal().getHeight();
             }
-            mGraphicsContext.setFill(Color.color(0, 0, 0, 0.6));
-            mGraphicsContext.fillRoundRect(15, 8, sDisabledTextWidth + 10, sDisabledTextHeight + 6, 6, 6);
-            mGraphicsContext.setFill(Color.WHITE);
-            mGraphicsContext.fillText(DISABLED, 20, 20 + sDisabledTextHeight * 0.3);
+            //Fill the whole waterfall with a solid background (the palette's lowest/"no signal" color, so it
+            //matches the active waterfall's blue and adapts to a user-selected color map) and draw the
+            //disabled message in a contrasting color - matches the classic disabled appearance.
+            mGraphicsContext.setFill(getDisabledBackgroundColor());
+            mGraphicsContext.fillRect(0, 0, width, height);
+            mGraphicsContext.setFill(Color.YELLOW);
+            mGraphicsContext.fillText(DISABLED, 5, sDisabledTextHeight);
         } else if (mPaused) {
             if (sPausedTextWidth < 0) {
                 javafx.scene.text.Text measureText = new javafx.scene.text.Text(PAUSED);
