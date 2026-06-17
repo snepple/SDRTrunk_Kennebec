@@ -70,10 +70,26 @@ public class WindowsHostOptimizer {
 
     public static CompletableFuture<Boolean> runOptimizationScript() {
         return CompletableFuture.supplyAsync(() -> {
-            String script = getOptimizationScriptContent() + "exit 0;";
-            String encoded = Base64.getEncoder().encodeToString(script.getBytes(StandardCharsets.UTF_16LE));
+            String innerScript = getOptimizationScriptContent() + "exit 0;";
+            String innerEncoded = Base64.getEncoder().encodeToString(innerScript.getBytes(StandardCharsets.UTF_16LE));
+
+            //Outer command elevates the inner (optimization) script via UAC (-Verb RunAs), waits for the
+            //elevated child, and exits with the child's real exit code. The inner payload is passed as an
+            //argument-array element so its length/characters can't break command-line quoting, and the
+            //outer command is itself base64-encoded to avoid any quoting pitfalls. If the user declines
+            //the UAC prompt, Start-Process throws and we return a non-zero exit so the UI reports failure.
+            String outerScript =
+                "$ErrorActionPreference='Stop'; " +
+                "try { " +
+                  "$p = Start-Process powershell -ArgumentList @('-NoProfile','-WindowStyle','Hidden'," +
+                  "'-ExecutionPolicy','Bypass','-EncodedCommand','" + innerEncoded + "') -Verb RunAs -Wait -PassThru; " +
+                  "exit $p.ExitCode " +
+                "} catch { exit 1 }";
+            String outerEncoded = Base64.getEncoder().encodeToString(outerScript.getBytes(StandardCharsets.UTF_16LE));
+
             try {
-                ProcessBuilder pb = new ProcessBuilder("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "Start-Process powershell -ArgumentList '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand " + encoded + "' -Verb RunAs -Wait");
+                ProcessBuilder pb = new ProcessBuilder("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                        "-EncodedCommand", outerEncoded);
                 Process p = pb.start();
                 int exitCode = p.waitFor();
                 mLog.info("Optimization script exited with code {}", exitCode);
