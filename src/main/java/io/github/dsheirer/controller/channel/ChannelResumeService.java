@@ -48,6 +48,14 @@ public class ChannelResumeService implements Listener<ChannelEvent>
     private static final String STATE_FILE = "running_channels.state";
     private static final String FIELD_SEPARATOR = "\u001F"; //Unit separator - won't occur in names
 
+    //Crash-resume of many channels is CPU-heavy: each channel rebuilds a polyphase channelizer and a
+    //decode chain. Starting them all back-to-back at launch pins every core and starves the JavaFX
+    //Application thread, so the main window paints but shows "Not Responding" for tens of seconds. We
+    //therefore wait for the UI to finish coming up, then start the channels one at a time with a gap
+    //between them so the FX thread (and audio) get CPU to stay responsive while monitoring is restored.
+    private static final long RESUME_INITIAL_DELAY_MS = 5000;
+    private static final long RESUME_STAGGER_MS = 3000;
+
     private final ChannelProcessingManager mChannelProcessingManager;
     private final ChannelModel mChannelModel;
     private final Path mStateFile;
@@ -119,39 +127,83 @@ public class ChannelResumeService implements Listener<ChannelEvent>
 
         mLog.info("Previous run ended unexpectedly - resuming [" + lines.size() + "] channel(s)");
 
-        ThreadPool.CACHED.submit(() -> {
-            for(String line : lines)
+        Thread resumeThread = new Thread(() -> resumeChannels(lines), "sdrtrunk channel resume");
+        //Below-normal priority so the channelizer/audio/UI threads win contention while we resume.
+        resumeThread.setDaemon(true);
+        resumeThread.setPriority(Thread.MIN_PRIORITY);
+        resumeThread.start();
+    }
+
+    /**
+     * Starts each previously-running channel on this background thread, deferring the first start until
+     * the UI has had a chance to render and spacing the (CPU-heavy) starts apart so the JavaFX
+     * Application thread is not starved into a "Not Responding" state during startup.
+     */
+    private void resumeChannels(List<String> lines)
+    {
+        if(!sleep(RESUME_INITIAL_DELAY_MS))
+        {
+            return;
+        }
+
+        boolean started = false;
+
+        for(String line : lines)
+        {
+            String[] fields = line.split(FIELD_SEPARATOR, -1);
+
+            if(fields.length != 3)
             {
-                String[] fields = line.split(FIELD_SEPARATOR, -1);
+                continue;
+            }
 
-                if(fields.length != 3)
+            for(Channel channel : mChannelModel.getChannels())
+            {
+                if(Objects.equals(fields[0], channel.getSystem()) &&
+                   Objects.equals(fields[1], channel.getSite()) &&
+                   Objects.equals(fields[2], channel.getName()) &&
+                   !mChannelProcessingManager.isProcessing(channel))
                 {
-                    continue;
-                }
-
-                for(Channel channel : mChannelModel.getChannels())
-                {
-                    if(Objects.equals(fields[0], channel.getSystem()) &&
-                       Objects.equals(fields[1], channel.getSite()) &&
-                       Objects.equals(fields[2], channel.getName()) &&
-                       !mChannelProcessingManager.isProcessing(channel))
+                    //Space successive channel starts apart so each channelizer rebuild's CPU spike
+                    //settles and the UI can repaint before the next one begins.
+                    if(started && !sleep(RESUME_STAGGER_MS))
                     {
-                        mLog.info("Resuming channel after unexpected shutdown: " + channel.getName());
-
-                        try
-                        {
-                            mChannelProcessingManager.receive(ChannelEvent.requestEnable(channel));
-                        }
-                        catch(Throwable t)
-                        {
-                            mLog.error("Error resuming channel [" + channel.getName() + "]", t);
-                        }
-
-                        break;
+                        return;
                     }
+
+                    mLog.info("Resuming channel after unexpected shutdown: " + channel.getName());
+
+                    try
+                    {
+                        mChannelProcessingManager.receive(ChannelEvent.requestEnable(channel));
+                        started = true;
+                    }
+                    catch(Throwable t)
+                    {
+                        mLog.error("Error resuming channel [" + channel.getName() + "]", t);
+                    }
+
+                    break;
                 }
             }
-        });
+        }
+    }
+
+    /**
+     * Sleeps the resume thread, returning false if it was interrupted so the caller can stop cleanly.
+     */
+    private static boolean sleep(long millis)
+    {
+        try
+        {
+            Thread.sleep(millis);
+            return true;
+        }
+        catch(InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     @Override
