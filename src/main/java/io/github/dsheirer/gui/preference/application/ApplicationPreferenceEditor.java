@@ -104,6 +104,16 @@ public class ApplicationPreferenceEditor extends HBox
             diagCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow(
                     "Auto-Label Trunked System/Site", trunkedAutoLabelToggle));
 
+            ToggleSwitch autoCalibrationToggle = new ToggleSwitch();
+            autoCalibrationToggle.setTooltip(new Tooltip("Automatically benchmark and select the fastest " +
+                    "SIMD/vector DSP code in the background at startup when not already calibrated (and the " +
+                    "calibration dialog is suppressed or running headless). Runs once per machine."));
+            autoCalibrationToggle.setSelected(mApplicationPreference.isAutoVectorCalibrationEnabled());
+            autoCalibrationToggle.selectedProperty().addListener((observable, oldValue, enabled) ->
+                    mApplicationPreference.setAutoVectorCalibrationEnabled(enabled));
+            diagCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow(
+                    "Auto-Calibrate DSP (SIMD) at Startup", autoCalibrationToggle));
+
             // Card 1.5: Theme
             Label themeLabel = new Label("Application Theme");
             themeLabel.getStyleClass().add("hig-section-header");

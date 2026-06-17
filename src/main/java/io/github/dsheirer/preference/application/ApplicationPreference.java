@@ -43,6 +43,7 @@ public class ApplicationPreference extends Preference
     private static final String PREFERENCE_KEY_AUDIO_TWO_TONE_DETECT = "audio.two.tone.detect.enabled";
     private static final String PREFERENCE_KEY_AUDIO_ALIAS_DETECT = "audio.alias.detect.enabled";
     private static final String PREFERENCE_KEY_TRUNKED_AUTO_LABEL = "trunked.auto.label.enabled";
+    private static final String PREFERENCE_KEY_AUTO_VECTOR_CALIBRATION = "auto.vector.calibration.enabled";
 
     private final static Logger mLog = LoggerFactory.getLogger(ApplicationPreference.class);
     private Preferences mPreferences = Preferences.userNodeForPackage(ApplicationPreference.class);
@@ -57,6 +58,7 @@ public class ApplicationPreference extends Preference
     private Boolean mAudioTwoToneDetectEnabled;
     private Boolean mAudioAliasDetectEnabled;
     private Boolean mTrunkedAutoLabelEnabled;
+    private Boolean mAutoVectorCalibrationEnabled;
 
     /**
      * Constructs an instance
@@ -146,6 +148,34 @@ public class ApplicationPreference extends Preference
     {
         mTrunkedAutoLabelEnabled = enabled;
         mPreferences.putBoolean(PREFERENCE_KEY_TRUNKED_AUTO_LABEL, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Indicates if the optimal SIMD/vector DSP implementations should be benchmarked and selected
+     * automatically in the background at startup when not already calibrated.  Applies when the
+     * interactive calibration dialog is suppressed or when running headless, so the application does not
+     * fall back to the slow scalar DSP path.
+     * @return enabled (default true).
+     */
+    public boolean isAutoVectorCalibrationEnabled()
+    {
+        if(mAutoVectorCalibrationEnabled == null)
+        {
+            mAutoVectorCalibrationEnabled = mPreferences.getBoolean(PREFERENCE_KEY_AUTO_VECTOR_CALIBRATION, true);
+        }
+
+        return mAutoVectorCalibrationEnabled;
+    }
+
+    /**
+     * Sets the enabled state for automatic background vector/SIMD DSP calibration at startup.
+     * @param enabled true to auto-calibrate in the background when uncalibrated.
+     */
+    public void setAutoVectorCalibrationEnabled(boolean enabled)
+    {
+        mAutoVectorCalibrationEnabled = enabled;
+        mPreferences.putBoolean(PREFERENCE_KEY_AUTO_VECTOR_CALIBRATION, enabled);
         notifyPreferenceUpdated();
     }
 
