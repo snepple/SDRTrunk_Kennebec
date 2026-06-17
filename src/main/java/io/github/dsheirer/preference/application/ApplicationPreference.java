@@ -42,6 +42,7 @@ public class ApplicationPreference extends Preference
 
     private static final String PREFERENCE_KEY_AUDIO_TWO_TONE_DETECT = "audio.two.tone.detect.enabled";
     private static final String PREFERENCE_KEY_AUDIO_ALIAS_DETECT = "audio.alias.detect.enabled";
+    private static final String PREFERENCE_KEY_TRUNKED_AUTO_LABEL = "trunked.auto.label.enabled";
 
     private final static Logger mLog = LoggerFactory.getLogger(ApplicationPreference.class);
     private Preferences mPreferences = Preferences.userNodeForPackage(ApplicationPreference.class);
@@ -55,6 +56,7 @@ public class ApplicationPreference extends Preference
     private Boolean mRemoteAccessOptimization;
     private Boolean mAudioTwoToneDetectEnabled;
     private Boolean mAudioAliasDetectEnabled;
+    private Boolean mTrunkedAutoLabelEnabled;
 
     /**
      * Constructs an instance
@@ -121,6 +123,32 @@ public class ApplicationPreference extends Preference
         mPreferences.putBoolean(PREFERENCE_KEY_CHANNEL_AUTO_DIAGNOSTIC_MONITORING, enabled);
         notifyPreferenceUpdated();
     }
+    /**
+     * Indicates if trunked-system System/Site labels should be auto-filled from decoded identifiers.  This
+     * only ever populates labels the user left blank and never overwrites a manually-set value.
+     * @return enabled (default true).
+     */
+    public boolean isTrunkedSystemAutoLabelEnabled()
+    {
+        if(mTrunkedAutoLabelEnabled == null)
+        {
+            mTrunkedAutoLabelEnabled = mPreferences.getBoolean(PREFERENCE_KEY_TRUNKED_AUTO_LABEL, true);
+        }
+
+        return mTrunkedAutoLabelEnabled;
+    }
+
+    /**
+     * Sets the enabled state for trunked-system System/Site label auto-fill.
+     * @param enabled true to auto-fill empty labels from decoded identifiers.
+     */
+    public void setTrunkedSystemAutoLabelEnabled(boolean enabled)
+    {
+        mTrunkedAutoLabelEnabled = enabled;
+        mPreferences.putBoolean(PREFERENCE_KEY_TRUNKED_AUTO_LABEL, enabled);
+        notifyPreferenceUpdated();
+    }
+
     /**
      * Gets the allocated memory in GB
      * @return memory in GB.

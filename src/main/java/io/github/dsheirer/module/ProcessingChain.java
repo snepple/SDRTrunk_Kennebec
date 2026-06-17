@@ -1027,4 +1027,23 @@ public class ProcessingChain implements Listener<ChannelEvent>
     {
         mIdentifierUpdateNotificationBroadcaster.broadcast(updateNotification);
     }
+
+    /**
+     * Registers an external listener to receive identifier update notifications produced during decoding.
+     * Used (for example) to auto-populate channel System/Site labels from decoded trunked-system identifiers.
+     * @param listener to register.
+     */
+    public void addIdentifierUpdateListener(Listener<IdentifierUpdateNotification> listener)
+    {
+        mIdentifierUpdateNotificationBroadcaster.addListener(listener);
+    }
+
+    /**
+     * Removes a previously registered external identifier update listener.
+     * @param listener to remove.
+     */
+    public void removeIdentifierUpdateListener(Listener<IdentifierUpdateNotification> listener)
+    {
+        mIdentifierUpdateNotificationBroadcaster.removeListener(listener);
+    }
 }

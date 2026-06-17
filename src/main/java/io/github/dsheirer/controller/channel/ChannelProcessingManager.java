@@ -564,6 +564,15 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
             {
                 processingChain.start();
 
+                //Auto-fill empty System/Site labels from decoded trunked-system identifiers (non-destructive).
+                if(mUserPreferences.getApplicationPreference().isTrunkedSystemAutoLabelEnabled())
+                {
+                    TrunkedSystemAutoConfigurator autoConfigurator = new TrunkedSystemAutoConfigurator(channel,
+                        () -> mChannelEventBroadcaster.broadcast(new ChannelEvent(channel,
+                            ChannelEvent.Event.NOTIFICATION_CONFIGURATION_CHANGE)));
+                    processingChain.addIdentifierUpdateListener(autoConfigurator);
+                }
+
                 if (source instanceof io.github.dsheirer.source.tuner.channel.TunerChannelSource)
                 {
                     io.github.dsheirer.source.tuner.channel.TunerChannelSource tcs = (io.github.dsheirer.source.tuner.channel.TunerChannelSource) source;

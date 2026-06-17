@@ -95,6 +95,15 @@ public class ApplicationPreferenceEditor extends HBox
             io.github.dsheirer.gui.preference.layout.SettingsCard diagCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
             diagCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Enable Diagnostic Monitoring", getAutomaticDiagnosticMonitoringToggle()));
 
+            ToggleSwitch trunkedAutoLabelToggle = new ToggleSwitch();
+            trunkedAutoLabelToggle.setTooltip(new Tooltip("Auto-fill empty channel System/Site labels from " +
+                    "decoded trunked-system identifiers. Never overwrites labels you have set manually."));
+            trunkedAutoLabelToggle.setSelected(mApplicationPreference.isTrunkedSystemAutoLabelEnabled());
+            trunkedAutoLabelToggle.selectedProperty().addListener((observable, oldValue, enabled) ->
+                    mApplicationPreference.setTrunkedSystemAutoLabelEnabled(enabled));
+            diagCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow(
+                    "Auto-Label Trunked System/Site", trunkedAutoLabelToggle));
+
             // Card 1.5: Theme
             Label themeLabel = new Label("Application Theme");
             themeLabel.getStyleClass().add("hig-section-header");
