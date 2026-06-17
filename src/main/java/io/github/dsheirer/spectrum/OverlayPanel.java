@@ -126,6 +126,12 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
     //the frequency labels
     private Preferences mPreferences = Preferences.userNodeForPackage(DisplayPreference.class);
     private double mSpectrumInset = mPreferences.getDouble("spectrum.inset", 20.0);
+    //Cache the overlay label sizing so the spectrum repaint path never reads the (Windows
+    //registry-backed) Preferences on every label/frame. Reading getDouble() per paint pinned the
+    //JavaFX thread in WindowsRegQueryValueEx and froze the UI when a tuner was streaming. These are
+    //refreshed when DISPLAY preferences change.
+    private double mLabelWidth = mPreferences.getDouble("overlay.label.width", 50.0);
+    private double mLabelHeight = mPreferences.getDouble("overlay.label.height", 12.0);
     private LabelSizeManager mLabelSizeMonitor = new LabelSizeManager();
 
     private SettingsManager mSettingsManager;
@@ -191,6 +197,22 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
         }
 
         mSettingsManager = null;
+    }
+
+    /**
+     * Refreshes cached display preferences (label sizing, spectrum inset) when the user changes DISPLAY
+     * preferences, so the repaint path can use cached values instead of reading the registry per frame.
+     */
+    @Subscribe
+    public void preferenceUpdated(PreferenceType preferenceType)
+    {
+        if(preferenceType == PreferenceType.DISPLAY)
+        {
+            mSpectrumInset = mPreferences.getDouble("spectrum.inset", 20.0);
+            mLabelWidth = mPreferences.getDouble("overlay.label.width", 50.0);
+            mLabelHeight = mPreferences.getDouble("overlay.label.height", 12.0);
+            repaint();
+        }
     }
 
     /**
@@ -341,7 +363,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
             
 
-            double rectWidth = mPreferences.getDouble("overlay.label.width", 50.0); double rectHeight = mPreferences.getDouble("overlay.label.height", 12.0);
+            double rectWidth = mLabelWidth; double rectHeight = mLabelHeight;
 
             if(mCursorLocation.getY() > rectHeight)
             {
@@ -490,7 +512,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
         
 
-        double rectWidth = mPreferences.getDouble("overlay.label.width", 50.0); double rectHeight = mPreferences.getDouble("overlay.label.height", 12.0);
+        double rectWidth = mLabelWidth; double rectHeight = mLabelHeight;
 
         //Only render the correction value label if the spacing is large enough
         if(rectWidth <= bandwidth && rectHeight * 5 <= height)
@@ -563,7 +585,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
         
 
-        double rectWidth = mPreferences.getDouble("overlay.label.width", 50.0); double rectHeight = mPreferences.getDouble("overlay.label.height", 12.0);
+        double rectWidth = mLabelWidth; double rectHeight = mLabelHeight;
 
         float xOffset = (float)rectWidth / 2;
 
@@ -662,7 +684,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
             return 0;
         }
 
-        double labelWidth = mPreferences.getDouble("overlay.label.width", 50.0); double labelHeight = mPreferences.getDouble("overlay.label.height", 12.0);
+        double labelWidth = mLabelWidth; double labelHeight = mLabelHeight;
 
         double offset = labelWidth / 2.0d;
         double y = baseY + labelHeight;
@@ -893,7 +915,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
                 //Set maximum precision as a starting point
                 setPrecision(5);
 
-                int maxLabelWidth = (int)mPreferences.getDouble("overlay.label.width", 50.0);
+                int maxLabelWidth = (int)mLabelWidth;
 
                 double maxLabels = ((double)OverlayPanel.this.mCanvas.getWidth() * LABEL_FILL_THRESHOLD) / (double)maxLabelWidth;
 
