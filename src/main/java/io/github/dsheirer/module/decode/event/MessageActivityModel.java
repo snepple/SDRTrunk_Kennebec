@@ -57,7 +57,8 @@ public class MessageActivityModel extends ClearableHistoryModel<MessageItem> imp
             return;
         }
 
-        Platform.runLater(() -> add(new MessageItem(message)));
+        //add() is thread-safe and coalesces UI updates internally; no Platform.runLater needed here.
+        add(new MessageItem(message));
     }
 
     /**

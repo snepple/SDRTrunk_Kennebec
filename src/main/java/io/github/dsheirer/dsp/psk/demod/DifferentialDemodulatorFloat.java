@@ -36,6 +36,10 @@ public abstract class DifferentialDemodulatorFloat implements IDemodulator
     protected float mMu;
     protected int mBufferOverlap;
     protected int mInterpolationOffset;
+    //Reused demodulation output buffer so demodulate() does not allocate a new float[] every sample
+    //buffer.  The output is fully written each call and the symbol processor copies it into its own
+    //buffer before the next call on this single-threaded instance, so reuse is safe.
+    protected float[] mDecodedPhases;
     protected final Interpolator mInterpolator = InterpolatorFactory.getInterpolator();
     private DifferentialDemodulatorFloatScalar mScalar;
 

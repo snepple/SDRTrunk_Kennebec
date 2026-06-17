@@ -42,6 +42,13 @@ public abstract class ClearableHistoryModel<T>
     private ObservableList<T> mItems = FXCollections.observableArrayList();
     private int mHistorySize = DEFAULT_HISTORY_SIZE;
 
+    //Incoming items are queued here and drained to the ObservableList in a single Platform.runLater per
+    //frame.  Trunked control channels emit hundreds of messages/events per second; posting one runLater
+    //per item (the previous behavior) saturated the JavaFX application thread and starved rendering.
+    private final java.util.Queue<T> mPending = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private final java.util.concurrent.atomic.AtomicBoolean mDrainScheduled =
+        new java.util.concurrent.atomic.AtomicBoolean(false);
+
     /**
      * @return the observable list of items for UI binding
      */
@@ -72,7 +79,30 @@ public abstract class ClearableHistoryModel<T>
      */
     public void add(T item)
     {
-        Platform.runLater(() -> {
+        //Queue the item and schedule a single drain.  Safe to call from any thread (e.g. the decode
+        //thread); the actual ObservableList mutation happens on the JavaFX thread inside drainPending().
+        mPending.offer(item);
+
+        if(mDrainScheduled.compareAndSet(false, true))
+        {
+            Platform.runLater(this::drainPending);
+        }
+    }
+
+    /**
+     * Drains all queued items into the observable list in a single JavaFX-thread pass, preserving the
+     * newest-on-top ordering and de-duplication semantics of the original per-item add.
+     */
+    private void drainPending()
+    {
+        //Clear the flag first so any item queued during this drain re-schedules another drain.
+        mDrainScheduled.set(false);
+
+        boolean inserted = false;
+        T item;
+
+        while((item = mPending.poll()) != null)
+        {
             if(mItems.contains(item))
             {
                 int itemRow = mItems.indexOf(item);
@@ -81,13 +111,17 @@ public abstract class ClearableHistoryModel<T>
             else
             {
                 mItems.add(0, item);
-
-                while(mItems.size() > mHistorySize)
-                {
-                    mItems.remove(mItems.size() - 1);
-                }
+                inserted = true;
             }
-        });
+        }
+
+        if(inserted)
+        {
+            while(mItems.size() > mHistorySize)
+            {
+                mItems.remove(mItems.size() - 1);
+            }
+        }
     }
 
     /**
@@ -96,6 +130,7 @@ public abstract class ClearableHistoryModel<T>
     public void clear()
     {
         Platform.runLater(() -> {
+            mPending.clear();
             mItems.clear();
         });
     }
@@ -106,6 +141,7 @@ public abstract class ClearableHistoryModel<T>
     public void clearAndSet(List<T> items)
     {
         Platform.runLater(() -> {
+            mPending.clear();
             mItems.clear();
             for(T item: items)
             {

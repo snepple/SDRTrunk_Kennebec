@@ -32,6 +32,10 @@ public class VectorRealFIRFilter128Bit implements IRealFilter
 {
     private static final VectorSpecies<Float> VECTOR_SPECIES = FloatVector.SPECIES_128;
     private float[] mBuffer;
+    //Reused output buffer so filter() does not allocate a new float[] on every sample buffer.  Every
+    //element is overwritten each call and the caller consumes the result before the next call on this
+    //single-threaded instance, so reuse is safe.  Avoids per-buffer GC churn across all active channels.
+    private float[] mFiltered;
     private float[] mCoefficients;
     private int mBufferOverlap;
 
@@ -91,7 +95,12 @@ public class VectorRealFIRFilter128Bit implements IRealFilter
         //Copy new sample array to end of buffer
         System.arraycopy(samples, 0, mBuffer, mBufferOverlap, samples.length);
 
-        float[] filtered = new float[samples.length];
+        if(mFiltered == null || mFiltered.length != samples.length)
+        {
+            mFiltered = new float[samples.length];
+        }
+
+        float[] filtered = mFiltered;
 
         FloatVector accumulator, buffer, filter;
 

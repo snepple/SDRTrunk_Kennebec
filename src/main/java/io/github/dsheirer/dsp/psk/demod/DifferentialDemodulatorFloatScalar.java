@@ -64,7 +64,12 @@ public class DifferentialDemodulatorFloatScalar extends DifferentialDemodulatorF
         System.arraycopy(q, 0, mQBuffer, bufferOverlap, sampleLength);
         //mIDecoded, mQDecoded and mPhase will be filled below during the decoding process.
 
-        float[] decodedPhases = new float[i.length];
+        if(mDecodedPhases == null || mDecodedPhases.length != i.length)
+        {
+            mDecodedPhases = new float[i.length];
+        }
+
+        float[] decodedPhases = mDecodedPhases;
         float iPrevious, qPreviousConjugate, iCurrent, qCurrent, differentialI, differentialQ;
 
         //Differential demodulation.
