@@ -158,11 +158,7 @@ public class LogsViewController {
         
         logListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (mLiveInspectorView != null) {
-                if (newVal != null) {
-                    mLiveInspectorView.setText(newVal);
-                } else {
-                    mLiveInspectorView.setText("");
-                }
+                mLiveInspectorView.setText(newVal != null ? buildInspectorText(newVal) : "");
             }
         });
 
@@ -268,9 +264,110 @@ public class LogsViewController {
         loadLogs();
     }
 
+    private static final DateTimeFormatter LIVE_LOG_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     @Subscribe
     public void onLogEvent(ILoggingEvent event) {
-        logQueue.add(event.getLevel() + " " + event.getFormattedMessage());
+        String timestamp = LIVE_LOG_TIME_FORMAT.format(
+            java.time.Instant.ofEpochMilli(event.getTimeStamp()).atZone(java.time.ZoneId.systemDefault()));
+        logQueue.add(timestamp + "  " + event.getLevel() + "  " + event.getFormattedMessage());
+    }
+
+    private static final DateTimeFormatter FRIENDLY_TIME_FORMAT =
+        DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm:ss a");
+
+    /**
+     * Builds the Detail Inspector content for a selected log line: a friendly date/time, the level and
+     * message, and (when recognized) a plain-language explanation of what it means and how to fix it.
+     */
+    private String buildInspectorText(String line) {
+        StringBuilder sb = new StringBuilder();
+        String message = line;
+
+        try {
+            if (line.length() > 19) {
+                java.time.LocalDateTime ts = java.time.LocalDateTime.parse(line.substring(0, 19), LIVE_LOG_TIME_FORMAT);
+                String rest = line.substring(19).trim();   // "LEVEL  message"
+                int sp = rest.indexOf("  ");
+                String level = sp > 0 ? rest.substring(0, sp).trim() : "";
+                message = sp > 0 ? rest.substring(sp).trim() : rest;
+
+                sb.append(ts.format(FRIENDLY_TIME_FORMAT));
+                if (!level.isEmpty()) {
+                    sb.append("    [").append(level).append("]");
+                }
+                sb.append("\n\n");
+            }
+        } catch (Exception e) {
+            //Not a timestamped line; fall back to showing it as-is.
+            message = line;
+        }
+
+        sb.append(message);
+
+        String explanation = explainLogLine(message);
+        if (explanation != null) {
+            sb.append("\n\n----------------------------------------\n");
+            sb.append("What this means and how to fix it:\n\n");
+            sb.append(explanation);
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Returns a plain-language explanation and remediation for recognized log messages, or null when
+     * the message isn't one we have specific guidance for.
+     */
+    private String explainLogLine(String message) {
+        if (message == null) {
+            return null;
+        }
+        String m = message.toLowerCase();
+
+        if (m.contains("jmbe") && (m.contains("not configured") || m.contains("missing") || m.contains("silent"))) {
+            return "Digital voice (P25 / DMR) audio needs the optional JMBE library, which isn't set up. "
+                + "Open User Preferences > JMBE Audio Library (or re-run the first-time wizard) to install it. "
+                + "Until then, digital voice channels will decode but stay silent.";
+        }
+        if (m.contains("no sdr tuner detected") || m.contains("no tuner available")) {
+            return "No SDR tuner was found. Check that the device is plugged in, that the correct driver is "
+                + "installed (for RTL-SDR on Windows, replace the driver with WinUSB using Zadig), and that no "
+                + "other program is using the device.";
+        }
+        if (m.contains("processor overloaded") || m.contains("cannot keep up")) {
+            return "The CPU can't process the incoming sample rate fast enough, so samples are being dropped. "
+                + "Lower the tuner sample rate, reduce the number of simultaneously decoding channels, or close "
+                + "other CPU-heavy programs.";
+        }
+        if (m.contains("gc pressure") || m.contains("memory at")) {
+            return "The application is running low on memory and spending time garbage-collecting. Increase the "
+                + "allocated memory in User Preferences > Memory, then restart SDRTrunk.";
+        }
+        if (m.contains("websockethandshakeexception") || (m.contains("zello") && m.contains("failed"))) {
+            return "A streaming connection failed to connect. Verify the stream's network name, username and "
+                + "password, and confirm the machine has internet access. SDRTrunk will keep retrying automatically.";
+        }
+        if (m.contains("address already in use")) {
+            return "Another instance of SDRTrunk is already running and holding the local network port. Close the "
+                + "other instance; only one copy should run at a time.";
+        }
+        if (m.contains("unable to source channel")) {
+            return "No tuner could provide this channel's frequency. Ensure a tuner that covers that frequency is "
+                + "enabled and isn't already fully subscribed by other channels.";
+        }
+        if (m.contains("auto-repairing stream")) {
+            return "A stream dropped into an error state and is being reconnected automatically. No action is "
+                + "needed unless it keeps recurring, which usually points to bad credentials or a network issue.";
+        }
+        if (m.contains("configuration backup created")) {
+            return "A routine automatic backup of your configuration was saved. No action needed.";
+        }
+        if (m.contains("auto-optimized sample rate")) {
+            return "SDRTrunk automatically chose a tuner sample rate that covers the active channels while using "
+                + "less CPU. This is informational.";
+        }
+        return null;
     }
 
     private void updateLiveFilter() {
