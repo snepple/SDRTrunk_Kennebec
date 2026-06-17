@@ -1,5 +1,6 @@
 package io.github.dsheirer.gui;
 
+import io.github.dsheirer.monitor.DiagnosticMonitor;
 import io.github.dsheirer.preference.UserPreferences;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.BorderPane;
@@ -13,14 +14,14 @@ public class LogsPanel extends BorderPane {
 
     private LogsViewController controller;
 
-    public LogsPanel(UserPreferences userPreferences) {
+    public LogsPanel(UserPreferences userPreferences, DiagnosticMonitor diagnosticMonitor) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/LogsView.fxml"));
             loader.setRoot(this);
             loader.load();
 
             controller = loader.getController();
-            controller.init(userPreferences);
+            controller.init(userPreferences, diagnosticMonitor);
 
             // Fix memory leak: hook up destruction
             sceneProperty().addListener((obs, oldScene, newScene) -> {

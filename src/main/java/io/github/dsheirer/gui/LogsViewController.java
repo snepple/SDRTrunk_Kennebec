@@ -10,6 +10,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.log.LogFile;
+import io.github.dsheirer.monitor.DiagnosticMonitor;
 import io.github.dsheirer.log.ListViewLogAppender;
 import io.github.dsheirer.module.log.ai.AILogAnalyzer;
 import io.github.dsheirer.preference.UserPreferences;
@@ -50,6 +51,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -59,6 +61,7 @@ public class LogsViewController {
 
     private java.util.Timer mHealthTimer;
     private UserPreferences mUserPreferences;
+    private DiagnosticMonitor mDiagnosticMonitor;
 
     @FXML private TabPane mTabbedPane;
 
@@ -90,8 +93,9 @@ public class LogsViewController {
     private String mSelectedLevel = "All";
     private FilteredList<String> mLiveFiltered;
 
-    public void init(UserPreferences userPreferences) {
+    public void init(UserPreferences userPreferences, DiagnosticMonitor diagnosticMonitor) {
         mUserPreferences = userPreferences;
+        mDiagnosticMonitor = diagnosticMonitor;
 
         // Live logs with filtering
         mLiveFiltered = new FilteredList<>(logData, p -> true);
@@ -260,6 +264,35 @@ public class LogsViewController {
             mHealthTimer = new java.util.Timer(true);
             mHealthTimer.scheduleAtFixedRate(new SystemHealthAdvisorTask(performanceLabel), 0, 5000);
         }
+
+        // Diagnostics Tab
+        VBox diagBox = new VBox(10);
+        diagBox.setPadding(new Insets(20));
+
+        Label diagTitle = new Label("Diagnostic Reports");
+        diagTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
+
+        Label diagDesc = new Label("Generate diagnostic reports to help troubleshoot issues. Reports are displayed below and also saved to the application log directory.");
+        diagDesc.setWrapText(true);
+
+        TextArea diagOutput = new TextArea();
+        diagOutput.setEditable(false);
+        diagOutput.setWrapText(false);
+        diagOutput.setFont(Font.font("Monospaced", 11));
+        VBox.setVgrow(diagOutput, Priority.ALWAYS);
+
+        Button processingReportBtn = new Button("Processing Diagnostic Report");
+        processingReportBtn.setOnAction(e -> generateProcessingDiagnosticReport(diagOutput, processingReportBtn));
+
+        Button threadDumpBtn = new Button("Thread Dump Report");
+        threadDumpBtn.setOnAction(e -> generateThreadDumpReport(diagOutput, threadDumpBtn));
+
+        HBox diagButtons = new HBox(10, processingReportBtn, threadDumpBtn);
+
+        diagBox.getChildren().addAll(diagTitle, diagDesc, diagButtons, diagOutput);
+
+        Tab diagTab = new Tab("Diagnostics", diagBox);
+        mTabbedPane.getTabs().add(diagTab);
 
         loadLogs();
     }
@@ -672,6 +705,105 @@ public class LogsViewController {
             content.putString(sb.toString());
             Clipboard.getSystemClipboard().setContent(content);
         }
+    }
+
+    private void generateProcessingDiagnosticReport(TextArea output, Button btn) {
+        btn.setDisable(true);
+        btn.setText("Generating...");
+        output.setText("Generating Processing Diagnostic Report...");
+        ThreadPool.CACHED.submit(() -> {
+            try {
+                java.nio.file.Path path = null;
+                String report;
+                if (mDiagnosticMonitor != null) {
+                    path = mDiagnosticMonitor.generateProcessingDiagnosticReport("Generated from Logs > Diagnostics panel");
+                    report = new String(java.nio.file.Files.readAllBytes(path));
+                } else {
+                    report = buildFallbackDiagnosticReport();
+                }
+                final String finalReport = report;
+                final java.nio.file.Path finalPath = path;
+                Platform.runLater(() -> {
+                    output.setText(finalReport);
+                    if (finalPath != null) {
+                        mLog.info("Processing diagnostic report saved to: {}", finalPath);
+                    }
+                    btn.setText("Processing Diagnostic Report");
+                    btn.setDisable(false);
+                });
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    output.setText("Error generating report: " + ex.getMessage());
+                    btn.setText("Processing Diagnostic Report");
+                    btn.setDisable(false);
+                });
+            }
+        });
+    }
+
+    private void generateThreadDumpReport(TextArea output, Button btn) {
+        btn.setDisable(true);
+        btn.setText("Generating...");
+        output.setText("Generating Thread Dump Report...");
+        ThreadPool.CACHED.submit(() -> {
+            try {
+                java.nio.file.Path path = null;
+                String report;
+                if (mDiagnosticMonitor != null) {
+                    path = mDiagnosticMonitor.generateThreadDumpReport();
+                    report = new String(java.nio.file.Files.readAllBytes(path));
+                } else {
+                    report = buildThreadDump();
+                }
+                final String finalReport = report;
+                final java.nio.file.Path finalPath = path;
+                Platform.runLater(() -> {
+                    output.setText(finalReport);
+                    if (finalPath != null) {
+                        mLog.info("Thread dump report saved to: {}", finalPath);
+                    }
+                    btn.setText("Thread Dump Report");
+                    btn.setDisable(false);
+                });
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    output.setText("Error generating report: " + ex.getMessage());
+                    btn.setText("Thread Dump Report");
+                    btn.setDisable(false);
+                });
+            }
+        });
+    }
+
+    private String buildFallbackDiagnosticReport() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("sdrtrunk Processing Diagnostic Report\n");
+        sb.append("Generated: ").append(java.time.LocalDateTime.now()).append("\n\n");
+        sb.append("=========================================================================\n\n");
+        sb.append("JVM Environment:\n");
+        sb.append("  OS Name:        ").append(System.getProperty("os.name")).append("\n");
+        sb.append("  OS Arch:        ").append(System.getProperty("os.arch")).append("\n");
+        sb.append("  OS Version:     ").append(System.getProperty("os.version")).append("\n");
+        sb.append("  CPU Cores:      ").append(Runtime.getRuntime().availableProcessors()).append("\n");
+        sb.append("  Max Memory:     ").append(Runtime.getRuntime().maxMemory() / 1024 / 1024).append(" MB\n");
+        sb.append("  Total Memory:   ").append(Runtime.getRuntime().totalMemory() / 1024 / 1024).append(" MB\n");
+        sb.append("  Free Memory:    ").append(Runtime.getRuntime().freeMemory() / 1024 / 1024).append(" MB\n\n");
+        sb.append("=========================================================================\n\n");
+        sb.append(buildThreadDump());
+        return sb.toString();
+    }
+
+    private String buildThreadDump() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Thread Dump Report\n\n");
+        for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
+            sb.append(entry.getKey()).append(" ").append(entry.getKey().getState()).append("\n");
+            for (StackTraceElement ste : entry.getValue()) {
+                sb.append("\tat ").append(ste).append("\n");
+            }
+            sb.append("\n\n");
+        }
+        return sb.toString();
     }
 
     public void destroy() {
