@@ -191,6 +191,24 @@ echo [INFO] Performing case-sensitivity sweep...
 powershell -Command "Get-ChildItem -Path . -Recurse | Group-Object {$_.FullName.ToLower()} | Where-Object {$_.Count -gt 1} | ForEach-Object { $_.Group[1] | Remove-Item -Force }" >nul 2>&1
 
 :: ============================================================================
+:: STEP 4.5: Auto-increment the project version on origin/master
+:: ============================================================================
+:: The workspace was just synced to origin/master, so gradle.properties holds the current published
+:: version. Increment it by one, push the bump back to master, and build with the new version - so
+:: every build run produces a fresh, monotonically increasing version. cwd is the cloned project here.
+call :drawProgressBar 22 "Bumping project version on origin/master..."
+set "NEW_VER="
+for /f "delims=" %%V in ('powershell -NoProfile -ExecutionPolicy Bypass -File ".github\bump_version.ps1" -GradleProperties "gradle.properties" 2^>nul') do set "NEW_VER=%%V"
+if defined NEW_VER (
+    echo [INFO] Version bumped to !NEW_VER! - pushing to origin/master...
+    git add gradle.properties >nul 2>&1
+    git commit -m "Bump version to !NEW_VER!" >nul 2>&1
+    git push origin HEAD:master >nul 2>&1
+) else (
+    echo [WARNING] Version auto-increment skipped (bump script unavailable) - building with existing version.
+)
+
+:: ============================================================================
 :: STEP 5: Read Project Version
 :: ============================================================================
 for /f "tokens=2 delims==" %%A in ('findstr /I "^projectVersion" gradle.properties') do set "PROJ_VER=%%A"
