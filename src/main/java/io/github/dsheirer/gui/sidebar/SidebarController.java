@@ -183,8 +183,13 @@ public class SidebarController implements Initializable {
 
         box.getChildren().add(iconBox);
 
+        //The Toggle Theme item shows what it will switch to, based on the current theme.
+        String displayLabel = item.id.equals("toggle_theme")
+            ? (isDark ? "Switch to Light Theme" : "Switch to Dark Theme")
+            : item.label;
+
         if (!collapsed) {
-            Label label = new Label(item.label);
+            Label label = new Label(displayLabel);
             label.setFont(Font.font("SansSerif", FontWeight.SEMI_BOLD, 13));
             label.setTextFill(isActive ? Color.WHITE : inactiveColor);
             box.getChildren().add(label);
@@ -207,7 +212,7 @@ public class SidebarController implements Initializable {
                 box.getChildren().add(chevron);
             }
         } else {
-            Tooltip tooltip = new Tooltip(item.label);
+            Tooltip tooltip = new Tooltip(displayLabel);
             tooltip.setShowDelay(javafx.util.Duration.millis(200));
             Tooltip.install(box, tooltip);
         }
