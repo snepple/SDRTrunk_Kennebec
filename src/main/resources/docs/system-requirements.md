@@ -12,11 +12,11 @@ SDRTrunk Kennebec supports 64-bit operating systems only. 32-bit systems are not
 | Linux | 64-bit |
 | macOS | 64-bit, version 12.x (Monterey) or higher |
 
-> [!NOTE]
+> **Note:**
 >
   Automated tuner reset via PowerShell — which hard-resets a locked or failed SDR device — is available on Windows 10 and higher only. This feature is not available on Linux or macOS.
 
-> [!WARNING]
+> **Warning:**
 >
   ARM-based systems (aarch64) are supported for Linux and macOS (Apple Silicon). Windows ARM support is available in build tooling but is not the primary tested configuration. Check the release notes for your specific version.
 
@@ -28,7 +28,7 @@ SDRTrunk Kennebec supports 64-bit operating systems only. 32-bit systems are not
 
 SDRTrunk performs software-based digital signal processing in real time. A 4-core CPU is the minimum for stable operation. More cores improve performance when monitoring multiple simultaneous channels or running with AI monitoring enabled.
 
-> [!TIP]
+> **Tip:**
 >
   SDRTrunk Kennebec uses accelerated signal processing that benefits from modern CPU microarchitectures. A processor released within the last five years will generally perform better than the minimum spec suggests.
 
@@ -54,7 +54,7 @@ Prebuilt release packages include a bundled JDK — you do not need to install J
 
 If you are running the application outside of a bundled release or Gradle environment, install a compatible JDK 23+ distribution. The build system uses Azul Zulu JDK 23; Bellsoft Liberica JDK is used for cross-platform release packaging.
 
-> [!NOTE]
+> **Note:**
 >
   SDRTrunk Kennebec uses the Vector API for accelerated signal processing. This is enabled automatically by the bundled launcher scripts — you do not need to configure anything manually when using a release package.
 
@@ -69,7 +69,7 @@ Supported hardware families include:
 - **HackRF** — wide-band transceiver suitable for broad spectrum capture
 - **SDRPlay** — requires the SDRPlay API to be installed separately
 
-> [!NOTE]
+> **Note:**
 >
   On Windows, most RTL-SDR dongles require the WinUSB driver to be installed via [Zadig](https://zadig.akeo.ie/) before SDRTrunk can access them. See the [RTL-SDR setup guide](/hardware/rtl-sdr) for step-by-step instructions.
 

@@ -49,7 +49,6 @@ Expand **Audio Filters** in the detail editor to tune the post-demodulation filt
 
 Click **Save**, then click **Play** or enable **Auto-Start**.
 
-
 ### Audio filter options
 
 SDRTrunk Kennebec provides a full post-demodulation audio filter chain for NBFM. All filters are per-channel and persist in your playlist.
@@ -74,7 +73,7 @@ NBFM squelch opens when the signal noise floor drops below a threshold (indicati
 | **Hysteresis open** | Consecutive samples below open threshold required to open | 4 |
 | **Hysteresis close** | Consecutive samples above close threshold required to close | 4 |
 
-> [!TIP]
+> **Tip:**
 > If the squelch opens frequently on a noisy frequency, raise the **noise open threshold** in small increments until false triggers stop. If weak signals are not opening the squelch, lower it.
 
 **Squelch tail removal** trims the noise burst at the end of a transmission when the transmitter drops carrier. It is enabled by default and removes the last 100 ms of each transmission. You can also configure **squelch head removal** (default 0 ms) to trim CTCSS tone ramp-up noise from the start of each transmission.
@@ -83,44 +82,42 @@ NBFM squelch opens when the signal noise floor drops below a threshold (indicati
 
 AM is used primarily on aviation and some HF bands. Configuration follows the same steps as NBFM, but with a simpler signal path.
 
-**7. Add a channel**
+**1. Add a channel**
 
 Open the **Playlist Editor**, click **New**, and select **AM**.
 
-**8. Enter the frequency**
+**2. Enter the frequency**
 
 Type the frequency in Hz. Aviation VHF frequencies are typically in the 118–137 MHz range.
 
-**9. Save and start**
+**3. Save and start**
 
 Click **Save**, then click **Play** or enable **Auto-Start**.
 
-
-> [!NOTE]
+> **Note:**
 > AM does not support sub-audible tone squelch (CTCSS/DCS). The squelch on AM channels is carrier-based only.
 
 ## CTCSS tone squelch
 
 Continuous Tone-Coded Squelch System (CTCSS) uses a sub-audible tone in the range of 67–254.1 Hz transmitted simultaneously with voice. SDRTrunk can detect and filter on CTCSS tones on NBFM channels, passing audio only when the correct tone is present.
 
-**10. Select your NBFM channel**
+**1. Select your NBFM channel**
 
 In the **Playlist Editor**, select the NBFM channel you want to configure.
 
-**11. Enable tone filtering**
+**2. Enable tone filtering**
 
 Toggle **Tone Filter Enabled** to on in the **Decoder** configuration section.
 
-**12. Add a CTCSS tone filter**
+**3. Add a CTCSS tone filter**
 
 Click **Add Tone Filter**, set the type to **CTCSS**, and select the tone frequency from the dropdown — for example, `100.0 Hz` or `127.3 Hz`.
 
-**13. Save the channel**
+**4. Save the channel**
 
 Click **Save**. SDRTrunk will now pass audio only when the configured CTCSS tone is detected.
 
-
-> [!WARNING]
+> **Warning:**
 > When tone filtering is enabled and the tone filter list is empty, **no audio will pass**. Always add at least one tone filter entry before enabling the feature.
 
 You can add multiple CTCSS entries to a single channel. Audio passes when **any** of the configured tones is detected — useful if a repeater is shared by multiple agencies on different tones.
@@ -129,20 +126,19 @@ You can add multiple CTCSS entries to a single channel. Audio passes when **any*
 
 Digital Coded Squelch (DCS) uses a 134 bps continuous digital code transmitted below the voice audio. It functions identically to CTCSS from a configuration perspective.
 
-**14. Enable tone filtering**
+**1. Enable tone filtering**
 
 Toggle **Tone Filter Enabled** to on in the channel's Decoder settings.
 
-**15. Add a DCS tone filter**
+**2. Add a DCS tone filter**
 
 Click **Add Tone Filter**, set the type to **DCS**, and select the DCS code — for example, `023` or `445`.
 
-**16. Save**
+**3. Save**
 
 Click **Save**. Audio will only pass when the configured DCS code is received.
 
-
-> [!TIP]
+> **Tip:**
 > CTCSS and DCS tone filters can be mixed on the same channel. SDRTrunk opens the squelch when **any** configured code is detected, letting you monitor a shared frequency where different agencies use different squelch codes.
 
 ## MDC-1200 metadata decoding
@@ -161,5 +157,5 @@ The following MDC-1200 message types are decoded and appear in the event log:
 
 To assign friendly names to MDC-1200 unit IDs, add alias entries with the **Protocol** set to `MDC-1200` and the identifier type set to **Talkgroup**, entering the numeric unit ID in the **Identifier** field.
 
-> [!NOTE]
+> **Note:**
 > MDC-1200 and Fleetsync II both layer over NBFM carriers. You do not create a separate channel entry for them — they are automatically decoded alongside the voice audio on any NBFM channel where they appear.

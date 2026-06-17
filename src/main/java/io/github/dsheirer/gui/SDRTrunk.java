@@ -365,9 +365,26 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
             primaryStage.setScene(scene);
             primaryStage.show();
-            
-            // Hide the preloader now that the main UI is visible
-            notifyPreloader(new SDRTrunkPreloader.HideNotification());
+
+            // Keep the splash up until the main content has actually been built and shown, so the user
+            // doesn't briefly see an empty window. A safety timeout guarantees the splash hides even if
+            // the content-ready signal never arrives.
+            final boolean[] splashHidden = {false};
+            Runnable hideSplash = () -> {
+                if(!splashHidden[0])
+                {
+                    splashHidden[0] = true;
+                    notifyPreloader(new SDRTrunkPreloader.HideNotification());
+                }
+            };
+            if(mControllerPanel != null)
+            {
+                mControllerPanel.setOnContentReady(() -> Platform.runLater(hideSplash));
+            }
+            javafx.animation.PauseTransition splashFallback =
+                new javafx.animation.PauseTransition(javafx.util.Duration.seconds(15));
+            splashFallback.setOnFinished(e -> hideSplash.run());
+            splashFallback.play();
 
             // Wire up global hotkeys
             try {

@@ -35,29 +35,27 @@ When all USB transfer buffers are exhausted, the application follows this sequen
 
     If the tuner reaches `Enabled` status, any channels assigned to it resume automatically. If all 5 attempts fail, the tuner is permanently set to `Error` with the message `Permanent USB Error - Transfer Buffers Exhausted`.
 
-
 ### Device disconnection
 
 When the USB device stops responding on the bus, the application uses a two-phase retry schedule designed to handle both brief cable interruptions and longer hardware outages:
 
-  **5. Tuner stops**
+  **1. Tuner stops**
 
     The application stops the tuner, sets its status to `Recovering`, and releases the USB device handle to avoid resource lockups.
 
-  **6. Rapid retry (first 15 minutes)**
+  **2. Rapid retry (first 15 minutes)**
 
     The application retries the restart every **5 seconds** during the first 15 minutes after the disconnect is detected.
 
-  **7. Slow retry (15 to 45 minutes)**
+  **3. Slow retry (15 to 45 minutes)**
 
     If the device has not reconnected after 15 minutes, the retry interval increases to **5 minutes** to reduce resource usage.
 
-  **8. Success or timeout**
+  **4. Success or timeout**
 
     A successful reconnect restores the tuner to `Enabled` and channels resume automatically. If the device is still unreachable after **45 minutes**, the tuner is permanently set to `Error` with the message `Permanent USB Error - Device Disconnected`.
 
-
-> [!NOTE]
+> **Note:**
 >
 The disconnect recovery schedule is designed to handle brief USB resets or cable reconnections quickly, while still accommodating longer hardware failures without consuming excessive system resources.
 
@@ -67,20 +65,19 @@ On Windows 10 and Windows 11, SDRTrunk Kennebec starts an additional background 
 
 ### How the USB monitor works
 
-  **9. Setup on first launch**
+  **1. Setup on first launch**
 
     At startup, SDRTrunk Kennebec prepares the USB monitor script in the `scripts/` subdirectory of the application folder. These files are created automatically — you do not need to do anything.
 
-  **10. Scheduled task registration**
+  **2. Scheduled task registration**
 
     The application checks whether a Windows Scheduled Task named `SDRTrunk_UsbMonitor_<username>` already exists. If it does not, SDRTrunk Kennebec prompts for a **UAC elevation dialog** to create the task with the privileges needed to reset USB devices at the OS level.
 
-  **11. Task execution**
+  **3. Task execution**
 
     The scheduled task runs silently in the background. The monitor watches for tuner failures and issues OS-level USB device reset commands when needed.
 
-
-> [!WARNING]
+> **Warning:**
 >
 Creating the scheduled task requires administrator (UAC) approval. SDRTrunk Kennebec displays a UAC prompt the first time the task needs to be registered — you only need to approve this once. If you deny the prompt, the software-level self-healing continues to operate normally, but the OS-level USB reset is not available.
 
@@ -123,6 +120,6 @@ If a tuner reaches `Error` status after exhausting all recovery attempts, self-h
 3. Restart SDRTrunk Kennebec if re-plugging alone does not bring the tuner back.
 4. On Windows, confirm the USB monitor scheduled task exists by opening **Task Scheduler** and searching for `SDRTrunk_UsbMonitor_<your username>`.
 
-> [!NOTE]
+> **Note:**
 >
 Recovery is not attempted for configuration errors, unknown tuner types, or other startup failures. These conditions move the tuner directly to `Error` status. On macOS Tahoe (OS version 26), a known libusb compatibility issue can also prevent USB tuner detection — see the [RTL-SDR setup guide](/hardware/rtl-sdr) for the Homebrew workaround.

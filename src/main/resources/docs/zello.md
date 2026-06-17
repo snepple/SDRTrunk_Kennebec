@@ -56,24 +56,23 @@ SDRTrunk Kennebec can push decoded radio audio directly into Zello channels over
 
     Check **Enabled**, then click **Save**. SDRTrunk Kennebec opens a WebSocket connection to `wss://zellowork.io/ws/{network_name}` and begins routing decoded audio.
 
-
 ---
 
 ## Setting Up Zello Consumer
 
-  **7. Obtain a Zello developer auth token**
+  **1. Obtain a Zello developer auth token**
 
     Register your application on the Zello developer portal to receive a JWT auth token. This token is a requirement of the Zello Consumer API — you cannot connect without it.
 
-  **8. Open the Streaming Editor**
+  **2. Open the Streaming Editor**
 
     In SDRTrunk Kennebec, go to **View** > **Streaming**.
 
-  **9. Add a Zello Consumer broadcaster**
+  **3. Add a Zello Consumer broadcaster**
 
     Click **+** and select **Zello Consumer**.
 
-  **10. Enter the configuration**
+  **4. Enter the configuration**
 
     Fill in the required fields:
 
@@ -85,16 +84,15 @@ SDRTrunk Kennebec can push decoded radio audio directly into Zello channels over
     | **Password** | Your Zello account password |
     | **Auth Token** | The JWT token from the Zello developer portal |
 
-  **11. Configure timing parameters (optional)**
+  **5. Configure timing parameters (optional)**
 
     The same **Stream Guard**, **Pause Time**, and **Relaxation Time** parameters are available as for Zello Work. The defaults (`0` / `0` / `700` ms) are a good starting point.
 
-  **12. Enable and save**
+  **6. Enable and save**
 
     Check **Enabled**, then click **Save**. SDRTrunk Kennebec connects to `wss://zello.io/ws` and starts streaming.
 
-
-> [!NOTE]
+> **Note:**
 >
   The auth token is a requirement of the Zello Consumer API. You must register your application on the Zello developer portal to obtain one before you can stream to a consumer channel.
 
@@ -104,7 +102,7 @@ SDRTrunk Kennebec can push decoded radio audio directly into Zello channels over
 
 Both Zello integration types re-encode decoded audio to **Opus** before transmission over WebSocket, regardless of the MP3 format used internally by the streaming subsystem. This re-encoding happens automatically in real time — you do not need to configure any codec settings.
 
-> [!NOTE]
+> **Note:**
 >
   Because SDRTrunk Kennebec re-encodes audio to Opus for Zello, there is a brief additional processing step compared to Icecast or Shoutcast streaming. In practice this delay is imperceptible.
 
@@ -128,10 +126,10 @@ Each Zello broadcaster configuration has a **Verbose Logging** toggle. When enab
 
 You can also enable verbose logging for all Zello broadcasters globally from **Application** > **Diagnostics (Logging)** in User Preferences, using the **Zello** category toggle.
 
-> [!WARNING]
+> **Warning:**
 >
   Verbose logging generates a significant volume of log output. Enable it for troubleshooting sessions only, and disable it once you have captured the information you need.
 
-> [!TIP]
+> **Tip:**
 >
   If you find yourself clicking **Reconnect** frequently, enable verbose logging to capture session-level diagnostics and share the log with support.

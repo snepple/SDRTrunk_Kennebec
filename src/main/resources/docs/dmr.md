@@ -21,20 +21,19 @@ DMR uses the AMBE+2 voice codec. As with P25, audio decoding requires the **JMBE
 
 ## DMR tiers explained
 
-<Tabs>
-  <Tab title="Tier I and Tier II — Conventional">
-    On a conventional DMR channel (Tier I simplex or Tier II repeater-based), radios transmit on a fixed frequency with no control channel. SDRTrunk monitors the carrier and decodes any DMR activity it detects on either timeslot.
+### Tier I and Tier II — Conventional
 
-    Use the **DMR** decoder type in the **Playlist Editor** and set **Frequency** to the channel's fixed frequency.
-  </Tab>
-  <Tab title="Tier III — Trunked">
-    DMR Tier III is the trunked variant, commonly deployed on Motorola MOTOTRBO Capacity Plus, Linked Capacity Plus, and Connect Plus systems. The system broadcasts a control channel that grants calls to specific traffic channel frequencies. SDRTrunk decodes the control channel and automatically follows traffic channel grants.
+On a conventional DMR channel (Tier I simplex or Tier II repeater-based), radios transmit on a fixed frequency with no control channel. SDRTrunk monitors the carrier and decodes any DMR activity it detects on either timeslot.
 
-    Use the **DMR** decoder type and point it at the control channel frequency. SDRTrunk detects Tier III operation automatically.
+Use the **DMR** decoder type in the **Playlist Editor** and set **Frequency** to the channel's fixed frequency.
 
-    On MotoTRBO systems that use fixed timeslot-to-frequency mapping (MOTOTRBO conventional IP Site Connect), you can configure a **Timeslot Map** in the decoder settings to tell SDRTrunk which frequencies correspond to which timeslots.
-  </Tab>
-</Tabs>
+### Tier III — Trunked
+
+DMR Tier III is the trunked variant, commonly deployed on Motorola MOTOTRBO Capacity Plus, Linked Capacity Plus, and Connect Plus systems. The system broadcasts a control channel that grants calls to specific traffic channel frequencies. SDRTrunk decodes the control channel and automatically follows traffic channel grants.
+
+Use the **DMR** decoder type and point it at the control channel frequency. SDRTrunk detects Tier III operation automatically.
+
+On MotoTRBO systems that use fixed timeslot-to-frequency mapping (MOTOTRBO conventional IP Site Connect), you can configure a **Timeslot Map** in the decoder settings to tell SDRTrunk which frequencies correspond to which timeslots.
 
 ## Set up a DMR channel
 
@@ -70,36 +69,34 @@ Fill in the **System** and **Site** fields for clear labeling in the **Now Playi
 
 Click **Save**, then select the channel and click **Play**, or enable **Auto-Start**.
 
-
 ## Talkgroup aliases
 
 DMR talkgroup IDs are integers decoded from the air interface. Assign human-readable names so you can identify calls at a glance.
 
-**7. Open the Aliases tab**
+**1. Open the Aliases tab**
 
 In the **Playlist Editor**, click **Aliases** in the sidebar.
 
-**8. Create an alias group**
+**2. Create an alias group**
 
 Click **Add Group** and name it to match the system or agency, for example `Fleet` or `Operations`.
 
-**9. Add a talkgroup alias**
+**3. Add a talkgroup alias**
 
 Click **Add Alias** inside the group. Set **Protocol** to `DMR`, set the identifier type to **Talkgroup**, and enter the numeric talkgroup ID and a display name.
 
-**10. Add radio ID aliases (optional)**
+**4. Add radio ID aliases (optional)**
 
 Set the identifier type to **Radio ID** to tag transmissions from specific subscriber units.
-
 
 ## Filtering by talkgroup
 
 Use the **Ignore Unaliased Talkgroups** option to limit decoding to only the talkgroups you have added as aliases. This is the primary filtering mechanism for DMR: SDRTrunk will not allocate a traffic channel for any call whose talkgroup has no alias entry.
 
-> [!WARNING]
+> **Warning:**
 > Enabling **Ignore Unaliased Talkgroups** silently drops any talkgroup without an alias entry — including calls you might not have known to add. Disable this option during initial monitoring to discover all active talkgroups before narrowing the list.
 
-> [!TIP]
+> **Tip:**
 > DMR talkgroup IDs on trunked systems can differ from the IDs shown in RadioReference listings if the system uses compressed talkgroups. If aliases are not matching, enable **Use Compressed Talkgroups** and verify the IDs in the SDRTrunk event log.
 
 ## Common issues

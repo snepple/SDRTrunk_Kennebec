@@ -44,6 +44,8 @@ public class ControllerPanel extends javafx.scene.layout.StackPane {
     private AudioRecordingsPanel mAudioRecordingsPanel;
 
     private ControllerPanelController mController;
+    private Runnable mOnContentReady;
+    private boolean mContentReady;
 
     public ControllerPanel(PlaylistManager playlistManager, AudioPlaybackManager audioPlaybackManager,
                            IconModel iconModel, MapService mapService, SettingsManager settingsManager,
@@ -77,10 +79,28 @@ public class ControllerPanel extends javafx.scene.layout.StackPane {
                     ((Region) root).setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
                 }
                 getChildren().add(root);
+
+                //Signal that the main content is now built and on-screen, so the splash can be hidden
+                //without showing an empty window first.
+                mContentReady = true;
+                if (mOnContentReady != null) {
+                    mOnContentReady.run();
+                }
             } catch (IOException e) {
                 mLog.error("Error loading ControllerPanel.fxml", e);
             }
         });
+    }
+
+    /**
+     * Registers a callback invoked (on the JavaFX thread) once the main content has been built and
+     * added. If the content is already built, the callback runs immediately.
+     */
+    public void setOnContentReady(Runnable onContentReady) {
+        mOnContentReady = onContentReady;
+        if (mContentReady && onContentReady != null) {
+            onContentReady.run();
+        }
     }
 
 

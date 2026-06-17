@@ -45,7 +45,6 @@ Each decoder type adds its own settings below the common fields — traffic chan
 
 Click **Save**. The channel row updates immediately in the Channels table.
 
-
 ## Enable and disable channels
 
 You can start and stop a channel at any time without deleting it:
@@ -54,7 +53,7 @@ You can start and stop a channel at any time without deleting it:
 - **Stop decoding** — select a running channel and click **Stop**, or double-click the row.
 - **Auto-Start** — enable the **Auto-Start** checkbox in the channel detail editor to have SDRTrunk Kennebec start this channel automatically every time the application launches.
 
-> [!WARNING]
+> **Warning:**
 > Enabling **Auto-Start** on a large number of channels simultaneously increases CPU and SDR tuner load at startup. Enable it selectively for the channels you monitor most frequently.
 
 ## Channel states in the Now Playing view
@@ -100,6 +99,5 @@ An enhanced version of LTR that uses a dedicated control channel for faster call
 
 A European analog trunked radio standard widely deployed on commercial and utility systems. Select **MPT-1327** when adding a channel.
 
-
-> [!NOTE]
+> **Note:**
 > The **Passport** decoder type is also available for Motorola Passport analog trunking systems.

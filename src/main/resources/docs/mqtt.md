@@ -12,7 +12,6 @@ In the main application window, open the **View** menu and select **User Prefere
 
 In the left sidebar, under the **Application** section header, click **MQTT**.
 
-
 ---
 
 ## Configuration fields
@@ -35,7 +34,7 @@ The full URL of your MQTT broker, including the protocol scheme and port. Defaul
 
 Enter the credentials required by your broker. Leave both fields empty if your broker does not require authentication. The password field masks input for security.
 
-> [!WARNING]
+> **Warning:**
 > SDRTrunk Kennebec stores the MQTT password in plaintext within its XML preferences file. Do not use a sensitive or shared password. Use a dedicated broker account with minimal permissions.
 
 ### Client ID
@@ -44,35 +43,34 @@ The MQTT client identifier sent to the broker when the connection is established
 
 Leave this field blank and the application automatically generates a unique identifier in the format `SDRTrunk-{UUID}` — for example, `SDRTrunk-a3f2c1d0-4e5b-...`. Set a fixed value such as `SDRTrunk-HomeStation` if you want a stable, human-readable identifier in your broker logs.
 
-> [!NOTE]
+> **Note:**
 > Most brokers require each connected client to have a unique ID. If two SDRTrunk instances connect with the same client ID, the broker will typically disconnect the earlier session.
 
 ---
 
 ## Enable MQTT step by step
 
-**3. Start your MQTT broker**
+**1. Start your MQTT broker**
 
 Ensure your broker (such as Mosquitto or a cloud service) is running and reachable from the machine running SDRTrunk Kennebec. Confirm you can connect to it with an MQTT client before configuring SDRTrunk.
 
-**4. Enter the server URL**
+**2. Enter the server URL**
 
 Type the full broker URL into the **Server/Host** field. Use `tcp://` for unencrypted connections or `ssl://` for TLS.
 
-**5. Add credentials (if required)**
+**3. Add credentials (if required)**
 
 If your broker requires authentication, enter the **Username** and **Password** for the broker account SDRTrunk should use.
 
-**6. Set a client ID (optional)**
+**4. Set a client ID (optional)**
 
 Leave the **Client ID** field blank to auto-generate an ID, or enter a fixed value such as `SDRTrunk-HomeStation` for a stable identifier in your broker logs.
 
-**7. Enable the integration**
+**5. Enable the integration**
 
 Check **Enable MQTT**. SDRTrunk Kennebec connects to the broker immediately and begins publishing events.
 
-
-> [!TIP]
+> **Tip:**
 > Use a tool like MQTT Explorer or `mosquitto_sub` to verify that events are arriving at your broker after enabling the integration.
 
 ---

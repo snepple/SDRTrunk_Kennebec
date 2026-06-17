@@ -24,11 +24,10 @@ Find the alias for the talkgroup or radio ID you want to record and select it.
 
 In the alias detail editor, click **Add ID** and select **Record**. This marks the alias as recordable. Click **Save**.
 
-
-> [!TIP]
+> **Tip:**
 > Use the **Record** view mode in the Alias Editor (the toggle button at the top) to see all aliases that currently have recording enabled and manage them in bulk.
 
-> [!NOTE]
+> **Note:**
 > Recording only captures calls on channels that are actively decoding. Make sure the channel is started (or set to Auto-Start) before expecting recordings to appear.
 
 ---
@@ -37,18 +36,17 @@ In the alias detail editor, click **Add ID** and select **Record**. This marks t
 
 SDRTrunk Kennebec writes recording files to the directory you specify in **User Preferences**.
 
-**4. Open User Preferences**
+**1. Open User Preferences**
 
 Select **View → User Preferences** from the menu bar, or use the keyboard shortcut **Alt+U**.
 
-**5. Navigate to Directory settings**
+**2. Navigate to Directory settings**
 
 In the preferences panel, select **File Storage → Directories**.
 
-**6. Set the recording path**
+**3. Set the recording path**
 
 Click the folder icon next to the **Recordings** path field and choose the directory where you want recording files saved. Click **OK** to confirm.
-
 
 ---
 
@@ -119,25 +117,23 @@ Open the **Filter Alias** dropdown to show only recordings where the To Alias or
 
 Open the **Filter Channel** dropdown to show only recordings from a specific channel. Select **All** to show recordings from all channels.
 
-
 ---
 
 ## Play back a recording
 
-**7. Locate the recording**
+**1. Locate the recording**
 
 Use the date, time, alias, and channel filters to find the recording you want to review.
 
-**8. Click Play**
+**2. Click Play**
 
 Click the **Play** button in the **Action** column for that row. SDRTrunk Kennebec starts playback through your default audio output device. The **Stop Playback** button in the filter bar becomes active.
 
-**9. Stop playback**
+**3. Stop playback**
 
 Click **Stop Playback** to end playback before the file finishes, or wait for the file to play to completion.
 
-
-> [!NOTE]
+> **Note:**
 > Only one recording can play at a time. Starting playback of a new file automatically stops any recording currently playing.
 
 ---
@@ -146,7 +142,7 @@ Click **Stop Playback** to end playback before the file finishes, or wait for th
 
 Select one or more rows in the table and click **Delete Selected** to permanently remove those files. To remove all recordings currently visible in the filtered view, click **Delete All**. Both actions display a confirmation dialog before deleting.
 
-> [!WARNING]
+> **Warning:**
 > Deletions are permanent and cannot be undone. Use filters to narrow the table before clicking **Delete All** to avoid removing recordings you want to keep.
 
 ---

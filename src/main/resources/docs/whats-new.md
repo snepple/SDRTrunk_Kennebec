@@ -7,7 +7,7 @@ Welcome to the **SDRTrunk Kennebec** release! This major update brings a stunnin
 ## 1. Always-Visible Sticky Audio Control Header
 *   **Sticky Playback Bar**: The top iTunes-style playback controller (`AudioPanel`) is now completely locked to the upper boundary of the right content pane. It remains anchor-visible at all times, ensuring you can adjust volume, mute, or inspect active calls regardless of which settings page or editor tab you are browsing.
 *   **Translucent glassmorphism**: Individual channel card boxes (`AudioChannelPanel`) now use a beautiful translucent dark style (`rgba(255,255,255,0.06)`) with subtle white borders and rounded corners, blending perfectly into the primary dark system background.
-*   **Elite Mute Pill Capsule**: The master mute button has been redesigned into a bold, highly visible pill-shaped capsule (`🔊 Mute` in translucent gray / `🔇 Muted` in warning-red). Standard mute indicators have been removed from individual channels to eliminate redundant UI noise.
+* **Elite Mute Pill Capsule**: The master mute button has been redesigned into a bold, highly visible pill-shaped capsule (` Mute` in translucent gray / ` Muted` in warning-red). Standard mute indicators have been removed from individual channels to eliminate redundant UI noise.
 
 ---
 

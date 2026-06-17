@@ -327,16 +327,19 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
         mWidgetContainer = new WidgetContainer(mNowPlayingPreference);
 
-        HBox topToolbar = new HBox(8);
-        topToolbar.setAlignment(Pos.CENTER_RIGHT);
-        topToolbar.getStyleClass().add("kennebec-filter-toolbar");
-        topToolbar.getChildren().add(getManageWidgetsButton());
+        // Float the "manage widgets" gear in the bottom-right corner, overlaid on the content, instead
+        // of consuming an entire toolbar row for a single button.
+        javafx.scene.layout.StackPane contentStack = new javafx.scene.layout.StackPane(mWidgetContainer);
+        VBox.setVgrow(contentStack, Priority.ALWAYS);
 
-        // Place WidgetContainer directly in VBox — no ScrollPane, no GridPane.
-        // The WidgetContainer (extends VBox) handles drag-to-reorder natively.
-        // Each widget gets VBox.setVgrow(Priority.ALWAYS) to share available space.
-        VBox.setVgrow(mWidgetContainer, Priority.ALWAYS);
-        getChildren().addAll(topToolbar, mWidgetContainer);
+        Button manageWidgets = getManageWidgetsButton();
+        javafx.scene.layout.StackPane.setAlignment(manageWidgets, Pos.BOTTOM_RIGHT);
+        javafx.scene.layout.StackPane.setMargin(manageWidgets, new javafx.geometry.Insets(0, 8, 8, 0));
+        //Let clicks pass through the empty area of the overlay to the content beneath it.
+        contentStack.setPickOnBounds(false);
+        contentStack.getChildren().add(manageWidgets);
+
+        getChildren().add(contentStack);
     }
 
     private void setupWidgets() {

@@ -32,7 +32,7 @@ SDRTrunk Kennebec supports two Icecast connection modes that match different ser
 | **Public** | Whether to advertise the stream in the Icecast directory |
 | **URL** | A website URL associated with the stream |
 
-> [!NOTE]
+> **Note:**
 > The **Inline** metadata flag is enabled by default. It embeds talkgroup metadata into the MP3 stream at an interval calculated from the bit rate. Leave this enabled unless your player has compatibility issues with inline ICY metadata.
 
 ### Icecast TCP (v2.3)
@@ -64,7 +64,6 @@ Enter the host, port, mount point, and password that match your Icecast server's
 **3. Enable and save**
 
 Check **Enabled**, then click **Save**. SDRTrunk Kennebec connects to the server and begins streaming audio as decoded calls arrive.
-
 
 ---
 
@@ -118,18 +117,17 @@ Shoutcast v2 introduces stream IDs and optional user ID authentication to suppor
 
 ### Add a Shoutcast Stream
 
-**4. Open the Streaming Editor**
+**1. Open the Streaming Editor**
 
 Go to **View** > **Streaming**, click **+**, and select **Shoutcast v1.x** or **Shoutcast v2.x**.
 
-**5. Fill in the server details**
+**2. Fill in the server details**
 
 Enter the host, port, and password. For Shoutcast v2, also enter the stream ID.
 
-**6. Enable and save**
+**3. Enable and save**
 
 Check **Enabled**, then click **Save**.
-
 
 ---
 
@@ -137,7 +135,7 @@ Check **Enabled**, then click **Save**.
 
 IAmResponding is a first-responder alerting platform with a **Two Tone Detect** feature. SDRTrunk Kennebec streams raw PCM audio to the IAmResponding Two Tone Detect listener over UDP on the local machine, allowing the software to detect two-tone sequential paging tones and trigger dispatch alerts automatically.
 
-> [!WARNING]
+> **Warning:**
 > IAmResponding is a **local, Windows-only** integration. SDRTrunk Kennebec sends audio to a UDP socket on the same computer — it does not transmit audio over a network. The IAmResponding Two Tone Detect client software must be installed and running on the same Windows machine as SDRTrunk Kennebec.
 
 **Required fields**
@@ -152,22 +150,21 @@ IAmResponding is a first-responder alerting platform with a **Two Tone Detect** 
 
 ### Add an IAmResponding Broadcaster
 
-**7. Confirm IAmResponding is running**
+**1. Confirm IAmResponding is running**
 
 Make sure the IAmResponding Two Tone Detect client is installed, configured, and running on the same Windows machine as SDRTrunk Kennebec.
 
-**8. Open the Streaming Editor**
+**2. Open the Streaming Editor**
 
 Go to **View** > **Streaming**, click **+**, and select **IAmResponding**.
 
-**9. Enter the connection details**
+**3. Enter the connection details**
 
 Set **Host** to `127.0.0.1` (or whichever loopback address IAmResponding is bound to) and enter the **Port** IAmResponding Two Tone Detect is listening on.
 
-**10. Enable and save**
+**4. Enable and save**
 
 Check **Enabled**, then click **Save**.
-
 
 ---
 

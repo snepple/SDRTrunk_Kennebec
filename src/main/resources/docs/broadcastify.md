@@ -59,8 +59,7 @@ Toggle **Verbose Logging** on if you need detailed diagnostic output in the appl
 
 Check **Enabled**, then click **Save**. SDRTrunk Kennebec connects to the Broadcastify server immediately and begins streaming decoded audio.
 
-
-> [!NOTE]
+> **Note:**
 > SDRTrunk Kennebec sets the audio parameters for Broadcastify Feed automatically: 16 kbps MP3, mono, 8000 Hz. You do not need to configure bit rate or sample rate.
 
 ---
@@ -75,15 +74,15 @@ Log in to your Broadcastify account and locate the Calls API key and system ID f
 
 ### Add the Broadcaster
 
-**6. Open the Streaming Editor**
+**1. Open the Streaming Editor**
 
 In SDRTrunk Kennebec, go to **View** > **Streaming**.
 
-**7. Add a Broadcastify Call broadcaster**
+**2. Add a Broadcastify Call broadcaster**
 
 Click **+** and select **Broadcastify Call**.
 
-**8. Enter the configuration**
+**3. Enter the configuration**
 
 Fill in the following fields:
 
@@ -94,28 +93,26 @@ Fill in the following fields:
 | **System ID** | Your numeric Broadcastify system ID |
 | **Host** | Leave at the default production endpoint (`https://api.broadcastify.com/call-upload`) unless directed otherwise |
 
-**9. Enable and save**
+**4. Enable and save**
 
 Check **Enabled**, then click **Save**. SDRTrunk Kennebec uploads completed call recordings to the Broadcastify Calls API as they arrive.
 
-
-> [!TIP]
+> **Tip:**
 > A development endpoint (`https://api.broadcastify.com/call-upload-dev`) is available for testing. Switch the **Host** field to this value while verifying your configuration, then switch back to the production endpoint before going live.
 
 ---
 
 ## Verifying the Connection
 
-<Tabs>
-  <Tab title="Broadcastify Feed">
-    After enabling the broadcaster, open **View** > **Broadcaster Status**. The Feed entry should show **Connected** within a few seconds.
+### Broadcastify Feed
 
-    You can also visit your feed's Broadcastify page while audio is being received to confirm the stream is active.
-  </Tab>
-  <Tab title="Broadcastify Call">
-    After enabling the broadcaster and receiving a trunked call, the **Broadcaster Status** panel shows **Connected** once the first upload attempt succeeds. Check your Broadcastify Calls interface to confirm new call entries are appearing.
-  </Tab>
-</Tabs>
+After enabling the broadcaster, open **View** > **Broadcaster Status**. The Feed entry should show **Connected** within a few seconds.
+
+You can also visit your feed's Broadcastify page while audio is being received to confirm the stream is active.
+
+### Broadcastify Call
+
+After enabling the broadcaster and receiving a trunked call, the **Broadcaster Status** panel shows **Connected** once the first upload attempt succeeds. Check your Broadcastify Calls interface to confirm new call entries are appearing.
 
 ---
 
@@ -130,5 +127,5 @@ If the **Broadcaster Status** panel shows **Disconnected** or **Error**, work th
 
 Enable **Verbose Logging** on the Broadcastify Feed configuration and review the application log for detailed error messages.
 
-> [!WARNING]
+> **Warning:**
 > The **Delay** and **Maximum Recording Age** fields are available in the configuration but should be left at their defaults unless Broadcastify support specifically advises you to change them. Setting **Maximum Recording Age** too low can cause call recordings to be discarded before they are uploaded.

@@ -15,7 +15,7 @@ Notifications trigger on two categories of events:
 | **Channel inactivity** | A monitored channel exceeds its configured silence threshold (see [Inactivity Monitoring](/alerts/inactivity-monitoring)) |
 | **AI audio monitoring** | An AI-flagged audio quality issue is detected on a channel |
 
-> [!NOTE]
+> **Note:**
 > SDRTrunk Kennebec attempts to self-heal a failed tuner before sending any alert. You will only receive a hardware notification if the automatic recovery fails.
 
 ## Open notification settings
@@ -28,16 +28,15 @@ In the menu bar, go to **View** → **User Preferences**.
 
 Select **Notifications** in the left sidebar of the **User Preferences** panel.
 
-
 ## Configure Telegram alerts
 
 To receive alerts through Telegram, you need a bot token and a chat ID. Both are free to create from the Telegram app.
 
-**3. Create a Telegram bot**
+**1. Create a Telegram bot**
 
 Open Telegram and start a conversation with **@BotFather**. Send the `/newbot` command and follow the prompts. BotFather will give you a **bot token** — a string that looks like `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`.
 
-**4. Find your chat ID**
+**2. Find your chat ID**
 
 Send any message to your new bot, then open a browser and visit:
 
@@ -47,7 +46,7 @@ https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
 
 Look for the `"id"` field inside the `"chat"` object. That number is your chat ID.
 
-**5. Enter your credentials in SDRTrunk Kennebec**
+**3. Enter your credentials in SDRTrunk Kennebec**
 
 In the **Notifications** panel of **User Preferences**:
 
@@ -55,19 +54,18 @@ In the **Notifications** panel of **User Preferences**:
 - Paste your chat ID into the **Telegram Chat ID** field.
 - Enable the **Telegram Notifications** toggle.
 
-**6. Test the configuration**
+**4. Test the configuration**
 
 Click **Send Test Message**. Your Telegram bot should deliver a test message within a few seconds.
 
-
-> [!TIP]
+> **Tip:**
 > You can send alerts to a Telegram group or channel instead of a private chat. Add your bot to the group, then use the group's chat ID — which will be a negative number — in the **Telegram Chat ID** field.
 
 ## Configure Email alerts
 
 SDRTrunk Kennebec sends email via SMTP, which works with Gmail, Outlook, or any standard mail provider.
 
-**7. Enter SMTP settings**
+**1. Enter SMTP settings**
 
 In the **Notifications** panel of **User Preferences**, fill in the **Email / SMTP** section:
 
@@ -80,16 +78,15 @@ In the **Notifications** panel of **User Preferences**, fill in the **Email / SM
 | **From Address** | The address that will appear as the sender |
 | **To Address** | The address that will receive the alerts |
 
-**8. Enable Email notifications**
+**2. Enable Email notifications**
 
 Turn on the **Email Notifications** toggle.
 
-**9. Test the configuration**
+**3. Test the configuration**
 
 Click **Send Test Email**. Check the inbox of your **To Address** for a test message from SDRTrunk Kennebec.
 
-
-> [!WARNING]
+> **Warning:**
 > If you use Gmail, Google requires an **App Password** rather than your regular account password. Generate one at **Google Account → Security → App passwords**. Using your regular password with 2-Step Verification enabled will cause authentication to fail.
 
 ## Add notification recipients
