@@ -109,6 +109,12 @@ public class AIPreferenceEditor extends VBox {
             mUserPreferences.getAIPreference().setGainAdvisorEnabled(newValue);
         });
 
+        ToggleSwitch enableSquelchAdvisorSwitch = new ToggleSwitch();
+        enableSquelchAdvisorSwitch.setSelected(mUserPreferences.getAIPreference().isSquelchAdvisorEnabled());
+        enableSquelchAdvisorSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setSquelchAdvisorEnabled(newValue);
+        });
+
         SettingsCard featuresCard = new SettingsCard();
         featuresCard.getChildren().addAll(
             new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
@@ -116,7 +122,8 @@ public class AIPreferenceEditor extends VBox {
             new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch),
             new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls),
             new SettingsRow("Auto-Optimize NBFM Audio Filters (runs up to twice a day per channel)", enableNbfmAutoOptimizeSwitch),
-            new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels, recommends tuner gain changes)", enableGainAdvisorSwitch)
+            new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels, recommends tuner gain changes)", enableGainAdvisorSwitch),
+            new SettingsRow("Squelch Advisor (enables the Calibrate Squelch button on NBFM channels)", enableSquelchAdvisorSwitch)
         );
 
         // API Key Card with Embedded Scaffolding

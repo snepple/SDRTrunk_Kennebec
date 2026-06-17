@@ -29,8 +29,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -63,6 +65,10 @@ public class PlaylistLinter
             Set<String> aliasListNames = new HashSet<>(playlistManager.getAliasModel().getListNames());
             Set<String> streamNames = new HashSet<>(playlistManager.getBroadcastModel().getBroadcastConfigurationNames());
 
+            //Maps a single-frequency channel's tuned frequency to the name of the first channel using it, so
+            //subsequent channels on the same frequency can be reported as potential duplicates.
+            Map<Long,String> frequencyToChannelName = new HashMap<>();
+
             for(Channel channel : playlistManager.getChannelModel().getChannels())
             {
                 String aliasListName = channel.getAliasListName();
@@ -73,10 +79,32 @@ public class PlaylistLinter
                         "' which does not exist - talkgroup names, priorities and stream assignments will not apply");
                 }
 
+                //Flag receiving channels that have no alias list assigned - decoded activity will show as raw
+                //numeric talkgroups/radio IDs with no names, priorities or stream assignments.
+                if((aliasListName == null || aliasListName.isEmpty()) && hasFrequency(channel))
+                {
+                    findings.add("Channel '" + channel.getName() + "' has no alias list assigned - decoded " +
+                        "activity will show raw numeric identifiers with no names or stream routing");
+                }
+
                 if(channel.isAutoStart() && !hasFrequency(channel))
                 {
                     findings.add("Auto-start channel '" + channel.getName() +
                         "' has no frequency configured and cannot start");
+                }
+
+                //Flag duplicate tuned frequencies across single-frequency channels.
+                if(channel.getSourceConfiguration() instanceof SourceConfigTuner tuner && tuner.getFrequency() > 0)
+                {
+                    long frequency = tuner.getFrequency();
+                    String existing = frequencyToChannelName.putIfAbsent(frequency, channel.getName());
+
+                    if(existing != null)
+                    {
+                        findings.add("Channel '" + channel.getName() + "' uses the same frequency (" +
+                            String.format("%.5f MHz", frequency / 1.0E6) + ") as channel '" + existing +
+                            "' - this is often a duplicate configuration");
+                    }
                 }
             }
 

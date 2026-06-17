@@ -22,6 +22,7 @@ public class AIPreference extends Preference {
     public static final String KEY_NBFM_AUTO_OPTIMIZE = "ai.nbfm.auto.optimize";
     public static final String KEY_NBFM_LAST_OPTIMIZE_PREFIX = "ai.nbfm.last.optimize.";
     public static final String KEY_GAIN_ADVISOR_ENABLED = "ai.gain.advisor.enabled";
+    public static final String KEY_SQUELCH_ADVISOR_ENABLED = "ai.squelch.advisor.enabled";
 
     //Auto-optimize a given NBFM channel at most this often.  Running every few calls burns Gemini
     //tokens very quickly when many channels are configured, so the cadence is time-based (twice a day).
@@ -217,6 +218,22 @@ public class AIPreference extends Preference {
     public void setGainAdvisorEnabled(boolean enabled) {
         mPreferences.putBoolean(KEY_GAIN_ADVISOR_ENABLED, enabled);
         mGainAdvisorEnabled = enabled;
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Whether to enable the Squelch Advisor, which powers the manual "Calibrate Squelch" button in the
+     * NBFM audio squelch view.  When enabled, the user can sample the live noise-variance for a few
+     * seconds and have recommended open/close noise thresholds applied automatically.  This is a local,
+     * heuristic feature - it analyses the channel's own noise statistics and does not call any external
+     * AI service.
+     */
+    public boolean isSquelchAdvisorEnabled() {
+        return mPreferences.getBoolean(KEY_SQUELCH_ADVISOR_ENABLED, false);
+    }
+
+    public void setSquelchAdvisorEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_SQUELCH_ADVISOR_ENABLED, enabled);
         notifyPreferenceUpdated();
     }
 }

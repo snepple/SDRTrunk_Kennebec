@@ -585,6 +585,30 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         final boolean calibrating = !calibrationManager.isCalibrated() &&
             !mUserPreferences.getVectorCalibrationPreference().isHideCalibrationDialog();
 
+        //Adaptive DSP path selection: when the interactive calibration dialog will not be shown (headless,
+        //or the user suppressed it) but the SIMD implementations are not yet benchmarked, calibrate in the
+        //background so we use the fastest vector path instead of the slow scalar fallback.  Calibration is
+        //persisted, so this runs at most once per machine.
+        boolean calibrationDialogWillShow = !headless && calibrating;
+        if(mUserPreferences.getApplicationPreference().isAutoVectorCalibrationEnabled() &&
+            !calibrationManager.isCalibrated() && !calibrationDialogWillShow)
+        {
+            Thread calibrationThread = new Thread(() -> {
+                try
+                {
+                    mLog.info("Auto-calibrating SIMD/vector DSP implementations in the background for optimal performance");
+                    calibrationManager.calibrate();
+                }
+                catch(Throwable t)
+                {
+                    mLog.warn("Background DSP calibration did not complete - continuing with current settings", t);
+                }
+            }, "sdrtrunk-auto-vector-calibration");
+            calibrationThread.setDaemon(true);
+            calibrationThread.setPriority(Thread.MIN_PRIORITY);
+            calibrationThread.start();
+        }
+
         new ChannelSelectionManager(mPlaylistManager.getChannelModel());
 
         mAudioPlaybackManager = new AudioPlaybackManager(mUserPreferences);

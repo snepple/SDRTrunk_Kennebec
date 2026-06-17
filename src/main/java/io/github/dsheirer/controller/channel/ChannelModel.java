@@ -320,7 +320,11 @@ public class ChannelModel implements Listener<ChannelEvent>
                 return 1;
             }
 
-            return 0;
+            //Neither channel has an explicit auto-start order - fall back to historical decode activity so
+            //the channels that have been most active previously start (and get tuner priority) first.
+            long activity1 = ChannelActivityTracker.getInstance().getActivityScore(channel1.getName());
+            long activity2 = ChannelActivityTracker.getInstance().getActivityScore(channel2.getName());
+            return Long.compare(activity2, activity1);
         });
 
         return autoStartChannels;
