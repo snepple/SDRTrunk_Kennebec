@@ -592,10 +592,11 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
         private void showContextMenu(javafx.scene.input.MouseEvent event) {
             ContextMenu contextMenu = new ContextMenu();
 
-            if(event.getSource() == mWaterfallPanel) {
-                contextMenu.getItems().add(new PauseItem(mWaterfallPanel, "Pause"));
-                contextMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
-            }
+            //Pause is available from both the spectrum and the waterfall right-click menus, freezing the
+            //panel that was clicked (the waterfall scroll, or the spectrum trace) so the user can read it.
+            Pausable pausable = (event.getSource() == mWaterfallPanel) ? mWaterfallPanel : mSpectrumPanel;
+            contextMenu.getItems().add(new PauseItem(pausable, "Pause"));
+            contextMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
 
             long frequency = mOverlayPanel.getFrequencyFromAxis(event.getX());
 

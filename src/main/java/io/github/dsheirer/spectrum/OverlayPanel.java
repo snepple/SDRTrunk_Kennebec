@@ -380,14 +380,17 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
             double rectWidth = mLabelWidth; double rectHeight = mLabelHeight;
 
+            //Fill (not stroke) the text so the glyphs render solid and crisp rather than as thin outlines.
+            graphics.setFill(mColorSpectrumCursor);
+
             if(mCursorLocation.getY() > rectHeight)
             {
-                graphics.strokeText(frequency, mCursorLocation.getX() + 5, mCursorLocation.getY());
+                graphics.fillText(frequency, mCursorLocation.getX() + 5, mCursorLocation.getY());
             }
 
             if(mZoom != 0)
             {
-                graphics.strokeText("Zoom: " + (int)FastMath.pow(2.0, mZoom) + "x", mCursorLocation.getX() + 17,
+                graphics.fillText("Zoom: " + (int)FastMath.pow(2.0, mZoom) + "x", mCursorLocation.getX() + 17,
                     mCursorLocation.getY() + 11);
             }
         }
@@ -557,7 +560,8 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
         //Only render the correction value label if the spacing is large enough
         if(rectWidth <= bandwidth && rectHeight * 5 <= height)
         {
-            graphics.strokeText(label, (float)(errorEdgeStart + 1.0), (float)(verticalAxisBottom - 2.0));
+            graphics.setFill(mColorSpectrumLine);
+            graphics.fillText(label, (float)(errorEdgeStart + 1.0), (float)(verticalAxisBottom - 2.0));
         }
     }
 
@@ -629,7 +633,9 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
         float xOffset = (float)rectWidth / 2;
 
-        graphics.strokeText(label, (float)(xaxis - xOffset), (float)(mCanvas.getHeight() - 2.0f));
+        //Fill (not stroke) so the frequency labels render solid rather than as thin glyph outlines.
+        graphics.setFill(mColorSpectrumLine);
+        graphics.fillText(label, (float)(xaxis - xOffset), (float)(mCanvas.getHeight() - 2.0f));
     }
 
 
@@ -667,8 +673,8 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
                         
                         
 
-                        //Change to the line color to render the channel name, etc.
-                        graphics.setStroke(mColorSpectrumLine);
+                        //Change to the line color to render the channel name, etc. (filled, not stroked).
+                        graphics.setFill(mColorSpectrumLine);
 
                         //Draw the labels starting at yAxis position 0
                         double yAxis = 0;
@@ -739,13 +745,13 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
             
 
-            graphics.strokeText(text, (float)(x - (maxWidth / 2.0d)), (float)y);
+            graphics.fillText(text, (float)(x - (maxWidth / 2.0d)), (float)y);
 
-            
+
         }
         else
         {
-            graphics.strokeText(text, (float)(x - offset), (float)y);
+            graphics.fillText(text, (float)(x - offset), (float)y);
         }
 
         return labelHeight;
