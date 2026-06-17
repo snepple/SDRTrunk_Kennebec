@@ -6,7 +6,7 @@ Two Tone Detect monitors an audio channel for sequential paging tones used in fi
 
 Two-tone sequential paging is a signaling system widely used in North American fire and EMS dispatch. Each station or unit is assigned a unique pair of audio frequencies — called Tone A and Tone B — transmitted back-to-back for a fixed duration. SDRTrunk Kennebec supports tone frequencies from the Motorola QC-II and Plectron standard tables, covering approximately 282 Hz to 3,062 Hz, and also accepts custom frequency values entered directly in Hz.
 
-> [!NOTE]
+> **Note:**
 > Two Tone Detect works on any channel that carries paging tones — typically a conventional FM dispatch channel. The channel must already be configured and decoding in the **Channels** section before Two Tone Detect can process its audio.
 
 ## Open the Two Tone Editor
@@ -44,8 +44,7 @@ Click the **Tone B** dropdown and enter the second tone frequency. The **Tone B*
 
 Click **Save** at the bottom of the **Configuration** tab. The detector is saved to the current playlist.
 
-
-> [!TIP]
+> **Tip:**
 > Use **Clone** in the left-pane toolbar to duplicate an existing detector and adjust only the tone values. This is faster than creating detectors from scratch when you have many similar entries.
 
 ## Link a detector to an alias
@@ -60,11 +59,11 @@ To link from the alias side, open the alias in the **Alias Editor**, add a **Two
 
 If you have a Zello broadcast stream configured in the **Playlist Editor's Streaming** section, you can route Two Tone detection events to a Zello channel.
 
-**7. Select a Zello channel**
+**1. Select a Zello channel**
 
 In the **Configuration** tab, open the **Zello Channel** dropdown. It is populated from your existing Zello broadcast configurations. Select the channel you want to receive the alert.
 
-**8. Enable a text message (optional)**
+**2. Enable a text message (optional)**
 
 Check **Enable Text Message** to send a text message to the Zello channel when the detector fires. Enter your message in the **Message Template** field using any of the following placeholders:
 
@@ -77,31 +76,29 @@ Check **Enable Text Message** to send a text message to the Zello channel when t
 
 A live preview of the resolved message appears below the template field.
 
-**9. Enable an alert tone (optional)**
+**3. Enable an alert tone (optional)**
 
 Check **Enable Zello Alert Tone** and select a tone file from the **Alert Tone File** dropdown (`alert1.wav` or `alert2.wav`). Click **Preview** to audition the tone before saving.
 
-**10. Save**
+**4. Save**
 
 Click **Save** in the **Configuration** tab.
 
-
 ## Configure MQTT integration
 
-**11. Enable MQTT publish**
+**1. Enable MQTT publish**
 
 Check **Enable MQTT Publish** in the MQTT Integration section of the **Configuration** tab. The **MQTT Topic** and **MQTT Payload** fields become active.
 
-**12. Set the topic and payload**
+**2. Set the topic and payload**
 
 Enter the MQTT topic string in **MQTT Topic** — for example, `sdrtrunk/dispatch/station7`. Enter the message payload in **MQTT Payload**. The payload can be any text, including JSON.
 
-**13. Save**
+**3. Save**
 
 Click **Save**. Each time the detector fires, SDRTrunk Kennebec publishes to the configured MQTT broker using the global MQTT settings in **User Preferences**.
 
-
-> [!NOTE]
+> **Note:**
 > MQTT broker connection settings — host, port, and credentials — are configured in **View → User Preferences**, not in the Two Tone Editor.
 
 ## IAmResponding integration
@@ -110,7 +107,7 @@ SDRTrunk Kennebec can send Two Tone detection events to **IAmResponding** via a 
 
 To use this integration, configure a UDP broadcast stream in the **Streaming** section of the **Playlist Editor** and point it at the IAmResponding local receiver port on the same computer. Then assign that stream to the alias linked to the Two Tone detector.
 
-> [!WARNING]
+> **Warning:**
 > UDP streaming to IAmResponding is a local-only integration. The IAmResponding receiver software must be running on the same machine as SDRTrunk Kennebec.
 
 ## Manage detectors

@@ -2,7 +2,7 @@
 
 RadioReference.com is the largest public database of radio system information in North America, containing frequencies, talkgroup IDs, site coordinates, and system metadata for thousands of public safety and government networks. SDRTrunk Kennebec's RadioReference integration lets you browse this database by location and pull a complete system configuration — channels, sites, and aliases — directly into your active playlist in seconds, without entering anything manually.
 
-> [!NOTE]
+> **Note:**
 > A RadioReference.com **Premium** subscription is required to use the API import feature. Free accounts cannot access the API.
 
 ---
@@ -28,7 +28,6 @@ Use the cascading dropdown menus to locate the system you want to import:
 **4. Select components and import**
 
 Check the boxes next to the sites and talkgroup categories you want to include. Click **Import Selected**. SDRTrunk Kennebec automatically creates the necessary channels and alias lists in your active playlist.
-
 
 ---
 
@@ -72,5 +71,5 @@ Navigate to the **Aliases** tab. The import process groups talkgroups based on t
 
 Your RadioReference username and password are saved in the application's Java preferences store. The **Store credentials** option (enabled by default) means you only need to log in once. To remove stored credentials, open the RadioReference panel and click the option to clear them.
 
-> [!WARNING]
+> **Warning:**
 > Credentials are stored in your operating system's user preferences store. Avoid using your RadioReference password on shared or publicly accessible systems.

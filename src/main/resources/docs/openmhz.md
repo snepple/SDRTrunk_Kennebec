@@ -35,8 +35,7 @@ Fill in the following fields in the configuration panel:
 
 Toggle **Enabled** on, then click **Save**. SDRTrunk Kennebec begins uploading completed call recordings to OpenMHz.
 
-
-> [!WARNING]
+> **Warning:**
 > The **System Name** field must exactly match the short name registered for your system on OpenMHz. A mismatch — including differences in capitalization — will cause uploads to be rejected by the API.
 
 ## How Calls Are Uploaded

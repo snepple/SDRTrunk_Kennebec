@@ -6,23 +6,23 @@ SDRTrunk Kennebec can isolate audio from specific talkgroups or radio IDs and ro
 
 SDRTrunk Kennebec interacts with virtual audio cables as standard output devices. You need to install a third-party driver for your operating system before assigning one in the application.
 
-<Tabs>
-  <Tab title="Windows">
-    **VB-Audio Virtual Cable (VB-Cable)** — Free, single cable. Install from the VB-Audio website. Appears as `CABLE Input (VB-Audio Virtual Cable)` in Windows sound settings.
+### Windows
 
-    **Virtual Audio Cable (VAC)** — Commercial software supporting multiple simultaneous cables. Useful when you need to route several aliases to different applications at the same time.
-  </Tab>
-  <Tab title="macOS">
-    **BlackHole** — Free, open-source virtual audio driver supporting 2, 16, or 64 channels. Available via Homebrew or direct download.
+**VB-Audio Virtual Cable (VB-Cable)** — Free, single cable. Install from the VB-Audio website. Appears as `CABLE Input (VB-Audio Virtual Cable)` in Windows sound settings.
 
-    **Loopback** — Commercial application from Rogue Amoeba. Provides a graphical interface for creating and managing virtual cables with routing rules.
-  </Tab>
-  <Tab title="Linux">
-    **PulseAudio null sinks** — Create a virtual output device with the `pactl load-module module-null-sink` command. Other applications can then record from the associated monitor source.
+**Virtual Audio Cable (VAC)** — Commercial software supporting multiple simultaneous cables. Useful when you need to route several aliases to different applications at the same time.
 
-    **PipeWire virtual devices** — On systems running PipeWire, use `pw-loopback` or the PipeWire configuration API to create loopback nodes that function as virtual cables.
-  </Tab>
-</Tabs>
+### macOS
+
+**BlackHole** — Free, open-source virtual audio driver supporting 2, 16, or 64 channels. Available via Homebrew or direct download.
+
+**Loopback** — Commercial application from Rogue Amoeba. Provides a graphical interface for creating and managing virtual cables with routing rules.
+
+### Linux
+
+**PulseAudio null sinks** — Create a virtual output device with the `pactl load-module module-null-sink` command. Other applications can then record from the associated monitor source.
+
+**PipeWire virtual devices** — On systems running PipeWire, use `pw-loopback` or the PipeWire configuration API to create loopback nodes that function as virtual cables.
 
 ---
 
@@ -39,7 +39,7 @@ SDRTrunk Kennebec
                                                       on VAC input/monitor
 ```
 
-> [!NOTE]
+> **Note:**
 >
   When a specific audio output device is assigned to an alias, the audio for that alias will **no longer play** through your default computer speakers. It is routed entirely to the VAC.
 
@@ -62,7 +62,6 @@ SDRTrunk Kennebec
   **4. Save the alias**
 
     Click **Save**. Any future calls matching this alias are now routed exclusively to the selected virtual audio cable.
-
 
 ---
 
@@ -94,7 +93,6 @@ If you have multiple VAC devices installed — for example, VB-Cable A and VB-Ca
   **Secondary recording**
 
     Capture audio in a separate recording application alongside SDRTrunk's built-in recorder for redundancy or alternative formats.
-
 
 ---
 

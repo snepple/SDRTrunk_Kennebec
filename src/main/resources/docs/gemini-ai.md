@@ -20,8 +20,7 @@ A background agent polls CPU and memory usage at regular intervals and displays 
 
 The AI monitors the last five decoded audio files from each active channel. If a channel's audio becomes unintelligible, Gemini flags it so you can investigate whether the cause is a decoding problem, weak signal, or hardware fault.
 
-
-> [!NOTE]
+> **Note:**
 > When AI features are enabled, SDRTrunk Kennebec saves the last five audio files from each active channel to your local disk to allow for audio quality review. These files are managed automatically and cleared as new audio arrives.
 
 ## Prerequisites
@@ -42,38 +41,36 @@ In a browser, go to [https://aistudio.google.com/app/apikey](https://aistudio.go
 
 Click **Create API key** and follow the prompts. Copy the generated key — you will need it in the next section.
 
-
-> [!WARNING]
+> **Warning:**
 > Treat your Gemini API key like a password. Do not share it or store it in a public location. SDRTrunk Kennebec stores the key in your local user preferences using a masked password field.
 
 ## Enable AI in SDRTrunk Kennebec
 
-**3. Open User Preferences**
+**1. Open User Preferences**
 
 Go to **View** → **User Preferences** in the menu bar.
 
-**4. Navigate to AI Preferences**
+**2. Navigate to AI Preferences**
 
 Select **AI** in the left sidebar of the **User Preferences** panel.
 
-**5. Enable AI Features**
+**3. Enable AI Features**
 
 Turn on the **Enable AI Features** toggle. The remaining AI settings become visible once this toggle is on.
 
-**6. Enter your Gemini API key**
+**4. Enter your Gemini API key**
 
 Paste your API key into the **Gemini API Key** field. The field is masked for security.
 
-**7. Test the API key**
+**5. Test the API key**
 
 Click **Test**. SDRTrunk Kennebec contacts the Gemini API to verify the key. If the test passes, the **Gemini Model** dropdown populates automatically with all models available to your account.
 
-**8. Select a Gemini model**
+**6. Select a Gemini model**
 
 Choose a model from the **Gemini Model** dropdown. The default is `models/gemini-1.5-flash`, which balances speed and capability for the tasks SDRTrunk Kennebec performs. You can also type a model name directly into the field if you prefer a specific version.
 
-
-> [!TIP]
+> **Tip:**
 > `models/gemini-1.5-flash` is a good default for most users — it is fast, cost-efficient, and well-suited for short-form analysis tasks. If you need higher accuracy for log analysis or audio quality review, consider `models/gemini-1.5-pro`.
 
 ## Enable or disable individual AI features
@@ -99,7 +96,7 @@ The system health advisor runs on a timer in the background and reads CPU load a
 
 When CPU usage exceeds 80%, the advisor recommends reducing sample rates or disabling waterfall displays to prevent audio dropouts. When memory usage exceeds 80%, it suggests closing unused features or tuners. These suggestions appear highlighted in red directly in the application window.
 
-> [!NOTE]
+> **Note:**
 > The system health advisor displays its output within the SDRTrunk Kennebec application window. It does not send suggestions via Telegram or Email. For remote alerting on system health, use the standard [error notifications](/alerts/notifications) feature.
 
 ## How log analysis works
@@ -108,7 +105,7 @@ When **Intelligent Log Analysis** is enabled, SDRTrunk Kennebec sends relevant l
 
 If the Gemini API quota for your selected model is exhausted, SDRTrunk Kennebec automatically downgrades to the next available model for the following request and notifies you in the log viewer.
 
-> [!WARNING]
+> **Warning:**
 > Log entries sent to the Gemini API may contain application state information such as channel names, protocol details, and error messages. Review Google's data usage policy for the Gemini API before enabling log analysis if you are operating in a sensitive environment.
 
 ## Troubleshooting

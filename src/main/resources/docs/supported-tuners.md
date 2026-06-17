@@ -12,7 +12,7 @@ SDRTrunk Kennebec uses a different communication path depending on the hardware 
 
 **Sound card** — Funcube Dongle Pro and Pro Plus present audio output to the operating system as a USB sound card. SDRTrunk Kennebec reads IQ samples from the sound card interface rather than a USB bulk transfer endpoint.
 
-> [!NOTE]
+> **Note:**
 >
 SDRTrunk Kennebec also includes a **Recording** tuner type that replays previously captured IQ files. Use it for offline decoding and testing without physical hardware.
 
@@ -45,7 +45,7 @@ The table below lists every tuner recognized by the `TunerType` enum, the chip o
 | SDRplay RSPdx | — | SDRplay API | `RSP_DX` |
 | IQ Recording | — | File | `RECORDING` |
 
-> [!NOTE]
+> **Note:**
 >
 A tuner type of `UNKNOWN` appears in logs when SDRTrunk Kennebec detects an RTL2832 chip but cannot identify the embedded tuner IC. The device is treated as unusable until a recognized tuner IC is found. Re-plug the dongle or check for a driver conflict if you see this value.
 

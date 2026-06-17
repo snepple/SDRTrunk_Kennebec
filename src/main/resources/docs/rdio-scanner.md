@@ -36,8 +36,7 @@ Fill in the following fields in the configuration panel:
 
 Toggle **Enabled** on, then click **Save**. SDRTrunk Kennebec begins uploading completed call recordings to your Rdio Scanner instance.
 
-
-> [!NOTE]
+> **Note:**
 > The **Rdio Scanner URL** field defaults to `http://localhost` if you leave it blank. Update it to the actual address of your Rdio Scanner server before enabling the broadcaster — uploads to `localhost` will fail unless Rdio Scanner is running on the same machine.
 
 ## How Call Data Is Sent

@@ -2,68 +2,61 @@
 
 SDRTrunk Kennebec supports the Airspy Mini, Airspy R2, Airspy HF+, HackRF One, HackRF Jawbreaker, and HackRF RAD1O as USB tuners. All of these devices communicate through libusb and share the same driver prerequisites as RTL-SDR dongles, but offer wider tuning ranges, higher maximum sample rates, and more granular gain controls than a typical RTL2832 dongle. Both families are detected automatically at startup once the driver is in place.
 
-> [!NOTE]
+> **Note:**
 >
 Both Airspy and HackRF devices use libusb for communication. On Windows you must install the WinUSB driver via Zadig. On Linux you must add a udev rule to grant non-root access. macOS requires no driver changes.
 
 ## Driver installation
 
-<Tabs>
-  <Tab title="Windows">
+### Windows
 
-      **1. Download Zadig**
+  **1. Download Zadig**
 
-        Download Zadig from [zadig.akeo.ie](https://zadig.akeo.ie) and run it as administrator.
+    Download Zadig from [zadig.akeo.ie](https://zadig.akeo.ie) and run it as administrator.
 
-      **2. Select your device**
+  **2. Select your device**
 
-        Open **Options > List All Devices** and select your Airspy or HackRF device from the dropdown.
+    Open **Options > List All Devices** and select your Airspy or HackRF device from the dropdown.
 
-      **3. Install WinUSB**
+  **3. Install WinUSB**
 
-        Confirm the target driver shown is **WinUSB**, then click **Replace Driver** (or **Install Driver** for a new device). Wait for the installation to complete.
+    Confirm the target driver shown is **WinUSB**, then click **Replace Driver** (or **Install Driver** for a new device). Wait for the installation to complete.
 
-      **4. Reconnect and launch**
+  **4. Reconnect and launch**
 
-        Unplug and re-plug the device, then start SDRTrunk Kennebec. The tuner should appear in the **Tuners** panel.
+    Unplug and re-plug the device, then start SDRTrunk Kennebec. The tuner should appear in the **Tuners** panel.
 
+### Linux
 
-  </Tab>
-  <Tab title="Linux">
+  **1. Add a udev rule for Airspy**
 
-      **5. Add a udev rule for Airspy**
+    ```bash
+    echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="1d50", MODE="0666"' | sudo tee /etc/udev/rules.d/99-airspy.rules
+    sudo udevadm control --reload-rules
+    ```
 
-        ```bash
-        echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="1d50", MODE="0666"' | sudo tee /etc/udev/rules.d/99-airspy.rules
-        sudo udevadm control --reload-rules
-        ```
+  **2. Add a udev rule for HackRF**
 
-      **6. Add a udev rule for HackRF**
+    ```bash
+    echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="6089", MODE="0666"' | sudo tee /etc/udev/rules.d/99-hackrf.rules
+    sudo udevadm control --reload-rules
+    ```
 
-        ```bash
-        echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="6089", MODE="0666"' | sudo tee /etc/udev/rules.d/99-hackrf.rules
-        sudo udevadm control --reload-rules
-        ```
+  **3. Re-plug and launch**
 
-      **7. Re-plug and launch**
+    Unplug and re-plug the device, then start SDRTrunk Kennebec. The tuner should appear in the **Tuners** panel with status `Enabled`.
 
-        Unplug and re-plug the device, then start SDRTrunk Kennebec. The tuner should appear in the **Tuners** panel with status `Enabled`.
+### macOS
 
+macOS does not load a conflicting kernel driver for Airspy or HackRF devices. Plug in the device and launch SDRTrunk Kennebec — the tuner manager claims the device through libusb automatically.
 
-  </Tab>
-  <Tab title="macOS">
-    macOS does not load a conflicting kernel driver for Airspy or HackRF devices. Plug in the device and launch SDRTrunk Kennebec — the tuner manager claims the device through libusb automatically.
-
-    > [!NOTE]
+> **Note:**
 >
-      On macOS Tahoe (version 26), there is a known compatibility issue with libusb. If device detection fails, install the HEAD build of libusb via Homebrew:
+  On macOS Tahoe (version 26), there is a known compatibility issue with libusb. If device detection fails, install the HEAD build of libusb via Homebrew:
 
-      ```bash
-      brew install libusb --HEAD
-      ```
-
-  </Tab>
-</Tabs>
+  ```bash
+  brew install libusb --HEAD
+  ```
 
 ---
 
@@ -75,7 +68,7 @@ The Airspy Mini and R2 both use the R820T tuner IC and are identified in SDRTrun
 
 The Airspy reports its supported sample rates directly from the device firmware. SDRTrunk Kennebec reads these rates at startup and populates the **Sample Rate** dropdown in the tuner editor. The default fallback rate is **10.00 MHz**.
 
-> [!TIP]
+> **Tip:**
 >
 Higher sample rates give you a wider instantaneous view of the spectrum and allow more channels to be decoded simultaneously from a single tuner. Choose the highest rate your CPU can sustain without dropping samples.
 
@@ -83,17 +76,17 @@ Higher sample rates give you a wider instantaneous view of the spectrum and allo
 
 The Airspy tuner editor provides three gain modes from the **Gain Mode** dropdown. Each mode targets a different use case.
 
-<Tabs>
-  <Tab title="Linearity">
-    Optimizes for maximum dynamic range. A single master slider selects from 22 linearity gain steps. This is the recommended starting point for dense signal environments where strong and weak signals coexist.
-  </Tab>
-  <Tab title="Sensitivity">
-    Optimizes for weak-signal reception. A single master slider selects from 22 sensitivity gain steps. Use this when you need to pull in marginal signals at the expense of some dynamic range.
-  </Tab>
-  <Tab title="Custom">
-    Exposes individual **LNA Gain**, **Mixer Gain**, and **IF Gain** sliders so you can tune each stage independently for your specific environment.
-  </Tab>
-</Tabs>
+### Linearity
+
+Optimizes for maximum dynamic range. A single master slider selects from 22 linearity gain steps. This is the recommended starting point for dense signal environments where strong and weak signals coexist.
+
+### Sensitivity
+
+Optimizes for weak-signal reception. A single master slider selects from 22 sensitivity gain steps. Use this when you need to pull in marginal signals at the expense of some dynamic range.
+
+### Custom
+
+Exposes individual **LNA Gain**, **Mixer Gain**, and **IF Gain** sliders so you can tune each stage independently for your specific environment.
 
 The table below summarizes the range and default for each gain control:
 
@@ -150,7 +143,7 @@ The HackRF tuner editor exposes separate **LNA Gain** and **VGA Gain** dropdowns
 
 The HackRF One includes an internal RF amplifier that you can toggle with the **Amplifier** button in the tuner editor. The amplifier applies approximately 11 dB of gain before the LNA stage.
 
-> [!WARNING]
+> **Warning:**
 >
 Enabling the internal amplifier on strong local signals can cause overload and intermodulation distortion. Start with the amplifier off and enable it only when you need additional gain for weak signals.
 
