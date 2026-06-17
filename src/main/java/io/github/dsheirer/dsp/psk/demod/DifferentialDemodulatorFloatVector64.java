@@ -75,7 +75,12 @@ public class DifferentialDemodulatorFloatVector64 extends DifferentialDemodulato
 
         float[] interpolatedI = new float[VECTOR_SPECIES.length()];
         float[] interpolatedQ = new float[VECTOR_SPECIES.length()];
-        float[] decodedPhases = new float[i.length];
+        if(mDecodedPhases == null || mDecodedPhases.length != i.length)
+        {
+            mDecodedPhases = new float[i.length];
+        }
+
+        float[] decodedPhases = mDecodedPhases;
         FloatVector iPrevious, qPreviousConjugate, iCurrent, qCurrent, differentialI, differentialQ;
 
         //Differential demodulation.

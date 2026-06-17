@@ -25,6 +25,11 @@ public class NativeRealFIRFilter implements IRealFilter {
 
     private int mLastSampleLength = -1;
 
+    //Reused output buffer so filter() does not allocate a new float[] on every sample buffer.  The native
+    //call fully overwrites it via get() and the caller consumes the result before the next call on this
+    //single-threaded instance, so reuse is safe.
+    private float[] mFiltered;
+
     public NativeRealFIRFilter(float[] coefficients) {
         mCoefficients = coefficients;
         ArrayUtils.reverse(mCoefficients);
@@ -81,7 +86,12 @@ public class NativeRealFIRFilter implements IRealFilter {
 
         nativeFilter(mInternalBufferNative, mCoefficientsBufferNative, mFilteredBufferNative, samples.length, mCoefficients.length);
 
-        float[] filtered = new float[samples.length];
+        if(mFiltered == null || mFiltered.length != samples.length)
+        {
+            mFiltered = new float[samples.length];
+        }
+
+        float[] filtered = mFiltered;
         mFilteredBuffer.get(filtered);
 
         return filtered;

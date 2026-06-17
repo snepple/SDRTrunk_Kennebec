@@ -29,6 +29,11 @@ public class AIPreference extends Preference {
 
     private Preferences mPreferences = Preferences.userNodeForPackage(AIPreference.class);
 
+    //Cache the gain-advisor flag.  isGainAdvisorEnabled() is polled from the per-sample-buffer decoder
+    //path (e.g. NBFMDecoder.receive()); reading the registry-backed Preferences there thousands of times
+    //per second per channel thrashes the Windows registry.  Read it once and refresh on update.
+    private Boolean mGainAdvisorEnabled;
+
     public AIPreference(Listener<PreferenceType> updateListener) {
         super(updateListener);
     }
@@ -199,11 +204,19 @@ public class AIPreference extends Preference {
      * that accounts for propagation patterns and multi-channel interactions.
      */
     public boolean isGainAdvisorEnabled() {
-        return mPreferences.getBoolean(KEY_GAIN_ADVISOR_ENABLED, true);
+        Boolean cached = mGainAdvisorEnabled;
+
+        if(cached == null) {
+            cached = mPreferences.getBoolean(KEY_GAIN_ADVISOR_ENABLED, true);
+            mGainAdvisorEnabled = cached;
+        }
+
+        return cached;
     }
 
     public void setGainAdvisorEnabled(boolean enabled) {
         mPreferences.putBoolean(KEY_GAIN_ADVISOR_ENABLED, enabled);
+        mGainAdvisorEnabled = enabled;
         notifyPreferenceUpdated();
     }
 }

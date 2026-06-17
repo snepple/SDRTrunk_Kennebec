@@ -80,7 +80,8 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
      */
     public void receive(final IDecodeEvent event)
     {
-        Platform.runLater(() -> add(event));
+        //add() is thread-safe and coalesces UI updates internally; no Platform.runLater needed here.
+        add(event);
     }
 
     /**

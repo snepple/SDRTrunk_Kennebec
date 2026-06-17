@@ -36,6 +36,10 @@ public class RealFIRFilter implements IRealFilter
     private float[] mBuffer;
     private float[] mCoefficients;
     private int mBufferOverlap;
+    //Reused output buffer so filter() does not allocate a new float[] on every sample buffer.  Each
+    //element is fully assigned (via a local accumulator) each call and the caller consumes the result
+    //before the next call on this single-threaded instance, so reuse is safe.
+    private float[] mFiltered;
 
     /**
      * Float sample FIR filter base class.
@@ -79,14 +83,23 @@ public class RealFIRFilter implements IRealFilter
         //Copy new sample array into end of buffer
         System.arraycopy(samples, 0, mBuffer, mBufferOverlap, samples.length);
 
-        float[] filtered = new float[samples.length];
+        if(mFiltered == null || mFiltered.length != samples.length)
+        {
+            mFiltered = new float[samples.length];
+        }
+
+        float[] filtered = mFiltered;
 
         for(int bufferPointer = 0; bufferPointer < samples.length; bufferPointer++)
         {
+            float accumulator = 0.0f;
+
             for(int coefficientPointer = 0; coefficientPointer < mCoefficients.length; coefficientPointer++)
             {
-                filtered[bufferPointer] += mBuffer[bufferPointer + coefficientPointer] * mCoefficients[coefficientPointer];
+                accumulator += mBuffer[bufferPointer + coefficientPointer] * mCoefficients[coefficientPointer];
             }
+
+            filtered[bufferPointer] = accumulator;
         }
 
         return filtered;
