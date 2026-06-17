@@ -52,3 +52,7 @@
 **Topic:** Channel Images
 **Learning:** The premium image upload pipeline was listed in "What's New" but lacked a dedicated Markdown guide.
 **Action:** Created src/main/resources/docs/channel-images.md with visual diagrams and integrated it into the HelpViewer navigation tree.
+## 2026-06-17 - Topic Selection
+**Topic:** 3 New Documentation Guides Added
+**Learning:** Three missing features from the "What's New" section (CTCSS/DCS/NAC Filtering, Native Sequential Paging, and Waterfall Audio Controls) lacked dedicated Markdown guides.
+**Action:** Created `ctcss-dcs-nac-filtering.md`, `native-sequential-paging.md`, and `waterfall-audio-controls.md` adhering to the Visual-First Mintlify style, and integrated them into the navigation tree of `HelpViewController.java`.

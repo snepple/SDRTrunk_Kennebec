@@ -78,11 +78,14 @@ public class HelpViewController {
         hardwareTunersNode.getChildren().add(new TreeItem<>("Spectrum & Waterfall"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Supported Tuners"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Self Healing"));
+        hardwareTunersNode.getChildren().add(new TreeItem<>("Waterfall Audio Controls"));
         guidesNode.getChildren().add(hardwareTunersNode);
 
         TreeItem<String> channelsDecodingNode = new TreeItem<>("Channels & Decoding");
         channelsDecodingNode.getChildren().add(new TreeItem<>("Analog"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Ctcss Dcs Nac Filtering"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("Dmr"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Native Sequential Paging"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("P25"));
         guidesNode.getChildren().add(channelsDecodingNode);
 
