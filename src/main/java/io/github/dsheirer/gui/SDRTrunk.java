@@ -254,6 +254,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     private JavaFxWindowManager mJavaFxWindowManager;
     private io.github.dsheirer.gui.SidebarPanel mSidebarPanel;
     private UserPreferences mUserPreferences = new UserPreferences();
+    private static java.nio.channels.FileChannel sInstanceLockChannel;
+    private static java.nio.channels.FileLock sInstanceLock;
     private TunerManager mTunerManager;
     private ApplicationLog mApplicationLog;
     private TwoToneLog mTwoToneLog;
@@ -443,8 +445,47 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         }
     }
 
+    /**
+     * Acquires an exclusive file lock so only one instance of SDRTrunk runs at a time. Returns true if
+     * this instance got the lock (or if locking could not be evaluated, in which case startup proceeds).
+     * The lock is held for the JVM lifetime and released by the OS when the process exits.
+     */
+    private boolean acquireSingleInstanceLock()
+    {
+        try
+        {
+            java.nio.file.Path lockPath = mUserPreferences.getDirectoryPreference()
+                .getDirectoryApplicationRoot().resolve("sdrtrunk.lock");
+            sInstanceLockChannel = java.nio.channels.FileChannel.open(lockPath,
+                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.WRITE);
+            sInstanceLock = sInstanceLockChannel.tryLock();
+            return sInstanceLock != null;
+        }
+        catch(java.nio.channels.OverlappingFileLockException e)
+        {
+            return false;
+        }
+        catch(Exception e)
+        {
+            //Don't block startup if the lock can't be evaluated (e.g. unusual filesystem).
+            mLog.warn("Unable to evaluate single-instance lock - continuing startup", e);
+            return true;
+        }
+    }
+
     public void init() throws Exception
     {
+        //Refuse to start a second instance. Multiple instances fight over the same tuners, USB bus, CPU,
+        //and the REST API port (which is what the "Address already in use" errors indicate), which on a
+        //resource-constrained host leads directly to an unresponsive UI. The lock is released
+        //automatically when this JVM exits (including a forced kill by the watchdog).
+        if(!acquireSingleInstanceLock())
+        {
+            mLog.error("Another instance of SDRTrunk is already running - exiting this instance to avoid " +
+                "resource contention. Close the other instance first.");
+            System.exit(0);
+        }
+
         String operatingSystem = System.getProperty("os.name", "generic").toLowerCase(Locale.ENGLISH);
         ThemeManager themeManager = new ThemeManager();
         if(operatingSystem.contains("mac") || operatingSystem.contains("nux")) {
