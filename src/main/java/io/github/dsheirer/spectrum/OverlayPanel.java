@@ -106,6 +106,11 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
     private int mZoom = 0;
     private int mDFTZoomWindowOffset = 0;
 
+    //Hard upper bound on the number of frequency ticks rendered in a single paint.  A correctly sized
+    //display draws at most a few hundred; this only ever engages if the tick increment math produces a
+    //degenerate (near-zero) step, guarding the draw loop from pinning the JavaFX thread.
+    private static final int MAX_FREQUENCY_TICKS = 4000;
+
     /**
      * Colors used by this component
      */
@@ -175,6 +180,14 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
         setColors();
 
         this.getChildren().add(mCanvas);
+
+        //Size the overlay canvas to track this panel.  A JavaFX Canvas does not resize on its own, so
+        //without this binding the canvas stays 0x0 - which (a) makes the overlay invisible and, worse,
+        //(b) collapses the label-spacing math (divide-by-zero on the canvas width) to a 1 Hz tick step,
+        //pinning the JavaFX thread for millions of strokeText() calls across the full tuner bandwidth
+        //and freezing the application on startup.  Matches SpectrumPanel/WaterfallPanel/FrequencyOverlayPanel.
+        mCanvas.widthProperty().bind(widthProperty());
+        mCanvas.heightProperty().bind(heightProperty());
 
         mCanvas.widthProperty().addListener((obs, oldVal, newVal) -> mLabelSizeMonitor.update());
         mCanvas.heightProperty().addListener((obs, oldVal, newVal) -> mLabelSizeMonitor.update());
@@ -340,9 +353,11 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
     {
         double width = mCanvas.getWidth();
         double height = mCanvas.getHeight();
+
+        //Clear to transparent only.  This canvas is layered on top of the spectrum panel in a StackPane,
+        //so it must NOT paint an opaque background (SPECTRUM_BACKGROUND defaults to opaque black) or it
+        //would hide the spectrum trace beneath it.  Matches FrequencyOverlayPanel, which only clears.
         mGraphicsContext.clearRect(0, 0, width, height);
-        mGraphicsContext.setFill(mColorSpectrumBackground);
-        mGraphicsContext.fillRect(0, 0, width, height);
 
         drawFrequencies(mGraphicsContext);
         drawChannels(mGraphicsContext);
@@ -388,23 +403,48 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
         long minFrequency = getMinDisplayFrequency();
         long maxFrequency = getMaxDisplayFrequency();
 
-        //Frequency increments for label and tick spacing
-        int label = mLabelSizeMonitor.getLabelIncrement(graphics);
+        //Frequency increments for label and tick spacing.  Read the major increment first: it forces the
+        //spacing recalculation so all three increments come from the same pass (the label/minor getters
+        //would otherwise return stale values from a previous layout).
         int major = mLabelSizeMonitor.getMajorTickIncrement(graphics);
+        int label = mLabelSizeMonitor.getLabelIncrement(graphics);
         int minor = mLabelSizeMonitor.getMinorTickIncrement(graphics);
 
         //Avoid divide by zero error
-        if(minor == 0)
+        if(minor <= 0)
         {
             minor = 1;
         }
-        if(label == 0)
+        if(label <= 0)
         {
             label = 1;
         }
-        if(major == 0)
+        if(major <= 0)
         {
             major = 1;
+        }
+
+        //Defensive cap: regardless of how the increment math turned out, never step finer than the span
+        //divided by MAX_FREQUENCY_TICKS.  Without this, a degenerate increment (e.g. from a not-yet
+        //laid-out 0-width canvas) makes this loop advance 1 Hz at a time across the whole tuner
+        //bandwidth, pinning the JavaFX thread for millions of strokeText() calls and freezing the UI.
+        long span = maxFrequency - minFrequency;
+        if(span > 0)
+        {
+            int minimumStep = (int)Math.min(Integer.MAX_VALUE, (span / MAX_FREQUENCY_TICKS) + 1);
+
+            if(minor < minimumStep)
+            {
+                minor = minimumStep;
+            }
+            if(label < minor)
+            {
+                label = minor;
+            }
+            if(major < minor)
+            {
+                major = minor;
+            }
         }
 
         //Adjust the start frequency to a multiple of the minor tick spacing
@@ -912,15 +952,45 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
         {
             if(mUpdateRequired)
             {
+                double canvasWidth = OverlayPanel.this.mCanvas.getWidth();
+                int displayBandwidth = getDisplayBandwidth();
+
+                //Until the canvas has actually been laid out (width 0) and the tuner bandwidth is known,
+                //the spacing math below divides by zero.  (int)log10(bandwidth/0) is (int)+Infinity =
+                //Integer.MAX_VALUE, which then overflows the pow() calls to a 0 increment.  The draw loop
+                //turns that into a 1 Hz step and renders one line + label per Hz across the entire
+                //bandwidth, pinning the JavaFX thread and freezing the UI.  Fall back to a single
+                //whole-bandwidth increment and leave the update pending so it recomputes once valid
+                //dimensions arrive.
+                if(canvasWidth <= 0 || displayBandwidth <= 0)
+                {
+                    int safe = Math.max(1, displayBandwidth);
+                    mLabelIncrement = safe;
+                    mMajorTickIncrement = safe;
+                    mMinorTickIncrement = safe;
+                    return;
+                }
+
                 //Set maximum precision as a starting point
                 setPrecision(5);
 
-                int maxLabelWidth = (int)mLabelWidth;
+                int maxLabelWidth = Math.max(1, (int)mLabelWidth);
 
-                double maxLabels = ((double)OverlayPanel.this.mCanvas.getWidth() * LABEL_FILL_THRESHOLD) / (double)maxLabelWidth;
+                double maxLabels = (canvasWidth * LABEL_FILL_THRESHOLD) / (double)maxLabelWidth;
 
-                //Calculate the next smallest base 10 value for the major increment
-                int power = (int)FastMath.log10((double)getDisplayBandwidth() / maxLabels);
+                if(maxLabels < 1.0d)
+                {
+                    maxLabels = 1.0d;
+                }
+
+                //Calculate the next smallest base 10 value for the major increment.  Clamp to >= 0 so the
+                //pow() brackets below can never collapse to a 0 minimum (and therefore a 0 increment).
+                int power = (int)FastMath.log10((double)displayBandwidth / maxLabels);
+
+                if(power < 0)
+                {
+                    power = 0;
+                }
 
                 //Set the number of decimal places to display in frequency labels
                 int precision = 5 - power;
@@ -931,7 +1001,7 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
                 int labelIncrement = start;
 
-                while(((double)getDisplayBandwidth() / (double)labelIncrement) < maxLabels && labelIncrement >= minimum)
+                while(((double)displayBandwidth / (double)labelIncrement) < maxLabels && labelIncrement >= minimum)
                 {
                     labelIncrement /= 2;
                     precision++;
@@ -944,9 +1014,10 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
                 setPrecision(precision);
 
-                mLabelIncrement = labelIncrement;
-                mMajorTickIncrement = labelIncrement / 2;
-                mMinorTickIncrement = labelIncrement / 10;
+                //Clamp every increment to >= 1 so the draw loop can never be handed a 0 (or negative) step.
+                mLabelIncrement = Math.max(1, labelIncrement);
+                mMajorTickIncrement = Math.max(1, labelIncrement / 2);
+                mMinorTickIncrement = Math.max(1, labelIncrement / 10);
 
                 mUpdateRequired = false;
             }
@@ -971,11 +1042,17 @@ public class OverlayPanel extends Pane implements Listener<ChannelEvent>, ISourc
 
         public int getMinorTickIncrement(GraphicsContext graphics)
         {
+            //Check to see if a calculation update is scheduled
+            update(graphics);
+
             return mMinorTickIncrement;
         }
 
         public int getLabelIncrement(GraphicsContext graphics)
         {
+            //Check to see if a calculation update is scheduled
+            update(graphics);
+
             return mLabelIncrement;
         }
 
