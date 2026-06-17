@@ -86,6 +86,7 @@ public class RestApiWatchdog {
         httpServer.createContext("/health", new HealthHandler());
         httpServer.createContext("/metrics", new MetricsHandler());
         httpServer.createContext("/restart", new RestartHandler(app));
+        httpServer.createContext("/threaddump", new ThreadDumpHandler());
         httpServer.setExecutor(null); // creates a default executor
         return httpServer;
     }
@@ -117,6 +118,41 @@ public class RestApiWatchdog {
 
     private static String escapeJson(String value) {
         return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    /**
+     * Returns a full thread dump as plain text. Served on the REST server's own thread, so it works
+     * even when the JavaFX Application thread is hung - hit http://127.0.0.1:8080/threaddump while the
+     * UI is "Not Responding" to capture exactly where the FX thread is stuck.
+     */
+    static class ThreadDumpHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            StringBuilder sb = new StringBuilder();
+            sb.append("sdrtrunk thread dump\n====================\n\n");
+
+            for (java.util.Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
+                Thread thread = entry.getKey();
+                sb.append('"').append(thread.getName()).append('"')
+                  .append(" id=").append(thread.threadId())
+                  .append(thread.isDaemon() ? " daemon" : "")
+                  .append(" prio=").append(thread.getPriority())
+                  .append(" state=").append(thread.getState())
+                  .append('\n');
+
+                for (StackTraceElement element : entry.getValue()) {
+                    sb.append("\tat ").append(element).append('\n');
+                }
+                sb.append('\n');
+            }
+
+            byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=utf-8");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        }
     }
 
     private static void respond(HttpExchange exchange, int status, String body) throws IOException {

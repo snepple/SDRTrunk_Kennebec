@@ -359,6 +359,18 @@ public class WaterfallPanel extends StackPane implements DFTResultsListener, Pau
         }
 
         mRowQueue.offer(newPixels);
+
+        //Bound the render queue. The waterfall image only holds mImageHeight rows, so buffering more is
+        //pointless; and if the JavaFX thread falls behind (it consumes this queue in draw()), an
+        //unbounded queue grows the heap without limit - each retained int[] is mDFTSize ints, and the
+        //DFT only feeds this when a tuner is streaming. Left unbounded that climbs into the gigabytes,
+        //and the resulting GC pressure starves the FX thread further into a permanent "Not Responding"
+        //spiral. Dropping the oldest rows keeps memory bounded; under load the display just skips frames.
+        int cap = mImageHeight > 0 ? mImageHeight : 700;
+        while (mRowQueue.size() > cap) {
+            mRowQueue.poll();
+        }
+
         mNeedsRedraw = true;
     }
 
