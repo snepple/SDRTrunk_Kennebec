@@ -11,7 +11,9 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -23,9 +25,27 @@ import com.google.gson.JsonArray;
 public class AudioWatchdogService {
     private static final Logger mLog = LoggerFactory.getLogger(AudioWatchdogService.class);
     
+    //Shared across all channel watchdog instances so we do not spawn a scheduler thread + HttpClient per
+    //channel (which, with many channels, added significant thread/connection overhead competing with I/Q
+    //processing). One scheduler thread drives every channel's lightweight 1-second check; the blocking
+    //Gemini HTTP call is offloaded to a small shared pool so one channel's latency cannot stall the others.
+    private static final HttpClient SHARED_HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(10))
+            .build();
+    private static final ScheduledExecutorService SHARED_SCHEDULER = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "AudioWatchdogService-Scheduler");
+        t.setDaemon(true);
+        return t;
+    });
+    private static final ExecutorService GEMINI_EXECUTOR = Executors.newFixedThreadPool(2, r -> {
+        Thread t = new Thread(r, "AudioWatchdogService-Gemini");
+        t.setDaemon(true);
+        return t;
+    });
+
     private final UserPreferences mUserPreferences;
-    private final HttpClient mHttpClient;
-    private final ScheduledExecutorService mScheduler;
+    //This channel's periodic check on the shared scheduler; cancelled by shutdown() when the channel stops.
+    private volatile ScheduledFuture<?> mWatchdogTask;
 
     private final AtomicLong mLastIQDataTime = new AtomicLong(System.currentTimeMillis());
     private final AtomicLong mLastAudioDataTime = new AtomicLong(System.currentTimeMillis());
@@ -56,17 +76,21 @@ public class AudioWatchdogService {
 
     public AudioWatchdogService(UserPreferences prefs) {
         mUserPreferences = prefs;
-        mHttpClient = HttpClient.newBuilder()
-                .connectTimeout(java.time.Duration.ofSeconds(10))
-                .build();
-        
-        mScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "AudioWatchdogService-Thread");
-            t.setDaemon(true);
-            return t;
-        });
-        
-        mScheduler.scheduleAtFixedRate(this::checkWatchdogs, 1, 1, TimeUnit.SECONDS);
+        //Register this channel's check on the shared scheduler (one thread serves all channels).
+        mWatchdogTask = SHARED_SCHEDULER.scheduleAtFixedRate(this::checkWatchdogs, 1, 1, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Cancels this channel's watchdog check on the shared scheduler. Call when the channel stops so dead
+     * channels are no longer polled and can be garbage collected. The shared scheduler/HttpClient/Gemini
+     * pool are process-wide and intentionally left running for the remaining channels.
+     */
+    public void shutdown() {
+        ScheduledFuture<?> task = mWatchdogTask;
+        if(task != null) {
+            task.cancel(false);
+            mWatchdogTask = null;
+        }
     }
 
     public void feedIQData(float[] iqSamples) {
@@ -131,14 +155,16 @@ public class AudioWatchdogService {
                 synchronized(mRecentAudioSnapshot) {
                     snapshot = new ArrayList<>(mRecentAudioSnapshot);
                 }
+                mLastTriggerTime.set(now);
+                mLastAudioDataTime.set(now); // Reset timer (also enforces backoff for the async call below)
                 if (snapshot.size() > 0 && !mGeminiDisabled) {
-                    analyzeFailureWithGemini(snapshot);
+                    //Offload the blocking Gemini HTTP call so it never stalls the shared scheduler thread
+                    //(and therefore every other channel's check).
+                    GEMINI_EXECUTOR.submit(() -> analyzeFailureWithGemini(snapshot));
                 } else {
                     mLog.warn("No audio data to analyze. Triggering JMBE flush fallback.");
                     triggerJmbeFlush();
                 }
-                mLastTriggerTime.set(now);
-                mLastAudioDataTime.set(now); // Reset timer
             }
         } catch (Exception e) {
             //A watchdog must never let an exception kill its own scheduler.
@@ -211,7 +237,7 @@ public class AudioWatchdogService {
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
 
-            HttpResponse<String> response = mHttpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = SHARED_HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
                 mGeminiFailureCount.set(0);

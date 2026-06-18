@@ -551,6 +551,12 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         {
             AdaptiveGainAdvisor.getInstance(mUserPreferences).removeChannel(mChannelName);
         }
+
+        // Cancel this channel's watchdog check on the shared scheduler so stopped channels aren't polled.
+        if(mAudioWatchdog != null)
+        {
+            mAudioWatchdog.shutdown();
+        }
     }
 
     /**
