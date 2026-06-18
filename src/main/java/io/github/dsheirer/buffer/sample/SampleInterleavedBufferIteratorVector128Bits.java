@@ -96,12 +96,15 @@ public class SampleInterleavedBufferIteratorVector128Bits extends SampleBufferIt
         for(int x = 0; x < FRAGMENT_SIZE; x++)
         {
             accumulator = FloatVector.zero(VECTOR_SPECIES);
-            accumulator = f1.fma(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x), accumulator);
-            accumulator = f2.fma(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x + 4), accumulator);
-            accumulator = f3.fma(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x + 8), accumulator);
-            accumulator = f4.fma(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x + 12), accumulator);
-            accumulator = f5.fma(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x + 16), accumulator);
-            accumulator = f6.fma(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x + 20), accumulator);
+            //Use mul().add() rather than fma(): this 128-bit path runs on CPUs without hardware FMA, where
+            //FloatVector.fma() falls back to the scalar Math.fma() (BigDecimal-based) and is hundreds of
+            //times slower, overrunning the sample buffer processor and starving every channel of I/Q.
+            accumulator = f1.mul(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x)).add(accumulator);
+            accumulator = f2.mul(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x + 4)).add(accumulator);
+            accumulator = f3.mul(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x + 8)).add(accumulator);
+            accumulator = f4.mul(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x + 12)).add(accumulator);
+            accumulator = f5.mul(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x + 16)).add(accumulator);
+            accumulator = f6.mul(FloatVector.fromArray(VECTOR_SPECIES, mQBuffer, x + 20)).add(accumulator);
 
             //Perform FS/2 frequency translation on final filtered values ... multiply sequence by 1, -1, etc.
             if(x % 2 == 0)
