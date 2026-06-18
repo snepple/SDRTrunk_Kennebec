@@ -47,6 +47,7 @@ import io.github.dsheirer.sample.complex.ComplexSamples;
 import io.github.dsheirer.sample.complex.IComplexSamplesListener;
 import io.github.dsheirer.sample.real.IRealBufferProvider;
 import io.github.dsheirer.source.ISourceEventListener;
+import io.github.dsheirer.source.ISourceEventProvider;
 import io.github.dsheirer.source.SourceEvent;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAnalysisResult;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAudioOptimizer;
@@ -80,14 +81,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * When squelch tail removal is enabled, a SquelchTailRemover buffers audio and discards
  * the trailing noise burst that occurs when a transmitter drops carrier.
  */
-public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventListener, IComplexSamplesListener,
-        Listener<ComplexSamples>, IRealBufferProvider, IDecoderStateEventProvider, INoiseSquelchController
+public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventListener, ISourceEventProvider,
+        IComplexSamplesListener, Listener<ComplexSamples>, IRealBufferProvider, IDecoderStateEventProvider,
+        INoiseSquelchController
 {
     private final static Logger mLog = LoggerFactory.getLogger(NBFMDecoder.class);
     private NBFMDecoderState mDecoderState;
     private static final double DEMODULATED_AUDIO_SAMPLE_RATE = 8000.0;
     private final IDemodulator mDemodulator = FmDemodulatorFactory.getFmDemodulator();
     private final SourceEventProcessor mSourceEventProcessor = new SourceEventProcessor();
+    //Outbound source-event broadcaster (wired by ProcessingChain). Used to publish channel power level
+    //so the Signal Power meter (SignalPowerView) updates for NBFM channels, just like the AM decoder.
+    private Listener<SourceEvent> mSourceEventListener;
     private final NoiseSquelch mNoiseSquelch;
     private IRealFilter mIBasebandFilter;
     private IRealFilter mQBasebandFilter;
@@ -523,6 +528,26 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     }
 
     /**
+     * Implements the ISourceEventProvider interface.  The ProcessingChain registers its source-event
+     * broadcaster here so the decoder can publish channel power level (NOTIFICATION_CHANNEL_POWER) to the
+     * Signal Power meter, just like the AM decoder.
+     */
+    @Override
+    public void setSourceEventListener(Listener<SourceEvent> listener)
+    {
+        mSourceEventListener = listener;
+    }
+
+    /**
+     * Implements the ISourceEventProvider interface to de-register the source-event broadcaster.
+     */
+    @Override
+    public void removeSourceEventListener()
+    {
+        mSourceEventListener = null;
+    }
+
+    /**
      * Module interface methods - unused.
      */
     @Override
@@ -660,9 +685,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             mAudioWatchdog.feedIQData(samples.i());
         }
 
-        // Sample I/Q power every IQ_SAMPLE_INTERVAL-th buffer for AdaptiveGainAdvisor
-        if(mUserPreferences.getAIPreference().isGainAdvisorEnabled() &&
-                ++mIQSampleCounter >= IQ_SAMPLE_INTERVAL)
+        // Sample I/Q power every IQ_SAMPLE_INTERVAL-th buffer to drive the Signal Power meter (always,
+        // via NOTIFICATION_CHANNEL_POWER) and the AdaptiveGainAdvisor (only when that feature is enabled).
+        if(++mIQSampleCounter >= IQ_SAMPLE_INTERVAL)
         {
             mIQSampleCounter = 0;
             float[] rawI = samples.i();
@@ -674,7 +699,18 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             }
             double power = sumSquared / rawI.length;
             double powerDbfs = 10.0 * Math.log10(Math.max(power, 1e-20));
-            AdaptiveGainAdvisor.getInstance(mUserPreferences).reportSignalLevel(mChannelName, mChannelFrequency, powerDbfs);
+
+            //Publish channel power so the Signal Power meter updates for NBFM channels (matches AMDecoder).
+            Listener<SourceEvent> sourceEventListener = mSourceEventListener;
+            if(sourceEventListener != null)
+            {
+                sourceEventListener.receive(SourceEvent.channelPowerLevel(null, powerDbfs));
+            }
+
+            if(mUserPreferences.getAIPreference().isGainAdvisorEnabled())
+            {
+                AdaptiveGainAdvisor.getInstance(mUserPreferences).reportSignalLevel(mChannelName, mChannelFrequency, powerDbfs);
+            }
         }
 
         float[] decimatedI = mIDecimationFilter.decimateReal(samples.i());
