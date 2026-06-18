@@ -208,7 +208,9 @@ public class AIPreference extends Preference {
         Boolean cached = mGainAdvisorEnabled;
 
         if(cached == null) {
-            cached = mPreferences.getBoolean(KEY_GAIN_ADVISOR_ENABLED, true);
+            //Default OFF so a fresh install matches the lean upstream/original profile (no per-sample-buffer
+            //power accounting or advisor thread competing with channel I/Q processing). Opt-in via the UI.
+            cached = mPreferences.getBoolean(KEY_GAIN_ADVISOR_ENABLED, false);
             mGainAdvisorEnabled = cached;
         }
 

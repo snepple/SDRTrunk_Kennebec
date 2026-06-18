@@ -85,11 +85,17 @@ public abstract class AbstractBroadcastEditor<T extends BroadcastConfiguration> 
         getEnabledSwitch().selectedProperty()
             .addListener((obs, oldVal, newVal) -> updateReconnectButtonState());
 
-        modifiedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) {
-                save();
-            }
-        });
+        //NOTE: Do NOT auto-save on the modified property here.  An auto-save-on-modify listener caused two
+        //serious bugs:
+        //  1) Cross-config corruption: while setItem() programmatically populates the fields of a newly
+        //     selected stream, each setText() fires the modification listener and auto-saves the
+        //     still-displayed (previous stream's) channel/username/password into the newly selected
+        //     configuration — bleeding one stream's credentials into another (e.g. Augusta <-> Hallowell).
+        //  2) Reconnect storm: every keystroke flipped modified=true and auto-saved, firing a
+        //     CONFIGURATION_CHANGE that tore down and reconnected the broadcaster on each character
+        //     (observed as "channel not found: Augusta / Augusta F / Augusta Fi ..." logon failures).
+        //Edits are persisted via the explicit Save button (getSaveButton() -> save()), which is the
+        //standard behavior and matches upstream SDRTrunk.
     }
 
     protected PlaylistManager getPlaylistManager()

@@ -22,6 +22,7 @@ import io.github.dsheirer.alias.action.AliasAction;
 import io.github.dsheirer.alias.action.beep.BeepAction;
 import io.github.dsheirer.alias.action.clip.ClipAction;
 import io.github.dsheirer.alias.action.script.ScriptAction;
+import io.github.dsheirer.alias.action.twotone.TwoToneAction;
 import io.github.dsheirer.alias.id.AliasID;
 import io.github.dsheirer.alias.id.broadcast.BroadcastChannel;
 import io.github.dsheirer.alias.id.dcs.Dcs;
@@ -40,6 +41,7 @@ import io.github.dsheirer.alias.id.talkgroup.P25FullyQualifiedTalkgroup;
 import io.github.dsheirer.alias.id.talkgroup.Talkgroup;
 import io.github.dsheirer.alias.id.talkgroup.TalkgroupRange;
 import io.github.dsheirer.alias.id.tone.TonesID;
+import io.github.dsheirer.alias.id.twotone.TwoToneDetectorID;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -142,6 +144,11 @@ public class AliasFactory
                 copyUnitStatusID.setStatus(originalUnitStatus.getStatus());
                 copyUnitStatusID.setOverlap(originalUnitStatus.overlapProperty().get());
                 return copyUnitStatusID;
+            case TWO_TONE_DETECTOR:
+                TwoToneDetectorID originalTwoTone = (TwoToneDetectorID)id;
+                TwoToneDetectorID copyTwoTone = new TwoToneDetectorID();
+                copyTwoTone.setDetectorName(originalTwoTone.getDetectorName());
+                return copyTwoTone;
 
             //Legacy identifiers ... not supported
             case FLEETSYNC:
@@ -186,6 +193,13 @@ public class AliasFactory
             copyScript.setPeriod(originalScript.getPeriod());
             copyScript.setScript(originalScript.getScript());
             return copyScript;
+        }
+        else if(action instanceof TwoToneAction)
+        {
+            TwoToneAction originalTwoTone = (TwoToneAction)action;
+            TwoToneAction copyTwoTone = new TwoToneAction();
+            copyTwoTone.setDetectorName(originalTwoTone.getDetectorName());
+            return copyTwoTone;
         }
 
         return null;
