@@ -283,12 +283,18 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
      */
     private synchronized void updateTimer()
     {
-        if(isShowing() && mController != null && mTimerFuture == null)
+        if(mController != null && mTimerFuture == null)
         {
-            //Start the timer
+            //Start the chart refresh whenever a controller is attached. This previously also required
+            //isShowing(), but in the Swing-hosted JavaFX channel panel the showing/controller handshake
+            //could leave isShowing() false at the instant a controller was set (the controller is assigned
+            //inside a Platform.runLater while setShowing() arrives on the Swing thread). When that happened
+            //the timer never started and nothing restarted it, so the graph stayed blank and the squelch
+            //state was stuck on "not available". The refresh is a single lightweight 50ms task for the one
+            //selected channel, so running it whenever a controller is attached is inexpensive and reliable.
             mTimerFuture = ThreadPool.SCHEDULED.scheduleAtFixedRate(this::updateChart, 0, 50, TimeUnit.MILLISECONDS);
         }
-        else if((!isShowing() || mController == null) && mTimerFuture != null)
+        else if(mController == null && mTimerFuture != null)
         {
             cancelTimer();
         }
