@@ -840,7 +840,12 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
      */
     private void updateControllerNoise()
     {
-        if(mController != null && isShowing())
+        //Gate on mControlsUpdated (set once the decoder's initial state has populated the controls) rather
+        //than isShowing(): in this Swing-hosted JavaFX panel isShowing() is unreliably false (see the timer
+        //note above), which silently dropped user slider edits so the squelch thresholds and graph lines
+        //never moved. The sliders are disabled until the controls are populated, so this can only fire for a
+        //genuine user adjustment or a programmatic apply (init/calibration), both of which we want.
+        if(mController != null && mControlsUpdated)
         {
             float open = getOpenNoiseThresholdFromSliderValue();
             float close = getCloseNoiseThresholdFromSliderValue();
@@ -925,7 +930,9 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
      */
     private void updateControllerHysteresis()
     {
-        if(mController != null && isShowing())
+        //See updateControllerNoise(): gate on mControlsUpdated rather than the unreliable isShowing() so
+        //user hysteresis slider edits actually reach the decoder.
+        if(mController != null && mControlsUpdated)
         {
             int open = (int)getOpenHysteresisSlider().getValue();
             int close = (int)getCloseHysteresisSlider().getValue() + open;
