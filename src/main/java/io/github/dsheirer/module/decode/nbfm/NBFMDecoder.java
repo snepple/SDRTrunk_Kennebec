@@ -265,19 +265,6 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         mSquelchTailRemovalMs = config.getSquelchTailRemovalMs();
         mSquelchHeadRemovalMs = config.getSquelchHeadRemovalMs();
 
-        //Send squelch controlled audio to the resampler.
-        //Only notify call continuation if tone filter is not active, or if tone matches.
-        //This makes the channel behave like a real radio: wrong tone = fully squelched/idle.
-        mNoiseSquelch.setAudioListener(audio -> {
-            mResampler.resample(audio);
-
-            // Only signal call activity if tone matches (or no tone filter configured)
-            if(!mToneFilterEnabled || mToneMatch)
-            {
-                notifyCallContinuation();
-            }
-        });
-
         //Notify the decoder state of call starts and ends, and manage tail remover + tone reset.
         //When tone filtering is enabled, we defer the call start until the correct tone is confirmed.
         //The channel stays idle until the CTCSS detector confirms the right tone — just like a real radio.
