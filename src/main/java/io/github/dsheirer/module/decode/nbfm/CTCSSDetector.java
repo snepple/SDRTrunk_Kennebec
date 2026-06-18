@@ -232,11 +232,24 @@ public class CTCSSDetector
      */
     private void analyzeBlock()
     {
-        // Compute total energy (noise floor estimate)
+        // Remove the DC offset first. FM-demodulated audio carries a DC component (proportional to the
+        // residual frequency offset); the lowest CTCSS Goertzel bins (coefficient ~1.997) respond very
+        // strongly to DC and would otherwise dominate every block and mask the actual PL tone.
+        float mean = 0;
+        for(int i = 0; i < mBlockSize; i++)
+        {
+            mean += mSampleBuffer[i];
+        }
+        mean /= mBlockSize;
+
+        // Compute total energy (noise floor estimate) on the DC-blocked samples, blocking DC in place
+        // so the Goertzel pass below sees the same DC-free signal.
         float totalEnergy = 0;
         for(int i = 0; i < mBlockSize; i++)
         {
-            totalEnergy += mSampleBuffer[i] * mSampleBuffer[i];
+            float s = mSampleBuffer[i] - mean;
+            mSampleBuffer[i] = s;
+            totalEnergy += s * s;
         }
         totalEnergy /= mBlockSize;
 
@@ -247,20 +260,35 @@ public class CTCSSDetector
             return;
         }
 
-        // Run Goertzel for each target frequency and store all power values
+        // Run Goertzel for every standard CTCSS frequency. We need all of them for the narrowband
+        // neighbor check below, but the DETECTION decision evaluates the configured target tone(s)
+        // directly (see next block) rather than requiring the target to be the global maximum.
         float[] powers = new float[mTargetFrequencies.length];
-        float maxPower = 0;
-        int maxIndex = -1;
-
         for(int i = 0; i < mTargetFrequencies.length; i++)
         {
             powers[i] = goertzel(mSampleBuffer, mBlockSize, mCoefficients[i]);
+        }
 
-            if(powers[i] > maxPower)
+        // Find the strongest bin AMONG THE ALLOWED TARGET TONES. The previous implementation picked the
+        // single strongest bin across all ~50 CTCSS frequencies and only matched if that global maximum
+        // happened to be a target - but a sub-audible PL tone (typically 10-15% of peak deviation) is
+        // frequently NOT the strongest component under voice, so the target almost never won and every
+        // call stayed gated/IDLE. Evaluating the target's own energy fixes that.
+        int maxIndex = -1;
+        float maxPower = 0;
+        for(int i = 0; i < mTargetCodeArray.length; i++)
+        {
+            if(mTargetCodes.contains(mTargetCodeArray[i]) && powers[i] > maxPower)
             {
                 maxPower = powers[i];
                 maxIndex = i;
             }
+        }
+
+        if(maxIndex < 0)
+        {
+            handleNoDetection();
+            return;
         }
 
         // Normalize power relative to total energy
@@ -269,9 +297,9 @@ public class CTCSSDetector
         // Convert to dB
         float snrDB = (float)(10.0 * Math.log10(normalizedPower + 1e-10));
 
-        if(maxIndex >= 0 && snrDB > DETECTION_THRESHOLD_DB)
+        if(snrDB > DETECTION_THRESHOLD_DB)
         {
-            // Narrowband check: compare the strongest bin against its nearest neighbors.
+            // Narrowband check: compare the target bin against its nearest frequency neighbors.
             // A real CTCSS tone produces a sharp spike at one frequency. Broadband interference
             // (e.g. digital data bursts) energizes all bins roughly equally and fails this check.
             float neighborSum = 0;
