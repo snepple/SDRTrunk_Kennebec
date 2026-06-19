@@ -81,6 +81,12 @@ public class AIPreferenceEditor extends VBox {
             mUserPreferences.getAIPreference().setTranscriptionEnabled(newValue);
         });
 
+        ToggleSwitch enableRadioIdNamingSwitch = new ToggleSwitch();
+        enableRadioIdNamingSwitch.setSelected(mUserPreferences.getAIPreference().isRadioIdNamingEnabled());
+        enableRadioIdNamingSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setRadioIdNamingEnabled(newValue);
+        });
+
         ToggleSwitch enableToneDiscoverySwitch = new ToggleSwitch();
         enableToneDiscoverySwitch.setSelected(mUserPreferences.getAIPreference().isAIToneDiscoveryEnabled());
         enableToneDiscoverySwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
@@ -120,6 +126,7 @@ public class AIPreferenceEditor extends VBox {
             new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
             new SettingsRow("System Health Advisor & Auto-Remediation", enableSystemHealthSwitch),
             new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch),
+            new SettingsRow("Radio ID Naming from Transcripts (P25/DMR - uses Gemini)", enableRadioIdNamingSwitch),
             new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls),
             new SettingsRow("Auto-Optimize NBFM Audio Filters (runs up to twice a day per channel)", enableNbfmAutoOptimizeSwitch),
             new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels, recommends tuner gain changes)", enableGainAdvisorSwitch),
