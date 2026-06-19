@@ -143,11 +143,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         if (mCurrentViewId != null && mCurrentViewId.equals("now_playing")) {
             mNowPlayingSpectrumDisabled = !mNowPlayingSpectrumDisabled;
             mControllerPanel.getNowPlayingPanel().setSpectralPanelVisible(!mNowPlayingSpectrumDisabled);
-            if (mNowPlayingSpectrumDisabled) {
-                mSpectralPanel.stop();
-            } else {
-                mSpectralPanel.start();
-            }
+            //Delegate the actual start/stop to the widget state so a minimized widget stays paused.
+            mControllerPanel.getNowPlayingPanel().updateSpectrumProcessing();
         } else if (mCurrentViewId != null && mCurrentViewId.equals("tuners")) {
             mTunerSpectrumDisabled = !mTunerSpectrumDisabled;
             if (mTunerSpectrumDisabled) {
@@ -166,6 +163,10 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 mTopContentPanel.setMaxHeight(300);
                 mTopContentPanel.setVisible(true);
                 mTopContentPanel.setManaged(true);
+                //Ensure the shared spectral panel is shown when displayed directly on the tuner page (it may have
+                //been left invisible by a minimized Now Playing widget).
+                mSpectralPanel.setVisible(true);
+                mSpectralPanel.setManaged(true);
                 mSpectralPanel.start();
             }
             Platform.runLater(() -> {
@@ -1227,11 +1228,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mControllerPanel.setResourcePanelVisible(false);
             mControllerPanel.getNowPlayingPanel().setNodes(mSpectralPanel, getBroadcastStatusPanel(), mNowPlayingResourceStatusPanel);
             mControllerPanel.getNowPlayingPanel().setSpectralPanelVisible(!mNowPlayingSpectrumDisabled);
-            if (mNowPlayingSpectrumDisabled) {
-                mSpectralPanel.stop();
-            } else {
-                mSpectralPanel.start();
-            }
+            //Let the Now Playing panel decide based on the widget's visible/minimized state, so a minimized or
+            //hidden Spectrum/Waterfall widget keeps the DFT paused even after switching back to this view.
+            mControllerPanel.getNowPlayingPanel().updateSpectrumProcessing();
         } else if (id.equals("tuners")) {
             if (!mTunerSpectrumDisabled) {
                 double prefHeight = mUserPreferences.getSwingPreference().getDimension("spectrum_v2") != null ? mUserPreferences.getSwingPreference().getDimension("spectrum_v2").getHeight() : 300;
@@ -1242,6 +1241,10 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 mTopContentPanel.setMaxHeight(Double.MAX_VALUE);
                 mTopContentPanel.setVisible(true);
                 mTopContentPanel.setManaged(true);
+                //The shared spectral panel may have been left invisible by a minimized Now Playing widget; ensure
+                //it is shown when displayed directly on the tuner page.
+                mSpectralPanel.setVisible(true);
+                mSpectralPanel.setManaged(true);
                 mSpectralPanel.start();
             } else {
                 mTopContentPanel.setCenter(null);

@@ -74,6 +74,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     private NowPlayingPreference mNowPlayingPreference;
     private Button mManageWidgetsBtn;
     private SplitPane mChannelSplitPane;
+    private Widget mSpectrumWidget;
 
     /**
      * GUI panel that combines the currently decoding channels metadata table and viewers for channel details,
@@ -187,6 +188,22 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     public void setSpectralPanelVisible(boolean visible) {
         if (mWidgetContainer != null) {
             mWidgetContainer.setWidgetVisible("spectrum_v2", visible);
+        }
+    }
+
+    /**
+     * Starts or stops the spectral display's DFT processor based on whether the Spectrum/Waterfall widget is
+     * currently visible and expanded.  Stopping the processor pauses both the spectrum and the waterfall
+     * computations, saving CPU while the widget is minimized or hidden.  Safe to call repeatedly; start() is a
+     * no-op when no tuner is selected.
+     */
+    public void updateSpectrumProcessing() {
+        if (mSpectrumWidget != null && mSpectralPanel instanceof io.github.dsheirer.spectrum.SpectralDisplayPanel sdp) {
+            if (mSpectrumWidget.isVisible() && !mSpectrumWidget.isMinimized()) {
+                sdp.start();
+            } else {
+                sdp.stop();
+            }
         }
     }
 
@@ -351,6 +368,14 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
             ((Region) mSpectralPanel).setPrefHeight(prefHeight);
             VBox.setVgrow(spectrumWidget, Priority.NEVER);
             mWidgetContainer.addWidget(spectrumWidget, false);
+
+            mSpectrumWidget = spectrumWidget;
+            //Pause the DFT (which feeds BOTH the spectrum and the waterfall) whenever the widget is minimized or
+            //hidden so we don't burn CPU computing graphs the user can't see.  Listeners are attached after
+            //addWidget() so the initial state restore doesn't fire them prematurely.
+            spectrumWidget.visibleProperty().addListener((o, was, now) -> updateSpectrumProcessing());
+            spectrumWidget.minimizedProperty().addListener((o, was, now) -> updateSpectrumProcessing());
+            updateSpectrumProcessing();
         }
 
         // Combined Channel Table + Channel Details widget using a horizontal SplitPane
