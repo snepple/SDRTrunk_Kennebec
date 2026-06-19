@@ -102,9 +102,9 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
     {
         setAlignment(Pos.CENTER_LEFT);
         setSpacing(0);
-        setMinHeight(64);
-        setPrefHeight(64);
-        setMaxHeight(64);
+        setMinHeight(72);
+        setPrefHeight(72);
+        setMaxHeight(72);
         setStyle("-fx-background-color: rgba(30,30,36,0.97); -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 0 0 1 0;");
 
 
@@ -125,6 +125,9 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
         mAudioChannelsScroller.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
         mAudioChannelsScroller.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
         mAudioChannelsScroller.setFitToHeight(true);
+        //Stretch the channel content to fill the available width so the now-playing display uses the whole
+        //bar (it was previously left at its small preferred width, leaving a large empty gap).
+        mAudioChannelsScroller.setFitToWidth(true);
         mAudioChannelsScroller.setVisible(true);
         mAudioChannelsScroller.setManaged(true);
         HBox.setHgrow(mAudioChannelsScroller, Priority.ALWAYS);

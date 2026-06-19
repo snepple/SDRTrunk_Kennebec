@@ -155,7 +155,7 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         
         mTable.setTableMenuButtonVisible(true);
         mTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        mTable.getColumns().addAll(DecodeEventModel.createColumns());
+        mTable.getColumns().addAll(DecodeEventModel.createColumns(mAliasModel, mUserPreferences));
         //Bind the table to the global event model so events are visible before any channel is selected.
         //When a channel is selected, receive(ProcessingChain) rebinds to that channel's per-channel model.
         //(Previously the table was bound to mActiveModelWrapper, which is never populated with events - the
