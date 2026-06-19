@@ -367,6 +367,24 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             primaryStage.setScene(scene);
             primaryStage.show();
 
+            //Closing the main window triggers the same confirmation as the sidebar Exit, then fully quits the app.
+            primaryStage.setOnCloseRequest(event -> {
+                event.consume();
+                confirmAndExit();
+            });
+
+            //Minimizing sends the app to the system tray to keep running as a background service (when the tray is
+            //available); otherwise it minimizes to the taskbar as usual.
+            primaryStage.iconifiedProperty().addListener((obs, wasIconified, isIconified) -> {
+                if(isIconified && mSystemTrayManager != null && mSystemTrayManager.isAvailable())
+                {
+                    Platform.runLater(() -> {
+                        primaryStage.hide();
+                        mSystemTrayManager.notifyMinimizedToTray();
+                    });
+                }
+            });
+
             // Keep the splash up until the main content has actually been built and shown, so the user
             // doesn't briefly see an empty window. A safety timeout guarantees the splash hides even if
             // the content-ready signal never arrives.
@@ -905,6 +923,140 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     }
 
     /**
+     * Performs application shutdown and exits the JVM.  Used after the user confirms they want to quit (from the
+     * sidebar Exit item, the window close button, or the system tray).
+     */
+    public void shutdownAndExit()
+    {
+        processShutdown();
+        System.exit(0);
+    }
+
+    /**
+     * Shows a themed confirmation dialog and, if the user confirms, shuts down and exits the application.  Must be
+     * called on the JavaFX Application Thread.
+     */
+    public void confirmAndExit()
+    {
+        //Bring the window forward so the confirmation has visible context (it may be hidden in the tray).
+        if(mPrimaryStage != null)
+        {
+            if(!mPrimaryStage.isShowing())
+            {
+                mPrimaryStage.show();
+            }
+            mPrimaryStage.setIconified(false);
+            mPrimaryStage.toFront();
+        }
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Exit SDRTrunk");
+        alert.setHeaderText("Exit SDRTrunk?");
+        alert.setContentText("This will stop all channels and audio streaming and close the application.");
+        alert.getButtonTypes().setAll(ButtonType.CANCEL, ButtonType.OK);
+
+        if(mPrimaryStage != null && mPrimaryStage.isShowing())
+        {
+            alert.initOwner(mPrimaryStage);
+        }
+
+        ThemeManager.applyCurrentTheme(alert.getDialogPane());
+
+        Optional<ButtonType> result = alert.showAndWait();
+
+        if(result.isPresent() && result.get() == ButtonType.OK)
+        {
+            shutdownAndExit();
+        }
+    }
+
+    /**
+     * Restores and focuses the main application window.  Used by the system tray to bring the app back from the
+     * background.  Safe to call from any thread.
+     */
+    public void showMainWindow()
+    {
+        Platform.runLater(() -> {
+            if(mPrimaryStage != null)
+            {
+                mPrimaryStage.show();
+                mPrimaryStage.setIconified(false);
+                mPrimaryStage.toFront();
+                mPrimaryStage.requestFocus();
+            }
+        });
+    }
+
+    /**
+     * Toggles muting of all application audio output.
+     * @return the new muted state (true if now muted)
+     */
+    public boolean toggleAudioMute()
+    {
+        if(mAudioPlaybackManager != null && mAudioPlaybackManager.getAudioOutput() != null)
+        {
+            boolean newState = !mAudioPlaybackManager.getAudioOutput().isMuted();
+            mAudioPlaybackManager.getAudioOutput().setMuted(newState);
+            return newState;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return true if all application audio output is currently muted.
+     */
+    public boolean isAudioMuted()
+    {
+        return mAudioPlaybackManager != null && mAudioPlaybackManager.getAudioOutput() != null
+            && mAudioPlaybackManager.getAudioOutput().isMuted();
+    }
+
+    /**
+     * Stops all currently playing channels without exiting the application.  Runs off the JavaFX thread so the UI
+     * stays responsive.
+     */
+    public void stopAllChannels()
+    {
+        if(mPlaylistManager != null)
+        {
+            io.github.dsheirer.util.ThreadPool.CACHED.submit(() ->
+                mPlaylistManager.getChannelProcessingManager().stopAllChannels());
+        }
+    }
+
+    /**
+     * (Re)starts all channels flagged for auto-start that are not already processing.  Runs off the JavaFX thread
+     * so the UI stays responsive.
+     */
+    public void restartAutoplayChannels()
+    {
+        if(mPlaylistManager == null)
+        {
+            return;
+        }
+
+        io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
+            List<Channel> channels = mPlaylistManager.getChannelModel().getAutoStartChannels();
+
+            for(Channel channel : channels)
+            {
+                try
+                {
+                    if(!mPlaylistManager.getChannelProcessingManager().isProcessing(channel))
+                    {
+                        mPlaylistManager.getChannelProcessingManager().start(channel);
+                    }
+                }
+                catch(ChannelException ce)
+                {
+                    mLog.error("Tray restart - channel [" + channel.getName() + "] failed: " + ce.getMessage());
+                }
+            }
+        });
+    }
+
+    /**
      * Lazy constructor for broadcast status panel
      */
     private BroadcastStatusPanel getBroadcastStatusPanel()
@@ -1280,8 +1432,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     @Override
     public void onItemSelected(String id) {
         if (id.equals("exit")) {
-            processShutdown();
-            System.exit(0);
+            confirmAndExit();
             return;
         }
 
