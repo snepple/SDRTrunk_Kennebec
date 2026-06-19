@@ -274,7 +274,7 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
 
     public class MuteButton extends Button
     {
-        private boolean mMuted = false;
+        private final javafx.beans.value.ChangeListener<Boolean> mMuteListener;
 
         public MuteButton()
         {
@@ -284,21 +284,28 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
             setPrefWidth(42);
             setPrefHeight(32);
             updateAppearance();
-            setTooltip(new javafx.scene.control.Tooltip("Mute All Audio (Ctrl+M)"));
-            accessibleTextProperty().set("Mute");
-            setOnAction(e -> {
-                mMuted = !mMuted;
-                mAudioPlaybackManager.getAudioOutput().setMuted(mMuted);
-                Platform.runLater(() -> {
-                    updateAppearance();
-                    setTooltip(new javafx.scene.control.Tooltip(mMuted ? "Unmute All Audio (Ctrl+M)" : "Mute All Audio (Ctrl+M)"));
-                    accessibleTextProperty().set(mMuted ? "Unmute" : "Mute");
-                });
+            updateTooltip();
+            setOnAction(e -> mAudioPlaybackManager.toggleMasterMuted());
+
+            //Drive the button's appearance from the shared master-mute state so it stays in sync no matter what
+            //toggled the mute (this button, the system tray, etc.).
+            mMuteListener = (obs, was, now) -> Platform.runLater(() -> {
+                updateAppearance();
+                updateTooltip();
             });
+            //Weak listener so the long-lived AudioPlaybackManager doesn't pin this button if the panel is recreated.
+            //The button holds the strong reference (mMuteListener field) for as long as it is alive.
+            mAudioPlaybackManager.masterMutedProperty().addListener(new javafx.beans.value.WeakChangeListener<>(mMuteListener));
+        }
+
+        private void updateTooltip() {
+            boolean muted = mAudioPlaybackManager.isMasterMuted();
+            setTooltip(new javafx.scene.control.Tooltip(muted ? "Unmute All Audio (Ctrl+M)" : "Mute All Audio (Ctrl+M)"));
+            accessibleTextProperty().set(muted ? "Unmute" : "Mute");
         }
 
         private void updateAppearance() {
-            if (mMuted) {
+            if (mAudioPlaybackManager.isMasterMuted()) {
                 setText("🔇");
                 setStyle("-fx-background-color: rgba(220,38,38,0.85); -fx-background-radius: 6; " +
                          "-fx-cursor: hand; -fx-font-size: 16px; -fx-padding: 4 8 4 8; " +

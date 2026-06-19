@@ -993,11 +993,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
      */
     public boolean toggleAudioMute()
     {
-        if(mAudioPlaybackManager != null && mAudioPlaybackManager.getAudioOutput() != null)
+        if(mAudioPlaybackManager != null)
         {
-            boolean newState = !mAudioPlaybackManager.getAudioOutput().isMuted();
-            mAudioPlaybackManager.getAudioOutput().setMuted(newState);
-            return newState;
+            return mAudioPlaybackManager.toggleMasterMuted();
         }
 
         return false;
@@ -1008,8 +1006,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
      */
     public boolean isAudioMuted()
     {
-        return mAudioPlaybackManager != null && mAudioPlaybackManager.getAudioOutput() != null
-            && mAudioPlaybackManager.getAudioOutput().isMuted();
+        return mAudioPlaybackManager != null && mAudioPlaybackManager.isMasterMuted();
     }
 
     /**
