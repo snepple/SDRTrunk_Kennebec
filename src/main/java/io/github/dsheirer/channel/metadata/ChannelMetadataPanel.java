@@ -73,6 +73,8 @@ public class ChannelMetadataPanel extends VBox
         TableColumn<ChannelMetadata, String> channelCol = new TableColumn<>("Channel");
         channelCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
             cellData.getValue().hasChannelConfigurationIdentifier() ? cellData.getValue().getChannelNameConfigurationIdentifier().toString() : ""));
+        //Default the Channel column wide enough to show full channel names (e.g. "Oakland/Belgrade/Rome").
+        channelCol.setPrefWidth(200);
             
         TableColumn<ChannelMetadata, String> freqCol = new TableColumn<>("Frequency");
         freqCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
@@ -90,43 +92,10 @@ public class ChannelMetadataPanel extends VBox
         fromCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
             cellData.getValue().hasFromIdentifier() ? cellData.getValue().getFromIdentifier().toString() : ""));
             
-        TableColumn<ChannelMetadata, ChannelMetadata> activityCol = new TableColumn<>("Activity");
-        activityCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue()));
-        activityCol.setCellFactory(column -> new TableCell<ChannelMetadata, ChannelMetadata>() {
-            private Canvas canvas = new Canvas(60, 16);
-            {
-                setGraphic(canvas);
-            }
-            @Override
-            protected void updateItem(ChannelMetadata item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(canvas);
-                    GraphicsContext gc = canvas.getGraphicsContext2D();
-                    gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-                    List<Boolean> history = mActivityHistory.get(item);
-                    if (history != null) {
-                        double barWidth = 3;
-                        double spacing = 1;
-                        double x = canvas.getWidth() - barWidth;
-                        for (int i = history.size() - 1; i >= 0 && x >= 0; i--) {
-                            if (history.get(i)) {
-                                gc.setFill(Color.web("#00ffcc")); // active cyan
-                                gc.fillRect(x, 2, barWidth, canvas.getHeight() - 4);
-                            } else {
-                                gc.setFill(Color.web("#333333")); // idle dark gray
-                                gc.fillRect(x, canvas.getHeight() / 2 - 1, barWidth, 2);
-                            }
-                            x -= (barWidth + spacing);
-                        }
-                    }
-                }
-            }
-        });
+        //Activity column removed (low-value sparkline). The idle->active polling that powers the Received
+        //count is retained in setupActivityPolling().
 
-        mTable.getColumns().addAll(stateCol, activityCol, channelCol, freqCol, receivedCol, toCol, fromCol);
+        mTable.getColumns().addAll(stateCol, channelCol, freqCol, receivedCol, toCol, fromCol);
         mTable.setTableMenuButtonVisible(true);
         
         setupActivityPolling();
