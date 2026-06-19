@@ -66,6 +66,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -436,6 +437,8 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
             mChannelTableView.getStyleClass().add("preferences-table");
             mChannelTableView.setEditable(true);
             mChannelTableView.setTableMenuButtonVisible(true);
+            //Allow shift/ctrl multi-select so the right-click menu can start/stop several channels at once.
+            mChannelTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
             TableColumn<Channel,Boolean> playingColumn = new TableColumn("Playing");
             playingColumn.setId("channelTable.playing");
@@ -639,10 +642,9 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
 
                 MenuItem playItem = new MenuItem("Play");
                 playItem.setOnAction(event -> {
-                    Channel channel = row.getItem();
-                    if (channel != null) {
-                        //Start on a background thread - channel startup acquires a tuner source and builds
-                        //the processing chain, which freezes the UI if run on the FX thread.
+                    //Start on a background thread - channel startup acquires a tuner source and builds
+                    //the processing chain, which freezes the UI if run on the FX thread.
+                    for (Channel channel : getStartStopTargets(row)) {
                         io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
                             try {
                                 mPlaylistManager.getChannelProcessingManager().start(channel);
@@ -655,10 +657,9 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
 
                 MenuItem stopItem = new MenuItem("Stop");
                 stopItem.setOnAction(event -> {
-                    Channel channel = row.getItem();
-                    if (channel != null) {
-                        //Stop on a background thread - teardown of the processing chain should not block
-                        //the FX thread.
+                    //Stop on a background thread - teardown of the processing chain should not block
+                    //the FX thread.
+                    for (Channel channel : getStartStopTargets(row)) {
                         io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
                             try {
                                 mPlaylistManager.getChannelProcessingManager().stop(channel);
@@ -719,6 +720,28 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
         }
 
         return mChannelTableView;
+    }
+
+    /**
+     * Resolves the channels a Play/Stop context-menu action should apply to.  When the right-clicked row
+     * is part of a multi-selection, all selected channels are returned; otherwise just the clicked row.
+     */
+    private List<Channel> getStartStopTargets(TableRow<Channel> row)
+    {
+        List<Channel> selected = new ArrayList<>(getChannelTableView().getSelectionModel().getSelectedItems());
+        Channel rowItem = row.getItem();
+
+        if(rowItem != null && !selected.contains(rowItem))
+        {
+            return List.of(rowItem);
+        }
+
+        if(selected.isEmpty() && rowItem != null)
+        {
+            return List.of(rowItem);
+        }
+
+        return selected;
     }
 
     private Label getPlaceholderLabel()
