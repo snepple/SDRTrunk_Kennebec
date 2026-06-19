@@ -342,7 +342,7 @@ private ComboBox getVGAGainCombo()
                     }
                 }
             });
-            mLNAGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>LNA Gain.  Set master gain to <b>MANUAL</b> to enable adjustment</html>"));
+            mLNAGainCombo.setTooltip(new javafx.scene.control.Tooltip("The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise. Set master gain to MANUAL to enable adjustment."));
         }
 
         return mLNAGainCombo;

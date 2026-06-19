@@ -36,3 +36,6 @@
 ## 2026-06-14 - P25P2Viewer Scramble Settings Tooltips
 **Learning:** Users need to understand the WACN, SYSTEM, and NAC acronyms.
 **Action:** Added help icons to WACN, SYSTEM, and NAC labels in P25P2Viewer.java explaining their roles in cross-system calls and radio system identification.
+## 2026-06-18 - Added Beginner-Friendly Tooltips for Jargon Hotspots
+**Learning:** Replaced technical definitions for SDR jargon (NAC, LNA, PPM) with user-friendly explanations.
+**Action:** Updated tooltips in NacEditor, R8xTunerEditor, E4KTunerEditor, and TunerEditor to better describe the 'Why' behind SDR configurations.
