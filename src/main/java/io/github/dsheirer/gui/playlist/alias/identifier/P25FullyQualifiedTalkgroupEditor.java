@@ -33,6 +33,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Pos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.github.dsheirer.controller.channel.Channel;
@@ -93,17 +95,23 @@ public class P25FullyQualifiedTalkgroupEditor extends IdentifierEditor<P25FullyQ
         gridPane.getChildren().add(getWacnField());
 
         Label systemLabel = new Label("System");
-        GridPane.setHalignment(systemLabel, HPos.RIGHT);
-        GridPane.setConstraints(systemLabel, 3, 0);
-        gridPane.getChildren().add(systemLabel);
+        Label systemHelp = createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system.");
+        HBox systemBox = new HBox(4, systemLabel, systemHelp);
+        systemBox.setAlignment(Pos.CENTER_RIGHT);
+        GridPane.setHalignment(systemBox, HPos.RIGHT);
+        GridPane.setConstraints(systemBox, 3, 0);
+        gridPane.getChildren().add(systemBox);
 
         GridPane.setConstraints(getSystemField(), 4, 0);
         gridPane.getChildren().add(getSystemField());
 
         Label radioLabel = new Label("Talkgroup");
-        GridPane.setHalignment(radioLabel, HPos.RIGHT);
-        GridPane.setConstraints(radioLabel, 5, 0);
-        gridPane.getChildren().add(radioLabel);
+        Label radioHelp = createHelpIcon("A unique number representing a group or channel on the network.");
+        HBox radioBox = new HBox(4, radioLabel, radioHelp);
+        radioBox.setAlignment(Pos.CENTER_RIGHT);
+        GridPane.setHalignment(radioBox, HPos.RIGHT);
+        GridPane.setConstraints(radioBox, 5, 0);
+        gridPane.getChildren().add(radioBox);
 
         GridPane.setConstraints(getTalkgroupField(), 6, 0);
         gridPane.getChildren().add(getTalkgroupField());
