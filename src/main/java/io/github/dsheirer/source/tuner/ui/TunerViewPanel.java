@@ -1,5 +1,7 @@
 package io.github.dsheirer.source.tuner.ui;
 
+import io.github.dsheirer.controller.channel.Channel;
+import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.tuner.configuration.TunerConfigurationManager;
 import io.github.dsheirer.source.tuner.manager.DiscoveredRecordingTuner;
@@ -28,17 +30,21 @@ public class TunerViewPanel extends VBox {
     private static final String TABLE_PREFERENCE_KEY = "tuner.view.panel";
 
     private UserPreferences mUserPreferences;
+    private PlaylistManager mPlaylistManager;
     private DiscoveredTunerModel mDiscoveredTunerModel;
     private DiscoveredTunerEditor mDiscoveredTunerEditor;
     private TunerConfigurationManager mTunerConfigurationManager;
     private TableView<DiscoveredTuner> mTunerTable;
+    private ListView<String> mTunerChannelsList;
     private SplitPane mSplitPane;
     private Button mAddRecordingButton;
     private Button mRemoveRecordingButton;
     private VisibilityListener mVisibilityListener;
 
-    public TunerViewPanel(TunerManager tunerManager, UserPreferences userPreferences, VisibilityListener visibilityListener) {
+    public TunerViewPanel(TunerManager tunerManager, UserPreferences userPreferences,
+                          PlaylistManager playlistManager, VisibilityListener visibilityListener) {
         mVisibilityListener = visibilityListener;
+        mPlaylistManager = playlistManager;
         mDiscoveredTunerModel = tunerManager.getDiscoveredTunerModel();
         mDiscoveredTunerEditor = new DiscoveredTunerEditor(userPreferences, tunerManager);
         mTunerConfigurationManager = tunerManager.getTunerConfigurationManager();
@@ -176,6 +182,7 @@ public class TunerViewPanel extends VBox {
             } else {
                 mDiscoveredTunerEditor.setItem(null);
             }
+            updateTunerChannelsList();
         });
 
         ContextMenu popupMenu = new ContextMenu();
@@ -213,6 +220,16 @@ public class TunerViewPanel extends VBox {
         buttonPanel.getChildren().addAll(getAddRecordingButton(), getRemoveRecordingButton());
         tunerTablePanel.getChildren().add(buttonPanel);
 
+        //List of channels currently playing on the selected tuner (kept current by the refresh timeline).
+        Label channelsTitle = new Label("Channels playing on selected tuner:");
+        channelsTitle.setStyle("-fx-font-weight: bold; -fx-padding: 4 0 2 0;");
+        mTunerChannelsList = new ListView<>();
+        mTunerChannelsList.setPrefHeight(120);
+        mTunerChannelsList.setPlaceholder(new Label("No channels playing on this tuner"));
+        VBox channelsBox = new VBox(2, channelsTitle, mTunerChannelsList);
+        channelsBox.setPadding(new javafx.geometry.Insets(4, 0, 0, 0));
+        tunerTablePanel.getChildren().add(channelsBox);
+
         ScrollPane editorScroller = new ScrollPane(mDiscoveredTunerEditor);
         editorScroller.setFitToWidth(true);
 
@@ -235,9 +252,39 @@ public class TunerViewPanel extends VBox {
                 //Hide the Live Stability column when AI features are off (the stabilizer can't run).
                 liveStabilityColumn.setVisible(mUserPreferences.getAIPreference().isAIEnabled());
                 mTunerTable.refresh();
+                updateTunerChannelsList();
             }));
         tableRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         tableRefresh.play();
+    }
+
+    /**
+     * Updates the "channels playing on selected tuner" list with the names of channels whose active tuner
+     * matches the currently-selected tuner.
+     */
+    private void updateTunerChannelsList() {
+        if (mTunerChannelsList == null) {
+            return;
+        }
+
+        java.util.List<String> names = new java.util.ArrayList<>();
+        DiscoveredTuner selected = mTunerTable.getSelectionModel().getSelectedItem();
+
+        if (selected != null && mPlaylistManager != null && mPlaylistManager.getChannelModel() != null) {
+            String tunerName = selected.getName();
+
+            if (tunerName != null && !tunerName.isEmpty()) {
+                for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
+                    if (tunerName.equals(channel.activeTunerNameProperty().get())) {
+                        names.add(channel.getName());
+                    }
+                }
+            }
+        }
+
+        if (!mTunerChannelsList.getItems().equals(names)) {
+            mTunerChannelsList.getItems().setAll(names);
+        }
     }
 
     private Button getAddRecordingButton() {
