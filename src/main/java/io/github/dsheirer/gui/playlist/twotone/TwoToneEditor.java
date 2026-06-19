@@ -677,10 +677,11 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         setCenter(centerSplitPane);
     }
     private void syncToPlaylist() {
-        if (mPlaylistManager.getCurrentPlaylist() != null) {
-            mPlaylistManager.getCurrentPlaylist().setTwoToneConfigurations(mObservableConfigs);
-            // PlaylistManager will listen to this change normally or we trigger a save if needed
-        }
+        //Write to the PlaylistManager's backing list (the source of truth). getCurrentPlaylist() returns a
+        //fresh throwaway PlaylistV2 each call, so the previous getCurrentPlaylist().setTwoToneConfigurations()
+        //updated a discarded object and nothing persisted - detectors vanished on refresh/navigation.
+        mPlaylistManager.setTwoToneConfigurations(mObservableConfigs);
+        mPlaylistManager.schedulePlaylistSave();
     }
 
     public void process(TwoToneTabRequest request)

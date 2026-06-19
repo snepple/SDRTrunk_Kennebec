@@ -480,6 +480,19 @@ public class PlaylistManager implements Listener<ChannelEvent>
     }
 
     /**
+     * Replaces the persisted two-tone detector configurations with the supplied list. This updates the
+     * manager's backing list (the source of truth that getCurrentPlaylist() serializes); callers should
+     * follow with schedulePlaylistSave() to persist. Note: getCurrentPlaylist() returns a fresh throwaway
+     * PlaylistV2 each call, so editing that object's list does NOT persist - callers must use this method.
+     */
+    public void setTwoToneConfigurations(List<TwoToneConfiguration> configurations) {
+        mTwoToneConfigurations.clear();
+        if(configurations != null) {
+            mTwoToneConfigurations.addAll(configurations);
+        }
+    }
+
+    /**
      * Constructs and returns the current playlist based on the internal models.
      */
     public PlaylistV2 getCurrentPlaylist()
