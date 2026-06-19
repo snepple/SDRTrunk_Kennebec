@@ -86,7 +86,10 @@ public class Talkgroup extends AliasID implements Comparable<Talkgroup>
         }
 
         TalkgroupFormat talkgroupFormat = TalkgroupFormat.get(mProtocol);
-        return talkgroupFormat.getMinimumValidValue() <= mValue && mValue <= talkgroupFormat.getMaximumValidValue();
+        //Use the format's unsigned-aware range check.  Protocols such as NBFM use a maximum value of -1
+        //(0xFFFFFFFF) to represent the full unsigned 32-bit range, so a signed comparison here would
+        //incorrectly flag valid talkgroups (e.g. NBFM 11139) as **NOT VALID**.
+        return talkgroupFormat.isValid(mValue);
     }
 
     public String toString()

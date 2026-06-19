@@ -88,6 +88,11 @@ public class TranscriptionEngine {
         Protocol protocol = null;
         String aliasListName = null;
 
+        //Capture the start timestamp and TO talkgroup now (while the segment is valid) so the events table
+        //can correlate the transcript to its decode event after the segment is recycled.
+        long startTimestamp = audioSegment.getStartTimestamp();
+        Integer toId = null;
+
         try {
             if (audioSegment.getIdentifierCollection() != null) {
                 Identifier from = audioSegment.getIdentifierCollection().getFromIdentifier();
@@ -95,6 +100,11 @@ public class TranscriptionEngine {
                 if (from != null && from.getForm() == Form.RADIO && from.getValue() instanceof Number) {
                     fromRadioId = ((Number) from.getValue()).intValue();
                     protocol = from.getProtocol();
+                }
+
+                Identifier to = audioSegment.getIdentifierCollection().getToIdentifier();
+                if (to != null && to.getValue() instanceof Number) {
+                    toId = ((Number) to.getValue()).intValue();
                 }
 
                 if (audioSegment.getIdentifierCollection().getAliasListConfiguration() != null) {
@@ -108,6 +118,8 @@ public class TranscriptionEngine {
         final Integer finalFromRadioId = fromRadioId;
         final Protocol finalProtocol = protocol;
         final String finalAliasListName = aliasListName;
+        final long finalStartTimestamp = startTimestamp;
+        final Integer finalToId = toId;
 
         mExecutor.submit(() -> {
             try {
@@ -138,7 +150,7 @@ public class TranscriptionEngine {
                     mLog.info("Transcription completed: " + transcript);
                     io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
                         new TranscriptionEvent(audioSegment, transcript, finalFromRadioId, finalProtocol,
-                            finalAliasListName));
+                            finalAliasListName, finalStartTimestamp, finalToId));
                 }
             } catch (Exception e) {
                 mLog.error("Error during audio transcription", e);

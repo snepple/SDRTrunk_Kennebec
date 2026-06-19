@@ -65,27 +65,27 @@ public class ChannelDetailPanel extends VBox implements Listener<ProcessingChain
         HBox buttonPanel = new HBox(10);
         buttonPanel.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         buttonPanel.setPadding(new Insets(4, 10, 4, 10));
-        buttonPanel.setStyle("-fx-background-color: #F9F9FB; -fx-background-radius: 8; -fx-border-color: #E5E5EA; -fx-border-radius: 8; -fx-border-width: 1;");
+        buttonPanel.getStyleClass().add("channel-detail-header");
 
         Label systemTitle = new Label("System:");
-        systemTitle.setStyle("-fx-text-fill: #8E8E93; -fx-font-weight: bold; -fx-font-size: 12px;");
+        systemTitle.getStyleClass().add("channel-detail-key");
         buttonPanel.getChildren().add(systemTitle);
         mSystemLabel = new Label(" ");
-        mSystemLabel.setStyle("-fx-text-fill: #1C1C1E; -fx-font-size: 13px;");
+        mSystemLabel.getStyleClass().add("channel-detail-value");
         buttonPanel.getChildren().add(mSystemLabel);
 
         Label siteTitle = new Label("Site:");
-        siteTitle.setStyle("-fx-text-fill: #8E8E93; -fx-font-weight: bold; -fx-font-size: 12px;");
+        siteTitle.getStyleClass().add("channel-detail-key");
         buttonPanel.getChildren().add(siteTitle);
         mSiteLabel = new Label(" ");
-        mSiteLabel.setStyle("-fx-text-fill: #1C1C1E; -fx-font-size: 13px;");
+        mSiteLabel.getStyleClass().add("channel-detail-value");
         buttonPanel.getChildren().add(mSiteLabel);
 
         Label nameTitle = new Label("Channel:");
-        nameTitle.setStyle("-fx-text-fill: #8E8E93; -fx-font-weight: bold; -fx-font-size: 12px;");
+        nameTitle.getStyleClass().add("channel-detail-key");
         buttonPanel.getChildren().add(nameTitle);
         mNameLabel = new Label(" ");
-        mNameLabel.setStyle("-fx-text-fill: #1C1C1E; -fx-font-size: 13px;");
+        mNameLabel.getStyleClass().add("channel-detail-value");
         buttonPanel.getChildren().add(mNameLabel);
 
         Region spacer = new Region();
@@ -101,10 +101,17 @@ public class ChannelDetailPanel extends VBox implements Listener<ProcessingChain
 
         mDetailTextPane = new TextArea(EMPTY_DETAILS);
         mDetailTextPane.setEditable(false);
-        mDetailTextPane.setStyle("-fx-font-family: monospace; -fx-font-size: 12px; -fx-background-radius: 8; -fx-border-radius: 8;");
+        mDetailTextPane.setWrapText(false);
+        //Blend the text area into a rounded "card" so the details read as a clean panel rather than a
+        //raw boxed-in dump.  Styling lives in CSS (channel-detail-*) so it adapts to light/dark themes.
+        mDetailTextPane.getStyleClass().add("channel-detail-text");
         VBox.setVgrow(mDetailTextPane, Priority.ALWAYS);
 
-        getChildren().add(mDetailTextPane);
+        VBox detailCard = new VBox(mDetailTextPane);
+        detailCard.getStyleClass().add("channel-detail-card");
+        VBox.setVgrow(detailCard, Priority.ALWAYS);
+
+        getChildren().add(detailCard);
     }
 
     private static final DecimalFormat FREQUENCY_FORMAT = new DecimalFormat("#.00000");

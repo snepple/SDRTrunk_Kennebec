@@ -16,6 +16,7 @@ public class AIPreference extends Preference {
     public static final String KEY_AI_TONE_DISCOVERY_ENABLED = "ai.tone.discovery.enabled";
     
     public static final String KEY_TRANSCRIPTION_ENABLED = "ai.transcription.enabled";
+    public static final String KEY_RADIO_ID_NAMING_ENABLED = "ai.radio.id.naming.enabled";
     public static final String KEY_TRANSCRIPTION_ENGINE = "ai.transcription.engine";
     public static final String KEY_GOOGLE_STT_API_KEY = "ai.transcription.google.key";
     public static final String KEY_WHISPER_API_KEY = "ai.transcription.whisper.key";
@@ -120,6 +121,19 @@ public class AIPreference extends Preference {
 
     public void setTranscriptionEnabled(boolean enabled) {
         mPreferences.putBoolean(KEY_TRANSCRIPTION_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Whether the AI radio-ID name learner (names P25/DMR radio IDs from transcripts) is enabled.
+     * Defaults to true to preserve prior behavior.
+     */
+    public boolean isRadioIdNamingEnabled() {
+        return mPreferences.getBoolean(KEY_RADIO_ID_NAMING_ENABLED, true);
+    }
+
+    public void setRadioIdNamingEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_RADIO_ID_NAMING_ENABLED, enabled);
         notifyPreferenceUpdated();
     }
 

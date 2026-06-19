@@ -269,6 +269,76 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         // TODO: implement JavaFX cell renderers when needed
     }
 
+    /**
+     * Receives completed audio transcriptions and attaches each to its decode event so it shows in the
+     * Transcription column.  Correlation is by TO talkgroup id (when known) plus closest start time, since
+     * transcripts arrive asynchronously and are not directly linked to a decode event.
+     */
+    @Subscribe
+    public void handleTranscription(io.github.dsheirer.transcription.TranscriptionEvent event)
+    {
+        if(event == null || event.getTranscript() == null || event.getTranscript().isBlank())
+        {
+            return;
+        }
+
+        final String transcript = event.getTranscript().trim();
+        final long timestamp = event.getStartTimestamp();
+        final Integer toId = event.getToId();
+
+        Platform.runLater(() -> {
+            IDecodeEvent best = null;
+            long bestDelta = Long.MAX_VALUE;
+
+            for(IDecodeEvent decodeEvent : new java.util.ArrayList<IDecodeEvent>(mTable.getItems()))
+            {
+                if(decodeEvent == null)
+                {
+                    continue;
+                }
+
+                //When a TO id is known, require it to match so transcripts don't attach to other channels.
+                if(toId != null)
+                {
+                    boolean toMatches = false;
+
+                    if(decodeEvent.getIdentifierCollection() != null)
+                    {
+                        for(io.github.dsheirer.identifier.Identifier id : decodeEvent.getIdentifierCollection()
+                                .getIdentifiers(io.github.dsheirer.identifier.Role.TO))
+                        {
+                            if(id.getValue() instanceof Number && ((Number)id.getValue()).intValue() == toId)
+                            {
+                                toMatches = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(!toMatches)
+                    {
+                        continue;
+                    }
+                }
+
+                //Pick the event closest in time to the audio segment start (within a 30 second window).
+                long delta = timestamp > 0 ? Math.abs(decodeEvent.getTimeStart() - timestamp) : 0;
+
+                if(delta < bestDelta && delta <= 30000)
+                {
+                    bestDelta = delta;
+                    best = decodeEvent;
+                }
+            }
+
+            if(best != null)
+            {
+                best.setTranscription(transcript);
+                mTable.refresh();
+            }
+        });
+    }
+
     @Override
     public void receive(final ProcessingChain processingChain)
     {

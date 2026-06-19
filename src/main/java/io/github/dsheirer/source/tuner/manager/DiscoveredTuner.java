@@ -303,6 +303,9 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
         }
 
         mErrorMessage = errorMessage;
+        //Notify listeners (e.g. ChannelProcessingManager via PlaylistManager) BEFORE stopping the tuner, so
+        //the channels currently playing on it can be remembered and automatically restarted on recovery.
+        MyEventBus.getGlobalEventBus().post(new TunerErrorEvent(this));
         stop();
         setTunerStatus(TunerStatus.RECOVERING);
         mRecoveryAttempts.set(0);

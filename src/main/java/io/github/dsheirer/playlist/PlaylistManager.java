@@ -38,6 +38,7 @@ import io.github.dsheirer.gui.playlist.IAliasListRefreshListener;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.module.log.EventLogManager;
 import com.google.common.eventbus.Subscribe;
+import io.github.dsheirer.source.tuner.manager.TunerErrorEvent;
 import io.github.dsheirer.source.tuner.manager.TunerRecoveredEvent;
 import io.github.dsheirer.controller.channel.ChannelEvent;
 import io.github.dsheirer.controller.channel.Channel;
@@ -935,11 +936,21 @@ public class PlaylistManager implements Listener<ChannelEvent>
     }
 
     /**
-     * Handles TunerRecoveredEvent by automatically starting channels configured to auto-start.
+     * Handles TunerErrorEvent by remembering the channels currently playing on the tuner (before it is
+     * stopped) so they can be restarted automatically once the tuner recovers.
+     */
+    @Subscribe
+    public void handleTunerError(TunerErrorEvent event) {
+        mLog.info("Tuner error: " + event.getTuner().getId() + " - remembering active channels for restart on recovery.");
+        mChannelProcessingManager.rememberChannelsForTuner(event.getTuner().getId());
+    }
+
+    /**
+     * Handles TunerRecoveredEvent by restarting the channels that were playing on the tuner when it failed.
      */
     @Subscribe
     public void handleTunerRecovered(TunerRecoveredEvent event) {
-        mLog.info("Tuner recovered: " + event.getTuner().getId() + " - Checking for auto-start channels.");
+        mLog.info("Tuner recovered: " + event.getTuner().getId() + " - restarting channels that were playing.");
         mChannelProcessingManager.restartChannelsForTuner(event.getTuner().getId());
     }
 }

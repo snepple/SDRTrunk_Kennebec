@@ -54,7 +54,7 @@ public class ControllerPanel extends javafx.scene.layout.StackPane {
         mAudioPanel = new AudioPanel(iconModel, userPreferences, settingsManager, audioPlaybackManager, playlistManager);
         mNowPlayingPanel = new NowPlayingPanel(playlistManager, iconModel, userPreferences, settingsManager, tunerManager, detailTabsVisible, visibilityListener);
         mMapPanel = new MapPanel(mapService, playlistManager.getAliasModel(), iconModel, settingsManager);
-        mTunerManagerPanel = new TunerViewPanel(tunerManager, userPreferences, visibilityListener);
+        mTunerManagerPanel = new TunerViewPanel(tunerManager, userPreferences, playlistManager, visibilityListener);
         mAudioRecordingsPanel = new AudioRecordingsPanel(userPreferences, playlistManager);
 
         mAudioPanel.setManageWidgetsButton(mNowPlayingPanel.getManageWidgetsButton());
