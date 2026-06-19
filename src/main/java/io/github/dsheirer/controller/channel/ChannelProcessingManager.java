@@ -584,7 +584,9 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
                     // We need to find the tuner that owns this source
                     for (io.github.dsheirer.source.tuner.manager.DiscoveredTuner dt : mTunerManager.getDiscoveredTunerModel().getAvailableTuners()) {
                         if (dt.hasTuner() && dt.getTuner().getChannelSourceManager().getTunerChannels().contains(tcs.getTunerChannel())) {
-                            Platform.runLater(() -> channel.activeTunerNameProperty().set(dt.getTuner().getPreferredName()));
+                            //Use the DiscoveredTuner name (friendly name when set) so the channel's Tuner
+                            //column matches the tuner list's Name column.
+                            Platform.runLater(() -> channel.activeTunerNameProperty().set(dt.getName()));
                             break;
                         }
                     }

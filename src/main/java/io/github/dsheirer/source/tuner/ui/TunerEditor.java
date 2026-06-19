@@ -359,6 +359,10 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             }
 
             mFriendlyNameTextField.textProperty().addListener((obs, oldV, newV) -> { if (getConfiguration() != null) getConfiguration().setFriendlyName(newV); });
+            //Persist the friendly name when editing finishes (focus lost or Enter) so it survives restarts
+            //and propagates to the tuner list / channel "Tuner" column.
+            mFriendlyNameTextField.focusedProperty().addListener((obs, was, focused) -> { if(!focused) saveConfiguration(); });
+            mFriendlyNameTextField.setOnAction(e -> saveConfiguration());
         }
 
         return mFriendlyNameTextField;
@@ -399,31 +403,25 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         if(mInfoConfigButton == null)
         {
             mInfoConfigButton = new Button("Info/Config");
-            mInfoConfigButton.setTooltip(new javafx.scene.control.Tooltip("View tuner information and set a friendly name"));
+            mInfoConfigButton.setTooltip(new javafx.scene.control.Tooltip("View tuner information"));
             mInfoConfigButton.setOnAction(e -> {
                 //Build the dialog content as real nodes.  Previously this VBox was passed to
                 //setContentText(String.valueOf(panel)), which rendered the object's toString
-                //("VBox@...") instead of the actual fields.
+                //("VBox@...") instead of the actual content.  (The friendly-name field now lives in the
+                //tuner config area, so this dialog just shows tuner information.)
                 VBox panel = new VBox(10);
                 panel.setPadding(new Insets(10));
 
                 String info = getTunerInfo();
-                if(info != null && !info.isEmpty()) {
-                    Label infoLabel = new Label(info);
-                    infoLabel.setWrapText(true);
-                    panel.getChildren().add(infoLabel);
-                }
-
-                HBox nameRow = new HBox(8);
-                nameRow.setAlignment(Pos.CENTER_LEFT);
-                getFriendlyNameTextField().setPrefWidth(220);
-                nameRow.getChildren().addAll(new Label("Friendly Name:"), getFriendlyNameTextField());
-                panel.getChildren().add(nameRow);
+                Label infoLabel = new Label(info != null && !info.isEmpty() ? info
+                        : "No additional tuner information available.");
+                infoLabel.setWrapText(true);
+                panel.getChildren().add(infoLabel);
 
                 Platform.runLater(() -> {
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
-                    alert.setTitle("Tuner Info / Configuration");
+                    alert.setTitle("Tuner Info");
                     alert.setHeaderText("Tuner Information");
                     alert.getDialogPane().setContent(panel);
                     alert.showAndWait();
@@ -1099,6 +1097,14 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         {
             setSpacing(6);
 
+            //Friendly name lives here in the config area so it's discoverable; it appears in the tuner list
+            //Name column and the channel "Tuner" column once set.
+            HBox nameRow = new HBox(6);
+            nameRow.setAlignment(Pos.CENTER_LEFT);
+            getFriendlyNameTextField().setPrefWidth(220);
+            getFriendlyNameTextField().setPromptText("Friendly name (shown in tuner & channel lists)");
+            nameRow.getChildren().addAll(new Label("Name:"), getFriendlyNameTextField());
+
             HBox row1 = new HBox(6);
             row1.setAlignment(Pos.CENTER_LEFT);
             row1.getChildren().addAll(getEnabledButton(), getRecordButton(), getViewSpectrumButton(), getNewSpectrumButton());
@@ -1107,7 +1113,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             row2.setAlignment(Pos.CENTER_LEFT);
             row2.getChildren().addAll(getInfoConfigButton(), getGainAdvisorButton(), getRestartTunerButton());
 
-            getChildren().addAll(row1, row2, getRecordingStatusLabel());
+            getChildren().addAll(nameRow, row1, row2, getRecordingStatusLabel());
         }
 
         /**

@@ -111,11 +111,17 @@ public class ChannelMetadataPanel extends VBox
         TableColumn<ChannelMetadata, String> fromCol = new TableColumn<>("From");
         fromCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
             cellData.getValue().hasFromIdentifier() ? cellData.getValue().getFromIdentifier().toString() : ""));
-            
+
+        //Tuner the channel is playing through (friendly name when set).  Resolved via the channel's
+        //activeTunerName; kept current by the 500ms refresh in setupActivityPolling().
+        TableColumn<ChannelMetadata, String> tunerCol = new TableColumn<>("Tuner");
+        tunerCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(resolveTunerName(cellData.getValue())));
+        tunerCol.setPrefWidth(150);
+
         //Activity column removed (low-value sparkline). The idle->active polling that powers the Received
         //count is retained in setupActivityPolling().
 
-        mTable.getColumns().addAll(stateCol, channelCol, freqCol, receivedCol, toCol, fromCol);
+        mTable.getColumns().addAll(stateCol, channelCol, freqCol, receivedCol, toCol, fromCol, tunerCol);
         mTable.setTableMenuButtonVisible(true);
         
         setupActivityPolling();
@@ -179,6 +185,32 @@ public class ChannelMetadataPanel extends VBox
         catch(Throwable t)
         {
             //Fall through to empty string
+        }
+
+        return "";
+    }
+
+    /**
+     * Resolves the friendly tuner name a channel is currently playing through, or "" if not running.
+     */
+    private String resolveTunerName(ChannelMetadata metadata)
+    {
+        try
+        {
+            if(mChannelProcessingManager != null && mChannelProcessingManager.getChannelMetadataModel() != null)
+            {
+                io.github.dsheirer.controller.channel.Channel channel =
+                    mChannelProcessingManager.getChannelMetadataModel().getChannelFromMetadata(metadata);
+
+                if(channel != null && channel.activeTunerNameProperty().get() != null)
+                {
+                    return channel.activeTunerNameProperty().get();
+                }
+            }
+        }
+        catch(Throwable t)
+        {
+            //fall through to empty
         }
 
         return "";
