@@ -30,8 +30,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
 import javafx.scene.control.Slider;
 import javafx.util.Duration;
 import org.slf4j.Logger;
@@ -70,7 +68,8 @@ public class AudioRecordingsPanel extends VBox {
 
 
 
-    private MediaPlayer mMediaPlayer;
+    private RecordingPlayer mPlayer;
+    private javafx.animation.Timeline mProgressTimer;
     private Button mStopButton;
     private Label mStatusLabel;
     private Label mDiskUsageLabel;
@@ -748,8 +747,8 @@ public class AudioRecordingsPanel extends VBox {
         HBox.setHgrow(mSeekSlider, Priority.ALWAYS);
         mSeekSlider.setOnMousePressed(e -> mUserSeeking = true);
         mSeekSlider.setOnMouseReleased(e -> {
-            if (mMediaPlayer != null) {
-                mMediaPlayer.seek(Duration.seconds(mSeekSlider.getValue()));
+            if (mPlayer != null) {
+                mPlayer.seekSeconds(mSeekSlider.getValue());
             }
             mUserSeeking = false;
         });
@@ -805,45 +804,59 @@ public class AudioRecordingsPanel extends VBox {
         mPlayPauseButton.setDisable(false);
 
         try {
-            Media media = new Media(item.getFile().toUri().toString());
-            mMediaPlayer = new MediaPlayer(media);
-
-            mMediaPlayer.setOnError(() -> Platform.runLater(() -> {
-                mLog.error("Media player error for {}: {}", item.getFile(),
-                    mMediaPlayer != null ? mMediaPlayer.getError() : "unknown");
-                mNowPlayingLabel.setText("Unable to play: " + channelName);
-                mPlayPauseButton.setText("▶");
-                mStopButton.setDisable(true);
-            }));
-
-            mMediaPlayer.setOnReady(() -> {
-                Duration total = mMediaPlayer.getTotalDuration();
-                if (total != null && !total.isUnknown() && !total.isIndefinite()) {
-                    mSeekSlider.setMax(total.toSeconds());
-                    mTotalTimeLabel.setText(formatTime(total));
+            final RecordingItem loadingItem = item;
+            mPlayer = RecordingPlayer.create(item.getFile());
+            mPlayer.setListener(new RecordingPlayer.Listener() {
+                @Override
+                public void onReady(double durationSeconds) {
+                    //Ignore late callbacks from a player that has since been replaced by a different selection.
+                    if (mCurrentItem != loadingItem) return;
+                    if (durationSeconds > 0) {
+                        mSeekSlider.setMax(durationSeconds);
+                        mTotalTimeLabel.setText(formatTime(Duration.seconds(durationSeconds)));
+                    }
+                    mSeekSlider.setDisable(false);
                 }
-                mSeekSlider.setDisable(false);
-            });
 
-            mMediaPlayer.currentTimeProperty().addListener((obs, o, n) -> {
-                if (!mUserSeeking && n != null) {
-                    mSeekSlider.setValue(n.toSeconds());
-                    mCurrentTimeLabel.setText(formatTime(n));
+                @Override
+                public void onEndOfMedia() {
+                    if (mCurrentItem != loadingItem) return;
+                    stopProgressTimer();
+                    if (mPlayer != null) {
+                        mPlayer.stop();
+                    }
+                    mSeekSlider.setValue(0);
+                    mCurrentTimeLabel.setText("0:00");
+                    mPlayPauseButton.setText("▶");
+                    mStopButton.setDisable(true);
+                }
+
+                @Override
+                public void onError(String message) {
+                    if (mCurrentItem != loadingItem) return;
+                    mLog.error("Error playing recording {}: {}", loadingItem.getFile(), message);
+                    mNowPlayingLabel.setText("Unable to play: " + channelName);
+                    mPlayPauseButton.setText("▶");
+                    mStopButton.setDisable(true);
+                }
+
+                @Override
+                public void onPlayingChanged(boolean playing) {
+                    if (mCurrentItem != loadingItem) return;
+                    mPlayPauseButton.setText(playing ? "⏸" : "▶");
+                    if (playing) {
+                        mStopButton.setDisable(false);
+                        startProgressTimer();
+                    } else {
+                        stopProgressTimer();
+                        updateProgressFromPlayer();
+                    }
                 }
             });
 
-            mMediaPlayer.statusProperty().addListener((obs, o, n) ->
-                mPlayPauseButton.setText(n == MediaPlayer.Status.PLAYING ? "⏸" : "▶"));
-
-            mMediaPlayer.setOnEndOfMedia(() -> {
-                mMediaPlayer.stop();
-                mMediaPlayer.seek(Duration.ZERO);
-                mPlayPauseButton.setText("▶");
-                mStopButton.setDisable(true);
-            });
+            mPlayer.prepare(autoPlay);
 
             if (autoPlay) {
-                mMediaPlayer.play();
                 mStopButton.setDisable(false);
             }
         } catch (Exception e) {
@@ -852,40 +865,63 @@ public class AudioRecordingsPanel extends VBox {
         }
     }
 
+    private void startProgressTimer() {
+        if (mProgressTimer == null) {
+            mProgressTimer = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(Duration.millis(200), e -> updateProgressFromPlayer()));
+            mProgressTimer.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        }
+        mProgressTimer.play();
+    }
+
+    private void stopProgressTimer() {
+        if (mProgressTimer != null) {
+            mProgressTimer.pause();
+        }
+    }
+
+    private void updateProgressFromPlayer() {
+        if (mPlayer == null || mUserSeeking) return;
+        double pos = mPlayer.getPositionSeconds();
+        mSeekSlider.setValue(pos);
+        mCurrentTimeLabel.setText(formatTime(Duration.seconds(pos)));
+    }
+
     private void togglePlayPause() {
-        if (mMediaPlayer == null) {
+        if (mPlayer == null) {
             if (mCurrentItem != null) {
                 loadMedia(mCurrentItem, true);
             }
             return;
         }
-        if (mMediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
-            mMediaPlayer.pause();
+        if (mPlayer.isPlaying()) {
+            mPlayer.pause();
         } else {
-            mMediaPlayer.play();
+            mPlayer.play();
             mStopButton.setDisable(false);
         }
     }
 
     private void skipBy(double seconds) {
-        if (mMediaPlayer == null) {
+        if (mPlayer == null) {
             return;
         }
-        Duration target = mMediaPlayer.getCurrentTime().add(Duration.seconds(seconds));
-        if (target.lessThan(Duration.ZERO)) {
-            target = Duration.ZERO;
+        double target = mPlayer.getPositionSeconds() + seconds;
+        if (target < 0) {
+            target = 0;
         }
-        Duration total = mMediaPlayer.getTotalDuration();
-        if (total != null && !total.isUnknown() && !total.isIndefinite() && target.greaterThan(total)) {
+        double total = mPlayer.getDurationSeconds();
+        if (total > 0 && target > total) {
             target = total;
         }
-        mMediaPlayer.seek(target);
+        mPlayer.seekSeconds(target);
+        updateProgressFromPlayer();
     }
 
     private void stopPlayback() {
-        if (mMediaPlayer != null) {
-            mMediaPlayer.stop();
-            mMediaPlayer.seek(Duration.ZERO);
+        stopProgressTimer();
+        if (mPlayer != null) {
+            mPlayer.stop();
         }
         if (mSeekSlider != null) {
             mSeekSlider.setValue(0);
@@ -902,10 +938,10 @@ public class AudioRecordingsPanel extends VBox {
     }
 
     private void disposePlayer() {
-        if (mMediaPlayer != null) {
-            mMediaPlayer.stop();
-            mMediaPlayer.dispose();
-            mMediaPlayer = null;
+        stopProgressTimer();
+        if (mPlayer != null) {
+            mPlayer.dispose();
+            mPlayer = null;
         }
         if (mStopButton != null) {
             mStopButton.setDisable(true);
