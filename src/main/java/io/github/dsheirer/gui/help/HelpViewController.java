@@ -82,6 +82,9 @@ public class HelpViewController {
         guidesNode.getChildren().add(hardwareTunersNode);
 
         TreeItem<String> channelsDecodingNode = new TreeItem<>("Channels & Decoding");
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Analog Hiss Reduction"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Anti Clipping"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("P25 Audio Enhancements"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("Analog"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("Ctcss Dcs Nac Filtering"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("Dmr"));
