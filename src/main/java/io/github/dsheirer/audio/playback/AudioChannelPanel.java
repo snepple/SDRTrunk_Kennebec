@@ -220,12 +220,12 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
 
         // Artwork
         mArtworkView = new ImageView();
-        mArtworkView.setFitWidth(46);
-        mArtworkView.setFitHeight(46);
+        mArtworkView.setFitWidth(56);
+        mArtworkView.setFitHeight(56);
         mArtworkView.setPreserveRatio(false);
         mArtworkView.setSmooth(true);
 
-        javafx.scene.shape.Rectangle artClip = new javafx.scene.shape.Rectangle(46, 46);
+        javafx.scene.shape.Rectangle artClip = new javafx.scene.shape.Rectangle(56, 56);
         artClip.setArcWidth(12);
         artClip.setArcHeight(12);
         mArtworkView.setClip(artClip);
@@ -256,13 +256,13 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         mChannelName.getStyleClass().add("audio-channel-name");
         mChannelName.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
         mChannelName.setTextFill(mLabelColor);
-        mChannelName.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+        mChannelName.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         mIconLabel.setFont(mFont);
         mIconLabel.setTextFill(mValueColor);
 
         mIdentifierLabel.getStyleClass().add("audio-channel-identifier");
-        mIdentifierLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.NORMAL, 11));
+        mIdentifierLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.NORMAL, 15));
         mIdentifierLabel.setTextFill(mValueColor);
 
         mStreamIconsPanel.setBackground(javafx.scene.layout.Background.EMPTY);
@@ -422,7 +422,7 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
                 identifier = " ";
             }
 
-            final javafx.scene.image.Image icon = iconName != null ? mIconModel.getIcon(iconName, 18) : null;
+            final javafx.scene.image.Image icon = iconName != null ? mIconModel.getIcon(iconName, 26) : null;
             final String identifierText = identifier;
             final boolean isIdle = (mIdentifier == null && mAliases.isEmpty());
 
@@ -445,7 +445,7 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
                             if (broadcaster != null && broadcaster.getBroadcastConfiguration().isEnabled()) {
                                 if (!activeStreams.contains(bc.getChannelName())) {
                                     activeStreams.add(bc.getChannelName());
-                                    Label streamLabel = new Label("", new javafx.scene.image.ImageView(mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath(), 14)));
+                                    Label streamLabel = new Label("", new javafx.scene.image.ImageView(mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath(), 18)));
                                     streamLabel.setTooltip(new javafx.scene.control.Tooltip(broadcaster.getBroadcastConfiguration().getName()));
                                     mStreamIconsPanel.getChildren().add(streamLabel);
                                 }
