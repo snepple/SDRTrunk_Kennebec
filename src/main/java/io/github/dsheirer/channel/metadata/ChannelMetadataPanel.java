@@ -3,6 +3,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.image.*;
 import javafx.scene.paint.*;
+import javafx.scene.shape.Circle;
 import javafx.geometry.*;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.source.tuner.ui.DiscoveredTunerModel;
@@ -10,6 +11,7 @@ import io.github.dsheirer.settings.SettingsManager;
 import io.github.dsheirer.preference.NowPlayingPreference;
 import io.github.dsheirer.module.ProcessingChain;
 import io.github.dsheirer.controller.channel.ChannelProcessingManager;
+import io.github.dsheirer.channel.state.State;
 
 
 import io.github.dsheirer.sample.Listener;
@@ -69,6 +71,24 @@ public class ChannelMetadataPanel extends VBox
         TableColumn<ChannelMetadata, String> stateCol = new TableColumn<>("State");
         stateCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
             cellData.getValue().hasDecoderStateIdentifier() ? cellData.getValue().getChannelStateIdentifier().toString() : ""));
+        //Render a colored status indicator next to the state text (green = active/call, amber = fade,
+        //red = encrypted, grey = idle) so activity is recognizable at a glance.
+        stateCol.setCellFactory(col -> new TableCell<ChannelMetadata, String>() {
+            private final Circle indicator = new Circle(5);
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if(empty || item == null || item.isEmpty()) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    setText(item);
+                    indicator.setFill(stateColor(item));
+                    setGraphic(indicator);
+                    setGraphicTextGap(6);
+                }
+            }
+        });
         
         TableColumn<ChannelMetadata, String> channelCol = new TableColumn<>("Channel");
         channelCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
@@ -164,12 +184,43 @@ public class ChannelMetadataPanel extends VBox
         return "";
     }
 
+    /**
+     * Indicator color for a channel state display value.  Active / call-producing states are green,
+     * fade is amber, encrypted is red, and idle (or anything else) is grey.
+     */
+    private static Color stateColor(String state)
+    {
+        if(state == null)
+        {
+            return Color.web("#9e9e9e");
+        }
+
+        switch(state.trim().toUpperCase())
+        {
+            case "CALL":
+            case "ACTIVE":
+            case "CONTROL":
+            case "DATA":
+                return Color.web("#2ecc40"); //green
+            case "ENCRYPTED":
+                return Color.web("#ff4136"); //red
+            case "FADE":
+                return Color.web("#ff851b"); //amber
+            default:
+                return Color.web("#9e9e9e"); //grey (IDLE, TEARDOWN, RESET, unknown)
+        }
+    }
+
     private void setupActivityPolling() {
         mPollingTimeline = new Timeline(new KeyFrame(Duration.millis(500), e -> {
             boolean updated = false;
             for (ChannelMetadata meta : mTable.getItems()) {
                 List<Boolean> history = mActivityHistory.computeIfAbsent(meta, k -> new ArrayList<>());
-                boolean isActive = meta.hasDecoderStateIdentifier() && meta.getChannelStateIdentifier().toString().equalsIgnoreCase("ACTIVE");
+                //A channel that is producing audio reports state CALL (not ACTIVE) - notably NBFM/analog
+                //channels only ever use CALL/IDLE/FADE.  Count any of the active-producing states so the
+                //Received tally reflects real traffic on conventional (NBFM) channels, not just trunked ACTIVE.
+                State state = meta.hasDecoderStateIdentifier() ? meta.getChannelStateIdentifier().getValue() : null;
+                boolean isActive = state != null && State.SINGLE_CHANNEL_ACTIVE_STATES.contains(state);
                 //Count each transition from idle to active as one received event.
                 boolean wasActive = !history.isEmpty() && history.get(history.size() - 1);
                 if(isActive && !wasActive)
