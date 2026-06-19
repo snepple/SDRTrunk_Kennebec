@@ -409,7 +409,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             try {
                   new HotkeyManager(scene, new HotkeyManager.HotkeyListener() {
                       @Override public void onToggleSpectrum() { SDRTrunk.this.onToggleSpectrum(); }
-                      @Override public void onToggleMute() { /* mute handled by AudioPanel */ }
+                      @Override public void onToggleMute() { SDRTrunk.this.toggleAudioMute(); }
                       @Override public void onToggleNightMode() { ThemeManager.toggleNightMode(); }
                   });
                   mLog.info("HotkeyManager initialized");
