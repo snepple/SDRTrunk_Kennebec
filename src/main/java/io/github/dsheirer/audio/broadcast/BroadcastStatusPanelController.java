@@ -304,13 +304,18 @@ public class BroadcastStatusPanelController {
                     BroadcastConfiguration config = mBroadcastModel.getBroadcastConfiguration(streamName);
                     if (config != null) {
                         ContextMenu rowMenu = new ContextMenu();
-                        CheckMenuItem enableItem = new CheckMenuItem("Enable");
+                        CheckMenuItem enableItem = new CheckMenuItem("Enabled");
                         enableItem.setSelected(config.isEnabled());
                         enableItem.setOnAction(evt -> {
                             config.setEnabled(enableItem.isSelected());
                             mBroadcastModel.process(new BroadcastEvent(config, BroadcastEvent.Event.CONFIGURATION_CHANGE));
                         });
-                        rowMenu.getItems().add(enableItem);
+
+                        javafx.scene.control.MenuItem configureItem = new javafx.scene.control.MenuItem("Configure Stream...");
+                        configureItem.setOnAction(evt -> MyEventBus.getGlobalEventBus().post(
+                                new io.github.dsheirer.gui.playlist.streaming.ViewStreamRequest(config)));
+
+                        rowMenu.getItems().addAll(enableItem, configureItem);
                         rowMenu.show(tableView, e.getScreenX(), e.getScreenY());
                     }
                 }

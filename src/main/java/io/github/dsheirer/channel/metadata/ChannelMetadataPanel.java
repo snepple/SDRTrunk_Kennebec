@@ -35,6 +35,7 @@ import java.util.HashMap;
 
 public class ChannelMetadataPanel extends VBox
 {
+    private static final org.slf4j.Logger mLog = org.slf4j.LoggerFactory.getLogger(ChannelMetadataPanel.class);
     //Displays channel frequency in MHz with up to 4 decimal places (e.g. 155.1252).
     private static final DecimalFormat FREQUENCY_MHZ_FORMAT = new DecimalFormat("0.0###");
 
@@ -123,7 +124,9 @@ public class ChannelMetadataPanel extends VBox
 
         mTable.getColumns().addAll(stateCol, channelCol, freqCol, receivedCol, toCol, fromCol, tunerCol);
         mTable.setTableMenuButtonVisible(true);
-        
+
+        setupRowContextMenu();
+
         setupActivityPolling();
         
         if (mChannelProcessingManager != null && mChannelProcessingManager.getChannelMetadataModel() != null) {
@@ -241,6 +244,68 @@ public class ChannelMetadataPanel extends VBox
             default:
                 return Color.web("#9e9e9e"); //grey (IDLE, TEARDOWN, RESET, unknown)
         }
+    }
+
+    /**
+     * Adds a right-click context menu to the channels table for managing the playing channel.
+     */
+    private void setupRowContextMenu()
+    {
+        mTable.setRowFactory(tv -> {
+            javafx.scene.control.TableRow<ChannelMetadata> row = new javafx.scene.control.TableRow<>();
+            javafx.scene.control.ContextMenu menu = new javafx.scene.control.ContextMenu();
+
+            javafx.scene.control.MenuItem stopItem = new javafx.scene.control.MenuItem("Stop Channel");
+            stopItem.setOnAction(e -> stopChannelAsync(channelForRow(row)));
+
+            javafx.scene.control.MenuItem restartItem = new javafx.scene.control.MenuItem("Restart Channel");
+            restartItem.setOnAction(e -> restartChannelAsync(channelForRow(row)));
+
+            menu.getItems().addAll(stopItem, restartItem);
+
+            //Only show the menu on non-empty rows.
+            row.contextMenuProperty().bind(javafx.beans.binding.Bindings.when(row.emptyProperty())
+                    .then((javafx.scene.control.ContextMenu) null).otherwise(menu));
+
+            return row;
+        });
+    }
+
+    private io.github.dsheirer.controller.channel.Channel channelForRow(javafx.scene.control.TableRow<ChannelMetadata> row)
+    {
+        if(row == null || row.getItem() == null || mChannelProcessingManager == null ||
+                mChannelProcessingManager.getChannelMetadataModel() == null)
+        {
+            return null;
+        }
+
+        return mChannelProcessingManager.getChannelMetadataModel().getChannelFromMetadata(row.getItem());
+    }
+
+    private void stopChannelAsync(io.github.dsheirer.controller.channel.Channel channel)
+    {
+        if(channel == null)
+        {
+            return;
+        }
+
+        io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
+            try { mChannelProcessingManager.stop(channel); }
+            catch(Exception ex) { mLog.error("Error stopping channel [" + channel.getName() + "]", ex); }
+        });
+    }
+
+    private void restartChannelAsync(io.github.dsheirer.controller.channel.Channel channel)
+    {
+        if(channel == null)
+        {
+            return;
+        }
+
+        io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
+            try { mChannelProcessingManager.stop(channel); mChannelProcessingManager.start(channel); }
+            catch(Exception ex) { mLog.error("Error restarting channel [" + channel.getName() + "]", ex); }
+        });
     }
 
     private void setupActivityPolling() {
