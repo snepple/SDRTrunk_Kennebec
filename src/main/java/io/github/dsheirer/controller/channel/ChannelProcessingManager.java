@@ -82,6 +82,9 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
 
     private ChannelSourceEventErrorListener mSourceErrorListener = new ChannelSourceEventErrorListener();
     private Map<String, List<Channel>> mTunerToChannelsMap = new ConcurrentHashMap<>();
+    //Tracks which tuner (by id) each currently-running channel is playing on.  Populated when a channel
+    //starts on a tuner and used at tuner-error time to remember channels to restart after recovery.
+    private final Map<Channel, String> mChannelTunerIdMap = new ConcurrentHashMap<>();
     private List<Listener<AudioSegment>> mAudioSegmentListeners = new CopyOnWriteArrayList<>();
     private List<Listener<IDecodeEvent>> mDecodeEventListeners = new CopyOnWriteArrayList<>();
     private Broadcaster<ChannelEvent> mChannelEventBroadcaster = new Broadcaster();
@@ -587,6 +590,9 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
                             //Use the DiscoveredTuner name (friendly name when set) so the channel's Tuner
                             //column matches the tuner list's Name column.
                             Platform.runLater(() -> channel.activeTunerNameProperty().set(dt.getName()));
+                            //Remember which tuner this channel is running on so it can be restarted if the
+                            //tuner later errors and recovers.
+                            mChannelTunerIdMap.put(channel, dt.getId());
                             break;
                         }
                     }
@@ -691,6 +697,10 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
      */
     private void stopProcessing(Channel channel) throws ChannelException
     {
+        //Drop the live tuner association; if this stop is due to a tuner error, the channel was already
+        //snapshotted for restart via rememberChannelsForTuner() before the tuner was stopped.
+        mChannelTunerIdMap.remove(channel);
+
         ProcessingChain processingChain = removeProcessingChain(channel);
 
         if(processingChain != null)
@@ -985,6 +995,32 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
     }
 
     /**
+     * Remembers the channels currently playing on a tuner so they can be restarted once the tuner recovers.
+     * Called when the tuner enters an error state, BEFORE it is stopped (while the channels are still
+     * running), so the association is captured reliably regardless of how the channels are torn down.
+     * @param tunerId of the tuner that errored
+     */
+    public void rememberChannelsForTuner(String tunerId)
+    {
+        if(tunerId == null)
+        {
+            return;
+        }
+
+        List<Channel> remembered = mTunerToChannelsMap.computeIfAbsent(tunerId, k -> new ArrayList<>());
+
+        for(Map.Entry<Channel, String> entry : mChannelTunerIdMap.entrySet())
+        {
+            if(tunerId.equals(entry.getValue()) && isProcessing(entry.getKey()) && !remembered.contains(entry.getKey()))
+            {
+                remembered.add(entry.getKey());
+                mLog.info("Remembering channel [" + entry.getKey().getName() +
+                        "] to restart after tuner [" + tunerId + "] recovery");
+            }
+        }
+    }
+
+    /**
      * Restarts channels that were halted due to a tuner crash.
      * @param tunerId The ID of the recovered tuner
      */
@@ -992,12 +1028,24 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
     {
         List<Channel> channels = mTunerToChannelsMap.remove(tunerId);
         if (channels != null) {
-            for (Channel channel : channels) {
-                //Restart every channel that was processing when the tuner failed, regardless of the
-                //auto-start flag - a manually started channel should not stay dead after recovery.
-                if (!isProcessing(channel)) {
+            //De-duplicate while preserving order (both rememberChannelsForTuner and the source-error
+            //listener can record channels).
+            for (Channel channel : new java.util.LinkedHashSet<>(channels)) {
+                //Restart every channel that was playing when the tuner failed, regardless of the auto-start
+                //flag - a manually started channel should not stay dead after recovery.
+                try
+                {
+                    //If a stale processing chain is still attached to the now-dead tuner source, tear it down
+                    //first so the channel can re-acquire a source on the recovered tuner.
+                    if (isProcessing(channel)) {
+                        stopProcessing(channel);
+                    }
                     mLog.info("Restarting channel after tuner recovery: " + channel.getName());
                     receive(ChannelEvent.requestEnable(channel));
+                }
+                catch(Throwable t)
+                {
+                    mLog.error("Error restarting channel [" + channel.getName() + "] after tuner recovery", t);
                 }
             }
         }
