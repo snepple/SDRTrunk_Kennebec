@@ -222,6 +222,14 @@ public class TunerViewPanel extends VBox {
 
         VBox.setVgrow(mSplitPane, Priority.ALWAYS);
         getChildren().add(mSplitPane);
+
+        //The Channels count and Live Stability columns are computed values (not bound to observable
+        //properties), so they don't update when channels start/stop while the app is running. Refresh the
+        //table on a short interval so those columns stay current.
+        javafx.animation.Timeline tableRefresh = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1.5), e -> mTunerTable.refresh()));
+        tableRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
+        tableRefresh.play();
     }
 
     private Button getAddRecordingButton() {
