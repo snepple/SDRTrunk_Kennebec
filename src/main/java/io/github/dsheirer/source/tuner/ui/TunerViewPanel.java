@@ -152,6 +152,9 @@ public class TunerViewPanel extends VBox {
         stabilityCol.setCellValueFactory(cellData -> {
             return new SimpleStringProperty(io.github.dsheirer.source.tuner.manager.AIFrequencyStabilizer.getInstance(mUserPreferences).getStabilityStatus());
         });
+        //The AI Frequency Stabilizer status is only meaningful when AI features are enabled; hide the
+        //column otherwise (re-evaluated in the periodic refresh below to handle runtime toggles).
+        stabilityCol.setVisible(mUserPreferences.getAIPreference().isAIEnabled());
 
         statusCol.setMinWidth(60);
         nameCol.setMinWidth(80);
@@ -226,8 +229,13 @@ public class TunerViewPanel extends VBox {
         //The Channels count and Live Stability columns are computed values (not bound to observable
         //properties), so they don't update when channels start/stop while the app is running. Refresh the
         //table on a short interval so those columns stay current.
+        final TableColumn<DiscoveredTuner, String> liveStabilityColumn = stabilityCol;
         javafx.animation.Timeline tableRefresh = new javafx.animation.Timeline(
-            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1.5), e -> mTunerTable.refresh()));
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1.5), e -> {
+                //Hide the Live Stability column when AI features are off (the stabilizer can't run).
+                liveStabilityColumn.setVisible(mUserPreferences.getAIPreference().isAIEnabled());
+                mTunerTable.refresh();
+            }));
         tableRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         tableRefresh.play();
     }
