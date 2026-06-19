@@ -137,6 +137,8 @@
 .preferences-table { -fx-background-color: #1e1e3a; -fx-border-color: #3a3a5a; }
 .preferences-table .table-row-cell { -fx-background-color: #1e1e3a; -fx-text-fill: #e0e0e0; }
 .preferences-table .table-row-cell .table-cell { -fx-text-fill: #e0e0e0; }
+.preferences-table .table-row-cell .text { -fx-fill: #e0e0e0; }
+.preferences-table .table-row-cell:selected .text { -fx-fill: #ffffff; }
 .preferences-table .table-row-cell:odd { -fx-background-color: #2a2a4a; }
 .preferences-table .table-row-cell:selected { -fx-background-color: #0f3460; }
 .preferences-table .column-header { -fx-background-color: #16213e; }

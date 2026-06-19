@@ -386,6 +386,13 @@
     -fx-text-fill: #FFFFFF;
 }
 
+/* Explicit non-selected text fill so row text reverts to dark after deselecting.  Without this the
+   :selected white .text fill can "stick" (a JavaFX .text quirk) and the deselected row stays white.
+   Lower specificity than the :selected rules above, so selected rows still render white. */
+.preferences-table .table-row-cell .text {
+    -fx-fill: #1C1C1E;
+}
+
 
 .preferences-main-area {
     -fx-background-color: #F2F2F7;
