@@ -33,7 +33,8 @@ public class FrequencyTextField extends javafx.scene.layout.Pane {
         mMinimum = minimum / 1E6d;
         mMaximum = maximum / 1E6d;
 
-        setPrefSize(100, 100); // new Dimension(80, 26));
+        //Size this container to its content (the text field) rather than the old fixed 100x100 box.
+        setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
 
         Platform.runLater(() -> {
             try {
@@ -56,10 +57,10 @@ public class FrequencyTextField extends javafx.scene.layout.Pane {
                     controller.fxTextField.setText(String.valueOf(frequencyMHz));
                 }
 
-                /* focused listener removed */
-
-                Scene scene = new Scene(root);
-                // setScene(scene);
+                //Attach the loaded FXML content as a child of this Pane so the text field actually renders.
+                //Previously 'root' was only wrapped in an unused Scene, leaving this Pane empty - which is
+                //why the Min/Max frequency fields were missing across all tuner editors.
+                getChildren().add(root);
             } catch (Exception e) {
                 LOGGER.error("Failed to load FrequencyTextField FXML", e);
             }

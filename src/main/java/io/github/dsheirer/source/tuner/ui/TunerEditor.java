@@ -399,15 +399,35 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         if(mInfoConfigButton == null)
         {
             mInfoConfigButton = new Button("Info/Config");
+            mInfoConfigButton.setTooltip(new javafx.scene.control.Tooltip("View tuner information and set a friendly name"));
             mInfoConfigButton.setOnAction(e -> {
-                VBox panel = new VBox(new javafx.scene.layout.HBox(4));
+                //Build the dialog content as real nodes.  Previously this VBox was passed to
+                //setContentText(String.valueOf(panel)), which rendered the object's toString
+                //("VBox@...") instead of the actual fields.
+                VBox panel = new VBox(10);
+                panel.setPadding(new Insets(10));
+
                 String info = getTunerInfo();
                 if(info != null && !info.isEmpty()) {
-                    panel.getChildren().add(new Label(info));
+                    Label infoLabel = new Label(info);
+                    infoLabel.setWrapText(true);
+                    panel.getChildren().add(infoLabel);
                 }
-                panel.getChildren().add(new Label("Friendly Name:"));
-                panel.getChildren().add(getFriendlyNameTextField());
-                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(panel)); alert.showAndWait(); });
+
+                HBox nameRow = new HBox(8);
+                nameRow.setAlignment(Pos.CENTER_LEFT);
+                getFriendlyNameTextField().setPrefWidth(220);
+                nameRow.getChildren().addAll(new Label("Friendly Name:"), getFriendlyNameTextField());
+                panel.getChildren().add(nameRow);
+
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
+                    alert.setTitle("Tuner Info / Configuration");
+                    alert.setHeaderText("Tuner Information");
+                    alert.getDialogPane().setContent(panel);
+                    alert.showAndWait();
+                });
             });
         }
         return mInfoConfigButton;
