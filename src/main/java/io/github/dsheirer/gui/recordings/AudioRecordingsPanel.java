@@ -32,6 +32,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
+import javafx.scene.control.Slider;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +74,19 @@ public class AudioRecordingsPanel extends VBox {
     private Button mStopButton;
     private Label mStatusLabel;
     private Label mDiskUsageLabel;
+
+    //Playback transport bar (Apple Music style)
+    private HBox mPlayerBar;
+    private Label mNowPlayingLabel;
+    private Button mPlayPauseButton;
+    private Slider mSeekSlider;
+    private Label mCurrentTimeLabel;
+    private Label mTotalTimeLabel;
+    private RecordingItem mCurrentItem;
+    private boolean mUserSeeking = false;
+
+    //Known channel names from the playlist, used to display a clean channel name in the table.
+    private final java.util.Set<String> mKnownChannelNames = new java.util.LinkedHashSet<>();
 
     private io.github.dsheirer.playlist.PlaylistManager mPlaylistManager;
 
@@ -390,6 +405,14 @@ public class AudioRecordingsPanel extends VBox {
         sortedData.comparatorProperty().bind(mTableView.comparatorProperty());
         mTableView.setItems(sortedData);
 
+        //Selecting a recording loads it into the transport bar (ready to play), so the user gets the
+        //Apple Music style controls without having to press the row's Play button first.
+        mTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
+            if (newSel != null && newSel != mCurrentItem) {
+                loadMedia(newSel, false);
+            }
+        });
+
         root.setCenter(mTableView);
 
         // Status bar at bottom
@@ -408,7 +431,13 @@ public class AudioRecordingsPanel extends VBox {
         HBox.setHgrow(statusSpacer, Priority.ALWAYS);
 
         statusBar.getChildren().addAll(mStatusLabel, statusSpacer, mDiskUsageLabel);
-        root.setBottom(statusBar);
+
+        //Transport/playback bar sits just above the status bar; hidden until a recording is selected.
+        mPlayerBar = buildPlayerBar();
+
+        VBox bottomContainer = new VBox();
+        bottomContainer.getChildren().addAll(mPlayerBar, statusBar);
+        root.setBottom(bottomContainer);
 
         // Update status label when filtered list changes
         mFilteredRecordings.addListener((javafx.collections.ListChangeListener<RecordingItem>) change -> {
@@ -422,7 +451,9 @@ public class AudioRecordingsPanel extends VBox {
         mTableView.setMinSize(0, 0);
         VBox.setVgrow(root, Priority.ALWAYS);
 
-        root.getStylesheets().add(getClass().getResource("/sdrtrunk_style.css").toExternalForm());
+        //Do NOT add sdrtrunk_style.css to this panel's own root.  It is already applied at the scene level
+        //(see SDRTrunk main scene setup).  Adding it again to a child Parent gives it higher CSS precedence
+        //than the scene-level night-mode.css, which is what prevented dark mode from theming this page.
 
         // Stop playback when panel is removed from scene
         sceneProperty().addListener((obs, oldScene, newScene) -> {
@@ -481,6 +512,18 @@ public class AudioRecordingsPanel extends VBox {
 
     public void loadRecordings() {
         mRecordings.clear();
+
+        //Snapshot known channel names so the loader thread can map a verbose recording filename to a
+        //clean channel name for the Channel column.
+        mKnownChannelNames.clear();
+        if (mPlaylistManager != null && mPlaylistManager.getChannelModel() != null) {
+            mPlaylistManager.getChannelModel().getChannels().forEach(c -> {
+                if (c.getName() != null && !c.getName().isEmpty()) {
+                    mKnownChannelNames.add(c.getName());
+                }
+            });
+        }
+
         Path dir = mUserPreferences.getDirectoryPreference().getDirectoryRecording();
         if (dir == null || !Files.exists(dir)) {
             return;
@@ -496,6 +539,7 @@ public class AudioRecordingsPanel extends VBox {
                       })
                       .forEach(p -> {
                           RecordingItem item = parseFilename(p);
+                          item.setChannel(simplifyChannelName(item.getChannel()));
                           items.add(item);
                       });
                 Platform.runLater(() -> {
@@ -631,23 +675,233 @@ public class AudioRecordingsPanel extends VBox {
         return item;
     }
 
+    /**
+     * Maps a verbose parsed channel string to a clean channel name by matching against the known channel
+     * names from the playlist.  Falls back to the original string when no confident match is found.
+     */
+    private String simplifyChannelName(String raw) {
+        if (raw == null || raw.isEmpty() || mKnownChannelNames.isEmpty()) {
+            return raw;
+        }
+
+        String rawNorm = raw.toLowerCase().replaceAll("[^a-z0-9]", "");
+        String best = null;
+        for (String name : mKnownChannelNames) {
+            if (name == null || name.length() < 3) {
+                continue;
+            }
+            if (raw.equalsIgnoreCase(name)) {
+                return name;
+            }
+            String nameNorm = name.toLowerCase().replaceAll("[^a-z0-9]", "");
+            if (!nameNorm.isEmpty() && rawNorm.contains(nameNorm)
+                    && (best == null || name.length() > best.length())) {
+                best = name;
+            }
+        }
+        return best != null ? best : raw;
+    }
+
+    /**
+     * Builds the Apple Music style transport bar: now-playing label, skip back/forward, play/pause,
+     * stop, a seek slider, and current/total time labels.  Hidden until a recording is selected.
+     */
+    private HBox buildPlayerBar() {
+        HBox bar = new HBox(10);
+        bar.setAlignment(Pos.CENTER_LEFT);
+        bar.setPadding(new Insets(6, 12, 6, 12));
+        bar.getStyleClass().add("kennebec-filter-toolbar");
+
+        mNowPlayingLabel = new Label("");
+        mNowPlayingLabel.getStyleClass().add("kennebec-toolbar-label");
+        mNowPlayingLabel.setMinWidth(160);
+        mNowPlayingLabel.setMaxWidth(280);
+
+        Button skipBackBtn = new Button("⏪");
+        skipBackBtn.getStyleClass().add("kennebec-toolbar-button");
+        skipBackBtn.setTooltip(new Tooltip("Back 10 seconds"));
+        skipBackBtn.setOnAction(e -> skipBy(-10));
+
+        mPlayPauseButton = new Button("▶");
+        mPlayPauseButton.getStyleClass().add("kennebec-toolbar-button-primary");
+        mPlayPauseButton.setTooltip(new Tooltip("Play / Pause"));
+        mPlayPauseButton.setOnAction(e -> togglePlayPause());
+
+        Button skipFwdBtn = new Button("⏩");
+        skipFwdBtn.getStyleClass().add("kennebec-toolbar-button");
+        skipFwdBtn.setTooltip(new Tooltip("Forward 10 seconds"));
+        skipFwdBtn.setOnAction(e -> skipBy(10));
+
+        Button stopBtn = new Button("⏹");
+        stopBtn.getStyleClass().add("kennebec-toolbar-button");
+        stopBtn.setTooltip(new Tooltip("Stop"));
+        stopBtn.setOnAction(e -> stopPlayback());
+
+        mCurrentTimeLabel = new Label("0:00");
+        mCurrentTimeLabel.getStyleClass().add("kennebec-toolbar-label");
+        mTotalTimeLabel = new Label("0:00");
+        mTotalTimeLabel.getStyleClass().add("kennebec-toolbar-label");
+
+        mSeekSlider = new Slider(0, 1, 0);
+        mSeekSlider.setDisable(true);
+        mSeekSlider.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(mSeekSlider, Priority.ALWAYS);
+        mSeekSlider.setOnMousePressed(e -> mUserSeeking = true);
+        mSeekSlider.setOnMouseReleased(e -> {
+            if (mMediaPlayer != null) {
+                mMediaPlayer.seek(Duration.seconds(mSeekSlider.getValue()));
+            }
+            mUserSeeking = false;
+        });
+        mSeekSlider.valueProperty().addListener((obs, o, n) -> {
+            if (mUserSeeking) {
+                mCurrentTimeLabel.setText(formatTime(Duration.seconds(n.doubleValue())));
+            }
+        });
+
+        bar.getChildren().addAll(mNowPlayingLabel, skipBackBtn, mPlayPauseButton, skipFwdBtn, stopBtn,
+            mCurrentTimeLabel, mSeekSlider, mTotalTimeLabel);
+
+        bar.setVisible(false);
+        bar.setManaged(false);
+        return bar;
+    }
+
     private void playRecording(RecordingItem item) {
-        stopPlayback();
+        loadMedia(item, true);
+    }
+
+    /**
+     * Loads a recording into the media player and transport bar, optionally starting playback.
+     */
+    private void loadMedia(RecordingItem item, boolean autoPlay) {
+        if (item == null) {
+            return;
+        }
+
+        disposePlayer();
+        mCurrentItem = item;
+        showPlayerBar(true);
+
+        String channelName = (item.getChannel() != null && !item.getChannel().isEmpty())
+            ? item.getChannel() : item.getFile().getFileName().toString();
+        mNowPlayingLabel.setText(channelName);
+        mSeekSlider.setValue(0);
+        mSeekSlider.setDisable(true);
+        mCurrentTimeLabel.setText("0:00");
+        mTotalTimeLabel.setText("0:00");
+        mPlayPauseButton.setText("▶");
+
+        //Baseband (I/Q) recordings are raw captures, not playable audio.  Tell the user instead of
+        //silently doing nothing (which was the prior behaviour).
+        String fileName = item.getFile().getFileName().toString().toLowerCase();
+        if (fileName.contains("baseband")) {
+            mNowPlayingLabel.setText("Baseband (I/Q) recording - not playable as audio");
+            mPlayPauseButton.setDisable(true);
+            mStopButton.setDisable(true);
+            return;
+        }
+
+        mPlayPauseButton.setDisable(false);
+
         try {
-            String uri = item.getFile().toUri().toString();
-            Media media = new Media(uri);
+            Media media = new Media(item.getFile().toUri().toString());
             mMediaPlayer = new MediaPlayer(media);
+
+            mMediaPlayer.setOnError(() -> Platform.runLater(() -> {
+                mLog.error("Media player error for {}: {}", item.getFile(),
+                    mMediaPlayer != null ? mMediaPlayer.getError() : "unknown");
+                mNowPlayingLabel.setText("Unable to play: " + channelName);
+                mPlayPauseButton.setText("▶");
+                mStopButton.setDisable(true);
+            }));
+
+            mMediaPlayer.setOnReady(() -> {
+                Duration total = mMediaPlayer.getTotalDuration();
+                if (total != null && !total.isUnknown() && !total.isIndefinite()) {
+                    mSeekSlider.setMax(total.toSeconds());
+                    mTotalTimeLabel.setText(formatTime(total));
+                }
+                mSeekSlider.setDisable(false);
+            });
+
+            mMediaPlayer.currentTimeProperty().addListener((obs, o, n) -> {
+                if (!mUserSeeking && n != null) {
+                    mSeekSlider.setValue(n.toSeconds());
+                    mCurrentTimeLabel.setText(formatTime(n));
+                }
+            });
+
+            mMediaPlayer.statusProperty().addListener((obs, o, n) ->
+                mPlayPauseButton.setText(n == MediaPlayer.Status.PLAYING ? "⏸" : "▶"));
+
             mMediaPlayer.setOnEndOfMedia(() -> {
+                mMediaPlayer.stop();
+                mMediaPlayer.seek(Duration.ZERO);
+                mPlayPauseButton.setText("▶");
                 mStopButton.setDisable(true);
             });
-            mMediaPlayer.play();
-            mStopButton.setDisable(false);
+
+            if (autoPlay) {
+                mMediaPlayer.play();
+                mStopButton.setDisable(false);
+            }
         } catch (Exception e) {
             mLog.error("Error playing recording: " + item.getFile(), e);
+            mNowPlayingLabel.setText("Unable to play: " + channelName);
         }
     }
 
+    private void togglePlayPause() {
+        if (mMediaPlayer == null) {
+            if (mCurrentItem != null) {
+                loadMedia(mCurrentItem, true);
+            }
+            return;
+        }
+        if (mMediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
+            mMediaPlayer.pause();
+        } else {
+            mMediaPlayer.play();
+            mStopButton.setDisable(false);
+        }
+    }
+
+    private void skipBy(double seconds) {
+        if (mMediaPlayer == null) {
+            return;
+        }
+        Duration target = mMediaPlayer.getCurrentTime().add(Duration.seconds(seconds));
+        if (target.lessThan(Duration.ZERO)) {
+            target = Duration.ZERO;
+        }
+        Duration total = mMediaPlayer.getTotalDuration();
+        if (total != null && !total.isUnknown() && !total.isIndefinite() && target.greaterThan(total)) {
+            target = total;
+        }
+        mMediaPlayer.seek(target);
+    }
+
     private void stopPlayback() {
+        if (mMediaPlayer != null) {
+            mMediaPlayer.stop();
+            mMediaPlayer.seek(Duration.ZERO);
+        }
+        if (mSeekSlider != null) {
+            mSeekSlider.setValue(0);
+        }
+        if (mCurrentTimeLabel != null) {
+            mCurrentTimeLabel.setText("0:00");
+        }
+        if (mPlayPauseButton != null) {
+            mPlayPauseButton.setText("▶");
+        }
+        if (mStopButton != null) {
+            mStopButton.setDisable(true);
+        }
+    }
+
+    private void disposePlayer() {
         if (mMediaPlayer != null) {
             mMediaPlayer.stop();
             mMediaPlayer.dispose();
@@ -656,6 +910,21 @@ public class AudioRecordingsPanel extends VBox {
         if (mStopButton != null) {
             mStopButton.setDisable(true);
         }
+    }
+
+    private void showPlayerBar(boolean show) {
+        if (mPlayerBar != null) {
+            mPlayerBar.setVisible(show);
+            mPlayerBar.setManaged(show);
+        }
+    }
+
+    private static String formatTime(Duration duration) {
+        if (duration == null || duration.isUnknown() || duration.isIndefinite()) {
+            return "0:00";
+        }
+        long totalSeconds = (long) Math.floor(duration.toSeconds());
+        return String.format("%d:%02d", totalSeconds / 60, totalSeconds % 60);
     }
 
     private void updateStatusLabel() {
