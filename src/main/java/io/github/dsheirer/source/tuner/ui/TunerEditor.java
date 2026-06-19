@@ -1160,7 +1160,10 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             ppmRow.getChildren().addAll(new Label("PPM:"), helpButton, getFrequencyCorrectionSpinner(), getMeasuredPPMLabel());
             getChildren().add(ppmRow);
 
-            getChildren().addAll(getAutoPPMCheckBox(), getAutoOptimizeSampleRateCheckBox());
+            HBox autoPpmBox = new HBox(4, getAutoPPMCheckBox(), createHelpIcon("?"));
+            ((Button)autoPpmBox.getChildren().get(1)).setTooltip(new javafx.scene.control.Tooltip("Allow decoders to automatically measure channel frequency error and adjust the tuner PPM setting above."));
+            autoPpmBox.setAlignment(Pos.CENTER_LEFT);
+            getChildren().addAll(autoPpmBox, getAutoOptimizeSampleRateCheckBox());
 
             // Min / Max frequency range grid
             GridPane minMaxGrid = new GridPane();
