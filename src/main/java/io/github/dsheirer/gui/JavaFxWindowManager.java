@@ -107,7 +107,11 @@ public class JavaFxWindowManager extends Application
     private Stage mRecordingViewerStage;
     private Consumer<String> mViewChangedListener;
     private javafx.scene.layout.Pane mStatusPanel;
-    private DiagnosticMonitor mDiagnosticMonitor;
+    //Volatile + a reference to the live Logs panel: the panel can be built (and cached) before the
+    //DiagnosticMonitor exists, so setDiagnosticMonitor() must be able to push it into the already-built
+    //panel after the fact, otherwise the diagnostic report is stuck on the degraded fallback path.
+    private volatile DiagnosticMonitor mDiagnosticMonitor;
+    private volatile LogsPanel mLogsPanel;
 
     /**
      * Constructs an instance.  Note: this constructor is used for Swing applications.
@@ -605,6 +609,13 @@ public class JavaFxWindowManager extends Application
     public void setDiagnosticMonitor(DiagnosticMonitor diagnosticMonitor)
     {
         mDiagnosticMonitor = diagnosticMonitor;
+
+        //Push into the Logs panel if it was already built before the monitor became available.
+        LogsPanel logsPanel = mLogsPanel;
+        if(logsPanel != null)
+        {
+            logsPanel.setDiagnosticMonitor(diagnosticMonitor);
+        }
     }
 
     private java.util.Map<ViewIdentifier, javafx.scene.layout.Pane> mViewMap = new java.util.HashMap<>();
@@ -628,7 +639,8 @@ public class JavaFxWindowManager extends Application
                     content = getUserPreferencesEditor();
                     break;
                 case LOGS:
-                    content = new LogsPanel(mUserPreferences, mDiagnosticMonitor);
+                    mLogsPanel = new LogsPanel(mUserPreferences, mDiagnosticMonitor);
+                    content = mLogsPanel;
                     break;
                 case RECORDING_VIEWER:
                     content = getRecordingViewer();
