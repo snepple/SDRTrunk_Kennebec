@@ -36,4 +36,14 @@ public class LogsPanel extends BorderPane {
             mLog.error("Error loading LogsView.fxml", e);
         }
     }
+
+    /**
+     * Updates the diagnostic monitor on the underlying controller.  Used when the monitor becomes
+     * available after this panel has already been constructed.
+     */
+    public void setDiagnosticMonitor(DiagnosticMonitor diagnosticMonitor) {
+        if (controller != null) {
+            controller.setDiagnosticMonitor(diagnosticMonitor);
+        }
+    }
 }

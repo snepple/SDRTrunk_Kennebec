@@ -83,9 +83,19 @@ public class AudioBufferManager {
             List<Path> files = stream.filter(path -> path.toString().endsWith(".raw"))
                                      .sorted()
                                      .collect(Collectors.toList());
-            while (files.size() > MAX_EVENTS) {
-                Files.deleteIfExists(files.get(0));
-                files.remove(0);
+            int removable = files.size() - MAX_EVENTS;
+            for (int i = 0; i < removable; i++) {
+                Path file = files.get(i);
+                try {
+                    Files.deleteIfExists(file);
+                } catch (IOException e) {
+                    //The file may be transiently locked by another process (antivirus, cloud sync) on
+                    //Windows. Skip it this round rather than aborting the entire cleanup so newer files
+                    //can still be pruned; it will be retried on the next cleanup cycle. Logged at debug
+                    //to avoid flooding the log with a stack trace on every call end.
+                    mLog.debug("Could not delete old AI buffer file (will retry next cleanup): {} - {}",
+                            file, e.getMessage());
+                }
             }
         } catch (IOException e) {
             mLog.error("Error cleaning up old AI buffer events", e);

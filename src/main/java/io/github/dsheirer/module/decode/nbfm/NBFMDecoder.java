@@ -626,7 +626,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         {
             mAudioWatchdog.feedAudioData(resampledAudio);
         }
-        mAudioBufferManager.addAudioSamples(resampledAudio);
+        if(isAudioBufferingEnabled())
+        {
+            mAudioBufferManager.addAudioSamples(resampledAudio);
+        }
         //Accumulate this call's audio length (8 kHz) to decide whether it is a "qualifying" call.
         mCurrentCallSamples += resampledAudio.length;
         if(mAudioFilters != null)
@@ -746,12 +749,27 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     }
 
     /**
+     * Indicates whether AI audio buffering should capture this call's audio to disk.  The buffered
+     * .raw files are only ever consumed by the NBFM audio auto-optimizer, so when that feature is
+     * disabled (or the user has opted this channel out) we skip writing them entirely - avoiding
+     * needless disk I/O, unbounded disk growth and per-call buffer allocation churn.
+     */
+    private boolean isAudioBufferingEnabled()
+    {
+        return mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled()
+                && !mNBFMConfig.isAiAutoOptimizeOptedOut();
+    }
+
+    /**
      * Broadcasts a call start state event
      */
     private void notifyCallStart()
     {
         mCurrentCallSamples = 0;
-        mAudioBufferManager.startEvent();
+        if(isAudioBufferingEnabled())
+        {
+            mAudioBufferManager.startEvent();
+        }
         broadcast(new DecoderStateEvent(this, DecoderStateEvent.Event.START, State.CALL, 0));
     }
 

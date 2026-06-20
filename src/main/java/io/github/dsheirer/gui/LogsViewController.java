@@ -61,7 +61,9 @@ public class LogsViewController {
 
     private java.util.Timer mHealthTimer;
     private UserPreferences mUserPreferences;
-    private DiagnosticMonitor mDiagnosticMonitor;
+    //Volatile: may be set after construction (see setDiagnosticMonitor) and is read from a background
+    //thread when generating the processing diagnostic report.
+    private volatile DiagnosticMonitor mDiagnosticMonitor;
 
     @FXML private TabPane mTabbedPane;
 
@@ -92,6 +94,14 @@ public class LogsViewController {
     @FXML private HBox mLogLevelFilterContainer;
     private String mSelectedLevel = "All";
     private FilteredList<String> mLiveFiltered;
+
+    /**
+     * Sets (or updates) the diagnostic monitor.  Allows the monitor to be supplied after this controller
+     * has been created so the processing diagnostic report uses the full report instead of the fallback.
+     */
+    public void setDiagnosticMonitor(DiagnosticMonitor diagnosticMonitor) {
+        mDiagnosticMonitor = diagnosticMonitor;
+    }
 
     public void init(UserPreferences userPreferences, DiagnosticMonitor diagnosticMonitor) {
         mUserPreferences = userPreferences;

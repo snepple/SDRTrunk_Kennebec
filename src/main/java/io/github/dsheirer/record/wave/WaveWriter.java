@@ -112,11 +112,15 @@ public class WaveWriter implements AutoCloseable
      */
     private void open() throws IOException
     {
+        Path baseFile = mFile;
         int version = 2;
 
         while(Files.exists(mFile) && version < 20)
         {
-            mFile = Paths.get(mFile.toFile().getAbsolutePath().replace(".tmp", "_" + version + ".tmp"));
+            //Derive each candidate name from the original base file - not from the previously modified
+            //mFile - otherwise the version suffix accumulates (foo_2.tmp -> foo_2_3.tmp -> foo_2_3_4.tmp)
+            //and the 20-attempt cap is exhausted almost immediately.
+            mFile = Paths.get(baseFile.toFile().getAbsolutePath().replace(".tmp", "_" + version + ".tmp"));
             version++;
         }
 
@@ -149,8 +153,13 @@ public class WaveWriter implements AutoCloseable
      */
     public void close(Path path) throws IOException
     {
-        mFileChannel.force(true);
-        mFileChannel.close();
+        //Guard against a channel that was never successfully opened or was already closed (e.g. after a
+        //failed rollover) so close() doesn't throw ClosedChannelException during recorder shutdown.
+        if(mFileChannel != null && mFileChannel.isOpen())
+        {
+            mFileChannel.force(true);
+            mFileChannel.close();
+        }
 
         rename(path);
     }

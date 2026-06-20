@@ -22,8 +22,8 @@ import io.github.dsheirer.source.ISourceEventProcessor;
 import io.github.dsheirer.source.InvalidFrequencyException;
 import io.github.dsheirer.source.SourceEvent;
 import io.github.dsheirer.source.SourceException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +40,10 @@ public class FrequencyController
     private double mFrequencyCorrection = 0.0d;
     private double mSampleRate = 0.0d;
     private boolean mSampleRateLocked = false;
-    private List<ISourceEventProcessor> mProcessors = new ArrayList<>();
+    //CopyOnWriteArrayList so broadcast() can iterate a stable snapshot even if a listener (re-entrantly,
+    //while being notified) adds/removes a processor or dispose() clears the list - avoids the
+    //ConcurrentModificationException observed during channel start/stop storms.
+    private List<ISourceEventProcessor> mProcessors = new CopyOnWriteArrayList<>();
 
     /**
      * Constructs an instance
