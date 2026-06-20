@@ -56,3 +56,7 @@
 **Topic:** 3 New Documentation Guides Added
 **Learning:** Three missing features from the "What's New" section (CTCSS/DCS/NAC Filtering, Native Sequential Paging, and Waterfall Audio Controls) lacked dedicated Markdown guides.
 **Action:** Created `ctcss-dcs-nac-filtering.md`, `native-sequential-paging.md`, and `waterfall-audio-controls.md` adhering to the Visual-First Mintlify style, and integrated them into the navigation tree of `HelpViewController.java`.
+## 2026-06-19 - Topic Selection
+**Topic:** 3 New Audio Enhancement Guides Added
+**Learning:** Three missing audio features from the "What's New" section (Analog Hiss Reduction, Anti-Clipping, and P25 Audio Enhancements) lacked dedicated Markdown guides.
+**Action:** Created `analog-hiss-reduction.md`, `anti-clipping.md`, and `p25-audio-enhancements.md` adhering to the Visual-First Mintlify style, and integrated them into the navigation tree of `HelpViewController.java` under "Channels & Decoding".
