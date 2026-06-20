@@ -41,14 +41,17 @@ import org.slf4j.LoggerFactory;
 public abstract class DiscoveredTuner implements ITunerErrorListener
 {
     private Logger mLog = LoggerFactory.getLogger(DiscoveredTuner.class);
-    private TunerStatus mTunerStatus = TunerStatus.ENABLED;
+    private volatile TunerStatus mTunerStatus = TunerStatus.ENABLED;
     private boolean mEnabled = true;
     private String mErrorMessage;
     private List<IDiscoveredTunerStatusListener> mListeners = new CopyOnWriteArrayList();
     protected Tuner mTuner;
     protected TunerConfiguration mTunerConfiguration;
-    private ScheduledFuture<?> mRecoveryTask;
+    private volatile ScheduledFuture<?> mRecoveryTask;
     private AtomicInteger mRecoveryAttempts = new AtomicInteger(0);
+    //Guards recovery scheduling so two errors arriving on different threads in the same instant cannot each
+    //schedule a recovery task (the earlier was orphaned and kept restarting channels every 3 minutes forever).
+    private final Object mRecoveryLock = new Object();
 
     /**
      * Tuner Class
@@ -295,32 +298,40 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             return;
         }
 
-        //If a recovery task is already active, just record the latest error.  The active recovery task owns the
-        //retry schedule, and a re-entrant error from a failed restart attempt must not cancel or reset it.
-        if (mRecoveryTask != null && !mRecoveryTask.isDone()) {
+        //Serialize the whole error-handling decision.  Without this lock, two errors arriving on different
+        //threads in the same instant (e.g. "Buffers Exhausted" and "Tuner Stalled" reported by separate
+        //channels when the tuner hiccups) could both pass the "already recovering?" check and each schedule a
+        //fixed-rate recovery task.  Only the last was tracked by mRecoveryTask; the other became an orphan that
+        //fired every 3 minutes forever, "recovering" an already-healthy tuner and restarting every channel.
+        synchronized(mRecoveryLock)
+        {
+            //If a recovery task is already active, just record the latest error.  The active recovery task owns
+            //the retry schedule, and a re-entrant error from a failed restart attempt must not schedule another.
+            if (mRecoveryTask != null && !mRecoveryTask.isDone()) {
+                mErrorMessage = errorMessage;
+                return;
+            }
+
             mErrorMessage = errorMessage;
-            return;
+            //Notify listeners (e.g. ChannelProcessingManager via PlaylistManager) BEFORE stopping the tuner, so
+            //the channels currently playing on it can be remembered and automatically restarted on recovery.
+            MyEventBus.getGlobalEventBus().post(new TunerErrorEvent(this));
+            stop();
+            setTunerStatus(TunerStatus.RECOVERING);
+            mRecoveryAttempts.set(0);
+
+            if ("USB Error - Device Disconnected".equals(errorMessage)) {
+                mLog.info("Tuner Error - Device Disconnected - Initiating Recovery - " + getId());
+                mRecoveryTask = ThreadPool.SCHEDULED.schedule(new DisconnectRecoveryRunnable(), 5, TimeUnit.SECONDS);
+                return;
+            }
+
+            //All other errors (buffer exhaustion, tuner stall, driver/API errors): attempt automatic recovery
+            //rather than permanently disabling the tuner.  Restart attempts are cheap, and a transient error
+            //should not require a human to restart the application to restore reception.
+            mLog.info("Tuner Error - Initiating Recovery - " + getId() + " Error: " + errorMessage);
+            mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(new RecoveryRunnable(), 180, 180, TimeUnit.SECONDS);
         }
-
-        mErrorMessage = errorMessage;
-        //Notify listeners (e.g. ChannelProcessingManager via PlaylistManager) BEFORE stopping the tuner, so
-        //the channels currently playing on it can be remembered and automatically restarted on recovery.
-        MyEventBus.getGlobalEventBus().post(new TunerErrorEvent(this));
-        stop();
-        setTunerStatus(TunerStatus.RECOVERING);
-        mRecoveryAttempts.set(0);
-
-        if ("USB Error - Device Disconnected".equals(errorMessage)) {
-            mLog.info("Tuner Error - Device Disconnected - Initiating Recovery - " + getId());
-            mRecoveryTask = ThreadPool.SCHEDULED.schedule(new DisconnectRecoveryRunnable(), 5, TimeUnit.SECONDS);
-            return;
-        }
-
-        //All other errors (buffer exhaustion, tuner stall, driver/API errors): attempt automatic recovery rather
-        //than permanently disabling the tuner.  Restart attempts are cheap, and a transient error should not
-        //require a human to restart the application to restore reception.
-        mLog.info("Tuner Error - Initiating Recovery - " + getId() + " Error: " + errorMessage);
-        mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(new RecoveryRunnable(), 180, 180, TimeUnit.SECONDS);
 
         if ("USB Error - Transfer Buffers Exhausted".equals(errorMessage) && this instanceof DiscoveredUSBTuner) {
             io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.source.tuner.ui.USBAlertEvent(
@@ -396,6 +407,22 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
     }
 
     /**
+     * Cancels the active recovery task (if any) under the recovery lock so that cancellation cannot race with a
+     * concurrent error scheduling a replacement task.  Clears the reference so the next error starts fresh.
+     */
+    private void cancelRecoveryTask()
+    {
+        synchronized(mRecoveryLock)
+        {
+            if(mRecoveryTask != null)
+            {
+                mRecoveryTask.cancel(false);
+                mRecoveryTask = null;
+            }
+        }
+    }
+
+    /**
      * Periodic tuner recovery task.  Attempts a restart every 3 minutes.  After 5 failed attempts it slows to a
      * 10-minute retry cadence and posts a system health alert, but never permanently gives up - an unattended
      * system should continue trying to restore reception indefinitely.
@@ -410,9 +437,15 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
 
             //Stop recovery if the tuner was removed or deliberately disabled
             if (status == TunerStatus.REMOVED || status == TunerStatus.DISABLED) {
-                if (mRecoveryTask != null) {
-                    mRecoveryTask.cancel(false);
-                }
+                cancelRecoveryTask();
+                return;
+            }
+
+            //If the tuner is already enabled at entry, this task has nothing to recover - it is a stale/orphaned
+            //schedule.  Cancel it quietly and, crucially, do NOT post a recovered event (which would restart
+            //every channel on a perfectly healthy tuner).
+            if (status == TunerStatus.ENABLED) {
+                cancelRecoveryTask();
                 return;
             }
 
@@ -424,9 +457,7 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
 
                 if (getTunerStatus() == TunerStatus.ENABLED) {
                     mLog.info("Successfully recovered tuner " + getId());
-                    if (mRecoveryTask != null) {
-                        mRecoveryTask.cancel(false);
-                    }
+                    cancelRecoveryTask();
                     mRecoveryAttempts.set(0);
                     MyEventBus.getGlobalEventBus().post(new TunerRecoveredEvent(DiscoveredTuner.this));
                 } else if (attempt == SLOW_MODE_ATTEMPT_THRESHOLD) {
@@ -438,11 +469,13 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
                         "Tuner " + getId() + " has failed " + attempt + " recovery attempts [" + getErrorMessage() +
                             "] - recovery will continue every " + (SLOW_MODE_INTERVAL_SECONDS / 60) + " minutes."));
 
-                    if (mRecoveryTask != null) {
-                        mRecoveryTask.cancel(false);
+                    synchronized(mRecoveryLock) {
+                        if (mRecoveryTask != null) {
+                            mRecoveryTask.cancel(false);
+                        }
+                        mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(this, SLOW_MODE_INTERVAL_SECONDS,
+                            SLOW_MODE_INTERVAL_SECONDS, TimeUnit.SECONDS);
                     }
-                    mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(this, SLOW_MODE_INTERVAL_SECONDS,
-                        SLOW_MODE_INTERVAL_SECONDS, TimeUnit.SECONDS);
                 } else {
                     mLog.warn("Tuner recovery attempt " + attempt + " failed for " + getId());
                 }
@@ -467,6 +500,12 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
 
             //Stop recovery if the tuner was removed or deliberately disabled
             if (status == TunerStatus.REMOVED || status == TunerStatus.DISABLED) {
+                return;
+            }
+
+            //Already enabled at entry means another path recovered the tuner - this chain is stale.  Stop
+            //without posting a recovered event so we don't needlessly restart channels on a healthy tuner.
+            if (status == TunerStatus.ENABLED) {
                 return;
             }
 

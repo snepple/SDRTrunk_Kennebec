@@ -186,6 +186,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         mChannelBandwidth = config.getBandwidth().getValue();
         mNoiseSquelch = new NoiseSquelch(config.getSquelchNoiseOpenThreshold(), config.getSquelchNoiseCloseThreshold(),
                 config.getSquelchHysteresisOpenThreshold(), config.getSquelchHysteresisCloseThreshold());
+        mNoiseSquelch.setAdaptive(config.isSquelchNoiseAdaptive());
 
         //Automatic squelch calibration: gated by the Squelch Advisor preference and locked out when the user
         //has manually adjusted this channel's squelch.  Applies thresholds (and a tail-removal duration) to
@@ -480,6 +481,26 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         //Update the channel configuration and schedule a playlist save.
         getDecodeConfiguration().setSquelchNoiseOpenThreshold(open);
         getDecodeConfiguration().setSquelchNoiseCloseThreshold(close);
+    }
+
+    /**
+     * Enables or disables adaptive noise-floor squelch tracking for this channel and persists the setting.
+     * @param enabled true to enable adaptive tracking.
+     */
+    @Override
+    public void setAdaptiveSquelch(boolean enabled)
+    {
+        mNoiseSquelch.setAdaptive(enabled);
+        getDecodeConfiguration().setSquelchNoiseAdaptive(enabled);
+    }
+
+    /**
+     * Indicates whether adaptive noise-floor squelch tracking is enabled for this channel.
+     */
+    @Override
+    public boolean isAdaptiveSquelch()
+    {
+        return mNoiseSquelch.isAdaptive();
     }
 
     /**

@@ -133,6 +133,7 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
     private Button mUnlockButton;
 
     private ToggleButton mSquelchOverrideButton;
+    private ToggleButton mAdaptiveButton;
     private Slider mOpenNoiseSlider;
     private Slider mCloseNoiseSlider;
     private Slider mOpenHysteresisSlider;
@@ -227,10 +228,11 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
         buttonsBox.setMaxWidth(Double.MAX_VALUE);
         buttonsBox.setSpacing(5);
         HBox.setHgrow(getSquelchOverrideButton(), Priority.ALWAYS);
+        HBox.setHgrow(getAdaptiveButton(), Priority.ALWAYS);
         HBox.setHgrow(getResetButton(), Priority.ALWAYS);
         HBox.setHgrow(getCalibrateButton(), Priority.ALWAYS);
-        buttonsBox.getChildren().addAll(getSquelchOverrideButton(), getResetButton(), getCalibrateButton(),
-                getLockLabel(), getUnlockButton());
+        buttonsBox.getChildren().addAll(getSquelchOverrideButton(), getAdaptiveButton(), getResetButton(),
+                getCalibrateButton(), getLockLabel(), getUnlockButton());
 
         GridPane.setHalignment(buttonsBox,  HPos.LEFT);
         GridPane.setHgrow(buttonsBox, Priority.SOMETIMES);
@@ -367,6 +369,8 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
 
             getSquelchOverrideButton().selectedProperty().setValue(noiseSquelchState.squelchOverride());
             getSquelchOverrideButton().setDisable(false);
+            getAdaptiveButton().setSelected(mController != null && mController.isAdaptiveSquelch());
+            getAdaptiveButton().setDisable(false);
             getResetButton().setDisable(false);
 
             //Show the Calibrate Squelch button only when the Squelch Advisor AI feature is enabled.
@@ -420,6 +424,7 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
 
         getResetButton().setDisable(true);
         getSquelchOverrideButton().setDisable(true);
+        getAdaptiveButton().setDisable(true);
         getSquelchStateLabel().setDisable(true);
         getSquelchStateLabel().setText(NOT_AVAILABLE);
 
@@ -812,6 +817,31 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
         }
 
         return mSquelchOverrideButton;
+    }
+
+    /**
+     * Adaptive noise-floor squelch toggle.  When enabled, the squelch raises its effective open threshold toward
+     * (but never above) the close threshold based on the measured noise floor, so weaker signals can open the
+     * squelch.  Off by default; persisted per channel.
+     */
+    private ToggleButton getAdaptiveButton()
+    {
+        if(mAdaptiveButton == null)
+        {
+            mAdaptiveButton = new ToggleButton("Adaptive");
+            mAdaptiveButton.setTooltip(new Tooltip("Adaptive noise-floor squelch: lets weaker signals open the " +
+                    "squelch by tracking the channel's noise floor (kept below the Close threshold)"));
+            mAdaptiveButton.setMaxWidth(Double.MAX_VALUE);
+            mAdaptiveButton.setDisable(true);
+            mAdaptiveButton.setOnAction(event -> {
+                if(mController != null)
+                {
+                    mController.setAdaptiveSquelch(getAdaptiveButton().isSelected());
+                }
+            });
+        }
+
+        return mAdaptiveButton;
     }
 
     /**
