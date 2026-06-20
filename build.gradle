@@ -758,11 +758,21 @@ tasks.register('createInstaller', Exec) {
             '--dest', destDir,
             '--name', 'SDRTrunk',
             '--app-version', appVersion,
+            '--vendor', 'SDRTrunk_Kennebec',
+            '--description', 'Decode, monitor, record and stream trunked mobile radio with Software Defined Radios.',
+            '--copyright', 'Copyright (C) 2014-2026 Dennis Sheirer. Licensed under GNU GPL v3.',
+            '--about-url', 'https://github.com/snepple/SDRTrunk_Kennebec',
             '--runtime-image', imageDir.absolutePath,
             '--input', libDir.absolutePath,
             '--main-jar', launcherJar != null ? launcherJar.name : 'sdr-trunk.jar',
             '--main-class', 'io.github.dsheirer.gui.SDRTrunkLauncher',
             '--temp', "$buildDir/tmp/jpackage"]
+
+        // Add a license-agreement page to the installer wizard (cross-platform).
+        def licenseFile = file("${projectDir}/LICENSE")
+        if (licenseFile.exists()) {
+            cmdList.addAll(['--license-file', licenseFile.absolutePath])
+        }
 
         if (osName.contains("win")) {
             // Add Windows-specific options
@@ -770,7 +780,32 @@ tasks.register('createInstaller', Exec) {
             if (iconFile.exists()) {
                 cmdList.addAll(['--icon', iconFile.absolutePath])
             }
-            cmdList.addAll(['--win-shortcut', '--win-menu', '--win-menu-group', 'SDRTrunk'])
+            cmdList.addAll(['--win-shortcut', '--win-menu', '--win-menu-group', 'SDRTrunk',
+                            '--win-dir-chooser',
+                            '--win-upgrade-uuid', '60C779DB-E3B4-4D77-BB3B-4ACD206481E3'])
+
+            // Brand the installer wizard pages with the SDRTrunk banner + welcome
+            // bitmaps. jpackage reads override resources from --resource-dir; an
+            // overrides.wxi there points the WiX UI bitmap variables at our committed
+            // BMPs (24-bit, 493x58 and 493x312). If a future WiX/jpackage version
+            // needs different wiring, 'jpackage --verbose' prints the exact override
+            // resource names it expects; removing --resource-dir falls back to stock.
+            def brandDir = file("${projectDir}/src/main/installer/windows")
+            def bannerBmp = new File(brandDir, "sdrtrunk-installer-banner.bmp")
+            def dialogBmp = new File(brandDir, "sdrtrunk-installer-dialog.bmp")
+            if (bannerBmp.exists() && dialogBmp.exists()) {
+                def wixResDir = file("$buildDir/installer/wix-resources")
+                wixResDir.mkdirs()
+                new File(wixResDir, "overrides.wxi").text = """<?xml version="1.0" encoding="utf-8"?>
+<Include>
+    <WixVariable Id="WixUIBannerBmp" Value="${bannerBmp.absolutePath}" Overridable="yes"/>
+    <WixVariable Id="WixUIDialogBmp" Value="${dialogBmp.absolutePath}" Overridable="yes"/>
+</Include>
+"""
+                cmdList.addAll(['--resource-dir', wixResDir.absolutePath])
+                logger.lifecycle("createInstaller: branding wizard via ${wixResDir}/overrides.wxi")
+            }
+
             jvmArgsWindows.each { arg ->
                 cmdList.addAll(['--java-options', arg])
             }
