@@ -67,6 +67,7 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
     private AudioPlaybackDeviceDescriptor mAudioPlaybackDevice;
     private AudioOutput mAudioOutput;
     private ScheduledFuture<?> mProcessingTask;
+    private final javafx.beans.property.BooleanProperty mMasterMuted = new javafx.beans.property.SimpleBooleanProperty(false);
 
     private TwoToneDetector mTwoToneDetector;
 
@@ -369,6 +370,9 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
                 //Note: audio output can use an alternate device if the requested device can't be used, so we assign
                 //the descriptor that was actually used by the audio output
                 mAudioPlaybackDevice = mAudioOutput.getAudioPlaybackDeviceDescriptor();
+
+                //Re-apply the current master mute state so switching the output device preserves the mute.
+                mAudioOutput.setMuted(mMasterMuted.get());
             }
             finally
             {
@@ -387,6 +391,50 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
     public AudioOutput getAudioOutput()
     {
         return mAudioOutput;
+    }
+
+    /**
+     * Observable master mute state for all application audio output.  This is the single source of truth for the
+     * UI, so the on-screen mute button, the system tray, and any other control stay in sync regardless of which one
+     * toggled the mute.
+     */
+    public javafx.beans.property.BooleanProperty masterMutedProperty()
+    {
+        return mMasterMuted;
+    }
+
+    /**
+     * @return true if all application audio output is currently muted.
+     */
+    public boolean isMasterMuted()
+    {
+        return mMasterMuted.get();
+    }
+
+    /**
+     * Sets the master mute state for all application audio output and updates the observable property so every
+     * control reflects the change.
+     * @param muted true to mute, false to unmute
+     */
+    public void setMasterMuted(boolean muted)
+    {
+        if(mAudioOutput != null)
+        {
+            mAudioOutput.setMuted(muted);
+        }
+
+        mMasterMuted.set(muted);
+    }
+
+    /**
+     * Toggles the master mute state.
+     * @return the new muted state (true if now muted)
+     */
+    public boolean toggleMasterMuted()
+    {
+        boolean newState = !isMasterMuted();
+        setMasterMuted(newState);
+        return newState;
     }
 
     /**

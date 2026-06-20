@@ -1262,6 +1262,10 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 ChannelToneFilter filter = savedFilters.get(0);
                 mToneTypeCombo.setValue(filter.getToneType());
                 updateToneCodeVisibility();
+                //Clear both code combos first so a stale value from a previously-edited channel doesn't
+                //linger (the editor instance is reused across channels of the same decoder type).
+                mCtcssCodeCombo.setValue(null);
+                mDcsCodeCombo.setValue(null);
                 if(filter.getToneType() == ChannelToneFilter.ToneType.CTCSS)
                 {
                     CTCSSCode code = filter.getCTCSSCode();

@@ -782,6 +782,15 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
      */
     public void shutdown()
     {
+        stopAllChannels();
+    }
+
+    /**
+     * Stops all currently processing channels (including traffic channels) and cancels any pending delayed
+     * channel starts, without otherwise tearing down the manager, so channels can be started again afterward.
+     */
+    public void stopAllChannels()
+    {
         List<ScheduledFuture<?>> delayedTasks = new ArrayList<>(mDelayedChannelStartTasks);
 
         for(ScheduledFuture<?> delayedTask: delayedTasks)

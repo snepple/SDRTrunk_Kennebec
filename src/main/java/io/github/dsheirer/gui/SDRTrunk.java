@@ -143,11 +143,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         if (mCurrentViewId != null && mCurrentViewId.equals("now_playing")) {
             mNowPlayingSpectrumDisabled = !mNowPlayingSpectrumDisabled;
             mControllerPanel.getNowPlayingPanel().setSpectralPanelVisible(!mNowPlayingSpectrumDisabled);
-            if (mNowPlayingSpectrumDisabled) {
-                mSpectralPanel.stop();
-            } else {
-                mSpectralPanel.start();
-            }
+            //Delegate the actual start/stop to the widget state so a minimized widget stays paused.
+            mControllerPanel.getNowPlayingPanel().updateSpectrumProcessing();
         } else if (mCurrentViewId != null && mCurrentViewId.equals("tuners")) {
             mTunerSpectrumDisabled = !mTunerSpectrumDisabled;
             if (mTunerSpectrumDisabled) {
@@ -166,6 +163,10 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 mTopContentPanel.setMaxHeight(300);
                 mTopContentPanel.setVisible(true);
                 mTopContentPanel.setManaged(true);
+                //Ensure the shared spectral panel is shown when displayed directly on the tuner page (it may have
+                //been left invisible by a minimized Now Playing widget).
+                mSpectralPanel.setVisible(true);
+                mSpectralPanel.setManaged(true);
                 mSpectralPanel.start();
             }
             Platform.runLater(() -> {
@@ -366,6 +367,24 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             primaryStage.setScene(scene);
             primaryStage.show();
 
+            //Closing the main window triggers the same confirmation as the sidebar Exit, then fully quits the app.
+            primaryStage.setOnCloseRequest(event -> {
+                event.consume();
+                confirmAndExit();
+            });
+
+            //Minimizing sends the app to the system tray to keep running as a background service (when the tray is
+            //available); otherwise it minimizes to the taskbar as usual.
+            primaryStage.iconifiedProperty().addListener((obs, wasIconified, isIconified) -> {
+                if(isIconified && mSystemTrayManager != null && mSystemTrayManager.isAvailable())
+                {
+                    Platform.runLater(() -> {
+                        primaryStage.hide();
+                        mSystemTrayManager.notifyMinimizedToTray();
+                    });
+                }
+            });
+
             // Keep the splash up until the main content has actually been built and shown, so the user
             // doesn't briefly see an empty window. A safety timeout guarantees the splash hides even if
             // the content-ready signal never arrives.
@@ -390,7 +409,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             try {
                   new HotkeyManager(scene, new HotkeyManager.HotkeyListener() {
                       @Override public void onToggleSpectrum() { SDRTrunk.this.onToggleSpectrum(); }
-                      @Override public void onToggleMute() { /* mute handled by AudioPanel */ }
+                      @Override public void onToggleMute() { SDRTrunk.this.toggleAudioMute(); }
                       @Override public void onToggleNightMode() { ThemeManager.toggleNightMode(); }
                   });
                   mLog.info("HotkeyManager initialized");
@@ -904,6 +923,137 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     }
 
     /**
+     * Performs application shutdown and exits the JVM.  Used after the user confirms they want to quit (from the
+     * sidebar Exit item, the window close button, or the system tray).
+     */
+    public void shutdownAndExit()
+    {
+        processShutdown();
+        System.exit(0);
+    }
+
+    /**
+     * Shows a themed confirmation dialog and, if the user confirms, shuts down and exits the application.  Must be
+     * called on the JavaFX Application Thread.
+     */
+    public void confirmAndExit()
+    {
+        //Bring the window forward so the confirmation has visible context (it may be hidden in the tray).
+        if(mPrimaryStage != null)
+        {
+            if(!mPrimaryStage.isShowing())
+            {
+                mPrimaryStage.show();
+            }
+            mPrimaryStage.setIconified(false);
+            mPrimaryStage.toFront();
+        }
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Exit SDRTrunk");
+        alert.setHeaderText("Exit SDRTrunk?");
+        alert.setContentText("This will stop all channels and audio streaming and close the application.");
+        alert.getButtonTypes().setAll(ButtonType.CANCEL, ButtonType.OK);
+
+        if(mPrimaryStage != null && mPrimaryStage.isShowing())
+        {
+            alert.initOwner(mPrimaryStage);
+        }
+
+        ThemeManager.applyCurrentTheme(alert.getDialogPane());
+
+        Optional<ButtonType> result = alert.showAndWait();
+
+        if(result.isPresent() && result.get() == ButtonType.OK)
+        {
+            shutdownAndExit();
+        }
+    }
+
+    /**
+     * Restores and focuses the main application window.  Used by the system tray to bring the app back from the
+     * background.  Safe to call from any thread.
+     */
+    public void showMainWindow()
+    {
+        Platform.runLater(() -> {
+            if(mPrimaryStage != null)
+            {
+                mPrimaryStage.show();
+                mPrimaryStage.setIconified(false);
+                mPrimaryStage.toFront();
+                mPrimaryStage.requestFocus();
+            }
+        });
+    }
+
+    /**
+     * Toggles muting of all application audio output.
+     * @return the new muted state (true if now muted)
+     */
+    public boolean toggleAudioMute()
+    {
+        if(mAudioPlaybackManager != null)
+        {
+            return mAudioPlaybackManager.toggleMasterMuted();
+        }
+
+        return false;
+    }
+
+    /**
+     * @return true if all application audio output is currently muted.
+     */
+    public boolean isAudioMuted()
+    {
+        return mAudioPlaybackManager != null && mAudioPlaybackManager.isMasterMuted();
+    }
+
+    /**
+     * Stops all currently playing channels without exiting the application.  Runs off the JavaFX thread so the UI
+     * stays responsive.
+     */
+    public void stopAllChannels()
+    {
+        if(mPlaylistManager != null)
+        {
+            io.github.dsheirer.util.ThreadPool.CACHED.submit(() ->
+                mPlaylistManager.getChannelProcessingManager().stopAllChannels());
+        }
+    }
+
+    /**
+     * (Re)starts all channels flagged for auto-start that are not already processing.  Runs off the JavaFX thread
+     * so the UI stays responsive.
+     */
+    public void restartAutoplayChannels()
+    {
+        if(mPlaylistManager == null)
+        {
+            return;
+        }
+
+        io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
+            List<Channel> channels = mPlaylistManager.getChannelModel().getAutoStartChannels();
+
+            for(Channel channel : channels)
+            {
+                try
+                {
+                    if(!mPlaylistManager.getChannelProcessingManager().isProcessing(channel))
+                    {
+                        mPlaylistManager.getChannelProcessingManager().start(channel);
+                    }
+                }
+                catch(ChannelException ce)
+                {
+                    mLog.error("Tray restart - channel [" + channel.getName() + "] failed: " + ce.getMessage());
+                }
+            }
+        });
+    }
+
+    /**
      * Lazy constructor for broadcast status panel
      */
     private BroadcastStatusPanel getBroadcastStatusPanel()
@@ -1227,11 +1377,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mControllerPanel.setResourcePanelVisible(false);
             mControllerPanel.getNowPlayingPanel().setNodes(mSpectralPanel, getBroadcastStatusPanel(), mNowPlayingResourceStatusPanel);
             mControllerPanel.getNowPlayingPanel().setSpectralPanelVisible(!mNowPlayingSpectrumDisabled);
-            if (mNowPlayingSpectrumDisabled) {
-                mSpectralPanel.stop();
-            } else {
-                mSpectralPanel.start();
-            }
+            //Let the Now Playing panel decide based on the widget's visible/minimized state, so a minimized or
+            //hidden Spectrum/Waterfall widget keeps the DFT paused even after switching back to this view.
+            mControllerPanel.getNowPlayingPanel().updateSpectrumProcessing();
         } else if (id.equals("tuners")) {
             if (!mTunerSpectrumDisabled) {
                 double prefHeight = mUserPreferences.getSwingPreference().getDimension("spectrum_v2") != null ? mUserPreferences.getSwingPreference().getDimension("spectrum_v2").getHeight() : 300;
@@ -1242,6 +1390,10 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 mTopContentPanel.setMaxHeight(Double.MAX_VALUE);
                 mTopContentPanel.setVisible(true);
                 mTopContentPanel.setManaged(true);
+                //The shared spectral panel may have been left invisible by a minimized Now Playing widget; ensure
+                //it is shown when displayed directly on the tuner page.
+                mSpectralPanel.setVisible(true);
+                mSpectralPanel.setManaged(true);
                 mSpectralPanel.start();
             } else {
                 mTopContentPanel.setCenter(null);
@@ -1277,8 +1429,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
     @Override
     public void onItemSelected(String id) {
         if (id.equals("exit")) {
-            processShutdown();
-            System.exit(0);
+            confirmAndExit();
             return;
         }
 

@@ -25,9 +25,10 @@ public class DynamicAliasPopulator {
 
         for (Identifier id : identifierCollection.getIdentifiers()) {
             io.github.dsheirer.alias.id.AliasID targetId = null;
-            if (id.getForm() == io.github.dsheirer.identifier.Form.TALKGROUP && id.getValue() instanceof Number) {
-                targetId = new Talkgroup(id.getProtocol(), ((Number) id.getValue()).intValue());
-            } else if (id.getForm() == io.github.dsheirer.identifier.Form.RADIO && id.getValue() instanceof Number) {
+            //Only auto-create aliases for RADIO (subscriber unit) ids - e.g. P25/DMR radio ids.  Talkgroups
+            //(including NBFM) are intentionally NOT auto-created: those are user-managed, and auto-creating
+            //them produced duplicate/unwanted entries.
+            if (id.getForm() == io.github.dsheirer.identifier.Form.RADIO && id.getValue() instanceof Number) {
                 targetId = new Radio(id.getProtocol(), ((Number) id.getValue()).intValue());
             }
 
@@ -91,7 +92,7 @@ public class DynamicAliasPopulator {
         boolean exists = false;
         for (Alias alias : mAliasModel.getAliases()) {
             for (io.github.dsheirer.alias.id.AliasID aliasId : alias.getAliasIdentifiers()) {
-                if (aliasId.equals(targetId)) {
+                if (aliasId.matches(targetId)) {
                     exists = true;
                     break;
                 }
@@ -129,7 +130,7 @@ public class DynamicAliasPopulator {
                 boolean stillExists = false;
                 for (Alias alias : mAliasModel.getAliases()) {
                     for (io.github.dsheirer.alias.id.AliasID aliasId : alias.getAliasIdentifiers()) {
-                        if (aliasId.equals(targetId)) {
+                        if (aliasId.matches(targetId)) {
                             stillExists = true;
                             break;
                         }
