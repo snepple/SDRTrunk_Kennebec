@@ -88,13 +88,28 @@ public class AudioRecordingsPanel extends VBox {
     private final java.util.Set<String> mKnownChannelNames = new java.util.LinkedHashSet<>();
 
     private io.github.dsheirer.playlist.PlaylistManager mPlaylistManager;
+    private io.github.dsheirer.audio.playback.AudioPlaybackManager mAudioPlaybackManager;
 
-    public AudioRecordingsPanel(UserPreferences userPreferences, io.github.dsheirer.playlist.PlaylistManager playlistManager) {
+    public AudioRecordingsPanel(UserPreferences userPreferences, io.github.dsheirer.playlist.PlaylistManager playlistManager,
+                                io.github.dsheirer.audio.playback.AudioPlaybackManager audioPlaybackManager) {
         mPlaylistManager = playlistManager;
         mUserPreferences = userPreferences;
+        mAudioPlaybackManager = audioPlaybackManager;
         setMinSize(0, 0);
 
         Platform.runLater(this::initFx);
+    }
+
+    /**
+     * Resolves the audio output device SDRTrunk currently uses for live audio, so recordings play through the same
+     * speakers/headphones rather than the system default.  Returns null when unknown (e.g., no device configured),
+     * in which case playback falls back to the default mixer.
+     */
+    private javax.sound.sampled.Mixer.Info getLiveAudioMixerInfo() {
+        if (mAudioPlaybackManager != null && mAudioPlaybackManager.getAudioPlaybackDevice() != null) {
+            return mAudioPlaybackManager.getAudioPlaybackDevice().getMixerInfo();
+        }
+        return null;
     }
 
 
@@ -805,7 +820,7 @@ public class AudioRecordingsPanel extends VBox {
 
         try {
             final RecordingItem loadingItem = item;
-            mPlayer = RecordingPlayer.create(item.getFile());
+            mPlayer = RecordingPlayer.create(item.getFile(), getLiveAudioMixerInfo());
             mPlayer.setListener(new RecordingPlayer.Listener() {
                 @Override
                 public void onReady(double durationSeconds) {

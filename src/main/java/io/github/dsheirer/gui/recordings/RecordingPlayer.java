@@ -30,6 +30,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.Mixer;
 import java.nio.file.Path;
 
 /**
@@ -87,8 +88,11 @@ interface RecordingPlayer
 
     /**
      * Creates the appropriate player for the recording based on its file extension.
+     * @param path of the recording
+     * @param mixerInfo of the audio device to play WAV recordings through (the same device used for live audio),
+     *                  or null to use the system default.  Ignored for MP3 (JavaFX MediaPlayer uses the default).
      */
-    static RecordingPlayer create(Path path)
+    static RecordingPlayer create(Path path, Mixer.Info mixerInfo)
     {
         String name = path.getFileName().toString().toLowerCase();
 
@@ -97,7 +101,7 @@ interface RecordingPlayer
             return new MediaRecordingPlayer(path);
         }
 
-        return new ClipRecordingPlayer(path);
+        return new ClipRecordingPlayer(path, mixerInfo);
     }
 }
 
@@ -108,12 +112,14 @@ class ClipRecordingPlayer implements RecordingPlayer
 {
     private static final Logger mLog = LoggerFactory.getLogger(ClipRecordingPlayer.class);
     private final Path mPath;
+    private final Mixer.Info mMixerInfo;
     private Clip mClip;
     private RecordingPlayer.Listener mListener;
 
-    ClipRecordingPlayer(Path path)
+    ClipRecordingPlayer(Path path, Mixer.Info mixerInfo)
     {
         mPath = path;
+        mMixerInfo = mixerInfo;
     }
 
     @Override
@@ -125,10 +131,9 @@ class ClipRecordingPlayer implements RecordingPlayer
     @Override
     public void prepare(boolean autoPlay)
     {
-        try(AudioInputStream in = AudioSystem.getAudioInputStream(mPath.toFile()))
+        try
         {
-            mClip = AudioSystem.getClip();
-            mClip.open(in);
+            mClip = openClip();
             mClip.addLineListener(event ->
             {
                 if(event.getType() == LineEvent.Type.START)
@@ -162,6 +167,36 @@ class ClipRecordingPlayer implements RecordingPlayer
         {
             mLog.error("Unable to open WAV recording for playback: " + mPath, e);
             notifyError(e.getMessage());
+        }
+    }
+
+    /**
+     * Opens a clip on the configured live-audio mixer so recordings play through the same device as live audio.
+     * Falls back to the system default mixer if the configured mixer can't provide a clip for this file's format.
+     * A fresh audio input stream is used for each attempt because opening a clip consumes the stream.
+     */
+    private Clip openClip() throws Exception
+    {
+        if(mMixerInfo != null)
+        {
+            try(AudioInputStream in = AudioSystem.getAudioInputStream(mPath.toFile()))
+            {
+                Clip clip = AudioSystem.getClip(mMixerInfo);
+                clip.open(in);
+                return clip;
+            }
+            catch(Exception e)
+            {
+                mLog.warn("Could not open recording on configured audio device [{}], falling back to default mixer: {}",
+                    mMixerInfo.getName(), e.getMessage());
+            }
+        }
+
+        try(AudioInputStream in = AudioSystem.getAudioInputStream(mPath.toFile()))
+        {
+            Clip clip = AudioSystem.getClip();
+            clip.open(in);
+            return clip;
         }
     }
 
