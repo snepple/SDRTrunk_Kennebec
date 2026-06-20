@@ -646,7 +646,7 @@ public abstract class USBTunerController extends TunerController
 
                     if(resubmitStatus == LibUsb.SUCCESS)
                     {
-                        mInProgressTransfers.add(transfer);
+                        mInProgressTransfers.add(toResubmit);
 
                         //Only log this if more than half of the total transfer buffers are in error-holding
                         if(mErrorTransfers.size() >= (mAvailableTransfers.size() / 2))
@@ -663,7 +663,7 @@ public abstract class USBTunerController extends TunerController
                     else
                     {
                         //Add it back to the queue to try again later.
-                        mErrorTransfers.add(transfer);
+                        mErrorTransfers.add(toResubmit);
                         mTransferErrorCount++;
                     }
                 }
