@@ -753,6 +753,7 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
             //action, not a manual edit, so guard it from marking the channel as manually adjusted.
             mProgrammaticChange = true;
             setNoiseSliderValues(open, close);
+            setHysteresisSliderValues(recommendation.hysteresisOpen(), recommendation.hysteresisClose());
             mProgrammaticChange = false;
 
             String why = recommendation.rationale() + (blended
@@ -763,9 +764,9 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
             //Persist per-channel so the squelch UI can show the last run and future calibrations can learn.
             if(channelName != null && !channelName.isEmpty())
             {
-                String summary = String.format("[%s] open=%.3f close=%.3f. %s",
+                String summary = String.format("[%s] noise open=%.3f close=%.3f, hysteresis %d/%d. %s",
                         new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date()),
-                        open, close, why);
+                        open, close, recommendation.hysteresisOpen(), recommendation.hysteresisClose(), why);
                 mUserPreferences.getAIPreference().setSquelchCalibration(channelName, open, close, summary);
                 updateCalibrateButtonTooltip();
             }
@@ -773,10 +774,11 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
             //Tell the user what changed and why - previously a successful calibration applied silently.
             Alert applied = new Alert(Alert.AlertType.INFORMATION);
             applied.setTitle("Calibrate Squelch");
-            applied.setHeaderText("Squelch thresholds updated");
+            applied.setHeaderText("Squelch settings updated");
             applied.setContentText(String.format(
-                    "Set the noise open threshold to %.3f and close threshold to %.3f (from %d samples).%n%nWhy: %s",
-                    open, close, sampleCount, why));
+                    "Set noise thresholds to open=%.3f / close=%.3f and hysteresis to %d / %d (x10 ms), from %d " +
+                            "samples.%n%nWhy: %s",
+                    open, close, recommendation.hysteresisOpen(), recommendation.hysteresisClose(), sampleCount, why));
             applied.show();
         });
     }
@@ -1170,6 +1172,22 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
 
         getOpenNoiseSlider().setValue(openSlider);
         getCloseNoiseSlider().setValue(closeSlider);
+    }
+
+    /**
+     * Sets the hysteresis sliders from advisor-recommended open/close hold counts (units of 10 ms).  The
+     * close slider holds the delta above open, matching this view's slider model; values are clamped to the
+     * slider ranges (open 1-5, close-delta 0-5).  Callers must guard with {@link #mProgrammaticChange} so the
+     * change is not treated as a manual edit (which would lock out the calibrator).
+     * @param open recommended open hysteresis hold count.
+     * @param close recommended close hysteresis hold count (greater than or equal to open).
+     */
+    private void setHysteresisSliderValues(int open, int close)
+    {
+        int safeOpen = Math.max(1, Math.min(5, open));
+        int safeCloseDelta = Math.max(0, Math.min(5, close - safeOpen));
+        getOpenHysteresisSlider().setValue(safeOpen);
+        getCloseHysteresisSlider().setValue(safeCloseDelta);
     }
 
     /**

@@ -219,6 +219,28 @@ public class SquelchAIAdvisor
             }
         }
 
+        //Hysteresis (consecutive-buffer hold counts, units of 10 ms): marginal signals - where the signal
+        //and noise-floor variance clusters sit close together - chatter the squelch open/closed, so they get
+        //longer hold counts to ride through brief dropouts; clean, well-separated signals can toggle faster.
+        //Constrained to the squelch view's slider ranges (open 1-5, close = open + 0..5).
+        int hysteresisOpen, hysteresisClose;
+        if(separation >= 0.10f)
+        {
+            hysteresisOpen = 2; hysteresisClose = 4;     //clean, well-separated - react quickly
+        }
+        else if(separation >= 0.05f)
+        {
+            hysteresisOpen = 3; hysteresisClose = 6;     //moderate - close to defaults
+        }
+        else if(separation >= MINIMUM_CLUSTER_SEPARATION)
+        {
+            hysteresisOpen = 3; hysteresisClose = 7;     //marginal - hold longer before closing
+        }
+        else
+        {
+            hysteresisOpen = 4; hysteresisClose = 8;     //very marginal / noise-only - ride through stutter
+        }
+
         String rationale;
         if(separation >= MINIMUM_CLUSTER_SEPARATION)
         {
@@ -232,10 +254,19 @@ public class SquelchAIAdvisor
                     "below the noise floor so ambient noise reliably keeps the squelch closed.", fmt(median));
         }
 
-        mLog.info("SquelchAI calibration: samples={}, low(p10)={}, median={}, high(p90)={} -> open={}, close={}",
-                mVarianceSamples.size(), fmt(low), fmt(median), fmt(high), fmt(open), fmt(close));
+        String hysteresisReason = (separation >= 0.10f)
+                ? "react quickly on this clean, well-separated signal"
+                : (separation < MINIMUM_CLUSTER_SEPARATION)
+                        ? "ride through brief dropouts and stop squelch stutter on this marginal signal"
+                        : "balance responsiveness against squelch stutter";
+        rationale += String.format("  Set hysteresis to open=%d, close=%d (x10 ms) to %s.",
+                hysteresisOpen, hysteresisClose, hysteresisReason);
 
-        return new Recommendation(open, close, rationale);
+        mLog.info("SquelchAI calibration: samples={}, low(p10)={}, median={}, high(p90)={} -> open={}, close={}, " +
+                        "hysteresis open={}, close={}", mVarianceSamples.size(), fmt(low), fmt(median), fmt(high),
+                fmt(open), fmt(close), hysteresisOpen, hysteresisClose);
+
+        return new Recommendation(open, close, hysteresisOpen, hysteresisClose, rationale);
     }
 
     /**
@@ -291,10 +322,13 @@ public class SquelchAIAdvisor
     }
 
     /**
-     * Recommended noise squelch open/close thresholds, in NoiseSquelch control units.
-     * @param openThreshold recommended open threshold (squelch opens below this variance).
-     * @param closeThreshold recommended close threshold (squelch closes above this variance).
-     * @param rationale human-readable explanation of why these thresholds were chosen (shown to the user).
+     * Recommended noise squelch settings, in NoiseSquelch control units.
+     * @param openThreshold recommended noise open threshold (squelch opens below this variance).
+     * @param closeThreshold recommended noise close threshold (squelch closes above this variance).
+     * @param hysteresisOpen recommended open hysteresis hold count (consecutive 10 ms buffers).
+     * @param hysteresisClose recommended close hysteresis hold count (consecutive 10 ms buffers).
+     * @param rationale human-readable explanation of why these settings were chosen (shown to the user).
      */
-    public record Recommendation(float openThreshold, float closeThreshold, String rationale) {}
+    public record Recommendation(float openThreshold, float closeThreshold, int hysteresisOpen,
+            int hysteresisClose, String rationale) {}
 }
