@@ -94,7 +94,7 @@ public class ComplexSamplesWaveRecorder extends Module implements IComplexSample
             }
             catch(IOException io)
             {
-                mLog.error("Error starting complex baseband recorder", io);
+                mLog.error("Error starting complex baseband I/Q recorder [{}]", mFilePrefix, io);
             }
         }
     }
@@ -124,7 +124,7 @@ public class ComplexSamplesWaveRecorder extends Module implements IComplexSample
                         }
                         catch(IOException ioe)
                         {
-                            mLog.error("Error closing baseband I/Q recorder", ioe);
+                            mLog.error("Error closing baseband I/Q recorder [{}]", mFile, ioe);
                         }
                     }
                 });
@@ -157,7 +157,7 @@ public class ComplexSamplesWaveRecorder extends Module implements IComplexSample
                         }
                         catch(IOException ioe)
                         {
-                            mLog.error("Error closing baseband I/Q recorder", ioe);
+                            mLog.error("Error closing baseband I/Q recorder [{}]", mFile, ioe);
                         }
                     }
                 });
@@ -224,7 +224,7 @@ public class ComplexSamplesWaveRecorder extends Module implements IComplexSample
                 }
                 catch(IOException ioe)
                 {
-                    mLog.error("IOException while writing I/Q buffers to wave recorder - stopping recorder", ioe);
+                    mLog.error("IOException while writing I/Q buffers to baseband recorder [{}] - stopping recorder", mFile, ioe);
                     error = true;
                     stop();
                 }

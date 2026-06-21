@@ -22,8 +22,17 @@ public class AIPreference extends Preference {
     public static final String KEY_WHISPER_API_KEY = "ai.transcription.whisper.key";
     public static final String KEY_NBFM_AUTO_OPTIMIZE = "ai.nbfm.auto.optimize";
     public static final String KEY_NBFM_LAST_OPTIMIZE_PREFIX = "ai.nbfm.last.optimize.";
+    //Human-readable summary (what changed and why, plus trigger/time) of the most recent NBFM filter
+    //optimization per channel - shown in the channel UI and fed back to the optimizer so it can learn.
+    public static final String KEY_NBFM_LAST_SUMMARY_PREFIX = "ai.nbfm.last.summary.";
     public static final String KEY_GAIN_ADVISOR_ENABLED = "ai.gain.advisor.enabled";
     public static final String KEY_SQUELCH_ADVISOR_ENABLED = "ai.squelch.advisor.enabled";
+
+    //Per-channel squelch calibration history: a display summary plus the last accepted open/close
+    //thresholds, used to stabilize ("learn from") subsequent calibrations.
+    public static final String KEY_SQUELCH_LAST_SUMMARY_PREFIX = "ai.squelch.last.summary.";
+    public static final String KEY_SQUELCH_LAST_OPEN_PREFIX = "ai.squelch.last.open.";
+    public static final String KEY_SQUELCH_LAST_CLOSE_PREFIX = "ai.squelch.last.close.";
 
     //Scheduled auto-run controls.  These are SEPARATE from each feature's on/off toggle so a feature can
     //be enabled for manual runs only.  Each scheduled toggle is gated on its parent feature being enabled,
@@ -32,6 +41,10 @@ public class AIPreference extends Preference {
     public static final String KEY_NBFM_AUTO_INTERVAL_HOURS = "ai.nbfm.auto.interval.hours";
     public static final String KEY_GAIN_ADVISOR_SCHEDULE_ENABLED = "ai.gain.advisor.schedule.enabled";
     public static final String KEY_GAIN_ADVISOR_INTERVAL_HOURS = "ai.gain.advisor.interval.hours";
+
+    //Per-tuner gain advisor history: a display summary of the most recent recommendation, used for the
+    //last-run display and as prior context fed into the next AI consultation (learning).
+    public static final String KEY_GAIN_LAST_SUMMARY_PREFIX = "ai.gain.last.summary.";
 
     //Selectable intervals (hours) for scheduled AI runs - chosen to balance external API token cost
     //against keeping tuner/channel settings reasonably current.
@@ -208,6 +221,103 @@ public class AIPreference extends Preference {
 
     public void setNBFMLastOptimizeMs(String channelName, long timestampMs) {
         mPreferences.putLong(nbfmOptimizeKey(channelName), timestampMs);
+    }
+
+    private static String nbfmSummaryKey(String channelName) {
+        String safe = channelName == null ? "" : channelName;
+        if((KEY_NBFM_LAST_SUMMARY_PREFIX.length() + safe.length()) <= Preferences.MAX_KEY_LENGTH) {
+            return KEY_NBFM_LAST_SUMMARY_PREFIX + safe;
+        }
+        return KEY_NBFM_LAST_SUMMARY_PREFIX + Integer.toHexString(safe.hashCode());
+    }
+
+    /**
+     * Human-readable summary of the most recent NBFM filter optimization for a channel (trigger, time,
+     * what changed and why).  Empty string if the channel has never been optimized.  Shown in the channel
+     * UI and included in the next optimization prompt so the AI can learn from its prior change.
+     */
+    public String getNBFMLastOptimizeSummary(String channelName) {
+        return mPreferences.get(nbfmSummaryKey(channelName), "");
+    }
+
+    public void setNBFMLastOptimizeSummary(String channelName, String summary) {
+        if(summary == null) {
+            summary = "";
+        }
+        //java.util.prefs caps individual value length; truncate defensively so a long AI explanation
+        //never throws when persisted.
+        if(summary.length() > Preferences.MAX_VALUE_LENGTH) {
+            summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
+        }
+        mPreferences.put(nbfmSummaryKey(channelName), summary);
+    }
+
+    /**
+     * Builds a per-scope preference key (prefix + identifier), hashing the identifier when the combined
+     * length would exceed the backing store's key-length limit.  Used for both per-channel (squelch) and
+     * per-tuner (gain) calibration history keys.
+     */
+    private static String scopedKey(String prefix, String id) {
+        String safe = id == null ? "" : id;
+        if((prefix.length() + safe.length()) <= Preferences.MAX_KEY_LENGTH) {
+            return prefix + safe;
+        }
+        return prefix + Integer.toHexString(safe.hashCode());
+    }
+
+    /**
+     * Human-readable summary (time, what changed, why) of the most recent squelch calibration for a
+     * channel, shown in the squelch UI.  Empty string if never calibrated.
+     */
+    public String getSquelchLastSummary(String channelName) {
+        return mPreferences.get(scopedKey(KEY_SQUELCH_LAST_SUMMARY_PREFIX, channelName), "");
+    }
+
+    /**
+     * Persists an accepted squelch calibration for a channel: the open/close thresholds (used to stabilize
+     * future calibrations) and a human-readable summary (shown in the UI).
+     */
+    public void setSquelchCalibration(String channelName, float open, float close, String summary) {
+        if(summary == null) {
+            summary = "";
+        }
+        if(summary.length() > Preferences.MAX_VALUE_LENGTH) {
+            summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
+        }
+        mPreferences.put(scopedKey(KEY_SQUELCH_LAST_SUMMARY_PREFIX, channelName), summary);
+        mPreferences.putFloat(scopedKey(KEY_SQUELCH_LAST_OPEN_PREFIX, channelName), open);
+        mPreferences.putFloat(scopedKey(KEY_SQUELCH_LAST_CLOSE_PREFIX, channelName), close);
+    }
+
+    /** @return last accepted squelch open threshold for the channel, or -1 if none recorded. */
+    public float getSquelchLastOpen(String channelName) {
+        return mPreferences.getFloat(scopedKey(KEY_SQUELCH_LAST_OPEN_PREFIX, channelName), -1f);
+    }
+
+    /** @return last accepted squelch close threshold for the channel, or -1 if none recorded. */
+    public float getSquelchLastClose(String channelName) {
+        return mPreferences.getFloat(scopedKey(KEY_SQUELCH_LAST_CLOSE_PREFIX, channelName), -1f);
+    }
+
+    /**
+     * Most recent gain advisor recommendation for a tuner (time-stamped), shown in the gain advisor UI and
+     * fed back as prior context on the next run.  Empty string when the tuner has never been advised.
+     */
+    public String getGainLastSummary(String tunerId) {
+        return mPreferences.get(scopedKey(KEY_GAIN_LAST_SUMMARY_PREFIX, tunerId), "");
+    }
+
+    /**
+     * Persists the most recent gain advisor recommendation for a tuner.
+     */
+    public void setGainLastSummary(String tunerId, String summary) {
+        if(summary == null) {
+            summary = "";
+        }
+        if(summary.length() > Preferences.MAX_VALUE_LENGTH) {
+            summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
+        }
+        mPreferences.put(scopedKey(KEY_GAIN_LAST_SUMMARY_PREFIX, tunerId), summary);
     }
 
     /**

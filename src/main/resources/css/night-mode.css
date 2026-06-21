@@ -227,3 +227,5 @@
 .channel-detail-card { -fx-background-color: #1e1e3a; -fx-border-color: #3a3a5a; }
 .channel-detail-text { -fx-text-fill: #e0e0e0; -fx-control-inner-background: #1e1e3a; -fx-highlight-fill: #0f3460; }
 .channel-detail-text .content { -fx-background-color: transparent; }
+.channel-detail-scroll, .channel-detail-scroll > .viewport { -fx-background-color: transparent; }
+.channel-detail-section { -fx-font-weight: bold; }

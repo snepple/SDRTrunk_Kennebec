@@ -239,7 +239,7 @@ public class ChannelResumeService implements Listener<ChannelEvent>
         }
         catch(Exception e)
         {
-            mLog.warn("Unable to update channel resume state file - " + e.getMessage());
+            mLog.warn("Unable to update channel resume state file", e);
         }
     }
 

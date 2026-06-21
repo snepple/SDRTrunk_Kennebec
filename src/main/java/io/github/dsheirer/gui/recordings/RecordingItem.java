@@ -9,16 +9,26 @@ public class RecordingItem {
     private Path file;
     private StringProperty date = new SimpleStringProperty("");
     private StringProperty time = new SimpleStringProperty("");
+    private StringProperty type = new SimpleStringProperty("");
     private StringProperty channel = new SimpleStringProperty("");
     private StringProperty toAlias = new SimpleStringProperty("");
     private StringProperty fromAlias = new SimpleStringProperty("");
     private StringProperty length = new SimpleStringProperty("");
+    private boolean baseband = false;
 
     public RecordingItem(Path file) {
         this.file = file;
     }
 
     public Path getFile() { return file; }
+
+    public String getType() { return type.get(); }
+    public StringProperty typeProperty() { return type; }
+    public void setType(String type) { this.type.set(type); }
+
+    /** True for baseband (I/Q) captures, which are not playable as audio. */
+    public boolean isBaseband() { return baseband; }
+    public void setBaseband(boolean baseband) { this.baseband = baseband; }
 
     public String getDate() { return date.get(); }
     public StringProperty dateProperty() { return date; }

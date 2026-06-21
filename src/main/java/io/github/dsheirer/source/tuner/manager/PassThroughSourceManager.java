@@ -167,7 +167,7 @@ public class PassThroughSourceManager extends ChannelSourceManager
             }
             catch(SourceException se)
             {
-                mLog.error("Error", se);
+                mLog.error("Error processing source event in pass-through source manager", se);
             }
         }
     }

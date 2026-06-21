@@ -250,7 +250,7 @@ public class AdaptiveGainAdvisor
             return;
         }
 
-        sendGeminiConsultation(buildStatsCsv(MIN_SAMPLES_FOR_ADVICE, all),
+        sendGeminiConsultation(buildStatsCsv(MIN_SAMPLES_FOR_ADVICE, all), null,
                 recommendation -> mLog.info("AdaptiveGain AI recommendation: {}", recommendation),
                 () -> { /* scheduled run: failures are non-fatal and already logged */ });
     }
@@ -262,10 +262,12 @@ public class AdaptiveGainAdvisor
      *
      * @param minFrequencyHz lower bound of the tuner's tuned passband (inclusive)
      * @param maxFrequencyHz upper bound of the tuner's tuned passband (inclusive)
+     * @param priorRecommendation the tuner's previous recommendation (or null/blank), fed to the AI as
+     *                            context so it can note whether conditions have changed (learning)
      * @param onResult       receives the recommendation text (called off the FX thread)
      * @param onError        receives a user-facing message when no recommendation could be produced
      */
-    public void requestManualConsultation(long minFrequencyHz, long maxFrequencyHz,
+    public void requestManualConsultation(long minFrequencyHz, long maxFrequencyHz, String priorRecommendation,
                                           java.util.function.Consumer<String> onResult,
                                           java.util.function.Consumer<String> onError)
     {
@@ -302,7 +304,7 @@ public class AdaptiveGainAdvisor
             }
 
             mLastAiConsultationMs.set(System.currentTimeMillis());
-            sendGeminiConsultation(buildStatsCsv(1, onThisTuner),
+            sendGeminiConsultation(buildStatsCsv(1, onThisTuner), priorRecommendation,
                     onResult,
                     () -> onResult.accept(heuristic +
                             "\n\n(AI consultation was unavailable, so the local heuristic analysis is shown instead.)"));
@@ -406,8 +408,15 @@ public class AdaptiveGainAdvisor
      * Sends a Gemini consultation for the given stats CSV, invoking {@code onText} with the
      * recommendation on success or {@code onFailure} when no usable response is obtained.
      */
-    private void sendGeminiConsultation(String csv, java.util.function.Consumer<String> onText, Runnable onFailure)
+    private void sendGeminiConsultation(String csv, String priorRecommendation,
+            java.util.function.Consumer<String> onText, Runnable onFailure)
     {
+        String priorContext = (priorRecommendation != null && !priorRecommendation.isBlank())
+                ? "\n\nYour previous recommendation for this tuner was:\n\"" + priorRecommendation + "\"\n" +
+                  "Take it into account: if conditions look unchanged, confirm and keep the current setting; if " +
+                  "they have shifted, explain what changed.\n"
+                : "";
+
         String prompt = "You are an RF engineer advising on SDR receiver gain settings.\n" +
                 "The following table shows I/Q signal power statistics for active receive channels, sampled " +
                 "over time. Each channel may share a physical SDR tuner with others. Columns:\n" +
@@ -424,6 +433,7 @@ public class AdaptiveGainAdvisor
                 "snr_estimate_db is roughly 20 dB or more. Because all channels on one tuner share the same " +
                 "hardware gain, recommend a single setting that keeps the strongest channel below clipping " +
                 "while giving the weakest channel acceptable SNR.\n" +
+                priorContext +
                 "Respond with a brief (2-4 sentence) plain-English recommendation: whether to increase, " +
                 "decrease, or keep the tuner gain, by roughly how much, and why.";
 

@@ -302,22 +302,26 @@ public class CTCSSDetector
             // Narrowband check: compare the target bin against its nearest frequency neighbors.
             // A real CTCSS tone produces a sharp spike at one frequency. Broadband interference
             // (e.g. digital data bursts) energizes all bins roughly equally and fails this check.
+            // Sample the local noise floor from bins OUTSIDE the spectral main lobe. CTCSS tones are
+            // spaced only ~2-7 Hz apart - closer than this block's frequency resolution (~sampleRate/
+            // blockSize, ~12 Hz) - so the immediately adjacent tone bins lie INSIDE the target's own
+            // leakage lobe. Averaging them made a genuine low/closely-spaced tone (e.g. 103.5 Hz next to
+            // 100.0/107.2 Hz) look "broadband" and get rejected, so those channels never opened. Use a
+            // frequency-distance guard so the reference bins are truly off-tone.
+            float targetFreq = mTargetFrequencies[maxIndex];
+            float guardHz = (mSampleRate / mBlockSize) * 1.5f;
             float neighborSum = 0;
             int neighborCount = 0;
 
-            for(int offset = 1; offset <= NARROWBAND_NEIGHBOR_COUNT; offset++)
+            for(int i = 0; i < powers.length; i++)
             {
-                int belowIndex = maxIndex - offset;
-                int aboveIndex = maxIndex + offset;
-
-                if(belowIndex >= 0)
+                if(i == maxIndex)
                 {
-                    neighborSum += powers[belowIndex];
-                    neighborCount++;
+                    continue;
                 }
-                if(aboveIndex < powers.length)
+                if(Math.abs(mTargetFrequencies[i] - targetFreq) >= guardHz)
                 {
-                    neighborSum += powers[aboveIndex];
+                    neighborSum += powers[i];
                     neighborCount++;
                 }
             }
