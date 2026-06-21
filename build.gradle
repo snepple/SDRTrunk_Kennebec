@@ -701,9 +701,14 @@ tasks.register('createInstaller', Exec) {
     def osName = System.properties.getProperty("os.name").toLowerCase()
     def arch = System.properties.getProperty("os.arch")
     def versionStr = project.findProperty('projectVersion')
-    // jpackage requires a numeric version (e.g. 0.0.75), strip any non-numeric prefix
-    def appVersion = versionStr.toString().replaceAll("^[^0-9]*", "").replaceAll("-.*", "")
-    if (appVersion.isEmpty()) appVersion = "0.0.1"
+    // jpackage requires a numeric dotted version. Strip any non-numeric prefix/suffix, then normalize
+    // each dot-separated component to a plain integer so leading zeros are removed: Windows MSI/jpackage
+    // rejects versions like "00.118" (leading-zero major), which fails the native installer step even
+    // though the runtime zip (which has no version validation) builds fine. e.g. "00.118" -> "0.118".
+    def rawVersion = versionStr.toString().replaceAll("^[^0-9]*", "").replaceAll("-.*", "")
+    def versionParts = rawVersion.split("\\.").findAll { it ==~ /\d+/ }.collect { it as int }
+    if (versionParts.isEmpty()) versionParts = [0, 0, 1]
+    def appVersion = versionParts.join(".")
     
     def jpackageCmd = "jpackage"
     def type = "app-image"

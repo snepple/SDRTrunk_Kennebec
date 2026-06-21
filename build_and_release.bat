@@ -347,6 +347,9 @@ if "!HAS_JPACKAGE!"=="1" (
         )
     ) else (
         echo [WARNING] Native installer creation failed. Portable zip is still available.
+        echo [WARNING] ---- last 60 lines of build_installer.log ^(jpackage/WiX error^) ----
+        powershell -NoProfile -Command "if (Test-Path 'build_installer.log') { Get-Content 'build_installer.log' -Tail 60 } else { Write-Host '(build_installer.log not found)' }"
+        echo [WARNING] ----------------------------------------------------------------------
     )
 ) else (
     call :drawProgressBar 55 "Skipping native installer (jpackage not available)..."
