@@ -108,7 +108,7 @@ public class NativeBufferWaveRecorder extends Module implements Listener<INative
             }
             catch(IOException io)
             {
-                mLog.error("Error starting complex baseband recorder", io);
+                mLog.error("Error starting baseband I/Q recorder [{}]", mFilePrefix, io);
             }
         }
     }
@@ -127,7 +127,7 @@ public class NativeBufferWaveRecorder extends Module implements Listener<INative
             }
             catch(IOException ioe)
             {
-                mLog.error("Error closing recording during file rollover");
+                mLog.error("Error closing recording during file rollover [{}]", mFilePath, ioe);
             }
 
             mCurrentSize = 0;
@@ -142,7 +142,7 @@ public class NativeBufferWaveRecorder extends Module implements Listener<INative
             }
             catch(IOException ioe)
             {
-                mLog.error("Error creating new recording during file rollover");
+                mLog.error("Error creating new recording during file rollover [{}]", mFilePrefix, ioe);
                 stop();
             }
         }
@@ -170,7 +170,7 @@ public class NativeBufferWaveRecorder extends Module implements Listener<INative
                     }
                     catch(IOException ioe)
                     {
-                        mLog.error("Error closing baseband I/Q recorder", ioe);
+                        mLog.error("Error closing baseband I/Q recorder [{}]", mFilePath, ioe);
                     }
                 });
             }
@@ -250,7 +250,7 @@ public class NativeBufferWaveRecorder extends Module implements Listener<INative
                 }
                 catch(IOException ioe)
                 {
-                    mLog.error("I/O exception while writing I/Q buffers to wave recorder - stopping recorder", ioe);
+                    mLog.error("I/O exception while writing I/Q buffers to baseband recorder [{}] - stopping recorder", mFilePath, ioe);
                     error = true;
                     stop();
                 }
