@@ -97,7 +97,7 @@ public class Rsp2TunerEditor extends RspTunerEditor<Rsp2TunerConfiguration>
         gainGrid.setHgap(10);
         gainGrid.setVgap(4);
         Button lnaHelp = createHelpIcon("?");
-        lnaHelp.setTooltip(new javafx.scene.control.Tooltip("<html><b>LNA Gain:</b> The power of the signal amplifier.<br>Increase this for distant signals, but lower it if you see a lot of static/noise.</html>"));
+        lnaHelp.setTooltip(new javafx.scene.control.Tooltip("LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise."));
         gainGrid.add(new Label("Gain:"), 0, 0);
         gainGrid.add(getGainPanel(), 1, 0);
         gainGrid.add(new Label("LNA:"), 0, 1);

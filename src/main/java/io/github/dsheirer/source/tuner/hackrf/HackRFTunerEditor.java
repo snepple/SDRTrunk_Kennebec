@@ -198,7 +198,7 @@ public class HackRFTunerEditor extends TunerEditor<HackRFTuner,HackRFTunerConfig
         if(mLnaGainCombo == null)
         {
             mLnaGainCombo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(HackRFLNAGain.values()));
-            mLnaGainCombo.setTooltip(new javafx.scene.control.Tooltip("<html>LNA Gain.  Adjust to set the IF gain</html>"));
+            mLnaGainCombo.setTooltip(new javafx.scene.control.Tooltip("LNA Gain: The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise."));
             mLnaGainCombo.setDisable(!(false));
             mLnaGainCombo.setOnAction(arg0 ->
             {
