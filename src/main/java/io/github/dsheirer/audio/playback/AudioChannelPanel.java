@@ -256,13 +256,15 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         mChannelName.getStyleClass().add("audio-channel-name");
         mChannelName.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
         mChannelName.setTextFill(mLabelColor);
-        mChannelName.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        //Larger, prominent channel name - the header bar is 72px tall and the name is the primary info,
+        //so it can be considerably bigger than the previous 20px without clipping the stacked rows.
+        mChannelName.setStyle("-fx-font-size: 25px; -fx-font-weight: bold;");
 
         mIconLabel.setFont(mFont);
         mIconLabel.setTextFill(mValueColor);
 
         mIdentifierLabel.getStyleClass().add("audio-channel-identifier");
-        mIdentifierLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.NORMAL, 15));
+        mIdentifierLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.NORMAL, 18));
         mIdentifierLabel.setTextFill(mValueColor);
 
         mStreamIconsPanel.setBackground(javafx.scene.layout.Background.EMPTY);
@@ -445,7 +447,7 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
                             if (broadcaster != null && broadcaster.getBroadcastConfiguration().isEnabled()) {
                                 if (!activeStreams.contains(bc.getChannelName())) {
                                     activeStreams.add(bc.getChannelName());
-                                    Label streamLabel = new Label("", new javafx.scene.image.ImageView(mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath(), 18)));
+                                    Label streamLabel = new Label("", new javafx.scene.image.ImageView(mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath(), 22)));
                                     streamLabel.setTooltip(new javafx.scene.control.Tooltip(broadcaster.getBroadcastConfiguration().getName()));
                                     mStreamIconsPanel.getChildren().add(streamLabel);
                                 }
