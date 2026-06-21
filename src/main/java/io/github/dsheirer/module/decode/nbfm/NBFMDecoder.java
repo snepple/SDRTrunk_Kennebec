@@ -814,7 +814,8 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                     List<List<float[]>> events = mAudioBufferManager.getBufferedEvents();
                     if(!events.isEmpty())
                     {
-                        AIAnalysisResult result = mAIAudioOptimizer.analyzeRawAudio(configSnapshot, events);
+                        String priorSummary = mUserPreferences.getAIPreference().getNBFMLastOptimizeSummary(mChannelName);
+                        AIAnalysisResult result = mAIAudioOptimizer.analyzeRawAudio(configSnapshot, events, priorSummary);
                         applyAIOptimizationResult(result, "AUTO");
                         mLog.info("AI auto-optimization applied to NBFM channel: {}", result.getImprovements());
                     }

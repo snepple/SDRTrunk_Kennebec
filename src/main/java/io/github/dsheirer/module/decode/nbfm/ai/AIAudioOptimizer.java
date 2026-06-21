@@ -224,7 +224,7 @@ public class AIAudioOptimizer {
         }
     }
 
-    public AIAnalysisResult analyzeRawAudio(DecodeConfigNBFM config, List<List<float[]>> audioEvents) throws Exception {
+    public AIAnalysisResult analyzeRawAudio(DecodeConfigNBFM config, List<List<float[]>> audioEvents, String priorSummary) throws Exception {
         String apiKey = mUserPreferences.getAIPreference().getGeminiApiKey();
         if (apiKey == null || apiKey.isEmpty()) {
             throw new Exception("Gemini API key is not configured in settings");
@@ -268,6 +268,10 @@ public class AIAudioOptimizer {
                 "squelchTailRemovalMs: " + config.getSquelchTailRemovalMs() + "\n" +
                 "squelchHeadRemovalMs: " + config.getSquelchHeadRemovalMs() + "\n" +
                 "noiseGateHoldTime: " + config.getNoiseGateHoldTime() + "\n\n" +
+                (priorSummary == null || priorSummary.isEmpty() ? "" :
+                    "Your previous optimization of THIS channel did the following - learn from it: keep what " +
+                    "worked and only change settings further if the audio still shows a problem.\n" +
+                    priorSummary + "\n\n") +
                 "Return JSON with these exact fields: hissReductionEnabled (boolean), hissReductionDb (float), hissReductionCorner (double), lowPassEnabled (boolean), lowPassCutoff (double), deemphasisEnabled (boolean), bassBoostEnabled (boolean), bassBoostDb (float), agcEnabled (boolean), agcTargetLevel (float), noiseGateEnabled (boolean), noiseGateThreshold (float), noiseGateReduction (float), agcMaxGain (float), squelchTailRemovalEnabled (boolean), squelchTailRemovalMs (int), squelchHeadRemovalMs (int), noiseGateHoldTime (int), issuesFound (string), improvements (string), explanation (string).";
 
             Gson gson = new Gson();
