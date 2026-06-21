@@ -85,4 +85,11 @@ public interface INoiseSquelchController
      * @return true when adaptive tracking is enabled.
      */
     default boolean isAdaptiveSquelch() { return false; }
+
+    /**
+     * Channel name for this controller, used to key per-channel squelch calibration history (persistence
+     * and learning).  Default null for controllers not associated with a named channel.
+     * @return channel name, or null when unknown.
+     */
+    default String getChannelName() { return null; }
 }

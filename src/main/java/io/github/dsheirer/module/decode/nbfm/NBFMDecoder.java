@@ -559,6 +559,12 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
      * Module interface methods - unused.
      */
     @Override
+    public String getChannelName()
+    {
+        return mChannelName;
+    }
+
+    @Override
     public void reset() {}
 
     @Override

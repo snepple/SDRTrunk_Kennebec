@@ -28,6 +28,12 @@ public class AIPreference extends Preference {
     public static final String KEY_GAIN_ADVISOR_ENABLED = "ai.gain.advisor.enabled";
     public static final String KEY_SQUELCH_ADVISOR_ENABLED = "ai.squelch.advisor.enabled";
 
+    //Per-channel squelch calibration history: a display summary plus the last accepted open/close
+    //thresholds, used to stabilize ("learn from") subsequent calibrations.
+    public static final String KEY_SQUELCH_LAST_SUMMARY_PREFIX = "ai.squelch.last.summary.";
+    public static final String KEY_SQUELCH_LAST_OPEN_PREFIX = "ai.squelch.last.open.";
+    public static final String KEY_SQUELCH_LAST_CLOSE_PREFIX = "ai.squelch.last.close.";
+
     //Scheduled auto-run controls.  These are SEPARATE from each feature's on/off toggle so a feature can
     //be enabled for manual runs only.  Each scheduled toggle is gated on its parent feature being enabled,
     //and the interval is user-selectable from SCHEDULED_INTERVAL_OPTIONS_HOURS.
@@ -240,6 +246,48 @@ public class AIPreference extends Preference {
             summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
         }
         mPreferences.put(nbfmSummaryKey(channelName), summary);
+    }
+
+    private static String squelchKey(String prefix, String channelName) {
+        String safe = channelName == null ? "" : channelName;
+        if((prefix.length() + safe.length()) <= Preferences.MAX_KEY_LENGTH) {
+            return prefix + safe;
+        }
+        return prefix + Integer.toHexString(safe.hashCode());
+    }
+
+    /**
+     * Human-readable summary (time, what changed, why) of the most recent squelch calibration for a
+     * channel, shown in the squelch UI.  Empty string if never calibrated.
+     */
+    public String getSquelchLastSummary(String channelName) {
+        return mPreferences.get(squelchKey(KEY_SQUELCH_LAST_SUMMARY_PREFIX, channelName), "");
+    }
+
+    /**
+     * Persists an accepted squelch calibration for a channel: the open/close thresholds (used to stabilize
+     * future calibrations) and a human-readable summary (shown in the UI).
+     */
+    public void setSquelchCalibration(String channelName, float open, float close, String summary) {
+        if(summary == null) {
+            summary = "";
+        }
+        if(summary.length() > Preferences.MAX_VALUE_LENGTH) {
+            summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
+        }
+        mPreferences.put(squelchKey(KEY_SQUELCH_LAST_SUMMARY_PREFIX, channelName), summary);
+        mPreferences.putFloat(squelchKey(KEY_SQUELCH_LAST_OPEN_PREFIX, channelName), open);
+        mPreferences.putFloat(squelchKey(KEY_SQUELCH_LAST_CLOSE_PREFIX, channelName), close);
+    }
+
+    /** @return last accepted squelch open threshold for the channel, or -1 if none recorded. */
+    public float getSquelchLastOpen(String channelName) {
+        return mPreferences.getFloat(squelchKey(KEY_SQUELCH_LAST_OPEN_PREFIX, channelName), -1f);
+    }
+
+    /** @return last accepted squelch close threshold for the channel, or -1 if none recorded. */
+    public float getSquelchLastClose(String channelName) {
+        return mPreferences.getFloat(squelchKey(KEY_SQUELCH_LAST_CLOSE_PREFIX, channelName), -1f);
     }
 
     /**
