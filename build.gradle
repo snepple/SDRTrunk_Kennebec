@@ -764,7 +764,7 @@ tasks.register('createInstaller', Exec) {
             '--name', 'SDRTrunk',
             '--app-version', appVersion,
             '--vendor', 'SDRTrunk_Kennebec',
-            '--description', 'Decode, monitor, record and stream trunked mobile radio with Software Defined Radios.',
+            '--description', 'Decode monitor record and stream trunked mobile radio with Software Defined Radios.',
             '--copyright', 'Copyright (C) 2014-2026 Dennis Sheirer. Licensed under GNU GPL v3.',
             '--about-url', 'https://github.com/snepple/SDRTrunk_Kennebec',
             '--runtime-image', imageDir.absolutePath,
@@ -798,18 +798,21 @@ tasks.register('createInstaller', Exec) {
             def brandDir = file("${projectDir}/src/main/installer/windows")
             def bannerBmp = new File(brandDir, "sdrtrunk-installer-banner.bmp")
             def dialogBmp = new File(brandDir, "sdrtrunk-installer-dialog.bmp")
-            if (bannerBmp.exists() && dialogBmp.exists()) {
-                def wixResDir = file("$buildDir/installer/wix-resources")
-                wixResDir.mkdirs()
-                new File(wixResDir, "overrides.wxi").text = """<?xml version="1.0" encoding="utf-8"?>
-<Include>
-    <WixVariable Id="WixUIBannerBmp" Value="${bannerBmp.absolutePath}" Overridable="yes"/>
-    <WixVariable Id="WixUIDialogBmp" Value="${dialogBmp.absolutePath}" Overridable="yes"/>
-</Include>
-"""
-                cmdList.addAll(['--resource-dir', wixResDir.absolutePath])
-                logger.lifecycle("createInstaller: branding wizard via ${wixResDir}/overrides.wxi")
+            // Copy branding BMPs into the jpackage --resource-dir.
+            // jpackage's built-in WiX UI template auto-picks up banner.bmp (493x58)
+            // and dialog.bmp (493x312) by convention - no overrides.wxi needed
+            // (overrides.wxi caused candle to fail because it was placed outside
+            // the internal JpConfigDir that main.wxs references at compile time).
+            def wixResDir = file("$buildDir/installer/wix-resources")
+            wixResDir.mkdirs()
+            if (bannerBmp.exists()) {
+                copy { from bannerBmp; into wixResDir; rename { 'banner.bmp' } }
             }
+            if (dialogBmp.exists()) {
+                copy { from dialogBmp; into wixResDir; rename { 'dialog.bmp' } }
+            }
+            cmdList.addAll(['--resource-dir', wixResDir.absolutePath])
+            logger.lifecycle("createInstaller: branding via BMP files in ${wixResDir}")
 
             jvmArgsWindows.each { arg ->
                 cmdList.addAll(['--java-options', arg])

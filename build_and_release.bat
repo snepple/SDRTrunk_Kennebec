@@ -402,9 +402,14 @@ if "!BUILD_MODE!"=="TEST" (
 :: STEP 11: Local Installation (Windows)
 :: ============================================================================
 call :drawProgressBar 80 "Installing locally..."
+:: Release any file locks from the installer/jpackage step before installDist attempts
+:: to re-package resources (other-platforms.md lock was the reported failure).
+call :releaseBuildLocks
 cd /d "%PROJ_DIR%"
 call "%GRADLEW%" installDist -x test -x javadoc -x compileJni --console=plain >> "%LOG_FILE%" 2>&1
 if !ERRORLEVEL! NEQ 0 goto ai_triage
+
+
 
 :: ============================================================================
 :: STEP 12: Upload to GitHub Release
