@@ -42,6 +42,10 @@ public class AIPreference extends Preference {
     public static final String KEY_GAIN_ADVISOR_SCHEDULE_ENABLED = "ai.gain.advisor.schedule.enabled";
     public static final String KEY_GAIN_ADVISOR_INTERVAL_HOURS = "ai.gain.advisor.interval.hours";
 
+    //Per-tuner gain advisor history: a display summary of the most recent recommendation, used for the
+    //last-run display and as prior context fed into the next AI consultation (learning).
+    public static final String KEY_GAIN_LAST_SUMMARY_PREFIX = "ai.gain.last.summary.";
+
     //Selectable intervals (hours) for scheduled AI runs - chosen to balance external API token cost
     //against keeping tuner/channel settings reasonably current.
     public static final Integer[] SCHEDULED_INTERVAL_OPTIONS_HOURS = {6, 12, 24, 48};
@@ -248,8 +252,13 @@ public class AIPreference extends Preference {
         mPreferences.put(nbfmSummaryKey(channelName), summary);
     }
 
-    private static String squelchKey(String prefix, String channelName) {
-        String safe = channelName == null ? "" : channelName;
+    /**
+     * Builds a per-scope preference key (prefix + identifier), hashing the identifier when the combined
+     * length would exceed the backing store's key-length limit.  Used for both per-channel (squelch) and
+     * per-tuner (gain) calibration history keys.
+     */
+    private static String scopedKey(String prefix, String id) {
+        String safe = id == null ? "" : id;
         if((prefix.length() + safe.length()) <= Preferences.MAX_KEY_LENGTH) {
             return prefix + safe;
         }
@@ -261,7 +270,7 @@ public class AIPreference extends Preference {
      * channel, shown in the squelch UI.  Empty string if never calibrated.
      */
     public String getSquelchLastSummary(String channelName) {
-        return mPreferences.get(squelchKey(KEY_SQUELCH_LAST_SUMMARY_PREFIX, channelName), "");
+        return mPreferences.get(scopedKey(KEY_SQUELCH_LAST_SUMMARY_PREFIX, channelName), "");
     }
 
     /**
@@ -275,19 +284,40 @@ public class AIPreference extends Preference {
         if(summary.length() > Preferences.MAX_VALUE_LENGTH) {
             summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
         }
-        mPreferences.put(squelchKey(KEY_SQUELCH_LAST_SUMMARY_PREFIX, channelName), summary);
-        mPreferences.putFloat(squelchKey(KEY_SQUELCH_LAST_OPEN_PREFIX, channelName), open);
-        mPreferences.putFloat(squelchKey(KEY_SQUELCH_LAST_CLOSE_PREFIX, channelName), close);
+        mPreferences.put(scopedKey(KEY_SQUELCH_LAST_SUMMARY_PREFIX, channelName), summary);
+        mPreferences.putFloat(scopedKey(KEY_SQUELCH_LAST_OPEN_PREFIX, channelName), open);
+        mPreferences.putFloat(scopedKey(KEY_SQUELCH_LAST_CLOSE_PREFIX, channelName), close);
     }
 
     /** @return last accepted squelch open threshold for the channel, or -1 if none recorded. */
     public float getSquelchLastOpen(String channelName) {
-        return mPreferences.getFloat(squelchKey(KEY_SQUELCH_LAST_OPEN_PREFIX, channelName), -1f);
+        return mPreferences.getFloat(scopedKey(KEY_SQUELCH_LAST_OPEN_PREFIX, channelName), -1f);
     }
 
     /** @return last accepted squelch close threshold for the channel, or -1 if none recorded. */
     public float getSquelchLastClose(String channelName) {
-        return mPreferences.getFloat(squelchKey(KEY_SQUELCH_LAST_CLOSE_PREFIX, channelName), -1f);
+        return mPreferences.getFloat(scopedKey(KEY_SQUELCH_LAST_CLOSE_PREFIX, channelName), -1f);
+    }
+
+    /**
+     * Most recent gain advisor recommendation for a tuner (time-stamped), shown in the gain advisor UI and
+     * fed back as prior context on the next run.  Empty string when the tuner has never been advised.
+     */
+    public String getGainLastSummary(String tunerId) {
+        return mPreferences.get(scopedKey(KEY_GAIN_LAST_SUMMARY_PREFIX, tunerId), "");
+    }
+
+    /**
+     * Persists the most recent gain advisor recommendation for a tuner.
+     */
+    public void setGainLastSummary(String tunerId, String summary) {
+        if(summary == null) {
+            summary = "";
+        }
+        if(summary.length() > Preferences.MAX_VALUE_LENGTH) {
+            summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
+        }
+        mPreferences.put(scopedKey(KEY_GAIN_LAST_SUMMARY_PREFIX, tunerId), summary);
     }
 
     /**
