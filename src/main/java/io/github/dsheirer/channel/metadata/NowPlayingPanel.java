@@ -233,7 +233,11 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     private TabPane getTabbedPane() {
     if (mTabbedPane == null) {
         mTabbedPane = new TabPane();
-        
+        //Tabs are fixed views (Details/Events/Messages/Channel Spectrum/Advanced).  Disable closing so the
+        //user can switch tabs but cannot permanently close one (there is no way to reopen a closed tab).
+        //This is a pane-level policy, so it also covers the tabs rebuilt in receive().
+        mTabbedPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+
         Tab detailsTab = new Tab("Details", mChannelDetailPanel);
         Tab eventsTab = new Tab("Events", mDecodeEventPanel);
         Tab messagesTab = new Tab("Messages", mMessageActivityPanel);
