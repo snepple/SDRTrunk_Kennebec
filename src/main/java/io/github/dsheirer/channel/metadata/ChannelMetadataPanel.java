@@ -147,10 +147,9 @@ public class ChannelMetadataPanel extends VBox
             for(Listener<ProcessingChain> listener : mListeners) {
                 if (listener instanceof io.github.dsheirer.channel.metadata.NowPlayingPanel) {
                     io.github.dsheirer.channel.metadata.NowPlayingPanel np = (io.github.dsheirer.channel.metadata.NowPlayingPanel) listener;
+                    boolean currentlyVisible = np.isDetailsPaneVisible();
                     np.toggleDetailsPane();
-                    // Update button text based on new state
-                    boolean nowVisible = np.isDetailsPaneVisible();
-                    toggleDetailsBtn.setText(nowVisible ? "\u25C0 Hide Details" : "\u25B6 Show Details");
+                    toggleDetailsBtn.setText(currentlyVisible ? "\u25B6 Show Details" : "\u25C0 Hide Details");
                 }
             }
         });

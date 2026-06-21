@@ -192,9 +192,9 @@ public class SquelchAIAdvisor
         }
         else
         {
-            //Noise-floor only - place thresholds just below the floor so noise keeps squelch closed.
-            open = median * 0.70f;
-            close = median * 0.88f;
+            //Noise-floor only - place thresholds above the floor so noise keeps squelch closed.
+            open = median * 1.10f;
+            close = median * 1.30f;
         }
 
         //Clamp into the valid control range and enforce a sensible open <= close ordering with a small gap.
