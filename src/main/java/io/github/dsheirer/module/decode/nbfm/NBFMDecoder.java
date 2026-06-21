@@ -815,7 +815,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                     if(!events.isEmpty())
                     {
                         AIAnalysisResult result = mAIAudioOptimizer.analyzeRawAudio(configSnapshot, events);
-                        applyAIOptimizationResult(result);
+                        applyAIOptimizationResult(result, "AUTO");
                         mLog.info("AI auto-optimization applied to NBFM channel: {}", result.getImprovements());
                     }
                 }
@@ -872,7 +872,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
      * Applies an AI analysis result to both the live audio filter chain and the persisted
      * channel configuration so the improved settings survive a restart.
      */
-    private void applyAIOptimizationResult(AIAnalysisResult result)
+    private void applyAIOptimizationResult(AIAnalysisResult result, String trigger)
     {
         // Persist to config so settings survive channel restart / playlist save
         mNBFMConfig.setHissReductionEnabled(result.isHissReductionEnabled());
@@ -914,6 +914,38 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             mAudioFilters.setSquelchReduction(result.getNoiseGateReduction());
             mAudioFilters.setHoldTime(result.getNoiseGateHoldTime());
         }
+
+        recordOptimizationSummary(result, trigger);
+    }
+
+    /**
+     * Records a human-readable summary (trigger, time, what changed and why) of the optimization just
+     * applied, so the channel UI can show the last run and the optimizer can learn from its prior change.
+     */
+    private void recordOptimizationSummary(AIAnalysisResult result, String trigger)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[").append(trigger).append(" ")
+          .append(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date()))
+          .append("] ");
+
+        String improvements = result.getImprovements();
+        String issues = result.getIssuesFound();
+
+        if(improvements != null && !improvements.isEmpty())
+        {
+            sb.append("Changes: ").append(improvements);
+        }
+        if(issues != null && !issues.isEmpty())
+        {
+            if(improvements != null && !improvements.isEmpty())
+            {
+                sb.append("  ");
+            }
+            sb.append("Why: ").append(issues);
+        }
+
+        mUserPreferences.getAIPreference().setNBFMLastOptimizeSummary(mChannelName, sb.toString());
     }
 
     /**

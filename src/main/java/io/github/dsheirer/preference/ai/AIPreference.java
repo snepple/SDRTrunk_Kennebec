@@ -22,6 +22,9 @@ public class AIPreference extends Preference {
     public static final String KEY_WHISPER_API_KEY = "ai.transcription.whisper.key";
     public static final String KEY_NBFM_AUTO_OPTIMIZE = "ai.nbfm.auto.optimize";
     public static final String KEY_NBFM_LAST_OPTIMIZE_PREFIX = "ai.nbfm.last.optimize.";
+    //Human-readable summary (what changed and why, plus trigger/time) of the most recent NBFM filter
+    //optimization per channel - shown in the channel UI and fed back to the optimizer so it can learn.
+    public static final String KEY_NBFM_LAST_SUMMARY_PREFIX = "ai.nbfm.last.summary.";
     public static final String KEY_GAIN_ADVISOR_ENABLED = "ai.gain.advisor.enabled";
     public static final String KEY_SQUELCH_ADVISOR_ENABLED = "ai.squelch.advisor.enabled";
 
@@ -208,6 +211,35 @@ public class AIPreference extends Preference {
 
     public void setNBFMLastOptimizeMs(String channelName, long timestampMs) {
         mPreferences.putLong(nbfmOptimizeKey(channelName), timestampMs);
+    }
+
+    private static String nbfmSummaryKey(String channelName) {
+        String safe = channelName == null ? "" : channelName;
+        if((KEY_NBFM_LAST_SUMMARY_PREFIX.length() + safe.length()) <= Preferences.MAX_KEY_LENGTH) {
+            return KEY_NBFM_LAST_SUMMARY_PREFIX + safe;
+        }
+        return KEY_NBFM_LAST_SUMMARY_PREFIX + Integer.toHexString(safe.hashCode());
+    }
+
+    /**
+     * Human-readable summary of the most recent NBFM filter optimization for a channel (trigger, time,
+     * what changed and why).  Empty string if the channel has never been optimized.  Shown in the channel
+     * UI and included in the next optimization prompt so the AI can learn from its prior change.
+     */
+    public String getNBFMLastOptimizeSummary(String channelName) {
+        return mPreferences.get(nbfmSummaryKey(channelName), "");
+    }
+
+    public void setNBFMLastOptimizeSummary(String channelName, String summary) {
+        if(summary == null) {
+            summary = "";
+        }
+        //java.util.prefs caps individual value length; truncate defensively so a long AI explanation
+        //never throws when persisted.
+        if(summary.length() > Preferences.MAX_VALUE_LENGTH) {
+            summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
+        }
+        mPreferences.put(nbfmSummaryKey(channelName), summary);
     }
 
     /**
