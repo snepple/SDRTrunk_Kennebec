@@ -1675,6 +1675,12 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     }
 
     private void handleAIOptimizeClick() {
+        //Guard against the feature being toggled off after this editor was opened.
+        if (!mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled()) {
+            mAIOptimizeStatusLabel.setText("Enable 'Auto-Optimize NBFM Audio Filters' in AI preferences first");
+            mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
+            return;
+        }
         mAIOptimizeButton.setDisable(true);
         mAIOptimizeStatusLabel.setText("Analyzing...");
         mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #0066cc;");
@@ -1724,6 +1730,15 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             if (channel == null) {
                 mAIOptimizeButton.setDisable(true);
                 mAIOptimizeStatusLabel.setText("No channel selected");
+                return;
+            }
+
+            //Manual optimization requires the feature to be enabled (#9): the feature toggle means
+            //"available for manual runs", and call audio is only buffered for analysis while it is on.
+            if (!mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled()) {
+                mAIOptimizeButton.setDisable(true);
+                mAIOptimizeStatusLabel.setText("Enable 'Auto-Optimize NBFM Audio Filters' in AI preferences to use this");
+                mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #888888;");
                 return;
             }
 
