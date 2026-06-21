@@ -121,6 +121,49 @@ public class AIPreferenceEditor extends VBox {
             mUserPreferences.getAIPreference().setSquelchAdvisorEnabled(newValue);
         });
 
+        //#9 Scheduled auto-run controls for the two schedulable AI features.  The "Auto" toggle and the
+        //interval selector are gated on the parent feature being enabled; the interval is only selectable
+        //when the schedule is on.  Toggling auto off leaves the feature available for manual runs.
+        ToggleSwitch nbfmScheduleSwitch = new ToggleSwitch();
+        nbfmScheduleSwitch.setSelected(mUserPreferences.getAIPreference().isNBFMAutoScheduleEnabled());
+        nbfmScheduleSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setNBFMAutoScheduleEnabled(newValue);
+        });
+        nbfmScheduleSwitch.disableProperty().bind(enableNbfmAutoOptimizeSwitch.selectedProperty().not());
+
+        ComboBox<Integer> nbfmIntervalCombo = new ComboBox<>();
+        nbfmIntervalCombo.getItems().addAll(io.github.dsheirer.preference.ai.AIPreference.SCHEDULED_INTERVAL_OPTIONS_HOURS);
+        nbfmIntervalCombo.setValue(mUserPreferences.getAIPreference().getNBFMAutoIntervalHours());
+        nbfmIntervalCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if(newValue != null) mUserPreferences.getAIPreference().setNBFMAutoIntervalHours(newValue);
+        });
+        nbfmIntervalCombo.disableProperty().bind(
+            enableNbfmAutoOptimizeSwitch.selectedProperty().not().or(nbfmScheduleSwitch.selectedProperty().not()));
+
+        HBox nbfmControls = new HBox(8, enableNbfmAutoOptimizeSwitch, new Label("Auto"), nbfmScheduleSwitch,
+            new Label("every"), nbfmIntervalCombo, new Label("h"));
+        nbfmControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        ToggleSwitch gainScheduleSwitch = new ToggleSwitch();
+        gainScheduleSwitch.setSelected(mUserPreferences.getAIPreference().isGainAdvisorScheduleEnabled());
+        gainScheduleSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setGainAdvisorScheduleEnabled(newValue);
+        });
+        gainScheduleSwitch.disableProperty().bind(enableGainAdvisorSwitch.selectedProperty().not());
+
+        ComboBox<Integer> gainIntervalCombo = new ComboBox<>();
+        gainIntervalCombo.getItems().addAll(io.github.dsheirer.preference.ai.AIPreference.SCHEDULED_INTERVAL_OPTIONS_HOURS);
+        gainIntervalCombo.setValue(mUserPreferences.getAIPreference().getGainAdvisorIntervalHours());
+        gainIntervalCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if(newValue != null) mUserPreferences.getAIPreference().setGainAdvisorIntervalHours(newValue);
+        });
+        gainIntervalCombo.disableProperty().bind(
+            enableGainAdvisorSwitch.selectedProperty().not().or(gainScheduleSwitch.selectedProperty().not()));
+
+        HBox gainControls = new HBox(8, enableGainAdvisorSwitch, new Label("Auto"), gainScheduleSwitch,
+            new Label("every"), gainIntervalCombo, new Label("h"));
+        gainControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
         SettingsCard featuresCard = new SettingsCard();
         featuresCard.getChildren().addAll(
             new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
@@ -128,8 +171,8 @@ public class AIPreferenceEditor extends VBox {
             new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch),
             new SettingsRow("Radio ID Naming from Transcripts (P25/DMR - uses Gemini)", enableRadioIdNamingSwitch),
             new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls),
-            new SettingsRow("Auto-Optimize NBFM Audio Filters (runs up to twice a day per channel)", enableNbfmAutoOptimizeSwitch),
-            new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels, recommends tuner gain changes)", enableGainAdvisorSwitch),
+            new SettingsRow("Auto-Optimize NBFM Audio Filters (manual anytime; Auto runs per channel)", nbfmControls),
+            new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels; Auto runs AI consultation)", gainControls),
             new SettingsRow("Squelch Advisor (enables the Calibrate Squelch button on NBFM channels)", enableSquelchAdvisorSwitch)
         );
 

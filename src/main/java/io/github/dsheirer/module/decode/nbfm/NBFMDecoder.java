@@ -839,7 +839,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
      */
     private boolean shouldAutoOptimizeNow()
     {
-        if(!mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled())
+        //#9 Auto runs (startup priming + ongoing cadence) require the auto-schedule toggle, which itself
+        //requires the feature to be enabled.  When the feature is on but auto-schedule is off, only manual
+        //runs occur (a separate path), so this method - which governs automatic runs only - returns false.
+        if(!mUserPreferences.getAIPreference().isNBFMAutoScheduleEnabled())
         {
             return false;
         }

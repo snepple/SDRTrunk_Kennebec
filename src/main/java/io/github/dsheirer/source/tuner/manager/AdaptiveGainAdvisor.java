@@ -221,7 +221,10 @@ public class AdaptiveGainAdvisor
         }
 
         var aiPref = mUserPreferences.getAIPreference();
-        if(!aiPref.isAIEnabled() || !aiPref.isGainAdvisorEnabled())
+        //#9 Only run the scheduled AI consultation when the advisor's auto-schedule is enabled (this also
+        //requires the advisor feature itself to be enabled).  Manual runs bypass this via
+        //requestManualConsultation().  The cadence is user-selectable rather than fixed at twice daily.
+        if(!aiPref.isAIEnabled() || !aiPref.isGainAdvisorScheduleEnabled())
         {
             return false;
         }
@@ -232,8 +235,9 @@ public class AdaptiveGainAdvisor
             return false;
         }
 
+        long intervalMs = aiPref.getGainAdvisorIntervalHours() * 60L * 60L * 1000L;
         long now = System.currentTimeMillis();
-        return (now - mLastAiConsultationMs.get()) >= AI_CONSULTATION_INTERVAL_MS;
+        return (now - mLastAiConsultationMs.get()) >= intervalMs;
     }
 
     private void consultGemini()

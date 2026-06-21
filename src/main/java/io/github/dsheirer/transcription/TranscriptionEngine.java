@@ -65,6 +65,13 @@ public class TranscriptionEngine {
             return;
         }
 
+        //Transcribe a given segment at most once.  Transcription is now requested for every completed
+        //segment by the audio recording manager (so it works without audio recording enabled), while the
+        //recorder/streaming paths may also request it - this guard makes it exactly-once.
+        if (!audioSegment.markTranscriptionRequested()) {
+            return;
+        }
+
         if (System.currentTimeMillis() < sDisabledUntil) {
             return;
         }
