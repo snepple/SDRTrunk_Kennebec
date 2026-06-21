@@ -979,3 +979,5 @@
     -fx-highlight-fill: #D6E4FF;
 }
 .channel-detail-text .content { -fx-background-color: transparent; }
+.channel-detail-scroll, .channel-detail-scroll > .viewport { -fx-background-color: transparent; }
+.channel-detail-section { -fx-font-weight: bold; }
