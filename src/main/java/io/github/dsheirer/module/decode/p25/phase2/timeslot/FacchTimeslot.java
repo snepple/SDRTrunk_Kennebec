@@ -214,7 +214,7 @@ public class FacchTimeslot extends AbstractSignalingTimeslot
             }
             catch(Exception e)
             {
-                mLog.error("Error", e);
+                mLog.error("Error during Reed-Solomon decoding of FACCH timeslot", e);
                 irrecoverableErrors = true;
             }
 

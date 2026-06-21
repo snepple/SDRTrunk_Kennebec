@@ -373,7 +373,7 @@ public class IcecastHTTPAudioBroadcaster extends IcecastAudioBroadcaster
                                     }
                                     else
                                     {
-                                        mLog.error("String [" + getStreamName() + "] - HTTP 403 protocol decoder error - message:\n\n" + message);
+                                        mLog.error("Stream [" + getStreamName() + "] - HTTP 403 protocol decoder error - message:\n\n" + message);
                                         setBroadcastState(BroadcastState.DISCONNECTED);
                                         disconnect();
                                     }
@@ -387,20 +387,20 @@ public class IcecastHTTPAudioBroadcaster extends IcecastAudioBroadcaster
                                     }
                                     else
                                     {
-                                        mLog.error("String [" + getStreamName() + "] - HTTP 401 protocol decoder error - message:\n\n" + message);
+                                        mLog.error("Stream [" + getStreamName() + "] - HTTP 401 protocol decoder error - message:\n\n" + message);
                                         setBroadcastState(BroadcastState.DISCONNECTED);
                                         disconnect();
                                     }
                                     break;
                                 default:
-                                        mLog.error("String [" + getStreamName() + "] - HTTP protocol decoder error - message:\n\n" + message);
+                                        mLog.error("Stream [" + getStreamName() + "] - HTTP protocol decoder error - message:\n\n" + message);
                                         setBroadcastState(BroadcastState.DISCONNECTED);
                                         disconnect();
                             }
                         }
                         else
                         {
-                            mLog.error("HTTP protocol decoder error - message:\n\n" + message);
+                            mLog.error("Stream [" + getStreamName() + "] - HTTP protocol decoder error - message:\n\n" + message);
                             setBroadcastState(BroadcastState.DISCONNECTED);
                             disconnect();
                         }
@@ -408,14 +408,14 @@ public class IcecastHTTPAudioBroadcaster extends IcecastAudioBroadcaster
                 }
                 else
                 {
-                    mLog.error("HTTP protocol decoder error", throwable);
+                    mLog.error("Stream [" + getStreamName() + "] - HTTP protocol decoder error", throwable);
                     setBroadcastState(BroadcastState.DISCONNECTED);
                     disconnect();
                 }
             }
             else
             {
-                mLog.error("Broadcast error", throwable);
+                mLog.error("Stream [" + getStreamName() + "] - broadcast error", throwable);
                 setBroadcastState(BroadcastState.DISCONNECTED);
                 disconnect();
             }

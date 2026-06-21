@@ -198,7 +198,7 @@ public abstract class USBTunerController extends TunerController
             mDeviceHandle = null;
             mDeviceDescriptor = null;
 
-            mLog.error("Access to USB tuner denied - (windows) reinstall zadig driver or (linux) blacklist driver and/or check udev rules");
+            mLog.error("Access to USB tuner denied [bus:{} port:{} - {}] - (windows) reinstall zadig driver or (linux) blacklist driver and/or check udev rules", mBus, mPortAddress, LibUsb.errorName(status));
             throw new SourceException("access denied - if using linux, blacklist the default driver and/or install udev rules");
         }
         else if(status != LibUsb.SUCCESS)
@@ -206,7 +206,7 @@ public abstract class USBTunerController extends TunerController
             mDeviceHandle = null;
             mDeviceDescriptor = null;
 
-            mLog.error("Can't open USB tuner - check driver or Linux udev rules");
+            mLog.error("Can't open USB tuner [bus:{} port:{} - {}] - check driver or Linux udev rules", mBus, mPortAddress, LibUsb.errorName(status));
             throw new SourceException("Can't open USB tuner - reinstall driver? - " + LibUsb.errorName(status));
         }
 
@@ -355,7 +355,7 @@ public abstract class USBTunerController extends TunerController
             }
             catch(SourceException se)
             {
-                mLog.error("Error starting streaming on USB tuner", se);
+                mLog.error("Error starting streaming on USB tuner [bus:{} port:{}]", mBus, mPortAddress, se);
             }
         }
     }
