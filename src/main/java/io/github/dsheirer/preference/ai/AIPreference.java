@@ -25,9 +25,18 @@ public class AIPreference extends Preference {
     public static final String KEY_GAIN_ADVISOR_ENABLED = "ai.gain.advisor.enabled";
     public static final String KEY_SQUELCH_ADVISOR_ENABLED = "ai.squelch.advisor.enabled";
 
-    //Auto-optimize a given NBFM channel at most this often.  Running every few calls burns Gemini
-    //tokens very quickly when many channels are configured, so the cadence is time-based (twice a day).
-    private static final long NBFM_AUTO_OPTIMIZE_INTERVAL_MS = 12L * 60L * 60L * 1000L;
+    //Scheduled auto-run controls.  These are SEPARATE from each feature's on/off toggle so a feature can
+    //be enabled for manual runs only.  Each scheduled toggle is gated on its parent feature being enabled,
+    //and the interval is user-selectable from SCHEDULED_INTERVAL_OPTIONS_HOURS.
+    public static final String KEY_NBFM_AUTO_SCHEDULE_ENABLED = "ai.nbfm.auto.schedule.enabled";
+    public static final String KEY_NBFM_AUTO_INTERVAL_HOURS = "ai.nbfm.auto.interval.hours";
+    public static final String KEY_GAIN_ADVISOR_SCHEDULE_ENABLED = "ai.gain.advisor.schedule.enabled";
+    public static final String KEY_GAIN_ADVISOR_INTERVAL_HOURS = "ai.gain.advisor.interval.hours";
+
+    //Selectable intervals (hours) for scheduled AI runs - chosen to balance external API token cost
+    //against keeping tuner/channel settings reasonably current.
+    public static final Integer[] SCHEDULED_INTERVAL_OPTIONS_HOURS = {6, 12, 24, 48};
+    private static final int DEFAULT_SCHEDULED_INTERVAL_HOURS = 12;
 
     private Preferences mPreferences = Preferences.userNodeForPackage(AIPreference.class);
 
@@ -206,10 +215,34 @@ public class AIPreference extends Preference {
      * auto-optimize is enabled and at least the twice-daily interval has elapsed since the last run.
      */
     public boolean isNBFMAutoOptimizeDue(String channelName) {
-        if(!isNBFMAudioAutoOptimizeEnabled()) {
+        if(!isNBFMAutoScheduleEnabled()) {
             return false;
         }
-        return (System.currentTimeMillis() - getNBFMLastOptimizeMs(channelName)) >= NBFM_AUTO_OPTIMIZE_INTERVAL_MS;
+        long intervalMs = getNBFMAutoIntervalHours() * 60L * 60L * 1000L;
+        return (System.currentTimeMillis() - getNBFMLastOptimizeMs(channelName)) >= intervalMs;
+    }
+
+    /**
+     * Whether NBFM filter optimization runs automatically on a schedule.  Separate from the feature
+     * toggle ({@link #isNBFMAudioAutoOptimizeEnabled()}), which can be enabled for manual runs only.
+     * Gated on the feature being enabled; defaults to true so enabling the feature keeps prior behavior.
+     */
+    public boolean isNBFMAutoScheduleEnabled() {
+        return isNBFMAudioAutoOptimizeEnabled() && mPreferences.getBoolean(KEY_NBFM_AUTO_SCHEDULE_ENABLED, true);
+    }
+
+    public void setNBFMAutoScheduleEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_NBFM_AUTO_SCHEDULE_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public int getNBFMAutoIntervalHours() {
+        return clampScheduledInterval(mPreferences.getInt(KEY_NBFM_AUTO_INTERVAL_HOURS, DEFAULT_SCHEDULED_INTERVAL_HOURS));
+    }
+
+    public void setNBFMAutoIntervalHours(int hours) {
+        mPreferences.putInt(KEY_NBFM_AUTO_INTERVAL_HOURS, clampScheduledInterval(hours));
+        notifyPreferenceUpdated();
     }
 
     /**
@@ -235,6 +268,42 @@ public class AIPreference extends Preference {
         mPreferences.putBoolean(KEY_GAIN_ADVISOR_ENABLED, enabled);
         mGainAdvisorEnabled = enabled;
         notifyPreferenceUpdated();
+    }
+
+    /**
+     * Whether the gain advisor performs scheduled, AI-assisted consultations automatically.  Separate
+     * from {@link #isGainAdvisorEnabled()} (which can run heuristics/manual only).  Gated on the feature
+     * being enabled; defaults to true so enabling the advisor preserves prior scheduled behavior.
+     */
+    public boolean isGainAdvisorScheduleEnabled() {
+        return isGainAdvisorEnabled() && mPreferences.getBoolean(KEY_GAIN_ADVISOR_SCHEDULE_ENABLED, true);
+    }
+
+    public void setGainAdvisorScheduleEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_GAIN_ADVISOR_SCHEDULE_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public int getGainAdvisorIntervalHours() {
+        return clampScheduledInterval(mPreferences.getInt(KEY_GAIN_ADVISOR_INTERVAL_HOURS, DEFAULT_SCHEDULED_INTERVAL_HOURS));
+    }
+
+    public void setGainAdvisorIntervalHours(int hours) {
+        mPreferences.putInt(KEY_GAIN_ADVISOR_INTERVAL_HOURS, clampScheduledInterval(hours));
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Constrains a scheduled-run interval to one of the supported {@link #SCHEDULED_INTERVAL_OPTIONS_HOURS}
+     * options, falling back to the default if an unsupported value is supplied.
+     */
+    private static int clampScheduledInterval(int hours) {
+        for(Integer option : SCHEDULED_INTERVAL_OPTIONS_HOURS) {
+            if(option == hours) {
+                return hours;
+            }
+        }
+        return DEFAULT_SCHEDULED_INTERVAL_HOURS;
     }
 
     /**
