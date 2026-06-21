@@ -219,10 +219,23 @@ public class SquelchAIAdvisor
             }
         }
 
+        String rationale;
+        if(separation >= MINIMUM_CLUSTER_SEPARATION)
+        {
+            rationale = String.format("Saw both a clean-signal level (~%s) and a noise-floor level (~%s); set " +
+                    "open/close in the gap between them so real signals open the squelch while noise keeps it closed.",
+                    fmt(low), fmt(high));
+        }
+        else
+        {
+            rationale = String.format("Saw mostly background noise (~%s) with little signal; set the thresholds just " +
+                    "below the noise floor so ambient noise reliably keeps the squelch closed.", fmt(median));
+        }
+
         mLog.info("SquelchAI calibration: samples={}, low(p10)={}, median={}, high(p90)={} -> open={}, close={}",
                 mVarianceSamples.size(), fmt(low), fmt(median), fmt(high), fmt(open), fmt(close));
 
-        return new Recommendation(open, close);
+        return new Recommendation(open, close, rationale);
     }
 
     /**
@@ -281,6 +294,7 @@ public class SquelchAIAdvisor
      * Recommended noise squelch open/close thresholds, in NoiseSquelch control units.
      * @param openThreshold recommended open threshold (squelch opens below this variance).
      * @param closeThreshold recommended close threshold (squelch closes above this variance).
+     * @param rationale human-readable explanation of why these thresholds were chosen (shown to the user).
      */
-    public record Recommendation(float openThreshold, float closeThreshold) {}
+    public record Recommendation(float openThreshold, float closeThreshold, String rationale) {}
 }

@@ -711,8 +711,18 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
             setNoiseSliderValues(recommendation.openThreshold(), recommendation.closeThreshold());
             mProgrammaticChange = false;
 
-            LOGGER.info("Squelch calibrated from {} samples: open={}, close={}", sampleCount,
-                    recommendation.openThreshold(), recommendation.closeThreshold());
+            LOGGER.info("Squelch calibrated from {} samples: open={}, close={} - {}", sampleCount,
+                    recommendation.openThreshold(), recommendation.closeThreshold(), recommendation.rationale());
+
+            //Tell the user what changed and why - previously a successful calibration applied silently.
+            Alert applied = new Alert(Alert.AlertType.INFORMATION);
+            applied.setTitle("Calibrate Squelch");
+            applied.setHeaderText("Squelch thresholds updated");
+            applied.setContentText(String.format(
+                    "Set the noise open threshold to %.3f and close threshold to %.3f (from %d samples).%n%nWhy: %s",
+                    recommendation.openThreshold(), recommendation.closeThreshold(), sampleCount,
+                    recommendation.rationale()));
+            applied.show();
         });
     }
 
