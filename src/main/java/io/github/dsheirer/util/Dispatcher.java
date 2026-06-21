@@ -180,10 +180,42 @@ public class Dispatcher<E> implements Listener<E>
         if(now - mLastOverflowLogTimestamp >= OVERFLOW_LOG_INTERVAL_MS)
         {
             mLastOverflowLogTimestamp = now;
-            mLog.warn("[{}] processor overloaded - dropped {} element(s) in the last ~{}ms (queue limit {}). The " +
-                    "consumer cannot keep up with the input rate - reduce sample rate or channel count, or free up CPU.",
-                    mThreadName, mDroppedSinceLastLog, OVERFLOW_LOG_INTERVAL_MS, mMaximumQueueSize);
+            mLog.warn("[{}] processor overloaded - dropped {} element(s) in the last ~{}ms (queue limit {}). " +
+                    "Cause: CONSUMER/CPU bottleneck - the processing thread cannot drain the queue fast enough " +
+                    "(this is distinct from USB transfer errors such as LIBUSB_ERROR_IO / 'transfer buffers " +
+                    "exhausted', which are source-side). Current load: {}. To fix: reduce the tuner sample rate, " +
+                    "reduce the number of simultaneously decoding channels, or free up CPU.",
+                    mThreadName, mDroppedSinceLastLog, OVERFLOW_LOG_INTERVAL_MS, mMaximumQueueSize, currentLoadDescription());
             mDroppedSinceLastLog = 0;
+        }
+    }
+
+    /**
+     * Best-effort process/system CPU load description included in the overload warning so the operator can
+     * tell a CPU-bound consumer (this dispatcher) apart from USB/source problems.  Never throws - the CPU
+     * metrics are optional diagnostic context.
+     */
+    private static String currentLoadDescription()
+    {
+        try
+        {
+            java.lang.management.OperatingSystemMXBean os =
+                    java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+            if(os instanceof com.sun.management.OperatingSystemMXBean sun)
+            {
+                double process = sun.getProcessCpuLoad();
+                double system = sun.getCpuLoad();
+                if(process >= 0 && system >= 0)
+                {
+                    return String.format("process CPU %.0f%%, system CPU %.0f%%, %d cores",
+                            process * 100.0, system * 100.0, os.getAvailableProcessors());
+                }
+            }
+            return os.getAvailableProcessors() + " cores (CPU load unavailable)";
+        }
+        catch(Throwable t)
+        {
+            return "CPU load unavailable";
         }
     }
 

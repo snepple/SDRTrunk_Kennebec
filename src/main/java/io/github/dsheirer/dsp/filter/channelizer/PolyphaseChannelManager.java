@@ -114,7 +114,10 @@ public class PolyphaseChannelManager implements ISourceEventProcessor
         }
 
         mChannelCalculator = new ChannelCalculator(sampleRate, channelCount, frequency, CHANNEL_OVERSAMPLING);
-        mBufferDispatcher = new Dispatcher("sdrtrunk polyphase buffer processor", 10);
+        //Name the dispatcher with this channelizer's center frequency so the overload warning identifies which
+        //tuner/channelizer is affected (a multi-tuner system otherwise can't tell them apart in the log).
+        mBufferDispatcher = new Dispatcher("sdrtrunk polyphase buffer processor [" +
+                String.format("%.4f MHz", frequency / 1_000_000.0) + "]", 10);
         //Bound the queue so an overwhelmed channelizer (e.g. at high sample rates / many channels) sheds buffers
         //with a logged warning instead of growing the queue without limit and freezing the application.
         mBufferDispatcher.setMaximumQueueSize(MAX_BUFFER_QUEUE_SIZE);
