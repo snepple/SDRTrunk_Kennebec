@@ -53,6 +53,7 @@ import io.github.dsheirer.module.decode.nbfm.ai.AIAnalysisResult;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAudioOptimizer;
 import io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager;
 import io.github.dsheirer.module.decode.nbfm.ai.AudioWatchdogService;
+import io.github.dsheirer.module.decode.nbfm.ai.NBFMOptimizeStatus;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.source.tuner.manager.AdaptiveGainAdvisor;
 import io.github.dsheirer.util.ThreadPool;
@@ -142,6 +143,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     private final String mChannelName;
     private int mCallEventCount = 0;
     private final AtomicBoolean mOptimizationRunning = new AtomicBoolean(false);
+    //Tracks event-bus registration so manual NBFM optimization requests (NBFMOptimizeRequest) are handled
+    //only while the decoder is started, and unregistration is balanced.
+    private boolean mEventBusRegistered = false;
 
     // Signal level sampling for AdaptiveGainAdvisor (sample every 50th buffer for efficiency)
     private int mIQSampleCounter = 0;
@@ -562,11 +566,26 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     public void reset() {}
 
     @Override
-    public void start() {}
+    public void start()
+    {
+        //Register for manual NBFM optimization requests (NBFMOptimizeRequest) targeting this channel.
+        if(!mEventBusRegistered)
+        {
+            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().register(this);
+            mEventBusRegistered = true;
+        }
+    }
 
     @Override
     public void stop()
     {
+        //Stop handling manual NBFM optimization requests for this (now-stopping) channel.
+        if(mEventBusRegistered)
+        {
+            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().unregister(this);
+            mEventBusRegistered = false;
+        }
+
         // Remove channel from gain advisor so its stale stats don't skew future recommendations
         if(mUserPreferences.getAIPreference().isGainAdvisorEnabled())
         {
@@ -807,28 +826,82 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             //buffer still respects the twice-daily cadence and we never hammer the API.
             mStartupOptimizeDone = true;
             mUserPreferences.getAIPreference().setNBFMLastOptimizeMs(mChannelName, System.currentTimeMillis());
-            final DecodeConfigNBFM configSnapshot = mNBFMConfig;
-            ThreadPool.CACHED.submit(() -> {
-                try
-                {
-                    List<List<float[]>> events = mAudioBufferManager.getBufferedEvents();
-                    if(!events.isEmpty())
-                    {
-                        AIAnalysisResult result = mAIAudioOptimizer.analyzeRawAudio(configSnapshot, events);
-                        applyAIOptimizationResult(result, "AUTO");
-                        mLog.info("AI auto-optimization applied to NBFM channel: {}", result.getImprovements());
-                    }
-                }
-                catch(Exception e)
-                {
-                    mLog.warn("NBFM auto-optimization failed: {}", e.getMessage());
-                }
-                finally
-                {
-                    mOptimizationRunning.set(false);
-                }
-            });
+            runOptimizationAsync("AUTO");
         }
+    }
+
+    /**
+     * Runs an NBFM filter optimization on a background thread.  The caller must have already acquired
+     * mOptimizationRunning (compareAndSet true) and recorded the last-optimize time; this clears the flag
+     * when done and posts {@link NBFMOptimizeStatus} events so the UI can show progress and the result.
+     */
+    private void runOptimizationAsync(String trigger)
+    {
+        final DecodeConfigNBFM configSnapshot = mNBFMConfig;
+        postOptimizeStatus(NBFMOptimizeStatus.STARTED, trigger + " NBFM filter optimization started");
+        ThreadPool.CACHED.submit(() -> {
+            try
+            {
+                List<List<float[]>> events = mAudioBufferManager.getBufferedEvents();
+                if(!events.isEmpty())
+                {
+                    AIAnalysisResult result = mAIAudioOptimizer.analyzeRawAudio(configSnapshot, events);
+                    applyAIOptimizationResult(result, trigger);
+                    mLog.info("AI {} optimization applied to NBFM channel {}: {}", trigger, mChannelName,
+                            result.getImprovements());
+                    postOptimizeStatus(NBFMOptimizeStatus.COMPLETED, result.getImprovements());
+                }
+                else
+                {
+                    mLog.info("AI {} optimization for NBFM channel {} skipped - no buffered call audio yet",
+                            trigger, mChannelName);
+                    postOptimizeStatus(NBFMOptimizeStatus.SKIPPED, "No recorded call audio available to analyze yet");
+                }
+            }
+            catch(Exception e)
+            {
+                mLog.warn("NBFM {} optimization failed for {}: {}", trigger, mChannelName, e.getMessage());
+                postOptimizeStatus(NBFMOptimizeStatus.FAILED, e.getMessage());
+            }
+            finally
+            {
+                mOptimizationRunning.set(false);
+            }
+        });
+    }
+
+    private void postOptimizeStatus(String state, String message)
+    {
+        io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
+                new io.github.dsheirer.module.decode.nbfm.ai.NBFMOptimizeStatus(mChannelName, state, message));
+    }
+
+    /**
+     * Handles a manual NBFM filter optimization request (from the channel UI) for this channel.  Runs
+     * regardless of the auto schedule, but still requires the feature enabled and buffered audio; declines
+     * with a status message if the feature is off or an optimization is already running.
+     */
+    @com.google.common.eventbus.Subscribe
+    public void onNBFMOptimizeRequest(io.github.dsheirer.module.decode.nbfm.ai.NBFMOptimizeRequest request)
+    {
+        if(request == null || !mChannelName.equals(request.getChannelName()))
+        {
+            return;
+        }
+        if(!mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled())
+        {
+            postOptimizeStatus(NBFMOptimizeStatus.SKIPPED,
+                    "Enable 'Auto-Optimize NBFM Audio Filters' in AI preferences first");
+            return;
+        }
+        if(!mOptimizationRunning.compareAndSet(false, true))
+        {
+            postOptimizeStatus(NBFMOptimizeStatus.SKIPPED, "An optimization is already running for this channel");
+            return;
+        }
+        mStartupOptimizeDone = true;
+        mUserPreferences.getAIPreference().setNBFMLastOptimizeMs(mChannelName, System.currentTimeMillis());
+        runOptimizationAsync("MANUAL");
     }
 
     /**
