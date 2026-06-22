@@ -63,6 +63,9 @@ public class LogsViewController {
     //Volatile: may be set after construction (see setDiagnosticMonitor) and is read from a background
     //thread when generating the processing diagnostic report.
     private volatile DiagnosticMonitor mDiagnosticMonitor;
+    //Optional self-healing orchestrator: when present, AI log analysis results are routed through it for
+    //auto-remediation and external (telegram/email) notification.  Set after construction.
+    private volatile io.github.dsheirer.preference.notification.SelfHealingOrchestrator mSelfHealingOrchestrator;
 
     @FXML private TabPane mTabbedPane;
 
@@ -104,6 +107,14 @@ public class LogsViewController {
      */
     public void setDiagnosticMonitor(DiagnosticMonitor diagnosticMonitor) {
         mDiagnosticMonitor = diagnosticMonitor;
+    }
+
+    /**
+     * Sets the self-healing orchestrator used to route AI log-analysis results into auto-remediation and
+     * external notification.  Optional; when null, AI analysis simply returns its text.
+     */
+    public void setSelfHealingOrchestrator(io.github.dsheirer.preference.notification.SelfHealingOrchestrator orchestrator) {
+        mSelfHealingOrchestrator = orchestrator;
     }
 
     public void init(UserPreferences userPreferences, DiagnosticMonitor diagnosticMonitor) {
@@ -632,6 +643,9 @@ public class LogsViewController {
 
             try {
                 AILogAnalyzer analyzer = new AILogAnalyzer(mUserPreferences);
+                if (mSelfHealingOrchestrator != null) {
+                    analyzer.setOrchestrator(mSelfHealingOrchestrator);
+                }
                 String result = analyzer.analyze(logContent);
                 Platform.runLater(() -> {
                     try {

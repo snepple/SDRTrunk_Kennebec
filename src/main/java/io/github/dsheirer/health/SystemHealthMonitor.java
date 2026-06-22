@@ -4,8 +4,9 @@ import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.gui.NotificationManager;
 import io.github.dsheirer.message.SyncLossMessage;
 import io.github.dsheirer.preference.UserPreferences;
-import io.github.dsheirer.preference.notification.NotificationPreference;
-import io.github.dsheirer.preference.notification.NotificationRecipient;
+import io.github.dsheirer.preference.notification.AlertCategory;
+import io.github.dsheirer.preference.notification.SelfHealingOrchestrator;
+import io.github.dsheirer.preference.notification.SystemAlert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +22,9 @@ public class SystemHealthMonitor {
     private static final long RATE_LIMIT_MS = TimeUnit.MINUTES.toMillis(60);
 
     private final UserPreferences mUserPreferences;
+    //Optional: routes alerts into auto-remediation and external (telegram/email) delivery.  The local
+    //tray/dialog notification is shown regardless of whether this is present.
+    private final SelfHealingOrchestrator mOrchestrator;
 
     private final ConcurrentHashMap<SystemHealthAlertEvent.AlertType, Long> mLastAlertTimes = new ConcurrentHashMap<>();
 
@@ -31,7 +35,12 @@ public class SystemHealthMonitor {
     private static final int SYNC_LOSS_THRESHOLD_BITS = 300000;
 
     public SystemHealthMonitor(UserPreferences userPreferences) {
+        this(userPreferences, null);
+    }
+
+    public SystemHealthMonitor(UserPreferences userPreferences, SelfHealingOrchestrator orchestrator) {
         this.mUserPreferences = userPreferences;
+        this.mOrchestrator = orchestrator;
         mLog.info("SystemHealthMonitor started");
     }
 
@@ -59,52 +68,42 @@ public class SystemHealthMonitor {
     // For now, it will accumulate over time, but the 60-minute rate limit prevents spam.
 
     private void triggerAlert(SystemHealthAlertEvent.AlertType type, String title, String message) {
-        NotificationPreference pref = mUserPreferences.getNotificationPreference();
-        if (pref == null) {
-            return;
-        }
-
-        boolean enabled = false;
-
-        if (pref.getRecipients() != null) {
-            for (NotificationRecipient recipient : pref.getRecipients()) {
-                switch (type) {
-                    case HARDWARE:
-                        if (recipient.isHardwareAlertEnabled()) enabled = true;
-                        break;
-                    case SIGNAL:
-                        if (recipient.isSignalAlertEnabled()) enabled = true;
-                        break;
-                    case SYSTEM:
-                        if (recipient.isSystemAlertEnabled()) enabled = true;
-                        break;
-                    case INTEGRATION:
-                        if (recipient.isIntegrationAlertEnabled()) enabled = true;
-                        break;
-                }
-                if (enabled) break; // If at least one recipient wants it, we enable the alert popup
-            }
-        }
-
-        if (!enabled) {
-            return;
-        }
-
         long now = System.currentTimeMillis();
         long lastAlertTime = mLastAlertTimes.getOrDefault(type, 0L);
 
-        if (now - lastAlertTime >= RATE_LIMIT_MS) {
-            // Update the timestamp and send notification
-            mLastAlertTimes.put(type, now);
-            mLog.warn("System Health Alert Triggered [" + type + "]: " + message);
-
-            // Dispatch to NotificationManager
-            NotificationManager.getInstance().showNotification(title, message, TrayIcon.MessageType.ERROR);
-
-            // Dispatch to recipients (for simplicity, we just use existing NotificationManager which handles Desktop popups.
-            // A more complete implementation might route through telegram/email recipients if configured, but NotificationManager suffices for the UI alert requirement).
-        } else {
+        //Rate-limit per alert type so a recurring condition can't spam the user.
+        if (now - lastAlertTime < RATE_LIMIT_MS) {
             mLog.debug("System Health Alert Suppressed (Rate Limited) [" + type + "]: " + message);
+            return;
+        }
+
+        mLastAlertTimes.put(type, now);
+        mLog.warn("System Health Alert Triggered [" + type + "]: " + message);
+
+        //Always surface the alert locally (system-tray balloon, or a dialog when no tray is available).
+        NotificationManager.getInstance().showNotification(title, message, TrayIcon.MessageType.ERROR);
+
+        //Route through the self-healing orchestrator for auto-remediation and external delivery.  The
+        //orchestrator/router gate telegram/email delivery by the user's per-recipient notification preferences.
+        if (mOrchestrator != null) {
+            mOrchestrator.intercept(new SystemAlert(toAlertCategory(type), message, type.name() + ":" + title));
+        }
+    }
+
+    /**
+     * Maps a health alert type to the notification routing category.
+     */
+    private static AlertCategory toAlertCategory(SystemHealthAlertEvent.AlertType type) {
+        switch (type) {
+            case HARDWARE:
+                return AlertCategory.HARDWARE;
+            case SIGNAL:
+                return AlertCategory.SIGNAL;
+            case INTEGRATION:
+                return AlertCategory.INTEGRATION;
+            case SYSTEM:
+            default:
+                return AlertCategory.SYSTEM;
         }
     }
 }
