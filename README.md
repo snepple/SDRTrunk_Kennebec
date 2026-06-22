@@ -1,8 +1,8 @@
-# SDRTrunk â€” Kennebec Version
+# SDRTrunk Ã¢â‚¬â€ Kennebec Version
 
-**SDRTrunk Kennebec** is a feature-rich fork of [SDRTrunk](https://github.com/DSheirer/sdrtrunk) that turns a standard computer and a compatible Software Defined Radio (SDR) into a powerful, multi-channel trunked and conventional radio scanner â€” with a modern interface and a large suite of automation, streaming, and reliability features layered on top for unattended, public-safety listening.
+**SDRTrunk Kennebec** is a feature-rich fork of [SDRTrunk](https://github.com/DSheirer/sdrtrunk) that turns a standard computer and a compatible Software Defined Radio (SDR) into a powerful, multi-channel trunked and conventional radio scanner Ã¢â‚¬â€ with a modern interface and a large suite of automation, streaming, and reliability features layered on top for unattended, public-safety listening.
 
-> **Lineage at a glance:** [DSheirer/sdrtrunk](https://github.com/DSheirer/sdrtrunk) (original) â†’ [actionpagezello/sdrtrunk](https://github.com/actionpagezello/sdrtrunk) (upstream fork) â†’ **SDRTrunk Kennebec** (this project). The core decoding, DSP, and trunking engine is the work of those upstream projects â€” see [Credits, Lineage & License](#credits-lineage--license).
+> **Lineage at a glance:** [DSheirer/sdrtrunk](https://github.com/DSheirer/sdrtrunk) (original) Ã¢â€ â€™ [actionpagezello/sdrtrunk](https://github.com/actionpagezello/sdrtrunk) (upstream fork) Ã¢â€ â€™ **SDRTrunk Kennebec** (this project). The core decoding, DSP, and trunking engine is the work of those upstream projects Ã¢â‚¬â€ see [Credits, Lineage & License](#credits-lineage--license).
 
 ---
 
@@ -27,30 +27,30 @@ To follow the traffic, SDRTrunk continuously decodes the control channel. When a
 The Kennebec build is aimed at operators who need reliable, unattended streaming and monitoring. It builds on the upstream [actionpagezello/sdrtrunk](https://github.com/actionpagezello/sdrtrunk) fork and adds (or significantly overhauls) the following:
 
 ### Modernized interface & workflow
-- **Unified User Preferences** â€” application settings, memory allocation, and tuner preferences consolidated into a single area instead of being spread across multiple menus.
-- **In-app Logs & Recordings** â€” browse, filter, and play back recordings and review live application/tuner logs from a GUI instead of digging through the file system.
-- **Refreshed UI** â€” updated icons, a collapsible left-hand navigation sidebar, and a polished "Now Playing" view.
-- **Windows native installer** â€” a standard `.exe` installer plus a silent, Windows-friendly launcher (no background terminal window).
+- **Unified User Preferences** Ã¢â‚¬â€ application settings, memory allocation, and tuner preferences consolidated into a single area instead of being spread across multiple menus.
+- **In-app Logs & Recordings** Ã¢â‚¬â€ browse, filter, and play back recordings and review live application/tuner logs from a GUI instead of digging through the file system.
+- **Refreshed UI** Ã¢â‚¬â€ updated icons, a collapsible left-hand navigation sidebar, and a polished "Now Playing" view.
+- **Windows native installer** Ã¢â‚¬â€ a standard `.exe` installer plus a silent, Windows-friendly launcher (no background terminal window).
 
 ### Advanced monitoring & integrations
-- **Two-Tone paging detection** â€” integrated detection of two-tone (and long-tone) pages for fire/EMS dispatch alerting, with per-detector alerting to one or more Zello channels, local audio, visual notifications, and MQTT.
-- **IAmResponding streaming** â€” native UDP streaming designed to route audio dispatches into the IAmResponding platform.
-- **Streaming integrations** â€” works with Broadcastify (feeds & Calls), OpenMHz, RdioScanner, Icecast, and Zello, alongside the existing SDRTrunk streaming options.
-- **Inactivity & error alerts** â€” optional Telegram or email alerts when a channel goes silent for too long or when the application/a tuner faults.
+- **Two-Tone paging detection** Ã¢â‚¬â€ integrated detection of two-tone (and long-tone) pages for fire/EMS dispatch alerting, with per-detector alerting to one or more Zello channels, local audio, visual notifications, and MQTT.
+- **IAmResponding streaming** Ã¢â‚¬â€ native UDP streaming designed to route audio dispatches into the IAmResponding platform.
+- **Streaming integrations** Ã¢â‚¬â€ works with Broadcastify (feeds & Calls), OpenMHz, RdioScanner, Icecast, and Zello, alongside the existing SDRTrunk streaming options.
+- **Inactivity & error alerts** Ã¢â‚¬â€ optional Telegram or email alerts when a channel goes silent for too long or when the application/a tuner faults.
 
 ### Reliability & health
-- **Tuner self-healing** â€” automatic recovery from transient USB errors instead of dropping all channels on a momentary glitch.
-- **Smart Bandwidth** â€” automatically lowers SDR sample rates when narrower bandwidth is sufficient, conserving CPU.
-- **System Health monitoring** â€” startup self-tests, playlist linting that surfaces configuration problems, and in-app health notifications.
+- **Tuner self-healing** Ã¢â‚¬â€ automatic recovery from transient USB errors instead of dropping all channels on a momentary glitch.
+- **Smart Bandwidth** Ã¢â‚¬â€ automatically lowers SDR sample rates when narrower bandwidth is sufficient, conserving CPU.
+- **System Health monitoring** Ã¢â‚¬â€ startup self-tests, playlist linting that surfaces configuration problems, and in-app health notifications.
 
 ### Performance
-- **Reduced CPU & memory utilization** â€” engine-level work to reduce heap allocations and improve thread usage.
-- **Optional OpenCL GPU acceleration (Aparapi)** â€” offloads some DSP/visualization math to a compatible GPU when available.
+- **Reduced CPU & memory utilization** Ã¢â‚¬â€ engine-level work to reduce heap allocations and improve thread usage.
+- **Optional OpenCL GPU acceleration (Aparapi)** Ã¢â‚¬â€ offloads some DSP/visualization math to a compatible GPU when available.
 
 ### Artificial intelligence (optional)
-- **Audio transcription** â€” real-time transcription of radio audio via OpenAI Whisper or Google Speech-to-Text.
-- **NBFM audio optimization** â€” AI-assisted noise reduction for analog NBFM audio.
-- **System Health Advisor** â€” an optional assistant that can review logs and offer remediation guidance.
+- **Audio transcription** Ã¢â‚¬â€ real-time transcription of radio audio via OpenAI Whisper or Google Speech-to-Text.
+- **NBFM audio optimization** Ã¢â‚¬â€ AI-assisted noise reduction for analog NBFM audio.
+- **System Health Advisor** Ã¢â‚¬â€ an optional assistant that can review logs and offer remediation guidance.
 
 ### In-app knowledge base
 - An embedded, searchable help viewer brings the documentation directly into the application.
@@ -71,7 +71,7 @@ The Kennebec build is aimed at operators who need reliable, unattended streaming
 
 ## Documentation & guides
 
-**[Read the SDRTrunk Kennebec documentation](https://sam-64221fcd.mintlify.app/)** for setup guides, tutorials, and troubleshooting â€” from initial hardware setup to advanced streaming and AI integration. The same content is also available in the in-app knowledge base.
+**[Read the SDRTrunk Kennebec documentation](https://sam-64221fcd.mintlify.app/)** for setup guides, tutorials, and troubleshooting Ã¢â‚¬â€ from initial hardware setup to advanced streaming and AI integration. The same content is also available in the in-app knowledge base.
 
 ---
 
@@ -91,11 +91,11 @@ The installer/runtime image is written to `build/installer/` and `build/image/`.
 
 ### Producing and publishing releases
 
-`build_and_release.bat` (Windows) is the release tool. It compiles the project, builds the platform packages (Windows installer + portable ZIP, and â€” for a full release â€” Linux and macOS packages), and publishes a GitHub Release with those assets.
+`build_and_release.bat` (Windows) is the release tool. It compiles the project, builds the platform packages (Windows installer + portable ZIP, and Ã¢â‚¬â€ for a full release Ã¢â‚¬â€ Linux and macOS packages), and publishes a GitHub Release with those assets.
 
 After publishing, it **automatically regenerates the "Download the Latest Release" section of this README** (the block delimited by the `DOWNLOADS:START` and `DOWNLOADS:END` HTML comment markers) so the links always point at the newest release, then commits and pushes the change. That regeneration is performed by [`.github/update_readme_downloads.ps1`](.github/update_readme_downloads.ps1), which links only the assets that actually exist in the release.
 
-> **Do not edit the download-links section by hand** â€” it is overwritten on every release.
+> **Do not edit the download-links section by hand** Ã¢â‚¬â€ it is overwritten on every release.
 
 ---
 
@@ -149,12 +149,12 @@ Performance &amp; live log analysis<br>
 
 SDRTrunk Kennebec stands on the work of two upstream projects and would not exist without them:
 
-- **Original â€” SDRTrunk by Dennis Sheirer:** [DSheirer/sdrtrunk](https://github.com/DSheirer/sdrtrunk). The decoding, DSP, and trunking engine at the heart of this application is Dennis Sheirer's work. Huge thanks to him and the SDRTrunk contributors.
-- **Upstream fork â€” [actionpagezello/sdrtrunk](https://github.com/actionpagezello/sdrtrunk):** SDRTrunk Kennebec is forked directly from this project and builds on its improvements. Thank you to its author(s) for the work that Kennebec extends.
+- **Original Ã¢â‚¬â€ SDRTrunk by Dennis Sheirer:** [DSheirer/sdrtrunk](https://github.com/DSheirer/sdrtrunk). The decoding, DSP, and trunking engine at the heart of this application is Dennis Sheirer's work. Huge thanks to him and the SDRTrunk contributors.
+- **Upstream fork Ã¢â‚¬â€ [actionpagezello/sdrtrunk](https://github.com/actionpagezello/sdrtrunk):** SDRTrunk Kennebec is forked directly from this project and builds on its improvements. Thank you to its author(s) for the work that Kennebec extends.
 
 Kennebec is a community/hobby fork and is not affiliated with or endorsed by the upstream projects.
 
-This project is licensed under the **GNU General Public License v3.0**, the same license as the original SDRTrunk â€” see [`LICENSE`](LICENSE). Per the GPL, source is available here and any redistributed builds remain under the GPL.
+This project is licensed under the **GNU General Public License v3.0**, the same license as the original SDRTrunk Ã¢â‚¬â€ see [`LICENSE`](LICENSE). Per the GPL, source is available here and any redistributed builds remain under the GPL.
 
 ---
 
@@ -162,13 +162,13 @@ This project is licensed under the **GNU General Public License v3.0**, the same
 <!-- This section is regenerated automatically by build_and_release.bat after each GitHub release. Do not edit by hand. -->
 ## Download the Latest Release
 
-Not sure what to download? Here is a quick guide to getting started with **SDRTrunk Kennebec (v00.125)**:
+Not sure what to download? Here is a quick guide to getting started with **SDRTrunk Kennebec (v00.126)**:
 
 - **Windows Users (Recommended)**: Download the Native Windows Installer. This is the easiest way to install and manage SDRTrunk on Windows.
-  - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.125/SDRTrunk-00.125-windows-installer.exe)
+  - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.126/SDRTrunk-00.126-windows-installer.exe)
   - **Note**: Because this is an open-source project without a paid code signing certificate, Windows SmartScreen may show an "Unknown Publisher" warning. To proceed, click **"More info"**, then click **"Run anyway"**.
 - **Advanced Windows Users**: Download the Portable ZIP if you prefer to run the application without installing it.
-  - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.125/SDRTrunk-00.125-windows-x86_64.zip)
+  - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.126/SDRTrunk-00.126-windows-x86_64.zip)
 
-*(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/00.125))*
+*(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/00.126))*
 <!-- DOWNLOADS:END -->
