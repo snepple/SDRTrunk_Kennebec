@@ -9,8 +9,8 @@ import java.util.Collection;
 import io.github.dsheirer.playlist.TwoToneConfiguration;
 import io.github.dsheirer.playlist.TwoToneDiscoveryLog;
 import io.github.dsheirer.audio.broadcast.zello.ZelloBroadcaster;
-import io.github.dsheirer.audio.broadcast.BroadcastConfiguration;
-import io.github.dsheirer.audio.broadcast.zello.ZelloConfiguration;
+import io.github.dsheirer.audio.broadcast.AbstractAudioBroadcaster;
+import io.github.dsheirer.audio.broadcast.BroadcastModel;
 import io.github.dsheirer.preference.notification.AntiFloodFilter;
 
 import org.slf4j.Logger;
@@ -61,7 +61,12 @@ public class TwoToneDetector
     private final AtomicBoolean mRunning = new AtomicBoolean(true);
 
     private final PlaylistManager mPlaylistManager;
-    private final List<ZelloBroadcaster> mZelloBroadcasters;
+    private final BroadcastModel mBroadcastModel;
+
+    // Per-segment cache for alias-based audio routing.  Alias membership is constant for the lifetime of an audio
+    // segment, so we resolve the applicable detectors once per segment instead of for every 20 ms audio block.
+    private AudioSegment mLastRoutedSegment;
+    private java.util.Set<String> mLastApplicableDetectors = java.util.Collections.emptySet();
 
     // Discovery tracking
     public static final List<TwoToneDiscoveryLog> DISCOVERY_LOG = new ArrayList<>();
@@ -85,10 +90,10 @@ public class TwoToneDetector
     private double mDiscoveryCurrentToneB = 0.0;
     private int mDiscoveryToneBBlocks = 0;
 
-    public TwoToneDetector(PlaylistManager playlistManager, List<ZelloBroadcaster> zelloBroadcasters)
+    public TwoToneDetector(PlaylistManager playlistManager)
     {
         mPlaylistManager = playlistManager;
-        mZelloBroadcasters = zelloBroadcasters;
+        mBroadcastModel = (playlistManager != null) ? playlistManager.getBroadcastModel() : null;
 
         mExecutorService.submit(() -> {
             while (mRunning.get())
@@ -146,9 +151,14 @@ public class TwoToneDetector
         boolean matchedToneAThisBlock = false;
         boolean matchedToneBThisBlock = false;
 
+        //Alias-based routing: a detector only receives this segment's audio when one of its selected aliases resolves
+        //on the segment (or when it has no aliases selected, in which case it runs globally for backward compatibility).
+        java.util.Set<String> applicableDetectors = getApplicableDetectorNames(segment, configs);
+
         for(TwoToneConfiguration config : configs)
         {
             if (!config.isEnabled()) continue;
+            if (!applicableDetectors.contains(config.getAlias())) continue;
 
             long freqA = Math.round(config.getToneA());
             long freqB = Math.round(config.getToneB());
@@ -310,6 +320,110 @@ public class TwoToneDetector
         }
     }
 
+    /**
+     * Determines which detector configurations should receive this audio segment, based on the alias(es) selected for
+     * each detector.  A detector that has one or more aliases selected only receives audio from segments whose resolved
+     * alias selected it (alias-routed live audio).  A detector with no aliases selected runs globally against all audio,
+     * preserving the legacy behavior.  Results are cached per audio segment because alias membership is constant for the
+     * lifetime of a segment and this is evaluated for every 20 ms audio block.
+     */
+    private java.util.Set<String> getApplicableDetectorNames(AudioSegment segment, List<TwoToneConfiguration> configs)
+    {
+        if(segment == mLastRoutedSegment)
+        {
+            return mLastApplicableDetectors;
+        }
+
+        java.util.Set<String> segmentDetectors = resolveSegmentDetectorNames(segment);
+        java.util.Set<String> applicable = new java.util.HashSet<>();
+
+        for(TwoToneConfiguration config : configs)
+        {
+            String name = config.getAlias();
+
+            if(name == null)
+            {
+                continue;
+            }
+
+            if(segmentDetectors.contains(name))
+            {
+                applicable.add(name); //An alias selected for this detector resolved on the segment
+            }
+            else if(!detectorHasAnyAliasMapping(name))
+            {
+                applicable.add(name); //No aliases selected for this detector -> global (legacy) behavior
+            }
+        }
+
+        mLastRoutedSegment = segment;
+        mLastApplicableDetectors = applicable;
+        return applicable;
+    }
+
+    /**
+     * Resolves the set of two-tone detector names referenced by the alias(es) that match the segment's identifiers.
+     */
+    private java.util.Set<String> resolveSegmentDetectorNames(AudioSegment segment)
+    {
+        java.util.Set<String> names = new java.util.HashSet<>();
+
+        if(segment == null)
+        {
+            return names;
+        }
+
+        try
+        {
+            io.github.dsheirer.alias.AliasList aliasList =
+                mPlaylistManager.getAliasModel().getAliasList(segment.getIdentifierCollection());
+
+            if(aliasList != null)
+            {
+                for(Identifier identifier : segment.getIdentifierCollection().getIdentifiers())
+                {
+                    List<Alias> aliases = aliasList.getAliases(identifier);
+
+                    if(aliases != null)
+                    {
+                        for(Alias alias : aliases)
+                        {
+                            for(io.github.dsheirer.alias.id.twotone.TwoToneDetectorID detectorId : alias.getTwoToneDetectors())
+                            {
+                                if(detectorId.getDetectorName() != null)
+                                {
+                                    names.add(detectorId.getDetectorName());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            mLog.error("Error resolving aliases for two tone detector audio routing", e);
+        }
+
+        return names;
+    }
+
+    /**
+     * Indicates if any alias in the alias model has selected the named detector.
+     */
+    private boolean detectorHasAnyAliasMapping(String detectorName)
+    {
+        for(Alias alias : mPlaylistManager.getAliasModel().aliasList())
+        {
+            if(alias.hasTwoToneDetector(detectorName))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private int getTolerancePower(float[] buffer, long freq, double tol) {
         if (tol <= 0) {
             return new GoertzelFilter(SAMPLE_RATE, freq, BLOCK_SIZE, WindowType.BLACKMAN).getPower(buffer.clone());
@@ -425,21 +539,32 @@ public class TwoToneDetector
             return;
         }
 
-        for(ZelloBroadcaster broadcaster : mZelloBroadcasters)
+        boolean sendText = config.isEnableZelloTextMessage();
+        boolean sendTone = config.isEnableZelloAlert() && config.getZelloAlertFile() != null &&
+                !config.getZelloAlertFile().isEmpty();
+
+        if(sendText || sendTone)
         {
-            BroadcastConfiguration bc = broadcaster.getBroadcastConfiguration();
-            if(bc instanceof ZelloConfiguration)
+            for(String streamName : config.getEffectiveZelloChannels())
             {
-                ZelloConfiguration zc = (ZelloConfiguration) bc;
-                if(config.getZelloChannel() != null && config.getZelloChannel().equals(zc.getChannel()))
+                ZelloBroadcaster broadcaster = getZelloBroadcaster(streamName);
+
+                if(broadcaster == null)
                 {
-                    mLog.info("Sending Zello Alert to {}: {}", zc.getChannel(), text);
-                    if (config.isEnableZelloTextMessage()) {
-                        broadcaster.sendTextMessage(text);
-                    }
-                    if (config.isEnableZelloAlert() && config.getZelloAlertFile() != null && !config.getZelloAlertFile().isEmpty()) {
-                        broadcaster.injectPreDispatchAudio(config.getZelloAlertFile());
-                    }
+                    mLog.warn("Two Tone Zello alert: no active Zello broadcaster for stream [{}] - is the stream " +
+                            "enabled and connected?", streamName);
+                    continue;
+                }
+
+                mLog.info("Sending Two Tone Zello alert to stream [{}]: {}", streamName, text);
+
+                if(sendText)
+                {
+                    broadcaster.sendTextMessage(text);
+                }
+                if(sendTone)
+                {
+                    broadcaster.injectPreDispatchAudio(config.getZelloAlertFile());
                 }
             }
         }
@@ -500,6 +625,28 @@ public class TwoToneDetector
                 mLog.error("Error playing local alert audio: " + config.getAlertFilePath(), ex);
             }
         }
+    }
+
+    /**
+     * Resolves the live Zello broadcaster for the given broadcast stream name, or null if there is no active Zello
+     * stream with that name.  The two tone editor stores broadcast stream names (BroadcastConfiguration.getName()),
+     * so the same name is used here to look up the running broadcaster.
+     */
+    private ZelloBroadcaster getZelloBroadcaster(String streamName)
+    {
+        if(streamName == null || mBroadcastModel == null)
+        {
+            return null;
+        }
+
+        AbstractAudioBroadcaster broadcaster = mBroadcastModel.getBroadcaster(streamName);
+
+        if(broadcaster instanceof ZelloBroadcaster)
+        {
+            return (ZelloBroadcaster) broadcaster;
+        }
+
+        return null;
     }
 
     private void logDiscovery(double toneA, double toneB, AudioSegment segment)

@@ -663,6 +663,11 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         notifyPreloader(new SDRTrunkPreloader.TextNotification("Initializing Audio Services..."));
         DuplicateCallDetector duplicateCallDetector = new DuplicateCallDetector(mUserPreferences);
 
+        //Wire up two-tone paging detection so it receives live audio.  The detector routes audio to each configured
+        //detector based on the alias(es) selected for it (see TwoToneDetector), and fires app, Zello, and MQTT alerts.
+        mAudioPlaybackManager.setTwoToneDetector(
+            new io.github.dsheirer.dsp.tone.TwoToneDetector(mPlaylistManager));
+
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(duplicateCallDetector);
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(mAudioPlaybackManager);
         mPlaylistManager.getChannelProcessingManager().addAudioSegmentListener(mAudioRecordingManager);

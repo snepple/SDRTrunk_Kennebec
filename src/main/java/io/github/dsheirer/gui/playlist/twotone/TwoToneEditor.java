@@ -27,6 +27,7 @@ import javafx.scene.control.TabPane;
 import io.github.dsheirer.audio.broadcast.BroadcastConfiguration;
 import io.github.dsheirer.audio.broadcast.BroadcastServerType;
 import javafx.collections.ListChangeListener;
+import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.SegmentedButton;
 
 
@@ -196,14 +197,18 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             }
         });
 
-        ComboBox<String> zelloField = new ComboBox<>();
+        //Multi-select of Zello channels (broadcast stream names). A detector can alert one or more Zello channels.
+        CheckComboBox<String> zelloField = new CheckComboBox<>();
+        zelloField.setMaxWidth(Double.MAX_VALUE);
         for (BroadcastConfiguration bc : mPlaylistManager.getBroadcastModel().getBroadcastConfigurations()) {
             if (bc.getBroadcastServerType() == BroadcastServerType.ZELLO_WORK || bc.getBroadcastServerType() == BroadcastServerType.ZELLO) {
-                if (bc.getName() != null) {
+                if (bc.getName() != null && !zelloField.getItems().contains(bc.getName())) {
                     zelloField.getItems().add(bc.getName());
                 }
             }
         }
+        //Guard so programmatic check updates (when switching detectors) don't write back to the model.
+        final boolean[] updatingZello = {false};
 
         CheckBox mqttCheck = new CheckBox("Enable MQTT Publish");
         TextField topicField = new TextField();
@@ -316,7 +321,8 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         Runnable updatePreview = () -> {
             String template = templateField.getText() != null && !templateField.getText().isEmpty() ? templateField.getText() : "Dispatch Received: {Alias}";
             String alias = aliasField.getText() != null && !aliasField.getText().isEmpty() ? aliasField.getText() : "Unknown";
-            String channel = zelloField.getValue() != null && !zelloField.getValue().isEmpty() ? zelloField.getValue() : "Unknown";
+            List<String> checkedChannels = zelloField.getCheckModel().getCheckedItems();
+            String channel = (checkedChannels != null && !checkedChannels.isEmpty()) ? checkedChannels.get(0) : "Unknown";
             String freq = "154.145";
             String timestamp = String.valueOf(System.currentTimeMillis());
 
@@ -398,7 +404,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         GridPane zelloGrid = new GridPane();
         zelloGrid.setHgap(10);
         zelloGrid.setVgap(8);
-        zelloGrid.add(new Label("Zello Channel:"), 0, 0);
+        zelloGrid.add(new Label("Zello Channel(s):"), 0, 0);
         zelloGrid.add(zelloField, 1, 0);
         zelloGrid.add(textMessageCheck, 0, 1);
         zelloGrid.add(textMessageInfo, 1, 1);
@@ -428,7 +434,6 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
 
             if (oldVal != null) {
                 aliasField.textProperty().unbindBidirectional(oldVal.aliasProperty());
-                zelloField.valueProperty().unbindBidirectional(oldVal.zelloChannelProperty());
                 mqttCheck.selectedProperty().unbindBidirectional(oldVal.enableMqttPublishProperty());
                 topicField.textProperty().unbindBidirectional(oldVal.mqttTopicProperty());
                 payloadArea.textProperty().unbindBidirectional(oldVal.mqttPayloadProperty());
@@ -469,7 +474,17 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                     toneBField.getEditor().setText(String.valueOf(newVal.getToneB()));
                     toneBField.setValue(String.valueOf(newVal.getToneB()));
                 }
-                zelloField.valueProperty().bindBidirectional(newVal.zelloChannelProperty());
+                //Reflect the detector's selected Zello channels in the multi-select control (guarded so this does not
+                //write back to the model).
+                updatingZello[0] = true;
+                zelloField.getCheckModel().clearChecks();
+                for (String channel : newVal.getEffectiveZelloChannels()) {
+                    if (!zelloField.getItems().contains(channel)) {
+                        zelloField.getItems().add(channel);
+                    }
+                    zelloField.getCheckModel().check(channel);
+                }
+                updatingZello[0] = false;
                 mqttCheck.selectedProperty().bindBidirectional(newVal.enableMqttPublishProperty());
                 topicField.textProperty().bindBidirectional(newVal.mqttTopicProperty());
                 payloadArea.textProperty().bindBidirectional(newVal.mqttPayloadProperty());
@@ -493,7 +508,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 toneBField.getEditor().clear();
                 toneBField.setValue(null);
                 typeSelector.getSelectionModel().select("A/B Tones");
-                zelloField.getSelectionModel().clearSelection();
+                updatingZello[0] = true;
+                zelloField.getCheckModel().clearChecks();
+                updatingZello[0] = false;
                 mqttCheck.setSelected(false);
                 topicField.clear();
                 payloadArea.clear();
@@ -516,7 +533,22 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         // Basic double conversion listener
         aliasField.textProperty().addListener((obs, o, n) -> updatePreview.run());
         templateField.textProperty().addListener((obs, o, n) -> updatePreview.run());
-        zelloField.valueProperty().addListener((obs, o, n) -> updatePreview.run());
+
+        //Persist multi-channel Zello selections to the selected detector. The legacy single-channel field is kept in
+        //sync (set to the first selected channel) for backward compatibility with older app versions.
+        zelloField.getCheckModel().getCheckedItems().addListener((ListChangeListener<String>) c -> {
+            updatePreview.run();
+            if (updatingZello[0]) {
+                return;
+            }
+            TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                return;
+            }
+            List<String> checked = new java.util.ArrayList<>(zelloField.getCheckModel().getCheckedItems());
+            sel.setZelloChannels(checked);
+            sel.setZelloChannel(checked.isEmpty() ? null : checked.get(0));
+        });
 
         toneAField.getEditor().textProperty().addListener((obs, o, n) -> {
             TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
