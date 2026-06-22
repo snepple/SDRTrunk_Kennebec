@@ -384,7 +384,13 @@ public class RadioIdNameLearner
 
             String text = candidates.get(0).getAsJsonObject().getAsJsonObject("content")
                 .getAsJsonArray("parts").get(0).getAsJsonObject().get("text").getAsString();
-            JsonObject result = new Gson().fromJson(text, JsonObject.class);
+            JsonObject result = parseModelJsonObject(text);
+
+            if(result == null)
+            {
+                mLog.debug("Gemini returned no parseable JSON object for radio name resolution: {}", text);
+                return;
+            }
 
             String name = result.has("name") ? result.get("name").getAsString() : "";
             double confidence = result.has("confidence") ? result.get("confidence").getAsDouble() : 0.0;
@@ -404,6 +410,59 @@ public class RadioIdNameLearner
         catch(Exception e)
         {
             mLog.warn("Error resolving radio name with Gemini - " + e.getMessage());
+        }
+    }
+
+    /**
+     * Parses a JSON object out of a generative-model text response.  Models frequently wrap the JSON in markdown code
+     * fences (```json ... ```) or surround it with prose, which makes a strict {@code Gson.fromJson} throw a
+     * MalformedJsonException.  This strips fences, extracts the outermost {@code { ... }} block, and parses leniently.
+     * @param text raw model output (may be null)
+     * @return parsed object, or null if no JSON object could be extracted/parsed
+     */
+    static JsonObject parseModelJsonObject(String text)
+    {
+        if(text == null)
+        {
+            return null;
+        }
+
+        String s = text.trim();
+
+        //Strip a leading ```json / ``` fence and trailing ``` fence if present.
+        if(s.startsWith("```"))
+        {
+            int firstNewline = s.indexOf('\n');
+            s = (firstNewline >= 0) ? s.substring(firstNewline + 1) : s.substring(3);
+            if(s.endsWith("```"))
+            {
+                s = s.substring(0, s.length() - 3);
+            }
+            s = s.trim();
+        }
+
+        //Extract the outermost JSON object if the model added surrounding prose.
+        int start = s.indexOf('{');
+        int end = s.lastIndexOf('}');
+        if(start >= 0 && end > start)
+        {
+            s = s.substring(start, end + 1);
+        }
+
+        if(s.isEmpty())
+        {
+            return null;
+        }
+
+        try(com.google.gson.stream.JsonReader reader =
+                new com.google.gson.stream.JsonReader(new java.io.StringReader(s)))
+        {
+            reader.setStrictness(com.google.gson.Strictness.LENIENT);
+            return new Gson().fromJson(reader, JsonObject.class);
+        }
+        catch(Exception e)
+        {
+            return null;
         }
     }
 

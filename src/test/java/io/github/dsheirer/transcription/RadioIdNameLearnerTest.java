@@ -1,0 +1,70 @@
+package io.github.dsheirer.transcription;
+
+import com.google.gson.JsonObject;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Tests for {@link RadioIdNameLearner#parseModelJsonObject(String)} - robust extraction of a JSON object from a
+ * generative model's text response, which is frequently wrapped in markdown code fences or surrounding prose.
+ */
+public class RadioIdNameLearnerTest
+{
+    @Test
+    public void parsesPlainJson()
+    {
+        JsonObject o = RadioIdNameLearner.parseModelJsonObject("{\"name\":\"Engine 5\",\"confidence\":0.9}");
+        assertNotNull(o);
+        assertEquals("Engine 5", o.get("name").getAsString());
+        assertEquals(0.9, o.get("confidence").getAsDouble(), 0.0001);
+    }
+
+    @Test
+    public void parsesJsonWrappedInJsonCodeFence()
+    {
+        String fenced = "```json\n{\"name\":\"Engine 5\",\"confidence\":0.8}\n```";
+        JsonObject o = RadioIdNameLearner.parseModelJsonObject(fenced);
+        assertNotNull(o);
+        assertEquals("Engine 5", o.get("name").getAsString());
+    }
+
+    @Test
+    public void parsesJsonWrappedInPlainCodeFence()
+    {
+        String fenced = "```\n{\"name\":\"Ladder 1\"}\n```";
+        JsonObject o = RadioIdNameLearner.parseModelJsonObject(fenced);
+        assertNotNull(o);
+        assertEquals("Ladder 1", o.get("name").getAsString());
+    }
+
+    @Test
+    public void parsesJsonSurroundedByProse()
+    {
+        String prose = "Sure! Here is the result:\n{\"name\":\"Medic 3\",\"confidence\":0.95} \nHope that helps.";
+        JsonObject o = RadioIdNameLearner.parseModelJsonObject(prose);
+        assertNotNull(o);
+        assertEquals("Medic 3", o.get("name").getAsString());
+    }
+
+    @Test
+    public void parsesLenientSingleQuotes()
+    {
+        //Models sometimes emit single-quoted JSON; lenient parsing accepts it.
+        JsonObject o = RadioIdNameLearner.parseModelJsonObject("{'name':'Engine 5'}");
+        assertNotNull(o);
+        assertEquals("Engine 5", o.get("name").getAsString());
+    }
+
+    @Test
+    public void returnsNullForNoJson()
+    {
+        assertNull(RadioIdNameLearner.parseModelJsonObject("I don't know the name."));
+    }
+
+    @Test
+    public void returnsNullForNullInput()
+    {
+        assertNull(RadioIdNameLearner.parseModelJsonObject(null));
+    }
+}
