@@ -58,11 +58,21 @@ public class SquelchAIAdvisor
     public static final int MIN_CALIBRATION_SAMPLES = 40;
 
     /**
-     * Minimum spread between the low (signal) and high (noise-floor) variance percentiles for the
-     * calibration to treat the capture as containing both signal and noise.  Below this the capture is
-     * assumed to be noise-floor only and a conservative below-the-floor placement is used instead.
+     * Minimum spread between the low (signal) and high (noise-floor) variance percentiles before a capture can be
+     * considered to contain a separate signal cluster at all.  Below this the capture is treated as noise-floor only
+     * and a conservative below-the-floor placement is used.
      */
     private static final float MINIMUM_CLUSTER_SEPARATION = 0.03f;
+
+    /**
+     * Fraction of the total p10..p90 spread that the largest interior decile gap (the "valley" between a signal
+     * cluster and the noise floor) must reach for a capture to be treated as bimodal signal+noise rather than
+     * unimodal noise.  A unimodal noise capture spreads its range roughly evenly across the deciles (each gap
+     * ~1/8 of the range), so requiring one dominant valley reliably rejects noisy-but-idle channels - which is
+     * essential, because mistaking noise spread for a signal cluster drops the thresholds inside the noise floor
+     * and makes the squelch chatter (rapid open/close, stuttering audio).
+     */
+    private static final float BIMODAL_VALLEY_FRACTION = 0.40f;
 
     //Noise-floor anchored placement (used when the capture is noise-floor only, i.e. an idle channel).  The noise
     //floor edge is the worst-case (lowest-variance, most signal-like) noise excursion; the open threshold is placed a
@@ -213,9 +223,15 @@ public class SquelchAIAdvisor
         float high = percentile(sorted, 90);    //~noise-floor variance
         float separation = high - low;
 
+        //Only place thresholds "between the clusters" when the capture is genuinely bimodal (a signal cluster AND a
+        //noise cluster separated by a valley).  An idle channel's noise still has a p10..p90 spread, so keying off
+        //spread alone (the old behaviour) dropped the thresholds inside the noise floor on idle channels and made the
+        //squelch chatter.  A unimodal noise capture is anchored below the floor instead.
+        boolean bimodal = isBimodal(sorted, low, high);
+
         float open, close;
 
-        if(separation >= MINIMUM_CLUSTER_SEPARATION)
+        if(bimodal)
         {
             //Both signal and noise observed - place thresholds in the gap between the clusters: open near the clean
             //signal level, close toward the noise floor, so real signals open the squelch while noise keeps it closed.
@@ -287,7 +303,7 @@ public class SquelchAIAdvisor
         hysteresisClose = Math.max(hysteresisOpen, Math.min(hysteresisOpen + 5, hysteresisClose));
 
         String rationale;
-        if(separation >= MINIMUM_CLUSTER_SEPARATION)
+        if(bimodal)
         {
             rationale = String.format("Saw both a clean-signal level (~%s) and a noise-floor level (~%s); set " +
                     "open/close in the gap between them so real signals open the squelch while noise keeps it closed.",
@@ -308,9 +324,10 @@ public class SquelchAIAdvisor
         rationale += String.format("  Set hysteresis to open=%d, close=%d (x10 ms) to %s.",
                 hysteresisOpen, hysteresisClose, hysteresisReason);
 
-        mLog.debug("SquelchAI calibration: samples={}, low(p10)={}, median={}, high(p90)={} -> open={}, close={}, " +
-                        "hysteresis open={}, close={}", mVarianceSamples.size(), fmt(low), fmt(median), fmt(high),
-                fmt(open), fmt(close), hysteresisOpen, hysteresisClose);
+        mLog.debug("SquelchAI calibration: samples={}, low(p10)={}, median={}, high(p90)={}, mode={} -> open={}, " +
+                        "close={}, hysteresis open={}, close={}", mVarianceSamples.size(), fmt(low), fmt(median),
+                fmt(high), bimodal ? "signal+noise" : "noise-floor", fmt(open), fmt(close), hysteresisOpen,
+                hysteresisClose);
 
         return new Recommendation(open, close, hysteresisOpen, hysteresisClose, rationale);
     }
@@ -355,6 +372,49 @@ public class SquelchAIAdvisor
     /**
      * Returns the value at the given percentile (0-100) from a pre-sorted, non-empty list.
      */
+    /**
+     * Decides whether a sorted variance capture is bimodal (a low-variance signal cluster AND a high-variance noise
+     * cluster separated by a valley) versus unimodal (noise floor only).  Placing open/close "between the clusters"
+     * is only correct for a genuinely bimodal capture; doing it on unimodal noise drops the thresholds inside the
+     * noise distribution so ambient noise constantly crosses them and the squelch chatters (the stuttering bug).
+     *
+     * Scale-free test: sample the distribution at deciles (p10..p90) and measure the largest gap between adjacent
+     * interior deciles, ignoring the outer p10-p20 / p80-p90 tails so a skewed-but-unimodal noise tail isn't
+     * mistaken for a valley.  A unimodal distribution spreads its range roughly evenly (each gap ~1/8 of the range);
+     * a bimodal distribution concentrates it into one valley.  Require that valley to be a large fraction of the
+     * total p10..p90 spread.
+     *
+     * @param sorted ascending variance samples.
+     * @param low p10 of the capture.
+     * @param high p90 of the capture.
+     * @return true when the capture looks like signal+noise, false when it looks like noise floor only.
+     */
+    private static boolean isBimodal(List<Float> sorted, float low, float high)
+    {
+        float separation = high - low;
+
+        if(separation < MINIMUM_CLUSTER_SEPARATION)
+        {
+            return false;   //Too little spread to contain two separate clusters.
+        }
+
+        float[] deciles = new float[9];     //p10, p20, ... p90
+        for(int i = 0; i < deciles.length; i++)
+        {
+            deciles[i] = percentile(sorted, (i + 1) * 10);
+        }
+
+        //Largest gap among the interior deciles p20..p80 - the valley between clusters lives here, away from the
+        //outer tails which can be uneven even for unimodal noise.
+        float maxInteriorGap = 0f;
+        for(int i = 2; i <= 7; i++)
+        {
+            maxInteriorGap = Math.max(maxInteriorGap, deciles[i] - deciles[i - 1]);
+        }
+
+        return maxInteriorGap >= (BIMODAL_VALLEY_FRACTION * separation);
+    }
+
     private static float percentile(List<Float> sorted, int percentile)
     {
         int index = Math.round((percentile / 100.0f) * (sorted.size() - 1));
