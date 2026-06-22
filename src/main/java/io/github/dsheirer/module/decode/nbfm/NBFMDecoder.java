@@ -246,6 +246,13 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
         //Send squelch controlled audio to the resampler and notify the decoder state that the call continues.
         mNoiseSquelch.setAudioListener(audio -> {
+            if(isToneGated())
+            {
+                //Tone-gated channels resample the full demodulated stream in receive() so the tone detector is
+                //never starved by the noise squelch; their output is gated on the tone match, not this squelch.
+                return;
+            }
+
             // if squelch is closing (it hasn't propagated yet to mute the audio)
             //  call the resampler with lastBatch set to true. This will zero pad the input buffer and ensure
             //  the output buffer gets emptied.
@@ -273,6 +280,14 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         //When tone filtering is enabled, we defer the call start until the correct tone is confirmed.
         //The channel stays idle until the CTCSS detector confirms the right tone — just like a real radio.
         mNoiseSquelch.setSquelchStateListener(squelchState -> {
+            if(isToneGated())
+            {
+                //Tone-gated channels derive call start/continuation/end (and tail-remover open/close) from the
+                //tone detector, which is fed continuously, so a mistuned noise squelch can neither start spurious
+                //calls nor end real ones.  The noise squelch does not participate in their gating.
+                return;
+            }
+
             if(squelchState == SquelchState.SQUELCH)
             {
                 // Squelch closed (end of transmission)
@@ -603,6 +618,17 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     }
 
     /**
+     * Indicates whether this channel is tone-gated, i.e. it has a valid CTCSS or DCS tone filter configured.
+     * For tone-gated channels the tone/code detector - fed continuously from the demodulated stream - is the
+     * squelch, so the noise squelch does not gate audio or drive the call lifecycle.
+     * @return true when a valid CTCSS/DCS tone filter is active.
+     */
+    private boolean isToneGated()
+    {
+        return mToneFilterEnabled && mToneFilterType != null;
+    }
+
+    /**
      * Processes resampled 8 kHz audio through the CTCSS/DCS tone filter and squelch tail remover
      * before broadcasting to downstream consumers.
      *
@@ -627,6 +653,13 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         {
             // Tone/code not confirmed yet — block audio
             return;
+        }
+
+        // Tone-gated channels keep the call alive here (their noise-squelch audio listener is bypassed), so the
+        // channel state doesn't fall back to idle while the matched tone persists.
+        if(isToneGated())
+        {
+            notifyCallContinuation();
         }
 
         // Step 3: Apply VoxSend audio filter chain (low-pass, de-emphasis, bass boost,
@@ -749,9 +782,27 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
         mNoiseSquelch.process(demodulated);
 
+        if(isToneGated())
+        {
+            //Tone-gated channel: the tone/code detector is the squelch.  Feed the FULL demodulated stream to the
+            //resampler so the detector is never starved by a mistuned or closed noise squelch (the previous design
+            //only forwarded audio while the noise squelch was open, which silently killed tone-filtered channels
+            //whose noise squelch never opened).  processResampledAudio() gates output on the tone match, and the
+            //call lifecycle is driven by the detector.  The noise squelch still runs above purely to render the
+            //squelch activity chart.
+            if(mResampler != null)
+            {
+                mResampler.resample(demodulated);
+            }
+
+            if(!mToneMatch)
+            {
+                notifyIdle();
+            }
+        }
         //Once we process the sample buffer, if the ending state is squelch closed, update the decoder state that we
         // are idle.
-        if(mNoiseSquelch.isSquelched())
+        else if(mNoiseSquelch.isSquelched())
         {
             notifyIdle();
         }
@@ -1084,6 +1135,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                     // If we were previously blocked, fire a call start now
                     if(wasBlocked)
                     {
+                        if(mSquelchTailRemover != null)
+                        {
+                            mSquelchTailRemover.squelchOpen();
+                        }
                         notifyCallStart();
                     }
 
@@ -1103,6 +1158,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                     // If we had an active call, end it and go idle
                     if(wasActive)
                     {
+                        if(mSquelchTailRemover != null)
+                        {
+                            mSquelchTailRemover.squelchClose();
+                        }
                         notifyCallEnd();
                     }
                     notifyIdle();
@@ -1122,6 +1181,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
                     if(wasActive)
                     {
+                        if(mSquelchTailRemover != null)
+                        {
+                            mSquelchTailRemover.squelchClose();
+                        }
                         notifyCallEnd();
                     }
                     notifyIdle();
@@ -1153,6 +1216,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
                     if(wasBlocked)
                     {
+                        if(mSquelchTailRemover != null)
+                        {
+                            mSquelchTailRemover.squelchOpen();
+                        }
                         notifyCallStart();
                     }
 
@@ -1171,6 +1238,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
                     if(wasActive)
                     {
+                        if(mSquelchTailRemover != null)
+                        {
+                            mSquelchTailRemover.squelchClose();
+                        }
                         notifyCallEnd();
                     }
                     notifyIdle();
@@ -1190,6 +1261,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
                     if(wasActive)
                     {
+                        if(mSquelchTailRemover != null)
+                        {
+                            mSquelchTailRemover.squelchClose();
+                        }
                         notifyCallEnd();
                     }
                     notifyIdle();
