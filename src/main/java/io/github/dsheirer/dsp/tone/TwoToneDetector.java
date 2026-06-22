@@ -68,6 +68,12 @@ public class TwoToneDetector
     private AudioSegment mLastRoutedSegment;
     private java.util.Set<String> mLastApplicableDetectors = java.util.Collections.emptySet();
 
+    // Cached Goertzel filters (keyed by target frequency) and a reused windowing scratch buffer, so tone detection
+    // does not allocate a filter (with its window coefficients) and a buffer clone on every 20 ms block.  Accessed
+    // only from the single detector processing thread.
+    private final java.util.HashMap<Long, GoertzelFilter> mGoertzelFilters = new java.util.HashMap<>();
+    private final float[] mGoertzelScratch = new float[BLOCK_SIZE];
+
     // Discovery tracking
     public static final List<TwoToneDiscoveryLog> DISCOVERY_LOG = new ArrayList<>();
 
@@ -426,12 +432,33 @@ public class TwoToneDetector
 
     private int getTolerancePower(float[] buffer, long freq, double tol) {
         if (tol <= 0) {
-            return new GoertzelFilter(SAMPLE_RATE, freq, BLOCK_SIZE, WindowType.BLACKMAN).getPower(buffer.clone());
+            return powerAt(buffer, freq);
         }
-        int p1 = new GoertzelFilter(SAMPLE_RATE, freq, BLOCK_SIZE, WindowType.BLACKMAN).getPower(buffer.clone());
-        int p2 = new GoertzelFilter(SAMPLE_RATE, (long)(freq - tol), BLOCK_SIZE, WindowType.BLACKMAN).getPower(buffer.clone());
-        int p3 = new GoertzelFilter(SAMPLE_RATE, (long)(freq + tol), BLOCK_SIZE, WindowType.BLACKMAN).getPower(buffer.clone());
+        int p1 = powerAt(buffer, freq);
+        int p2 = powerAt(buffer, (long)(freq - tol));
+        int p3 = powerAt(buffer, (long)(freq + tol));
         return Math.max(p1, Math.max(p2, p3));
+    }
+
+    /**
+     * Returns the Goertzel power (dB) of the target frequency within the buffer, reusing a cached filter instance and
+     * a scratch buffer.  GoertzelFilter.getPower() windows its input in place, so the samples are copied into the
+     * reused scratch buffer rather than cloning the caller's buffer on every call.
+     */
+    private int powerAt(float[] buffer, long freq) {
+        if (buffer.length != BLOCK_SIZE) {
+            //Fall back to a one-off filter for an unexpected buffer size rather than corrupting the scratch buffer.
+            return new GoertzelFilter(SAMPLE_RATE, freq, buffer.length, WindowType.BLACKMAN).getPower(buffer.clone());
+        }
+
+        GoertzelFilter filter = mGoertzelFilters.get(freq);
+        if (filter == null) {
+            filter = new GoertzelFilter(SAMPLE_RATE, freq, BLOCK_SIZE, WindowType.BLACKMAN);
+            mGoertzelFilters.put(freq, filter);
+        }
+
+        System.arraycopy(buffer, 0, mGoertzelScratch, 0, BLOCK_SIZE);
+        return filter.getPower(mGoertzelScratch);
     }
 
 
