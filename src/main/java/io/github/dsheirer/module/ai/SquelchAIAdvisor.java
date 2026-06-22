@@ -86,7 +86,7 @@ public class SquelchAIAdvisor
         float avg = sum / count;
         mRecommendedThreshold = avg + HEADROOM_DB;
 
-        mLog.info("SquelchAI: avg noise={}dBFS, peak={}dBFS, recommended threshold={}dBFS",
+        mLog.debug("SquelchAI: avg noise={}dBFS, peak={}dBFS, recommended threshold={}dBFS",
             String.format("%.1f", avg), String.format("%.1f", max),
             String.format("%.1f", mRecommendedThreshold));
     }
@@ -262,7 +262,7 @@ public class SquelchAIAdvisor
         rationale += String.format("  Set hysteresis to open=%d, close=%d (x10 ms) to %s.",
                 hysteresisOpen, hysteresisClose, hysteresisReason);
 
-        mLog.info("SquelchAI calibration: samples={}, low(p10)={}, median={}, high(p90)={} -> open={}, close={}, " +
+        mLog.debug("SquelchAI calibration: samples={}, low(p10)={}, median={}, high(p90)={} -> open={}, close={}, " +
                         "hysteresis open={}, close={}", mVarianceSamples.size(), fmt(low), fmt(median), fmt(high),
                 fmt(open), fmt(close), hysteresisOpen, hysteresisClose);
 
