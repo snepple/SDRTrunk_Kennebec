@@ -29,7 +29,6 @@ import io.github.dsheirer.alias.id.radio.Radio;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.protocol.Protocol;
-import io.github.dsheirer.util.ThreadPool;
 import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,6 +83,15 @@ public class RadioIdNameLearner
     private static final int GEMINI_DAILY_BUDGET = 20;
     private static final double GEMINI_CONFIDENCE_THRESHOLD = 0.7;
     private static final String AUTO_NAME_SUFFIX = " (auto)";
+
+    //Dedicated, bounded, lower-priority executor for Gemini name-resolution calls so this best-effort background work
+    //can't spawn an unbounded number of concurrent HTTP calls (it previously used the shared cached pool) and yields
+    //CPU to the core audio/streaming path. Excess requests under load are dropped rather than queued without bound.
+    private static final java.util.concurrent.ExecutorService GEMINI_EXECUTOR =
+        new java.util.concurrent.ThreadPoolExecutor(1, 2, 30L, java.util.concurrent.TimeUnit.SECONDS,
+            new java.util.concurrent.LinkedBlockingQueue<>(50),
+            new io.github.dsheirer.controller.NamingThreadFactory("sdrtrunk radioid-gemini", Thread.NORM_PRIORITY - 1),
+            new java.util.concurrent.ThreadPoolExecutor.DiscardOldestPolicy());
 
     //Unit designators commonly used for self-identification, matched near the start of a transmission
     private static final Pattern UNIT_PATTERN = Pattern.compile(
@@ -189,7 +197,7 @@ public class RadioIdNameLearner
                    noStrongCandidate(candidate))
                 {
                     candidate.mGeminiAttempted = true;
-                    ThreadPool.CACHED.submit(() -> resolveWithGemini(candidate));
+                    GEMINI_EXECUTOR.submit(() -> resolveWithGemini(candidate));
                 }
             }
         }

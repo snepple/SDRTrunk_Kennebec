@@ -41,10 +41,24 @@ public class NamingThreadFactory implements ThreadFactory
     
     private final String mNamePrefix;
 
+    private final int mPriority;
+
     public NamingThreadFactory( String prefix ) 
+    {
+        this(prefix, Thread.NORM_PRIORITY);
+    }
+
+    /**
+     * Constructs a thread factory that creates threads at the specified priority.  Used to give core real-time work
+     * (e.g. the audio/streaming dispatch) priority over ancillary background work.
+     * @param prefix thread name prefix
+     * @param priority Thread priority (MIN_PRIORITY..MAX_PRIORITY)
+     */
+    public NamingThreadFactory( String prefix, int priority )
     {
         mThreadGroup = Thread.currentThread().getThreadGroup();
         mNamePrefix = prefix + " thread ";
+        mPriority = Math.max(Thread.MIN_PRIORITY, Math.min(Thread.MAX_PRIORITY, priority));
     }
 
     public Thread newThread( Runnable runnable ) 
@@ -57,9 +71,9 @@ public class NamingThreadFactory implements ThreadFactory
             thread.setDaemon( false );
         }
         
-        if( thread.getPriority() != Thread.NORM_PRIORITY )
+        if( thread.getPriority() != mPriority )
         {
-            thread.setPriority( Thread.NORM_PRIORITY );
+            thread.setPriority( mPriority );
         }
 
         thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler()
