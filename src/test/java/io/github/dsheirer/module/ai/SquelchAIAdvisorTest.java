@@ -121,4 +121,49 @@ public class SquelchAIAdvisorTest
         assertTrue(rec.hysteresisClose() >= 7,
                 "picket-fencing capture should lengthen the close hold (was " + rec.hysteresisClose() + ")");
     }
+
+    @Test
+    public void broadNoiseFloor_doesNotPlaceOpenInsideTheNoise()
+    {
+        //A broad but signal-free noise distribution (no distinct clean-signal cluster) - e.g. a noisy channel
+        //whose variance wanders across a wide band (~0.25 .. 0.445).  The wide SPREAD previously tripped the
+        //"signal+noise" branch and seated the open threshold inside the noise floor, so ambient noise opened the
+        //squelch constantly.  It must instead be treated as noise-only, with open below the noise floor.
+        float[] samples = new float[120];
+        float min = Float.MAX_VALUE;
+        for(int i = 0; i < samples.length; i++)
+        {
+            samples[i] = 0.25f + ((i % 40) * 0.005f); //uniform 0.25 .. 0.445, no low (signal) cluster
+            min = Math.min(min, samples[i]);
+        }
+
+        SquelchAIAdvisor.Recommendation rec = withSamples(samples).calibrate();
+        assertValidNoiseSquelchSettings(rec);
+        //Open must sit below the lowest observed noise so ambient noise can't open the squelch.
+        assertTrue(rec.openThreshold() < min,
+                "open (" + rec.openThreshold() + ") must be below the noise floor (" + min + ")");
+        //And it must be representable on the UI open slider.
+        assertTrue(rec.openThreshold() <= NoiseSquelch.MAXIMUM_NOISE_OPEN_THRESHOLD,
+                "open (" + rec.openThreshold() + ") must not exceed the UI open ceiling");
+    }
+
+    @Test
+    public void highNoiseFloor_openClampedToUiCeiling()
+    {
+        //Very noisy channel with a tight, high noise floor (~0.40 .. 0.44).  The noise-floor-anchored open would
+        //exceed the UI's open ceiling, so it must be clamped to MAXIMUM_NOISE_OPEN_THRESHOLD (0.25) rather than
+        //the DSP's 0.5 maximum, so what the dialog announces is what the slider can actually apply.
+        float[] samples = new float[60];
+        for(int i = 0; i < samples.length; i++)
+        {
+            samples[i] = 0.40f + ((i % 5) * 0.01f); //0.40 .. 0.44
+        }
+
+        SquelchAIAdvisor.Recommendation rec = withSamples(samples).calibrate();
+        assertValidNoiseSquelchSettings(rec);
+        assertEquals(NoiseSquelch.MAXIMUM_NOISE_OPEN_THRESHOLD, rec.openThreshold(), 0.0001f,
+                "a high noise floor should clamp open to the UI ceiling (0.25), not the DSP max");
+        assertTrue(rec.closeThreshold() <= rec.openThreshold() + NoiseSquelch.MAXIMUM_NOISE_CLOSE_DELTA + 0.0001f,
+                "close must stay within open + the UI close delta");
+    }
 }

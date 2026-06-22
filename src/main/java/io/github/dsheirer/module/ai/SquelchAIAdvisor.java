@@ -58,16 +58,31 @@ public class SquelchAIAdvisor
     public static final int MIN_CALIBRATION_SAMPLES = 40;
 
     /**
-     * Minimum spread between the low (signal) and high (noise-floor) variance percentiles for the
-     * calibration to treat the capture as containing both signal and noise.  Below this the capture is
-     * assumed to be noise-floor only and a conservative below-the-floor placement is used instead.
+     * Minimum lower-tail spread (median - p10) for the capture to be treated as containing a genuine clean
+     * signal rather than a single noise mode.  Below this the capture is assumed to be noise-floor only and a
+     * conservative below-the-floor placement is used instead.
      */
-    private static final float MINIMUM_CLUSTER_SEPARATION = 0.03f;
+    private static final float MINIMUM_SIGNAL_SEPARATION = 0.03f;
 
-    //Noise-floor anchored placement (used when the capture is noise-floor only, i.e. an idle channel).  The noise
-    //floor edge is the worst-case (lowest-variance, most signal-like) noise excursion; the open threshold is placed a
-    //margin below it so ambient noise never opens the squelch, and the close threshold a small margin above it for an
-    //amplitude-hysteresis (Schmitt-trigger) gap.
+    /**
+     * How strongly the lower tail (median - p10) must dominate the upper tail (p90 - median) for the capture to
+     * be treated as bimodal (a clean signal sitting below the noise floor).  A single noise mode is roughly
+     * symmetric about its center (ratio near 1), whereas a real clean signal adds a pronounced lower tail (ratio
+     * well above 1).  Requiring a clear asymmetry prevents a broad-but-signal-free noise distribution from being
+     * misread as signal+noise - the previous "spread alone" test did exactly that, seating the open threshold
+     * inside the noise floor so ambient noise opened the squelch constantly.
+     */
+    private static final float SIGNAL_ASYMMETRY_RATIO = 1.8f;
+
+    //Gap placement fractions (signal+noise case): seat open/close in the gap between the clean-signal level
+    //(p10) and the noise-floor center (median), staying safely below the floor so noise can't open the squelch.
+    private static final float OPEN_GAP_FRACTION = 0.35f;
+    private static final float CLOSE_GAP_FRACTION = 0.60f;
+
+    //Noise-floor anchored placement (used when the capture is noise-floor only - an idle channel, or a broad
+    //signal-free distribution).  The noise floor edge is the worst-case (lowest-variance, most signal-like) noise
+    //excursion; the open threshold is placed a margin below it so ambient noise never opens the squelch, and the
+    //close threshold a small margin above it for an amplitude-hysteresis (Schmitt-trigger) gap.
     private static final int NOISE_FLOOR_EDGE_PERCENTILE = 5;
     private static final float OPEN_FRACTION_BELOW_FLOOR = 0.90f;   //open = 90% of the noise floor edge (10% below)
     private static final float CLOSE_FRACTION_ABOVE_FLOOR = 1.05f;  //close = 105% of the noise floor edge (5% above)
@@ -189,11 +204,14 @@ public class SquelchAIAdvisor
     /**
      * Computes recommended noise open/close thresholds from the collected variance samples.
      *
-     * In the {@code NoiseSquelch} design, low variance indicates a clean signal (squelch should open) and
-     * high variance indicates noise (squelch should close).  This positions the open and close thresholds
-     * in the gap between the low (signal) and high (noise-floor) variance clusters.  When the capture
-     * contains only the noise floor (little spread between clusters), the thresholds are placed
-     * conservatively just below the noise floor so that ambient noise reliably keeps the squelch closed.
+     * In the {@code NoiseSquelch} design, low variance indicates a clean signal (squelch should open) and high
+     * variance indicates noise (squelch should close).  Calibration first decides whether the capture actually
+     * contains a clean signal: a single noise mode is roughly symmetric about its center, whereas a genuine
+     * signal adds a pronounced lower (low-variance) tail.  Only when that asymmetry is clear are the thresholds
+     * placed in the gap between the signal level and the noise floor.  Otherwise - including a broad but
+     * signal-free noise distribution - the thresholds are anchored just below the noise floor so ambient noise
+     * reliably keeps the squelch closed.  Results are then constrained to the UI-representable control range so
+     * the announced thresholds match what the squelch view's sliders can show and apply.
      *
      * @return a recommendation with open/close thresholds clamped into the valid NoiseSquelch range, or
      * null when there is insufficient data.
@@ -208,50 +226,67 @@ public class SquelchAIAdvisor
         List<Float> sorted = new ArrayList<>(mVarianceSamples);
         Collections.sort(sorted);
 
-        float low = percentile(sorted, 10);     //~signal-present variance (clean audio)
-        float median = percentile(sorted, 50);
-        float high = percentile(sorted, 90);    //~noise-floor variance
-        float separation = high - low;
+        float p10 = percentile(sorted, 10);      //cleanest end (clean signal, or the quiet edge of the noise)
+        float median = percentile(sorted, 50);   //robust noise-floor center
+        float p90 = percentile(sorted, 90);      //noisiest end
+        float separation = p90 - p10;            //overall spread (drives the picket-fencing hysteresis below)
+
+        //Decide whether the capture contains a genuine clean signal (a distinct low-variance cluster below the
+        //noise floor) or is noise only.  A single noise mode is roughly symmetric about its center, so a real
+        //signal shows up as a pronounced LOWER tail: the distance from the center down to p10 must both be
+        //meaningful in absolute terms and clearly dominate the upper (noise-floor) spread.  Without this check a
+        //broad but signal-free noise distribution is misread as signal+noise, seating the open threshold inside
+        //the noise floor so ambient noise opens the squelch.
+        float lowerSpread = median - p10;
+        float upperSpread = Math.max(0f, p90 - median);
+        boolean signalPresent = lowerSpread >= MINIMUM_SIGNAL_SEPARATION
+                && lowerSpread >= (SIGNAL_ASYMMETRY_RATIO * upperSpread);
 
         float open, close;
+        String rationale;
 
-        if(separation >= MINIMUM_CLUSTER_SEPARATION)
+        if(signalPresent)
         {
-            //Both signal and noise observed - place thresholds in the gap between the clusters: open near the clean
-            //signal level, close toward the noise floor, so real signals open the squelch while noise keeps it closed.
-            open = low + (0.25f * separation);
-            close = low + (0.55f * separation);
+            //Clean signal near p10, noise floor near the median.  Seat open/close in the gap between them and below
+            //the floor, so a real signal (low variance) opens the squelch while the noise floor keeps it closed.
+            open = p10 + (OPEN_GAP_FRACTION * lowerSpread);
+            close = p10 + (CLOSE_GAP_FRACTION * lowerSpread);
+            rationale = String.format("On the activity graph this channel showed a clean-signal level near %s and a " +
+                    "noise floor near %s (graph scale); the open/close lines are set in the gap between them so real " +
+                    "signals (which read higher) open the squelch while noise (which reads lower) keeps it closed.",
+                    fmtDisplay(p10), fmtDisplay(median));
         }
         else
         {
-            //Noise-floor only (idle channel) - anchor to the noise floor: find the worst-case (lowest-variance, most
-            //signal-like) noise excursion and place the open threshold a margin BELOW it so ambient noise can never
-            //open the squelch, with the close threshold a small margin above it for amplitude hysteresis.  This is the
-            //raw-variance equivalent of "set the on-screen open line just above the highest idle noise peak".
+            //Noise only (idle channel, or a broad signal-free distribution) - anchor to the noise floor: find the
+            //worst-case (lowest-variance, most signal-like) noise excursion and place the open threshold a margin
+            //BELOW it so ambient noise can never open the squelch, with the close threshold a small margin above it
+            //for amplitude hysteresis.  On the graph this is "set the open line just above the cleanest noise peak".
             float noiseFloorEdge = percentile(sorted, NOISE_FLOOR_EDGE_PERCENTILE);
             open = noiseFloorEdge * OPEN_FRACTION_BELOW_FLOOR;
             close = noiseFloorEdge * CLOSE_FRACTION_ABOVE_FLOOR;
+            rationale = String.format("On the activity graph this channel showed mostly background noise near %s " +
+                    "(graph scale); the open line is set just above the noise so ambient noise can't open the squelch " +
+                    "while a genuinely cleaner signal (reading higher) still can.", fmtDisplay(noiseFloorEdge));
         }
 
-        //Clamp into the valid control range and enforce a sensible open <= close ordering with a small gap.
-        open = clampThreshold(open);
-        close = clampThreshold(close);
-
-        if(close < open)
-        {
-            float swap = open;
-            open = close;
-            close = swap;
-        }
+        //Constrain to the UI-representable / practical control range so the recommendation can actually be shown on
+        //the slider and applied without being silently clamped: open in [MIN, MAXIMUM_NOISE_OPEN_THRESHOLD], close
+        //in [open, open + MAXIMUM_NOISE_CLOSE_DELTA] (and never above the absolute maximum).
+        open = clamp(open, NoiseSquelch.MINIMUM_NOISE_THRESHOLD, NoiseSquelch.MAXIMUM_NOISE_OPEN_THRESHOLD);
+        close = clamp(close, open, Math.min(open + NoiseSquelch.MAXIMUM_NOISE_CLOSE_DELTA,
+                NoiseSquelch.MAXIMUM_NOISE_THRESHOLD));
 
         //Ensure a minimum hysteresis gap between open and close where range allows.
         float minimumGap = 0.02f;
         if((close - open) < minimumGap)
         {
-            close = clampThreshold(open + minimumGap);
+            close = clamp(open + minimumGap, open, Math.min(open + NoiseSquelch.MAXIMUM_NOISE_CLOSE_DELTA,
+                    NoiseSquelch.MAXIMUM_NOISE_THRESHOLD));
             if((close - open) < minimumGap)
             {
-                open = clampThreshold(close - minimumGap);
+                open = clamp(close - minimumGap, NoiseSquelch.MINIMUM_NOISE_THRESHOLD,
+                        NoiseSquelch.MAXIMUM_NOISE_OPEN_THRESHOLD);
             }
         }
 
@@ -286,20 +321,7 @@ public class SquelchAIAdvisor
         hysteresisOpen = Math.max(1, Math.min(6, hysteresisOpen));
         hysteresisClose = Math.max(hysteresisOpen, Math.min(hysteresisOpen + 5, hysteresisClose));
 
-        String rationale;
-        if(separation >= MINIMUM_CLUSTER_SEPARATION)
-        {
-            rationale = String.format("Saw both a clean-signal level (~%s) and a noise-floor level (~%s); set " +
-                    "open/close in the gap between them so real signals open the squelch while noise keeps it closed.",
-                    fmt(low), fmt(high));
-        }
-        else
-        {
-            rationale = String.format("Saw mostly background noise (noise floor ~%s); set the open threshold just " +
-                    "below the noise floor and the close threshold just above it, so ambient noise can't open the " +
-                    "squelch while a genuinely cleaner signal still can.", fmt(percentile(sorted, NOISE_FLOOR_EDGE_PERCENTILE)));
-        }
-
+        //The placement rationale (signal+noise vs noise-only) was set above; append the temporal-hysteresis reason.
         String hysteresisReason = (relativeSpread >= 0.5f)
                 ? "hold the gate open longer to bridge dropouts on this fading (picket-fencing) signal"
                 : (separation >= 0.10f)
@@ -308,9 +330,9 @@ public class SquelchAIAdvisor
         rationale += String.format("  Set hysteresis to open=%d, close=%d (x10 ms) to %s.",
                 hysteresisOpen, hysteresisClose, hysteresisReason);
 
-        mLog.debug("SquelchAI calibration: samples={}, low(p10)={}, median={}, high(p90)={} -> open={}, close={}, " +
-                        "hysteresis open={}, close={}", mVarianceSamples.size(), fmt(low), fmt(median), fmt(high),
-                fmt(open), fmt(close), hysteresisOpen, hysteresisClose);
+        mLog.debug("SquelchAI calibration: samples={}, signalPresent={}, p10={}, median={}, p90={} -> open={}, " +
+                        "close={}, hysteresis open={}, close={}", mVarianceSamples.size(), signalPresent, fmt(p10),
+                fmt(median), fmt(p90), fmt(open), fmt(close), hysteresisOpen, hysteresisClose);
 
         return new Recommendation(open, close, hysteresisOpen, hysteresisClose, rationale);
     }
@@ -337,19 +359,11 @@ public class SquelchAIAdvisor
     }
 
     /**
-     * Clamps a noise threshold into the valid NoiseSquelch control range.
+     * Clamps a value into the inclusive [min, max] range.
      */
-    private static float clampThreshold(float value)
+    private static float clamp(float value, float min, float max)
     {
-        if(value < NoiseSquelch.MINIMUM_NOISE_THRESHOLD)
-        {
-            return NoiseSquelch.MINIMUM_NOISE_THRESHOLD;
-        }
-        if(value > NoiseSquelch.MAXIMUM_NOISE_THRESHOLD)
-        {
-            return NoiseSquelch.MAXIMUM_NOISE_THRESHOLD;
-        }
-        return value;
+        return Math.max(min, Math.min(max, value));
     }
 
     /**
@@ -365,6 +379,15 @@ public class SquelchAIAdvisor
     private static String fmt(float value)
     {
         return String.format("%.3f", value);
+    }
+
+    /**
+     * Formats a raw variance value on the inverted display scale used by the squelch chart/labels (a clean signal
+     * reads high, the noise floor reads low), so calibration rationale speaks the same units the user sees.
+     */
+    private static String fmtDisplay(float variance)
+    {
+        return String.format("%.2f", NoiseSquelch.toDisplayScale(variance));
     }
 
     /**
