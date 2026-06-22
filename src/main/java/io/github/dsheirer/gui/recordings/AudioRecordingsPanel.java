@@ -243,14 +243,13 @@ public class AudioRecordingsPanel extends VBox {
                     deleteSelectedButton.setDisable(true);
                     deleteSelectedButton.setText("Deleting...");
                     List<RecordingItem> snapshot = new ArrayList<>(selectedItems);
+                    //Release the playback handle first so an open MediaPlayer doesn't lock the file (Windows).
+                    releasePlayerIfDeleting(snapshot);
                     io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
                         List<RecordingItem> successfullyDeleted = new ArrayList<>();
                         for (RecordingItem item : snapshot) {
-                            try {
-                                Files.deleteIfExists(item.getFile());
+                            if (deleteRecordingFileWithRetry(item.getFile())) {
                                 successfullyDeleted.add(item);
-                            } catch (IOException ex) {
-                                mLog.error("Failed to delete recording: " + item.getFile(), ex);
                             }
                         }
                         javafx.application.Platform.runLater(() -> {
@@ -287,14 +286,13 @@ public class AudioRecordingsPanel extends VBox {
                     deleteAllButton.setDisable(true);
                     deleteAllButton.setText("Deleting...");
                     List<RecordingItem> snapshot = new ArrayList<>(itemsToDelete);
+                    //Release the playback handle first so an open MediaPlayer doesn't lock the file (Windows).
+                    releasePlayerIfDeleting(snapshot);
                     io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
                         List<RecordingItem> successfullyDeleted = new ArrayList<>();
                         for (RecordingItem item : snapshot) {
-                            try {
-                                Files.deleteIfExists(item.getFile());
+                            if (deleteRecordingFileWithRetry(item.getFile())) {
                                 successfullyDeleted.add(item);
-                            } catch (IOException ex) {
-                                mLog.error("Failed to delete recording: " + item.getFile(), ex);
                             }
                         }
                         javafx.application.Platform.runLater(() -> {
@@ -991,6 +989,56 @@ public class AudioRecordingsPanel extends VBox {
         if (mStopButton != null) {
             mStopButton.setDisable(true);
         }
+    }
+
+    /**
+     * If the currently-loaded recording is among those about to be deleted, dispose the player so its file handle is
+     * released before deletion (an open MediaPlayer locks the file on Windows). Must be called on the FX thread.
+     * @param itemsToDelete recordings that are about to be deleted
+     */
+    private void releasePlayerIfDeleting(List<RecordingItem> itemsToDelete) {
+        if (mCurrentItem != null && itemsToDelete.contains(mCurrentItem)) {
+            disposePlayer();
+            showPlayerBar(false);
+            mCurrentItem = null;
+        }
+    }
+
+    /**
+     * Deletes a recording file, retrying with exponential backoff. On Windows a just-closed playback/recording handle
+     * may linger briefly, so the first delete can fail with the file still "in use"; a short retry (nudged by a GC to
+     * help release native MediaPlayer handles) resolves it.
+     * @param file recording file to delete
+     * @return true if the file was deleted (or did not exist), false if it could not be deleted
+     */
+    private boolean deleteRecordingFileWithRetry(java.nio.file.Path file) {
+        final int maxAttempts = 5;
+        long backoffMs = 100;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                Files.deleteIfExists(file);
+                return true;
+            } catch (IOException ex) {
+                if (attempt == maxAttempts) {
+                    mLog.error("Failed to delete recording after " + maxAttempts + " attempts: " + file, ex);
+                    return false;
+                }
+
+                try {
+                    Thread.sleep(backoffMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+
+                backoffMs = Math.min(backoffMs * 2, 1000);
+                //Help release any lingering native file handle (e.g. a disposed JavaFX MediaPlayer) before retrying.
+                System.gc();
+            }
+        }
+
+        return false;
     }
 
     private void showPlayerBar(boolean show) {
