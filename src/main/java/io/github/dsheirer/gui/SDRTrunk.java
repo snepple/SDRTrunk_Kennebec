@@ -365,6 +365,11 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             primaryStage.setTitle(mTitle);
 
             primaryStage.setScene(scene);
+            //Show the window invisibly (opacity 0) so JavaFX lays out and paints the (initially empty) content while
+            //the splash still covers it.  The window is revealed at full opacity only once the content has actually
+            //rendered (see the reveal logic below), so the user goes straight from the splash to a fully-drawn window
+            //instead of watching a bare/outlined shell fill in.
+            primaryStage.setOpacity(0.0);
             primaryStage.show();
 
             //Closing the main window triggers the same confirmation as the sidebar Exit, then fully quits the app.
@@ -385,24 +390,75 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 }
             });
 
-            // Keep the splash up until the main content has actually been built and shown, so the user
-            // doesn't briefly see an empty window. A safety timeout guarantees the splash hides even if
-            // the content-ready signal never arrives.
-            final boolean[] splashHidden = {false};
-            Runnable hideSplash = () -> {
-                if(!splashHidden[0])
+            // Reveal the fully-drawn window and hide the splash together, so the transition is splash -> ready window
+            // with no empty/outlined intermediate state. A safety timeout guarantees the window is revealed even if
+            // the readiness signal never arrives.
+            final boolean[] revealed = {false};
+            Runnable reveal = () -> {
+                if(!revealed[0])
                 {
-                    splashHidden[0] = true;
+                    revealed[0] = true;
+                    primaryStage.setOpacity(1.0);
                     notifyPreloader(new SDRTrunkPreloader.HideNotification());
                 }
             };
+
+            //The window is shown invisibly first; we must wait until the heavy initial layout/paint of the content has
+            //completed before revealing it. An AnimationTimer forces continuous render pulses: while the FX thread is
+            //busy doing the first layout, frames are far apart; once several consecutive frames render smoothly the
+            //content has settled and is fully painted, so we reveal. A wall-clock cap prevents waiting indefinitely.
+            Runnable revealWhenRendered = () -> {
+                final javafx.animation.AnimationTimer[] timer = new javafx.animation.AnimationTimer[1];
+                final long[] startNanos = { -1 };
+                final long[] lastPulseNanos = { -1 };
+                final int[] smoothFrames = { 0 };
+                timer[0] = new javafx.animation.AnimationTimer() {
+                    @Override
+                    public void handle(long now)
+                    {
+                        if(startNanos[0] < 0)
+                        {
+                            startNanos[0] = now;
+                        }
+
+                        if(lastPulseNanos[0] > 0)
+                        {
+                            long deltaMs = (now - lastPulseNanos[0]) / 1_000_000L;
+                            //A smooth (~25fps+) frame means the FX thread is keeping up and no longer doing heavy work.
+                            if(deltaMs < 40)
+                            {
+                                smoothFrames[0]++;
+                            }
+                            else
+                            {
+                                smoothFrames[0] = 0;
+                            }
+                        }
+                        lastPulseNanos[0] = now;
+
+                        long elapsedMs = (now - startNanos[0]) / 1_000_000L;
+                        if(smoothFrames[0] >= 5 || elapsedMs >= 12000)
+                        {
+                            timer[0].stop();
+                            reveal.run();
+                        }
+                    }
+                };
+                timer[0].start();
+            };
+
             if(mControllerPanel != null)
             {
-                mControllerPanel.setOnContentReady(() -> Platform.runLater(hideSplash));
+                mControllerPanel.setOnContentReady(() -> Platform.runLater(revealWhenRendered));
             }
+            else
+            {
+                Platform.runLater(revealWhenRendered);
+            }
+
             javafx.animation.PauseTransition splashFallback =
                 new javafx.animation.PauseTransition(javafx.util.Duration.seconds(15));
-            splashFallback.setOnFinished(e -> hideSplash.run());
+            splashFallback.setOnFinished(e -> reveal.run());
             splashFallback.play();
 
             // Wire up global hotkeys

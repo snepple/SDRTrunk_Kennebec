@@ -121,6 +121,9 @@ public class SDRTrunkPreloader extends Preloader {
         scene.setFill(Color.TRANSPARENT);
         
         primaryStage.initStyle(StageStyle.UNDECORATED);
+        //Keep the splash above the main window while the latter renders invisibly, so nothing of the still-drawing
+        //application shell peeks out around the splash before it is fully ready.
+        primaryStage.setAlwaysOnTop(true);
         primaryStage.setScene(scene);
         primaryStage.setTitle("SDRTrunk Starting...");
         primaryStage.centerOnScreen();
