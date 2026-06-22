@@ -86,7 +86,7 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
         GridPane.setConstraints(getProtocolLabel(), 0, 0);
         gridPane.getChildren().add(getProtocolLabel());
 
-        Label valueLabel = new Label("WACN", createHelpIcon("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."));
+        Label valueLabel = new Label("WACN", createHelpIcon("Wide Area Communication Network (WACN): A unique code identifying a large regional radio system. This is usually provided by RadioReference and tells the software which network to follow."));
         GridPane.setHalignment(valueLabel, HPos.RIGHT);
         GridPane.setConstraints(valueLabel, 1, 0);
         gridPane.getChildren().add(valueLabel);
