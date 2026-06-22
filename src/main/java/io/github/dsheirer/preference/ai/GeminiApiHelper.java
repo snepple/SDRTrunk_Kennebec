@@ -97,17 +97,37 @@ public class GeminiApiHelper {
                     .connectTimeout(Duration.ofSeconds(10))
                     .build();
 
-            String prompt = "A dispatch paging tone was just transmitted. The resulting transcript is: \\\"" + transcript.replace("\"", "\\\"").replace("\n", " ").replace("\r", " ") + "\\\". " +
-                    "Identify and extract the specific field units, departments, or agencies that are transmitting, receiving a message, or being dispatched. " +
-                    "CRITICAL RULE: Distinguishing Dispatch Centers from Field Units. " +
-                    "Public safety communications constantly reference the dispatch center handling the radio traffic. You must completely ignore the names of dispatch centers. Do not extract, output, or confuse a dispatch center name with a field unit or dispatched agency. " +
-                    "Common dispatch center identifiers that you must ignore include: Dispatch, Fire Alarm or Alarm, Comm Center, Communications, or Med-Comm, Control or County Control, Central or Central Dispatch, Base, Geographic names acting as the dispatch entity. " +
-                    "Examples to guide your extraction: " +
-                    "Transcript: 'Fire Alarm, Engine 4 is responding.' Correct Extraction: 'Engine 4'. " +
-                    "Transcript: 'County Control paging Topsham Fire for a motor vehicle accident.' Correct Extraction: 'Topsham Fire'. " +
-                    "Transcript: 'Augusta Dispatch, Medic 3 is on scene.' Correct Extraction: 'Medic 3'. " +
-                    "Focus exclusively on identifying the operational units, stations, or departments responding to or mitigating the incident. " +
-                    "Respond with ONLY the unit/agency name (e.g. 'Engine 52' or 'Springfield Fire'), or 'UNKNOWN' if unclear.";
+            String cleanTranscript = transcript.replace("\\", "\\\\").replace("\"", "'").replace("\n", " ").replace("\r", " ");
+
+            String prompt = "You are a specialized Named Entity Recognition model calibrated exclusively for U.S. public-safety " +
+                    "two-tone paging dispatch. A two-tone sequential page was just transmitted on a radio channel, " +
+                    "immediately followed by a voice dispatch. The (often noisy, band-limited) speech-to-text transcript of " +
+                    "that dispatch is: '" + cleanTranscript + "'. " +
+                    "Your job: extract the specific field unit(s), station(s), apparatus, or department(s) being paged or " +
+                    "dispatched, and return a clean, human-readable name. " +
+                    "RULE 1 - Ignore dispatch centers. Dispatchers constantly identify themselves; never extract or output a " +
+                    "dispatch-center name. Ignore identifiers such as: Dispatch, Fire Alarm / Alarm, Comm Center, " +
+                    "Communications, Med-Comm, Control / County Control, Central / Central Dispatch, Base, and bare " +
+                    "geographic names acting as the dispatch entity. " +
+                    "RULE 2 - Recognize dispatch syntax. The paged entity is typically wrapped in rigid phrasing: " +
+                    "Direct address/callout ('Fire Alarm to Yarmouth Chief 801, respond...' -> 'Yarmouth Chief 801'); " +
+                    "Direct assignment of several units ('Engine 4, Rescue 1, respond to 123 Main Street...' -> 'Engine 4, Rescue 1'); " +
+                    "Test announcement ('This is the nightly pager test for the Centerville Volunteer Fire Department.' -> 'Centerville Volunteer Fire Department'); " +
+                    "Clearance/status ('County Dispatch clearing Station 7 EMS.' -> 'Station 7 EMS'); " +
+                    "Nature-type driven ('Structure fire box 44, Engine 1 and Truck 2, respond.' -> 'Engine 1, Truck 2'). " +
+                    "RULE 3 - Correct phonetic hallucinations using incident context. Band-limited radio audio mis-transcribes " +
+                    "unit names; use the surrounding words to repair them. e.g. 'Has Matt Two, respond to the chemical spill' " +
+                    "-> 'Hazmat 2'; 'Clint Four' near firefighting context -> 'Quint 4'. " +
+                    "RULE 4 - Reconstruct truncated names. A slow squelch or late mic key often clips the first syllable. Use " +
+                    "syntax to rebuild the most probable name: '...escue 4, respond to the motor vehicle accident' -> 'Rescue 4'. " +
+                    "RULE 5 - Stacked paging. If the dispatch clearly names multiple distinct units for one incident, combine " +
+                    "them into a single composite name joined with ' / ' and suffixed with ' Dispatch', e.g. " +
+                    "'Engine 1, Engine 2, and Rescue 5, respond...' -> 'Engine 1 / Engine 2 / Rescue 5 Dispatch'. " +
+                    "RULE 6 - Graceful degradation. If the transcript is unintelligible, contains only a general bulletin with no " +
+                    "nameable unit (e.g. 'Attention all units, severe weather warning...'), or your confidence is low, respond " +
+                    "with exactly 'UNKNOWN' rather than guessing a hallucinated name. " +
+                    "OUTPUT: Respond with ONLY the standardized, descriptive unit/agency name (e.g. 'Engine 52', " +
+                    "'Springfield Fire', or 'Engine 1 / Engine 2 / Rescue 5 Dispatch'), or 'UNKNOWN'. No quotes, no extra words.";
             
             String jsonPayload = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt + "\"}]}]}";
 

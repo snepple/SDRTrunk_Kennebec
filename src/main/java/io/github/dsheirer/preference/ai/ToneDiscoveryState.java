@@ -21,6 +21,13 @@ public class ToneDiscoveryState {
     // Key: "ToneA_ToneB", Value: The agency name AI figured out
     private Map<String, String> mFinalizedToneNames = new HashMap<>();
 
+    // Soft-deletion markers for tone pairs the user rejected/deleted - an absolute barrier to regeneration.
+    private List<ToneTombstone> mTombstones = new ArrayList<>();
+
+    // Key: "ToneA_ToneB", Value: number of times the tone has been heard+transcribed (used for graceful
+    // degradation: after enough observations without a confident name, stage an "Unknown Unit" placeholder).
+    private Map<String, Integer> mObservationCounts = new HashMap<>();
+
     public ToneDiscoveryState() {
     }
 
@@ -46,5 +53,21 @@ public class ToneDiscoveryState {
 
     public void setFinalizedToneNames(Map<String, String> finalizedToneNames) {
         mFinalizedToneNames = finalizedToneNames;
+    }
+
+    public List<ToneTombstone> getTombstones() {
+        return mTombstones;
+    }
+
+    public void setTombstones(List<ToneTombstone> tombstones) {
+        mTombstones = (tombstones != null) ? tombstones : new ArrayList<>();
+    }
+
+    public Map<String, Integer> getObservationCounts() {
+        return mObservationCounts;
+    }
+
+    public void setObservationCounts(Map<String, Integer> observationCounts) {
+        mObservationCounts = (observationCounts != null) ? observationCounts : new HashMap<>();
     }
 }
