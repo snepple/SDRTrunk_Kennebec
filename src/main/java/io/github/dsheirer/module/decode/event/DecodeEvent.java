@@ -39,6 +39,8 @@ public class DecodeEvent implements IDecodeEvent
     private Protocol mProtocol;
     private int mTimeslot = -1;
     private volatile String mTranscription;
+    //Transcribed segments keyed by audio start timestamp, joined in chronological order into mTranscription.
+    private java.util.TreeMap<Long, String> mTranscriptionSegments;
 
     /**
      * Constructs an instance
@@ -215,6 +217,25 @@ public class DecodeEvent implements IDecodeEvent
     public void setTranscription(String transcription)
     {
         mTranscription = transcription;
+    }
+
+    @Override
+    public synchronized void addTranscriptionSegment(long startTimestamp, String transcription)
+    {
+        if(transcription == null || transcription.isBlank())
+        {
+            return;
+        }
+
+        if(mTranscriptionSegments == null)
+        {
+            mTranscriptionSegments = new java.util.TreeMap<>();
+        }
+
+        //Key by segment start so multiple segments of one call join in chronological order (preserving the
+        //beginning of the message) and re-delivery of the same segment overwrites rather than duplicates.
+        mTranscriptionSegments.put(startTimestamp, transcription.trim());
+        mTranscription = String.join(" ", mTranscriptionSegments.values());
     }
 
     /**
