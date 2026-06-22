@@ -109,6 +109,24 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
     }
 
     /**
+     * Sets the two tone detector that receives live audio for two-tone paging detection.  The detector is fed audio
+     * from segments as they are processed; it internally routes audio to detectors based on the alias(es) selected for
+     * each detector.  A null detector disables two-tone detection.
+     *
+     * @param twoToneDetector to receive live audio, or null to disable
+     */
+    public void setTwoToneDetector(TwoToneDetector twoToneDetector)
+    {
+        TwoToneDetector previous = mTwoToneDetector;
+        mTwoToneDetector = twoToneDetector;
+
+        if(previous != null && previous != twoToneDetector)
+        {
+            previous.dispose();
+        }
+    }
+
+    /**
      * Receives audio segments from channel audio modules.
      * @param audioSegment to receive and process
      */
