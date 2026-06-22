@@ -68,6 +68,22 @@ public interface IDecodeEvent
     String getDetails();
 
     /**
+     * Optional AI transcription of the event's audio, or null if none.  Default no-op for event types that
+     * don't carry a transcription.
+     */
+    default String getTranscription()
+    {
+        return null;
+    }
+
+    /**
+     * Sets the AI transcription of the event's audio.  Default no-op.
+     */
+    default void setTranscription(String transcription)
+    {
+    }
+
+    /**
      * Protocol for the decoder that produced the event
      */
     Protocol getProtocol();

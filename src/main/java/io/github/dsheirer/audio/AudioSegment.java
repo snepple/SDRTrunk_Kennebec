@@ -77,6 +77,9 @@ public class AudioSegment implements Listener<IdentifierUpdateNotification>
     private Broadcaster<IdentifierUpdateNotification> mIdentifierUpdateNotificationBroadcaster = new Broadcaster<>();
     private List<float[]> mAudioBuffers = new CopyOnWriteArrayList<>();
     private AtomicInteger mConsumerCount = new AtomicInteger();
+    //Ensures a completed segment is transcribed at most once even though several pipeline stages
+    //(audio recording manager, recorder, streaming) may each request transcription for it.
+    private final java.util.concurrent.atomic.AtomicBoolean mTranscriptionRequested = new java.util.concurrent.atomic.AtomicBoolean(false);
     private AliasList mAliasList;
     private long mStartTimestamp = System.currentTimeMillis();
     private long mSampleCount = 0;
@@ -102,6 +105,16 @@ public class AudioSegment implements Listener<IdentifierUpdateNotification>
     public int getTimeslot()
     {
         return mTimeslot;
+    }
+
+    /**
+     * Atomically marks this audio segment as having had transcription requested so it is transcribed at
+     * most once regardless of how many pipeline stages attempt it.
+     * @return true if transcription had not previously been requested (the caller should proceed).
+     */
+    public boolean markTranscriptionRequested()
+    {
+        return mTranscriptionRequested.compareAndSet(false, true);
     }
 
     /**

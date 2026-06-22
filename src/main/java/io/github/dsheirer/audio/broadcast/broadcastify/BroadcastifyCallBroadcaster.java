@@ -299,7 +299,7 @@ public class BroadcastifyCallBroadcaster extends AbstractAudioBroadcaster<Broadc
                                 }
                                 else
                                 {
-                                    mLog.error("Error while sending upload URL request" + throwable.getLocalizedMessage());
+                                    mLog.error("Error while sending upload URL request", throwable);
                                     setBroadcastState(BroadcastState.TEMPORARY_BROADCAST_ERROR);
                                 }
                                 incrementErrorAudioCount();

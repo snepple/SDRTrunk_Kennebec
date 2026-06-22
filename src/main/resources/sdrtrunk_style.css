@@ -386,6 +386,13 @@
     -fx-text-fill: #FFFFFF;
 }
 
+/* Explicit non-selected text fill so row text reverts to dark after deselecting.  Without this the
+   :selected white .text fill can "stick" (a JavaFX .text quirk) and the deselected row stays white.
+   Lower specificity than the :selected rules above, so selected rows still render white. */
+.preferences-table .table-row-cell .text {
+    -fx-fill: #1C1C1E;
+}
+
 
 .preferences-main-area {
     -fx-background-color: #F2F2F7;
@@ -940,3 +947,37 @@
 .wizard-status-label {
     -fx-font-weight: bold;
 }
+
+/* === Channel Details panel (Now Playing) - light theme === */
+.channel-detail-header {
+    -fx-background-color: #F9F9FB;
+    -fx-background-radius: 8;
+    -fx-border-color: #E5E5EA;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+}
+.channel-detail-key { -fx-text-fill: #8E8E93; -fx-font-weight: bold; -fx-font-size: 12px; }
+.channel-detail-value { -fx-text-fill: #1C1C1E; -fx-font-size: 13px; }
+.channel-detail-card {
+    -fx-background-color: #FBFBFD;
+    -fx-background-radius: 8;
+    -fx-border-color: #E5E5EA;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 6;
+}
+.channel-detail-text {
+    -fx-font-family: 'Consolas','Menlo','DejaVu Sans Mono','Monospaced';
+    -fx-font-size: 13px;
+    -fx-text-fill: #1C1C1E;
+    -fx-control-inner-background: #FBFBFD;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-highlight-fill: #D6E4FF;
+}
+.channel-detail-text .content { -fx-background-color: transparent; }
+.channel-detail-scroll, .channel-detail-scroll > .viewport { -fx-background-color: transparent; }
+.channel-detail-section { -fx-font-weight: bold; }

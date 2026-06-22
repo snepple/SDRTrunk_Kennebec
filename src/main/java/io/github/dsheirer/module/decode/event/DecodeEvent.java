@@ -38,6 +38,7 @@ public class DecodeEvent implements IDecodeEvent
     private String mDetails;
     private Protocol mProtocol;
     private int mTimeslot = -1;
+    private volatile String mTranscription;
 
     /**
      * Constructs an instance
@@ -202,6 +203,18 @@ public class DecodeEvent implements IDecodeEvent
     public void setDetails(String details)
     {
         mDetails = details;
+    }
+
+    @Override
+    public String getTranscription()
+    {
+        return mTranscription;
+    }
+
+    @Override
+    public void setTranscription(String transcription)
+    {
+        mTranscription = transcription;
     }
 
     /**

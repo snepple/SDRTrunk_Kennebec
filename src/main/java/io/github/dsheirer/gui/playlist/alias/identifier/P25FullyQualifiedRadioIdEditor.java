@@ -34,6 +34,8 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Pos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.github.dsheirer.controller.channel.Channel;
@@ -84,7 +86,7 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
         GridPane.setConstraints(getProtocolLabel(), 0, 0);
         gridPane.getChildren().add(getProtocolLabel());
 
-        Label valueLabel = new Label("WACN", createHelpIcon("Wide Area Communication Network (WACN) identifier. Required for cross-system P25 calls where the raw ID alone is not unique."));
+        Label valueLabel = new Label("WACN", createHelpIcon("Wide Area Communication Network (WACN): A unique code identifying a large regional radio system. This is usually provided by RadioReference and tells the software which network to follow."));
         GridPane.setHalignment(valueLabel, HPos.RIGHT);
         GridPane.setConstraints(valueLabel, 1, 0);
         gridPane.getChildren().add(valueLabel);
@@ -93,17 +95,23 @@ public class P25FullyQualifiedRadioIdEditor extends IdentifierEditor<P25FullyQua
         gridPane.getChildren().add(getWacnField());
 
         Label systemLabel = new Label("System");
-        GridPane.setHalignment(systemLabel, HPos.RIGHT);
-        GridPane.setConstraints(systemLabel, 3, 0);
-        gridPane.getChildren().add(systemLabel);
+        Label systemHelp = createHelpIcon("System Identifier. Combined with the WACN, uniquely identifies a P25 system.");
+        HBox systemBox = new HBox(4, systemLabel, systemHelp);
+        systemBox.setAlignment(Pos.CENTER_RIGHT);
+        GridPane.setHalignment(systemBox, HPos.RIGHT);
+        GridPane.setConstraints(systemBox, 3, 0);
+        gridPane.getChildren().add(systemBox);
 
         GridPane.setConstraints(getSystemField(), 4, 0);
         gridPane.getChildren().add(getSystemField());
 
         Label radioLabel = new Label("Radio ID");
-        GridPane.setHalignment(radioLabel, HPos.RIGHT);
-        GridPane.setConstraints(radioLabel, 5, 0);
-        gridPane.getChildren().add(radioLabel);
+        Label radioHelp = createHelpIcon("A unique number assigned to an individual radio on the network.");
+        HBox radioBox = new HBox(4, radioLabel, radioHelp);
+        radioBox.setAlignment(Pos.CENTER_RIGHT);
+        GridPane.setHalignment(radioBox, HPos.RIGHT);
+        GridPane.setConstraints(radioBox, 5, 0);
+        gridPane.getChildren().add(radioBox);
 
         GridPane.setConstraints(getRadioField(), 6, 0);
         gridPane.getChildren().add(getRadioField());

@@ -359,6 +359,10 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             }
 
             mFriendlyNameTextField.textProperty().addListener((obs, oldV, newV) -> { if (getConfiguration() != null) getConfiguration().setFriendlyName(newV); });
+            //Persist the friendly name when editing finishes (focus lost or Enter) so it survives restarts
+            //and propagates to the tuner list / channel "Tuner" column.
+            mFriendlyNameTextField.focusedProperty().addListener((obs, was, focused) -> { if(!focused) saveConfiguration(); });
+            mFriendlyNameTextField.setOnAction(e -> saveConfiguration());
         }
 
         return mFriendlyNameTextField;
@@ -399,15 +403,29 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         if(mInfoConfigButton == null)
         {
             mInfoConfigButton = new Button("Info/Config");
+            mInfoConfigButton.setTooltip(new javafx.scene.control.Tooltip("View tuner information"));
             mInfoConfigButton.setOnAction(e -> {
-                VBox panel = new VBox(new javafx.scene.layout.HBox(4));
+                //Build the dialog content as real nodes.  Previously this VBox was passed to
+                //setContentText(String.valueOf(panel)), which rendered the object's toString
+                //("VBox@...") instead of the actual content.  (The friendly-name field now lives in the
+                //tuner config area, so this dialog just shows tuner information.)
+                VBox panel = new VBox(10);
+                panel.setPadding(new Insets(10));
+
                 String info = getTunerInfo();
-                if(info != null && !info.isEmpty()) {
-                    panel.getChildren().add(new Label(info));
-                }
-                panel.getChildren().add(new Label("Friendly Name:"));
-                panel.getChildren().add(getFriendlyNameTextField());
-                Platform.runLater(() -> { Alert alert = new Alert(Alert.AlertType.INFORMATION); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane()); alert.setContentText(String.valueOf(panel)); alert.showAndWait(); });
+                Label infoLabel = new Label(info != null && !info.isEmpty() ? info
+                        : "No additional tuner information available.");
+                infoLabel.setWrapText(true);
+                panel.getChildren().add(infoLabel);
+
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
+                    alert.setTitle("Tuner Info");
+                    alert.setHeaderText("Tuner Information");
+                    alert.getDialogPane().setContent(panel);
+                    alert.showAndWait();
+                });
             });
         }
         return mInfoConfigButton;
@@ -774,9 +792,6 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         if(mGainAdvisorButton == null)
         {
             mGainAdvisorButton = new Button("Gain Advisor");
-            mGainAdvisorButton.setTooltip(new javafx.scene.control.Tooltip(
-                    "Run the Adaptive Gain Advisor now and show a tuner gain recommendation based on " +
-                    "current I/Q signal levels across active channels."));
             mGainAdvisorButton.setOnAction(e ->
             {
                 long minFreq = 0;
@@ -796,11 +811,25 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                     maxFreq = Long.MAX_VALUE;
                 }
 
+                final String tunerId = (getDiscoveredTuner() != null) ? getDiscoveredTuner().getId() : null;
+                final String prior = (tunerId != null)
+                        ? mUserPreferences.getAIPreference().getGainLastSummary(tunerId) : null;
+
                 mGainAdvisorButton.setDisable(true);
                 io.github.dsheirer.source.tuner.manager.AdaptiveGainAdvisor.getInstance(mUserPreferences)
-                        .requestManualConsultation(minFreq, maxFreq,
+                        .requestManualConsultation(minFreq, maxFreq, prior,
                                 recommendation -> Platform.runLater(() -> {
                                     mGainAdvisorButton.setDisable(false);
+
+                                    //Persist per-tuner for the last-run display and as learning context next time.
+                                    if(tunerId != null)
+                                    {
+                                        String summary = "[" + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
+                                                .format(new java.util.Date()) + "] " + recommendation;
+                                        mUserPreferences.getAIPreference().setGainLastSummary(tunerId, summary);
+                                        updateGainAdvisorButtonTooltip();
+                                    }
+
                                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                                     io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                                     alert.setTitle("Adaptive Gain Advisor");
@@ -822,9 +851,35 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                                     alert.showAndWait();
                                 }));
             });
+
+            updateGainAdvisorButtonTooltip();
         }
 
         return mGainAdvisorButton;
+    }
+
+    /**
+     * Sets the Gain Advisor button tooltip to the base help text plus this tuner's most recent
+     * recommendation (time-stamped) when one has been recorded, so the last run is visible near the button.
+     */
+    private void updateGainAdvisorButtonTooltip()
+    {
+        if(mGainAdvisorButton == null)
+        {
+            return;
+        }
+        String base = "Run the Adaptive Gain Advisor now and show a tuner gain recommendation based on " +
+                "current I/Q signal levels across active channels.";
+        String tunerId = (getDiscoveredTuner() != null) ? getDiscoveredTuner().getId() : null;
+        String last = (tunerId != null) ? mUserPreferences.getAIPreference().getGainLastSummary(tunerId) : "";
+        if(last != null && !last.isEmpty())
+        {
+            mGainAdvisorButton.setTooltip(new javafx.scene.control.Tooltip(base + "\n\nLast run: " + last));
+        }
+        else
+        {
+            mGainAdvisorButton.setTooltip(new javafx.scene.control.Tooltip(base));
+        }
     }
 
     /**
@@ -1079,6 +1134,14 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         {
             setSpacing(6);
 
+            //Friendly name lives here in the config area so it's discoverable; it appears in the tuner list
+            //Name column and the channel "Tuner" column once set.
+            HBox nameRow = new HBox(6);
+            nameRow.setAlignment(Pos.CENTER_LEFT);
+            getFriendlyNameTextField().setPrefWidth(220);
+            getFriendlyNameTextField().setPromptText("Friendly name (shown in tuner & channel lists)");
+            nameRow.getChildren().addAll(new Label("Name:"), getFriendlyNameTextField());
+
             HBox row1 = new HBox(6);
             row1.setAlignment(Pos.CENTER_LEFT);
             row1.getChildren().addAll(getEnabledButton(), getRecordButton(), getViewSpectrumButton(), getNewSpectrumButton());
@@ -1087,7 +1150,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             row2.setAlignment(Pos.CENTER_LEFT);
             row2.getChildren().addAll(getInfoConfigButton(), getGainAdvisorButton(), getRestartTunerButton());
 
-            getChildren().addAll(row1, row2, getRecordingStatusLabel());
+            getChildren().addAll(nameRow, row1, row2, getRecordingStatusLabel());
         }
 
         /**
@@ -1134,7 +1197,10 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
             ppmRow.getChildren().addAll(new Label("PPM:"), helpButton, getFrequencyCorrectionSpinner(), getMeasuredPPMLabel());
             getChildren().add(ppmRow);
 
-            getChildren().addAll(getAutoPPMCheckBox(), getAutoOptimizeSampleRateCheckBox());
+            HBox autoPpmBox = new HBox(4, getAutoPPMCheckBox(), createHelpIcon("?"));
+            ((Button)autoPpmBox.getChildren().get(1)).setTooltip(new javafx.scene.control.Tooltip("Allow decoders to automatically measure channel frequency error and adjust the tuner PPM setting above."));
+            autoPpmBox.setAlignment(Pos.CENTER_LEFT);
+            getChildren().addAll(autoPpmBox, getAutoOptimizeSampleRateCheckBox());
 
             // Min / Max frequency range grid
             GridPane minMaxGrid = new GridPane();

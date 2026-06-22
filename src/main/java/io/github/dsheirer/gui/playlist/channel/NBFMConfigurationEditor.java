@@ -1262,6 +1262,10 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 ChannelToneFilter filter = savedFilters.get(0);
                 mToneTypeCombo.setValue(filter.getToneType());
                 updateToneCodeVisibility();
+                //Clear both code combos first so a stale value from a previously-edited channel doesn't
+                //linger (the editor instance is reused across channels of the same decoder type).
+                mCtcssCodeCombo.setValue(null);
+                mDcsCodeCombo.setValue(null);
                 if(filter.getToneType() == ChannelToneFilter.ToneType.CTCSS)
                 {
                     CTCSSCode code = filter.getCTCSSCode();
@@ -1617,11 +1621,66 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mHoldTimeSlider.setValue(result.getNoiseGateHoldTime());
                 modifiedProperty().set(true);
                 mApplyingAiResult = false;
+
+                //Record what changed and why + the time so the channel shows its last optimization and the
+                //AI can learn from it on the next run.
+                recordManualOptimizationSummary(result);
             }
         });
     }
 
+    /**
+     * Persists a human-readable summary (time, what changed, why) of an accepted manual optimization so the
+     * channel's "last run" display can show it and the optimizer can learn from it on the next run.
+     */
+    private void recordManualOptimizationSummary(AIAnalysisResult result) {
+        if(getItem() == null) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("[MANUAL ")
+          .append(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date()))
+          .append("] ");
+        if(result.getImprovements() != null && !result.getImprovements().isEmpty()) {
+            sb.append("Changes: ").append(result.getImprovements());
+        }
+        if(result.getIssuesFound() != null && !result.getIssuesFound().isEmpty()) {
+            sb.append("  Why: ").append(result.getIssuesFound());
+        }
+        String name = getItem().getName();
+        mUserPreferences.getAIPreference().setNBFMLastOptimizeSummary(name, sb.toString());
+        mUserPreferences.getAIPreference().setNBFMLastOptimizeMs(name, System.currentTimeMillis());
+        updateLastRunDisplay();
+    }
+
+    /**
+     * Shows, in the AI-optimize status label next to the manual run button, when this channel was last
+     * optimized (auto or manual) with the full "what changed and why" summary available in the tooltip.
+     * Does nothing if the channel has never been optimized (leaves the existing readiness message).
+     */
+    private void updateLastRunDisplay() {
+        if(mAIOptimizeStatusLabel == null || getItem() == null) {
+            return;
+        }
+        String name = getItem().getName();
+        long lastMs = mUserPreferences.getAIPreference().getNBFMLastOptimizeMs(name);
+        String summary = mUserPreferences.getAIPreference().getNBFMLastOptimizeSummary(name);
+        if(lastMs <= 0 || summary == null || summary.isEmpty()) {
+            return;
+        }
+        String when = new java.text.SimpleDateFormat("MMM d, HH:mm").format(new java.util.Date(lastMs));
+        mAIOptimizeStatusLabel.setText("Last optimized " + when + " (hover for details)");
+        mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #444444;");
+        mAIOptimizeStatusLabel.setTooltip(new javafx.scene.control.Tooltip(summary));
+    }
+
     private void handleAIOptimizeClick() {
+        //Guard against the feature being toggled off after this editor was opened.
+        if (!mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled()) {
+            mAIOptimizeStatusLabel.setText("Enable 'Auto-Optimize NBFM Audio Filters' in AI preferences first");
+            mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
+            return;
+        }
         mAIOptimizeButton.setDisable(true);
         mAIOptimizeStatusLabel.setText("Analyzing...");
         mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #0066cc;");
@@ -1642,7 +1701,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
                 AIAudioOptimizer optimizer = new AIAudioOptimizer(mUserPreferences);
                 DecodeConfigNBFM config = (DecodeConfigNBFM) getItem().getDecodeConfiguration();
-                AIAnalysisResult result = optimizer.analyzeRawAudio(config, recent);
+                String priorSummary = mUserPreferences.getAIPreference().getNBFMLastOptimizeSummary(getItem().getName());
+                AIAnalysisResult result = optimizer.analyzeRawAudio(config, recent, priorSummary);
 
                 javafx.application.Platform.runLater(() -> {
                     showComparisonUI(config, result);
@@ -1673,6 +1733,15 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 return;
             }
 
+            //Manual optimization requires the feature to be enabled (#9): the feature toggle means
+            //"available for manual runs", and call audio is only buffered for analysis while it is on.
+            if (!mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled()) {
+                mAIOptimizeButton.setDisable(true);
+                mAIOptimizeStatusLabel.setText("Enable 'Auto-Optimize NBFM Audio Filters' in AI preferences to use this");
+                mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #888888;");
+                return;
+            }
+
             mAIOptimizeButton.setDisable(true);
             mAIOptimizeStatusLabel.setText("Checking for buffered events...");
 
@@ -1690,6 +1759,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                         mAIOptimizeButton.setDisable(false);
                         mAIOptimizeStatusLabel.setText("Click to run Gemini AI analysis on this channel's audio");
                         mAIOptimizeStatusLabel.setStyle("");
+                        //If this channel has been optimized before (auto or manual), show that instead.
+                        updateLastRunDisplay();
                     }
                 });
             }).start();

@@ -71,4 +71,25 @@ public interface INoiseSquelchController
      * @return true when manually adjusted.
      */
     default boolean isSquelchManuallyAdjusted() { return false; }
+
+    /**
+     * Enables or disables adaptive noise-floor tracking, which raises the effective open threshold toward (but
+     * never above) the close threshold based on the measured noise floor so weak signals can open the squelch.
+     * Default no-op for controllers that do not support it.
+     * @param enabled true to enable adaptive tracking.
+     */
+    default void setAdaptiveSquelch(boolean enabled) {}
+
+    /**
+     * Indicates whether adaptive noise-floor tracking is enabled for this channel.  Default false.
+     * @return true when adaptive tracking is enabled.
+     */
+    default boolean isAdaptiveSquelch() { return false; }
+
+    /**
+     * Channel name for this controller, used to key per-channel squelch calibration history (persistence
+     * and learning).  Default null for controllers not associated with a named channel.
+     * @return channel name, or null when unknown.
+     */
+    default String getChannelName() { return null; }
 }

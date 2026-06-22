@@ -18,6 +18,7 @@
  */
 
 package io.github.dsheirer.source.tuner.ui;
+import javafx.application.Platform;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.image.*;
@@ -130,17 +131,22 @@ public class DiscoveredTunerEditor extends Editor<DiscoveredTuner> implements ID
     @Override
     public void tunerStatusUpdated(DiscoveredTuner discoveredTuner, TunerStatus previous, TunerStatus current)
     {
-        //If this is the currently displayed tuner, set it again to re-render the editor
-        if(hasItem() && getItem().equals(discoveredTuner))
-        {
-            if(current == TunerStatus.REMOVED)
+        //This callback arrives on a background thread (e.g. the tuner recovery/scheduled thread via
+        //DiscoveredTuner.broadcast()).  setItem() mutates JavaFX scene-graph nodes, so marshal onto the FX
+        //application thread to avoid an IllegalStateException ("Not on FX application thread").
+        Platform.runLater(() -> {
+            //If this is the currently displayed tuner, set it again to re-render the editor
+            if(hasItem() && getItem().equals(discoveredTuner))
             {
-                setItem(null);
+                if(current == TunerStatus.REMOVED)
+                {
+                    setItem(null);
+                }
+                else
+                {
+                    setItem(discoveredTuner);
+                }
             }
-            else
-            {
-                setItem(discoveredTuner);
-            }
-        }
+        });
     }
 }

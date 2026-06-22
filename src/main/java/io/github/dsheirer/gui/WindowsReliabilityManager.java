@@ -20,6 +20,22 @@ public class WindowsReliabilityManager {
     //toggled on again at runtime).
     private static volatile boolean mWatchdogStarted = false;
 
+    //Directory for the graceful-exit and watchdog-restart marker files.  These MUST live in a user-writable
+    //location: when SDRTrunk is installed under C:\Program Files (the installer default), user.dir is not
+    //writable without elevation, so marker writes failed with AccessDeniedException - silently breaking
+    //graceful-exit detection and watchdog crash-loop protection.  Resolved from the user preferences
+    //(application root) at startup; falls back to user.dir if not yet initialized.
+    private static volatile String mMarkerDir;
+
+    /**
+     * Resolves the user-writable directory for the marker files, falling back to the working directory if
+     * the preference-based application root has not yet been initialized.
+     */
+    private static String resolveMarkerDir() {
+        String dir = mMarkerDir;
+        return (dir != null) ? dir : System.getProperty("user.dir");
+    }
+
     /**
      * Resolves the launcher used to (re)start the application: the native jpackage executable
      * (SDRTrunk.exe) when present, otherwise the runtime-image launcher (bin\sdrtrunk.bat). This makes
@@ -40,6 +56,7 @@ public class WindowsReliabilityManager {
      */
     public static void startWatchdogIfEnabled(UserPreferences prefs) {
         if (isWindows10OrNewer() && prefs != null && prefs.getApplicationPreference().isWatchdogEnabled()) {
+            mMarkerDir = prefs.getDirectoryPreference().getDirectoryApplicationRoot().toString();
             startWatchdog();
         }
     }
@@ -54,8 +71,10 @@ public class WindowsReliabilityManager {
             return;
         }
 
+        mMarkerDir = prefs.getDirectoryPreference().getDirectoryApplicationRoot().toString();
+
         try {
-            Path exitFile = Paths.get(System.getProperty("user.dir"), GRACEFUL_EXIT_FILE);
+            Path exitFile = Paths.get(resolveMarkerDir(), GRACEFUL_EXIT_FILE);
             Files.deleteIfExists(exitFile);
         } catch (IOException e) {
             mLog.warn("Failed to clean up graceful exit file", e);
@@ -73,6 +92,7 @@ public class WindowsReliabilityManager {
         try {
             long currentPid = ProcessHandle.current().pid();
             String userDir = System.getProperty("user.dir");
+            String markerDir = resolveMarkerDir();
             String launcher = resolveLauncher();
             int healthPort = RestApiWatchdog.getConfiguredPort();
 
@@ -106,7 +126,7 @@ public class WindowsReliabilityManager {
                   "New-Item -ItemType File -Path $marker -Force | Out-Null; " +
                   "Start-Process -FilePath '%s' -WorkingDirectory '%s' " +
                 "}",
-                currentPid, healthPort, userDir, GRACEFUL_EXIT_FILE, userDir, RESTART_MARKER_FILE, launcher, userDir
+                currentPid, healthPort, markerDir, GRACEFUL_EXIT_FILE, markerDir, RESTART_MARKER_FILE, launcher, userDir
             );
 
             String encodedCmd = Base64.getEncoder().encodeToString(command.getBytes(StandardCharsets.UTF_16LE));
@@ -144,7 +164,7 @@ public class WindowsReliabilityManager {
             return;
         }
         try {
-            Path exitFile = Paths.get(System.getProperty("user.dir"), GRACEFUL_EXIT_FILE);
+            Path exitFile = Paths.get(resolveMarkerDir(), GRACEFUL_EXIT_FILE);
             Files.writeString(exitFile, "exit");
         } catch (IOException e) {
             mLog.warn("Failed to write graceful exit file", e);

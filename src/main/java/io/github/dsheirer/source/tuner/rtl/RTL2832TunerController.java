@@ -180,7 +180,7 @@ public class RTL2832TunerController extends USBTunerController implements ISampl
             }
             else
             {
-                mLog.error("Error performing test write to RTL2832 device - " + LibUsb.errorName(lue.getErrorCode()));
+                mLog.error("Error performing test write to RTL2832 device - " + LibUsb.errorName(lue.getErrorCode()), lue);
             }
         }
 
@@ -195,7 +195,7 @@ public class RTL2832TunerController extends USBTunerController implements ISampl
             }
             catch(LibUsbException lue)
             {
-                mLog.error("Couldnt' reset RTL2832 device - setting error");
+                mLog.error("Couldn't reset RTL2832 device - setting error", lue);
                 throw new SourceException("unable to reset USB device - " + LibUsb.errorName(status));
             }
         }

@@ -304,6 +304,75 @@ public class ApplicationPreferenceEditor extends HBox
             });
             wizardCard.getChildren().add(new io.github.dsheirer.gui.preference.layout.SettingsRow("Re-run initial configuration wizard", wizardBtn));
             mEditorPane.getChildren().addAll(wizardLabel, wizardCard);
+
+            // Card 8: Software Updates
+            Label updatesLabel = new Label("Software Updates");
+            updatesLabel.getStyleClass().add("hig-section-header");
+            io.github.dsheirer.gui.preference.layout.SettingsCard updatesCard = new io.github.dsheirer.gui.preference.layout.SettingsCard();
+
+            String currentVersion = io.github.dsheirer.properties.SystemProperties.getInstance().getApplicationVersion();
+            final String currentVersionFinal = (currentVersion != null && !currentVersion.isEmpty()) ? currentVersion : null;
+            Label currentVersionLabel = new Label(currentVersionFinal != null ? currentVersionFinal : "unknown (running from IDE/dev build)");
+
+            Label updateResultLabel = new Label();
+            updateResultLabel.setWrapText(true);
+            updateResultLabel.setPadding(new Insets(0, 15, 5, 15));
+            updateResultLabel.getStyleClass().add("kennebec-secondary-text");
+
+            Button checkUpdatesButton = new Button("Check for Updates");
+            Button downloadUpdateButton = new Button("Download & Install");
+            downloadUpdateButton.setVisible(false);
+            downloadUpdateButton.setManaged(false);
+
+            checkUpdatesButton.setOnAction(e -> {
+                updateResultLabel.setText("Checking GitHub for the latest release...");
+                downloadUpdateButton.setVisible(false);
+                downloadUpdateButton.setManaged(false);
+                java.util.concurrent.CompletableFuture
+                        .supplyAsync(io.github.dsheirer.update.GitHubUpdateChecker::fetchLatestRelease)
+                        .thenAccept(release -> javafx.application.Platform.runLater(() -> {
+                            if(release == null || release.tag == null)
+                            {
+                                updateResultLabel.setText("Could not check for updates (no internet connection or GitHub unavailable).");
+                                return;
+                            }
+
+                            if(currentVersionFinal != null &&
+                               io.github.dsheirer.update.GitHubUpdateChecker.isNewer(release.tag, currentVersionFinal))
+                            {
+                                updateResultLabel.setText("A newer version is available: " + release.tag + ".");
+                                downloadUpdateButton.setUserData(release);
+                                downloadUpdateButton.setVisible(true);
+                                downloadUpdateButton.setManaged(true);
+                            }
+                            else
+                            {
+                                updateResultLabel.setText("You are running the latest version (latest release: " + release.tag + ").");
+                            }
+                        }));
+            });
+
+            downloadUpdateButton.setOnAction(e -> {
+                Object data = downloadUpdateButton.getUserData();
+                if(data instanceof io.github.dsheirer.update.GitHubUpdateChecker.Release release)
+                {
+                    updateResultLabel.setText("Downloading update...");
+                    java.util.concurrent.CompletableFuture.runAsync(() -> {
+                        boolean launched = io.github.dsheirer.update.GitHubUpdateChecker.downloadAndLaunch(release);
+                        javafx.application.Platform.runLater(() -> updateResultLabel.setText(launched ?
+                                "Installer launched - follow its prompts, then restart SDRTrunk." :
+                                "Opened the release page in your browser to download the installer manually."));
+                    });
+                }
+            });
+
+            HBox updatesButtonBox = new HBox(10, checkUpdatesButton, downloadUpdateButton);
+            updatesButtonBox.setPadding(new Insets(5, 15, 5, 15));
+            updatesCard.getChildren().addAll(
+                    new io.github.dsheirer.gui.preference.layout.SettingsRow("Installed Version", currentVersionLabel),
+                    updatesButtonBox);
+
+            mEditorPane.getChildren().addAll(updatesLabel, updatesCard, updateResultLabel);
         }
 
         return mEditorPane;

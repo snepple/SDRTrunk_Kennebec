@@ -137,7 +137,7 @@ public class P25P2Viewer extends VBox
         HBox scrambleSettingsBox = new HBox();
         scrambleSettingsBox.setAlignment(Pos.BASELINE_LEFT);
         scrambleSettingsBox.setSpacing(5);
-        Label wacnLabel = new Label("WACN:", createHelpIcon("Wide Area Communication Network (WACN):\nA unique identifier for cross-system P25 calls where the raw ID alone is not unique."));
+        Label wacnLabel = new Label("WACN:", createHelpIcon("Wide Area Communication Network (WACN): A unique code identifying a large regional radio system. This is usually provided by RadioReference and tells the software which network to follow."));
         Label systemLabel = new Label("SYSTEM:", createHelpIcon("System Identifier:\nCombined with the WACN, uniquely identifies a P25 system."));
         Label nacLabel = new Label("NAC:", createHelpIcon("Network Access Code (NAC):\nA unique code identifying a specific radio system to follow."));
         scrambleSettingsBox.getChildren().addAll(wacnLabel, getWACNTextField(), systemLabel, getSystemTextField(),

@@ -31,6 +31,7 @@ public class Widget extends VBox {
     private final VBox mResizeHandle;
 
     private boolean mMinimized = false;
+    private final javafx.beans.property.BooleanProperty mMinimizedProperty = new javafx.beans.property.SimpleBooleanProperty(false);
 
     public Widget(String id, String title, Region contentComponent, WidgetContainer container, int minHeight) {
         mId = id;
@@ -168,6 +169,10 @@ public class Widget extends VBox {
     public void ensureContentComponentParent() {
         if (mContentComponent != null && mContentComponent.getParent() != this) {
             getChildren().add(1, mContentComponent);
+            //Re-apply the minimized state so the content's visibility stays in sync with the widget after the
+            //content has been re-parented elsewhere (e.g., the shared spectral panel returning from the tuner view).
+            mContentComponent.setVisible(!mMinimized);
+            mContentComponent.setManaged(!mMinimized);
             requestLayout();
             requestLayout();
         }
@@ -186,6 +191,7 @@ public class Widget extends VBox {
 
     public void setMinimized(boolean minimized) {
         mMinimized = minimized;
+        mMinimizedProperty.set(minimized);
         mContentComponent.setVisible(!minimized);
         mContentComponent.setManaged(!minimized);
         mResizeHandle.setVisible(!minimized);
@@ -212,6 +218,14 @@ public class Widget extends VBox {
 
     public boolean isMinimized() {
         return mMinimized;
+    }
+
+    /**
+     * Observable minimized state, so interested components (e.g., the spectral display) can pause expensive work
+     * when the widget's content is collapsed.
+     */
+    public javafx.beans.property.BooleanProperty minimizedProperty() {
+        return mMinimizedProperty;
     }
 
     private void toggleMinimized() {

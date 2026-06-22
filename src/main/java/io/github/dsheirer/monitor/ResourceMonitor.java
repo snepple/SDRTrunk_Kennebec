@@ -132,15 +132,25 @@ public class ResourceMonitor
      */
     private void updateCpuMemory()
     {
-        double cpuLoadScaled = 0.0;
+        double cpuLoad = -1.0;
 
-        if(mOperatingSystemMXBean != null)
+        //getSystemLoadAverage() returns -1 on Windows, which left the CPU gauge permanently empty.  Prefer
+        //com.sun.management's getCpuLoad() (system-wide CPU, 0.0-1.0) which works cross-platform; fall back
+        //to the load-average/cores estimate only where the com.sun bean isn't available.
+        if(mOperatingSystemMXBean instanceof com.sun.management.OperatingSystemMXBean sunBean)
+        {
+            cpuLoad = sunBean.getCpuLoad();
+        }
+        else if(mOperatingSystemMXBean != null)
         {
             double load = mOperatingSystemMXBean.getSystemLoadAverage();
-            cpuLoadScaled = load / mOperatingSystemMXBean.getAvailableProcessors();
+            if(load >= 0)
+            {
+                cpuLoad = load / mOperatingSystemMXBean.getAvailableProcessors();
+            }
         }
 
-        final double loadFinal = cpuLoadScaled;
+        final double loadFinal = cpuLoad;
 
         Platform.runLater(() -> {
             mMemoryAllocated.set(Runtime.getRuntime().totalMemory());

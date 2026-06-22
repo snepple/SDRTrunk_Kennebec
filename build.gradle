@@ -701,9 +701,14 @@ tasks.register('createInstaller', Exec) {
     def osName = System.properties.getProperty("os.name").toLowerCase()
     def arch = System.properties.getProperty("os.arch")
     def versionStr = project.findProperty('projectVersion')
-    // jpackage requires a numeric version (e.g. 0.0.75), strip any non-numeric prefix
-    def appVersion = versionStr.toString().replaceAll("^[^0-9]*", "").replaceAll("-.*", "")
-    if (appVersion.isEmpty()) appVersion = "0.0.1"
+    // jpackage requires a numeric dotted version. Strip any non-numeric prefix/suffix, then normalize
+    // each dot-separated component to a plain integer so leading zeros are removed: Windows MSI/jpackage
+    // rejects versions like "00.118" (leading-zero major), which fails the native installer step even
+    // though the runtime zip (which has no version validation) builds fine. e.g. "00.118" -> "0.118".
+    def rawVersion = versionStr.toString().replaceAll("^[^0-9]*", "").replaceAll("-.*", "")
+    def versionParts = rawVersion.split("\\.").findAll { it ==~ /\d+/ }.collect { it as int }
+    if (versionParts.isEmpty()) versionParts = [0, 0, 1]
+    def appVersion = versionParts.join(".")
     
     def jpackageCmd = "jpackage"
     def type = "app-image"
@@ -758,11 +763,21 @@ tasks.register('createInstaller', Exec) {
             '--dest', destDir,
             '--name', 'SDRTrunk',
             '--app-version', appVersion,
+            '--vendor', 'SDRTrunk_Kennebec',
+            '--description', 'Decode monitor record and stream trunked mobile radio with Software Defined Radios.',
+            '--copyright', 'Copyright (C) 2014-2026 Dennis Sheirer. Licensed under GNU GPL v3.',
+            '--about-url', 'https://github.com/snepple/SDRTrunk_Kennebec',
             '--runtime-image', imageDir.absolutePath,
             '--input', libDir.absolutePath,
             '--main-jar', launcherJar != null ? launcherJar.name : 'sdr-trunk.jar',
             '--main-class', 'io.github.dsheirer.gui.SDRTrunkLauncher',
             '--temp', "$buildDir/tmp/jpackage"]
+
+        // Add a license-agreement page to the installer wizard (cross-platform).
+        def licenseFile = file("${projectDir}/LICENSE")
+        if (licenseFile.exists()) {
+            cmdList.addAll(['--license-file', licenseFile.absolutePath])
+        }
 
         if (osName.contains("win")) {
             // Add Windows-specific options
@@ -770,7 +785,35 @@ tasks.register('createInstaller', Exec) {
             if (iconFile.exists()) {
                 cmdList.addAll(['--icon', iconFile.absolutePath])
             }
-            cmdList.addAll(['--win-shortcut', '--win-menu', '--win-menu-group', 'SDRTrunk'])
+            cmdList.addAll(['--win-shortcut', '--win-menu', '--win-menu-group', 'SDRTrunk',
+                            '--win-dir-chooser',
+                            '--win-upgrade-uuid', '60C779DB-E3B4-4D77-BB3B-4ACD206481E3'])
+
+            // Brand the installer wizard pages with the SDRTrunk banner + welcome
+            // bitmaps. jpackage reads override resources from --resource-dir; an
+            // overrides.wxi there points the WiX UI bitmap variables at our committed
+            // BMPs (24-bit, 493x58 and 493x312). If a future WiX/jpackage version
+            // needs different wiring, 'jpackage --verbose' prints the exact override
+            // resource names it expects; removing --resource-dir falls back to stock.
+            def brandDir = file("${projectDir}/src/main/installer/windows")
+            def bannerBmp = new File(brandDir, "sdrtrunk-installer-banner.bmp")
+            def dialogBmp = new File(brandDir, "sdrtrunk-installer-dialog.bmp")
+            // Copy branding BMPs into the jpackage --resource-dir.
+            // jpackage's built-in WiX UI template auto-picks up banner.bmp (493x58)
+            // and dialog.bmp (493x312) by convention - no overrides.wxi needed
+            // (overrides.wxi caused candle to fail because it was placed outside
+            // the internal JpConfigDir that main.wxs references at compile time).
+            def wixResDir = file("$buildDir/installer/wix-resources")
+            wixResDir.mkdirs()
+            if (bannerBmp.exists()) {
+                copy { from bannerBmp; into wixResDir; rename { 'banner.bmp' } }
+            }
+            if (dialogBmp.exists()) {
+                copy { from dialogBmp; into wixResDir; rename { 'dialog.bmp' } }
+            }
+            cmdList.addAll(['--resource-dir', wixResDir.absolutePath])
+            logger.lifecycle("createInstaller: branding via BMP files in ${wixResDir}")
+
             jvmArgsWindows.each { arg ->
                 cmdList.addAll(['--java-options', arg])
             }

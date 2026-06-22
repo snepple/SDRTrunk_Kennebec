@@ -16,17 +16,40 @@ public class AIPreference extends Preference {
     public static final String KEY_AI_TONE_DISCOVERY_ENABLED = "ai.tone.discovery.enabled";
     
     public static final String KEY_TRANSCRIPTION_ENABLED = "ai.transcription.enabled";
+    public static final String KEY_RADIO_ID_NAMING_ENABLED = "ai.radio.id.naming.enabled";
     public static final String KEY_TRANSCRIPTION_ENGINE = "ai.transcription.engine";
     public static final String KEY_GOOGLE_STT_API_KEY = "ai.transcription.google.key";
     public static final String KEY_WHISPER_API_KEY = "ai.transcription.whisper.key";
     public static final String KEY_NBFM_AUTO_OPTIMIZE = "ai.nbfm.auto.optimize";
     public static final String KEY_NBFM_LAST_OPTIMIZE_PREFIX = "ai.nbfm.last.optimize.";
+    //Human-readable summary (what changed and why, plus trigger/time) of the most recent NBFM filter
+    //optimization per channel - shown in the channel UI and fed back to the optimizer so it can learn.
+    public static final String KEY_NBFM_LAST_SUMMARY_PREFIX = "ai.nbfm.last.summary.";
     public static final String KEY_GAIN_ADVISOR_ENABLED = "ai.gain.advisor.enabled";
     public static final String KEY_SQUELCH_ADVISOR_ENABLED = "ai.squelch.advisor.enabled";
 
-    //Auto-optimize a given NBFM channel at most this often.  Running every few calls burns Gemini
-    //tokens very quickly when many channels are configured, so the cadence is time-based (twice a day).
-    private static final long NBFM_AUTO_OPTIMIZE_INTERVAL_MS = 12L * 60L * 60L * 1000L;
+    //Per-channel squelch calibration history: a display summary plus the last accepted open/close
+    //thresholds, used to stabilize ("learn from") subsequent calibrations.
+    public static final String KEY_SQUELCH_LAST_SUMMARY_PREFIX = "ai.squelch.last.summary.";
+    public static final String KEY_SQUELCH_LAST_OPEN_PREFIX = "ai.squelch.last.open.";
+    public static final String KEY_SQUELCH_LAST_CLOSE_PREFIX = "ai.squelch.last.close.";
+
+    //Scheduled auto-run controls.  These are SEPARATE from each feature's on/off toggle so a feature can
+    //be enabled for manual runs only.  Each scheduled toggle is gated on its parent feature being enabled,
+    //and the interval is user-selectable from SCHEDULED_INTERVAL_OPTIONS_HOURS.
+    public static final String KEY_NBFM_AUTO_SCHEDULE_ENABLED = "ai.nbfm.auto.schedule.enabled";
+    public static final String KEY_NBFM_AUTO_INTERVAL_HOURS = "ai.nbfm.auto.interval.hours";
+    public static final String KEY_GAIN_ADVISOR_SCHEDULE_ENABLED = "ai.gain.advisor.schedule.enabled";
+    public static final String KEY_GAIN_ADVISOR_INTERVAL_HOURS = "ai.gain.advisor.interval.hours";
+
+    //Per-tuner gain advisor history: a display summary of the most recent recommendation, used for the
+    //last-run display and as prior context fed into the next AI consultation (learning).
+    public static final String KEY_GAIN_LAST_SUMMARY_PREFIX = "ai.gain.last.summary.";
+
+    //Selectable intervals (hours) for scheduled AI runs - chosen to balance external API token cost
+    //against keeping tuner/channel settings reasonably current.
+    public static final Integer[] SCHEDULED_INTERVAL_OPTIONS_HOURS = {6, 12, 24, 48};
+    private static final int DEFAULT_SCHEDULED_INTERVAL_HOURS = 12;
 
     private Preferences mPreferences = Preferences.userNodeForPackage(AIPreference.class);
 
@@ -123,6 +146,19 @@ public class AIPreference extends Preference {
         notifyPreferenceUpdated();
     }
 
+    /**
+     * Whether the AI radio-ID name learner (names P25/DMR radio IDs from transcripts) is enabled.
+     * Defaults to true to preserve prior behavior.
+     */
+    public boolean isRadioIdNamingEnabled() {
+        return mPreferences.getBoolean(KEY_RADIO_ID_NAMING_ENABLED, true);
+    }
+
+    public void setRadioIdNamingEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_RADIO_ID_NAMING_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
     public String getTranscriptionEngine() {
         return mPreferences.get(KEY_TRANSCRIPTION_ENGINE, "WHISPER"); // "WHISPER" or "GOOGLE"
     }
@@ -187,15 +223,136 @@ public class AIPreference extends Preference {
         mPreferences.putLong(nbfmOptimizeKey(channelName), timestampMs);
     }
 
+    private static String nbfmSummaryKey(String channelName) {
+        String safe = channelName == null ? "" : channelName;
+        if((KEY_NBFM_LAST_SUMMARY_PREFIX.length() + safe.length()) <= Preferences.MAX_KEY_LENGTH) {
+            return KEY_NBFM_LAST_SUMMARY_PREFIX + safe;
+        }
+        return KEY_NBFM_LAST_SUMMARY_PREFIX + Integer.toHexString(safe.hashCode());
+    }
+
+    /**
+     * Human-readable summary of the most recent NBFM filter optimization for a channel (trigger, time,
+     * what changed and why).  Empty string if the channel has never been optimized.  Shown in the channel
+     * UI and included in the next optimization prompt so the AI can learn from its prior change.
+     */
+    public String getNBFMLastOptimizeSummary(String channelName) {
+        return mPreferences.get(nbfmSummaryKey(channelName), "");
+    }
+
+    public void setNBFMLastOptimizeSummary(String channelName, String summary) {
+        if(summary == null) {
+            summary = "";
+        }
+        //java.util.prefs caps individual value length; truncate defensively so a long AI explanation
+        //never throws when persisted.
+        if(summary.length() > Preferences.MAX_VALUE_LENGTH) {
+            summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
+        }
+        mPreferences.put(nbfmSummaryKey(channelName), summary);
+    }
+
+    /**
+     * Builds a per-scope preference key (prefix + identifier), hashing the identifier when the combined
+     * length would exceed the backing store's key-length limit.  Used for both per-channel (squelch) and
+     * per-tuner (gain) calibration history keys.
+     */
+    private static String scopedKey(String prefix, String id) {
+        String safe = id == null ? "" : id;
+        if((prefix.length() + safe.length()) <= Preferences.MAX_KEY_LENGTH) {
+            return prefix + safe;
+        }
+        return prefix + Integer.toHexString(safe.hashCode());
+    }
+
+    /**
+     * Human-readable summary (time, what changed, why) of the most recent squelch calibration for a
+     * channel, shown in the squelch UI.  Empty string if never calibrated.
+     */
+    public String getSquelchLastSummary(String channelName) {
+        return mPreferences.get(scopedKey(KEY_SQUELCH_LAST_SUMMARY_PREFIX, channelName), "");
+    }
+
+    /**
+     * Persists an accepted squelch calibration for a channel: the open/close thresholds (used to stabilize
+     * future calibrations) and a human-readable summary (shown in the UI).
+     */
+    public void setSquelchCalibration(String channelName, float open, float close, String summary) {
+        if(summary == null) {
+            summary = "";
+        }
+        if(summary.length() > Preferences.MAX_VALUE_LENGTH) {
+            summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
+        }
+        mPreferences.put(scopedKey(KEY_SQUELCH_LAST_SUMMARY_PREFIX, channelName), summary);
+        mPreferences.putFloat(scopedKey(KEY_SQUELCH_LAST_OPEN_PREFIX, channelName), open);
+        mPreferences.putFloat(scopedKey(KEY_SQUELCH_LAST_CLOSE_PREFIX, channelName), close);
+    }
+
+    /** @return last accepted squelch open threshold for the channel, or -1 if none recorded. */
+    public float getSquelchLastOpen(String channelName) {
+        return mPreferences.getFloat(scopedKey(KEY_SQUELCH_LAST_OPEN_PREFIX, channelName), -1f);
+    }
+
+    /** @return last accepted squelch close threshold for the channel, or -1 if none recorded. */
+    public float getSquelchLastClose(String channelName) {
+        return mPreferences.getFloat(scopedKey(KEY_SQUELCH_LAST_CLOSE_PREFIX, channelName), -1f);
+    }
+
+    /**
+     * Most recent gain advisor recommendation for a tuner (time-stamped), shown in the gain advisor UI and
+     * fed back as prior context on the next run.  Empty string when the tuner has never been advised.
+     */
+    public String getGainLastSummary(String tunerId) {
+        return mPreferences.get(scopedKey(KEY_GAIN_LAST_SUMMARY_PREFIX, tunerId), "");
+    }
+
+    /**
+     * Persists the most recent gain advisor recommendation for a tuner.
+     */
+    public void setGainLastSummary(String tunerId, String summary) {
+        if(summary == null) {
+            summary = "";
+        }
+        if(summary.length() > Preferences.MAX_VALUE_LENGTH) {
+            summary = summary.substring(0, Preferences.MAX_VALUE_LENGTH);
+        }
+        mPreferences.put(scopedKey(KEY_GAIN_LAST_SUMMARY_PREFIX, tunerId), summary);
+    }
+
     /**
      * Whether an automatic NBFM optimization is due for the given channel.  True only when
      * auto-optimize is enabled and at least the twice-daily interval has elapsed since the last run.
      */
     public boolean isNBFMAutoOptimizeDue(String channelName) {
-        if(!isNBFMAudioAutoOptimizeEnabled()) {
+        if(!isNBFMAutoScheduleEnabled()) {
             return false;
         }
-        return (System.currentTimeMillis() - getNBFMLastOptimizeMs(channelName)) >= NBFM_AUTO_OPTIMIZE_INTERVAL_MS;
+        long intervalMs = getNBFMAutoIntervalHours() * 60L * 60L * 1000L;
+        return (System.currentTimeMillis() - getNBFMLastOptimizeMs(channelName)) >= intervalMs;
+    }
+
+    /**
+     * Whether NBFM filter optimization runs automatically on a schedule.  Separate from the feature
+     * toggle ({@link #isNBFMAudioAutoOptimizeEnabled()}), which can be enabled for manual runs only.
+     * Gated on the feature being enabled; defaults to true so enabling the feature keeps prior behavior.
+     */
+    public boolean isNBFMAutoScheduleEnabled() {
+        return isNBFMAudioAutoOptimizeEnabled() && mPreferences.getBoolean(KEY_NBFM_AUTO_SCHEDULE_ENABLED, true);
+    }
+
+    public void setNBFMAutoScheduleEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_NBFM_AUTO_SCHEDULE_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public int getNBFMAutoIntervalHours() {
+        return clampScheduledInterval(mPreferences.getInt(KEY_NBFM_AUTO_INTERVAL_HOURS, DEFAULT_SCHEDULED_INTERVAL_HOURS));
+    }
+
+    public void setNBFMAutoIntervalHours(int hours) {
+        mPreferences.putInt(KEY_NBFM_AUTO_INTERVAL_HOURS, clampScheduledInterval(hours));
+        notifyPreferenceUpdated();
     }
 
     /**
@@ -208,7 +365,9 @@ public class AIPreference extends Preference {
         Boolean cached = mGainAdvisorEnabled;
 
         if(cached == null) {
-            cached = mPreferences.getBoolean(KEY_GAIN_ADVISOR_ENABLED, true);
+            //Default OFF so a fresh install matches the lean upstream/original profile (no per-sample-buffer
+            //power accounting or advisor thread competing with channel I/Q processing). Opt-in via the UI.
+            cached = mPreferences.getBoolean(KEY_GAIN_ADVISOR_ENABLED, false);
             mGainAdvisorEnabled = cached;
         }
 
@@ -219,6 +378,42 @@ public class AIPreference extends Preference {
         mPreferences.putBoolean(KEY_GAIN_ADVISOR_ENABLED, enabled);
         mGainAdvisorEnabled = enabled;
         notifyPreferenceUpdated();
+    }
+
+    /**
+     * Whether the gain advisor performs scheduled, AI-assisted consultations automatically.  Separate
+     * from {@link #isGainAdvisorEnabled()} (which can run heuristics/manual only).  Gated on the feature
+     * being enabled; defaults to true so enabling the advisor preserves prior scheduled behavior.
+     */
+    public boolean isGainAdvisorScheduleEnabled() {
+        return isGainAdvisorEnabled() && mPreferences.getBoolean(KEY_GAIN_ADVISOR_SCHEDULE_ENABLED, true);
+    }
+
+    public void setGainAdvisorScheduleEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_GAIN_ADVISOR_SCHEDULE_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    public int getGainAdvisorIntervalHours() {
+        return clampScheduledInterval(mPreferences.getInt(KEY_GAIN_ADVISOR_INTERVAL_HOURS, DEFAULT_SCHEDULED_INTERVAL_HOURS));
+    }
+
+    public void setGainAdvisorIntervalHours(int hours) {
+        mPreferences.putInt(KEY_GAIN_ADVISOR_INTERVAL_HOURS, clampScheduledInterval(hours));
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Constrains a scheduled-run interval to one of the supported {@link #SCHEDULED_INTERVAL_OPTIONS_HOURS}
+     * options, falling back to the default if an unsupported value is supplied.
+     */
+    private static int clampScheduledInterval(int hours) {
+        for(Integer option : SCHEDULED_INTERVAL_OPTIONS_HOURS) {
+            if(option == hours) {
+                return hours;
+            }
+        }
+        return DEFAULT_SCHEDULED_INTERVAL_HOURS;
     }
 
     /**

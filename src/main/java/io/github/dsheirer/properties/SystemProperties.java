@@ -201,6 +201,22 @@ public class SystemProperties
     }
 
     /**
+     * Application version string (manifest Implementation-Version), e.g. "00.107", or null if unavailable
+     * (for example when running from an IDE without a packaged manifest).
+     */
+    public String getApplicationVersion()
+    {
+        Manifest manifest = getManifest(SDRTrunk.class);
+
+        if(manifest != null)
+        {
+            return manifest.getMainAttributes().getValue(MANIFEST_VERSION);
+        }
+
+        return null;
+    }
+
+    /**
      * Creates the application name, suitable for display in the title bar of the gui
      */
     public String getApplicationName()

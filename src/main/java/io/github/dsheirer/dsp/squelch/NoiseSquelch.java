@@ -52,6 +52,15 @@ public class NoiseSquelch implements INoiseSquelchController
     private float mMeanAccumulator;
     private float mNoiseOpenThreshold = DEFAULT_NOISE_OPEN_THRESHOLD;
     private float mNoiseCloseThreshold = DEFAULT_NOISE_CLOSE_THRESHOLD;
+    //Adaptive noise-floor tracking (opt-in).  When enabled, the EFFECTIVE open threshold is raised toward (but
+    //never above) the close threshold based on the measured noise floor, so a weaker signal that sits below the
+    //noise floor can still open the squelch.  Disabled by default so existing, hand-tuned channels are unchanged.
+    public static final float ADAPTIVE_OPEN_FRACTION = 0.65f;     //Open at ~65% of the measured noise floor.
+    private static final float ADAPTIVE_FLOOR_DECAY = 0.02f;      //Slow decay on dips; fast attack on rises.
+    private static final float ADAPTIVE_MIN_GAP = 0.02f;          //Keep open below close to preserve hysteresis.
+    private boolean mAdaptiveEnabled = false;
+    private float mNoiseFloorEstimate = 0.0f;
+    private float mEffectiveOpenThreshold = DEFAULT_NOISE_OPEN_THRESHOLD;
     private boolean mSquelch = true;
     private boolean mSquelchOverride = false;
     private int mMeanAccumulatorPointer;
@@ -118,6 +127,32 @@ public class NoiseSquelch implements INoiseSquelchController
 
         mNoiseOpenThreshold = open;
         mNoiseCloseThreshold = close;
+        mEffectiveOpenThreshold = open;
+        mNoiseFloorEstimate = 0.0f;     //Re-learn the floor after a threshold change.
+    }
+
+    /**
+     * Enables or disables adaptive noise-floor tracking.  When enabled, the effective open threshold is raised
+     * toward (but never above) the close threshold based on the measured noise floor so weak signals can open the
+     * squelch.  When disabled, the fixed configured open threshold is used.
+     * @param enabled true to enable adaptive tracking.
+     */
+    public void setAdaptive(boolean enabled)
+    {
+        mAdaptiveEnabled = enabled;
+        if(!enabled)
+        {
+            mEffectiveOpenThreshold = mNoiseOpenThreshold;
+        }
+        mNoiseFloorEstimate = 0.0f;     //Re-learn the floor on any mode change.
+    }
+
+    /**
+     * Indicates whether adaptive noise-floor tracking is enabled.
+     */
+    public boolean isAdaptive()
+    {
+        return mAdaptiveEnabled;
     }
 
     /**
@@ -286,7 +321,35 @@ public class NoiseSquelch implements INoiseSquelchController
 
                 //Formula from Apache Commons Math - Variance class.
                 float noiseVariance = (varianceAccumulator1 - (varianceAccumulator2 * varianceAccumulator2 / mVarianceWindowSize)) / mVarianceWindowSize;
-                boolean below = mSquelch ? (noiseVariance < mNoiseOpenThreshold) : (noiseVariance < mNoiseCloseThreshold);
+
+                if(mAdaptiveEnabled)
+                {
+                    //Track the noise floor only while squelched (no confirmed signal): fast attack on rises so a
+                    //noise burst keeps the squelch shut, slow decay so a brief signal dip can't collapse the floor.
+                    if(mSquelch)
+                    {
+                        if(noiseVariance > mNoiseFloorEstimate)
+                        {
+                            mNoiseFloorEstimate = noiseVariance;
+                        }
+                        else
+                        {
+                            mNoiseFloorEstimate += ADAPTIVE_FLOOR_DECAY * (noiseVariance - mNoiseFloorEstimate);
+                        }
+                    }
+
+                    //Effective open is bounded: never stricter than the configured open, never above the close
+                    //threshold (minus a gap) so the user's "this is noise" line and the hysteresis gap are preserved.
+                    float adaptive = mNoiseFloorEstimate * ADAPTIVE_OPEN_FRACTION;
+                    float upperBound = mNoiseCloseThreshold - ADAPTIVE_MIN_GAP;
+                    mEffectiveOpenThreshold = Math.max(mNoiseOpenThreshold, Math.min(adaptive, upperBound));
+                }
+                else
+                {
+                    mEffectiveOpenThreshold = mNoiseOpenThreshold;
+                }
+
+                boolean below = mSquelch ? (noiseVariance < mEffectiveOpenThreshold) : (noiseVariance < mNoiseCloseThreshold);
                 mHysteresisCount += (below ? 1 : -1);
 
                 if(mSquelch && mHysteresisCount >= mHysteresisOpenThreshold)
@@ -372,7 +435,7 @@ public class NoiseSquelch implements INoiseSquelchController
 
         //Thresholds here may seem reversed but keep in mind that the mSquelch state has already been flipped and thus
         // represents the state moving forward, and we need to detect the transition from the previous mSquelch state.
-        float varianceThreshold = mSquelch ? mNoiseCloseThreshold : mNoiseOpenThreshold;
+        float varianceThreshold = mSquelch ? mNoiseCloseThreshold : mEffectiveOpenThreshold;
         int hysteresisThreshold = mSquelch ? mHysteresisCloseThreshold : mHysteresisOpenThreshold;
 
         //Look back window start and end indices are sized according the previous mSquelch state

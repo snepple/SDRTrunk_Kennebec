@@ -74,6 +74,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     private NowPlayingPreference mNowPlayingPreference;
     private Button mManageWidgetsBtn;
     private SplitPane mChannelSplitPane;
+    private Widget mSpectrumWidget;
 
     /**
      * GUI panel that combines the currently decoding channels metadata table and viewers for channel details,
@@ -155,6 +156,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
             if (mChannelSplitPane != null) {
                 TabPane pane = getTabbedPane();
                 if (mChannelSplitPane.getItems().contains(pane)) {
+                    mChannelSpectrumSquelchPanel.setPanelVisible(false);
                     javafx.animation.Timeline timeline = new javafx.animation.Timeline();
                     javafx.animation.KeyValue kv = new javafx.animation.KeyValue(mChannelSplitPane.getDividers().get(0).positionProperty(), 1.0, javafx.animation.Interpolator.EASE_BOTH);
                     javafx.animation.KeyFrame kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(250), kv);
@@ -164,6 +166,8 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
                 } else {
                     mChannelSplitPane.getItems().add(pane);
                     mChannelSplitPane.setDividerPositions(1.0);
+                    int selectedIdx = pane.getSelectionModel().getSelectedIndex();
+                    mChannelSpectrumSquelchPanel.setPanelVisible(selectedIdx == 3 || selectedIdx == 4);
                     javafx.animation.Timeline timeline = new javafx.animation.Timeline();
                     javafx.animation.KeyValue kv = new javafx.animation.KeyValue(mChannelSplitPane.getDividers().get(0).positionProperty(), 0.40, javafx.animation.Interpolator.EASE_BOTH);
                     javafx.animation.KeyFrame kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(250), kv);
@@ -187,6 +191,22 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     public void setSpectralPanelVisible(boolean visible) {
         if (mWidgetContainer != null) {
             mWidgetContainer.setWidgetVisible("spectrum_v2", visible);
+        }
+    }
+
+    /**
+     * Starts or stops the spectral display's DFT processor based on whether the Spectrum/Waterfall widget is
+     * currently visible and expanded.  Stopping the processor pauses both the spectrum and the waterfall
+     * computations, saving CPU while the widget is minimized or hidden.  Safe to call repeatedly; start() is a
+     * no-op when no tuner is selected.
+     */
+    public void updateSpectrumProcessing() {
+        if (mSpectrumWidget != null && mSpectralPanel instanceof io.github.dsheirer.spectrum.SpectralDisplayPanel sdp) {
+            if (mSpectrumWidget.isVisible() && !mSpectrumWidget.isMinimized()) {
+                sdp.start();
+            } else {
+                sdp.stop();
+            }
         }
     }
 
@@ -216,7 +236,11 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
     private TabPane getTabbedPane() {
     if (mTabbedPane == null) {
         mTabbedPane = new TabPane();
-        
+        //Tabs are fixed views (Details/Events/Messages/Channel Spectrum/Advanced).  Disable closing so the
+        //user can switch tabs but cannot permanently close one (there is no way to reopen a closed tab).
+        //This is a pane-level policy, so it also covers the tabs rebuilt in receive().
+        mTabbedPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+
         Tab detailsTab = new Tab("Details", mChannelDetailPanel);
         Tab eventsTab = new Tab("Events", mDecodeEventPanel);
         Tab messagesTab = new Tab("Messages", mMessageActivityPanel);
@@ -246,6 +270,16 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         }
 
         mTabbedPane.getTabs().addAll(detailsTab, eventsTab, messagesTab, spectrumTab, advancedTab);
+
+        mTabbedPaneChangeListener = (obs, oldTab, newTab) -> {
+            if (newTab != null) {
+                int idx = mTabbedPane.getTabs().indexOf(newTab);
+                mChannelSpectrumSquelchPanel.setPanelVisible(idx == 3 || idx == 4);
+            } else {
+                mChannelSpectrumSquelchPanel.setPanelVisible(false);
+            }
+        };
+        mTabbedPane.getSelectionModel().selectedItemProperty().addListener(mTabbedPaneChangeListener);
     }
     return mTabbedPane;
 }
@@ -351,6 +385,14 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
             ((Region) mSpectralPanel).setPrefHeight(prefHeight);
             VBox.setVgrow(spectrumWidget, Priority.NEVER);
             mWidgetContainer.addWidget(spectrumWidget, false);
+
+            mSpectrumWidget = spectrumWidget;
+            //Pause the DFT (which feeds BOTH the spectrum and the waterfall) whenever the widget is minimized or
+            //hidden so we don't burn CPU computing graphs the user can't see.  Listeners are attached after
+            //addWidget() so the initial state restore doesn't fire them prematurely.
+            spectrumWidget.visibleProperty().addListener((o, was, now) -> updateSpectrumProcessing());
+            spectrumWidget.minimizedProperty().addListener((o, was, now) -> updateSpectrumProcessing());
+            updateSpectrumProcessing();
         }
 
         // Combined Channel Table + Channel Details widget using a horizontal SplitPane

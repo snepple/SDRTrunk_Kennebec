@@ -638,7 +638,10 @@ public class SpectralDisplayPanel extends javafx.scene.layout.StackPane
                 displayMenu.getItems().add(channelDisplayMenu);
             }
 
-            Menu fftWidthMenu = new Menu("FFT Width");
+            Menu fftWidthMenu = new Menu();
+            javafx.scene.control.Label fftWidthLabel = new javafx.scene.control.Label("FFT Width");
+            fftWidthLabel.setTooltip(new javafx.scene.control.Tooltip("FFT Size: How much detail you see in the waterfall display. Higher numbers show more detail but use more computer power."));
+            fftWidthMenu.setGraphic(fftWidthLabel);
             displayMenu.getItems().add(fftWidthMenu);
             for(DFTSize width : DFTSize.values()) fftWidthMenu.getItems().add(new DFTSizeItem(SpectralDisplayPanel.this, width));
 

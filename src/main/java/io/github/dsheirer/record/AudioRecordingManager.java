@@ -127,6 +127,13 @@ public class AudioRecordingManager implements Listener<AudioSegment>
 //            mLog.debug("Audio Segment detected with NO TO identifiers");
         }
 
+        //Transcribe every completed segment when transcription is enabled, independent of whether the
+        //segment is being recorded.  Previously transcription ran only via the recording/streaming path
+        //(AudioSegmentRecorder.record), so enabling Google/Whisper transcription without also enabling
+        //audio recording produced no transcripts.  transcribeAsync() no-ops when transcription is
+        //disabled, copies the audio buffers synchronously, and is guarded to run at most once per segment.
+        io.github.dsheirer.transcription.TranscriptionEngine.transcribeAsync(audioSegment, mUserPreferences);
+
         if(audioSegment.recordAudioProperty().get())
         {
             mCompletedAudioSegmentQueue.add(audioSegment);

@@ -201,7 +201,7 @@ public class LcchTimeslot extends AbstractSignalingTimeslot
             }
             catch(Exception e)
             {
-                mLog.error("Error", e);
+                mLog.error("Error during Reed-Solomon decoding of LCCH timeslot", e);
                 irrecoverableErrors = true;
             }
 

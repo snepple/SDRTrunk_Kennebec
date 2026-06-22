@@ -102,9 +102,9 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
     {
         setAlignment(Pos.CENTER_LEFT);
         setSpacing(0);
-        setMinHeight(64);
-        setPrefHeight(64);
-        setMaxHeight(64);
+        setMinHeight(72);
+        setPrefHeight(72);
+        setMaxHeight(72);
         setStyle("-fx-background-color: rgba(30,30,36,0.97); -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 0 0 1 0;");
 
 
@@ -125,6 +125,9 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
         mAudioChannelsScroller.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
         mAudioChannelsScroller.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
         mAudioChannelsScroller.setFitToHeight(true);
+        //Stretch the channel content to fill the available width so the now-playing display uses the whole
+        //bar (it was previously left at its small preferred width, leaving a large empty gap).
+        mAudioChannelsScroller.setFitToWidth(true);
         mAudioChannelsScroller.setVisible(true);
         mAudioChannelsScroller.setManaged(true);
         HBox.setHgrow(mAudioChannelsScroller, Priority.ALWAYS);
@@ -271,7 +274,7 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
 
     public class MuteButton extends Button
     {
-        private boolean mMuted = false;
+        private final javafx.beans.value.ChangeListener<Boolean> mMuteListener;
 
         public MuteButton()
         {
@@ -281,21 +284,28 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
             setPrefWidth(42);
             setPrefHeight(32);
             updateAppearance();
-            setTooltip(new javafx.scene.control.Tooltip("Mute All Audio (Ctrl+M)"));
-            accessibleTextProperty().set("Mute");
-            setOnAction(e -> {
-                mMuted = !mMuted;
-                mAudioPlaybackManager.getAudioOutput().setMuted(mMuted);
-                Platform.runLater(() -> {
-                    updateAppearance();
-                    setTooltip(new javafx.scene.control.Tooltip(mMuted ? "Unmute All Audio (Ctrl+M)" : "Mute All Audio (Ctrl+M)"));
-                    accessibleTextProperty().set(mMuted ? "Unmute" : "Mute");
-                });
+            updateTooltip();
+            setOnAction(e -> mAudioPlaybackManager.toggleMasterMuted());
+
+            //Drive the button's appearance from the shared master-mute state so it stays in sync no matter what
+            //toggled the mute (this button, the system tray, etc.).
+            mMuteListener = (obs, was, now) -> Platform.runLater(() -> {
+                updateAppearance();
+                updateTooltip();
             });
+            //Weak listener so the long-lived AudioPlaybackManager doesn't pin this button if the panel is recreated.
+            //The button holds the strong reference (mMuteListener field) for as long as it is alive.
+            mAudioPlaybackManager.masterMutedProperty().addListener(new javafx.beans.value.WeakChangeListener<>(mMuteListener));
+        }
+
+        private void updateTooltip() {
+            boolean muted = mAudioPlaybackManager.isMasterMuted();
+            setTooltip(new javafx.scene.control.Tooltip(muted ? "Unmute All Audio (Ctrl+M)" : "Mute All Audio (Ctrl+M)"));
+            accessibleTextProperty().set(muted ? "Unmute" : "Mute");
         }
 
         private void updateAppearance() {
-            if (mMuted) {
+            if (mAudioPlaybackManager.isMasterMuted()) {
                 setText("🔇");
                 setStyle("-fx-background-color: rgba(220,38,38,0.85); -fx-background-radius: 6; " +
                          "-fx-cursor: hand; -fx-font-size: 16px; -fx-padding: 4 8 4 8; " +

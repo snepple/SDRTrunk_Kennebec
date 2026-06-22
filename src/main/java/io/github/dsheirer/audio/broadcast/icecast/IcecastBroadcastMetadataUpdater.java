@@ -130,7 +130,7 @@ public class IcecastBroadcastMetadataUpdater implements IBroadcastMetadataUpdate
                             if(!mConnectionLoggingSuppressed)
                             {
                                 mLog.error("IO Error submitting Icecast metadata update [" +
-                                    (metadataUpdateURL != null ? metadataUpdateURL : "no url"), ioe);
+                                    (metadataUpdateURL != null ? metadataUpdateURL : "no url") + "]", ioe);
                                 mConnectionLoggingSuppressed = true;
                             }
                         }

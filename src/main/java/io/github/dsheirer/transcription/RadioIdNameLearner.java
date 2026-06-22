@@ -111,23 +111,33 @@ public class RadioIdNameLearner
 
     public void start()
     {
-        if(isEnabled())
-        {
-            MyEventBus.getGlobalEventBus().register(this);
-            mLog.info("Radio ID name learner started - friendly names will be learned from transcriptions");
-        }
+        //Always register so the toggle can take effect at runtime; enablement is checked per-event in
+        //handleTranscription() via the AI preference (and an optional system-property hard override).
+        MyEventBus.getGlobalEventBus().register(this);
+        mLog.info("Radio ID name learner started - friendly names will be learned from transcriptions when enabled");
     }
 
-    private static boolean isEnabled()
+    private boolean isEnabled()
     {
-        String value = System.getProperty("sdrtrunk.transcription.autoname",
+        //A system property / env var can hard-disable the feature (set to "false"); otherwise the AI
+        //preference toggle controls it (default on).
+        String override = System.getProperty("sdrtrunk.transcription.autoname",
             System.getenv("SDRTRUNK_TRANSCRIPTION_AUTONAME"));
-        return value == null || !value.equalsIgnoreCase("false");
+        if(override != null && override.equalsIgnoreCase("false"))
+        {
+            return false;
+        }
+        return mUserPreferences.getAIPreference().isRadioIdNamingEnabled();
     }
 
     @Subscribe
     public void handleTranscription(TranscriptionEvent event)
     {
+        if(!isEnabled())
+        {
+            return;
+        }
+
         try
         {
             //No FROM radio ID means an analog (NBFM) or unidentified transmission - nothing to name

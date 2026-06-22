@@ -41,6 +41,7 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     private float mSquelchNoiseCloseThreshold = NoiseSquelch.DEFAULT_NOISE_CLOSE_THRESHOLD;
     private int mSquelchHysteresisOpenThreshold = NoiseSquelch.DEFAULT_HYSTERESIS_OPEN_THRESHOLD;
     private int mSquelchHysteresisCloseThreshold = NoiseSquelch.DEFAULT_HYSTERESIS_CLOSE_THRESHOLD;
+    private boolean mSquelchNoiseAdaptive = false;
 
     // === NEW: Channel-level tone filtering ===
     private List<ChannelToneFilter> mToneFilters = new ArrayList<>();
@@ -181,6 +182,26 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
         }
 
         mSquelchNoiseCloseThreshold = close;
+    }
+
+    /**
+     * Indicates whether adaptive noise-floor squelch tracking is enabled for this channel.  When enabled, the
+     * effective open threshold is raised toward (but never above) the close threshold based on the measured noise
+     * floor so weaker signals can open the squelch.  Default false (existing tuned channels are unchanged).
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "squelchNoiseAdaptive")
+    public boolean isSquelchNoiseAdaptive()
+    {
+        return mSquelchNoiseAdaptive;
+    }
+
+    /**
+     * Sets whether adaptive noise-floor squelch tracking is enabled for this channel.
+     * @param adaptive true to enable.
+     */
+    public void setSquelchNoiseAdaptive(boolean adaptive)
+    {
+        mSquelchNoiseAdaptive = adaptive;
     }
 
     /**

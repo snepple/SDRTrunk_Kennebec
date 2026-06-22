@@ -133,6 +133,7 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
     private Button mUnlockButton;
 
     private ToggleButton mSquelchOverrideButton;
+    private ToggleButton mAdaptiveButton;
     private Slider mOpenNoiseSlider;
     private Slider mCloseNoiseSlider;
     private Slider mOpenHysteresisSlider;
@@ -227,10 +228,11 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
         buttonsBox.setMaxWidth(Double.MAX_VALUE);
         buttonsBox.setSpacing(5);
         HBox.setHgrow(getSquelchOverrideButton(), Priority.ALWAYS);
+        HBox.setHgrow(getAdaptiveButton(), Priority.ALWAYS);
         HBox.setHgrow(getResetButton(), Priority.ALWAYS);
         HBox.setHgrow(getCalibrateButton(), Priority.ALWAYS);
-        buttonsBox.getChildren().addAll(getSquelchOverrideButton(), getResetButton(), getCalibrateButton(),
-                getLockLabel(), getUnlockButton());
+        buttonsBox.getChildren().addAll(getSquelchOverrideButton(), getAdaptiveButton(), getResetButton(),
+                getCalibrateButton(), getLockLabel(), getUnlockButton());
 
         GridPane.setHalignment(buttonsBox,  HPos.LEFT);
         GridPane.setHgrow(buttonsBox, Priority.SOMETIMES);
@@ -367,6 +369,8 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
 
             getSquelchOverrideButton().selectedProperty().setValue(noiseSquelchState.squelchOverride());
             getSquelchOverrideButton().setDisable(false);
+            getAdaptiveButton().setSelected(mController != null && mController.isAdaptiveSquelch());
+            getAdaptiveButton().setDisable(false);
             getResetButton().setDisable(false);
 
             //Show the Calibrate Squelch button only when the Squelch Advisor AI feature is enabled.
@@ -420,6 +424,7 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
 
         getResetButton().setDisable(true);
         getSquelchOverrideButton().setDisable(true);
+        getAdaptiveButton().setDisable(true);
         getSquelchStateLabel().setDisable(true);
         getSquelchStateLabel().setText(NOT_AVAILABLE);
 
@@ -582,6 +587,7 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
                 }
 
                 updateTimer();
+                updateCalibrateButtonTooltip();
             });
         }
         catch(Exception e)
@@ -646,6 +652,31 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
     }
 
     /**
+     * Updates the Calibrate button tooltip to include this channel's last calibration summary (what
+     * changed, when, why) when available, so the most recent run is visible near the button.
+     */
+    private void updateCalibrateButtonTooltip()
+    {
+        if(mCalibrateButton == null)
+        {
+            return;
+        }
+        String base = "Sample the current channel noise for a few seconds " +
+                "and automatically set the noise open/close thresholds";
+        String channelName = (mController != null) ? mController.getChannelName() : null;
+        String last = (channelName != null)
+                ? mUserPreferences.getAIPreference().getSquelchLastSummary(channelName) : "";
+        if(last != null && !last.isEmpty())
+        {
+            mCalibrateButton.setTooltip(new Tooltip(base + "\n\nLast calibration: " + last));
+        }
+        else
+        {
+            mCalibrateButton.setTooltip(new Tooltip(base));
+        }
+    }
+
+    /**
      * Begins a noise-variance calibration capture.  Collects live samples for {@link #CALIBRATION_WINDOW_MS}
      * milliseconds, then applies the advisor's recommended open/close thresholds.
      */
@@ -699,15 +730,56 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
                 return;
             }
 
-            //Apply the recommended thresholds.  Setting the slider values propagates to the controller and
+            //Learning: if this channel has been calibrated before, blend the new recommendation 30% toward
+            //the previous accepted thresholds to stabilize results across runs and avoid oscillation.
+            float open = recommendation.openThreshold();
+            float close = recommendation.closeThreshold();
+            String channelName = (mController != null) ? mController.getChannelName() : null;
+            boolean blended = false;
+            if(channelName != null && !channelName.isEmpty())
+            {
+                float priorOpen = mUserPreferences.getAIPreference().getSquelchLastOpen(channelName);
+                float priorClose = mUserPreferences.getAIPreference().getSquelchLastClose(channelName);
+                if(priorOpen > 0f && priorClose > 0f)
+                {
+                    open = (0.7f * open) + (0.3f * priorOpen);
+                    close = (0.7f * close) + (0.3f * priorClose);
+                    blended = true;
+                }
+            }
+
+            //Apply the (blended) thresholds.  Setting the slider values propagates to the controller and
             //schedules a playlist save through the existing slider change listeners.  This is an advisor
             //action, not a manual edit, so guard it from marking the channel as manually adjusted.
             mProgrammaticChange = true;
-            setNoiseSliderValues(recommendation.openThreshold(), recommendation.closeThreshold());
+            setNoiseSliderValues(open, close);
+            setHysteresisSliderValues(recommendation.hysteresisOpen(), recommendation.hysteresisClose());
             mProgrammaticChange = false;
 
-            LOGGER.info("Squelch calibrated from {} samples: open={}, close={}", sampleCount,
-                    recommendation.openThreshold(), recommendation.closeThreshold());
+            String why = recommendation.rationale() + (blended
+                    ? " Blended 30% toward this channel's previous calibration for stability." : "");
+
+            LOGGER.info("Squelch calibrated from {} samples: open={}, close={} - {}", sampleCount, open, close, why);
+
+            //Persist per-channel so the squelch UI can show the last run and future calibrations can learn.
+            if(channelName != null && !channelName.isEmpty())
+            {
+                String summary = String.format("[%s] noise open=%.3f close=%.3f, hysteresis %d/%d. %s",
+                        new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date()),
+                        open, close, recommendation.hysteresisOpen(), recommendation.hysteresisClose(), why);
+                mUserPreferences.getAIPreference().setSquelchCalibration(channelName, open, close, summary);
+                updateCalibrateButtonTooltip();
+            }
+
+            //Tell the user what changed and why - previously a successful calibration applied silently.
+            Alert applied = new Alert(Alert.AlertType.INFORMATION);
+            applied.setTitle("Calibrate Squelch");
+            applied.setHeaderText("Squelch settings updated");
+            applied.setContentText(String.format(
+                    "Set noise thresholds to open=%.3f / close=%.3f and hysteresis to %d / %d (x10 ms), from %d " +
+                            "samples.%n%nWhy: %s",
+                    open, close, recommendation.hysteresisOpen(), recommendation.hysteresisClose(), sampleCount, why));
+            applied.show();
         });
     }
 
@@ -815,6 +887,31 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
     }
 
     /**
+     * Adaptive noise-floor squelch toggle.  When enabled, the squelch raises its effective open threshold toward
+     * (but never above) the close threshold based on the measured noise floor, so weaker signals can open the
+     * squelch.  Off by default; persisted per channel.
+     */
+    private ToggleButton getAdaptiveButton()
+    {
+        if(mAdaptiveButton == null)
+        {
+            mAdaptiveButton = new ToggleButton("Adaptive");
+            mAdaptiveButton.setTooltip(new Tooltip("Adaptive noise-floor squelch: lets weaker signals open the " +
+                    "squelch by tracking the channel's noise floor (kept below the Close threshold)"));
+            mAdaptiveButton.setMaxWidth(Double.MAX_VALUE);
+            mAdaptiveButton.setDisable(true);
+            mAdaptiveButton.setOnAction(event -> {
+                if(mController != null)
+                {
+                    mController.setAdaptiveSquelch(getAdaptiveButton().isSelected());
+                }
+            });
+        }
+
+        return mAdaptiveButton;
+    }
+
+    /**
      * Open noise threshold slider.  Values range from 0.0 to 0.15.  Note: slider values are inverted and converted
      * to the actual values used by the noise squelch control.
      * @return slider control
@@ -840,7 +937,12 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
      */
     private void updateControllerNoise()
     {
-        if(mController != null && isShowing())
+        //Gate on mControlsUpdated (set once the decoder's initial state has populated the controls) rather
+        //than isShowing(): in this Swing-hosted JavaFX panel isShowing() is unreliably false (see the timer
+        //note above), which silently dropped user slider edits so the squelch thresholds and graph lines
+        //never moved. The sliders are disabled until the controls are populated, so this can only fire for a
+        //genuine user adjustment or a programmatic apply (init/calibration), both of which we want.
+        if(mController != null && mControlsUpdated)
         {
             float open = getOpenNoiseThresholdFromSliderValue();
             float close = getCloseNoiseThresholdFromSliderValue();
@@ -925,7 +1027,9 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
      */
     private void updateControllerHysteresis()
     {
-        if(mController != null && isShowing())
+        //See updateControllerNoise(): gate on mControlsUpdated rather than the unreliable isShowing() so
+        //user hysteresis slider edits actually reach the decoder.
+        if(mController != null && mControlsUpdated)
         {
             int open = (int)getOpenHysteresisSlider().getValue();
             int close = (int)getCloseHysteresisSlider().getValue() + open;
@@ -1068,6 +1172,22 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
 
         getOpenNoiseSlider().setValue(openSlider);
         getCloseNoiseSlider().setValue(closeSlider);
+    }
+
+    /**
+     * Sets the hysteresis sliders from advisor-recommended open/close hold counts (units of 10 ms).  The
+     * close slider holds the delta above open, matching this view's slider model; values are clamped to the
+     * slider ranges (open 1-5, close-delta 0-5).  Callers must guard with {@link #mProgrammaticChange} so the
+     * change is not treated as a manual edit (which would lock out the calibrator).
+     * @param open recommended open hysteresis hold count.
+     * @param close recommended close hysteresis hold count (greater than or equal to open).
+     */
+    private void setHysteresisSliderValues(int open, int close)
+    {
+        int safeOpen = Math.max(1, Math.min(5, open));
+        int safeCloseDelta = Math.max(0, Math.min(5, close - safeOpen));
+        getOpenHysteresisSlider().setValue(safeOpen);
+        getCloseHysteresisSlider().setValue(safeCloseDelta);
     }
 
     /**

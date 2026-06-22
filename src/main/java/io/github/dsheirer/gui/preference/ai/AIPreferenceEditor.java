@@ -81,6 +81,12 @@ public class AIPreferenceEditor extends VBox {
             mUserPreferences.getAIPreference().setTranscriptionEnabled(newValue);
         });
 
+        ToggleSwitch enableRadioIdNamingSwitch = new ToggleSwitch();
+        enableRadioIdNamingSwitch.setSelected(mUserPreferences.getAIPreference().isRadioIdNamingEnabled());
+        enableRadioIdNamingSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setRadioIdNamingEnabled(newValue);
+        });
+
         ToggleSwitch enableToneDiscoverySwitch = new ToggleSwitch();
         enableToneDiscoverySwitch.setSelected(mUserPreferences.getAIPreference().isAIToneDiscoveryEnabled());
         enableToneDiscoverySwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
@@ -115,14 +121,58 @@ public class AIPreferenceEditor extends VBox {
             mUserPreferences.getAIPreference().setSquelchAdvisorEnabled(newValue);
         });
 
+        //#9 Scheduled auto-run controls for the two schedulable AI features.  The "Auto" toggle and the
+        //interval selector are gated on the parent feature being enabled; the interval is only selectable
+        //when the schedule is on.  Toggling auto off leaves the feature available for manual runs.
+        ToggleSwitch nbfmScheduleSwitch = new ToggleSwitch();
+        nbfmScheduleSwitch.setSelected(mUserPreferences.getAIPreference().isNBFMAutoScheduleEnabled());
+        nbfmScheduleSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setNBFMAutoScheduleEnabled(newValue);
+        });
+        nbfmScheduleSwitch.disableProperty().bind(enableNbfmAutoOptimizeSwitch.selectedProperty().not());
+
+        ComboBox<Integer> nbfmIntervalCombo = new ComboBox<>();
+        nbfmIntervalCombo.getItems().addAll(io.github.dsheirer.preference.ai.AIPreference.SCHEDULED_INTERVAL_OPTIONS_HOURS);
+        nbfmIntervalCombo.setValue(mUserPreferences.getAIPreference().getNBFMAutoIntervalHours());
+        nbfmIntervalCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if(newValue != null) mUserPreferences.getAIPreference().setNBFMAutoIntervalHours(newValue);
+        });
+        nbfmIntervalCombo.disableProperty().bind(
+            enableNbfmAutoOptimizeSwitch.selectedProperty().not().or(nbfmScheduleSwitch.selectedProperty().not()));
+
+        HBox nbfmControls = new HBox(8, enableNbfmAutoOptimizeSwitch, new Label("Auto"), nbfmScheduleSwitch,
+            new Label("every"), nbfmIntervalCombo, new Label("h"));
+        nbfmControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        ToggleSwitch gainScheduleSwitch = new ToggleSwitch();
+        gainScheduleSwitch.setSelected(mUserPreferences.getAIPreference().isGainAdvisorScheduleEnabled());
+        gainScheduleSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setGainAdvisorScheduleEnabled(newValue);
+        });
+        gainScheduleSwitch.disableProperty().bind(enableGainAdvisorSwitch.selectedProperty().not());
+
+        ComboBox<Integer> gainIntervalCombo = new ComboBox<>();
+        gainIntervalCombo.getItems().addAll(io.github.dsheirer.preference.ai.AIPreference.SCHEDULED_INTERVAL_OPTIONS_HOURS);
+        gainIntervalCombo.setValue(mUserPreferences.getAIPreference().getGainAdvisorIntervalHours());
+        gainIntervalCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if(newValue != null) mUserPreferences.getAIPreference().setGainAdvisorIntervalHours(newValue);
+        });
+        gainIntervalCombo.disableProperty().bind(
+            enableGainAdvisorSwitch.selectedProperty().not().or(gainScheduleSwitch.selectedProperty().not()));
+
+        HBox gainControls = new HBox(8, enableGainAdvisorSwitch, new Label("Auto"), gainScheduleSwitch,
+            new Label("every"), gainIntervalCombo, new Label("h"));
+        gainControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
         SettingsCard featuresCard = new SettingsCard();
         featuresCard.getChildren().addAll(
             new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
             new SettingsRow("System Health Advisor & Auto-Remediation", enableSystemHealthSwitch),
             new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch),
+            new SettingsRow("Radio ID Naming from Transcripts (P25/DMR - uses Gemini)", enableRadioIdNamingSwitch),
             new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls),
-            new SettingsRow("Auto-Optimize NBFM Audio Filters (runs up to twice a day per channel)", enableNbfmAutoOptimizeSwitch),
-            new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels, recommends tuner gain changes)", enableGainAdvisorSwitch),
+            new SettingsRow("Auto-Optimize NBFM Audio Filters (manual anytime; Auto runs per channel)", nbfmControls),
+            new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels; Auto runs AI consultation)", gainControls),
             new SettingsRow("Squelch Advisor (enables the Calibrate Squelch button on NBFM channels)", enableSquelchAdvisorSwitch)
         );
 
@@ -183,19 +233,89 @@ public class AIPreferenceEditor extends VBox {
             mUserPreferences.getAIPreference().setGoogleSttApiKey(newValue);
         });
 
-        SettingsRow whisperKeyRow = new SettingsRow("OpenAI Whisper API Key", whisperApiKeyField);
+        //Whisper key: field + Test + Save + result indicator
+        Label whisperResultLabel = new Label();
+        Button whisperTestButton = new Button("Test");
+        Button whisperSaveButton = new Button("Save");
+        whisperSaveButton.setOnAction(e -> {
+            mUserPreferences.getAIPreference().setWhisperApiKey(whisperApiKeyField.getText());
+            whisperResultLabel.setText("Saved ✓");
+            whisperResultLabel.setTextFill(javafx.scene.paint.Color.GREEN);
+        });
+        whisperTestButton.setOnAction(e -> {
+            whisperResultLabel.setText("Testing...");
+            whisperResultLabel.setTextFill(javafx.scene.paint.Color.GRAY);
+            String key = whisperApiKeyField.getText();
+            java.util.concurrent.CompletableFuture
+                .supplyAsync(() -> io.github.dsheirer.preference.ai.SttApiHelper.testWhisperKey(key))
+                .thenAccept(r -> Platform.runLater(() -> {
+                    whisperResultLabel.setText(r.message);
+                    whisperResultLabel.setTextFill(r.success ? javafx.scene.paint.Color.GREEN : javafx.scene.paint.Color.RED);
+                }));
+        });
+        HBox whisperKeyBox = new HBox(8, whisperApiKeyField, whisperTestButton, whisperSaveButton, whisperResultLabel);
+        whisperKeyBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        //Google key: field + Test + Save + result indicator
+        Label googleResultLabel = new Label();
+        Button googleTestButton = new Button("Test");
+        Button googleSaveButton = new Button("Save");
+        googleSaveButton.setOnAction(e -> {
+            mUserPreferences.getAIPreference().setGoogleSttApiKey(googleApiKeyField.getText());
+            googleResultLabel.setText("Saved ✓");
+            googleResultLabel.setTextFill(javafx.scene.paint.Color.GREEN);
+        });
+        googleTestButton.setOnAction(e -> {
+            googleResultLabel.setText("Testing...");
+            googleResultLabel.setTextFill(javafx.scene.paint.Color.GRAY);
+            String key = googleApiKeyField.getText();
+            java.util.concurrent.CompletableFuture
+                .supplyAsync(() -> io.github.dsheirer.preference.ai.SttApiHelper.testGoogleSttKey(key))
+                .thenAccept(r -> Platform.runLater(() -> {
+                    googleResultLabel.setText(r.message);
+                    googleResultLabel.setTextFill(r.success ? javafx.scene.paint.Color.GREEN : javafx.scene.paint.Color.RED);
+                }));
+        });
+        HBox googleKeyBox = new HBox(8, googleApiKeyField, googleTestButton, googleSaveButton, googleResultLabel);
+        googleKeyBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        SettingsRow whisperKeyRow = new SettingsRow("OpenAI Whisper API Key", whisperKeyBox);
+        VBox whisperHelpBox = buildSttHelpBox(
+            "How to get an OpenAI (Whisper) API key:",
+            new String[]{
+                "1. Sign in at platform.openai.com.",
+                "2. Open the API keys page and click 'Create new secret key'.",
+                "3. Copy the key, paste it above, then click Test and Save.",
+                "Note: Whisper transcription requires an OpenAI account with billing enabled."
+            },
+            "Open OpenAI API keys page", "https://platform.openai.com/api-keys");
         whisperKeyRow.managedProperty().bind(engineComboBox.valueProperty().isEqualTo("WHISPER"));
         whisperKeyRow.visibleProperty().bind(engineComboBox.valueProperty().isEqualTo("WHISPER"));
+        whisperHelpBox.managedProperty().bind(engineComboBox.valueProperty().isEqualTo("WHISPER"));
+        whisperHelpBox.visibleProperty().bind(engineComboBox.valueProperty().isEqualTo("WHISPER"));
 
-        SettingsRow googleKeyRow = new SettingsRow("Google STT API Key", googleApiKeyField);
+        SettingsRow googleKeyRow = new SettingsRow("Google STT API Key", googleKeyBox);
+        VBox googleHelpBox = buildSttHelpBox(
+            "How to get a Google Speech-to-Text API key:",
+            new String[]{
+                "1. Go to console.cloud.google.com and create or select a project.",
+                "2. Enable the 'Cloud Speech-to-Text API' for that project.",
+                "3. Under APIs & Services > Credentials, click 'Create credentials' > 'API key'.",
+                "4. Copy the key, paste it above, then click Test and Save."
+            },
+            "Open Google Cloud Credentials", "https://console.cloud.google.com/apis/credentials");
         googleKeyRow.managedProperty().bind(engineComboBox.valueProperty().isEqualTo("GOOGLE"));
         googleKeyRow.visibleProperty().bind(engineComboBox.valueProperty().isEqualTo("GOOGLE"));
+        googleHelpBox.managedProperty().bind(engineComboBox.valueProperty().isEqualTo("GOOGLE"));
+        googleHelpBox.visibleProperty().bind(engineComboBox.valueProperty().isEqualTo("GOOGLE"));
 
         SettingsCard transcriptionCard = new SettingsCard();
         transcriptionCard.getChildren().addAll(
             new SettingsRow("Engine", engineComboBox),
             whisperKeyRow,
-            googleKeyRow
+            whisperHelpBox,
+            googleKeyRow,
+            googleHelpBox
         );
 
         // Embedded Scaffolding VBox
@@ -276,5 +396,45 @@ public class AIPreferenceEditor extends VBox {
                 }
             }
         });
+    }
+
+    /**
+     * Builds a small instructional help box (bold title, numbered steps, and a clickable link) used to
+     * explain how to obtain a speech-to-text API key.
+     */
+    private VBox buildSttHelpBox(String title, String[] steps, String linkText, String url)
+    {
+        VBox box = new VBox(2);
+        box.setPadding(new Insets(5, 15, 5, 15));
+        box.getStyleClass().add("kennebec-secondary-text");
+
+        Label header = new Label(title);
+        header.setStyle("-fx-font-weight: bold;");
+        box.getChildren().add(header);
+
+        for(String step : steps)
+        {
+            box.getChildren().add(new Label(step));
+        }
+
+        Hyperlink link = new Hyperlink(linkText);
+        link.setPadding(new Insets(0));
+        link.setOnAction(e -> {
+            try
+            {
+                if(java.awt.Desktop.isDesktopSupported() &&
+                   java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.BROWSE))
+                {
+                    java.awt.Desktop.getDesktop().browse(new URI(url));
+                }
+            }
+            catch(Exception ex)
+            {
+                mLog.error("Error opening URL in browser: " + url, ex);
+            }
+        });
+        box.getChildren().add(link);
+
+        return box;
     }
 }

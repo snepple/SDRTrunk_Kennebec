@@ -47,6 +47,7 @@ import io.github.dsheirer.sample.complex.ComplexSamples;
 import io.github.dsheirer.sample.complex.IComplexSamplesListener;
 import io.github.dsheirer.sample.real.IRealBufferProvider;
 import io.github.dsheirer.source.ISourceEventListener;
+import io.github.dsheirer.source.ISourceEventProvider;
 import io.github.dsheirer.source.SourceEvent;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAnalysisResult;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAudioOptimizer;
@@ -80,14 +81,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * When squelch tail removal is enabled, a SquelchTailRemover buffers audio and discards
  * the trailing noise burst that occurs when a transmitter drops carrier.
  */
-public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventListener, IComplexSamplesListener,
-        Listener<ComplexSamples>, IRealBufferProvider, IDecoderStateEventProvider, INoiseSquelchController
+public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventListener, ISourceEventProvider,
+        IComplexSamplesListener, Listener<ComplexSamples>, IRealBufferProvider, IDecoderStateEventProvider,
+        INoiseSquelchController
 {
     private final static Logger mLog = LoggerFactory.getLogger(NBFMDecoder.class);
     private NBFMDecoderState mDecoderState;
     private static final double DEMODULATED_AUDIO_SAMPLE_RATE = 8000.0;
     private final IDemodulator mDemodulator = FmDemodulatorFactory.getFmDemodulator();
     private final SourceEventProcessor mSourceEventProcessor = new SourceEventProcessor();
+    //Outbound source-event broadcaster (wired by ProcessingChain). Used to publish channel power level
+    //so the Signal Power meter (SignalPowerView) updates for NBFM channels, just like the AM decoder.
+    private Listener<SourceEvent> mSourceEventListener;
     private final NoiseSquelch mNoiseSquelch;
     private IRealFilter mIBasebandFilter;
     private IRealFilter mQBasebandFilter;
@@ -181,6 +186,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         mChannelBandwidth = config.getBandwidth().getValue();
         mNoiseSquelch = new NoiseSquelch(config.getSquelchNoiseOpenThreshold(), config.getSquelchNoiseCloseThreshold(),
                 config.getSquelchHysteresisOpenThreshold(), config.getSquelchHysteresisCloseThreshold());
+        mNoiseSquelch.setAdaptive(config.isSquelchNoiseAdaptive());
 
         //Automatic squelch calibration: gated by the Squelch Advisor preference and locked out when the user
         //has manually adjusted this channel's squelch.  Applies thresholds (and a tail-removal duration) to
@@ -259,19 +265,6 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         mSquelchTailRemovalEnabled = config.isSquelchTailRemovalEnabled();
         mSquelchTailRemovalMs = config.getSquelchTailRemovalMs();
         mSquelchHeadRemovalMs = config.getSquelchHeadRemovalMs();
-
-        //Send squelch controlled audio to the resampler.
-        //Only notify call continuation if tone filter is not active, or if tone matches.
-        //This makes the channel behave like a real radio: wrong tone = fully squelched/idle.
-        mNoiseSquelch.setAudioListener(audio -> {
-            mResampler.resample(audio);
-
-            // Only signal call activity if tone matches (or no tone filter configured)
-            if(!mToneFilterEnabled || mToneMatch)
-            {
-                notifyCallContinuation();
-            }
-        });
 
         //Notify the decoder state of call starts and ends, and manage tail remover + tone reset.
         //When tone filtering is enabled, we defer the call start until the correct tone is confirmed.
@@ -491,6 +484,26 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     }
 
     /**
+     * Enables or disables adaptive noise-floor squelch tracking for this channel and persists the setting.
+     * @param enabled true to enable adaptive tracking.
+     */
+    @Override
+    public void setAdaptiveSquelch(boolean enabled)
+    {
+        mNoiseSquelch.setAdaptive(enabled);
+        getDecodeConfiguration().setSquelchNoiseAdaptive(enabled);
+    }
+
+    /**
+     * Indicates whether adaptive noise-floor squelch tracking is enabled for this channel.
+     */
+    @Override
+    public boolean isAdaptiveSquelch()
+    {
+        return mNoiseSquelch.isAdaptive();
+    }
+
+    /**
      * Sets the open and close hysteresis thresholds in units of 10 milliseconds.
      * @param open in range 1-10, recommend: 4 where open <= close
      * @param close in range 1-10, recommend: 6 where close >= open.
@@ -523,8 +536,34 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     }
 
     /**
+     * Implements the ISourceEventProvider interface.  The ProcessingChain registers its source-event
+     * broadcaster here so the decoder can publish channel power level (NOTIFICATION_CHANNEL_POWER) to the
+     * Signal Power meter, just like the AM decoder.
+     */
+    @Override
+    public void setSourceEventListener(Listener<SourceEvent> listener)
+    {
+        mSourceEventListener = listener;
+    }
+
+    /**
+     * Implements the ISourceEventProvider interface to de-register the source-event broadcaster.
+     */
+    @Override
+    public void removeSourceEventListener()
+    {
+        mSourceEventListener = null;
+    }
+
+    /**
      * Module interface methods - unused.
      */
+    @Override
+    public String getChannelName()
+    {
+        return mChannelName;
+    }
+
     @Override
     public void reset() {}
 
@@ -538,6 +577,12 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         if(mUserPreferences.getAIPreference().isGainAdvisorEnabled())
         {
             AdaptiveGainAdvisor.getInstance(mUserPreferences).removeChannel(mChannelName);
+        }
+
+        // Cancel this channel's watchdog check on the shared scheduler so stopped channels aren't polled.
+        if(mAudioWatchdog != null)
+        {
+            mAudioWatchdog.shutdown();
         }
     }
 
@@ -587,7 +632,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         {
             mAudioWatchdog.feedAudioData(resampledAudio);
         }
-        mAudioBufferManager.addAudioSamples(resampledAudio);
+        if(isAudioBufferingEnabled())
+        {
+            mAudioBufferManager.addAudioSamples(resampledAudio);
+        }
         //Accumulate this call's audio length (8 kHz) to decide whether it is a "qualifying" call.
         mCurrentCallSamples += resampledAudio.length;
         if(mAudioFilters != null)
@@ -660,9 +708,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             mAudioWatchdog.feedIQData(samples.i());
         }
 
-        // Sample I/Q power every IQ_SAMPLE_INTERVAL-th buffer for AdaptiveGainAdvisor
-        if(mUserPreferences.getAIPreference().isGainAdvisorEnabled() &&
-                ++mIQSampleCounter >= IQ_SAMPLE_INTERVAL)
+        // Sample I/Q power every IQ_SAMPLE_INTERVAL-th buffer to drive the Signal Power meter (always,
+        // via NOTIFICATION_CHANNEL_POWER) and the AdaptiveGainAdvisor (only when that feature is enabled).
+        if(++mIQSampleCounter >= IQ_SAMPLE_INTERVAL)
         {
             mIQSampleCounter = 0;
             float[] rawI = samples.i();
@@ -674,7 +722,18 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             }
             double power = sumSquared / rawI.length;
             double powerDbfs = 10.0 * Math.log10(Math.max(power, 1e-20));
-            AdaptiveGainAdvisor.getInstance(mUserPreferences).reportSignalLevel(mChannelName, mChannelFrequency, powerDbfs);
+
+            //Publish channel power so the Signal Power meter updates for NBFM channels (matches AMDecoder).
+            Listener<SourceEvent> sourceEventListener = mSourceEventListener;
+            if(sourceEventListener != null)
+            {
+                sourceEventListener.receive(SourceEvent.channelPowerLevel(null, powerDbfs));
+            }
+
+            if(mUserPreferences.getAIPreference().isGainAdvisorEnabled())
+            {
+                AdaptiveGainAdvisor.getInstance(mUserPreferences).reportSignalLevel(mChannelName, mChannelFrequency, powerDbfs);
+            }
         }
 
         float[] decimatedI = mIDecimationFilter.decimateReal(samples.i());
@@ -696,12 +755,27 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     }
 
     /**
+     * Indicates whether AI audio buffering should capture this call's audio to disk.  The buffered
+     * .raw files are only ever consumed by the NBFM audio auto-optimizer, so when that feature is
+     * disabled (or the user has opted this channel out) we skip writing them entirely - avoiding
+     * needless disk I/O, unbounded disk growth and per-call buffer allocation churn.
+     */
+    private boolean isAudioBufferingEnabled()
+    {
+        return mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled()
+                && !mNBFMConfig.isAiAutoOptimizeOptedOut();
+    }
+
+    /**
      * Broadcasts a call start state event
      */
     private void notifyCallStart()
     {
         mCurrentCallSamples = 0;
-        mAudioBufferManager.startEvent();
+        if(isAudioBufferingEnabled())
+        {
+            mAudioBufferManager.startEvent();
+        }
         broadcast(new DecoderStateEvent(this, DecoderStateEvent.Event.START, State.CALL, 0));
     }
 
@@ -746,8 +820,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                     List<List<float[]>> events = mAudioBufferManager.getBufferedEvents();
                     if(!events.isEmpty())
                     {
-                        AIAnalysisResult result = mAIAudioOptimizer.analyzeRawAudio(configSnapshot, events);
-                        applyAIOptimizationResult(result);
+                        String priorSummary = mUserPreferences.getAIPreference().getNBFMLastOptimizeSummary(mChannelName);
+                        AIAnalysisResult result = mAIAudioOptimizer.analyzeRawAudio(configSnapshot, events, priorSummary);
+                        applyAIOptimizationResult(result, "AUTO");
                         mLog.info("AI auto-optimization applied to NBFM channel: {}", result.getImprovements());
                     }
                 }
@@ -771,7 +846,10 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
      */
     private boolean shouldAutoOptimizeNow()
     {
-        if(!mUserPreferences.getAIPreference().isNBFMAudioAutoOptimizeEnabled())
+        //#9 Auto runs (startup priming + ongoing cadence) require the auto-schedule toggle, which itself
+        //requires the feature to be enabled.  When the feature is on but auto-schedule is off, only manual
+        //runs occur (a separate path), so this method - which governs automatic runs only - returns false.
+        if(!mUserPreferences.getAIPreference().isNBFMAutoScheduleEnabled())
         {
             return false;
         }
@@ -801,7 +879,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
      * Applies an AI analysis result to both the live audio filter chain and the persisted
      * channel configuration so the improved settings survive a restart.
      */
-    private void applyAIOptimizationResult(AIAnalysisResult result)
+    private void applyAIOptimizationResult(AIAnalysisResult result, String trigger)
     {
         // Persist to config so settings survive channel restart / playlist save
         mNBFMConfig.setHissReductionEnabled(result.isHissReductionEnabled());
@@ -843,6 +921,38 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             mAudioFilters.setSquelchReduction(result.getNoiseGateReduction());
             mAudioFilters.setHoldTime(result.getNoiseGateHoldTime());
         }
+
+        recordOptimizationSummary(result, trigger);
+    }
+
+    /**
+     * Records a human-readable summary (trigger, time, what changed and why) of the optimization just
+     * applied, so the channel UI can show the last run and the optimizer can learn from its prior change.
+     */
+    private void recordOptimizationSummary(AIAnalysisResult result, String trigger)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[").append(trigger).append(" ")
+          .append(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date()))
+          .append("] ");
+
+        String improvements = result.getImprovements();
+        String issues = result.getIssuesFound();
+
+        if(improvements != null && !improvements.isEmpty())
+        {
+            sb.append("Changes: ").append(improvements);
+        }
+        if(issues != null && !issues.isEmpty())
+        {
+            if(improvements != null && !improvements.isEmpty())
+            {
+                sb.append("  ");
+            }
+            sb.append("Why: ").append(issues);
+        }
+
+        mUserPreferences.getAIPreference().setNBFMLastOptimizeSummary(mChannelName, sb.toString());
     }
 
     /**
