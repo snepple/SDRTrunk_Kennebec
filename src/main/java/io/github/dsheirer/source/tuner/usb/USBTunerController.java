@@ -559,6 +559,13 @@ public abstract class USBTunerController extends TunerController
         //Number of consecutive zero-length transfer completions that indicates a stalled/locked-up tuner.
         private static final int ZERO_LENGTH_TRANSFER_ERROR_THRESHOLD = 50;
 
+        //A transient USB I/O burst can momentarily push every transfer buffer into the error queue.  Rather than
+        //killing the tuner instantly (which drops every channel using it), we try to drain the error queue with
+        //exponential backoff over a short window and only shut down if the buffers stay exhausted.
+        private static final int MAX_BUFFER_RECOVERY_ATTEMPTS = 5;
+        private static final long BUFFER_RECOVERY_INITIAL_BACKOFF_MS = 100;
+        private static final long BUFFER_RECOVERY_MAX_BACKOFF_MS = 1000;
+
         private List<Transfer> mAvailableTransfers;
         private LinkedTransferQueue<Transfer> mInProgressTransfers = new LinkedTransferQueue<>();
         private boolean mAutoResubmitTransfers = false;
@@ -566,6 +573,8 @@ public abstract class USBTunerController extends TunerController
         private List<Transfer> mErrorTransfers = new ArrayList<>();
         private int mResubmitFailureLogCount = 0;
         private int mConsecutiveZeroLengthTransfers = 0;
+        private final java.util.concurrent.atomic.AtomicBoolean mBufferRecoveryInProgress =
+                new java.util.concurrent.atomic.AtomicBoolean(false);
 
         /**
          * Creates USB Transfers to carry the streaming sample data.  Transfer buffers are backed by native memory
@@ -693,9 +702,109 @@ public abstract class USBTunerController extends TunerController
 
             if(mErrorTransfers.size() >= mAvailableTransfers.size())
             {
-                mLog.error("Maximum USB transfer buffer errors reached - transfer buffers exhausted - shutting down USB tuner");
-                ThreadPool.CACHED.submit(() -> setErrorMessage("USB Error - Transfer Buffers Exhausted"));
+                //Don't shut down on a momentary exhaustion (a transient USB I/O burst can fill the queue in a few ms
+                //before any resubmit succeeds).  Try to recover with backoff first; only shut down if it persists.
+                scheduleBufferRecovery();
             }
+        }
+
+        /**
+         * Launches a one-shot background recovery that repeatedly attempts to resubmit the queued error transfers with
+         * exponential backoff.  Only if the transfer buffers remain fully exhausted after the recovery window does the
+         * tuner shut down (allowing the channel restart/recovery logic to re-acquire it).  This prevents a transient
+         * USB I/O burst from needlessly killing the tuner and dropping all of its channels.
+         */
+        private void scheduleBufferRecovery()
+        {
+            if(!mAutoResubmitTransfers)
+            {
+                return; //already shutting down
+            }
+
+            if(!mBufferRecoveryInProgress.compareAndSet(false, true))
+            {
+                return; //a recovery pass is already running
+            }
+
+            mLog.warn("All USB transfer buffers are temporarily in the error queue - attempting recovery with backoff " +
+                    "before shutting down the tuner");
+
+            ThreadPool.CACHED.submit(() -> {
+                try
+                {
+                    long backoff = BUFFER_RECOVERY_INITIAL_BACKOFF_MS;
+
+                    for(int attempt = 1; attempt <= MAX_BUFFER_RECOVERY_ATTEMPTS; attempt++)
+                    {
+                        try
+                        {
+                            Thread.sleep(backoff);
+                        }
+                        catch(InterruptedException ie)
+                        {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+
+                        if(!mAutoResubmitTransfers)
+                        {
+                            return; //tuner is shutting down for another reason
+                        }
+
+                        if(drainErrorTransfers())
+                        {
+                            mLog.info("USB transfer buffers recovered after [" + attempt + "] attempt(s) - tuner " +
+                                    "continues running");
+                            return;
+                        }
+
+                        backoff = Math.min(backoff * 2, BUFFER_RECOVERY_MAX_BACKOFF_MS);
+                    }
+
+                    mLog.error("USB transfer buffers remained exhausted after [" + MAX_BUFFER_RECOVERY_ATTEMPTS +
+                            "] recovery attempts - shutting down USB tuner");
+                    setErrorMessage("USB Error - Transfer Buffers Exhausted");
+                }
+                finally
+                {
+                    mBufferRecoveryInProgress.set(false);
+                }
+            });
+        }
+
+        /**
+         * Attempts to resubmit every queued error transfer.
+         * @return true if at least one buffer is back in service (queue no longer fully exhausted), false if it
+         * remains fully exhausted or the device is gone.
+         */
+        private synchronized boolean drainErrorTransfers()
+        {
+            if(mAvailableTransfers == null || mErrorTransfers.isEmpty())
+            {
+                return mAvailableTransfers != null;
+            }
+
+            java.util.Iterator<Transfer> it = mErrorTransfers.iterator();
+
+            while(it.hasNext())
+            {
+                Transfer transfer = it.next();
+                int status = LibUsb.submitTransfer(transfer);
+
+                if(status == LibUsb.SUCCESS)
+                {
+                    it.remove();
+                    mInProgressTransfers.add(transfer);
+                }
+                else if(status == LibUsb.ERROR_NO_DEVICE || status == LibUsb.ERROR_PIPE)
+                {
+                    //Device physically gone - let the disconnect path handle it; recovery can't help.
+                    return false;
+                }
+                //else: leave it queued and try again on the next recovery attempt
+            }
+
+            return mErrorTransfers.size() < mAvailableTransfers.size();
         }
 
         /**

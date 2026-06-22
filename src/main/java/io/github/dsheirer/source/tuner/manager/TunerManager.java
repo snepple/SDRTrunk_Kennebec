@@ -692,9 +692,80 @@ public class TunerManager implements IDiscoveredTunerStatusListener
                     }
                 }
             }
+
+            if(source == null)
+            {
+                logNoTunerAvailableDiagnostic(tunerChannel);
+            }
         }
 
         return source;
+    }
+
+    /**
+     * Logs a per-tuner explanation of why no tuner could source the requested channel, so users can tell whether a
+     * channel failed because its frequency is outside every tuner's range or because the tuners are at capacity (no
+     * available bandwidth in their current sample-rate windows) rather than just seeing a bare "No Tuner Available".
+     * @param tunerChannel that could not be sourced
+     */
+    private void logNoTunerAvailableDiagnostic(TunerChannel tunerChannel)
+    {
+        try
+        {
+            long frequency = tunerChannel.getFrequency();
+            StringBuilder sb = new StringBuilder();
+            sb.append("No tuner available for channel at [").append(frequency)
+                    .append(" Hz] - reason per tuner:");
+
+            java.util.List<DiscoveredTuner> tuners = mDiscoveredTunerModel.getAvailableTuners();
+
+            if(tuners.isEmpty())
+            {
+                sb.append("\n\tNo tuners are currently available (none discovered, enabled, or started).");
+            }
+
+            for(DiscoveredTuner discoveredTuner : tuners)
+            {
+                String name = discoveredTuner.hasTuner() ? discoveredTuner.getTuner().getPreferredName()
+                        : String.valueOf(discoveredTuner.getId());
+                sb.append("\n\t").append(name).append(": ");
+
+                if(!discoveredTuner.hasTuner())
+                {
+                    sb.append("not started / unavailable");
+                    continue;
+                }
+
+                try
+                {
+                    io.github.dsheirer.source.tuner.TunerController controller =
+                            discoveredTuner.getTuner().getTunerController();
+                    long min = controller.getMinimumFrequency();
+                    long max = controller.getMaximumFrequency();
+
+                    if(frequency < min || frequency > max)
+                    {
+                        sb.append("frequency outside tunable range [").append(min).append(" - ").append(max)
+                                .append(" Hz]");
+                    }
+                    else
+                    {
+                        sb.append("covers this frequency but no channel could be allocated (at capacity / not enough " +
+                                "free bandwidth in the current sample-rate window)");
+                    }
+                }
+                catch(Exception e)
+                {
+                    sb.append("could not evaluate (").append(e.getMessage()).append(")");
+                }
+            }
+
+            mLog.warn(sb.toString());
+        }
+        catch(Exception e)
+        {
+            mLog.warn("No tuner available for channel [" + tunerChannel + "] - and the diagnostic could not be built", e);
+        }
     }
 
     /**

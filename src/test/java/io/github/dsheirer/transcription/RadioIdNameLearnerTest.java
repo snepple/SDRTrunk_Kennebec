@@ -1,88 +1,70 @@
 package io.github.dsheirer.transcription;
 
+import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests the public-safety transcript parsing / speaker-scoring used by {@link RadioIdNameLearner} to disambiguate the
- * transmitting unit (speaker) from the unit being called (recipient), and to preserve compound identifiers.
+ * Tests for {@link RadioIdNameLearner#parseJsonObjectLenient(String)} - robust extraction of a JSON object from a
+ * generative model's text response, which is frequently wrapped in markdown code fences or surrounding prose.
  */
 public class RadioIdNameLearnerTest
 {
-    private static final int SELF_ID = 40;
-    private static final int DIRECTIONAL = 25;
-    private static final int ACK = 15;
-
     @Test
-    public void selfIdentificationWithStatusIsStrongest()
+    public void parsesPlainJson()
     {
-        Map<String, Integer> s = RadioIdNameLearner.extractScoredCandidates("Engine 7 is en route");
-        assertEquals(SELF_ID, s.get("Engine 7"));
+        JsonObject o = RadioIdNameLearner.parseJsonObjectLenient("{\"name\":\"Engine 5\",\"confidence\":0.9}");
+        assertNotNull(o);
+        assertEquals("Engine 5", o.get("name").getAsString());
+        assertEquals(0.9, o.get("confidence").getAsDouble(), 0.0001);
     }
 
     @Test
-    public void selfIdentificationWithTenCode()
+    public void parsesJsonWrappedInJsonCodeFence()
     {
-        assertEquals(SELF_ID, RadioIdNameLearner.extractScoredCandidates("Medic 12 is 10-8").get("Medic 12"));
-        //"County" has no numeric id and isn't matched; the speaker reporting on-scene is Patrol 44.
-        Map<String, Integer> s = RadioIdNameLearner.extractScoredCandidates("County, Patrol 44 is on scene");
-        assertEquals(SELF_ID, s.get("Patrol 44"));
+        String fenced = "```json\n{\"name\":\"Engine 5\",\"confidence\":0.8}\n```";
+        JsonObject o = RadioIdNameLearner.parseJsonObjectLenient(fenced);
+        assertNotNull(o);
+        assertEquals("Engine 5", o.get("name").getAsString());
     }
 
     @Test
-    public void fromToStructureScoresSpeakerBeforeTo_andExcludesRecipient()
+    public void parsesJsonWrappedInPlainCodeFence()
     {
-        Map<String, Integer> s = RadioIdNameLearner.extractScoredCandidates("Rescue 4 to Command 2");
-        assertEquals(DIRECTIONAL, s.get("Rescue 4"));
-        assertFalse(s.containsKey("Command 2"), "the unit after 'to' is the recipient, not the speaker");
+        String fenced = "```\n{\"name\":\"Ladder 1\"}\n```";
+        JsonObject o = RadioIdNameLearner.parseJsonObjectLenient(fenced);
+        assertNotNull(o);
+        assertEquals("Ladder 1", o.get("name").getAsString());
     }
 
     @Test
-    public void toFromStructureScoresTheSecondParty()
+    public void parsesJsonSurroundedByProse()
     {
-        Map<String, Integer> s = RadioIdNameLearner.extractScoredCandidates("Dispatch, Engine 7");
-        assertEquals(DIRECTIONAL, s.get("Engine 7"));
+        String prose = "Sure! Here is the result:\n{\"name\":\"Medic 3\",\"confidence\":0.95} \nHope that helps.";
+        JsonObject o = RadioIdNameLearner.parseJsonObjectLenient(prose);
+        assertNotNull(o);
+        assertEquals("Medic 3", o.get("name").getAsString());
     }
 
     @Test
-    public void acknowledgementIsWeak()
+    public void parsesLenientSingleQuotes()
     {
-        assertEquals(ACK, RadioIdNameLearner.extractScoredCandidates("Engine 7, 10-4").get("Engine 7"));
+        //Models sometimes emit single-quoted JSON; lenient parsing accepts it.
+        JsonObject o = RadioIdNameLearner.parseJsonObjectLenient("{'name':'Engine 5'}");
+        assertNotNull(o);
+        assertEquals("Engine 5", o.get("name").getAsString());
     }
 
     @Test
-    public void unitGivenAnOrderIsTheRecipientNotTheSpeaker()
+    public void returnsNullForNoJson()
     {
-        //Dispatch ordering Engine 4 to respond: Engine 4 must NOT be scored as the speaker.
-        Map<String, Integer> s = RadioIdNameLearner.extractScoredCandidates("Engine 4, respond to a structure fire");
-        assertFalse(s.containsKey("Engine 4"));
+        assertNull(RadioIdNameLearner.parseJsonObjectLenient("I don't know the name."));
     }
 
     @Test
-    public void compoundIdentifiersArePreservedAndDistinct()
+    public void returnsNullForNullInput()
     {
-        assertEquals("Engine 9-2", RadioIdNameLearner.extractUnitName("Engine 9-2 is on scene"));
-        assertEquals("Engine 9", RadioIdNameLearner.extractUnitName("Engine 9 is on scene"));
-        assertNotEquals(
-            RadioIdNameLearner.extractUnitName("Engine 9-2 responding"),
-            RadioIdNameLearner.extractUnitName("Engine 9 responding"));
-    }
-
-    @Test
-    public void extractUnitNameReturnsStrongestCandidate()
-    {
-        //"Engine 4" is the recipient (excluded); the self-identifying "Rescue 9 is en route" wins.
-        assertEquals("Rescue 9", RadioIdNameLearner.extractUnitName("Engine 4, Rescue 9 is en route"));
-    }
-
-    @Test
-    public void noUnitYieldsNoCandidates()
-    {
-        assertTrue(RadioIdNameLearner.extractScoredCandidates("dispatch go ahead").isEmpty());
-        assertNull(RadioIdNameLearner.extractUnitName(""));
-        assertNull(RadioIdNameLearner.extractUnitName(null));
+        assertNull(RadioIdNameLearner.parseJsonObjectLenient(null));
     }
 }

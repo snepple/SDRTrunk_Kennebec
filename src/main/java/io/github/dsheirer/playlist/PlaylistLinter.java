@@ -137,11 +137,26 @@ public class PlaylistLinter
                 mLog.warn("Playlist lint: " + finding);
             }
 
+            //Surface the actual findings (not just the first) so the user can see and act on each issue directly from
+            //the alert instead of having to dig through the application log. Cap the list so the alert stays readable.
+            final int maxToShow = 10;
+            StringBuilder detail = new StringBuilder(findings.size() + " playlist configuration issue(s) detected:");
+
+            for(int i = 0; i < findings.size() && i < maxToShow; i++)
+            {
+                detail.append("\n\u2022 ").append(findings.get(i));
+            }
+
+            if(findings.size() > maxToShow)
+            {
+                detail.append("\n\u2022 ...and ").append(findings.size() - maxToShow)
+                    .append(" more (see application log for the full list)");
+            }
+
             MyEventBus.getGlobalEventBus().post(new SystemHealthAlertEvent(
                 SystemHealthAlertEvent.AlertType.SYSTEM,
                 "Playlist Configuration Issues",
-                findings.size() + " playlist configuration issue(s) detected - see application log " +
-                    "for details.  First issue: " + findings.get(0)));
+                detail.toString()));
         }
         else
         {
