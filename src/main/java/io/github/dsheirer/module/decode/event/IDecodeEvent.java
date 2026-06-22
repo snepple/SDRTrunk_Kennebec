@@ -84,6 +84,22 @@ public interface IDecodeEvent
     }
 
     /**
+     * Adds a transcribed audio segment to this event, keyed by the segment's audio start timestamp.  A single
+     * call can be split into several audio segments (e.g. transmissions longer than 60 seconds), each
+     * transcribed separately and arriving out of order.  Implementations should join the fragments in
+     * chronological order so the displayed transcription reads from the beginning of the call - rather than
+     * overwriting earlier text with whichever fragment arrives last.  Keying by start timestamp also makes
+     * re-delivery of the same segment idempotent.  Default falls back to {@link #setTranscription(String)}.
+     *
+     * @param startTimestamp audio segment start time (epoch millis) used for ordering/de-duplication
+     * @param transcription transcribed text for the segment
+     */
+    default void addTranscriptionSegment(long startTimestamp, String transcription)
+    {
+        setTranscription(transcription);
+    }
+
+    /**
      * Protocol for the decoder that produced the event
      */
     Protocol getProtocol();

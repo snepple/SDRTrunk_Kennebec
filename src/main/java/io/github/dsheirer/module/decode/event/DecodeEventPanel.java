@@ -333,7 +333,9 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
 
             if(best != null)
             {
-                best.setTranscription(transcript);
+                //Append in audio-start order instead of overwriting, so a call split across multiple audio
+                //segments shows its full text from the beginning rather than only the last-arriving fragment.
+                best.addTranscriptionSegment(timestamp, transcript);
                 mTable.refresh();
             }
         });

@@ -34,8 +34,19 @@ public class ToneDiscoveryManager {
     private final PlaylistManager mPlaylistManager;
     private ToneDiscoveryState mState;
 
-    // Ephemeral map of AudioSegment ID to ToneDiscoveredEvent waiting for a transcript
-    private final Map<Long, ToneDiscoveredEvent> mPendingTranscripts = new ConcurrentHashMap<>();
+    //A discovered tone waits here (keyed by its AudioSegment id) until the matching transcript arrives on the
+    //event bus - this is how tone discovery "naturally waits" for the (low-priority, possibly delayed)
+    //transcript.  Bounded with LRU eviction so that tones whose transcript never arrives (e.g. transcription
+    //disabled, too short, or shed under extreme load) do not pin their AudioSegment - and its audio buffers -
+    //in memory indefinitely.
+    private static final int MAX_PENDING_TONE_TRANSCRIPTS = 200;
+    private final Map<Long, ToneDiscoveredEvent> mPendingTranscripts = Collections.synchronizedMap(
+        new LinkedHashMap<Long, ToneDiscoveredEvent>(16, 0.75f, false) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Long, ToneDiscoveredEvent> eldest) {
+                return size() > MAX_PENDING_TONE_TRANSCRIPTS;
+            }
+        });
 
     public ToneDiscoveryManager(UserPreferences userPreferences, PlaylistManager playlistManager) {
         mUserPreferences = userPreferences;

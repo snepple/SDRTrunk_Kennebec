@@ -46,14 +46,30 @@ public class TranscriptionEngine {
     private static final AtomicInteger sConsecutiveFailures = new AtomicInteger();
     private static volatile long sDisabledUntil = 0;
 
-    //Single worker with a bounded queue: when transcription falls behind (busy system or slow API),
-    //the oldest queued segments are dropped rather than growing memory without bound.
-    private static final ExecutorService mExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
-        new LinkedBlockingQueue<>(20), r -> {
-            Thread t = new Thread(r, "sdrtrunk transcription");
+    //Transcription is intentionally LOW priority: a transcript only needs to be produced after the audio
+    //has been received, played and streamed, and it may be delayed behind newer calls without ever blocking
+    //the core tuner -> demod -> audio -> stream path.  Cloud STT calls are network/IO bound, so a few
+    //minimum-OS-priority worker threads drain the backlog (and any AI feature waiting on transcripts via the
+    //event bus) without stealing CPU from decoding/playback/streaming.
+    //
+    //A large queue lets transcripts WAIT (be delayed) rather than being dropped.  The previous design - one
+    //worker, a 20-deep queue and DiscardOldestPolicy - silently discarded the OLDEST queued segments under
+    //load.  That is why transcripts "almost never" appeared on busy multi-channel systems and, for calls
+    //split into multiple 60-second segments, dropped the earliest segment first (the beginning of the
+    //message).  Dropping is now a last resort that is logged so it is diagnosable rather than silent, and it
+    //sheds the NEWEST submission so audio already queued (including the start of in-progress calls) survives.
+    private static final int WORKER_THREADS = 3;
+    private static final int QUEUE_CAPACITY = 500;
+    private static final AtomicInteger sThreadCounter = new AtomicInteger();
+    private static final ExecutorService mExecutor = new ThreadPoolExecutor(WORKER_THREADS, WORKER_THREADS,
+        0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(QUEUE_CAPACITY), r -> {
+            Thread t = new Thread(r, "sdrtrunk transcription " + sThreadCounter.incrementAndGet());
             t.setDaemon(true);
+            t.setPriority(Thread.MIN_PRIORITY);
             return t;
-        }, new ThreadPoolExecutor.DiscardOldestPolicy());
+        }, (rejected, executor) -> mLog.warn("Transcription backlog full (" + QUEUE_CAPACITY +
+            " queued); skipping transcription for the newest segment - the system cannot keep up with the " +
+            "call volume at the configured STT throughput"));
 
     public static void transcribeAsync(AudioSegment audioSegment, UserPreferences userPreferences) {
         if (audioSegment == null || !audioSegment.hasAudio() || userPreferences == null) {
