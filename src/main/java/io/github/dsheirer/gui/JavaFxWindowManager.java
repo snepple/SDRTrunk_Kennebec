@@ -244,6 +244,14 @@ public class JavaFxWindowManager extends Application
     }
 
     /**
+     * Self-healing orchestrator used for external notification routing (Telegram/email).
+     */
+    public io.github.dsheirer.preference.notification.SelfHealingOrchestrator getSelfHealingOrchestrator()
+    {
+        return mSelfHealingOrchestrator;
+    }
+
+    /**
      * Removes monitoring for all JavaFX stages and shuts down the FX thread, killing all FX windows.
      */
     public void shutdown()

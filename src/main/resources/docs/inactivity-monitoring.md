@@ -1,98 +1,92 @@
-# Monitor Channels for Silence and Inactivity
+# Monitor channels for silence and poor audio quality
 
-Inactivity monitoring watches your channels for audio activity and fires an alert — via Telegram, Email, or both — when a channel has been silent for longer than a duration you configure. Once audio resumes on that channel, the timer resets automatically and will not fire again until the full threshold elapses a second time.
+SDRTrunk Kennebec provides dual-layer channel telemetry: **inactivity monitoring** detects when a channel stops producing decoded calls, and **AI audio monitoring** verifies that recorded audio contains real voice or dispatch signaling rather than static or squelch noise.
 
-> **Note:**
-> Inactivity monitoring relies on at least one notification delivery method being configured and enabled. Set up Telegram or Email in **User Preferences → Notifications** before enabling inactivity monitoring. See [Notifications](/alerts/notifications) for setup instructions.
+Both layers route alerts through the notification system configured in **View → User Preferences → Notifications** (Telegram, SMTP email, and per-recipient routing). Configure delivery credentials and recipients before enabling channel alerts.
 
-## How inactivity monitoring works
+## Global notification configuration
 
-SDRTrunk Kennebec tracks the elapsed time since the last decoded audio event on each channel you choose to monitor. When that elapsed time exceeds your configured silence threshold, the application sends an alert through whichever delivery method you have enabled. The alert message includes the channel name, the duration of silence at the time the alert was sent, and the threshold that was exceeded.
+Open **View → User Preferences → Notifications** to configure:
+
+| Pane | Purpose |
+| --- | --- |
+| **Telegram** | Bot token from @BotFather for low-latency mobile push alerts |
+| **SMTP Email** | Host, port (465 or 587), username, password, and from address for HTML email alerts |
+| **Notification recipients & routing** | Per-recipient delivery method and category toggles, including **Channel Inactivity** and **AI Audio** |
+
+Route high-priority trunk channels to Telegram and lower-priority channels to email by creating separate recipients with different category toggles.
+
+## Per-channel configuration
+
+Open the **Playlist Editor**, select a channel, and open the **Alerts** tab.
+
+### Channel inactivity alerts
+
+| Setting | Description |
+| --- | --- |
+| **Enable Alert** | Master toggle for inactivity monitoring on this channel |
+| **Duration Threshold (minutes)** | Maximum silence before the monitor escalates (e.g. 10 minutes for dispatch, days for tactical channels) |
+| **Auto-Restart Channel** | Automatically tear down and restart the channel before alerting a human (up to 2 attempts per episode) |
+
+When a threshold is exceeded, the monitor enters a short grace period to absorb brief control-channel dropouts. If silence continues, auto-restart runs first when enabled. Persistent silence triggers Telegram/email alerts. Multiple inactive channels on the same tuner are bundled into a single correlated alert.
+
+When audio resumes, a recovery notification is sent and timers reset.
+
+### AI audio monitoring
+
+| Setting | Description |
+| --- | --- |
+| **Enable Monitoring** | Master toggle for Gemini-based audio verification |
+| **Check Interval (hours)** | How often the monitor sweeps new recordings for the channel |
+| **Wait for New Audio on Failure** | After a failed verification, pause until the radio keys up again before re-checking (avoids re-analyzing the same static) |
+| **Alert Threshold (failures)** | Consecutive invalid recordings required before an external alert is sent |
+
+Gemini classifies each recording using structured output (`is_valid_transmission`, acoustic profile, confidence). Isolated static or empty key-ups are absorbed silently. Sustained failures trigger alerts with exponential backoff to prevent notification loops. Recovery requires consecutive valid verifications before a resolved notification is sent.
+
+Requires a Gemini API key in **View → User Preferences → AI Settings**.
 
 ## Use cases
 
 **Detecting a down feed**
 
-If you stream a channel to Broadcastify or another platform, inactivity monitoring alerts you when the source goes quiet so you can determine whether the feed is genuinely down or the radio system itself is inactive.
+Inactivity monitoring alerts you when a streamed channel goes quiet so you can determine whether the feed or the radio system is down.
 
 **Watching a high-priority talkgroup**
 
-For talkgroups you expect to hear regularly — such as a primary dispatch channel — a silence alert tells you if decoding has stalled or if there is an upstream problem with the radio system.
+A short inactivity threshold on a primary dispatch channel catches decoder stalls quickly.
 
-**Overnight and unattended monitoring**
+**Catching false squelch breaks**
 
-When running SDRTrunk Kennebec unattended, inactivity monitoring acts as a lightweight watchdog, notifying you on your phone via Telegram without requiring you to check the application manually.
+AI audio monitoring detects when SDRTrunk records static or noise that satisfies the inactivity timer but is not real traffic.
 
-**Confirming control channel health**
+**Overnight unattended monitoring**
 
-A trunked control channel that stops producing decoded traffic is a strong signal that the decoder has lost sync. Set a short threshold to catch these events quickly.
+Telegram push alerts notify you on your phone without checking the application manually.
 
-## Enable inactivity monitoring
+## Choosing thresholds
 
-**1. Open User Preferences**
-
-Go to **View** → **User Preferences** in the menu bar.
-
-**2. Navigate to Inactivity Monitoring**
-
-Select **Inactivity Monitoring** in the left sidebar of the **User Preferences** panel.
-
-**3. Enable the feature**
-
-Turn on the **Enable Inactivity Monitoring** toggle.
-
-**4. Set the silence threshold**
-
-Enter your desired silence duration in the **Silence Threshold** field. The value is in minutes. For example, entering `15` means an alert fires after 15 consecutive minutes of silence on a monitored channel.
-
-**5. Choose channels to monitor**
-
-Under **Monitored Channels**, select which channels or talkgroups to watch. You can apply monitoring globally to all active channels or limit it to specific entries from your playlist.
-
-**6. Select alert delivery methods**
-
-Enable **Telegram**, **Email**, or both. These toggles operate independently from your error notification delivery settings, so you can use a different combination if needed.
-
-## Choosing a silence threshold
-
-Pick a threshold that reflects the expected activity level of the channel. Thresholds that are too short will generate alerts during natural lulls in traffic.
-
-| Channel type | Suggested starting threshold |
+| Channel type | Suggested inactivity threshold |
 | --- | --- |
 | High-traffic dispatch (24/7) | 10–15 minutes |
 | Moderate-traffic talkgroup | 20–30 minutes |
 | Low-traffic or overnight channel | 60 minutes or more |
 
-> **Warning:**
-> Thresholds under 5 minutes can generate frequent alerts on channels that experience natural quiet periods. Consider the typical usage pattern of a channel before setting a low value.
-
-> **Tip:**
-> Start with 30 minutes or longer to reduce false positives, then adjust downward once you understand the channel's normal activity pattern.
-
-## Alert message content
-
-When a silence alert fires, the message includes:
-
-- The name of the silent channel or talkgroup
-- The duration of silence at the time the alert was sent
-- The configured threshold that was exceeded
-
-This information is delivered identically whether you receive the alert via Telegram or Email.
-
-## Relationship to notification recipients
-
-Inactivity alerts are routed to recipients who have the **Channel Inactivity** toggle enabled on their recipient entry. You can have one recipient receive inactivity alerts and a different recipient receive hardware error alerts — the per-recipient toggles in the **Notifications** panel control this independently. See [Notifications](/alerts/notifications) for details on configuring recipients.
+Start with longer thresholds and adjust downward once you understand normal activity patterns. Thresholds under 5 minutes can generate frequent alerts during natural quiet periods.
 
 ## Troubleshooting
 
 **Alerts not firing when channel goes silent**
 
-Confirm that **Enable Inactivity Monitoring** is toggled on and that at least one delivery method (Telegram or Email) is enabled in both the Inactivity Monitoring settings and the Notifications settings. Also verify that the channel appears under **Monitored Channels** and that its decoder is actively running.
+Confirm the channel's **Enable Alert** toggle is on, the channel is actively processing, and at least one notification recipient has **Channel Inactivity** enabled with Telegram or email configured.
+
+**AI alerts not firing**
+
+Confirm **Enable Monitoring** is on, a Gemini API key is set, recordings exist for the channel, and a recipient has **AI Audio** enabled.
 
 **Receiving too many alerts**
 
-Increase the silence threshold or reduce the number of monitored channels. Channels with naturally long gaps between transmissions — such as low-traffic talkgroups overnight — are poor candidates for short thresholds.
+Increase the inactivity threshold, raise the AI alert failure threshold, or reduce monitored channels. The system applies grace periods, auto-restart, wait-for-new-audio, exponential backoff, and tuner-level deduplication to limit alert fatigue.
 
 **Alert not clearing after audio resumes**
 
-The timer resets automatically when the channel produces a new decoded audio event. If activity has resumed but the status has not updated, check whether the decoder for that channel is still running in the **Now Playing** view.
+The inactivity timer resets when the channel produces a new decoded audio event. AI recovery requires consecutive valid verifications before a resolved notification is sent.

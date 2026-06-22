@@ -690,6 +690,10 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         mAudioRecordingManager = new AudioRecordingManager(mUserPreferences);
         mChannelAlertMonitor = new ChannelAlertMonitor(mPlaylistManager.getChannelModel(), mPlaylistManager.getChannelProcessingManager(), mUserPreferences);
+        if(mJavaFxWindowManager != null)
+        {
+            mChannelAlertMonitor.setSelfHealingOrchestrator(mJavaFxWindowManager.getSelfHealingOrchestrator());
+        }
         mAudioRecordingManager.start();
         mChannelAlertMonitor.start();
 
