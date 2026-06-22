@@ -98,45 +98,59 @@
 <h2>📸 Updated Screenshots</h2>
 
 <p align="center">
-Refreshed Apple-style GUI & Side Navigation<br>
+Refreshed GUI &amp; side navigation<br>
 <img src="images/now_playing_k78.png" alt="SDRTrunk Kennebec - Updated GUI" width="800">
 <br><br>
 
-Streamlined Aliases & Inline Editing<br>
+Streamlined aliases &amp; inline editing<br>
 <img src="images/playlist_editor_k78.png" alt="SDRTrunk Kennebec - Aliases" width="800">
 <br><br>
 
-Enhanced Two Tone Detect Configuration<br>
+Two-Tone detect configuration<br>
 <img src="images/two_tones_k78.png" alt="SDRTrunk Kennebec - Two Tones" width="800">
 <br><br>
 
-Streaming Integrations (IAmResponding & more)<br>
+Streaming integrations (IAmResponding &amp; more)<br>
 <img src="images/streaming_k78.png" alt="SDRTrunk Kennebec - Integrations" width="800">
 <br><br>
 
-AI Monitoring & Setup<br>
+AI monitoring &amp; setup<br>
 <img src="images/ai_preferences_k78.png" alt="SDRTrunk Kennebec - AI Setup" width="800">
 <br><br>
 
-In-App Knowledge Base & Help Viewer<br>
+In-app knowledge base &amp; help viewer<br>
 <img src="images/help_docs_k78.png" alt="SDRTrunk Kennebec - Help and Docs" width="800">
 <br><br>
 
-Audio Recordings Review<br>
+Audio recordings review<br>
 <img src="images/audio_recordings_k78.png" alt="SDRTrunk Kennebec - Audio Recordings" width="800">
 <br><br>
 
-Performance & Live Log Analysis<br>
+Performance &amp; live log analysis<br>
 <img src="images/performance_logs_k78.png" alt="SDRTrunk Kennebec - Performance and Logs" width="800">
 </p>
 
-<h2>Minimum System Requirements</h2>
-<ul>
-  <li>Operating System: Windows (64-bit), Linux (64-bit) or Mac (64-bit, 12.x or higher)</li>
-  <li>CPU: 4-core</li>
-  <li>RAM: 8GB or more (preferred). Depending on usage, 4GB may be sufficient.</li>
-  <li>Java: Requires Java 23+ (automatically provisioned via Gradle Toolchains).</li>
-</ul>
+---
+
+## Minimum system requirements
+
+- **Operating system:** Windows (64-bit), Linux (64-bit), or macOS (64-bit, 12.x or higher)
+- **CPU:** 4 cores
+- **RAM:** 8 GB or more recommended (4 GB may suffice depending on usage)
+- **Java:** Java 23+ (automatically provisioned via Gradle toolchains when building from source; bundled in the release packages)
+
+---
+
+## Credits, Lineage & License
+
+SDRTrunk Kennebec stands on the work of two upstream projects and would not exist without them:
+
+- **Original — SDRTrunk by Dennis Sheirer:** [DSheirer/sdrtrunk](https://github.com/DSheirer/sdrtrunk). The decoding, DSP, and trunking engine at the heart of this application is Dennis Sheirer's work. Huge thanks to him and the SDRTrunk contributors.
+- **Upstream fork — [actionpagezello/sdrtrunk](https://github.com/actionpagezello/sdrtrunk):** SDRTrunk Kennebec is forked directly from this project and builds on its improvements. Thank you to its author(s) for the work that Kennebec extends.
+
+Kennebec is a community/hobby fork and is not affiliated with or endorsed by the upstream projects.
+
+This project is licensed under the **GNU General Public License v3.0**, the same license as the original SDRTrunk — see [`LICENSE`](LICENSE). Per the GPL, source is available here and any redistributed builds remain under the GPL.
 
 ---
 
@@ -151,10 +165,6 @@ Not sure what to download? Here is a quick guide to getting started with **SDRTr
   - **Note**: Because this is an open-source project without a paid code signing certificate, Windows SmartScreen may show an "Unknown Publisher" warning. To proceed, click **"More info"**, then click **"Run anyway"**.
 - **Advanced Windows Users**: Download the Portable ZIP if you prefer to run the application without installing it.
   - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.122/SDRTrunk-00.122-windows-x86_64.zip)
-- **Mac Users**:
-  - [Download macOS Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.122/SDRTrunk-00.122-macos-x86_64.zip)
-- **Linux Users**:
-  - [Download Linux Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.122/SDRTrunk-00.122-linux-x86_64.zip)
 
 *(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/00.122))*
 <!-- DOWNLOADS:END -->
