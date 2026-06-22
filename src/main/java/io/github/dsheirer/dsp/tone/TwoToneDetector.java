@@ -682,16 +682,29 @@ public class TwoToneDetector
         
         boolean exists = false;
         for (TwoToneConfiguration config : mPlaylistManager.getTwoToneConfigurations()) {
-            if (Math.abs(config.getToneA() - toneA) < config.getFrequencyTolerance() && 
-                Math.abs(config.getToneB() - toneB) < config.getFrequencyTolerance()) {
+            //Use the standard analog tolerance (~1.5%) so slightly drifted measurements still match an existing
+            //detector instead of being reported as a new discovery.
+            if (ToneStandards.toneSequencesMatch(config.getToneA(), config.getToneB(), toneA, toneB)) {
                 exists = true;
                 break;
             }
         }
-        
+
+        //RF channel frequency the tone was heard on (part of the tombstone key / human-review package).
+        double channelFrequency = 0.0;
+        if(segment != null) {
+            Identifier freqId = segment.getIdentifierCollection().getIdentifier(IdentifierClass.CONFIGURATION, Form.CHANNEL_FREQUENCY, Role.ANY);
+            if (freqId instanceof FrequencyConfigurationIdentifier) {
+                Object value = ((FrequencyConfigurationIdentifier) freqId).getValue();
+                if (value instanceof Number) {
+                    channelFrequency = ((Number) value).doubleValue();
+                }
+            }
+        }
+
         if (!exists) {
             // Emit event for AI Tone Discovery Manager
-            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new ToneDiscoveredEvent(toneA, toneB, segment));
+            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new ToneDiscoveredEvent(toneA, toneB, segment, channelFrequency));
         }
         
         String channel = "Unknown";

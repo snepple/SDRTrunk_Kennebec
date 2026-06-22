@@ -45,6 +45,12 @@ public class TwoToneConfiguration
     
     private BooleanProperty mAutoDiscoveredProperty = new SimpleBooleanProperty(false);
 
+    //RF channel frequency (Hz) this detector was AI-discovered on, and the raw ASR transcript that led to the
+    //AI's name deduction.  Captured for the human-review package and as part of the tombstone primary key; 0/empty
+    //for manually created detectors.
+    private DoubleProperty mDiscoveryFrequencyProperty = new SimpleDoubleProperty(0.0);
+    private StringProperty mDiscoveryTranscriptProperty = new SimpleStringProperty("");
+
     public TwoToneConfiguration()
     {
     }
@@ -71,6 +77,8 @@ public class TwoToneConfiguration
         copy.setFrequencyTolerance(getFrequencyTolerance());
         copy.setToneDurationMs(getToneDurationMs());
         copy.setAutoDiscovered(isAutoDiscovered());
+        copy.setDiscoveryFrequency(getDiscoveryFrequency());
+        copy.setDiscoveryTranscript(getDiscoveryTranscript());
         return copy;
     }
 
@@ -425,6 +433,40 @@ public class TwoToneConfiguration
     public BooleanProperty autoDiscoveredProperty()
     {
         return mAutoDiscoveredProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "discoveryFrequency")
+    public double getDiscoveryFrequency()
+    {
+        return mDiscoveryFrequencyProperty.get();
+    }
+
+    public void setDiscoveryFrequency(double discoveryFrequency)
+    {
+        mDiscoveryFrequencyProperty.set(discoveryFrequency);
+    }
+
+    @JsonIgnore
+    public DoubleProperty discoveryFrequencyProperty()
+    {
+        return mDiscoveryFrequencyProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "discoveryTranscript")
+    public String getDiscoveryTranscript()
+    {
+        return mDiscoveryTranscriptProperty.get();
+    }
+
+    public void setDiscoveryTranscript(String discoveryTranscript)
+    {
+        mDiscoveryTranscriptProperty.set(discoveryTranscript != null ? discoveryTranscript : "");
+    }
+
+    @JsonIgnore
+    public StringProperty discoveryTranscriptProperty()
+    {
+        return mDiscoveryTranscriptProperty;
     }
 
     public static Callback<TwoToneConfiguration, Observable[]> extractor()

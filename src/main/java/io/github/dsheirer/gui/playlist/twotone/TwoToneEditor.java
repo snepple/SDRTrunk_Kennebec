@@ -586,6 +586,17 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         delBtn.setOnAction(e -> {
             TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
             if (sel != null) {
+                //When the user rejects/deletes an AI-discovered detector, record a tombstone so the AI never
+                //regenerates that tone pair (soft-delete exclusion list).
+                if (sel.isAutoDiscovered()) {
+                    io.github.dsheirer.preference.ai.ToneDiscoveryManager manager =
+                        io.github.dsheirer.preference.ai.ToneDiscoveryManager.getInstance();
+
+                    if (manager != null) {
+                        manager.recordTombstone(sel.getToneA(), sel.getToneB(), sel.getDiscoveryFrequency());
+                    }
+                }
+
                 mObservableConfigs.remove(sel);
                 syncToPlaylist();
             }
