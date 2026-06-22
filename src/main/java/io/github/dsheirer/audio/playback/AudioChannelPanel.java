@@ -215,17 +215,19 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         MyEventBus.getGlobalEventBus().register(this);
 
         setAlignment(Pos.CENTER_LEFT);
-        setSpacing(6);
-        setPadding(new Insets(2, 6, 2, 6));
+        setSpacing(12);
+        setPadding(new Insets(6, 16, 6, 16));
+        //The panel must stretch to fill the wide now-playing bar so its content can be spread across the full width.
+        setMaxWidth(Double.MAX_VALUE);
 
         // Artwork
         mArtworkView = new ImageView();
-        mArtworkView.setFitWidth(56);
-        mArtworkView.setFitHeight(56);
+        mArtworkView.setFitWidth(64);
+        mArtworkView.setFitHeight(64);
         mArtworkView.setPreserveRatio(false);
         mArtworkView.setSmooth(true);
 
-        javafx.scene.shape.Rectangle artClip = new javafx.scene.shape.Rectangle(56, 56);
+        javafx.scene.shape.Rectangle artClip = new javafx.scene.shape.Rectangle(64, 64);
         artClip.setArcWidth(12);
         artClip.setArcHeight(12);
         mArtworkView.setClip(artClip);
@@ -240,8 +242,10 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         mArtworkContainer.setVisible(false);
         mArtworkContainer.setManaged(false);
 
-        // Metadata VBox
-        VBox metaBox = new VBox(1);
+        // Metadata VBox - channel name on top, live identifier below.  Kept to two rows so it fits the bar height
+        // without clipping; the streaming-service icons are placed in their own column on the right (below) rather
+        // than as a third stacked row.
+        VBox metaBox = new VBox(3);
         metaBox.setAlignment(Pos.CENTER_LEFT);
 
         mMutedLabel.setFont(mFont);
@@ -254,36 +258,40 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         }
         mChannelName = new Label(cName);
         mChannelName.getStyleClass().add("audio-channel-name");
-        mChannelName.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
         mChannelName.setTextFill(mLabelColor);
-        //Larger, prominent channel name - the header bar is 72px tall and the name is the primary info,
-        //so it can be considerably bigger than the previous 20px without clipping the stacked rows.
-        mChannelName.setStyle("-fx-font-size: 25px; -fx-font-weight: bold;");
+        //Large, prominent channel name (primary info).  Inline style so it wins over the author stylesheet, which
+        //otherwise forces a small font size onto the .audio-channel-name style class.
+        mChannelName.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
 
         mIconLabel.setFont(mFont);
         mIconLabel.setTextFill(mValueColor);
 
         mIdentifierLabel.getStyleClass().add("audio-channel-identifier");
-        mIdentifierLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.NORMAL, 18));
         mIdentifierLabel.setTextFill(mValueColor);
+        //Inline font size is required: a programmatic setFont() is overridden by the .audio-channel-identifier author
+        //stylesheet rule (which previously pinned this to 11px), but an inline style takes precedence.
+        mIdentifierLabel.setStyle("-fx-font-size: 21px;");
 
         mStreamIconsPanel.setBackground(javafx.scene.layout.Background.EMPTY);
 
-        mTwoToneAlertLabel.setFont(javafx.scene.text.Font.font(mFont.getFamily(), javafx.scene.text.FontWeight.BOLD, mFont.getSize()));
+        mTwoToneAlertLabel.setStyle("-fx-font-size: 21px; -fx-font-weight: bold;");
         mTwoToneAlertLabel.setTextFill(javafx.scene.paint.Color.RED);
         mTwoToneAlertLabel.setVisible(false);
 
-        //Mockup layout: channel artwork on the left; to its right the channel name on top, the live
-        //talkgroup/alias identifier next, and the streaming-service icons in a horizontal row below.
-        HBox identifierLine = new HBox(4, mIconLabel, mIdentifierLabel, mTwoToneAlertLabel);
+        //Channel artwork on the left; to its right the channel name on top with the live talkgroup/alias identifier
+        //below it.  The metadata column grows to fill the available width so the streaming-service icons are pushed to
+        //the right edge, spreading the content across the full width of the bar.
+        HBox identifierLine = new HBox(6, mIconLabel, mIdentifierLabel, mTwoToneAlertLabel);
         identifierLine.setAlignment(Pos.CENTER_LEFT);
 
-        mStreamIconsPanel.setAlignment(Pos.CENTER_LEFT);
-
-        metaBox.getChildren().addAll(mChannelName, identifierLine, mStreamIconsPanel);
+        metaBox.getChildren().addAll(mChannelName, identifierLine);
         HBox.setHgrow(metaBox, Priority.ALWAYS);
+        metaBox.setMaxWidth(Double.MAX_VALUE);
 
-        getChildren().addAll(mArtworkContainer, metaBox);
+        mStreamIconsPanel.setAlignment(Pos.CENTER_RIGHT);
+        mStreamIconsPanel.setSpacing(8);
+
+        getChildren().addAll(mArtworkContainer, metaBox, mStreamIconsPanel);
     }
 
     @Override
@@ -424,7 +432,7 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
                 identifier = " ";
             }
 
-            final javafx.scene.image.Image icon = iconName != null ? mIconModel.getIcon(iconName, 26) : null;
+            final javafx.scene.image.Image icon = iconName != null ? mIconModel.getIcon(iconName, 32) : null;
             final String identifierText = identifier;
             final boolean isIdle = (mIdentifier == null && mAliases.isEmpty());
 
@@ -447,7 +455,7 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
                             if (broadcaster != null && broadcaster.getBroadcastConfiguration().isEnabled()) {
                                 if (!activeStreams.contains(bc.getChannelName())) {
                                     activeStreams.add(bc.getChannelName());
-                                    Label streamLabel = new Label("", new javafx.scene.image.ImageView(mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath(), 22)));
+                                    Label streamLabel = new Label("", new javafx.scene.image.ImageView(mIconModel.getIcon(broadcaster.getBroadcastConfiguration().getBroadcastServerType().getIconPath(), 30)));
                                     streamLabel.setTooltip(new javafx.scene.control.Tooltip(broadcaster.getBroadcastConfiguration().getName()));
                                     mStreamIconsPanel.getChildren().add(streamLabel);
                                 }
@@ -473,7 +481,7 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
                     try {
                         java.io.File file = new java.io.File(chan.getImagePath());
                         if (file.exists()) {
-                            javafx.scene.image.Image img = new javafx.scene.image.Image(file.toURI().toString(), 46, 46, false, true);
+                            javafx.scene.image.Image img = new javafx.scene.image.Image(file.toURI().toString(), 64, 64, false, true);
                             mArtworkView.setImage(img);
                             mArtworkContainer.setVisible(true);
                             mArtworkContainer.setManaged(true);

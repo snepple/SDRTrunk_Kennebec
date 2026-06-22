@@ -102,9 +102,11 @@ public class AudioPanel extends HBox implements Listener<AudioEvent>
     {
         setAlignment(Pos.CENTER_LEFT);
         setSpacing(0);
-        setMinHeight(72);
-        setPrefHeight(72);
-        setMaxHeight(72);
+        //Taller now-playing bar so the channel name + identifier rows and stream icons fit without clipping and can
+        //use a larger, more legible font given the wide horizontal space available.
+        setMinHeight(88);
+        setPrefHeight(88);
+        setMaxHeight(88);
         setStyle("-fx-background-color: rgba(30,30,36,0.97); -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 0 0 1 0;");
 
 
