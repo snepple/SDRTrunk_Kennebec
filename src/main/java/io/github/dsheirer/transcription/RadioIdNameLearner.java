@@ -22,6 +22,8 @@ import com.google.common.eventbus.Subscribe;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.Strictness;
+import com.google.gson.stream.JsonReader;
 import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.alias.id.AliasID;
@@ -34,6 +36,7 @@ import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -374,7 +377,14 @@ public class RadioIdNameLearner
                 return;
             }
 
-            JsonObject root = new Gson().fromJson(response.body(), JsonObject.class);
+            JsonObject root = parseJsonObjectLenient(response.body());
+
+            if(root == null)
+            {
+                mLog.warn("Gemini radio name resolution returned an unparseable response body");
+                return;
+            }
+
             JsonArray candidates = root.getAsJsonArray("candidates");
 
             if(candidates == null || candidates.size() == 0)
@@ -384,7 +394,17 @@ public class RadioIdNameLearner
 
             String text = candidates.get(0).getAsJsonObject().getAsJsonObject("content")
                 .getAsJsonArray("parts").get(0).getAsJsonObject().get("text").getAsString();
-            JsonObject result = new Gson().fromJson(text, JsonObject.class);
+
+            //Models frequently wrap the JSON in markdown fences or add stray prose even when asked for raw
+            //JSON, so parse tolerantly rather than letting a MalformedJsonException abort the resolution.
+            JsonObject result = parseJsonObjectLenient(text);
+
+            if(result == null)
+            {
+                mLog.warn("Gemini radio name resolution returned unparseable JSON: " +
+                    (text.length() > 120 ? text.substring(0, 120) + "..." : text));
+                return;
+            }
 
             String name = result.has("name") ? result.get("name").getAsString() : "";
             double confidence = result.has("confidence") ? result.get("confidence").getAsDouble() : 0.0;
@@ -404,6 +424,62 @@ public class RadioIdNameLearner
         catch(Exception e)
         {
             mLog.warn("Error resolving radio name with Gemini - " + e.getMessage());
+        }
+    }
+
+    /**
+     * Parses a JSON object from model output, tolerating the markdown code fences and stray prose that some
+     * models emit even when asked for raw JSON (which made strict GSON parsing throw MalformedJsonException).
+     * Returns null if no JSON object can be recovered.
+     */
+    static JsonObject parseJsonObjectLenient(String raw)
+    {
+        if(raw == null || raw.isBlank())
+        {
+            return null;
+        }
+
+        String cleaned = raw.trim();
+
+        //Strip a wrapping markdown code fence: ```json ... ``` or ``` ... ```
+        if(cleaned.startsWith("```"))
+        {
+            int firstNewline = cleaned.indexOf('\n');
+
+            if(firstNewline >= 0)
+            {
+                cleaned = cleaned.substring(firstNewline + 1);
+            }
+
+            if(cleaned.endsWith("```"))
+            {
+                cleaned = cleaned.substring(0, cleaned.length() - 3);
+            }
+
+            cleaned = cleaned.trim();
+        }
+
+        //Isolate the first {...} block when there is leading/trailing prose around it.
+        if(!cleaned.startsWith("{"))
+        {
+            int start = cleaned.indexOf('{');
+            int end = cleaned.lastIndexOf('}');
+
+            if(start >= 0 && end > start)
+            {
+                cleaned = cleaned.substring(start, end + 1);
+            }
+        }
+
+        try
+        {
+            JsonReader reader = new JsonReader(new StringReader(cleaned));
+            reader.setStrictness(Strictness.LENIENT);
+            return new Gson().fromJson(reader, JsonObject.class);
+        }
+        catch(Exception e)
+        {
+            return null;
         }
     }
 

@@ -242,22 +242,9 @@ public class AudioRecordingsPanel extends VBox {
                     deleteSelectedButton.disableProperty().unbind();
                     deleteSelectedButton.setDisable(true);
                     deleteSelectedButton.setText("Deleting...");
-                    List<RecordingItem> snapshot = new ArrayList<>(selectedItems);
-                    io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
-                        List<RecordingItem> successfullyDeleted = new ArrayList<>();
-                        for (RecordingItem item : snapshot) {
-                            try {
-                                Files.deleteIfExists(item.getFile());
-                                successfullyDeleted.add(item);
-                            } catch (IOException ex) {
-                                mLog.error("Failed to delete recording: " + item.getFile(), ex);
-                            }
-                        }
-                        javafx.application.Platform.runLater(() -> {
-                            mRecordings.removeAll(successfullyDeleted);
-                            deleteSelectedButton.setText("Delete Selected");
-                            deleteSelectedButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(mTableView.getSelectionModel().getSelectedItems()));
-                        });
+                    deleteRecordings(new ArrayList<>(selectedItems), deleted -> {
+                        deleteSelectedButton.setText("Delete Selected");
+                        deleteSelectedButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(mTableView.getSelectionModel().getSelectedItems()));
                     });
                 }
             });
@@ -286,22 +273,9 @@ public class AudioRecordingsPanel extends VBox {
                     deleteAllButton.disableProperty().unbind();
                     deleteAllButton.setDisable(true);
                     deleteAllButton.setText("Deleting...");
-                    List<RecordingItem> snapshot = new ArrayList<>(itemsToDelete);
-                    io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
-                        List<RecordingItem> successfullyDeleted = new ArrayList<>();
-                        for (RecordingItem item : snapshot) {
-                            try {
-                                Files.deleteIfExists(item.getFile());
-                                successfullyDeleted.add(item);
-                            } catch (IOException ex) {
-                                mLog.error("Failed to delete recording: " + item.getFile(), ex);
-                            }
-                        }
-                        javafx.application.Platform.runLater(() -> {
-                            mRecordings.removeAll(successfullyDeleted);
-                            deleteAllButton.setText("Delete All");
-                            deleteAllButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(mFilteredRecordings));
-                        });
+                    deleteRecordings(new ArrayList<>(itemsToDelete), deleted -> {
+                        deleteAllButton.setText("Delete All");
+                        deleteAllButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(mFilteredRecordings));
                     });
                 }
             });
@@ -998,6 +972,89 @@ public class AudioRecordingsPanel extends VBox {
             mPlayerBar.setVisible(show);
             mPlayerBar.setManaged(show);
         }
+    }
+
+    /**
+     * Deletes the given recordings off the FX thread.  If the media player currently holds one of the files,
+     * it is disposed first - on Windows an open MP3/WAV cannot be deleted ("being used by another process").
+     * Reports any files that still could not be deleted back to the user instead of failing silently.
+     *
+     * @param snapshot recordings to delete
+     * @param onComplete run on the FX thread after deletion (e.g. to restore button state)
+     */
+    private void deleteRecordings(List<RecordingItem> snapshot, java.util.function.Consumer<List<RecordingItem>> onComplete) {
+        //Release the player's handle on any file being deleted so the OS will allow the delete.
+        if (mCurrentItem != null && snapshot.contains(mCurrentItem)) {
+            disposePlayer();
+            mCurrentItem = null;
+            showPlayerBar(false);
+            if (mNowPlayingLabel != null) {
+                mNowPlayingLabel.setText("");
+            }
+        }
+
+        io.github.dsheirer.util.ThreadPool.CACHED.submit(() -> {
+            List<RecordingItem> deleted = new ArrayList<>();
+            List<RecordingItem> failed = new ArrayList<>();
+
+            for (RecordingItem item : snapshot) {
+                if (deleteWithRetry(item.getFile())) {
+                    deleted.add(item);
+                } else {
+                    failed.add(item);
+                }
+            }
+
+            javafx.application.Platform.runLater(() -> {
+                mRecordings.removeAll(deleted);
+                onComplete.accept(deleted);
+
+                if (!failed.isEmpty()) {
+                    showDeleteFailureAlert(failed);
+                }
+            });
+        });
+    }
+
+    /**
+     * Attempts to delete a file, retrying briefly if it is reported as in use.  The media player releases its
+     * native file handle asynchronously, so a file just released may need a moment before it can be deleted.
+     *
+     * @return true if the file was deleted (or did not exist)
+     */
+    private boolean deleteWithRetry(Path file) {
+        for (int attempt = 0; attempt < 5; attempt++) {
+            try {
+                Files.deleteIfExists(file);
+                return true;
+            } catch (IOException ex) {
+                if (attempt == 4) {
+                    mLog.error("Failed to delete recording: " + file, ex);
+                } else {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return false;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Tells the user which recordings could not be deleted (typically because they are open in another program
+     * or were still being recorded when the delete was attempted).
+     */
+    private void showDeleteFailureAlert(List<RecordingItem> failed) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
+        alert.setTitle("Delete Incomplete");
+        alert.setHeaderText(failed.size() + " recording(s) could not be deleted");
+        alert.setContentText("These files may be in use (e.g. currently playing or still being recorded) or open "
+            + "in another program. Close anything using them and try again.");
+        alert.showAndWait();
     }
 
     private static String formatTime(Duration duration) {
