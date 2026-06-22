@@ -47,6 +47,13 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     private List<ChannelToneFilter> mToneFilters = new ArrayList<>();
     private boolean mToneFilterEnabled = false;
 
+    //Tone-squelch false-trigger suppression (per channel, both default OFF so tone-filtered channels keep the
+    //pure tone-squelch behavior).  Minimum call duration drops tone matches shorter than the configured time
+    //(e.g. brief static bursts that momentarily carry the tone).  Require-noise-squelch additionally gates audio
+    //on the noise squelch being open, so noisy static can't open the channel even when it carries the tone.
+    private int mToneMinCallDurationMs = 0;
+    private boolean mToneRequireNoiseSquelch = false;
+
     // === NEW: Squelch tail/head removal ===
     private int mSquelchTailRemovalMs = SquelchTailRemover.DEFAULT_TAIL_REMOVAL_MS;
     private int mSquelchHeadRemovalMs = SquelchTailRemover.DEFAULT_HEAD_REMOVAL_MS;
@@ -312,6 +319,46 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     public boolean hasToneFiltering()
     {
         return mToneFilterEnabled && !mToneFilters.isEmpty();
+    }
+
+    /**
+     * Minimum duration (milliseconds) a tone/code match must persist before it is treated as a real call.
+     * Tone matches shorter than this - typically brief static bursts that momentarily carry the configured
+     * tone - are dropped (no call event, no audio).  Buffered lead-in audio is released once the call
+     * qualifies, so a real call's start is not clipped.  0 (default) disables this suppression.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "toneMinCallDurationMs")
+    public int getToneMinCallDurationMs()
+    {
+        return mToneMinCallDurationMs;
+    }
+
+    /**
+     * Sets the minimum tone-squelch call duration (milliseconds, clamped 0-5000).
+     */
+    public void setToneMinCallDurationMs(int ms)
+    {
+        mToneMinCallDurationMs = Math.max(0, Math.min(5000, ms));
+    }
+
+    /**
+     * Indicates whether a tone-filtered channel additionally requires the noise squelch to be open before audio
+     * passes (tone AND carrier).  When true, noisy static that carries the correct tone can't open the channel
+     * because its high noise keeps the noise squelch closed.  Default false, which keeps the pure tone-squelch
+     * behavior (the tone alone gates the channel) so a mistuned noise squelch can't silence the channel.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "toneRequireNoiseSquelch")
+    public boolean isToneRequireNoiseSquelch()
+    {
+        return mToneRequireNoiseSquelch;
+    }
+
+    /**
+     * Sets whether a tone-filtered channel also requires the noise squelch open (tone AND carrier).
+     */
+    public void setToneRequireNoiseSquelch(boolean require)
+    {
+        mToneRequireNoiseSquelch = require;
     }
 
     // ========== NEW: Squelch tail/head removal ==========
