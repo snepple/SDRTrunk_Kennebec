@@ -53,25 +53,29 @@ import java.util.regex.Pattern;
 /**
  * Learns friendly names for radio IDs (subscriber units) from audio transcriptions.
  *
- * Radio procedure means units usually self-identify at the start of a transmission
- * ("Dispatch, Engine 5, responding ...").  This learner accumulates transcripts per FROM radio ID
- * and applies a two-stage strategy:
+ * Only the transmitting Radio ID (subscriber unit) is aliased - never the Talkgroup (the candidate key uses the
+ * FROM radio ID), so an individual radio is named, not an entire fleet.
  *
- *   1. Pattern heuristics: a unit designator (Engine/Medic/Ladder/Unit/Car/etc. + number) found
- *      near the start of a transmission counts as a name observation.  A name is only assigned
- *      after the SAME designator is observed in multiple transmissions from the same radio,
- *      because a single transmission often contains the callee's name rather than the caller's.
- *   2. Gemini fallback (optional, when a Gemini API key is configured): radios with several
- *      transcripts but no heuristic winner are resolved by asking the model to identify the
- *      speaker's self-identification across all transmissions, gated on confidence and a daily
- *      call budget.
+ * This learner accumulates transcripts per FROM radio ID and applies a two-stage strategy:
  *
- * Names are applied conservatively: only auto-populated aliases (e.g. "[1234567]") or missing
- * aliases are named - user-entered alias names are never overwritten.  Assigned names carry an
- * "(auto)" suffix so they are recognizable and correctable.
+ *   1. Confidence-scoring heuristics: each transmission is parsed for unit designators and a weight is awarded to
+ *      the SPEAKER candidate(s) based on public-safety cadence - self-identification with a status or 10-/11-
+ *      brevity code is strongest, directional "X to Y" / "Recipient, Speaker" is medium, a bare acknowledgement is
+ *      weak, and a unit being addressed/commanded is ignored. Evidence accumulates across transmissions and a name
+ *      is committed only once it crosses a confidence threshold; a conflicting self-identification penalizes prior
+ *      candidates so shared/pooled radios or transcription errors do not lock in the wrong unit. Compound
+ *      identifiers (e.g. "Engine 9-2") are preserved as distinct from "Engine 9".
+ *   2. Gemini fallback (optional, when a Gemini API key is configured): radios with several transcripts but no
+ *      confident heuristic winner (e.g. dispatch consoles, ambiguous cadences) are resolved by the model, which is
+ *      prompted with the same speaker-vs-recipient rules, gated on confidence and a daily call budget.
  *
- * NBFM and other analog channels are excluded: they have no radio IDs, so transcription events
- * without a FROM radio ID are ignored.
+ * Non-destructive by design: a pre-execution audit skips any radio that already has a real human/imported alias,
+ * and at commit time only auto-populated ("[1234567]"), blank, or prior "(auto)" aliases are (re)named - user,
+ * CSV-imported, and RadioReference names are never overwritten. Assigned names carry an "(auto)" suffix so they are
+ * recognizable and correctable.
+ *
+ * NBFM and other analog channels are excluded: they have no radio IDs, so transcription events without a FROM radio
+ * ID are ignored. Encrypted transmissions produce no usable transcript and are likewise skipped.
  *
  * Opt out with -Dsdrtrunk.transcription.autoname=false or SDRTRUNK_TRANSCRIPTION_AUTONAME=false.
  */
@@ -79,7 +83,18 @@ public class RadioIdNameLearner
 {
     private static final Logger mLog = LoggerFactory.getLogger(RadioIdNameLearner.class);
 
-    private static final int HEURISTIC_CONFIRMATION_COUNT = 3;
+    //Confidence-scoring model: accumulate weighted evidence per candidate name across transmissions from the same
+    //radio and only commit a name once it reaches COMMIT_THRESHOLD. This prevents a single misheard word from
+    //creating a permanent wrong alias. Weights reflect how reliably each syntactic structure identifies the SPEAKER
+    //(self-identification with a status/brevity code is the strongest signal; directional "X to Y" / "Dispatch, X" is
+    //medium; a bare acknowledgement is weak). A conflicting self-identification penalizes prior candidates so a
+    //pooled/shared radio isn't locked to one unit.
+    private static final int COMMIT_THRESHOLD = 85;
+    private static final int WEIGHT_SELF_ID = 40;       //"Engine 7 is en route" / status / 10-code adjacent
+    private static final int WEIGHT_DIRECTIONAL = 25;   //"Rescue 4 to Command" or "Dispatch, Engine 7"
+    private static final int WEIGHT_ACKNOWLEDGEMENT = 15; //"Engine 7, 10-4" / "Engine 7 copy"
+    private static final int CONTRADICTION_PENALTY = 50;
+
     private static final int GEMINI_MINIMUM_TRANSCRIPTS = 5;
     private static final int MAX_TRANSCRIPTS_PER_RADIO = 8;
     private static final int MAX_TRACKED_RADIOS = 500;
@@ -96,15 +111,33 @@ public class RadioIdNameLearner
             new io.github.dsheirer.controller.NamingThreadFactory("sdrtrunk radioid-gemini", Thread.NORM_PRIORITY - 1),
             new java.util.concurrent.ThreadPoolExecutor.DiscardOldestPolicy());
 
-    //Unit designators commonly used for self-identification, matched near the start of a transmission
+    //Unit designators followed by a (possibly hyphen-compound) numeric identifier. The compound form preserves
+    //identifiers like "Engine 9-2" / "Tanker 9-3" / "Utility 9-6" - "Engine 9" and "Engine 9-2" are DISTINCT radios
+    //and must not be truncated to the same name.
     private static final Pattern UNIT_PATTERN = Pattern.compile(
         "\\b(engine|medic|ladder|truck|rescue|squad|battalion|chief|ambulance|tower|brush|tanker|tender|" +
         "utility|marine|car|unit|station|patrol|deputy|adam|baker|charlie|david|edward|frank|george|henry|" +
         "ida|john|king|lincoln|mary|nora|ocean|paul|queen|robert|sam|tom|union|victor|william|x-ray|young|zebra)" +
-        "[\\s-]*(\\d{1,4})\\b", Pattern.CASE_INSENSITIVE);
+        "[\\s-]*(\\d{1,4}(?:-\\d{1,4})*)\\b", Pattern.CASE_INSENSITIVE);
 
-    //Only consider self-identification near the start of the transmission
-    private static final int SELF_ID_WINDOW_CHARACTERS = 80;
+    //Status declarations and APCO 10-/11- brevity codes. When one of these immediately follows a unit name, the
+    //grammatical subject is almost universally the SPEAKER (the transmitting radio) - the strongest self-id signal.
+    private static final Pattern STATUS_OR_CODE = Pattern.compile(
+        "^[\\s,]*(?:is\\s+|are\\s+)?(?:en[\\s-]?route|enroute|responding|on[\\s-]?scene|on[\\s-]?location|" +
+        "on[\\s-]?the[\\s-]?air|in[\\s-]?service|out[\\s-]?of[\\s-]?service|in[\\s-]?quarters|in[\\s-]?route|" +
+        "available|clear(?:ing|ed)?|arriv(?:ed|ing)|returning|10[\\s-]?\\d{1,2}|11[\\s-]?\\d{1,2})\\b",
+        Pattern.CASE_INSENSITIVE);
+
+    //A short acknowledgement following a unit name (weaker self-id evidence).
+    private static final Pattern ACKNOWLEDGEMENT = Pattern.compile(
+        "^[\\s,]*(?:10[\\s-]?4|10[\\s-]?2|copy(?:\\s+that)?|roger|received|affirmative|negative)\\b",
+        Pattern.CASE_INSENSITIVE);
+
+    //Imperative/command words directed AT a unit (it is the recipient being called, not the speaker).
+    private static final Pattern RECIPIENT_COMMAND = Pattern.compile(
+        "^[\\s,]*(?:respond|be\\s+advised|go\\s+ahead|stand\\s+by|switch\\s+to|you'?re\\s+clear|" +
+        "what'?s\\s+your|copy\\s+direct|disregard|do\\s+you|can\\s+you)\\b",
+        Pattern.CASE_INSENSITIVE);
 
     private final AliasModel mAliasModel;
     private final UserPreferences mUserPreferences;
@@ -174,6 +207,20 @@ public class RadioIdNameLearner
                 return;
             }
 
+            //Fail-fast (pre-execution state audit): if this radio already has a real, human/imported alias, do no
+            //further work. The AI must never touch human-curated data, and scoring an already-named radio just wastes
+            //effort. Auto-populated placeholders ("[1234]") and prior "(auto)" names remain eligible for naming.
+            if(!candidate.mAliasChecked)
+            {
+                candidate.mAliasChecked = true;
+
+                if(hasExistingUserAlias(candidate))
+                {
+                    candidate.mResolved = true;
+                    return;
+                }
+            }
+
             synchronized(candidate)
             {
                 if(candidate.mTranscripts.size() < MAX_TRANSCRIPTS_PER_RADIO)
@@ -181,21 +228,42 @@ public class RadioIdNameLearner
                     candidate.mTranscripts.add(event.getTranscript());
                 }
 
-                String name = extractUnitName(event.getTranscript());
+                //Score the SPEAKER candidates in this transmission by syntactic structure (self-id/status/brevity-code
+                //strongest, directional medium, acknowledgement weak) and accumulate the evidence for this radio.
+                Map<String, Integer> scored = extractScoredCandidates(event.getTranscript());
+                String selfId = topName(scored);
+                boolean strongSelfId = selfId != null && scored.get(selfId) >= WEIGHT_SELF_ID;
 
-                if(name != null)
+                for(Map.Entry<String, Integer> entry : scored.entrySet())
                 {
-                    int count = candidate.mNameCounts.merge(name, 1, Integer::sum);
+                    candidate.mScores.merge(entry.getKey(), entry.getValue(), Integer::sum);
+                }
 
-                    if(count >= HEURISTIC_CONFIRMATION_COUNT)
+                //Contradiction handling: a strong self-identification penalizes every OTHER candidate for this radio,
+                //so a shared/pooled radio or a transcription error doesn't lock in the wrong unit.
+                if(strongSelfId)
+                {
+                    for(Map.Entry<String, Integer> entry : candidate.mScores.entrySet())
                     {
-                        candidate.mResolved = true;
-                        assignName(candidate, name, "heuristic x" + count);
-                        return;
+                        if(!entry.getKey().equals(selfId))
+                        {
+                            entry.setValue(entry.getValue() - CONTRADICTION_PENALTY);
+                        }
                     }
                 }
 
-                //Gemini fallback for radios that talk a lot but never match the unit pattern
+                //Commit the strongest candidate once it crosses the confidence threshold.
+                String best = topName(candidate.mScores);
+
+                if(best != null && candidate.mScores.get(best) >= COMMIT_THRESHOLD)
+                {
+                    candidate.mResolved = true;
+                    assignName(candidate, best, "confidence " + candidate.mScores.get(best));
+                    return;
+                }
+
+                //Gemini fallback for radios that talk a lot but never reach a confident heuristic name (e.g. dispatch
+                //consoles and ambiguous cadences the local parser can't disambiguate).
                 if(!candidate.mGeminiAttempted && candidate.mTranscripts.size() >= GEMINI_MINIMUM_TRANSCRIPTS &&
                    noStrongCandidate(candidate))
                 {
@@ -212,35 +280,158 @@ public class RadioIdNameLearner
 
     private boolean noStrongCandidate(RadioNameCandidate candidate)
     {
-        for(int count : candidate.mNameCounts.values())
+        int max = 0;
+
+        for(int score : candidate.mScores.values())
         {
-            if(count >= 2)
-            {
-                return false;
-            }
+            max = Math.max(max, score);
         }
 
-        return true;
+        //Heuristics are weak (no candidate is close to committing) - let Gemini try.
+        return max < (COMMIT_THRESHOLD / 2);
     }
 
     /**
-     * Extracts a unit designator from the start of a transcript, normalized to title case.
+     * Returns the highest-scoring name in a score map, or null if it is empty.
+     */
+    private static String topName(Map<String, Integer> scores)
+    {
+        String best = null;
+        int bestScore = Integer.MIN_VALUE;
+
+        for(Map.Entry<String, Integer> entry : scores.entrySet())
+        {
+            if(entry.getValue() > bestScore)
+            {
+                bestScore = entry.getValue();
+                best = entry.getKey();
+            }
+        }
+
+        return best;
+    }
+
+    /**
+     * Extracts candidate SPEAKER unit names from a transcript with a syntax-derived weight for each, following public
+     * safety cadence:
+     *   - "Engine 7 is en route" / a status or 10-/11- brevity code adjacent to the name  -> strong self-identification
+     *   - "Rescue 4 to Command" (speaker precedes "to") / "Dispatch, Engine 7" (To-From)  -> directional (medium)
+     *   - "Engine 7, 10-4" / "Engine 7 copy"                                              -> acknowledgement (weak)
+     * A unit that is the RECIPIENT (named after "to", or immediately commanded - "respond"/"be advised") is NOT
+     * awarded speaker weight. Within a single transcript the strongest weight per name is kept. Compound identifiers
+     * such as "Engine 9-2" are preserved (never truncated to "Engine 9").
+     * @return map of candidate name -> weight (may be empty)
+     */
+    static Map<String, Integer> extractScoredCandidates(String transcript)
+    {
+        Map<String, Integer> scores = new HashMap<>();
+
+        if(transcript == null || transcript.isBlank())
+        {
+            return scores;
+        }
+
+        Matcher matcher = UNIT_PATTERN.matcher(transcript);
+
+        while(matcher.find())
+        {
+            String name = normalizeName(matcher.group(1), matcher.group(2));
+            String after = transcript.substring(matcher.end());
+            String before = transcript.substring(Math.max(0, matcher.start() - 16), matcher.start())
+                .toLowerCase(Locale.US);
+
+            //Recipient: named right after "to" (the call target) or immediately given a command -> not the speaker.
+            if(before.matches("(?s).*\\bto\\s*$") || RECIPIENT_COMMAND.matcher(after).find())
+            {
+                continue;
+            }
+
+            String afterLower = after.toLowerCase(Locale.US);
+            int weight;
+
+            if(ACKNOWLEDGEMENT.matcher(after).find())
+            {
+                weight = WEIGHT_ACKNOWLEDGEMENT;     //"Engine 7, 10-4" / "copy" - acknowledgement (weak)
+            }
+            else if(STATUS_OR_CODE.matcher(after).find())
+            {
+                weight = WEIGHT_SELF_ID;             //"Engine 7 is en route" / status / non-ack 10-code (strong)
+            }
+            else if(afterLower.matches("(?s)^\\s*to\\s+\\S.*"))
+            {
+                weight = WEIGHT_DIRECTIONAL;         //"<name> to <recipient>" - the name is the speaker
+            }
+            else if(before.matches("(?s).*\\w\\s*,\\s*$"))
+            {
+                weight = WEIGHT_DIRECTIONAL;         //"<recipient>, <name>" To-From - the name is the speaker
+            }
+            else
+            {
+                weight = WEIGHT_ACKNOWLEDGEMENT;     //bare mention - weak speaker evidence
+            }
+
+            scores.merge(name, weight, Math::max);
+        }
+
+        return scores;
+    }
+
+    /**
+     * Normalizes a designator + (possibly compound) numeric identifier into a display name, e.g. ("engine","9-2") ->
+     * "Engine 9-2". The numeric/compound portion is preserved verbatim so distinct radios stay distinct.
+     */
+    private static String normalizeName(String designator, String number)
+    {
+        String d = designator.toLowerCase(Locale.US);
+        d = Character.toUpperCase(d.charAt(0)) + d.substring(1);
+        return d + " " + number;
+    }
+
+    /**
+     * Backwards-compatible single-name extraction: returns the strongest-weighted speaker candidate, or null.
      */
     static String extractUnitName(String transcript)
     {
-        String window = transcript.length() > SELF_ID_WINDOW_CHARACTERS ?
-            transcript.substring(0, SELF_ID_WINDOW_CHARACTERS) : transcript;
+        return topName(extractScoredCandidates(transcript));
+    }
 
-        Matcher matcher = UNIT_PATTERN.matcher(window);
-
-        if(matcher.find())
+    /**
+     * Best-effort check of whether the radio already has a real (non-auto, non-placeholder) alias in its alias list -
+     * a human-entered, CSV-imported, or RadioReference name the AI must never touch. Reads a defensive snapshot of the
+     * alias model; on any error it returns false so normal (commit-time protected) processing simply continues.
+     */
+    private boolean hasExistingUserAlias(RadioNameCandidate candidate)
+    {
+        try
         {
-            String designator = matcher.group(1).toLowerCase(Locale.US);
-            designator = Character.toUpperCase(designator.charAt(0)) + designator.substring(1);
-            return designator + " " + matcher.group(2);
+            Radio radioId = new Radio(candidate.mProtocol, candidate.mRadioId);
+
+            for(Alias alias : new ArrayList<>(mAliasModel.getAliases()))
+            {
+                if(!candidate.mAliasListName.equals(alias.getAliasListName()))
+                {
+                    continue;
+                }
+
+                for(AliasID aliasID : alias.getAliasIdentifiers())
+                {
+                    if(radioId.matches(aliasID))
+                    {
+                        String name = alias.getName();
+                        boolean autoOrPlaceholder = name == null || name.isBlank() ||
+                            (name.startsWith("[") && name.endsWith("]")) || name.endsWith(AUTO_NAME_SUFFIX);
+                        return !autoOrPlaceholder;   //a real user/imported name means it is already aliased
+                    }
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            //Concurrent modification or other transient read error - skip the optimization; assignName still
+            //protects human aliases at commit time.
         }
 
-        return null;
+        return false;
     }
 
     /**
@@ -338,10 +529,30 @@ public class RadioIdNameLearner
             }
 
             StringBuilder prompt = new StringBuilder();
-            prompt.append("These are radio transmission transcripts all spoken by the SAME radio unit on a public ")
-                .append("safety system.  Units normally self-identify at the start of a transmission.  Identify the ")
-                .append("unit designator of the SPEAKER (not units they are calling).  Respond with JSON only: ")
-                .append("{\"name\": \"<designator like Engine 5, or empty string if unsure>\", \"confidence\": <0.0-1.0>}\n\n");
+            prompt.append("These are public-safety radio transcripts ALL transmitted by the SAME radio (one physical ")
+                .append("unit). Identify the unit designator of the SPEAKER (the transmitting radio), NOT the units it ")
+                .append("is calling.\n\n")
+                .append("How to find the speaker (public-safety cadence):\n")
+                .append("- Self-identification with a status or brevity code is the STRONGEST signal: in ")
+                .append("\"Engine 7 is en route\", \"Medic 12 is 10-8\", \"Patrol 44 on scene\" the subject is the speaker.\n")
+                .append("- Directional \"X to Y\": the unit BEFORE \"to\" is the speaker (\"Rescue 4 to Command\" -> Rescue 4).\n")
+                .append("- To-From \"Recipient, Speaker\": \"Dispatch, Engine 7\" -> the speaker is Engine 7 (Dispatch is called).\n")
+                .append("- A unit being given an order is the RECIPIENT, not the speaker (\"Engine 4, respond...\" -> the ")
+                .append("speaker is whoever is giving the order, often Dispatch).\n")
+                .append("- 10-codes/11-codes (10-4, 10-8, 10-23, 10-20, 11-41...) mark routine status updates; the unit ")
+                .append("next to the code is the speaker.\n")
+                .append("- Common designators: Engine, Truck, Ladder, Tower, Quint, Tanker, Brush, Squad, Medic, ")
+                .append("Ambulance, Rescue, EMS, Battalion, Car, Chief, Command, Patrol, Unit, K9, Traffic, Detective, ")
+                .append("Marine, Utility, Hazmat, Air; dispatch/infrastructure: Dispatch, County, Control, Base, Center, ")
+                .append("Comms, Fire Alarm.\n")
+                .append("- A radio that addresses MANY different units but refers to itself with a static word like ")
+                .append("\"Dispatch\"/\"County\"/\"Control\" is a dispatch console - name it that.\n")
+                .append("- Preserve compound identifiers EXACTLY: \"Engine 9-2\" is NOT \"Engine 9\".\n")
+                .append("- If the transcripts are garbled/encrypted/contradictory and you cannot be sure, return an ")
+                .append("empty name with low confidence rather than guessing.\n\n")
+                .append("Respond with JSON only: ")
+                .append("{\"name\": \"<designator like Engine 5 or Dispatch, or empty string if unsure>\", ")
+                .append("\"confidence\": <0.0-1.0>}\n\n");
 
             List<String> transcripts;
 
@@ -518,10 +729,12 @@ public class RadioIdNameLearner
         private final Protocol mProtocol;
         private final int mRadioId;
         private final String mAliasListName;
-        private final Map<String, Integer> mNameCounts = new HashMap<>();
+        //Accumulated confidence score per candidate unit name (weighted by syntactic evidence across transmissions).
+        private final Map<String, Integer> mScores = new HashMap<>();
         private final List<String> mTranscripts = new ArrayList<>();
         private volatile boolean mResolved = false;
         private boolean mGeminiAttempted = false;
+        private boolean mAliasChecked = false;
 
         private RadioNameCandidate(Protocol protocol, int radioId, String aliasListName)
         {
