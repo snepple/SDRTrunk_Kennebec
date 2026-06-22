@@ -18,9 +18,32 @@ import org.slf4j.LoggerFactory;
  *     noise-floor power measurements with a fixed headroom, used for power-based advisories.</li>
  *     <li><b>Noise-variance calibration</b> ({@link #recordVarianceSample(float)} / {@link #calibrate()}) -
  *     samples the live {@code NoiseSquelch} variance stream (units 0.1-0.5, matching the squelch open/close
- *     thresholds) and recommends open/close thresholds positioned between the signal and noise-floor
- *     variance clusters.  This powers the manual "Calibrate Squelch" button.</li>
+ *     thresholds) and recommends open/close thresholds anchored to the measured noise floor.  This powers the
+ *     manual "Calibrate Squelch" button.</li>
  * </ul>
+ *
+ * <h2>NBFM squelch calibration methodology</h2>
+ * The {@code NoiseSquelch} measures the statistical <i>variance</i> of the high-pass filtered, demodulated audio in
+ * 10 ms windows.  A clean signal has <b>low</b> variance and the squelch opens when variance falls <b>below</b> the
+ * open threshold; ambient noise has <b>high</b> variance and the squelch closes when variance rises <b>above</b> the
+ * close threshold (so {@code open <= close}).  Note the squelch <i>view</i> presents an inverted, x20-scaled value
+ * (display = 10 - 20*variance), so on screen a strong signal reads <b>high</b> ("Noise (N)" near 10) and the idle
+ * noise floor reads lower; raising the on-screen open line above the idle noise peak is equivalent to setting the
+ * raw open threshold below the idle noise variance.
+ * <p>
+ * Calibration follows these rules:
+ * <ol>
+ *     <li><b>Noise-floor baseline:</b> from an idle (no-signal) capture, find the worst-case (most signal-like)
+ *     noise excursion - the lowest noise variance - and treat it as the noise floor edge.</li>
+ *     <li><b>Open threshold:</b> placed a margin <i>below</i> the noise floor edge so ambient noise never opens the
+ *     squelch (only a genuinely cleaner signal can).</li>
+ *     <li><b>Close threshold:</b> placed a small margin <i>above</i> the open threshold (a Schmitt-trigger / amplitude
+ *     hysteresis) so an established transmission can fade or degrade slightly without prematurely muting.</li>
+ *     <li><b>Temporal hysteresis (10 ms units):</b> a low, non-zero open hold (~3 = 30 ms) rejects instantaneous
+ *     static spikes without clipping the first syllables; the close hold is kept low (~6 = 60 ms) to cut the
+ *     squelch-tail noise burst quickly, but is increased when the capture shows rapid fluctuation (picket-fencing)
+ *     to bridge temporary audio dropouts.</li>
+ * </ol>
  */
 public class SquelchAIAdvisor
 {
@@ -40,6 +63,14 @@ public class SquelchAIAdvisor
      * assumed to be noise-floor only and a conservative below-the-floor placement is used instead.
      */
     private static final float MINIMUM_CLUSTER_SEPARATION = 0.03f;
+
+    //Noise-floor anchored placement (used when the capture is noise-floor only, i.e. an idle channel).  The noise
+    //floor edge is the worst-case (lowest-variance, most signal-like) noise excursion; the open threshold is placed a
+    //margin below it so ambient noise never opens the squelch, and the close threshold a small margin above it for an
+    //amplitude-hysteresis (Schmitt-trigger) gap.
+    private static final int NOISE_FLOOR_EDGE_PERCENTILE = 5;
+    private static final float OPEN_FRACTION_BELOW_FLOOR = 0.90f;   //open = 90% of the noise floor edge (10% below)
+    private static final float CLOSE_FRACTION_ABOVE_FLOOR = 1.05f;  //close = 105% of the noise floor edge (5% above)
 
     //Tail-removal recommendation bounds (milliseconds) and the noise-floor-to-tail scaling factor.
     private static final int DEFAULT_TAIL_REMOVAL_MS = 100;
@@ -186,15 +217,20 @@ public class SquelchAIAdvisor
 
         if(separation >= MINIMUM_CLUSTER_SEPARATION)
         {
-            //Both signal and noise observed - place thresholds in the gap between the clusters.
+            //Both signal and noise observed - place thresholds in the gap between the clusters: open near the clean
+            //signal level, close toward the noise floor, so real signals open the squelch while noise keeps it closed.
             open = low + (0.25f * separation);
             close = low + (0.55f * separation);
         }
         else
         {
-            //Noise-floor only - place thresholds above the floor so noise keeps squelch closed.
-            open = median * 1.10f;
-            close = median * 1.30f;
+            //Noise-floor only (idle channel) - anchor to the noise floor: find the worst-case (lowest-variance, most
+            //signal-like) noise excursion and place the open threshold a margin BELOW it so ambient noise can never
+            //open the squelch, with the close threshold a small margin above it for amplitude hysteresis.  This is the
+            //raw-variance equivalent of "set the on-screen open line just above the highest idle noise peak".
+            float noiseFloorEdge = percentile(sorted, NOISE_FLOOR_EDGE_PERCENTILE);
+            open = noiseFloorEdge * OPEN_FRACTION_BELOW_FLOOR;
+            close = noiseFloorEdge * CLOSE_FRACTION_ABOVE_FLOOR;
         }
 
         //Clamp into the valid control range and enforce a sensible open <= close ordering with a small gap.
@@ -219,27 +255,36 @@ public class SquelchAIAdvisor
             }
         }
 
-        //Hysteresis (consecutive-buffer hold counts, units of 10 ms): marginal signals - where the signal
-        //and noise-floor variance clusters sit close together - chatter the squelch open/closed, so they get
-        //longer hold counts to ride through brief dropouts; clean, well-separated signals can toggle faster.
-        //Constrained to the squelch view's slider ranges (open 1-5, close = open + 0..5).
-        int hysteresisOpen, hysteresisClose;
-        if(separation >= 0.10f)
+        //Temporal hysteresis (consecutive-buffer hold counts, units of 10 ms).
+        //Open hold: low but non-zero (~30 ms) rejects instantaneous static spikes without clipping the first
+        //syllables of a valid transmission.  Close hold: kept low (~60 ms) to cut the squelch-tail noise burst
+        //quickly, but increased when the capture shows rapid fluctuation (picket-fencing) so brief dropouts don't
+        //prematurely mute an active signal.  Clamped to the squelch view's slider ranges (open 1-6, close = open+0..5).
+        int hysteresisOpen = 3;
+        int hysteresisClose = 6;
+
+        //Picket-fencing / rapid-fading proxy: how variable the captured variance is relative to its level.  A wide,
+        //fluctuating distribution indicates a fading signal that needs a longer close hold to bridge dropouts.
+        float relativeSpread = (median > 0.0001f) ? (separation / median) : 0f;
+
+        if(relativeSpread >= 1.0f)
         {
-            hysteresisOpen = 2; hysteresisClose = 4;     //clean, well-separated - react quickly
+            hysteresisClose = 9;   //heavy fluctuation - bridge dropouts aggressively
         }
-        else if(separation >= 0.05f)
+        else if(relativeSpread >= 0.5f)
         {
-            hysteresisOpen = 3; hysteresisClose = 6;     //moderate - close to defaults
+            hysteresisClose = 7;   //moderate fluctuation - hold a little longer before muting
         }
-        else if(separation >= MINIMUM_CLUSTER_SEPARATION)
+        else if(separation >= 0.10f)
         {
-            hysteresisOpen = 3; hysteresisClose = 7;     //marginal - hold longer before closing
+            //Clean, well-separated and stable - react a touch faster.
+            hysteresisOpen = 2;
+            hysteresisClose = 4;
         }
-        else
-        {
-            hysteresisOpen = 4; hysteresisClose = 8;     //very marginal / noise-only - ride through stutter
-        }
+
+        //Clamp to the squelch control ranges and the view's open+(0..5) close relationship.
+        hysteresisOpen = Math.max(1, Math.min(6, hysteresisOpen));
+        hysteresisClose = Math.max(hysteresisOpen, Math.min(hysteresisOpen + 5, hysteresisClose));
 
         String rationale;
         if(separation >= MINIMUM_CLUSTER_SEPARATION)
@@ -250,15 +295,16 @@ public class SquelchAIAdvisor
         }
         else
         {
-            rationale = String.format("Saw mostly background noise (~%s) with little signal; set the thresholds just " +
-                    "below the noise floor so ambient noise reliably keeps the squelch closed.", fmt(median));
+            rationale = String.format("Saw mostly background noise (noise floor ~%s); set the open threshold just " +
+                    "below the noise floor and the close threshold just above it, so ambient noise can't open the " +
+                    "squelch while a genuinely cleaner signal still can.", fmt(percentile(sorted, NOISE_FLOOR_EDGE_PERCENTILE)));
         }
 
-        String hysteresisReason = (separation >= 0.10f)
-                ? "react quickly on this clean, well-separated signal"
-                : (separation < MINIMUM_CLUSTER_SEPARATION)
-                        ? "ride through brief dropouts and stop squelch stutter on this marginal signal"
-                        : "balance responsiveness against squelch stutter";
+        String hysteresisReason = (relativeSpread >= 0.5f)
+                ? "hold the gate open longer to bridge dropouts on this fading (picket-fencing) signal"
+                : (separation >= 0.10f)
+                        ? "react quickly on this clean, well-separated signal"
+                        : "reject static spikes on open while cutting the squelch tail quickly on close";
         rationale += String.format("  Set hysteresis to open=%d, close=%d (x10 ms) to %s.",
                 hysteresisOpen, hysteresisClose, hysteresisReason);
 
