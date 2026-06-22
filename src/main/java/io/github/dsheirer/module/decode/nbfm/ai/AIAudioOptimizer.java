@@ -246,33 +246,84 @@ public class AIAudioOptimizer {
         String url = baseUrl + "/v1beta/" + normalizeModelPath(model) + ":generateContent?key=" + apiKey;
 
         try {
+            String methodology = """
+                NBFM AUDIO PHYSICS (ground truth - reason from this):
+                - An FM discriminator outputs MAXIMUM wideband white-noise "hiss" when NO carrier is present, and the
+                  carrier "quiets" that noise when a radio keys up (the FM quieting effect). Noise is the constant
+                  adversary, strongest at the start/end of and between transmissions.
+                - Narrowband voice intelligence lives ~300-3000 Hz. Continuous energy above ~4000 Hz during speech is
+                  discriminator hiss, NOT voice. Human speech (formants, dynamic) is distinct from the flat, continuous
+                  spectrum of white noise.
+                - The recordings are mono 8 kHz, so the usable audio band is ~300-3800 Hz.
+
+                ONLY change a setting if you actually hear the problem it fixes; otherwise keep the current value.
+                Prefer the gentlest change that works. Never introduce artifacts.
+
+                TUNE IN THIS ORDER (each stage changes what the next stage hears):
+                PHASE 1 - TEMPORAL BOUNDARIES (do first):
+                - Squelch tail: a harsh wideband noise burst ("pffft"/"chk") at the END of a transmission means raise
+                  squelchTailRemovalMs (in ~25 ms steps, ~100 ms baseline, max 300). If final syllables of words like
+                  "out"/"copy" are clipped, lower it. A static burst BEFORE speech starts means raise squelchHeadRemovalMs
+                  (0 baseline, max 150); otherwise keep it 0.
+                - Noise gate: gates on audio AMPLITUDE to silence dead-air/background between phrases. Set
+                  noiseGateThreshold (percent, 0-100) just ABOVE the dead-air background level (typically ~4-6). Use a
+                  SOFT gate noiseGateReduction ~0.7-0.8 (fraction 0-1; 1.0 = hard/jarring). Set noiseGateHoldTime ~250-500
+                  ms so it does not stutter/chatter between words; too long (>=1000) leaks background noise after speech.
+                PHASE 2 - HIGH-FREQUENCY CLEANSING:
+                - lowPassCutoff (Hz, ~2500-4000): set at the upper edge of the voice band to slice off >4 kHz hiss.
+                  ~3400 is the optimal baseline (telephony 300-3400). Lower it toward 3000 if heavy hiss remains, but NOT
+                  below ~3000 or consonants (s/sh/t sibilance) muffle ("underwater"/"blanket" effect).
+                - hissReductionDb (-12..0) is a high-shelf cut; corner hissReductionCorner (Hz) where it begins, ideally
+                  ~2000-2500 (slightly BELOW the low-pass cutoff to catch what the LPF misses). Prefer -3 to -6 dB.
+                  Aggressive cuts near -12 dB cause "phasey"/metallic/robotic artifacts - if you hear that, back OFF the
+                  cut toward -3/-6 dB even if a little hiss returns.
+                PHASE 3 - TONAL SCULPTING:
+                - bassBoostDb (0..12) low-shelf: only if the voice is thin/tinny/reedy (the JMBE codec is bass-light).
+                  ~+3 to +6 dB typically; if the low end already overpowers consonants (muddy/"proximity effect"), keep 0.
+                - Voice enhancement boosts the 1-3 kHz formants to pull weak voices out of noise. agcEnabled turns it on;
+                  agcTargetLevel encodes its STRENGTH in dB from -30 (off) to -6 (maximum); use ~-18 (about half) when SNR
+                  is poor, and ~-30 (off) when the signal is already strong/clean. Too much sounds harsh/"honky".
+                PHASE 4 - FINAL AMPLITUDE (do last):
+                - agcMaxGain is the output gain in dB (0 = unity; positive = louder). Normalize quiet transmissions, but
+                  NEVER so high that peaks clip. CRITICAL: gain amplifies EVERYTHING including hiss, gate leakage and
+                  squelch tails - do not raise gain unless Phases 1-3 already produced clean audio.
+                - deemphasisEnabled: enable FM 75us de-emphasis only if the audio sounds harsh/overly bright.
+                """;
+
             String promptText = "You are an expert RF DSP engineer and Audio DSP specialist configuring settings for an SDRTrunk Narrow-Band FM channel.\n" +
                 "You are provided with up to 5 of the most recent raw audio recordings from this channel. These recordings contain the current DSP state applied by the user (which you must analyze) AND the intrinsic characteristics of the radio signal itself.\n" +
                 "Analyze the audio across all clips and suggest an optimal set of filters and settings to maximize human vocal intelligibility and minimize noise/hiss.\n\n" +
+                methodology + "\n" +
                 "Here is the context of the user's current settings:\n" +
                 "hissReductionEnabled: " + config.isHissReductionEnabled() + "\n" +
-                "hissReductionDb: " + config.getHissReductionDb() + "\n" +
-                "hissReductionCornerHz: " + config.getHissReductionCornerHz() + "\n" +
+                "hissReductionDb: " + config.getHissReductionDb() + " (range -12..0)\n" +
+                "hissReductionCornerHz: " + config.getHissReductionCornerHz() + " (range ~1000..3500 Hz)\n" +
                 "lowPassEnabled: " + config.isLowPassEnabled() + "\n" +
-                "lowPassCutoff: " + config.getLowPassCutoff() + "\n" +
+                "lowPassCutoff: " + config.getLowPassCutoff() + " (range ~2500..4000 Hz)\n" +
                 "deemphasisEnabled: " + config.isDeemphasisEnabled() + "\n" +
                 "bassBoostEnabled: " + config.isBassBoostEnabled() + "\n" +
-                "bassBoostDb: " + config.getBassBoostDb() + "\n" +
-                "agcEnabled: " + config.isAgcEnabled() + "\n" +
-                "agcTargetLevel: " + config.getAgcTargetLevel() + "\n" +
+                "bassBoostDb: " + config.getBassBoostDb() + " (range 0..12)\n" +
+                "agcEnabled (voice enhancement on/off): " + config.isAgcEnabled() + "\n" +
+                "agcTargetLevel (voice enhancement strength, dB -30=off..-6=max): " + config.getAgcTargetLevel() + "\n" +
                 "noiseGateEnabled: " + config.isNoiseGateEnabled() + "\n" +
-                "noiseGateThreshold: " + config.getNoiseGateThreshold() + "\n" +
-                "noiseGateReduction: " + config.getNoiseGateReduction() + "\n" +
-                "agcMaxGain: " + config.getAgcMaxGain() + "\n" +
+                "noiseGateThreshold: " + config.getNoiseGateThreshold() + " (percent 0..100)\n" +
+                "noiseGateReduction: " + config.getNoiseGateReduction() + " (fraction 0..1)\n" +
+                "agcMaxGain (output gain, dB): " + config.getAgcMaxGain() + "\n" +
                 "squelchTailRemovalEnabled: " + config.isSquelchTailRemovalEnabled() + "\n" +
-                "squelchTailRemovalMs: " + config.getSquelchTailRemovalMs() + "\n" +
-                "squelchHeadRemovalMs: " + config.getSquelchHeadRemovalMs() + "\n" +
-                "noiseGateHoldTime: " + config.getNoiseGateHoldTime() + "\n\n" +
+                "squelchTailRemovalMs: " + config.getSquelchTailRemovalMs() + " (range 0..300)\n" +
+                "squelchHeadRemovalMs: " + config.getSquelchHeadRemovalMs() + " (range 0..150)\n" +
+                "noiseGateHoldTime: " + config.getNoiseGateHoldTime() + " (ms 0..1000)\n\n" +
                 (priorSummary == null || priorSummary.isEmpty() ? "" :
                     "Your previous optimization of THIS channel did the following - learn from it: keep what " +
                     "worked and only change settings further if the audio still shows a problem.\n" +
                     priorSummary + "\n\n") +
-                "Return JSON with these exact fields: hissReductionEnabled (boolean), hissReductionDb (float), hissReductionCorner (double), lowPassEnabled (boolean), lowPassCutoff (double), deemphasisEnabled (boolean), bassBoostEnabled (boolean), bassBoostDb (float), agcEnabled (boolean), agcTargetLevel (float), noiseGateEnabled (boolean), noiseGateThreshold (float), noiseGateReduction (float), agcMaxGain (float), squelchTailRemovalEnabled (boolean), squelchTailRemovalMs (int), squelchHeadRemovalMs (int), noiseGateHoldTime (int), issuesFound (string), improvements (string), explanation (string).";
+                "Return ONLY JSON with these exact fields, using the units/ranges above: hissReductionEnabled (boolean), " +
+                "hissReductionDb (float -12..0), hissReductionCorner (double Hz), lowPassEnabled (boolean), " +
+                "lowPassCutoff (double Hz), deemphasisEnabled (boolean), bassBoostEnabled (boolean), bassBoostDb (float 0..12), " +
+                "agcEnabled (boolean), agcTargetLevel (float dB -30..-6), noiseGateEnabled (boolean), " +
+                "noiseGateThreshold (float 0..100), noiseGateReduction (float 0..1), agcMaxGain (float dB), " +
+                "squelchTailRemovalEnabled (boolean), squelchTailRemovalMs (int 0..300), squelchHeadRemovalMs (int 0..150), " +
+                "noiseGateHoldTime (int 0..1000), issuesFound (string), improvements (string), explanation (string).";
 
             Gson gson = new Gson();
             JsonObject payload = new JsonObject();
@@ -285,7 +336,10 @@ public class AIAudioOptimizer {
             parts.add(textPart);
 
             for (List<float[]> event : audioEvents) {
-                byte[] wavBytes = WavUtil.floatsToWav(event, 48000);
+                //NBFM audio is captured at 8 kHz (DEMODULATED_AUDIO_SAMPLE_RATE). The WAV header must declare the
+                //true rate, otherwise the model interprets every frequency ~6x too high and its frequency-domain
+                //reasoning (speech 300-3000 Hz vs hiss >4000 Hz) is meaningless.
+                byte[] wavBytes = WavUtil.floatsToWav(event, 8000);
                 String base64Data = Base64.getEncoder().encodeToString(wavBytes);
                 
                 JsonObject inlineDataObj = new JsonObject();
