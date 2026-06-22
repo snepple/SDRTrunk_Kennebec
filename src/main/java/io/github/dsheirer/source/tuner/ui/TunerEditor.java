@@ -301,7 +301,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         if(mAutoPPMCheckBox == null)
         {
             mAutoPPMCheckBox = new CheckBox("Enable decoder(s) to auto-adjust PPM");
-            mAutoPPMCheckBox.setTooltip(new javafx.scene.control.Tooltip("Allow decoders to measure channel frequency error and correct tuner PPM"));
+            mAutoPPMCheckBox.setTooltip(new javafx.scene.control.Tooltip("Allow decoders to measure channel frequency error and correct tuner PPM. This helps keep signals centered as hardware warms up."));
             mAutoPPMCheckBox.setOnAction(e ->
             {
                 if(!isLoading())
@@ -385,7 +385,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         {
             SpinnerValueFactory model = new javafx.scene.control.SpinnerValueFactory.DoubleSpinnerValueFactory(-1000.0, 1000.0, 0.0, 0.1);
             mFrequencyCorrectionSpinner = new Spinner(model);
-            mFrequencyCorrectionSpinner.setTooltip(new javafx.scene.control.Tooltip("Adjust the PPM value to compensate for tuner frequency error"));
+            mFrequencyCorrectionSpinner.setTooltip(new javafx.scene.control.Tooltip("Adjusts your tuner to match the exact frequency. If your hardware gets warm and signals shift, adjust this until the signal is centered."));
             mFrequencyCorrectionSpinner.setDisable(!(false));
             // Spinner.NumberEditor editor = ...
             // DecimalFormat format = editor.getFormat();

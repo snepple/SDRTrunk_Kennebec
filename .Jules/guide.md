@@ -33,20 +33,9 @@
 ## 2024-05-23 - FFT Window Type Help
 **Learning:** Adding a help icon with clear explanation for "FFT Window Type" helps beginners understand that different window types affect frequency resolution and amplitude accuracy, and recommends Hanning or Hamming as good defaults.
 **Action:** Added a `createHelpIcon` to `DisplayPreferenceEditor.java` and applied it to the "FFT Window Type" `SettingsRow`.
-
-## 2026-06-19 - P25 Talkgroup & Radio ID System Identifiers
-**Simplified:**
-- System: System Identifier. Combined with the WACN, uniquely identifies a P25 system.
-- Radio ID: A unique number assigned to an individual radio on the network.
-- Talkgroup: A unique number representing a group or channel on the network.
-
-## 2026-06-19 - Auto-Adjust PPM
-**Simplified:**
-- Auto-Adjust PPM: Allow decoders to automatically measure channel frequency error and adjust the tuner PPM setting above.
-
-## 2026-06-21 - Jargon Bridge: LNA, WACN, FFT Size
-**Learning:** SDR users struggle with terminology like LNA, WACN, and FFT Size. Converting these into "User Outcomes" greatly improves the onboarding experience.
-**Action:** Replaced existing tooltips with Apple HIG compliant user-friendly translations:
-- **LNA Gain:** Translated from "Low Noise Amplifier power coefficient" to "The power of the signal amplifier. Increase this for distant signals, but lower it if you see a lot of static/noise."
-- **WACN:** Translated from "Wide Area Communication Network ID" to "A unique code identifying a large regional radio system. This is usually provided by RadioReference and tells the software which network to follow."
-- **FFT Size:** Translated from "Fast Fourier Transform bin count" to "How much detail you see in the waterfall display. Higher numbers show more detail but use more computer power."
+## 2026-06-14 - P25P2Viewer Scramble Settings Tooltips
+**Learning:** Users need to understand the WACN, SYSTEM, and NAC acronyms.
+**Action:** Added help icons to WACN, SYSTEM, and NAC labels in P25P2Viewer.java explaining their roles in cross-system calls and radio system identification.
+## 2026-06-18 - Added Beginner-Friendly Tooltips for Jargon Hotspots
+**Learning:** Replaced technical definitions for SDR jargon (NAC, LNA, PPM) with user-friendly explanations.
+**Action:** Updated tooltips in NacEditor, R8xTunerEditor, E4KTunerEditor, and TunerEditor to better describe the 'Why' behind SDR configurations.

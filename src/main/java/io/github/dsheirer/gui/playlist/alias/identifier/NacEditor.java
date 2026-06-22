@@ -41,6 +41,8 @@ import java.util.HashSet;
 import java.util.Set;
 import javafx.util.StringConverter;
 import javafx.scene.control.ComboBox;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 
 /**
  * Editor for P25 Network Access Code (NAC) alias identifiers
@@ -62,13 +64,28 @@ public class NacEditor extends IdentifierEditor<Nac>
         gridPane.setHgap(5);
 
         Label typeLabel = new Label("NAC (0-4095 / 0x000-0xFFF)");
-        GridPane.setConstraints(typeLabel, 0, 0);
-        gridPane.getChildren().add(typeLabel);
+        Label helpIcon = createHelpIcon("A unique code identifying a specific radio system. This is usually provided by RadioReference and tells the software which network to follow.");
+
+        HBox labelBox = new HBox(5, typeLabel, helpIcon);
+        GridPane.setConstraints(labelBox, 0, 0);
+        gridPane.getChildren().add(labelBox);
 
         GridPane.setConstraints(getNacSpinner(), 1, 0);
         gridPane.getChildren().add(getNacSpinner());
 
         getChildren().add(gridPane);
+    }
+
+    private Label createHelpIcon(String tooltipText) {
+        IconNode iconNode = new IconNode(FontAwesome.INFO_CIRCLE);
+        iconNode.setIconSize(14);
+        iconNode.setFill(Color.GRAY);
+        Label label = new Label("", iconNode);
+        Tooltip tooltip = new Tooltip(tooltipText);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(400);
+        label.setTooltip(tooltip);
+        return label;
     }
 
     @Override
