@@ -664,18 +664,18 @@
     -fx-border-color: rgba(255,255,255,0.1);
     -fx-border-radius: 8px;
     -fx-border-width: 1px;
-    -fx-padding: 6 10 6 10;
-    -fx-alignment: center;
-    -fx-spacing: 2;
+    -fx-padding: 6 16 6 16;
+    -fx-alignment: center-left;
+    -fx-spacing: 12;
 }
 .audio-channel-name {
     -fx-text-fill: #FFFFFF !important;
-    -fx-font-size: 11px;
+    -fx-font-size: 28px;
     -fx-font-weight: bold;
 }
 .audio-channel-identifier {
     -fx-text-fill: #007AFF !important;
-    -fx-font-size: 11px;
+    -fx-font-size: 21px;
     -fx-font-family: monospace;
 }
 
