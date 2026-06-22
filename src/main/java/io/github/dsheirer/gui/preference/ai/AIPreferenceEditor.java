@@ -164,6 +164,28 @@ public class AIPreferenceEditor extends VBox {
             new Label("every"), gainIntervalCombo, new Label("h"));
         gainControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
+        //Squelch calibration is manual (per-channel Calibrate button) by default.  The optional schedule re-runs
+        //it automatically, never more often than every 12 hours.
+        ToggleSwitch squelchScheduleSwitch = new ToggleSwitch();
+        squelchScheduleSwitch.setSelected(mUserPreferences.getAIPreference().isSquelchAdvisorScheduleEnabled());
+        squelchScheduleSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            mUserPreferences.getAIPreference().setSquelchAdvisorScheduleEnabled(newValue);
+        });
+        squelchScheduleSwitch.disableProperty().bind(enableSquelchAdvisorSwitch.selectedProperty().not());
+
+        ComboBox<Integer> squelchIntervalCombo = new ComboBox<>();
+        squelchIntervalCombo.getItems().addAll(io.github.dsheirer.preference.ai.AIPreference.SQUELCH_SCHEDULED_INTERVAL_OPTIONS_HOURS);
+        squelchIntervalCombo.setValue(mUserPreferences.getAIPreference().getSquelchAdvisorIntervalHours());
+        squelchIntervalCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if(newValue != null) mUserPreferences.getAIPreference().setSquelchAdvisorIntervalHours(newValue);
+        });
+        squelchIntervalCombo.disableProperty().bind(
+            enableSquelchAdvisorSwitch.selectedProperty().not().or(squelchScheduleSwitch.selectedProperty().not()));
+
+        HBox squelchControls = new HBox(8, enableSquelchAdvisorSwitch, new Label("Auto"), squelchScheduleSwitch,
+            new Label("every"), squelchIntervalCombo, new Label("h"));
+        squelchControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
         SettingsCard featuresCard = new SettingsCard();
         featuresCard.getChildren().addAll(
             new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
@@ -173,7 +195,7 @@ public class AIPreferenceEditor extends VBox {
             new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls),
             new SettingsRow("Auto-Optimize NBFM Audio Filters (manual anytime; Auto runs per channel)", nbfmControls),
             new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels; Auto runs AI consultation)", gainControls),
-            new SettingsRow("Squelch Advisor (enables the Calibrate Squelch button on NBFM channels)", enableSquelchAdvisorSwitch)
+            new SettingsRow("Squelch Advisor (Calibrate button is manual; Auto runs per channel, min every 12h)", squelchControls)
         );
 
         // API Key Card with Embedded Scaffolding

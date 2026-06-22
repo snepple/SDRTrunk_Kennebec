@@ -188,12 +188,15 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                 config.getSquelchHysteresisOpenThreshold(), config.getSquelchHysteresisCloseThreshold());
         mNoiseSquelch.setAdaptive(config.isSquelchNoiseAdaptive());
 
-        //Automatic squelch calibration: gated by the Squelch Advisor preference and locked out when the user
-        //has manually adjusted this channel's squelch.  Applies thresholds (and a tail-removal duration) to
-        //the live squelch and persisted config without marking the change as a manual adjustment.
+        //Scheduled squelch calibration.  Calibration is manual-only (the per-channel Calibrate button) unless
+        //the user enables a schedule in preferences; this calibrator runs only when that schedule is enabled,
+        //at the configured interval (minimum 12 hours), and is locked out when the user has manually adjusted
+        //this channel's squelch.  Applies thresholds (and a tail-removal duration) to the live squelch and
+        //persisted config without marking the change as a manual adjustment.
         mSquelchAutoCalibrator = new io.github.dsheirer.dsp.squelch.SquelchAutoCalibrator(channelName,
-                () -> mUserPreferences.getAIPreference().isSquelchAdvisorEnabled(),
+                () -> mUserPreferences.getAIPreference().isSquelchAdvisorScheduleEnabled(),
                 () -> getDecodeConfiguration().isSquelchManuallyAdjusted(),
+                () -> mUserPreferences.getAIPreference().getSquelchAdvisorIntervalHours() * 3_600_000L,
                 (open, close) -> {
                     mNoiseSquelch.setNoiseThreshold(open, close);
                     getDecodeConfiguration().setSquelchNoiseOpenThreshold(open);

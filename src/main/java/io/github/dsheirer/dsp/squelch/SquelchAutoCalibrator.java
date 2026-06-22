@@ -24,28 +24,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Drives automatic squelch calibration for a channel by consuming the live {@link NoiseSquelchState} stream:
- * <ul>
- *     <li><b>Auto-calibrate on channel start</b> - after a short warm-up, captures the channel's noise
- *     variance for a few seconds and applies recommended open/close thresholds and a tail-removal duration.</li>
- *     <li><b>Continuous drift correction</b> - periodically re-captures and gently nudges the thresholds
- *     toward the new recommendation (with a dead-band to avoid jitter) so the squelch tracks slow changes in
- *     the RF environment.</li>
- * </ul>
+ * Drives <b>scheduled</b> squelch calibration for a channel by consuming the live {@link NoiseSquelchState}
+ * stream.  Squelch calibration is manual by default (the per-channel "Calibrate" button); this calibrator only
+ * acts when the user opts in to a schedule in preferences.  When the schedule is enabled, it captures the
+ * channel's noise variance for a few seconds and applies recommended open/close thresholds (and a tail-removal
+ * duration) once per configured interval, never more often than every 12 hours, and never immediately on
+ * channel start (a full interval must elapse first).
  *
- * Both behaviours are gated by an enabled supplier (the Squelch Advisor preference) and a manual-lock supplier
- * (set when the user adjusts the squelch by hand): when locked, captured statistics are still observed but no
- * changes are applied, so manual settings are always respected.
+ * Gated by an enabled supplier (the scheduled-calibration preference) and a manual-lock supplier (set when the
+ * user adjusts the squelch by hand): when scheduling is off it does nothing, and when locked no changes are
+ * applied, so manual settings are always respected.
  */
 public class SquelchAutoCalibrator
 {
     private static final Logger mLog = LoggerFactory.getLogger(SquelchAutoCalibrator.class);
 
-    private static final long WARMUP_MS = 2_000;
     private static final long CAPTURE_MS = 5_000;
-    private static final long DRIFT_INTERVAL_MS = 10L * 60L * 1_000L; //Re-check drift every ten minutes.
-    private static final float DRIFT_STEP = 0.34f;   //Move ~1/3 of the way toward the new recommendation.
-    private static final float DRIFT_DEAD_BAND = 0.02f; //Ignore changes smaller than this to avoid jitter.
+    //Never auto-calibrate more often than every 12 hours, to conserve CPU and avoid churning the user's
+    //squelch thresholds.  The configured interval (from preferences) is clamped up to this floor.
+    private static final long MINIMUM_INTERVAL_MS = 12L * 60L * 60L * 1_000L;
+    private static final float CHANGE_DEAD_BAND = 0.02f; //Skip a new calibration that barely differs from the current one.
 
     /**
      * Applies recommended noise open/close thresholds to the live squelch and persisted configuration.
@@ -63,16 +61,17 @@ public class SquelchAutoCalibrator
         void apply(int tailRemovalMs);
     }
 
-    private enum Phase {WARMUP, INITIAL_CAPTURE, MONITOR, DRIFT_CAPTURE}
+    private enum Phase {MONITOR, CAPTURE}
 
     private final String mChannelName;
     private final BooleanSupplier mEnabledSupplier;
     private final BooleanSupplier mLockedSupplier;
+    private final java.util.function.LongSupplier mIntervalMsSupplier;
     private final ThresholdApplier mThresholdApplier;
     private final TailApplier mTailApplier;
 
     private final SquelchAIAdvisor mAdvisor = new SquelchAIAdvisor();
-    private Phase mPhase = Phase.WARMUP;
+    private Phase mPhase = Phase.MONITOR;
     private long mPhaseStartMs = -1;
     private float mCurrentOpen = NoiseSquelch.DEFAULT_NOISE_OPEN_THRESHOLD;
     private float mCurrentClose = NoiseSquelch.DEFAULT_NOISE_CLOSE_THRESHOLD;
@@ -80,18 +79,22 @@ public class SquelchAutoCalibrator
     /**
      * Constructs an instance.
      * @param channelName for logging.
-     * @param enabledSupplier returns true when automatic squelch calibration is enabled (Squelch Advisor).
+     * @param enabledSupplier returns true when SCHEDULED automatic squelch calibration is enabled.  When false,
+     *                        calibration is manual-only (the per-channel Calibrate button) and this calibrator
+     *                        does nothing.
      * @param lockedSupplier returns true when the user has manually adjusted the squelch (lock changes out).
+     * @param intervalMsSupplier scheduled re-calibration interval in milliseconds (floored at 12 hours).
      * @param thresholdApplier applies recommended open/close thresholds.
      * @param tailApplier applies a recommended tail-removal duration.
      */
     public SquelchAutoCalibrator(String channelName, BooleanSupplier enabledSupplier,
-                                 BooleanSupplier lockedSupplier, ThresholdApplier thresholdApplier,
-                                 TailApplier tailApplier)
+                                 BooleanSupplier lockedSupplier, java.util.function.LongSupplier intervalMsSupplier,
+                                 ThresholdApplier thresholdApplier, TailApplier tailApplier)
     {
         mChannelName = channelName;
         mEnabledSupplier = enabledSupplier;
         mLockedSupplier = lockedSupplier;
+        mIntervalMsSupplier = intervalMsSupplier;
         mThresholdApplier = thresholdApplier;
         mTailApplier = tailApplier;
     }
@@ -104,6 +107,10 @@ public class SquelchAutoCalibrator
     {
         if(state == null || !mEnabledSupplier.getAsBoolean())
         {
+            //Scheduled auto-calibration is disabled - calibration is manual-only via the Calibrate button.
+            //Reset so that if the user later enables the schedule, a fresh full interval elapses first.
+            mPhase = Phase.MONITOR;
+            mPhaseStartMs = -1;
             return;
         }
 
@@ -118,44 +125,36 @@ public class SquelchAutoCalibrator
 
         switch(mPhase)
         {
-            case WARMUP:
-                if(elapsed >= WARMUP_MS)
-                {
-                    beginCapture(now, Phase.INITIAL_CAPTURE);
-                }
-                break;
-
-            case INITIAL_CAPTURE:
-                mAdvisor.recordVarianceSample(state.noise());
-                if(elapsed >= CAPTURE_MS)
-                {
-                    applyCapture(true);
-                    enterMonitor(now);
-                }
-                break;
-
             case MONITOR:
-                if(elapsed >= DRIFT_INTERVAL_MS)
+                //Wait a full interval (>= 12 hours) before the first and each subsequent scheduled calibration,
+                //so a freshly started channel is never auto-calibrated immediately.
+                if(elapsed >= intervalMs())
                 {
-                    beginCapture(now, Phase.DRIFT_CAPTURE);
+                    beginCapture(now);
                 }
                 break;
 
-            case DRIFT_CAPTURE:
+            case CAPTURE:
                 mAdvisor.recordVarianceSample(state.noise());
                 if(elapsed >= CAPTURE_MS)
                 {
-                    applyCapture(false);
+                    applyCapture();
                     enterMonitor(now);
                 }
                 break;
         }
     }
 
-    private void beginCapture(long now, Phase capturePhase)
+    private long intervalMs()
+    {
+        long ms = (mIntervalMsSupplier != null) ? mIntervalMsSupplier.getAsLong() : MINIMUM_INTERVAL_MS;
+        return Math.max(MINIMUM_INTERVAL_MS, ms);
+    }
+
+    private void beginCapture(long now)
     {
         mAdvisor.resetCalibration();
-        mPhase = capturePhase;
+        mPhase = Phase.CAPTURE;
         mPhaseStartMs = now;
     }
 
@@ -167,11 +166,9 @@ public class SquelchAutoCalibrator
 
     /**
      * Computes a recommendation from the captured samples and applies it, unless the channel is locked by a
-     * manual adjustment.  For the initial capture the recommendation is applied directly; for drift captures
-     * the current thresholds are nudged partway toward the recommendation with a dead-band.
-     * @param initial true for the on-start calibration, false for a drift correction.
+     * manual adjustment or the recommendation barely differs from the currently applied thresholds.
      */
-    private void applyCapture(boolean initial)
+    private void applyCapture()
     {
         SquelchAIAdvisor.Recommendation recommendation = mAdvisor.calibrate();
 
@@ -180,30 +177,9 @@ public class SquelchAutoCalibrator
             return;
         }
 
-        float open;
-        float close;
+        float open = clamp(recommendation.openThreshold());
+        float close = clamp(recommendation.closeThreshold());
 
-        if(initial)
-        {
-            open = recommendation.openThreshold();
-            close = recommendation.closeThreshold();
-        }
-        else
-        {
-            //Drift: only move when the change is meaningful, then step partway toward the target.
-            if(Math.abs(recommendation.openThreshold() - mCurrentOpen) < DRIFT_DEAD_BAND &&
-               Math.abs(recommendation.closeThreshold() - mCurrentClose) < DRIFT_DEAD_BAND)
-            {
-                return;
-            }
-
-            open = mCurrentOpen + (DRIFT_STEP * (recommendation.openThreshold() - mCurrentOpen));
-            close = mCurrentClose + (DRIFT_STEP * (recommendation.closeThreshold() - mCurrentClose));
-        }
-
-        //Clamp and order before applying.
-        open = clamp(open);
-        close = clamp(close);
         if(close < open)
         {
             float swap = open;
@@ -211,16 +187,23 @@ public class SquelchAutoCalibrator
             close = swap;
         }
 
+        //Skip applying when the new calibration is essentially the same as the current one, to avoid an
+        //unnecessary threshold change (and squelch disruption) on each scheduled run.
+        if(Math.abs(open - mCurrentOpen) < CHANGE_DEAD_BAND && Math.abs(close - mCurrentClose) < CHANGE_DEAD_BAND)
+        {
+            return;
+        }
+
         mCurrentOpen = open;
         mCurrentClose = close;
         mThresholdApplier.apply(open, close);
 
-        if(initial && mTailApplier != null)
+        if(mTailApplier != null)
         {
             mTailApplier.apply(mAdvisor.getRecommendedTailRemovalMs());
         }
 
-        mLog.info("Auto-squelch {} for channel '{}': open={}, close={}", initial ? "calibrated" : "drift-adjusted",
+        mLog.info("Auto-squelch (scheduled) calibrated for channel '{}': open={}, close={}",
                 mChannelName, String.format("%.3f", open), String.format("%.3f", close));
     }
 
