@@ -570,7 +570,8 @@ public class DMRTrafficChannelManager extends TrafficChannelManager implements I
         catch(Exception e)
         {
             //This shouldn't happen, but we'll log if it ever does.
-            mLog.error("Error while processing channel grant event - traffic channel lock is released", e);
+            mLog.error("Error while processing channel grant event for [{}] - traffic channel lock is released",
+                mParentChannel.getName(), e);
         }
         finally
         {

@@ -65,6 +65,7 @@ public class AudioRecordingsPanel extends VBox {
     private Spinner<Integer> mEndMinuteSpinner;
     private ComboBox<String> mAliasComboBox;
     private ComboBox<String> mChannelComboBox;
+    private ComboBox<String> mTypeComboBox;
 
 
 
@@ -183,6 +184,12 @@ public class AudioRecordingsPanel extends VBox {
         mChannelComboBox.getSelectionModel().select("All");
         mChannelComboBox.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
 
+        mTypeComboBox = new ComboBox<>();
+        mTypeComboBox.setPromptText("Filter Type");
+        mTypeComboBox.getItems().addAll("All", "Audio", "Baseband I/Q");
+        mTypeComboBox.getSelectionModel().select("All");
+        mTypeComboBox.valueProperty().addListener((obs, oldVal, newVal) -> updateFilters());
+
         Button refreshButton = new Button("_Refresh");
         refreshButton.setMnemonicParsing(true);
         refreshButton.accessibleTextProperty().set("Refresh Recordings");
@@ -213,6 +220,7 @@ public class AudioRecordingsPanel extends VBox {
             mEndMinuteSpinner.getValueFactory().setValue(59);
             mAliasComboBox.getSelectionModel().select("All");
             mChannelComboBox.getSelectionModel().select("All");
+            mTypeComboBox.getSelectionModel().select("All");
         });
 
         Button deleteSelectedButton = new Button("Delete _Selected");
@@ -345,6 +353,13 @@ public class AudioRecordingsPanel extends VBox {
         channelLabel.setMinWidth(Region.USE_PREF_SIZE);
         channelBox.getChildren().addAll(channelLabel, mChannelComboBox);
 
+        HBox typeBox = new HBox(8);
+        typeBox.setAlignment(Pos.CENTER_LEFT);
+        Label typeLabel = new Label("Type:");
+        typeLabel.getStyleClass().add("kennebec-toolbar-label");
+        typeLabel.setMinWidth(Region.USE_PREF_SIZE);
+        typeBox.getChildren().addAll(typeLabel, mTypeComboBox);
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
@@ -357,7 +372,7 @@ public class AudioRecordingsPanel extends VBox {
         buttonBox.setAlignment(Pos.CENTER_LEFT);
         buttonBox.getChildren().addAll(refreshButton, mStopButton, clearFiltersButton, deleteSelectedButton, deleteAllButton);
 
-        controlsBox2.getChildren().addAll(aliasBox, channelBox, spacer, buttonBox);
+        controlsBox2.getChildren().addAll(aliasBox, channelBox, typeBox, spacer, buttonBox);
 
         filterContainer.getChildren().addAll(controlsBox1, controlsBox2);
 
@@ -377,6 +392,9 @@ public class AudioRecordingsPanel extends VBox {
 
         TableColumn<RecordingItem, String> channelCol = new TableColumn<>("Channel");
         channelCol.setCellValueFactory(data -> data.getValue().channelProperty());
+
+        TableColumn<RecordingItem, String> typeCol = new TableColumn<>("Type");
+        typeCol.setCellValueFactory(data -> data.getValue().typeProperty());
 
         TableColumn<RecordingItem, String> toAliasCol = new TableColumn<>("To Alias");
         toAliasCol.setCellValueFactory(data -> data.getValue().toAliasProperty());
@@ -407,12 +425,18 @@ public class AudioRecordingsPanel extends VBox {
                 if (empty || item == null) {
                     setGraphic(null);
                 } else {
+                    //Baseband (I/Q) captures aren't playable as audio - disable the action for them.
+                    boolean baseband = item.isBaseband();
+                    playBtn.setDisable(baseband);
+                    playBtn.setTooltip(baseband
+                        ? new Tooltip("Baseband (I/Q) recording - not playable as audio")
+                        : null);
                     setGraphic(playBtn);
                 }
             }
         });
 
-        mTableView.getColumns().addAll(dateCol, timeCol, channelCol, toAliasCol, fromAliasCol, lengthCol, actionCol);
+        mTableView.getColumns().addAll(dateCol, timeCol, channelCol, typeCol, toAliasCol, fromAliasCol, lengthCol, actionCol);
         mTableView.setTableMenuButtonVisible(true);
 
         SortedList<RecordingItem> sortedData = new SortedList<>(mFilteredRecordings);
@@ -490,11 +514,15 @@ public class AudioRecordingsPanel extends VBox {
 
         String aliasFilter = mAliasComboBox.getValue() != null && !mAliasComboBox.getValue().equals("All") ? mAliasComboBox.getValue() : null;
         String channelFilter = mChannelComboBox.getValue() != null && !mChannelComboBox.getValue().equals("All") ? mChannelComboBox.getValue() : null;
+        String typeFilter = mTypeComboBox.getValue() != null && !mTypeComboBox.getValue().equals("All") ? mTypeComboBox.getValue() : null;
 
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
         mFilteredRecordings.setPredicate(item -> {
+            //Type filter applies regardless of whether the date/time parsed successfully.
+            if (typeFilter != null && !typeFilter.equals(item.getType())) return false;
+
             try {
                 LocalDate itemDate = LocalDate.parse(item.getDate(), dateFormatter);
                 LocalTime itemTime = LocalTime.parse(item.getTime(), timeFormatter);
@@ -580,6 +608,12 @@ public class AudioRecordingsPanel extends VBox {
             item.setLength("Unknown");
         }
 
+        //Baseband (I/Q) captures are named "<channel>_baseband_...".  Flag them so the UI can distinguish
+        //them from playable call audio (separate Type column, Type filter, no Play action).
+        boolean isBaseband = name.toLowerCase().contains("baseband");
+        item.setBaseband(isBaseband);
+        item.setType(isBaseband ? "Baseband I/Q" : "Audio");
+
         // Parse filename
         String withoutExt = name.contains(".") ? name.substring(0, name.lastIndexOf('.')) : name;
         String[] parts = withoutExt.split("_");
@@ -613,9 +647,6 @@ public class AudioRecordingsPanel extends VBox {
                 }
             }
         }
-
-        // Check for baseband format: FREQ_baseband_yyyyMMdd_HHmmss
-        boolean isBaseband = parts.length >= 4 && parts[1].equals("baseband");
 
         if (dateIdx >= 0 && timeIdx >= 0) {
             // Found date and time parts
@@ -808,8 +839,7 @@ public class AudioRecordingsPanel extends VBox {
 
         //Baseband (I/Q) recordings are raw captures, not playable audio.  Tell the user instead of
         //silently doing nothing (which was the prior behaviour).
-        String fileName = item.getFile().getFileName().toString().toLowerCase();
-        if (fileName.contains("baseband")) {
+        if (item.isBaseband()) {
             mNowPlayingLabel.setText("Baseband (I/Q) recording - not playable as audio");
             mPlayPauseButton.setDisable(true);
             mStopButton.setDisable(true);

@@ -600,7 +600,8 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
             }
             catch(Throwable t)
             {
-                mLog.error("Error caught during processing chain startup - continuing", t);
+                mLog.error("Error caught during processing chain startup for channel [{}] - continuing",
+                    channel.getName(), t);
             }
 
             if(GraphicsEnvironment.isHeadless())
@@ -921,7 +922,8 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
             }
             catch(Throwable t)
             {
-                mLog.error("Error executing persistent channel start task");
+                mLog.error("Error executing persistent channel start task for channel [{}]",
+                    mRequest.getChannel().getName(), t);
             }
         }
     }

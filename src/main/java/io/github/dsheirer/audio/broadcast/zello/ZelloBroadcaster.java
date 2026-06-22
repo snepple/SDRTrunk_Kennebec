@@ -902,6 +902,23 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     }
 
     /**
+     * Sets stream-level error detail only when the connection is not healthy.
+     * While CONNECTED, stream errors (channel busy, on_stream_stop, invalid stream id) are
+     * transient — clear any stale error rather than showing a misleading one in the table.
+     */
+    private void updateStreamErrorDetail(String detail)
+    {
+        if(getBroadcastState() == BroadcastState.CONNECTED)
+        {
+            setLastErrorDetail(null);
+        }
+        else if(detail != null)
+        {
+            setLastErrorDetail(detail);
+        }
+    }
+
+    /**
      * Maps Zello Channel API error strings to Zello Bridge error codes (3001-3009)
      * for consistent diagnostics. See Zello Bridge documentation.
      */
@@ -1050,7 +1067,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                     {
                         mLog.debug("{}Zello [{}]: error=\"{}\" seq={} command={}",
                             ch(), bridgeCode, errorMsg, seq, originCmd != null ? originCmd : "unknown");
-                        setLastErrorDetail("[" + bridgeCode + "] " + errorMsg +
+                        updateStreamErrorDetail("[" + bridgeCode + "] " + errorMsg +
                             (originCmd != null ? " — " + originCmd : ""));
                         mStreamActive.set(false);
                         mCurrentStreamId.set(-1);
@@ -1107,7 +1124,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                         if(stoppedId > 0 && stoppedId == mCurrentStreamId.get())
                         {
                             mLog.info("{}Zello server stopped our stream (id={})", ch(), stoppedId);
-                            setLastErrorDetail("[3007] server stopped stream (id=" + stoppedId + ")");
+                            updateStreamErrorDetail("[3007] server stopped stream (id=" + stoppedId + ")");
                             mStreamActive.set(false);
                             mCurrentStreamId.set(-1);
                             mLastStreamStopTime = System.currentTimeMillis();
@@ -1173,7 +1190,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                         String error = json.has("error") ? json.get("error").getAsString() : "unknown";
                         mLog.error("{}Zello start_stream failed: error=\"{}\" seq={} command={}",
                             ch(), error, seq, originCmd != null ? originCmd : "start_stream");
-                        setLastErrorDetail("[3006] " + error);
+                        updateStreamErrorDetail("[3006] " + error);
                         mCurrentStreamId.set(-2);
                         mStreamActive.set(false);
                     }

@@ -645,7 +645,8 @@ import org.slf4j.LoggerFactory;
                 return "No Response";
             }
 
-            mLog.error("Exception connecting to OpenMHz server [" + e.toString() + "]");
+            mLog.error("Exception connecting to OpenMHz server [{}/{}]", configuration.getHost(),
+                configuration.getSystemName(), e);
             return "Unknown Exception";
          }
      }

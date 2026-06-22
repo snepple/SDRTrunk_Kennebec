@@ -792,9 +792,6 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
         if(mGainAdvisorButton == null)
         {
             mGainAdvisorButton = new Button("Gain Advisor");
-            mGainAdvisorButton.setTooltip(new javafx.scene.control.Tooltip(
-                    "Run the Adaptive Gain Advisor now and show a tuner gain recommendation based on " +
-                    "current I/Q signal levels across active channels."));
             mGainAdvisorButton.setOnAction(e ->
             {
                 long minFreq = 0;
@@ -814,11 +811,25 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                     maxFreq = Long.MAX_VALUE;
                 }
 
+                final String tunerId = (getDiscoveredTuner() != null) ? getDiscoveredTuner().getId() : null;
+                final String prior = (tunerId != null)
+                        ? mUserPreferences.getAIPreference().getGainLastSummary(tunerId) : null;
+
                 mGainAdvisorButton.setDisable(true);
                 io.github.dsheirer.source.tuner.manager.AdaptiveGainAdvisor.getInstance(mUserPreferences)
-                        .requestManualConsultation(minFreq, maxFreq,
+                        .requestManualConsultation(minFreq, maxFreq, prior,
                                 recommendation -> Platform.runLater(() -> {
                                     mGainAdvisorButton.setDisable(false);
+
+                                    //Persist per-tuner for the last-run display and as learning context next time.
+                                    if(tunerId != null)
+                                    {
+                                        String summary = "[" + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
+                                                .format(new java.util.Date()) + "] " + recommendation;
+                                        mUserPreferences.getAIPreference().setGainLastSummary(tunerId, summary);
+                                        updateGainAdvisorButtonTooltip();
+                                    }
+
                                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                                     io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                                     alert.setTitle("Adaptive Gain Advisor");
@@ -840,9 +851,35 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                                     alert.showAndWait();
                                 }));
             });
+
+            updateGainAdvisorButtonTooltip();
         }
 
         return mGainAdvisorButton;
+    }
+
+    /**
+     * Sets the Gain Advisor button tooltip to the base help text plus this tuner's most recent
+     * recommendation (time-stamped) when one has been recorded, so the last run is visible near the button.
+     */
+    private void updateGainAdvisorButtonTooltip()
+    {
+        if(mGainAdvisorButton == null)
+        {
+            return;
+        }
+        String base = "Run the Adaptive Gain Advisor now and show a tuner gain recommendation based on " +
+                "current I/Q signal levels across active channels.";
+        String tunerId = (getDiscoveredTuner() != null) ? getDiscoveredTuner().getId() : null;
+        String last = (tunerId != null) ? mUserPreferences.getAIPreference().getGainLastSummary(tunerId) : "";
+        if(last != null && !last.isEmpty())
+        {
+            mGainAdvisorButton.setTooltip(new javafx.scene.control.Tooltip(base + "\n\nLast run: " + last));
+        }
+        else
+        {
+            mGainAdvisorButton.setTooltip(new javafx.scene.control.Tooltip(base));
+        }
     }
 
     /**
