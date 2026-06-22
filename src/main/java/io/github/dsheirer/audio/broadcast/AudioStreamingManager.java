@@ -34,7 +34,6 @@ import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.record.AudioSegmentRecorder;
 import io.github.dsheirer.record.RecordFormat;
 import io.github.dsheirer.sample.Listener;
-import io.github.dsheirer.util.ThreadPool;
 import io.github.dsheirer.util.TimeStamp;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -65,6 +64,9 @@ public class AudioStreamingManager implements Listener<AudioSegment>
     private BroadcastFormat mBroadcastFormat;
     private UserPreferences mUserPreferences;
     private ScheduledFuture<?> mAudioSegmentProcessorFuture;
+    //Dedicated, higher-priority executor for the core audio-streaming dispatch so it is not head-of-line blocked
+    //behind ancillary tasks (monitors, AI, discovery) on the shared scheduled pool.
+    private java.util.concurrent.ScheduledExecutorService mDispatchExecutor;
     private int mNextRecordingNumber = 1;
     private BroadcastModel mBroadcastModel;
 
@@ -118,7 +120,14 @@ public class AudioStreamingManager implements Listener<AudioSegment>
     {
         if(mAudioSegmentProcessorFuture == null)
         {
-            mAudioSegmentProcessorFuture = ThreadPool.SCHEDULED.scheduleAtFixedRate(new AudioSegmentProcessor(),
+            if(mDispatchExecutor == null)
+            {
+                mDispatchExecutor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(
+                    new io.github.dsheirer.controller.NamingThreadFactory("sdrtrunk audio streaming",
+                        Thread.NORM_PRIORITY + 2));
+            }
+
+            mAudioSegmentProcessorFuture = mDispatchExecutor.scheduleAtFixedRate(new AudioSegmentProcessor(),
                 0, 250, TimeUnit.MILLISECONDS);
         }
     }
@@ -132,6 +141,12 @@ public class AudioStreamingManager implements Listener<AudioSegment>
         {
             mAudioSegmentProcessorFuture.cancel(true);
             mAudioSegmentProcessorFuture = null;
+        }
+
+        if(mDispatchExecutor != null)
+        {
+            mDispatchExecutor.shutdownNow();
+            mDispatchExecutor = null;
         }
 
         for(AudioSegment audioSegment: mNewAudioSegments)

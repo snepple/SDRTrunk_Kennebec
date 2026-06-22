@@ -15,7 +15,6 @@ import io.github.dsheirer.log.ListViewLogAppender;
 import io.github.dsheirer.module.log.ai.AILogAnalyzer;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.util.ThreadPool;
-import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -71,7 +70,11 @@ public class LogsViewController {
     private ObservableList<String> logData = FXCollections.observableArrayList();
     private ListViewLogAppender appender;
     private ConcurrentLinkedQueue<String> logQueue = new ConcurrentLinkedQueue<>();
-    private AnimationTimer batchTimer;
+    //Event-driven, coalesced UI flush instead of a perpetual 60fps AnimationTimer: a single flush is scheduled when
+    //log lines arrive, so the JavaFX pulse only runs while there is actual log activity (not continuously, and not at
+    //all while the app is idle or the Logs view is hidden).
+    private final java.util.concurrent.atomic.AtomicBoolean mFlushScheduled =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
 
     @FXML private TableView<LogFile> mAppTable;
     @FXML private TextField mAppSearchField;
@@ -197,30 +200,7 @@ public class LogsViewController {
         appender.start();
         rootLogger.addAppender(appender);
 
-        batchTimer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                if (!logQueue.isEmpty()) {
-                    List<String> batch = new ArrayList<>();
-                    String msg;
-                    int count = 0;
-                    // Limit to 250 log lines per frame to prevent JavaFX EDT from freezing during log floods
-                    while (count < 250 && (msg = logQueue.poll()) != null) {
-                        batch.add(msg);
-                        count++;
-                    }
-                    if (!batch.isEmpty()) {
-                        logData.addAll(batch);
-                        if (logData.size() > 10000) {
-                            logData.remove(0, logData.size() - 10000);
-                        }
-                        // Auto-scroll to bottom
-                        logListView.scrollTo(logData.size() - 1);
-                    }
-                }
-            }
-        };
-        batchTimer.start();
+        //Live log lines are flushed to the ListView on demand via scheduleLogFlush() (see onLogEvent).
 
         // Initialize File Tables
         mAppFiltered = new FilteredList<>(mAppListModel, p -> true);
@@ -313,7 +293,55 @@ public class LogsViewController {
     public void onLogEvent(ILoggingEvent event) {
         String timestamp = LIVE_LOG_TIME_FORMAT.format(
             java.time.Instant.ofEpochMilli(event.getTimeStamp()).atZone(java.time.ZoneId.systemDefault()));
+
+        //Soft cap so a debug/log flood can't grow the queue without bound if logging outpaces the UI.
+        if (logQueue.size() > 50000) {
+            for (int i = 0; i < 10000 && logQueue.poll() != null; i++) { /* drop oldest */ }
+        }
+
         logQueue.add(timestamp + "  " + event.getLevel() + "  " + event.getFormattedMessage());
+        scheduleLogFlush();
+    }
+
+    /**
+     * Coalesces UI flushes: schedules a single flush on the FX thread if one isn't already pending. This replaces a
+     * perpetual AnimationTimer so the JavaFX pulse only runs while there is actual log activity.
+     */
+    private void scheduleLogFlush() {
+        if (mFlushScheduled.compareAndSet(false, true)) {
+            javafx.application.Platform.runLater(this::flushLogQueue);
+        }
+    }
+
+    /**
+     * Drains a bounded batch of queued log lines into the ListView on the FX thread. If more lines remain (or arrived
+     * during the flush) another flush is scheduled, so draining continues without a continuously-running timer.
+     */
+    private void flushLogQueue() {
+        mFlushScheduled.set(false);
+
+        List<String> batch = new ArrayList<>();
+        String msg;
+        int count = 0;
+        // Limit lines per flush to keep the JavaFX thread responsive during log floods.
+        while (count < 250 && (msg = logQueue.poll()) != null) {
+            batch.add(msg);
+            count++;
+        }
+
+        if (!batch.isEmpty()) {
+            logData.addAll(batch);
+            if (logData.size() > 10000) {
+                logData.remove(0, logData.size() - 10000);
+            }
+            // Auto-scroll to bottom
+            logListView.scrollTo(logData.size() - 1);
+        }
+
+        // Keep draining (without a perpetual timer) if more lines remain or arrived during this flush.
+        if (!logQueue.isEmpty()) {
+            scheduleLogFlush();
+        }
     }
 
     private static final DateTimeFormatter FRIENDLY_TIME_FORMAT =
@@ -819,9 +847,6 @@ public class LogsViewController {
     public void destroy() {
         if (mHealthTimer != null) {
             mHealthTimer.cancel();
-        }
-        if (batchTimer != null) {
-            batchTimer.stop();
         }
         MyEventBus.getGlobalEventBus().unregister(this);
         if (appender != null) {

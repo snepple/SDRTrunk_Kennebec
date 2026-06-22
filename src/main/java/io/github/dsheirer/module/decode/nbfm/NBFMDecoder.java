@@ -922,6 +922,14 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             mAudioFilters.setHoldTime(result.getNoiseGateHoldTime());
         }
 
+        //Apply the squelch tail/head trim to the live remover too, so an auto-optimization takes effect immediately
+        //instead of staying stale until the channel restarts.
+        if(mSquelchTailRemover != null)
+        {
+            mSquelchTailRemover.setTailRemovalMs(result.getSquelchTailRemovalMs());
+            mSquelchTailRemover.setHeadRemovalMs(result.getSquelchHeadRemovalMs());
+        }
+
         recordOptimizationSummary(result, trigger);
     }
 

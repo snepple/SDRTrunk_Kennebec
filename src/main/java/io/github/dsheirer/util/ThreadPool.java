@@ -29,8 +29,13 @@ import java.util.concurrent.ScheduledExecutorService;
 public class ThreadPool
 {
     private final static Logger mLog = LoggerFactory.getLogger(ThreadPool.class);
+
+    //Shared scheduled pool for ancillary/periodic work (monitors, AI, discovery, UI refreshers).  Sized to the number
+    //of CPU cores (min 4) so a slow or bursty ancillary task doesn't head-of-line block the others.  Core real-time
+    //work (e.g. the audio/streaming dispatch) uses its own dedicated, higher-priority executor instead of this pool.
+    private static final int SCHEDULED_POOL_SIZE = Math.max(4, Runtime.getRuntime().availableProcessors());
     public static ScheduledExecutorService SCHEDULED =
-            Executors.newScheduledThreadPool(4, new NamingThreadFactory("sdrtrunk scheduled"));
+            Executors.newScheduledThreadPool(SCHEDULED_POOL_SIZE, new NamingThreadFactory("sdrtrunk scheduled"));
     public static ExecutorService CACHED =
             Executors.newCachedThreadPool(new NamingThreadFactory("sdrtrunk cached"));
 

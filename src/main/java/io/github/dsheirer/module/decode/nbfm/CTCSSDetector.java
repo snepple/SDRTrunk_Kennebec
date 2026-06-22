@@ -84,6 +84,9 @@ public class CTCSSDetector
     // Goertzel coefficients for each target frequency
     private final float[] mCoefficients;
 
+    // Reused per-block Goertzel power scratch buffer (avoids allocating an array on every analyzed block)
+    private final float[] mPowers;
+
     // Sample accumulator
     private float[] mSampleBuffer;
     private int mSampleIndex = 0;
@@ -131,6 +134,8 @@ public class CTCSSDetector
         mTargetCodeArray = allCodes.toArray(new CTCSSCode[0]);
         mTargetFrequencies = new float[mTargetCodeArray.length];
         mCoefficients = new float[mTargetCodeArray.length];
+        //Reused per-block Goertzel power scratch buffer (analyzeBlock runs continuously for every NBFM channel).
+        mPowers = new float[mTargetCodeArray.length];
 
         for(int i = 0; i < mTargetCodeArray.length; i++)
         {
@@ -263,7 +268,7 @@ public class CTCSSDetector
         // Run Goertzel for every standard CTCSS frequency. We need all of them for the narrowband
         // neighbor check below, but the DETECTION decision evaluates the configured target tone(s)
         // directly (see next block) rather than requiring the target to be the global maximum.
-        float[] powers = new float[mTargetFrequencies.length];
+        float[] powers = mPowers;
         for(int i = 0; i < mTargetFrequencies.length; i++)
         {
             powers[i] = goertzel(mSampleBuffer, mBlockSize, mCoefficients[i]);

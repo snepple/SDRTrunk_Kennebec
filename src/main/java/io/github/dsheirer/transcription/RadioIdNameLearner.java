@@ -22,6 +22,8 @@ import com.google.common.eventbus.Subscribe;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.Strictness;
+import com.google.gson.stream.JsonReader;
 import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.alias.id.AliasID;
@@ -29,11 +31,11 @@ import io.github.dsheirer.alias.id.radio.Radio;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.protocol.Protocol;
-import io.github.dsheirer.util.ThreadPool;
 import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -84,6 +86,15 @@ public class RadioIdNameLearner
     private static final int GEMINI_DAILY_BUDGET = 20;
     private static final double GEMINI_CONFIDENCE_THRESHOLD = 0.7;
     private static final String AUTO_NAME_SUFFIX = " (auto)";
+
+    //Dedicated, bounded, lower-priority executor for Gemini name-resolution calls so this best-effort background work
+    //can't spawn an unbounded number of concurrent HTTP calls (it previously used the shared cached pool) and yields
+    //CPU to the core audio/streaming path. Excess requests under load are dropped rather than queued without bound.
+    private static final java.util.concurrent.ExecutorService GEMINI_EXECUTOR =
+        new java.util.concurrent.ThreadPoolExecutor(1, 2, 30L, java.util.concurrent.TimeUnit.SECONDS,
+            new java.util.concurrent.LinkedBlockingQueue<>(50),
+            new io.github.dsheirer.controller.NamingThreadFactory("sdrtrunk radioid-gemini", Thread.NORM_PRIORITY - 1),
+            new java.util.concurrent.ThreadPoolExecutor.DiscardOldestPolicy());
 
     //Unit designators commonly used for self-identification, matched near the start of a transmission
     private static final Pattern UNIT_PATTERN = Pattern.compile(
@@ -189,7 +200,7 @@ public class RadioIdNameLearner
                    noStrongCandidate(candidate))
                 {
                     candidate.mGeminiAttempted = true;
-                    ThreadPool.CACHED.submit(() -> resolveWithGemini(candidate));
+                    GEMINI_EXECUTOR.submit(() -> resolveWithGemini(candidate));
                 }
             }
         }
@@ -374,7 +385,14 @@ public class RadioIdNameLearner
                 return;
             }
 
-            JsonObject root = new Gson().fromJson(response.body(), JsonObject.class);
+            JsonObject root = parseJsonObjectLenient(response.body());
+
+            if(root == null)
+            {
+                mLog.warn("Gemini radio name resolution returned an unparseable response body");
+                return;
+            }
+
             JsonArray candidates = root.getAsJsonArray("candidates");
 
             if(candidates == null || candidates.size() == 0)
@@ -384,11 +402,15 @@ public class RadioIdNameLearner
 
             String text = candidates.get(0).getAsJsonObject().getAsJsonObject("content")
                 .getAsJsonArray("parts").get(0).getAsJsonObject().get("text").getAsString();
-            JsonObject result = parseModelJsonObject(text);
+
+            //Models frequently wrap the JSON in markdown fences or add stray prose even when asked for raw
+            //JSON, so parse tolerantly rather than letting a MalformedJsonException abort the resolution.
+            JsonObject result = parseJsonObjectLenient(text);
 
             if(result == null)
             {
-                mLog.debug("Gemini returned no parseable JSON object for radio name resolution: {}", text);
+                mLog.warn("Gemini radio name resolution returned unparseable JSON: " +
+                    (text.length() > 120 ? text.substring(0, 120) + "..." : text));
                 return;
             }
 
@@ -414,50 +436,53 @@ public class RadioIdNameLearner
     }
 
     /**
-     * Parses a JSON object out of a generative-model text response.  Models frequently wrap the JSON in markdown code
-     * fences (```json ... ```) or surround it with prose, which makes a strict {@code Gson.fromJson} throw a
-     * MalformedJsonException.  This strips fences, extracts the outermost {@code { ... }} block, and parses leniently.
-     * @param text raw model output (may be null)
-     * @return parsed object, or null if no JSON object could be extracted/parsed
+     * Parses a JSON object from model output, tolerating the markdown code fences and stray prose that some
+     * models emit even when asked for raw JSON (which made strict GSON parsing throw MalformedJsonException).
+     * Returns null if no JSON object can be recovered.
      */
-    static JsonObject parseModelJsonObject(String text)
+    static JsonObject parseJsonObjectLenient(String raw)
     {
-        if(text == null)
+        if(raw == null || raw.isBlank())
         {
             return null;
         }
 
-        String s = text.trim();
+        String cleaned = raw.trim();
 
-        //Strip a leading ```json / ``` fence and trailing ``` fence if present.
-        if(s.startsWith("```"))
+        //Strip a wrapping markdown code fence: ```json ... ``` or ``` ... ```
+        if(cleaned.startsWith("```"))
         {
-            int firstNewline = s.indexOf('\n');
-            s = (firstNewline >= 0) ? s.substring(firstNewline + 1) : s.substring(3);
-            if(s.endsWith("```"))
+            int firstNewline = cleaned.indexOf('\n');
+
+            if(firstNewline >= 0)
             {
-                s = s.substring(0, s.length() - 3);
+                cleaned = cleaned.substring(firstNewline + 1);
             }
-            s = s.trim();
+
+            if(cleaned.endsWith("```"))
+            {
+                cleaned = cleaned.substring(0, cleaned.length() - 3);
+            }
+
+            cleaned = cleaned.trim();
         }
 
-        //Extract the outermost JSON object if the model added surrounding prose.
-        int start = s.indexOf('{');
-        int end = s.lastIndexOf('}');
-        if(start >= 0 && end > start)
+        //Isolate the first {...} block when there is leading/trailing prose around it.
+        if(!cleaned.startsWith("{"))
         {
-            s = s.substring(start, end + 1);
+            int start = cleaned.indexOf('{');
+            int end = cleaned.lastIndexOf('}');
+
+            if(start >= 0 && end > start)
+            {
+                cleaned = cleaned.substring(start, end + 1);
+            }
         }
 
-        if(s.isEmpty())
+        try
         {
-            return null;
-        }
-
-        try(com.google.gson.stream.JsonReader reader =
-                new com.google.gson.stream.JsonReader(new java.io.StringReader(s)))
-        {
-            reader.setStrictness(com.google.gson.Strictness.LENIENT);
+            JsonReader reader = new JsonReader(new StringReader(cleaned));
+            reader.setStrictness(Strictness.LENIENT);
             return new Gson().fromJson(reader, JsonObject.class);
         }
         catch(Exception e)

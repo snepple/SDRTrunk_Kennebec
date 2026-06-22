@@ -2,6 +2,8 @@ package io.github.dsheirer.playlist;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.beans.Observable;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -19,6 +21,10 @@ public class TwoToneConfiguration
     private StringProperty mAliasProperty = new SimpleStringProperty();
     private StringProperty mTemplateProperty = new SimpleStringProperty("Dispatch Received: {Alias}");
     private StringProperty mZelloChannelProperty = new SimpleStringProperty();
+    //Multiple Zello channels (stream names) to send the text message and alert tone to when this detector fires.
+    //The legacy single-channel field (mZelloChannelProperty) is retained for backward compatibility with playlists
+    //saved before multi-channel support; see getEffectiveZelloChannels().
+    private List<String> mZelloChannels = new ArrayList<>();
     private DoubleProperty mToneAProperty = new SimpleDoubleProperty(0.0);
     private DoubleProperty mToneBProperty = new SimpleDoubleProperty(0.0);
     private BooleanProperty mLongAToneProperty = new SimpleBooleanProperty(false);
@@ -49,6 +55,7 @@ public class TwoToneConfiguration
         copy.setAlias(getAlias());
         copy.setTemplate(getTemplate());
         copy.setZelloChannel(getZelloChannel());
+        copy.setZelloChannels(getZelloChannels());
         copy.setToneA(getToneA());
         copy.setToneB(getToneB());
         copy.setLongATone(isLongATone());
@@ -116,6 +123,52 @@ public class TwoToneConfiguration
     public StringProperty zelloChannelProperty()
     {
         return mZelloChannelProperty;
+    }
+
+    /**
+     * Zello channels (broadcast stream names) that this detector sends text messages and alert audio to when it
+     * fires.  Serialized as repeated {@code <zelloChannelEntry>} elements.
+     */
+    @JacksonXmlProperty(isAttribute = false, localName = "zelloChannelEntry")
+    public List<String> getZelloChannels()
+    {
+        return mZelloChannels;
+    }
+
+    public void setZelloChannels(List<String> zelloChannels)
+    {
+        mZelloChannels = (zelloChannels != null) ? new ArrayList<>(zelloChannels) : new ArrayList<>();
+    }
+
+    /**
+     * Resolves the effective set of Zello channels (stream names) to alert.  Prefers the multi-channel list and falls
+     * back to the legacy single-channel field so that playlists saved before multi-channel support continue to work.
+     * @return ordered, de-duplicated list of non-empty channel names (may be empty)
+     */
+    @JsonIgnore
+    public List<String> getEffectiveZelloChannels()
+    {
+        List<String> result = new ArrayList<>();
+
+        if(mZelloChannels != null)
+        {
+            for(String channel : mZelloChannels)
+            {
+                if(channel != null && !channel.trim().isEmpty() && !result.contains(channel))
+                {
+                    result.add(channel);
+                }
+            }
+        }
+
+        String legacy = getZelloChannel();
+
+        if(result.isEmpty() && legacy != null && !legacy.trim().isEmpty())
+        {
+            result.add(legacy);
+        }
+
+        return result;
     }
 
     @JacksonXmlProperty(isAttribute = true, localName = "toneA")

@@ -311,7 +311,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                 this::processAudioQueue, 10, 10, TimeUnit.MILLISECONDS);
         }
 
-        mLog.info("{}Zello stream started", ch());
+        mLog.debug("{}Zello stream started", ch());
     }
 
     @Override
@@ -405,7 +405,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         }
 
         mLastStreamStopTime = System.currentTimeMillis();
-        mLog.info("{}Zello stream stopped", ch());
+        mLog.debug("{}Zello stream stopped", ch());
     }
 
     // ========================================================================
