@@ -158,8 +158,10 @@ public class AudioStreamingManager implements Listener<AudioSegment>
     private void processAudioSegments()
     {
         mNewAudioSegments.drainTo(mAudioSegments);
-        if (!mAudioSegments.isEmpty()) {
-            mLog.info("AudioStreamingManager processing " + mAudioSegments.size() + " segments...");
+        if (!mAudioSegments.isEmpty() && mLog.isTraceEnabled()) {
+            //This runs every 250ms whenever audio is flowing; keep it at trace so it doesn't flood the logs or do
+            //per-cycle string work in normal operation.
+            mLog.trace("AudioStreamingManager processing {} segments...", mAudioSegments.size());
         }
 
         Iterator<AudioSegment> it = mAudioSegments.iterator();
