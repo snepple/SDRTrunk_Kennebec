@@ -41,6 +41,10 @@ public class AIPreference extends Preference {
     public static final String KEY_NBFM_AUTO_INTERVAL_HOURS = "ai.nbfm.auto.interval.hours";
     public static final String KEY_GAIN_ADVISOR_SCHEDULE_ENABLED = "ai.gain.advisor.schedule.enabled";
     public static final String KEY_GAIN_ADVISOR_INTERVAL_HOURS = "ai.gain.advisor.interval.hours";
+    //Squelch calibration is manual (per-channel Calibrate button) by default.  It only runs automatically when
+    //the user opts in to a schedule here, and never more often than every 12 hours to conserve CPU.
+    public static final String KEY_SQUELCH_ADVISOR_SCHEDULE_ENABLED = "ai.squelch.advisor.schedule.enabled";
+    public static final String KEY_SQUELCH_ADVISOR_INTERVAL_HOURS = "ai.squelch.advisor.interval.hours";
 
     //Per-tuner gain advisor history: a display summary of the most recent recommendation, used for the
     //last-run display and as prior context fed into the next AI consultation (learning).
@@ -50,6 +54,11 @@ public class AIPreference extends Preference {
     //against keeping tuner/channel settings reasonably current.
     public static final Integer[] SCHEDULED_INTERVAL_OPTIONS_HOURS = {6, 12, 24, 48};
     private static final int DEFAULT_SCHEDULED_INTERVAL_HOURS = 12;
+
+    //Squelch auto-calibration is intentionally limited to a minimum of every 12 hours (no 6-hour option) to
+    //conserve CPU and avoid churning the user's squelch thresholds.
+    public static final Integer[] SQUELCH_SCHEDULED_INTERVAL_OPTIONS_HOURS = {12, 24, 48};
+    private static final int MINIMUM_SQUELCH_INTERVAL_HOURS = 12;
 
     private Preferences mPreferences = Preferences.userNodeForPackage(AIPreference.class);
 
@@ -430,5 +439,43 @@ public class AIPreference extends Preference {
     public void setSquelchAdvisorEnabled(boolean enabled) {
         mPreferences.putBoolean(KEY_SQUELCH_ADVISOR_ENABLED, enabled);
         notifyPreferenceUpdated();
+    }
+
+    /**
+     * Whether squelch calibration runs automatically on a schedule.  Disabled by default: calibration only
+     * happens when the user presses the per-channel "Calibrate" button.  Gated on the Squelch Advisor being
+     * enabled.  When on, calibration re-runs at {@link #getSquelchAdvisorIntervalHours()} (minimum 12 hours).
+     */
+    public boolean isSquelchAdvisorScheduleEnabled() {
+        return isSquelchAdvisorEnabled() && mPreferences.getBoolean(KEY_SQUELCH_ADVISOR_SCHEDULE_ENABLED, false);
+    }
+
+    public void setSquelchAdvisorScheduleEnabled(boolean enabled) {
+        mPreferences.putBoolean(KEY_SQUELCH_ADVISOR_SCHEDULE_ENABLED, enabled);
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Interval (hours) for scheduled squelch calibration, never less than 12 hours.
+     */
+    public int getSquelchAdvisorIntervalHours() {
+        return clampSquelchInterval(mPreferences.getInt(KEY_SQUELCH_ADVISOR_INTERVAL_HOURS, MINIMUM_SQUELCH_INTERVAL_HOURS));
+    }
+
+    public void setSquelchAdvisorIntervalHours(int hours) {
+        mPreferences.putInt(KEY_SQUELCH_ADVISOR_INTERVAL_HOURS, clampSquelchInterval(hours));
+        notifyPreferenceUpdated();
+    }
+
+    /**
+     * Constrains a squelch interval to one of {@link #SQUELCH_SCHEDULED_INTERVAL_OPTIONS_HOURS} (minimum 12 hours).
+     */
+    private static int clampSquelchInterval(int hours) {
+        for(Integer option : SQUELCH_SCHEDULED_INTERVAL_OPTIONS_HOURS) {
+            if(option == hours) {
+                return hours;
+            }
+        }
+        return MINIMUM_SQUELCH_INTERVAL_HOURS;
     }
 }
