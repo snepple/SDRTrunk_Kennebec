@@ -156,6 +156,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
             if (mChannelSplitPane != null) {
                 TabPane pane = getTabbedPane();
                 if (mChannelSplitPane.getItems().contains(pane)) {
+                    mChannelSpectrumSquelchPanel.setPanelVisible(false);
                     javafx.animation.Timeline timeline = new javafx.animation.Timeline();
                     javafx.animation.KeyValue kv = new javafx.animation.KeyValue(mChannelSplitPane.getDividers().get(0).positionProperty(), 1.0, javafx.animation.Interpolator.EASE_BOTH);
                     javafx.animation.KeyFrame kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(250), kv);
@@ -165,6 +166,8 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
                 } else {
                     mChannelSplitPane.getItems().add(pane);
                     mChannelSplitPane.setDividerPositions(1.0);
+                    int selectedIdx = pane.getSelectionModel().getSelectedIndex();
+                    mChannelSpectrumSquelchPanel.setPanelVisible(selectedIdx == 3 || selectedIdx == 4);
                     javafx.animation.Timeline timeline = new javafx.animation.Timeline();
                     javafx.animation.KeyValue kv = new javafx.animation.KeyValue(mChannelSplitPane.getDividers().get(0).positionProperty(), 0.40, javafx.animation.Interpolator.EASE_BOTH);
                     javafx.animation.KeyFrame kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(250), kv);
@@ -267,6 +270,16 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         }
 
         mTabbedPane.getTabs().addAll(detailsTab, eventsTab, messagesTab, spectrumTab, advancedTab);
+
+        mTabbedPaneChangeListener = (obs, oldTab, newTab) -> {
+            if (newTab != null) {
+                int idx = mTabbedPane.getTabs().indexOf(newTab);
+                mChannelSpectrumSquelchPanel.setPanelVisible(idx == 3 || idx == 4);
+            } else {
+                mChannelSpectrumSquelchPanel.setPanelVisible(false);
+            }
+        };
+        mTabbedPane.getSelectionModel().selectedItemProperty().addListener(mTabbedPaneChangeListener);
     }
     return mTabbedPane;
 }

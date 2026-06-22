@@ -558,6 +558,7 @@ public class BroadcastModel implements Listener<AudioRecording>
                     {
                         // // fireTableCellUpdated(row, COLUMN_BROADCASTER_AGED_OFF_COUNT);
                     }
+                    break;
                 case BROADCASTER_ERROR_COUNT_CHANGE:
                     if(row >= 0)
                     {
