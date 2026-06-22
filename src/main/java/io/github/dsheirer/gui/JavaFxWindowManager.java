@@ -112,6 +112,9 @@ public class JavaFxWindowManager extends Application
     //panel after the fact, otherwise the diagnostic report is stuck on the degraded fallback path.
     private volatile DiagnosticMonitor mDiagnosticMonitor;
     private volatile LogsPanel mLogsPanel;
+    //Self-healing / notification stack: the orchestrator attempts auto-remediation then routes alerts to the
+    //AntiFloodFilter -> NotificationRouter (telegram/email recipients).  Shared with the Logs view's AI analyzer.
+    private io.github.dsheirer.preference.notification.SelfHealingOrchestrator mSelfHealingOrchestrator;
 
     /**
      * Constructs an instance.  Note: this constructor is used for Swing applications.
@@ -124,6 +127,17 @@ public class JavaFxWindowManager extends Application
         mViewChangedListener = viewChangedListener;
 
         RuntimeModelRegistry.register(mTunerManager, mPlaylistManager);
+
+        //Build the self-healing / notification stack and register the System Health monitor so that
+        //SystemHealthAlertEvent posts (startup self-test, playlist lint, diagnostics, streaming, tuner, etc.)
+        //actually surface to the user (tray/dialog) and route to external recipients with auto-remediation.
+        io.github.dsheirer.preference.notification.NotificationRouter notificationRouter =
+                new io.github.dsheirer.preference.notification.NotificationRouter(mUserPreferences);
+        io.github.dsheirer.preference.notification.AntiFloodFilter antiFloodFilter =
+                new io.github.dsheirer.preference.notification.AntiFloodFilter(notificationRouter);
+        mSelfHealingOrchestrator = new io.github.dsheirer.preference.notification.SelfHealingOrchestrator(antiFloodFilter);
+        mSystemHealthMonitor = new SystemHealthMonitor(mUserPreferences, mSelfHealingOrchestrator);
+        MyEventBus.getGlobalEventBus().register(mSystemHealthMonitor);
 
         setup();
     }
@@ -640,6 +654,7 @@ public class JavaFxWindowManager extends Application
                     break;
                 case LOGS:
                     mLogsPanel = new LogsPanel(mUserPreferences, mDiagnosticMonitor);
+                    mLogsPanel.setSelfHealingOrchestrator(mSelfHealingOrchestrator);
                     content = mLogsPanel;
                     break;
                 case RECORDING_VIEWER:

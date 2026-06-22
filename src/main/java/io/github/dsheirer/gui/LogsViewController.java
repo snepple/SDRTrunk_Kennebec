@@ -63,6 +63,9 @@ public class LogsViewController {
     //Volatile: may be set after construction (see setDiagnosticMonitor) and is read from a background
     //thread when generating the processing diagnostic report.
     private volatile DiagnosticMonitor mDiagnosticMonitor;
+    //Optional self-healing orchestrator: when present, AI log analysis results are routed through it for
+    //auto-remediation and external (telegram/email) notification.  Set after construction.
+    private volatile io.github.dsheirer.preference.notification.SelfHealingOrchestrator mSelfHealingOrchestrator;
 
     @FXML private TabPane mTabbedPane;
 
@@ -104,6 +107,14 @@ public class LogsViewController {
      */
     public void setDiagnosticMonitor(DiagnosticMonitor diagnosticMonitor) {
         mDiagnosticMonitor = diagnosticMonitor;
+    }
+
+    /**
+     * Sets the self-healing orchestrator used to route AI log-analysis results into auto-remediation and
+     * external notification.  Optional; when null, AI analysis simply returns its text.
+     */
+    public void setSelfHealingOrchestrator(io.github.dsheirer.preference.notification.SelfHealingOrchestrator orchestrator) {
+        mSelfHealingOrchestrator = orchestrator;
     }
 
     public void init(UserPreferences userPreferences, DiagnosticMonitor diagnosticMonitor) {
@@ -391,54 +402,9 @@ public class LogsViewController {
      * the message isn't one we have specific guidance for.
      */
     private String explainLogLine(String message) {
-        if (message == null) {
-            return null;
-        }
-        String m = message.toLowerCase();
-
-        if (m.contains("jmbe") && (m.contains("not configured") || m.contains("missing") || m.contains("silent"))) {
-            return "Digital voice (P25 / DMR) audio needs the optional JMBE library, which isn't set up. "
-                + "Open User Preferences > JMBE Audio Library (or re-run the first-time wizard) to install it. "
-                + "Until then, digital voice channels will decode but stay silent.";
-        }
-        if (m.contains("no sdr tuner detected") || m.contains("no tuner available")) {
-            return "No SDR tuner was found. Check that the device is plugged in, that the correct driver is "
-                + "installed (for RTL-SDR on Windows, replace the driver with WinUSB using Zadig), and that no "
-                + "other program is using the device.";
-        }
-        if (m.contains("processor overloaded") || m.contains("cannot keep up")) {
-            return "The CPU can't process the incoming sample rate fast enough, so samples are being dropped. "
-                + "Lower the tuner sample rate, reduce the number of simultaneously decoding channels, or close "
-                + "other CPU-heavy programs.";
-        }
-        if (m.contains("gc pressure") || m.contains("memory at")) {
-            return "The application is running low on memory and spending time garbage-collecting. Increase the "
-                + "allocated memory in User Preferences > Memory, then restart SDRTrunk.";
-        }
-        if (m.contains("websockethandshakeexception") || (m.contains("zello") && m.contains("failed"))) {
-            return "A streaming connection failed to connect. Verify the stream's network name, username and "
-                + "password, and confirm the machine has internet access. SDRTrunk will keep retrying automatically.";
-        }
-        if (m.contains("address already in use")) {
-            return "Another instance of SDRTrunk is already running and holding the local network port. Close the "
-                + "other instance; only one copy should run at a time.";
-        }
-        if (m.contains("unable to source channel")) {
-            return "No tuner could provide this channel's frequency. Ensure a tuner that covers that frequency is "
-                + "enabled and isn't already fully subscribed by other channels.";
-        }
-        if (m.contains("auto-repairing stream")) {
-            return "A stream dropped into an error state and is being reconnected automatically. No action is "
-                + "needed unless it keeps recurring, which usually points to bad credentials or a network issue.";
-        }
-        if (m.contains("configuration backup created")) {
-            return "A routine automatic backup of your configuration was saved. No action needed.";
-        }
-        if (m.contains("auto-optimized sample rate")) {
-            return "SDRTrunk automatically chose a tuner sample rate that covers the active channels while using "
-                + "less CPU. This is informational.";
-        }
-        return null;
+        //Delegate to the shared, unit-tested System Health diagnostics engine so the log-detail "health card"
+        //and any other consumer interpret signatures identically.
+        return io.github.dsheirer.health.HealthDiagnostics.explain(message);
     }
 
     private void updateLiveFilter() {
@@ -677,6 +643,9 @@ public class LogsViewController {
 
             try {
                 AILogAnalyzer analyzer = new AILogAnalyzer(mUserPreferences);
+                if (mSelfHealingOrchestrator != null) {
+                    analyzer.setOrchestrator(mSelfHealingOrchestrator);
+                }
                 String result = analyzer.analyze(logContent);
                 Platform.runLater(() -> {
                     try {

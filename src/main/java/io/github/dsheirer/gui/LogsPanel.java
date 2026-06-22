@@ -46,4 +46,14 @@ public class LogsPanel extends BorderPane {
             controller.setDiagnosticMonitor(diagnosticMonitor);
         }
     }
+
+    /**
+     * Supplies the self-healing orchestrator to the underlying controller so AI log analysis can route into
+     * auto-remediation and external notification.
+     */
+    public void setSelfHealingOrchestrator(io.github.dsheirer.preference.notification.SelfHealingOrchestrator orchestrator) {
+        if (controller != null) {
+            controller.setSelfHealingOrchestrator(orchestrator);
+        }
+    }
 }
