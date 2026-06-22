@@ -79,12 +79,22 @@ public class PlaylistLinter
                         "' which does not exist - talkgroup names, priorities and stream assignments will not apply");
                 }
 
-                //Flag receiving channels that have no alias list assigned - decoded activity will show as raw
-                //numeric talkgroups/radio IDs with no names, priorities or stream assignments.
+                //Flag channels with no alias list assigned.  An ENABLED auto-start channel with no alias list is
+                //a critical fault: the application throws a NullPointerException at alias.AliasDirectory.getAliasList
+                //during startup and halts.  A non-auto-start channel merely shows raw numeric identifiers.
                 if((aliasListName == null || aliasListName.isEmpty()) && hasFrequency(channel))
                 {
-                    findings.add("Channel '" + channel.getName() + "' has no alias list assigned - decoded " +
-                        "activity will show raw numeric identifiers with no names or stream routing");
+                    if(channel.isAutoStart())
+                    {
+                        findings.add("Auto-start channel '" + channel.getName() + "' is enabled with no alias list " +
+                            "assigned - this throws a NullPointerException (alias.AliasDirectory.getAliasList) at " +
+                            "startup and halts the application.  Assign an alias list or disable auto-start.");
+                    }
+                    else
+                    {
+                        findings.add("Channel '" + channel.getName() + "' has no alias list assigned - decoded " +
+                            "activity will show raw numeric identifiers with no names or stream routing");
+                    }
                 }
 
                 if(channel.isAutoStart() && !hasFrequency(channel))
