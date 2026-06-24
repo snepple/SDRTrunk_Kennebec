@@ -505,7 +505,15 @@ public class DecoderFactory
         {
             modules.add(new AMDecoder(configAM));
             modules.add(new AMDecoderState(channel.getName(), configAM));
-            modules.add(new AudioModule(aliasList, 0, 60000, AUDIO_FILTER_ENABLE));
+            AudioModule amAudioModule = new AudioModule(aliasList, 0, 60000, AUDIO_FILTER_ENABLE);
+            //Seed the audio module with the configured TO talkgroup so every audio segment carries it for alias/stream
+            //routing - same reason as NBFM (the audio module is not wired to the decoder state's USER identifiers).
+            if(configAM.getTalkgroup() != 0)
+            {
+                amAudioModule.getIdentifierCollection().update(
+                        new io.github.dsheirer.module.decode.am.AMTalkgroup(configAM.getTalkgroup()));
+            }
+            modules.add(amAudioModule);
         }
         else
         {
