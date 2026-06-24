@@ -888,8 +888,10 @@ public class P25P1DecoderState extends DecoderState implements IChannelEventList
                 }
 
                 //Run the talkgroup through the patch group manager so we don't get a plain talkgroup in addition to the patch
-                //Talkgroup value of zero indicates a unit-to-unit call, so don't attempt to update it as a patch group
-                if(talkgroup instanceof APCO25Talkgroup apco25Tg && apco25Tg.getValue() > 0)
+                //Talkgroup value of zero indicates a unit-to-unit call, so don't attempt to update it as a patch group.
+                //Use !=0 (not >0) so 10-digit/high-bit unsigned conventional talkgroup overrides are not treated as
+                //unit-to-unit (their int value is negative).
+                if(talkgroup instanceof APCO25Talkgroup apco25Tg && apco25Tg.getValue() != 0)
                 {
                     talkgroup = mPatchGroupManager.update(talkgroup, message.getTimestamp());
                 }
