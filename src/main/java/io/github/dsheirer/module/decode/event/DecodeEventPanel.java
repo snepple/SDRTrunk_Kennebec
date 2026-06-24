@@ -285,10 +285,11 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         final String transcript = event.getTranscript().trim();
         final long timestamp = event.getStartTimestamp();
         final Integer toId = event.getToId();
+        final long frequency = event.getFrequency();
 
         Platform.runLater(() -> {
             IDecodeEvent best = findBestTranscriptionMatch(new java.util.ArrayList<IDecodeEvent>(mTable.getItems()),
-                timestamp, toId);
+                timestamp, toId, frequency);
 
             if(best != null)
             {
@@ -305,19 +306,41 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
      * segments; later segments start well after the decode event start, so matching only against start time drops long
      * calls.  Treat the whole event interval as the match window, with a short grace period before/after it.
      */
-    static IDecodeEvent findBestTranscriptionMatch(List<IDecodeEvent> decodeEvents, long timestamp, Integer toId)
+    static IDecodeEvent findBestTranscriptionMatch(List<IDecodeEvent> decodeEvents, long timestamp, Integer toId,
+            long frequency)
     {
-        IDecodeEvent best = null;
-        long bestDelta = Long.MAX_VALUE;
-
         if(decodeEvents == null)
         {
             return null;
         }
 
+        //Frequency uniquely identifies a conventional channel even when several channels share a default talkgroup,
+        //so when it is known prefer matching on it. Only fall back to TO-talkgroup matching when no frequency-scoped
+        //candidate is found (e.g. trunked protocols where the decode event carries no fixed channel frequency).
+        IDecodeEvent best = bestByPredicate(decodeEvents, timestamp,
+                decodeEvent -> frequency > 0 && frequencyMatches(decodeEvent, frequency));
+
+        if(best != null)
+        {
+            return best;
+        }
+
+        return bestByPredicate(decodeEvents, timestamp, decodeEvent -> toMatches(decodeEvent, toId));
+    }
+
+    /**
+     * Returns the decode event satisfying the predicate whose time interval is closest to the transcript timestamp,
+     * within the 30-second match window.
+     */
+    private static IDecodeEvent bestByPredicate(List<IDecodeEvent> decodeEvents, long timestamp,
+            java.util.function.Predicate<IDecodeEvent> predicate)
+    {
+        IDecodeEvent best = null;
+        long bestDelta = Long.MAX_VALUE;
+
         for(IDecodeEvent decodeEvent : decodeEvents)
         {
-            if(decodeEvent == null || !toMatches(decodeEvent, toId))
+            if(decodeEvent == null || !predicate.test(decodeEvent))
             {
                 continue;
             }
@@ -332,6 +355,15 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         }
 
         return best;
+    }
+
+    /**
+     * Indicates whether the decode event's channel downlink frequency matches the transcript's captured frequency.
+     */
+    private static boolean frequencyMatches(IDecodeEvent decodeEvent, long frequency)
+    {
+        return decodeEvent.getChannelDescriptor() != null
+                && decodeEvent.getChannelDescriptor().getDownlinkFrequency() == frequency;
     }
 
     private static boolean toMatches(IDecodeEvent decodeEvent, Integer toId)

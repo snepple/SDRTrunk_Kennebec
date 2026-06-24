@@ -115,6 +115,7 @@ public class TranscriptionEngine {
         //can correlate the transcript to its decode event after the segment is recycled.
         long startTimestamp = audioSegment.getStartTimestamp();
         Integer toId = null;
+        long frequency = 0L;
 
         try {
             if (audioSegment.getIdentifierCollection() != null) {
@@ -130,6 +131,15 @@ public class TranscriptionEngine {
                     toId = ((Number) to.getValue()).intValue();
                 }
 
+                //Capture the channel frequency - the most reliable correlation key for conventional channels, which
+                //may share a default talkgroup but never a frequency.
+                for (Identifier id : audioSegment.getIdentifierCollection().getIdentifiers()) {
+                    if (id.getForm() == Form.CHANNEL_FREQUENCY && id.getValue() instanceof Number) {
+                        frequency = ((Number) id.getValue()).longValue();
+                        break;
+                    }
+                }
+
                 if (audioSegment.getIdentifierCollection().getAliasListConfiguration() != null) {
                     aliasListName = audioSegment.getIdentifierCollection().getAliasListConfiguration().getValue();
                 }
@@ -143,6 +153,7 @@ public class TranscriptionEngine {
         final String finalAliasListName = aliasListName;
         final long finalStartTimestamp = startTimestamp;
         final Integer finalToId = toId;
+        final long finalFrequency = frequency;
 
         mExecutor.submit(() -> {
             try {
@@ -173,7 +184,7 @@ public class TranscriptionEngine {
                     mLog.info("Transcription completed: " + transcript);
                     io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
                         new TranscriptionEvent(audioSegment, transcript, finalFromRadioId, finalProtocol,
-                            finalAliasListName, finalStartTimestamp, finalToId));
+                            finalAliasListName, finalStartTimestamp, finalToId, finalFrequency));
                 }
             } catch (Exception e) {
                 mLog.error("Error during audio transcription", e);
