@@ -218,6 +218,26 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
         //AI transcription of the call audio (populated asynchronously when transcription is enabled).
         TableColumn<IDecodeEvent, String> transcriptionCol = new TableColumn<>("Transcription");
         transcriptionCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getTranscription()));
+        transcriptionCol.setCellFactory(col -> new TableCell<>()
+        {
+            @Override
+            protected void updateItem(String value, boolean empty)
+            {
+                super.updateItem(value, empty);
+
+                if(empty || value == null || value.isBlank())
+                {
+                    setText(null);
+                    setTooltip(null);
+                }
+                else
+                {
+                    setText(value);
+                    setWrapText(true);
+                    setTooltip(new Tooltip(value));
+                }
+            }
+        });
         transcriptionCol.setPrefWidth(280);
         columns.add(transcriptionCol);
 

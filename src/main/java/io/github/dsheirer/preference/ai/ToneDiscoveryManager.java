@@ -162,11 +162,27 @@ public class ToneDiscoveryManager {
             return;
         }
 
-        // Store it so we can pair it when the transcript arrives
+        int observations = mState.getObservationCounts().merge(toneKey, 1, Integer::sum);
+
+        if (shouldFinalizeUnknown(toneKey, observations)) {
+            finalizeDetector(event.getToneA(), event.getToneB(), toneKey, null,
+                event.getChannelFrequency(), null);
+            return;
+        }
+
+        saveState();
+
+        // Store it so we can pair it when the transcript arrives.  If there is no segment (or no later transcript),
+        // the observation count above still drives the review-pending Unknown Unit fallback.
         if (event.getAudioSegment() != null) {
-            // Using hashcode or some unique ID from AudioSegment. If no unique ID exists, we can use object hash or timestamp.
             mPendingTranscripts.put((long) event.getAudioSegment().hashCode(), event);
         }
+    }
+
+    private boolean shouldFinalizeUnknown(String toneKey, int observations) {
+        boolean hasNamedCandidate = mState.getPendingDiscoveries().containsKey(toneKey) &&
+            !mState.getPendingDiscoveries().get(toneKey).isEmpty();
+        return !hasNamedCandidate && observations >= UNKNOWN_PLACEHOLDER_THRESHOLD;
     }
 
     /**
@@ -257,6 +273,10 @@ public class ToneDiscoveryManager {
             return;
         }
 
+        if (event == null || event.getAudioSegment() == null) {
+            return;
+        }
+
         long segmentId = (long) event.getAudioSegment().hashCode();
         ToneDiscoveredEvent toneEvent = mPendingTranscripts.remove(segmentId);
         
@@ -287,9 +307,6 @@ public class ToneDiscoveryManager {
                     return;
                 }
 
-                //Count every observation of this tone (named or not) to drive graceful degradation.
-                int observations = mState.getObservationCounts().merge(toneKey, 1, Integer::sum);
-
                 if (haveName) {
                     List<String> agencies = mState.getPendingDiscoveries().computeIfAbsent(toneKey, k -> new ArrayList<>());
                     agencies.add(agency.trim());
@@ -304,12 +321,10 @@ public class ToneDiscoveryManager {
                         saveState();
                     }
                 } else {
-                    boolean hasNamedCandidate = mState.getPendingDiscoveries().containsKey(toneKey) &&
-                        !mState.getPendingDiscoveries().get(toneKey).isEmpty();
-
                     //Graceful degradation: enough unintelligible observations and no nameable candidate -> preserve
                     //the accurately measured tone data behind an "Unknown Unit" placeholder for human review.
-                    if (!hasNamedCandidate && observations >= UNKNOWN_PLACEHOLDER_THRESHOLD) {
+                    int observations = mState.getObservationCounts().getOrDefault(toneKey, 0);
+                    if (shouldFinalizeUnknown(toneKey, observations)) {
                         finalizeDetector(event.getToneA(), event.getToneB(), toneKey, null,
                             event.getChannelFrequency(), transcript);
                     } else {
@@ -367,7 +382,7 @@ public class ToneDiscoveryManager {
         newConfig.setDiscoveryFrequency(channelFrequency);
         newConfig.setDiscoveryTranscript(transcript != null ? transcript.trim() : "");
 
-        javafx.application.Platform.runLater(() -> {
+        runOnFxThread(() -> {
             try {
                 mPlaylistManager.getTwoToneConfigurations().add(newConfig);
                 mPlaylistManager.schedulePlaylistSave();
@@ -382,6 +397,18 @@ public class ToneDiscoveryManager {
         mState.getFinalizedTones().add(toneKey);
         mState.getFinalizedToneNames().put(toneKey, resolvedName);
         saveState();
+    }
+
+    private static void runOnFxThread(Runnable runnable) {
+        try {
+            if (javafx.application.Platform.isFxApplicationThread()) {
+                runnable.run();
+            } else {
+                javafx.application.Platform.runLater(runnable);
+            }
+        } catch (IllegalStateException e) {
+            runnable.run();
+        }
     }
 
     /**

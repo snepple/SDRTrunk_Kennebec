@@ -287,49 +287,8 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         final Integer toId = event.getToId();
 
         Platform.runLater(() -> {
-            IDecodeEvent best = null;
-            long bestDelta = Long.MAX_VALUE;
-
-            for(IDecodeEvent decodeEvent : new java.util.ArrayList<IDecodeEvent>(mTable.getItems()))
-            {
-                if(decodeEvent == null)
-                {
-                    continue;
-                }
-
-                //When a TO id is known, require it to match so transcripts don't attach to other channels.
-                if(toId != null)
-                {
-                    boolean toMatches = false;
-
-                    if(decodeEvent.getIdentifierCollection() != null)
-                    {
-                        for(io.github.dsheirer.identifier.Identifier id : decodeEvent.getIdentifierCollection()
-                                .getIdentifiers(io.github.dsheirer.identifier.Role.TO))
-                        {
-                            if(id.getValue() instanceof Number && ((Number)id.getValue()).intValue() == toId)
-                            {
-                                toMatches = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if(!toMatches)
-                    {
-                        continue;
-                    }
-                }
-
-                //Pick the event closest in time to the audio segment start (within a 30 second window).
-                long delta = timestamp > 0 ? Math.abs(decodeEvent.getTimeStart() - timestamp) : 0;
-
-                if(delta < bestDelta && delta <= 30000)
-                {
-                    bestDelta = delta;
-                    best = decodeEvent;
-                }
-            }
+            IDecodeEvent best = findBestTranscriptionMatch(new java.util.ArrayList<IDecodeEvent>(mTable.getItems()),
+                timestamp, toId);
 
             if(best != null)
             {
@@ -339,6 +298,80 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
                 mTable.refresh();
             }
         });
+    }
+
+    /**
+     * Finds the decode event that best matches a completed transcription.  A call may be split into multiple audio
+     * segments; later segments start well after the decode event start, so matching only against start time drops long
+     * calls.  Treat the whole event interval as the match window, with a short grace period before/after it.
+     */
+    static IDecodeEvent findBestTranscriptionMatch(List<IDecodeEvent> decodeEvents, long timestamp, Integer toId)
+    {
+        IDecodeEvent best = null;
+        long bestDelta = Long.MAX_VALUE;
+
+        if(decodeEvents == null)
+        {
+            return null;
+        }
+
+        for(IDecodeEvent decodeEvent : decodeEvents)
+        {
+            if(decodeEvent == null || !toMatches(decodeEvent, toId))
+            {
+                continue;
+            }
+
+            long delta = timestamp > 0 ? distanceFromEventInterval(decodeEvent, timestamp) : 0;
+
+            if(delta < bestDelta && delta <= 30000)
+            {
+                bestDelta = delta;
+                best = decodeEvent;
+            }
+        }
+
+        return best;
+    }
+
+    private static boolean toMatches(IDecodeEvent decodeEvent, Integer toId)
+    {
+        if(toId == null)
+        {
+            return true;
+        }
+
+        if(decodeEvent.getIdentifierCollection() != null)
+        {
+            for(io.github.dsheirer.identifier.Identifier id : decodeEvent.getIdentifierCollection()
+                    .getIdentifiers(io.github.dsheirer.identifier.Role.TO))
+            {
+                if(id.getValue() instanceof Number && ((Number)id.getValue()).intValue() == toId)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static long distanceFromEventInterval(IDecodeEvent decodeEvent, long timestamp)
+    {
+        long start = decodeEvent.getTimeStart();
+        long end = decodeEvent.getTimeEnd();
+
+        if(end < start)
+        {
+            end = start;
+        }
+
+        if(timestamp >= start && timestamp <= end)
+        {
+            return 0;
+        }
+
+        return Math.min(Math.abs(timestamp - start), Math.abs(timestamp - end));
     }
 
     @Override
