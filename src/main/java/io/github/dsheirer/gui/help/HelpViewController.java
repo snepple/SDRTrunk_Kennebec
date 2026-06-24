@@ -80,6 +80,7 @@ public class HelpViewController {
         hardwareTunersNode.getChildren().add(new TreeItem<>("Spectrum & Waterfall"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Supported Tuners"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Self Healing"));
+        hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Waterfall Collapse"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Waterfall Audio Controls"));
         guidesNode.getChildren().add(hardwareTunersNode);
 
@@ -111,6 +112,7 @@ public class HelpViewController {
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Streaming Connection Console"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Thinline Radio"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Two Tone Detect"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Vibrant Streaming Console"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Zello"));
         guidesNode.getChildren().add(integrationsStreamingNode);
 

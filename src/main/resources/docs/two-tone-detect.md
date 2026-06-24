@@ -11,7 +11,14 @@ Two-tone sequential paging is a signaling system widely used in North American f
 
 ## Open the Two Tone Editor
 
-In the **Playlist Editor**, click **Two Tones** in the left sidebar. The editor opens in a split-pane layout: the left pane lists your configured detectors, and the right pane shows the configuration detail for the selected detector, with two tabs — **Configuration** and **Aliases**.
+In the **Playlist Editor**, click **Two Tones** in the left sidebar. The editor opens in a split-pane layout: the left pane lists your configured detectors, and the right pane shows the configuration detail for the selected detector, grouped into four dedicated tabs:
+
+1. **General Setup** (Frequencies, Type, Name)
+2. **Zello Integration**
+3. **MQTT Integration**
+4. **Aliases**
+
+The "Save Settings" button is located in a persistent top header bar, keeping it visible and accessible at all times while browsing across integration tabs.
 
 ## Create a detector
 
@@ -21,7 +28,7 @@ Click **New** in the left-pane toolbar and select **Detector**. A new entry name
 
 **2. Set the detector name**
 
-In the **Name** field of the **Configuration** tab, type a descriptive name such as `Station 7` or `EMS Unit 42`. This name is also used as the alias name when the detector fires.
+In the **Name** field of the **General Setup** tab, type a descriptive name such as `Station 7` or `EMS Unit 42`. This name is also used as the alias name when the detector fires.
 
 **3. Choose the detection type**
 
@@ -42,7 +49,7 @@ Click the **Tone B** dropdown and enter the second tone frequency. The **Tone B*
 
 **6. Save the configuration**
 
-Click **Save** at the bottom of the **Configuration** tab. The detector is saved to the current playlist.
+Click **Save Settings** in the persistent top header bar. The detector is saved to the current playlist.
 
 > **Tip:**
 > Use **Clone** in the left-pane toolbar to duplicate an existing detector and adjust only the tone values. This is faster than creating detectors from scratch when you have many similar entries.
@@ -57,11 +64,11 @@ To link from the alias side, open the alias in the **Alias Editor**, add a **Two
 
 ## Configure Zello integration
 
-If you have a Zello broadcast stream configured in the **Playlist Editor's Streaming** section, you can route Two Tone detection events to a Zello channel.
+Navigate to the **Zello Integration** tab. If you have a Zello broadcast stream configured in the **Playlist Editor's Streaming** section, you can route Two Tone detection events to a Zello channel.
 
 **1. Select a Zello channel**
 
-In the **Configuration** tab, open the **Zello Channel** dropdown. It is populated from your existing Zello broadcast configurations. Select the channel you want to receive the alert.
+Open the **Zello Channel** dropdown. It is populated from your existing Zello broadcast configurations. Select the channel you want to receive the alert.
 
 **2. Enable a text message (optional)**
 
@@ -82,13 +89,15 @@ Check **Enable Zello Alert Tone** and select a tone file from the **Alert Tone F
 
 **4. Save**
 
-Click **Save** in the **Configuration** tab.
+Click **Save Settings** in the persistent top header bar.
 
 ## Configure MQTT integration
 
+Navigate to the **MQTT Integration** tab.
+
 **1. Enable MQTT publish**
 
-Check **Enable MQTT Publish** in the MQTT Integration section of the **Configuration** tab. The **MQTT Topic** and **MQTT Payload** fields become active.
+Check **Enable MQTT Publish**. The **MQTT Topic** and **MQTT Payload** fields become active.
 
 **2. Set the topic and payload**
 
@@ -96,7 +105,7 @@ Enter the MQTT topic string in **MQTT Topic** — for example, `sdrtrunk/dispatc
 
 **3. Save**
 
-Click **Save**. Each time the detector fires, SDRTrunk Kennebec publishes to the configured MQTT broker using the global MQTT settings in **User Preferences**.
+Click **Save Settings**. Each time the detector fires, SDRTrunk Kennebec publishes to the configured MQTT broker using the global MQTT settings in **User Preferences**.
 
 > **Note:**
 > MQTT broker connection settings — host, port, and credentials — are configured in **View → User Preferences**, not in the Two Tone Editor.
