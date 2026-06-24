@@ -70,6 +70,9 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
 
     private VisibilityListener mVisibilityListener;
     private ChangeListener<Tab> mTabbedPaneChangeListener;
+    //The processing chain for the currently displayed channel, used to tailor the Advanced tab (e.g. only show the
+    //noise-squelch pane for analog channels that actually use it).
+    private ProcessingChain mCurrentProcessingChain;
     private WidgetContainer mWidgetContainer;
     private NowPlayingPreference mNowPlayingPreference;
     private Button mManageWidgetsBtn;
@@ -103,6 +106,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
             TabPane pane = getTabbedPane();
 
             if (processingChain == null) {
+                mCurrentProcessingChain = null;
                 // Remove TabPane from split pane to collapse it
                 if (mChannelSplitPane != null && mChannelSplitPane.getItems().contains(pane)) {
                     mChannelSplitPane.getItems().remove(pane);
@@ -121,6 +125,7 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
                 pane.getTabs().add(new javafx.scene.control.Tab("Messages", mMessageActivityPanel));
                 pane.getTabs().add(new javafx.scene.control.Tab("Channel Spectrum", mChannelSpectrumSquelchPanel));
                 
+                mCurrentProcessingChain = processingChain;
                 javafx.scene.control.Tab advancedTab = new javafx.scene.control.Tab("Advanced", getAdvancedTabContent());
                 pane.getTabs().add(advancedTab);
                 // visibility managed elsewhere
@@ -296,14 +301,45 @@ public class NowPlayingPanel extends VBox implements Listener<ProcessingChain>
         javafx.scene.control.TitledPane logPane = new javafx.scene.control.TitledPane("Log Settings", logSettingsView);
 
         javafx.scene.control.Accordion accordion = new javafx.scene.control.Accordion();
-        accordion.getPanes().addAll(squelchPane, powerPane, symbolsPane, logPane);
-        accordion.setExpandedPane(squelchPane);
+
+        //The noise/audio squelch only applies to analog channels (NBFM/AM). For digital channels (P25/DMR/etc.) it
+        //is never populated and just shows an empty "not available" chart, so omit the pane entirely for them.
+        boolean showSquelch = usesNoiseSquelch(mCurrentProcessingChain);
+
+        if(showSquelch)
+        {
+            accordion.getPanes().add(squelchPane);
+        }
+
+        accordion.getPanes().addAll(powerPane, symbolsPane, logPane);
+        accordion.setExpandedPane(showSquelch ? squelchPane : powerPane);
 
         javafx.scene.control.ScrollPane scrollWrapper = new javafx.scene.control.ScrollPane(accordion);
         scrollWrapper.setFitToWidth(true);
         scrollWrapper.setStyle("-fx-background-color: transparent;");
 
         return scrollWrapper;
+    }
+
+    /**
+     * Indicates whether the channel behind the given processing chain uses the audio/noise squelch - i.e. it has an
+     * analog (NBFM or AM) primary decoder. Digital channels (P25/DMR/etc.) do not, so the Squelch pane is hidden for
+     * them. Returns false when no chain/decoder is available.
+     */
+    private static boolean usesNoiseSquelch(ProcessingChain processingChain) {
+        if(processingChain == null) {
+            return false;
+        }
+
+        for(io.github.dsheirer.channel.state.DecoderState decoderState : processingChain.getDecoderStates()) {
+            io.github.dsheirer.module.decode.DecoderType type = decoderState.getDecoderType();
+            if(type == io.github.dsheirer.module.decode.DecoderType.NBFM
+                    || type == io.github.dsheirer.module.decode.DecoderType.AM) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void makeTabTearable(Tab tab) {
