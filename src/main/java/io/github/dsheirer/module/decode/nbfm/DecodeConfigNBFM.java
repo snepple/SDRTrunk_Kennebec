@@ -54,6 +54,12 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     private int mToneMinCallDurationMs = 0;
     private boolean mToneRequireNoiseSquelch = false;
 
+    //General minimum call duration (milliseconds) applied to ALL calls regardless of tone filtering.  Calls shorter
+    //than this - typically sub-second static bursts that briefly open the squelch - never produce a decode event in
+    //the Events table (and therefore don't flood the table or evict real calls before their transcripts arrive).
+    //0 (default) disables the gate so existing behavior is unchanged.
+    private int mMinCallDurationMs = 0;
+
     // === NEW: Squelch tail/head removal ===
     private int mSquelchTailRemovalMs = SquelchTailRemover.DEFAULT_TAIL_REMOVAL_MS;
     private int mSquelchHeadRemovalMs = SquelchTailRemover.DEFAULT_HEAD_REMOVAL_MS;
@@ -339,6 +345,25 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     public void setToneMinCallDurationMs(int ms)
     {
         mToneMinCallDurationMs = Math.max(0, Math.min(5000, ms));
+    }
+
+    /**
+     * General minimum call duration (milliseconds). Calls shorter than this never produce a decode event. This applies
+     * to every call (not just tone-filtered) and is the primary defense against sub-second static calls flooding the
+     * Events table. 0 (default) disables the gate.
+     */
+    @JacksonXmlProperty(isAttribute = true, localName = "minCallDurationMs")
+    public int getMinCallDurationMs()
+    {
+        return mMinCallDurationMs;
+    }
+
+    /**
+     * Sets the general minimum call duration (milliseconds, clamped 0-5000).
+     */
+    public void setMinCallDurationMs(int ms)
+    {
+        mMinCallDurationMs = Math.max(0, Math.min(5000, ms));
     }
 
     /**

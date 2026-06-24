@@ -74,6 +74,9 @@ public class AudioStreamingManager implements Listener<AudioSegment>
     private java.util.Map<AudioSegment, List<IRealTimeAudioBroadcaster>> mRealTimeStreams =
             new java.util.concurrent.ConcurrentHashMap<>();
     private java.util.Map<AudioSegment, Integer> mLastBufferIndex = new java.util.concurrent.ConcurrentHashMap<>();
+    //Tracks segments for which we have already emitted a real-time routing diagnostic so the log isn't flooded.
+    private java.util.Set<AudioSegment> mDiagnosedSegments =
+            java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
 
     /**
      * Constructs an instance
@@ -165,6 +168,7 @@ public class AudioStreamingManager implements Listener<AudioSegment>
         mAudioSegments.clear();
         mRealTimeStreams.clear();
         mLastBufferIndex.clear();
+        mDiagnosedSegments.clear();
     }
 
     /**
@@ -273,8 +277,24 @@ public class AudioStreamingManager implements Listener<AudioSegment>
      */
     private void forwardRealTimeAudio(AudioSegment audioSegment)
     {
-        if(mBroadcastModel == null || !audioSegment.hasBroadcastChannels())
+        if(mBroadcastModel == null)
         {
+            return;
+        }
+
+        if(!audioSegment.hasBroadcastChannels())
+        {
+            //Diagnostic: the alias for this call's talkgroup did not resolve to any broadcast channel. This is the
+            //most common cause of "channel is configured to an alias but does not stream" - the alias either has no
+            //stream assigned, or the talkgroup value/protocol on the alias does not match what the decoder produced.
+            if(mDiagnosedSegments.add(audioSegment))
+            {
+                mLog.info("Audio call not streamed - no stream/alias match for its talkgroup. Verify the alias has a " +
+                        "stream assigned (Aliases > Streaming) and that the alias talkgroup value AND protocol exactly " +
+                        "match the channel. Call identifiers: {}",
+                        audioSegment.getIdentifierCollection() != null
+                                ? audioSegment.getIdentifierCollection().getIdentifiers() : "none");
+            }
             return;
         }
 
@@ -282,17 +302,44 @@ public class AudioStreamingManager implements Listener<AudioSegment>
         if(!mRealTimeStreams.containsKey(audioSegment))
         {
             List<IRealTimeAudioBroadcaster> rtBroadcasters = new ArrayList<>();
+            boolean firstDiagnostic = mDiagnosedSegments.add(audioSegment);
 
             for(BroadcastChannel broadcastChannel : audioSegment.getBroadcastChannels())
             {
                 AbstractAudioBroadcaster<?> broadcaster = mBroadcastModel.getBroadcaster(broadcastChannel.getChannelName());
-                if(broadcaster instanceof IRealTimeAudioBroadcaster rtb && rtb.isRealTimeReady())
+
+                if(broadcaster == null)
                 {
-                    IdentifierCollection identifiers = audioSegment.getIdentifierCollection() != null
-                            ? new IdentifierCollection(audioSegment.getIdentifierCollection().getIdentifiers())
-                            : null;
-                    rtb.startRealTimeStream(identifiers);
-                    rtBroadcasters.add(rtb);
+                    if(firstDiagnostic)
+                    {
+                        mLog.warn("Audio call not streamed - alias references stream [{}] but no broadcaster with that " +
+                                "name exists. The stream may be renamed, disabled, or deleted.",
+                                broadcastChannel.getChannelName());
+                    }
+                    continue;
+                }
+
+                if(broadcaster instanceof IRealTimeAudioBroadcaster rtb)
+                {
+                    if(rtb.isRealTimeReady())
+                    {
+                        IdentifierCollection identifiers = audioSegment.getIdentifierCollection() != null
+                                ? new IdentifierCollection(audioSegment.getIdentifierCollection().getIdentifiers())
+                                : null;
+                        rtb.startRealTimeStream(identifiers);
+                        rtBroadcasters.add(rtb);
+                    }
+                    else if(firstDiagnostic)
+                    {
+                        //Not ready: typically connecting/offline, or a prior stream is still active (relaxation hold).
+                        mLog.info("Audio call to stream [{}] deferred - broadcaster not ready (connecting, channel " +
+                                "offline, or previous stream still active).", broadcastChannel.getChannelName());
+                    }
+                }
+                else if(firstDiagnostic)
+                {
+                    mLog.debug("Stream [{}] is not a real-time broadcaster; audio will be routed via file recording.",
+                            broadcastChannel.getChannelName());
                 }
             }
 
@@ -334,6 +381,7 @@ public class AudioStreamingManager implements Listener<AudioSegment>
     {
         List<IRealTimeAudioBroadcaster> rtBroadcasters = mRealTimeStreams.remove(audioSegment);
         mLastBufferIndex.remove(audioSegment);
+        mDiagnosedSegments.remove(audioSegment);
 
         if(rtBroadcasters != null)
         {

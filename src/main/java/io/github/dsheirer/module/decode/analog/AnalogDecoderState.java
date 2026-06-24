@@ -43,6 +43,10 @@ public abstract class AnalogDecoderState extends DecoderState implements ISource
     private Listener<SourceEvent> mSourceEventListener = new SourceEventListener();
     private DecodeEvent mDecodeEvent;
     private IChannelDescriptor mChannelDescriptor = null;
+    //Tracks the wall-clock start of the in-progress call and whether its decode event has been published to the
+    //event table/streaming yet. Used to enforce getMinCallDurationMs() so sub-second static calls never surface.
+    private long mCallStartMs = 0;
+    private boolean mEventPublished = false;
 
     public AnalogDecoderState()
     {
@@ -54,6 +58,17 @@ public abstract class AnalogDecoderState extends DecoderState implements ISource
     protected abstract Identifier getChannelNameIdentifier();
 
     protected abstract Identifier getTalkgroupIdentifier();
+
+    /**
+     * Minimum call duration, in milliseconds, before a call is published as a decode event. Calls shorter than this
+     * are discarded so brief static bursts that momentarily open the squelch don't flood the Events table (which in
+     * turn evicts real calls before their asynchronous transcripts arrive). Default 0 disables the gate; subclasses
+     * override to supply a per-channel configured value.
+     */
+    protected int getMinCallDurationMs()
+    {
+        return 0;
+    }
 
     @Override
     public void receiveDecoderStateEvent(DecoderStateEvent event)
@@ -101,13 +116,22 @@ public abstract class AnalogDecoderState extends DecoderState implements ISource
 
         if(mDecodeEvent == null)
         {
-            mDecodeEvent = DecodeEvent.builder(DecodeEventType.CALL, System.currentTimeMillis())
+            mCallStartMs = System.currentTimeMillis();
+            mEventPublished = false;
+            mDecodeEvent = DecodeEvent.builder(DecodeEventType.CALL, mCallStartMs)
                     .channel(mChannelDescriptor)
                     .details(getDecoderType().name())
                     .identifiers(new IdentifierCollection(getIdentifierCollection().getIdentifiers()))
                     .build();
 
-            broadcast(mDecodeEvent);
+            //When a minimum call duration is configured, defer publishing the event until the call has lasted long
+            //enough. This prevents sub-second static bursts from appearing in the Events table at all. With no
+            //minimum (0), the event is published immediately to preserve the original behavior.
+            if(getMinCallDurationMs() <= 0)
+            {
+                mEventPublished = true;
+                broadcast(mDecodeEvent);
+            }
         }
     }
 
@@ -123,7 +147,17 @@ public abstract class AnalogDecoderState extends DecoderState implements ISource
 
         getIdentifierCollection().update(getTalkgroupIdentifier());
         mDecodeEvent.update(System.currentTimeMillis());
-        broadcast(mDecodeEvent);
+
+        //Publish a deferred event once it crosses the minimum-duration threshold; thereafter keep updating it.
+        if(!mEventPublished && (System.currentTimeMillis() - mCallStartMs) >= getMinCallDurationMs())
+        {
+            mEventPublished = true;
+        }
+
+        if(mEventPublished)
+        {
+            broadcast(mDecodeEvent);
+        }
     }
 
     /**
@@ -134,8 +168,17 @@ public abstract class AnalogDecoderState extends DecoderState implements ISource
         if(mDecodeEvent != null)
         {
             mDecodeEvent.end(System.currentTimeMillis());
-            broadcast(mDecodeEvent);
+
+            //Publish the completed event only if it qualified (already published, or it met the minimum duration).
+            //A call shorter than the configured minimum that never qualified is discarded silently - it never
+            //reaches the Events table or streaming.
+            if(mEventPublished || (mDecodeEvent.getTimeEnd() - mCallStartMs) >= getMinCallDurationMs())
+            {
+                broadcast(mDecodeEvent);
+            }
+
             mDecodeEvent = null;
+            mEventPublished = false;
         }
 
         //Remove any user identifiers from the identifier collection

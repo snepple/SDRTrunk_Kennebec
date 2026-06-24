@@ -109,6 +109,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private ToggleSwitch mToneFilterEnabledSwitch;
     private ComboBox<ChannelToneFilter.ToneType> mToneTypeCombo;
     private Spinner<Integer> mToneMinCallDurationSpinner;
+    private Spinner<Integer> mMinCallDurationSpinner;
     private ToggleSwitch mToneRequireNoiseSquelchSwitch;
     private ComboBox<CTCSSCode> mCtcssCodeCombo;
     private ComboBox<DCSCode> mDcsCodeCombo;
@@ -231,10 +232,23 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             });
             talkgroupBox.getChildren().add(generateIdButton);
 
+            //General minimum call duration - applies to ALL calls (with or without tone filtering). Calls shorter
+            //than this are discarded so sub-second static bursts never reach the Events table.
+            mMinCallDurationSpinner = new Spinner<>(0, 5000, 0, 100);
+            mMinCallDurationSpinner.setEditable(true);
+            mMinCallDurationSpinner.setPrefWidth(110);
+            mMinCallDurationSpinner.setTooltip(new Tooltip("Discard calls shorter than this (milliseconds). 0 = off."));
+            mMinCallDurationSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> {
+                if(!mLoadingConfiguration) {
+                    modifiedProperty().set(true);
+                }
+            });
+
             SettingsCard decoderCard = new SettingsCard();
             decoderCard.getChildren().addAll(
                 new SettingsRow("Channel Bandwidth", createHelpIcon("NBFM (Narrow-Band FM) channel width determines how much radio spectrum is decoded.\n\u2022 12.5 kHz = Standard narrow-band (most modern radios)\n\u2022 25 kHz = Wide-band (older or commercial radios)\nIf you hear distorted or chopped audio, try the other setting."), getBandwidthButton()),
-                new SettingsRow("Talkgroup To Assign", createHelpIcon("Talkgroup ID: A numeric address used to identify a specific group of radio users.\nFor NBFM channels without trunking, this manually assigns a talkgroup number\nso that alias rules (listen/record/stream) can be applied to this channel's audio.\nLeave blank to use the auto-detected talkgroup (if available)."), talkgroupBox)
+                new SettingsRow("Talkgroup To Assign", createHelpIcon("Talkgroup ID: A numeric address used to identify a specific group of radio users.\nFor NBFM channels without trunking, this manually assigns a talkgroup number\nso that alias rules (listen/record/stream) can be applied to this channel's audio.\nLeave blank to use the auto-detected talkgroup (if available)."), talkgroupBox),
+                new SettingsRow("Min Call Duration (ms)", createHelpIcon("Discards any call shorter than this many milliseconds, so brief sub-second\nstatic bursts never appear in the Events table or get streamed. Applies to\nall calls (with or without a tone filter). This also keeps the limited Events\ntable from filling with static and evicting real calls before their\ntranscriptions arrive. 0 disables this (default)."), mMinCallDurationSpinner)
             );
             content.getChildren().add(decoderCard);
 
@@ -1320,6 +1334,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             // Load tone-squelch false-trigger suppression settings
             mToneMinCallDurationSpinner.getValueFactory().setValue(decodeConfigNBFM.getToneMinCallDurationMs());
             mToneRequireNoiseSquelchSwitch.setSelected(decodeConfigNBFM.isToneRequireNoiseSquelch());
+            mMinCallDurationSpinner.getValueFactory().setValue(decodeConfigNBFM.getMinCallDurationMs());
 
             // Load squelch tail settings
             mSquelchTailEnabledSwitch.setSelected(decodeConfigNBFM.isSquelchTailRemovalEnabled());
@@ -1354,6 +1369,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             updateToneCodeVisibility();
             mToneMinCallDurationSpinner.getValueFactory().setValue(0);
             mToneRequireNoiseSquelchSwitch.setSelected(false);
+            mMinCallDurationSpinner.getValueFactory().setValue(0);
 
             // Reset squelch tail controls
             mSquelchTailEnabledSwitch.setSelected(false);
@@ -1475,6 +1491,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         config.setToneFilters(filters);
         config.setToneMinCallDurationMs(mToneMinCallDurationSpinner.getValue());
         config.setToneRequireNoiseSquelch(mToneRequireNoiseSquelchSwitch.isSelected());
+        config.setMinCallDurationMs(mMinCallDurationSpinner.getValue());
 
         // Save squelch tail settings
         config.setSquelchTailRemovalEnabled(mSquelchTailEnabledSwitch.isSelected());
