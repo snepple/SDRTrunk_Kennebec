@@ -842,6 +842,24 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                     maxFreq = Long.MAX_VALUE;
                 }
 
+                //The advisor only accumulates per-channel I/Q signal levels while the (opt-in, default-off) gain
+                //advisor feature is enabled. If a user clicks the button before enabling it, there is no data and the
+                //advisor reports "no channels reporting". Bootstrap the feature on first click and tell the user to
+                //let traffic accumulate, rather than showing a confusing empty result.
+                if(!mUserPreferences.getAIPreference().isGainAdvisorEnabled())
+                {
+                    mUserPreferences.getAIPreference().setGainAdvisorEnabled(true);
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
+                    alert.setTitle("Adaptive Gain Advisor");
+                    alert.setHeaderText("Gain advisor monitoring enabled");
+                    alert.setContentText("The gain advisor was not yet collecting signal levels, so it has just been "
+                            + "enabled. Let the NBFM channels on this tuner receive traffic for about a minute, then "
+                            + "click Gain Advisor again for a recommendation.");
+                    alert.showAndWait();
+                    return;
+                }
+
                 final String tunerId = (getDiscoveredTuner() != null) ? getDiscoveredTuner().getId() : null;
                 final String prior = (tunerId != null)
                         ? mUserPreferences.getAIPreference().getGainLastSummary(tunerId) : null;
