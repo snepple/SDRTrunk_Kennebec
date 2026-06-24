@@ -47,6 +47,32 @@ public class NoiseSquelch implements INoiseSquelchController
     public static final float DEFAULT_NOISE_CLOSE_THRESHOLD = 0.19f;
     public static final float MINIMUM_NOISE_THRESHOLD = 0.1f;
     public static final float MAXIMUM_NOISE_THRESHOLD = 0.5f;
+
+    /**
+     * Largest noise OPEN threshold selectable through the squelch view's open slider.  The DSP itself accepts up
+     * to {@link #MAXIMUM_NOISE_THRESHOLD} (0.5), but the user interface - and therefore squelch calibration -
+     * targets this narrower, practical range so a recommended value can actually be represented by the slider and
+     * applied without being silently clamped.  Derived from the open-slider range (0.10 offset + 0.15 span).
+     */
+    public static final float MAXIMUM_NOISE_OPEN_THRESHOLD = 0.25f;
+
+    /**
+     * Largest gap the squelch view can represent between the close and open noise thresholds (the close-slider
+     * span).  Calibration keeps close within open + this delta so the recommendation is UI-representable.
+     */
+    public static final float MAXIMUM_NOISE_CLOSE_DELTA = 0.15f;
+
+    /**
+     * Display-scale inversion base.  The squelch view and activity chart present an inverted, scaled value so that
+     * a clean (low-variance) signal reads high and the ambient noise floor reads low: {@code display = 10 -
+     * 20*variance}.
+     */
+    public static final float DISPLAY_INVERSION_BASE = 10.0f;
+
+    /**
+     * Display-scale multiplier that maps the 0.0-0.5 variance range onto the 0-10 chart range.
+     */
+    public static final float DISPLAY_SCALAR = 20.0f;
     private float[] mFilteredBuffer = new float[0];
     private float[] mAudioBuffer = new float[0];
     private float mMeanAccumulator;
@@ -87,6 +113,19 @@ public class NoiseSquelch implements INoiseSquelchController
     {
         setNoiseThreshold(noiseOpen, noiseClose);
         setHysteresisThreshold(hysteresisOpen, hysteresisClose);
+    }
+
+    /**
+     * Converts a raw noise-variance value into the inverted display scale used by the squelch view and activity
+     * chart, where a clean (low-variance) signal reads high and the ambient noise floor reads low.  This is the
+     * single source of truth for that conversion so the chart, the on-screen labels, and AI squelch calibration
+     * all speak the same units.
+     * @param variance raw noise variance (0.0 - 0.5).
+     * @return display-scale value (~0 - 10).
+     */
+    public static float toDisplayScale(float variance)
+    {
+        return DISPLAY_INVERSION_BASE - (variance * DISPLAY_SCALAR);
     }
 
     /**

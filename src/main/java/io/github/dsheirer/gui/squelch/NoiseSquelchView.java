@@ -82,17 +82,6 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.00");
 
     /**
-     * Scales the noise value (0.0 to 0.5) to align with the hysteresis value range (0.0 to 10.0).  Value is determined
-     * by hysteresis-max (10.0) divided by noise-max (0.5).
-     */
-    private static final float NOISE_DISPLAY_SCALOR = 20.0f;
-
-    /**
-     * Noise inversion value for converting displayed values in range 0-10 to usable noise values in the range 10 - 0.
-     */
-    private static final float NOISE_INVERSION_BASE = 10.0f;
-
-    /**
      * Noise inversion base to convert from the slider control range (0.0 to 0.15) to inverted range (0.15 to 0.00).
      */
     private static final float NOISE_CONTROL_INVERSION_BASE = 0.15f;
@@ -748,6 +737,15 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
                 }
             }
 
+            //Constrain to the UI-representable range so the value announced below is exactly what the sliders
+            //apply.  The open slider tops out at MAXIMUM_NOISE_OPEN_THRESHOLD and the close slider at open + the
+            //close delta; without this a blend toward an older (pre-constraint) prior could exceed the slider
+            //range and be silently clamped, making the announced value disagree with the applied value.
+            open = Math.max(NoiseSquelch.MINIMUM_NOISE_THRESHOLD,
+                    Math.min(open, NoiseSquelch.MAXIMUM_NOISE_OPEN_THRESHOLD));
+            close = Math.max(open, Math.min(close,
+                    Math.min(open + NoiseSquelch.MAXIMUM_NOISE_CLOSE_DELTA, NoiseSquelch.MAXIMUM_NOISE_THRESHOLD)));
+
             //Apply the (blended) thresholds.  Setting the slider values propagates to the controller and
             //schedules a playlist save through the existing slider change listeners.  This is an advisor
             //action, not a manual edit, so guard it from marking the channel as manually adjusted.
@@ -764,9 +762,10 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
             //Persist per-channel so the squelch UI can show the last run and future calibrations can learn.
             if(channelName != null && !channelName.isEmpty())
             {
-                String summary = String.format("[%s] noise open=%.3f close=%.3f, hysteresis %d/%d. %s",
+                String summary = String.format("[%s] N-Open=%.2f N-Close=%.2f (graph scale), hysteresis %d/%d. %s",
                         new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date()),
-                        open, close, recommendation.hysteresisOpen(), recommendation.hysteresisClose(), why);
+                        NoiseSquelch.toDisplayScale(open), NoiseSquelch.toDisplayScale(close),
+                        recommendation.hysteresisOpen(), recommendation.hysteresisClose(), why);
                 mUserPreferences.getAIPreference().setSquelchCalibration(channelName, open, close, summary);
                 updateCalibrateButtonTooltip();
             }
@@ -776,9 +775,10 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
             applied.setTitle("Calibrate Squelch");
             applied.setHeaderText("Squelch settings updated");
             applied.setContentText(String.format(
-                    "Set noise thresholds to open=%.3f / close=%.3f and hysteresis to %d / %d (x10 ms), from %d " +
-                            "samples.%n%nWhy: %s",
-                    open, close, recommendation.hysteresisOpen(), recommendation.hysteresisClose(), sampleCount, why));
+                    "Set squelch to N-Open=%.2f / N-Close=%.2f (graph scale, matching the chart's N-Open/N-Close " +
+                            "lines) and hysteresis to %d / %d (x10 ms), from %d samples.%n%nWhy: %s",
+                    NoiseSquelch.toDisplayScale(open), NoiseSquelch.toDisplayScale(close),
+                    recommendation.hysteresisOpen(), recommendation.hysteresisClose(), sampleCount, why));
             applied.show();
         });
     }
@@ -1206,7 +1206,7 @@ public class NoiseSquelchView extends ChannelView implements Listener<NoiseSquel
      */
     private static float toDisplayNoise(float noiseValue)
     {
-        return NOISE_INVERSION_BASE - (noiseValue * NOISE_DISPLAY_SCALOR);
+        return NoiseSquelch.toDisplayScale(noiseValue);
     }
 
     /**

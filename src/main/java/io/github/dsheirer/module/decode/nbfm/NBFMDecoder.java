@@ -122,6 +122,19 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     private static final long TONE_HOLDOVER_MS = 500;
     private volatile long mLastToneMatchTime = 0;
 
+    // Tone-squelch false-trigger suppression (per channel, from config; both default off).
+    //  - minimum call duration: a tone match must sustain (passing the gate) this long before it becomes a real
+    //    call, so brief static bursts that momentarily carry the tone are dropped (lead-in audio is buffered so a
+    //    qualifying call's start isn't clipped).
+    //  - require noise squelch: additionally gate audio on the noise squelch being open (tone AND carrier), so
+    //    noisy static can't open the channel even when it carries the tone.
+    private final int mToneMinCallDurationMs;
+    private final boolean mToneRequireNoiseSquelch;
+    private boolean mCallQualified = false;
+    private long mToneSustainStartMs = -1;
+    private final java.util.ArrayDeque<float[]> mPendingCallAudio = new java.util.ArrayDeque<>();
+    private int mPendingCallSamples = 0;
+
     // Squelch tail/head removal
     private final boolean mSquelchTailRemovalEnabled;
     private final int mSquelchTailRemovalMs;
@@ -215,6 +228,8 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
 // Extract CTCSS/DCS tone filter configuration
         mToneFilterEnabled = config.hasToneFiltering();
+        mToneMinCallDurationMs = config.getToneMinCallDurationMs();
+        mToneRequireNoiseSquelch = config.isToneRequireNoiseSquelch();
         if(mToneFilterEnabled)
         {
             mTargetCTCSSCodes = extractCTCSSCodes(config.getToneFilters());
@@ -246,6 +261,13 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
         //Send squelch controlled audio to the resampler and notify the decoder state that the call continues.
         mNoiseSquelch.setAudioListener(audio -> {
+            if(isToneGated())
+            {
+                //Tone-gated channels resample the full demodulated stream in receive() so the tone detector is
+                //never starved by the noise squelch; their output is gated on the tone match, not this squelch.
+                return;
+            }
+
             // if squelch is closing (it hasn't propagated yet to mute the audio)
             //  call the resampler with lastBatch set to true. This will zero pad the input buffer and ensure
             //  the output buffer gets emptied.
@@ -273,6 +295,14 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
         //When tone filtering is enabled, we defer the call start until the correct tone is confirmed.
         //The channel stays idle until the CTCSS detector confirms the right tone — just like a real radio.
         mNoiseSquelch.setSquelchStateListener(squelchState -> {
+            if(isToneGated())
+            {
+                //Tone-gated channels derive call start/continuation/end (and tail-remover open/close) from the
+                //tone detector, which is fed continuously, so a mistuned noise squelch can neither start spurious
+                //calls nor end real ones.  The noise squelch does not participate in their gating.
+                return;
+            }
+
             if(squelchState == SquelchState.SQUELCH)
             {
                 // Squelch closed (end of transmission)
@@ -603,6 +633,17 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
     }
 
     /**
+     * Indicates whether this channel is tone-gated, i.e. it has a valid CTCSS or DCS tone filter configured.
+     * For tone-gated channels the tone/code detector - fed continuously from the demodulated stream - is the
+     * squelch, so the noise squelch does not gate audio or drive the call lifecycle.
+     * @return true when a valid CTCSS/DCS tone filter is active.
+     */
+    private boolean isToneGated()
+    {
+        return mToneFilterEnabled && mToneFilterType != null;
+    }
+
+    /**
      * Processes resampled 8 kHz audio through the CTCSS/DCS tone filter and squelch tail remover
      * before broadcasting to downstream consumers.
      *
@@ -622,15 +663,166 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             mDCSDetector.process(resampledAudio);
         }
 
-        // Step 2: Gate audio based on tone/code match
-        if(mToneFilterEnabled && !mToneMatch)
+        // Step 2: Gate audio.  Tone-gated channels run the tone-squelch state machine (minimum-call-duration
+        // qualification + optional require-noise-squelch AND-gate); everything else passes straight through.
+        if(isToneGated())
         {
-            // Tone/code not confirmed yet — block audio
+            processToneGatedAudio(resampledAudio);
             return;
         }
 
-        // Step 3: Apply VoxSend audio filter chain (low-pass, de-emphasis, bass boost,
-        //         voice enhancement, noise gate) — processes samples in-place
+        if(mToneFilterEnabled && !mToneMatch)
+        {
+            // Tone filtering enabled but no valid code configured (misconfiguration) - block audio.
+            return;
+        }
+
+        emitAudio(resampledAudio);
+    }
+
+    /**
+     * Applies the tone-squelch call gating for tone-filtered channels: the minimum-call-duration qualification
+     * and the optional require-noise-squelch (tone AND carrier) gate.  Audio for a tone match that never
+     * qualifies (too brief, or never passes the gate) is dropped, suppressing false triggers; a qualifying call
+     * flushes its buffered lead-in so its start is not clipped.
+     */
+    private void processToneGatedAudio(float[] resampledAudio)
+    {
+        if(!mToneMatch)
+        {
+            return; //No matching tone - nothing passes (idle is driven from receive()).
+        }
+
+        //Optional AND-gate: also require the noise squelch open so noisy static carrying the tone can't open it.
+        boolean passGate = !mToneRequireNoiseSquelch || !mNoiseSquelch.isSquelched();
+
+        if(mCallQualified)
+        {
+            //Established call: pass audio while the gate is open; briefly mute on a carrier gap without ending.
+            if(passGate)
+            {
+                notifyCallContinuation();
+                emitAudio(resampledAudio);
+            }
+            return;
+        }
+
+        //Candidate call: the tone has matched but has not yet sustained long enough to be a real call.
+        if(!passGate)
+        {
+            //Gate closed (noisy static under the AND-gate, or carrier not open) - restart the qualification
+            //window and drop any buffered lead-in so a brief, gated burst can't qualify.
+            mToneSustainStartMs = -1;
+            clearPendingCallAudio();
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        if(mToneSustainStartMs < 0)
+        {
+            mToneSustainStartMs = now;
+        }
+
+        bufferPendingCallAudio(resampledAudio);
+
+        if((now - mToneSustainStartMs) >= mToneMinCallDurationMs)
+        {
+            qualifyToneCall();
+        }
+    }
+
+    /**
+     * Resets candidate-call state at the start of a new tone match.  The call is not started until it qualifies
+     * in {@link #processToneGatedAudio(float[])}.
+     */
+    private void onToneCandidateStart()
+    {
+        mCallQualified = false;
+        mToneSustainStartMs = -1;
+        clearPendingCallAudio();
+    }
+
+    /**
+     * Promotes the current candidate to a real call: starts the call, opens the tail remover, and flushes the
+     * buffered lead-in audio so the call's start is not clipped.
+     */
+    private void qualifyToneCall()
+    {
+        mCallQualified = true;
+
+        if(mSquelchTailRemover != null)
+        {
+            mSquelchTailRemover.squelchOpen();
+        }
+
+        notifyCallStart();
+
+        while(!mPendingCallAudio.isEmpty())
+        {
+            float[] buffered = mPendingCallAudio.pollFirst();
+            notifyCallContinuation();
+            emitAudio(buffered);
+        }
+        mPendingCallSamples = 0;
+    }
+
+    /**
+     * Ends the current tone match.  A qualified call is ended normally (tail remover + call end); an unqualified
+     * candidate (too brief / never passed the gate) is discarded so no call event or audio is produced.
+     */
+    private void onToneCandidateEnd()
+    {
+        if(mCallQualified)
+        {
+            if(mSquelchTailRemover != null)
+            {
+                mSquelchTailRemover.squelchClose();
+            }
+            notifyCallEnd();
+        }
+        else
+        {
+            clearPendingCallAudio();
+        }
+
+        mCallQualified = false;
+        mToneSustainStartMs = -1;
+        notifyIdle();
+    }
+
+    /**
+     * Buffers candidate-call lead-in audio, bounded to roughly the minimum-call-duration window so memory can't
+     * grow without bound if a candidate lingers without qualifying.
+     */
+    private void bufferPendingCallAudio(float[] audio)
+    {
+        mPendingCallAudio.addLast(audio);
+        mPendingCallSamples += audio.length;
+
+        int maxSamples = (int)(((mToneMinCallDurationMs + 250) / 1000.0) * DEMODULATED_AUDIO_SAMPLE_RATE) + 1024;
+        while(mPendingCallSamples > maxSamples && !mPendingCallAudio.isEmpty())
+        {
+            float[] dropped = mPendingCallAudio.pollFirst();
+            mPendingCallSamples -= dropped.length;
+        }
+    }
+
+    /**
+     * Discards any buffered candidate-call lead-in audio.
+     */
+    private void clearPendingCallAudio()
+    {
+        mPendingCallAudio.clear();
+        mPendingCallSamples = 0;
+    }
+
+    /**
+     * Applies the audio filter chain, AI buffering, and tail remover / broadcast to a buffer that has passed the
+     * squelch/tone gating.  Shared by the tone-gated and non-tone-gated paths.
+     */
+    private void emitAudio(float[] resampledAudio)
+    {
+        // Apply VoxSend audio filter chain (low-pass, de-emphasis, bass boost, voice enhancement, noise gate).
         if(mAudioWatchdog != null)
         {
             mAudioWatchdog.feedAudioData(resampledAudio);
@@ -646,7 +838,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             mAudioFilters.process(resampledAudio);
         }
 
-        // Step 4: Pass through squelch tail remover if enabled, otherwise broadcast directly
+        // Pass through squelch tail remover if enabled, otherwise broadcast directly.
         if(mSquelchTailRemover != null)
         {
             mSquelchTailRemover.process(resampledAudio);
@@ -749,9 +941,27 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
         mNoiseSquelch.process(demodulated);
 
+        if(isToneGated())
+        {
+            //Tone-gated channel: the tone/code detector is the squelch.  Feed the FULL demodulated stream to the
+            //resampler so the detector is never starved by a mistuned or closed noise squelch (the previous design
+            //only forwarded audio while the noise squelch was open, which silently killed tone-filtered channels
+            //whose noise squelch never opened).  processResampledAudio() gates output on the tone match, and the
+            //call lifecycle is driven by the detector.  The noise squelch still runs above purely to render the
+            //squelch activity chart.
+            if(mResampler != null)
+            {
+                mResampler.resample(demodulated);
+            }
+
+            if(!mToneMatch)
+            {
+                notifyIdle();
+            }
+        }
         //Once we process the sample buffer, if the ending state is squelch closed, update the decoder state that we
         // are idle.
-        if(mNoiseSquelch.isSquelched())
+        else if(mNoiseSquelch.isSquelched())
         {
             notifyIdle();
         }
@@ -1081,10 +1291,11 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                     mToneMatch = true;
                     mLastToneMatchTime = System.currentTimeMillis();
 
-                    // If we were previously blocked, fire a call start now
+                    // A new tone match begins a candidate call; it becomes a real call (call start + audio) only
+                    // once it sustains the configured minimum duration, handled in processToneGatedAudio().
                     if(wasBlocked)
                     {
-                        notifyCallStart();
+                        onToneCandidateStart();
                     }
 
                     if(mDecoderState != null)
@@ -1096,16 +1307,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                 @Override
                 public void ctcssRejected(CTCSSCode code)
                 {
-                    // Wrong tone confirmed — fully squelch the channel like a real radio
-                    boolean wasActive = mToneMatch;
+                    // Wrong tone confirmed — end any qualified call (or discard an unqualified candidate) and idle.
                     mToneMatch = false;
-
-                    // If we had an active call, end it and go idle
-                    if(wasActive)
-                    {
-                        notifyCallEnd();
-                    }
-                    notifyIdle();
+                    onToneCandidateEnd();
 
                     if(mDecoderState != null)
                     {
@@ -1116,15 +1320,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                 @Override
                 public void ctcssLost()
                 {
-                    // Tone lost — squelch the channel until tone re-confirmed
-                    boolean wasActive = mToneMatch;
+                    // Tone lost — end any qualified call (or discard an unqualified candidate) and idle.
                     mToneMatch = false;
-
-                    if(wasActive)
-                    {
-                        notifyCallEnd();
-                    }
-                    notifyIdle();
+                    onToneCandidateEnd();
 
                     if(mDecoderState != null)
                     {
@@ -1153,7 +1351,7 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
                     if(wasBlocked)
                     {
-                        notifyCallStart();
+                        onToneCandidateStart();
                     }
 
                     if(mDecoderState != null)
@@ -1165,15 +1363,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                 @Override
                 public void dcsRejected(DCSCode code)
                 {
-                    // Wrong code confirmed — fully squelch the channel
-                    boolean wasActive = mToneMatch;
+                    // Wrong code confirmed — end any qualified call (or discard an unqualified candidate) and idle.
                     mToneMatch = false;
-
-                    if(wasActive)
-                    {
-                        notifyCallEnd();
-                    }
-                    notifyIdle();
+                    onToneCandidateEnd();
 
                     if(mDecoderState != null)
                     {
@@ -1184,15 +1376,9 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
                 @Override
                 public void dcsLost()
                 {
-                    // Code lost — squelch until re-confirmed
-                    boolean wasActive = mToneMatch;
+                    // Code lost — end any qualified call (or discard an unqualified candidate) and idle.
                     mToneMatch = false;
-
-                    if(wasActive)
-                    {
-                        notifyCallEnd();
-                    }
-                    notifyIdle();
+                    onToneCandidateEnd();
 
                     if(mDecoderState != null)
                     {

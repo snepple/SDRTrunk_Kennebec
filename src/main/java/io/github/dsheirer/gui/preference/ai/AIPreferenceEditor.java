@@ -186,16 +186,34 @@ public class AIPreferenceEditor extends VBox {
             new Label("every"), squelchIntervalCombo, new Label("h"));
         squelchControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
+        //Simple on/off AI features, each with a plain-English description of what it does.
         SettingsCard featuresCard = new SettingsCard();
         featuresCard.getChildren().addAll(
-            new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
-            new SettingsRow("System Health Advisor & Auto-Remediation", enableSystemHealthSwitch),
-            new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch),
-            new SettingsRow("Radio ID Naming from Transcripts (P25/DMR - uses Gemini)", enableRadioIdNamingSwitch),
-            new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls),
-            new SettingsRow("Auto-Optimize NBFM Audio Filters (manual anytime; Auto runs per channel)", nbfmControls),
-            new SettingsRow("Adaptive Gain Advisor (monitors I/Q levels; Auto runs AI consultation)", gainControls),
-            new SettingsRow("Squelch Advisor (Calibrate button is manual; Auto runs per channel, min every 12h)", squelchControls)
+            withDescription(new SettingsRow("Intelligent Log Analysis", enableLogAnalysisSwitch),
+                "Translates application warnings and errors in the Logs viewer into plain-English explanations with suggested fixes."),
+            withDescription(new SettingsRow("System Health Advisor & Auto-Remediation", enableSystemHealthSwitch),
+                "Monitors CPU and memory and surfaces optimization suggestions when usage runs high. Also powers audio-quality monitoring that flags unintelligible channel audio."),
+            withDescription(new SettingsRow("AI Two-Tone Paging Discovery", toneDiscoveryControls),
+                "Detects unrecognized two-tone paging tone-outs and proposes them for aliasing. Use Manage Ignored Tones to suppress tones you don't want flagged."),
+            withDescription(new SettingsRow("Audio Transcriptions", enableTranscriptionSwitch),
+                "Transcribes decoded call audio to text using the transcription service configured below."),
+            withDescription(new SettingsRow("Radio ID Naming from Transcripts (P25/DMR)", enableRadioIdNamingSwitch),
+                "Uses Gemini to suggest names for unidentified P25/DMR radio IDs from their call transcripts. Requires Audio Transcriptions.")
+        );
+
+        //Scheduled/automatic AI tasks: feature on/off plus an Auto schedule + interval (interval is only
+        //selectable when Auto is on).  Descriptions spell out what enabling Auto will do.
+        Label automaticTasksLabel = new Label("Automatic Tasks");
+        automaticTasksLabel.getStyleClass().add("hig-section-header");
+
+        SettingsCard scheduledCard = new SettingsCard();
+        scheduledCard.getChildren().addAll(
+            withDescription(new SettingsRow("Auto-Optimize NBFM Audio Filters", nbfmControls),
+                "Analyzes recent NBFM call audio and tunes that channel's audio filters. Run it manually anytime from a channel; turn on Auto to also re-run it automatically per channel on the selected interval, applying new filter settings without prompting."),
+            withDescription(new SettingsRow("Adaptive Gain Advisor", gainControls),
+                "Monitors tuner I/Q signal levels and consults the AI for gain recommendations. Turn on Auto to run the consultation automatically on the selected interval."),
+            withDescription(new SettingsRow("Squelch Advisor", squelchControls),
+                "Enables the per-channel Calibrate Squelch button (manual). Turn on Auto to also re-calibrate squelch automatically on the selected interval, never more often than every 12 hours.")
         );
 
         // API Key Card with Embedded Scaffolding
@@ -407,7 +425,11 @@ public class AIPreferenceEditor extends VBox {
             });
         });
 
-        settingsBox.getChildren().addAll(featuresLabel, featuresCard, transcriptionHeaderLabel, transcriptionCard, apiHeaderLabel, apiCard, scaffoldingBox);
+        settingsBox.getChildren().addAll(
+            apiHeaderLabel, apiCard, scaffoldingBox,
+            featuresLabel, featuresCard,
+            automaticTasksLabel, scheduledCard,
+            transcriptionHeaderLabel, transcriptionCard);
         getChildren().addAll(headerLabel, mainCard, mainExplanation, settingsBox);
 
         sceneProperty().addListener((observable, oldScene, newScene) -> {
@@ -418,6 +440,22 @@ public class AIPreferenceEditor extends VBox {
                 }
             }
         });
+    }
+
+    /**
+     * Wraps a settings row with a wrapped, secondary-text description shown directly beneath it, so each AI
+     * feature explains what it does (and, for scheduled tasks, what turning on Auto will do).
+     * @param row the settings row (label + controls).
+     * @param description plain-English explanation shown under the row.
+     * @return a VBox containing the row and its description, suitable for adding to a SettingsCard.
+     */
+    private static VBox withDescription(javafx.scene.Node row, String description)
+    {
+        Label desc = new Label(description);
+        desc.getStyleClass().add("kennebec-secondary-text");
+        desc.setWrapText(true);
+        desc.setPadding(new Insets(2, 10, 4, 4));
+        return new VBox(3, row, desc);
     }
 
     /**
