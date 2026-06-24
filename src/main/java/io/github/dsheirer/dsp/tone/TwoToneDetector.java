@@ -729,7 +729,15 @@ public class TwoToneDetector
                 channel = ((io.github.dsheirer.identifier.configuration.ChannelNameConfigurationIdentifier)id).getValue();
             }
         }
-        org.slf4j.LoggerFactory.getLogger(io.github.dsheirer.log.TwoToneLog.LOGGER_NAME).info("[Channel: {}] - [Unknown]", channel);
+        //Log every detected two-tone sequence - recognized or not - with its tones and channel, so the user can see
+        //discovery is working even for tones that won't be auto-added (auto-add requires repeated occurrences).
+        org.slf4j.LoggerFactory.getLogger(io.github.dsheirer.log.TwoToneLog.LOGGER_NAME).info(
+                "[Channel: {}] [{} MHz] Tone A: {} Hz, Tone B: {} Hz - {}",
+                channel,
+                channelFrequency > 0 ? String.format("%.4f", channelFrequency / 1.0E6) : "?",
+                String.format("%.1f", toneA),
+                String.format("%.1f", toneB),
+                exists ? "matches existing detector" : "UNRECOGNIZED (candidate for new detector)");
     }
 
     public void dispose()

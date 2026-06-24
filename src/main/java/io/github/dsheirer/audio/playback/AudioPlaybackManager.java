@@ -70,6 +70,11 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
     private final javafx.beans.property.BooleanProperty mMasterMuted = new javafx.beans.property.SimpleBooleanProperty(false);
 
     private TwoToneDetector mTwoToneDetector;
+    //Tracks, per audio segment, the index of the next audio buffer to feed the two-tone detector. A call's audio
+    //buffers accumulate over its lifetime, so we must feed buffers incrementally each processing cycle - feeding only
+    //the buffers present when a segment is first seen would miss most of a multi-second tone-out and starve discovery.
+    //We hold a consumer count on each tracked segment so its audio buffers are not recycled before we finish feeding.
+    private final java.util.Map<AudioSegment,Integer> mTwoToneFedIndex = new java.util.concurrent.ConcurrentHashMap<>();
 
 
     /**
@@ -133,8 +138,62 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
     @Override
     public void receive(AudioSegment audioSegment)
     {
+        //Register the segment for incremental two-tone feeding before any playback filtering (duplicate suppression,
+        //do-not-monitor) so tone discovery analyses every channel's full audio, not just what gets monitored. Hold a
+        //consumer count so the segment's buffers stay valid until we have fed them all.
+        if(mTwoToneDetector != null && mUserPreferences.getApplicationPreference().isAudioTwoToneDetectEnabled())
+        {
+            audioSegment.incrementConsumerCount();
+            mTwoToneFedIndex.put(audioSegment, 0);
+        }
+
         mNewAudioSegmentQueue.add(audioSegment);
         mAudioRouter.route(audioSegment);
+    }
+
+    /**
+     * Feeds any newly-arrived audio buffers of each tracked segment to the two-tone detector, then releases segments
+     * that have completed. Runs every processing cycle so a tone-out spanning the whole call is analysed in full.
+     */
+    private void feedTwoToneDetector()
+    {
+        if(mTwoToneFedIndex.isEmpty())
+        {
+            return;
+        }
+
+        TwoToneDetector detector = mTwoToneDetector;
+        Iterator<java.util.Map.Entry<AudioSegment,Integer>> it = mTwoToneFedIndex.entrySet().iterator();
+
+        while(it.hasNext())
+        {
+            java.util.Map.Entry<AudioSegment,Integer> entry = it.next();
+            AudioSegment segment = entry.getKey();
+            int nextIndex = entry.getValue();
+
+            List<float[]> buffers = segment.getAudioBuffers();
+            int size = buffers.size();
+
+            for(int i = nextIndex; i < size; i++)
+            {
+                float[] buffer = segment.getAudioBuffer(i);
+                if(buffer != null && detector != null)
+                {
+                    detector.processAudio(buffer, segment);
+                }
+            }
+
+            if(segment.completeProperty().get())
+            {
+                //All buffers fed and the call has ended - stop tracking and release our consumer count.
+                it.remove();
+                segment.decrementConsumerCount();
+            }
+            else
+            {
+                entry.setValue(size);
+            }
+        }
     }
 
     /**
@@ -144,6 +203,10 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
      */
     private void processAudioSegments()
     {
+        //Feed accumulated audio to the two-tone detector for every tracked segment (all channels) before the
+        //playback-oriented filtering below removes duplicates / do-not-monitor segments.
+        feedTwoToneDetector();
+
         //Process new audio segments queue.  If segment has audio, queue it for replay, otherwise place in pending queue
         AudioSegment newSegment = mNewAudioSegmentQueue.poll();
 
@@ -156,11 +219,7 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
             }
             else if(newSegment.hasAudio())
             {
-                if(mTwoToneDetector != null && mUserPreferences.getApplicationPreference().isAudioTwoToneDetectEnabled()) {
-                    for(float[] buffer : newSegment.getAudioBuffers()) {
-                        mTwoToneDetector.processAudio(buffer, newSegment);
-                    }
-                }
+                //Two-tone feeding is handled incrementally by feedTwoToneDetector() across the segment's whole life.
                 mAudioSegments.add(newSegment);
             }
 
