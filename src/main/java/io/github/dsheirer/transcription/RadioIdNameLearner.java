@@ -89,7 +89,7 @@ public class RadioIdNameLearner
     //(self-identification with a status/brevity code is the strongest signal; directional "X to Y" / "Dispatch, X" is
     //medium; a bare acknowledgement is weak). A conflicting self-identification penalizes prior candidates so a
     //pooled/shared radio isn't locked to one unit.
-    private static final int COMMIT_THRESHOLD = 85;
+    private static final int COMMIT_THRESHOLD = 60;
     private static final int WEIGHT_SELF_ID = 40;       //"Engine 7 is en route" / status / 10-code adjacent
     private static final int WEIGHT_DIRECTIONAL = 25;   //"Rescue 4 to Command" or "Dispatch, Engine 7"
     private static final int WEIGHT_ACKNOWLEDGEMENT = 15; //"Engine 7, 10-4" / "Engine 7 copy"
@@ -115,10 +115,14 @@ public class RadioIdNameLearner
     //identifiers like "Engine 9-2" / "Tanker 9-3" / "Utility 9-6" - "Engine 9" and "Engine 9-2" are DISTINCT radios
     //and must not be truncated to the same name.
     private static final Pattern UNIT_PATTERN = Pattern.compile(
-        "\\b(engine|medic|ladder|truck|rescue|squad|battalion|chief|ambulance|tower|brush|tanker|tender|" +
-        "utility|marine|car|unit|station|patrol|deputy|adam|baker|charlie|david|edward|frank|george|henry|" +
+        "\\b(engine|medic|ladder|truck|quint|rescue|squad|battalion|chief|command|ambulance|ems|tower|brush|" +
+        "tanker|tender|utility|marine|car|unit|station|patrol|deputy|traffic|detective|hazmat|air|k-?9|" +
+        "adam|baker|charlie|david|edward|frank|george|henry|" +
         "ida|john|king|lincoln|mary|nora|ocean|paul|queen|robert|sam|tom|union|victor|william|x-ray|young|zebra)" +
         "[\\s-]*(\\d{1,4}(?:-\\d{1,4})*)\\b", Pattern.CASE_INSENSITIVE);
+
+    private static final Pattern DISPATCH_CONSOLE_PATTERN = Pattern.compile(
+        "\\b(dispatch|county|control|base|center|comms|fire\\s+alarm)\\b", Pattern.CASE_INSENSITIVE);
 
     //Status declarations and APCO 10-/11- brevity codes. When one of these immediately follows a unit name, the
     //grammatical subject is almost universally the SPEAKER (the transmitting radio) - the strongest self-id signal.
@@ -331,6 +335,43 @@ public class RadioIdNameLearner
             return scores;
         }
 
+        Matcher consoleMatcher = DISPATCH_CONSOLE_PATTERN.matcher(transcript);
+
+        while(consoleMatcher.find())
+        {
+            String name = normalizeConsoleName(consoleMatcher.group(1));
+            String after = transcript.substring(consoleMatcher.end());
+            String before = transcript.substring(Math.max(0, consoleMatcher.start() - 16), consoleMatcher.start())
+                .toLowerCase(Locale.US);
+            String afterLower = after.toLowerCase(Locale.US);
+
+            if(before.matches("(?s).*\\bto\\s*$") || RECIPIENT_COMMAND.matcher(after).find())
+            {
+                continue;
+            }
+
+            int weight;
+
+            if(STATUS_OR_CODE.matcher(after).find())
+            {
+                weight = WEIGHT_SELF_ID;
+            }
+            else if(afterLower.matches("(?s)^\\s*to\\s+\\S.*"))
+            {
+                weight = WEIGHT_DIRECTIONAL;
+            }
+            else if(afterLower.matches("(?s)^\\s*,\\s*" + UNIT_PATTERN.pattern() + ".*"))
+            {
+                continue;
+            }
+            else
+            {
+                weight = WEIGHT_ACKNOWLEDGEMENT;
+            }
+
+            scores.merge(name, weight, Math::max);
+        }
+
         Matcher matcher = UNIT_PATTERN.matcher(transcript);
 
         while(matcher.find())
@@ -383,8 +424,33 @@ public class RadioIdNameLearner
     private static String normalizeName(String designator, String number)
     {
         String d = designator.toLowerCase(Locale.US);
-        d = Character.toUpperCase(d.charAt(0)) + d.substring(1);
+        if(d.equals("k9") || d.equals("k-9"))
+        {
+            d = "K9";
+        }
+        else
+        {
+            d = Character.toUpperCase(d.charAt(0)) + d.substring(1);
+        }
         return d + " " + number;
+    }
+
+    private static String normalizeConsoleName(String designator)
+    {
+        String lower = designator.toLowerCase(Locale.US);
+        StringBuilder normalized = new StringBuilder();
+
+        for(String part : lower.split("\\s+"))
+        {
+            if(!normalized.isEmpty())
+            {
+                normalized.append(' ');
+            }
+
+            normalized.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+
+        return normalized.toString();
     }
 
     /**
@@ -440,7 +506,7 @@ public class RadioIdNameLearner
      */
     private void assignName(RadioNameCandidate candidate, String name, String basis)
     {
-        Platform.runLater(() -> {
+        runOnFxThread(() -> {
             try
             {
                 Radio radioId = new Radio(candidate.mProtocol, candidate.mRadioId);
@@ -500,6 +566,25 @@ public class RadioIdNameLearner
                 mLog.error("Error assigning learned radio name", e);
             }
         });
+    }
+
+    private static void runOnFxThread(Runnable runnable)
+    {
+        try
+        {
+            if(Platform.isFxApplicationThread())
+            {
+                runnable.run();
+            }
+            else
+            {
+                Platform.runLater(runnable);
+            }
+        }
+        catch(IllegalStateException e)
+        {
+            runnable.run();
+        }
     }
 
     /**

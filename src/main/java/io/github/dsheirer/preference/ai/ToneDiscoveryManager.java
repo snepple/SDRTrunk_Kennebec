@@ -413,10 +413,10 @@ public class ToneDiscoveryManager {
 
     /**
      * Builds a descriptive placeholder name that preserves the measured tone data and RF channel of origin when no
-     * confident unit name could be extracted, e.g. {@code "Unknown Unit (Tones: 1006.9/832.5 on 154.1450)"}.
+     * confident unit name could be extracted, e.g. {@code "Pending User Review (Tones: 1006.9/832.5 on 154.1450)"}.
      */
     static String buildUnknownPlaceholder(double toneA, double toneB, double channelFrequency) {
-        StringBuilder sb = new StringBuilder("Unknown Unit (Tones: ");
+        StringBuilder sb = new StringBuilder("Pending User Review (Tones: ");
         sb.append(formatTone(toneA));
 
         if (toneB > 0) {
