@@ -7,6 +7,7 @@ import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.playlist.TwoToneConfiguration;
+import io.github.dsheirer.transcription.TranscriptionCorrelator;
 import io.github.dsheirer.transcription.TranscriptionEvent;
 import com.google.common.eventbus.Subscribe;
 import org.slf4j.Logger;
@@ -16,6 +17,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Orchestrates AI-driven Two-Tone paging discovery.
@@ -28,17 +33,19 @@ public class ToneDiscoveryManager {
     private static ToneDiscoveryManager mInstance;
 
     private static final int CONFIDENCE_THRESHOLD = 3;
-    //After this many observations of a tone with no confident agency name, stage an "Unknown Unit" placeholder so
-    //the (accurately measured) tone data is preserved for human review rather than being lost (graceful degradation).
+    //After this many observations of a tone with no confident agency name, stage a "Pending User Review"
+    //placeholder so the (accurately measured) tone data is preserved for human review rather than being lost.
     private static final int UNKNOWN_PLACEHOLDER_THRESHOLD = 4;
     private static final double TONE_TOLERANCE_HZ = 5.0;
     private static final String STATE_FILE_PATH = "ai_tone_discovery_state.json";
+    //How long to wait for a transcript before counting the tone observation without NLP.
+    private static final long TRANSCRIPT_WAIT_MS = 120_000;
 
     private final UserPreferences mUserPreferences;
     private final PlaylistManager mPlaylistManager;
     private ToneDiscoveryState mState;
 
-    //A discovered tone waits here (keyed by its AudioSegment id) until the matching transcript arrives on the
+    //A discovered tone waits here (keyed by audio segment correlation id) until the matching transcript arrives on the
     //event bus - this is how tone discovery "naturally waits" for the (low-priority, possibly delayed)
     //transcript.  Bounded with LRU eviction so that tones whose transcript never arrives (e.g. transcription
     //disabled, too short, or shed under extreme load) do not pin their AudioSegment - and its audio buffers -
@@ -51,17 +58,33 @@ public class ToneDiscoveryManager {
                 return size() > MAX_PENDING_TONE_TRANSCRIPTS;
             }
         });
+    private final Map<Long, ScheduledFuture<?>> mPendingTranscriptTimeouts = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService mScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "sdrtrunk tone-discovery");
+        t.setDaemon(true);
+        t.setPriority(Thread.MIN_PRIORITY);
+        return t;
+    });
 
     public ToneDiscoveryManager(UserPreferences userPreferences, PlaylistManager playlistManager) {
         mUserPreferences = userPreferences;
         mPlaylistManager = playlistManager;
         loadState();
+        mPlaylistManager.syncToneDiscoveryWithAIPreference();
         MyEventBus.getGlobalEventBus().register(this);
         mInstance = this;
     }
 
     public static ToneDiscoveryManager getInstance() {
         return mInstance;
+    }
+
+    /**
+     * Aligns playlist FFT discovery with the AI tone-discovery preference toggle.
+     */
+    public void syncPlaylistToneDiscovery()
+    {
+        mPlaylistManager.syncToneDiscoveryWithAIPreference();
     }
 
     public Set<String> getFinalizedTones() {
@@ -163,9 +186,70 @@ public class ToneDiscoveryManager {
         }
 
         // Store it so we can pair it when the transcript arrives
-        if (event.getAudioSegment() != null) {
-            // Using hashcode or some unique ID from AudioSegment. If no unique ID exists, we can use object hash or timestamp.
-            mPendingTranscripts.put((long) event.getAudioSegment().hashCode(), event);
+        long correlationKey = segmentCorrelationKey(event);
+
+        if(correlationKey != 0L)
+        {
+            mPendingTranscripts.put(correlationKey, event);
+            scheduleTranscriptTimeout(correlationKey, event);
+        }
+    }
+
+    private long segmentCorrelationKey(ToneDiscoveredEvent event)
+    {
+        if(event.getAudioSegment() == null)
+        {
+            return 0L;
+        }
+
+        Integer toId = null;
+
+        try
+        {
+            if(event.getAudioSegment().getIdentifierCollection() != null &&
+                event.getAudioSegment().getIdentifierCollection().getToIdentifier() != null &&
+                event.getAudioSegment().getIdentifierCollection().getToIdentifier().getValue() instanceof Number)
+            {
+                toId = ((Number)event.getAudioSegment().getIdentifierCollection().getToIdentifier().getValue()).intValue();
+            }
+        }
+        catch(Exception e)
+        {
+            mLog.debug("Unable to read talkgroup for tone/transcript correlation - " + e.getMessage());
+        }
+
+        return TranscriptionCorrelator.segmentCorrelationKey(event.getAudioSegment().getStartTimestamp(), toId);
+    }
+
+    private void scheduleTranscriptTimeout(long correlationKey, ToneDiscoveredEvent event)
+    {
+        ScheduledFuture<?> existing = mPendingTranscriptTimeouts.remove(correlationKey);
+
+        if(existing != null)
+        {
+            existing.cancel(false);
+        }
+
+        ScheduledFuture<?> future = mScheduler.schedule(() -> {
+            ToneDiscoveredEvent pending = mPendingTranscripts.remove(correlationKey);
+            mPendingTranscriptTimeouts.remove(correlationKey);
+
+            if(pending != null)
+            {
+                processDiscoveredToneWithoutTranscript(pending);
+            }
+        }, TRANSCRIPT_WAIT_MS, TimeUnit.MILLISECONDS);
+
+        mPendingTranscriptTimeouts.put(correlationKey, future);
+    }
+
+    private void cancelTranscriptTimeout(long correlationKey)
+    {
+        ScheduledFuture<?> future = mPendingTranscriptTimeouts.remove(correlationKey);
+
+        if(future != null)
+        {
+            future.cancel(false);
         }
     }
 
@@ -257,11 +341,45 @@ public class ToneDiscoveryManager {
             return;
         }
 
-        long segmentId = (long) event.getAudioSegment().hashCode();
-        ToneDiscoveredEvent toneEvent = mPendingTranscripts.remove(segmentId);
-        
-        if (toneEvent != null) {
+        long correlationKey = event.getSegmentCorrelationKey();
+        ToneDiscoveredEvent toneEvent = correlationKey != 0L ? mPendingTranscripts.remove(correlationKey) : null;
+
+        if(toneEvent != null)
+        {
+            cancelTranscriptTimeout(correlationKey);
             processDiscoveredToneWithTranscript(toneEvent, event.getTranscript());
+        }
+    }
+
+    private void processDiscoveredToneWithoutTranscript(ToneDiscoveredEvent event)
+    {
+        synchronized(this)
+        {
+            String toneKey = getToneKey(event.getToneA(), event.getToneB());
+
+            if(mState.getFinalizedTones().contains(toneKey) ||
+                matchesActiveConfiguration(event.getToneA(), event.getToneB()) ||
+                matchesTombstone(event.getToneA(), event.getToneB(), event.getChannelFrequency()))
+            {
+                return;
+            }
+
+            int observations = mState.getObservationCounts().merge(toneKey, 1, Integer::sum);
+            boolean hasNamedCandidate = mState.getPendingDiscoveries().containsKey(toneKey) &&
+                !mState.getPendingDiscoveries().get(toneKey).isEmpty();
+
+            mLog.info("AI Tone Discovery: tone " + toneKey + " observed without transcript (" + observations +
+                "/" + UNKNOWN_PLACEHOLDER_THRESHOLD + ")");
+
+            if(!hasNamedCandidate && observations >= UNKNOWN_PLACEHOLDER_THRESHOLD)
+            {
+                finalizeDetector(event.getToneA(), event.getToneB(), toneKey, null,
+                    event.getChannelFrequency(), null);
+            }
+            else
+            {
+                saveState();
+            }
         }
     }
 
@@ -269,7 +387,11 @@ public class ToneDiscoveryManager {
         String apiKey = mUserPreferences.getAIPreference().getGeminiApiKey();
         String model = mUserPreferences.getAIPreference().getGeminiModel();
 
-        if (apiKey == null || apiKey.isEmpty()) return;
+        if (apiKey == null || apiKey.isEmpty())
+        {
+            processDiscoveredToneWithoutTranscript(event);
+            return;
+        }
 
         // Run async on a low-priority background path so the resource-intensive NLP never competes with the core
         // tuner -> demod -> audio -> stream pipeline.
@@ -308,7 +430,7 @@ public class ToneDiscoveryManager {
                         !mState.getPendingDiscoveries().get(toneKey).isEmpty();
 
                     //Graceful degradation: enough unintelligible observations and no nameable candidate -> preserve
-                    //the accurately measured tone data behind an "Unknown Unit" placeholder for human review.
+                    //the accurately measured tone data behind a pending-review placeholder for human review.
                     if (!hasNamedCandidate && observations >= UNKNOWN_PLACEHOLDER_THRESHOLD) {
                         finalizeDetector(event.getToneA(), event.getToneB(), toneKey, null,
                             event.getChannelFrequency(), transcript);
@@ -323,8 +445,8 @@ public class ToneDiscoveryManager {
     /**
      * Stages a new (disabled, review-pending) detector for the discovered tones.  Tones are snapped to the nearest
      * standardized paging matrix value, and the RF channel of origin plus the raw transcript are stored as the
-     * human-review package.  A null/empty {@code agencies} list produces an "Unknown Unit" placeholder that preserves
-     * the tone data (graceful degradation).
+     * human-review package.  A null/empty {@code agencies} list produces a "Pending User Review" placeholder that
+     * preserves the tone data (graceful degradation).
      */
     private void finalizeDetector(double toneA, double toneB, String toneKey, List<String> agencies,
                                   double channelFrequency, String transcript) {
@@ -386,10 +508,10 @@ public class ToneDiscoveryManager {
 
     /**
      * Builds a descriptive placeholder name that preserves the measured tone data and RF channel of origin when no
-     * confident unit name could be extracted, e.g. {@code "Unknown Unit (Tones: 1006.9/832.5 on 154.1450)"}.
+     * confident unit name could be extracted, e.g. {@code "Pending User Review (Tones: 1006.9/832.5 on 154.1450)"}.
      */
     static String buildUnknownPlaceholder(double toneA, double toneB, double channelFrequency) {
-        StringBuilder sb = new StringBuilder("Unknown Unit (Tones: ");
+        StringBuilder sb = new StringBuilder("Pending User Review (Tones: ");
         sb.append(formatTone(toneA));
 
         if (toneB > 0) {

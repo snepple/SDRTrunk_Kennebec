@@ -78,4 +78,11 @@ public class TranscriptionEvent {
     public Integer getToId() {
         return mToId;
     }
+
+    /**
+     * Stable key for pairing this transcription with a tone-discovery event from the same audio segment.
+     */
+    public long getSegmentCorrelationKey() {
+        return TranscriptionCorrelator.segmentCorrelationKey(mStartTimestamp, mToId);
+    }
 }

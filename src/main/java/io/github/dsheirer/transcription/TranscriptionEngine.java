@@ -203,7 +203,9 @@ public class TranscriptionEngine {
                 "\"config\": {" +
                 "\"encoding\":\"LINEAR16\"," +
                 "\"sampleRateHertz\": 8000," +
-                "\"languageCode\": \"en-US\"" +
+                "\"languageCode\": \"en-US\"," +
+                "\"model\": \"phone_call\"," +
+                "\"enableAutomaticPunctuation\": true" +
                 "}," +
                 "\"audio\": {" +
                 "\"content\": \"" + audioBase64 + "\"" +

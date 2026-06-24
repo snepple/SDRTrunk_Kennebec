@@ -3,7 +3,6 @@ package io.github.dsheirer.dsp.tone;
 import io.github.dsheirer.dsp.filter.GoertzelFilter;
 import io.github.dsheirer.dsp.window.WindowType;
 import io.github.dsheirer.playlist.PlaylistManager;
-import io.github.dsheirer.playlist.PlaylistV2;
 import io.github.dsheirer.alias.Alias;
 import java.util.Collection;
 import io.github.dsheirer.playlist.TwoToneConfiguration;
@@ -77,11 +76,16 @@ public class TwoToneDetector
     // Discovery tracking
     public static final List<TwoToneDiscoveryLog> DISCOVERY_LOG = new ArrayList<>();
 
-    // State machine for Tone A -> Tone B
-    private double mCurrentToneA = 0.0;
-    private int mCurrentToneABlocks = 0;
-    private double mCurrentToneB = 0.0;
-    private int mCurrentToneBBlocks = 0;
+    // Per-detector state machines so multiple configured detectors do not stomp each other's A->B tracking.
+    private static final class DetectorSequenceState
+    {
+        private double mToneA;
+        private int mToneABlocks;
+        private double mToneB;
+        private int mToneBBlocks;
+    }
+
+    private final java.util.HashMap<String, DetectorSequenceState> mDetectorStates = new java.util.HashMap<>();
 
     // FFT Auto-Discovery variables
     private static final int FFT_SIZE = 4096;
@@ -131,11 +135,8 @@ public class TwoToneDetector
 
     private void processBuffer(float[] buffer, AudioSegment segment)
     {
-        PlaylistV2 playlist = mPlaylistManager.getCurrentPlaylist();
-        if(playlist == null) return;
-
-        List<TwoToneConfiguration> configs = playlist.getTwoToneConfigurations();
-        boolean discoveryEnabled = playlist.isToneDiscoveryEnabled();
+        List<TwoToneConfiguration> configs = mPlaylistManager.getTwoToneConfigurations();
+        boolean discoveryEnabled = isToneDiscoveryEnabled();
 
         if (configs.isEmpty() && !discoveryEnabled)
         {
@@ -170,6 +171,7 @@ public class TwoToneDetector
             long freqB = Math.round(config.getToneB());
             double tol = config.getFrequencyTolerance();
             int minToneBlocks = Math.max(1, (int)(config.getToneDurationMs() / 20));
+            DetectorSequenceState state = stateFor(config.getAlias());
 
             if (freqA <= 0) continue;
             if (!config.isLongATone() && freqB <= 0) continue;
@@ -181,28 +183,24 @@ public class TwoToneDetector
                 if (powerA > POWER_THRESHOLD_DB)
                 {
                     matchedToneAThisBlock = true;
-                    if(mCurrentToneA == config.getToneA())
+                    if(frequencyMatches(state.mToneA, config.getToneA(), tol))
                     {
-                        mCurrentToneABlocks++;
+                        state.mToneABlocks++;
                     }
                     else
                     {
-                        mCurrentToneA = config.getToneA();
-                        mCurrentToneABlocks = 1;
+                        state.mToneA = config.getToneA();
+                        state.mToneABlocks = 1;
                     }
 
-                    if(mCurrentToneABlocks == LONG_A_MIN_TONE_BLOCKS)
+                    if(state.mToneABlocks == LONG_A_MIN_TONE_BLOCKS)
                     {
-                        triggerAlertIfMatched(config, segment);
-                        // Do not reset mCurrentToneABlocks to 0 here.
-                        // Allow it to keep incrementing as long as the tone is present
-                        // to prevent multiple triggers for the same continuous long tone.
+                        triggerAlert(config, segment);
                     }
                 }
-                else if (mCurrentToneA == config.getToneA())
+                else if (frequencyMatches(state.mToneA, config.getToneA(), tol))
                 {
-                    mCurrentToneA = 0;
-                    mCurrentToneABlocks = 0;
+                    resetState(state);
                 }
                 continue;
             }
@@ -213,43 +211,41 @@ public class TwoToneDetector
             if (powerA > POWER_THRESHOLD_DB)
             {
                 matchedToneAThisBlock = true;
-                if(mCurrentToneA == config.getToneA())
+                if(frequencyMatches(state.mToneA, config.getToneA(), tol))
                 {
-                    mCurrentToneABlocks++;
+                    state.mToneABlocks++;
                 }
                 else
                 {
-                    mCurrentToneA = config.getToneA();
-                    mCurrentToneABlocks = 1;
-                    mCurrentToneB = 0;
-                    mCurrentToneBBlocks = 0;
+                    state.mToneA = config.getToneA();
+                    state.mToneABlocks = 1;
+                    state.mToneB = 0;
+                    state.mToneBBlocks = 0;
                 }
             }
             // Tone B detection (only valid if Tone A was previously detected and held)
-            else if (powerB > POWER_THRESHOLD_DB && mCurrentToneABlocks >= minToneBlocks && mCurrentToneA == config.getToneA())
+            else if (powerB > POWER_THRESHOLD_DB && state.mToneABlocks >= minToneBlocks &&
+                frequencyMatches(state.mToneA, config.getToneA(), tol))
             {
                 matchedToneBThisBlock = true;
-                if(mCurrentToneB == config.getToneB())
+                if(frequencyMatches(state.mToneB, config.getToneB(), tol))
                 {
-                    mCurrentToneBBlocks++;
+                    state.mToneBBlocks++;
                 }
                 else
                 {
-                    mCurrentToneB = config.getToneB();
-                    mCurrentToneBBlocks = 1;
+                    state.mToneB = config.getToneB();
+                    state.mToneBBlocks = 1;
                 }
 
 
                 // If B is held long enough, it's a confirmed sequence
-                if(mCurrentToneBBlocks >= minToneBlocks)
+                if(state.mToneBBlocks >= minToneBlocks)
                 {
-                    triggerAlertIfMatched(config, segment);
+                    triggerAlert(config, segment);
 
                     // Reset to avoid multiple triggers for the same continuous tone
-                    mCurrentToneA = 0;
-                    mCurrentToneABlocks = 0;
-                    mCurrentToneB = 0;
-                    mCurrentToneBBlocks = 0;
+                    resetState(state);
                 }
 
             }
@@ -323,6 +319,47 @@ public class TwoToneDetector
                     mDiscoveryToneBBlocks = 0;
                 }
             }
+        }
+    }
+
+    private DetectorSequenceState stateFor(String detectorAlias)
+    {
+        return mDetectorStates.computeIfAbsent(detectorAlias, key -> new DetectorSequenceState());
+    }
+
+    private static void resetState(DetectorSequenceState state)
+    {
+        state.mToneA = 0;
+        state.mToneABlocks = 0;
+        state.mToneB = 0;
+        state.mToneBBlocks = 0;
+    }
+
+    private static boolean frequencyMatches(double observed, double configured, double tolerance)
+    {
+        if(configured <= 0)
+        {
+            return false;
+        }
+
+        return Math.abs(observed - configured) <= Math.max(tolerance, 1.0);
+    }
+
+    private boolean isToneDiscoveryEnabled()
+    {
+        if(mPlaylistManager.isToneDiscoveryEnabled())
+        {
+            return true;
+        }
+
+        try
+        {
+            return mPlaylistManager.getUserPreferences().getAIPreference().isAIEnabled() &&
+                mPlaylistManager.getUserPreferences().getAIPreference().isAIToneDiscoveryEnabled();
+        }
+        catch(Exception e)
+        {
+            return false;
         }
     }
 
@@ -461,68 +498,30 @@ public class TwoToneDetector
         return filter.getPower(mGoertzelScratch);
     }
 
-
-    private void triggerAlertIfMatched(TwoToneConfiguration config, AudioSegment segment)
-    {
-        boolean shouldTrigger = true;
-        // Check alias associations
-        if (segment != null) {
-            io.github.dsheirer.alias.AliasList aliasList = mPlaylistManager.getAliasModel().getAliasList(segment.getIdentifierCollection());
-            boolean foundMapping = false;
-            if (aliasList != null) {
-                for (io.github.dsheirer.identifier.Identifier identifier : segment.getIdentifierCollection().getIdentifiers()) {
-                    java.util.List<io.github.dsheirer.alias.Alias> aliases = aliasList.getAliases(identifier);
-                    if (aliases != null) {
-                        for (io.github.dsheirer.alias.Alias alias : aliases) {
-                            if (alias.hasTwoToneDetector(config.getAlias())) {
-                                foundMapping = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (foundMapping) break;
-                }
-            }
-
-            // If we didn't find a mapping on the segment's aliases, we need to see if the config has ANY aliases at all.
-            // If it has aliases configured but they didn't match, we skip.
-            // If it has NO aliases configured, we trigger (global mode).
-            if (!foundMapping) {
-                boolean hasAnyMapping = false;
-                for (io.github.dsheirer.alias.Alias alias : mPlaylistManager.getAliasModel().aliasList()) {
-                    if (alias.hasTwoToneDetector(config.getAlias())) {
-                        hasAnyMapping = true;
-                        break;
-                    }
-                }
-                if (hasAnyMapping) {
-                    shouldTrigger = false;
-                }
-            }
-        }
-
-        if (shouldTrigger) {
-            mLog.info("Two Tone Detected: {} (A:{} B:{})", config.getAlias(), config.getToneA(), config.getToneB());
-            triggerAlert(config, segment);
-
-            String channel = "Unknown";
-            if(segment != null) {
-                io.github.dsheirer.identifier.Identifier id = segment.getIdentifierCollection().getIdentifier(io.github.dsheirer.identifier.IdentifierClass.CONFIGURATION, io.github.dsheirer.identifier.Form.CHANNEL, io.github.dsheirer.identifier.Role.ANY);
-                if (id instanceof io.github.dsheirer.identifier.configuration.ChannelNameConfigurationIdentifier) {
-                    channel = ((io.github.dsheirer.identifier.configuration.ChannelNameConfigurationIdentifier)id).getValue();
-                }
-            }
-            org.slf4j.LoggerFactory.getLogger(io.github.dsheirer.log.TwoToneLog.LOGGER_NAME).info("[Channel: {}] [Alias: {}] - [{}]", channel, config.getAlias(), config.getAlias());
-        }
-    }
-
     private AntiFloodFilter mAntiFloodFilter;
 
     public void setAntiFloodFilter(AntiFloodFilter filter) {
         this.mAntiFloodFilter = filter;
     }
 
+
     private void triggerAlert(TwoToneConfiguration config, AudioSegment segment)
+    {
+        mLog.info("Two Tone Detected: {} (A:{} B:{})", config.getAlias(), config.getToneA(), config.getToneB());
+
+        String channel = "Unknown";
+        if(segment != null) {
+            io.github.dsheirer.identifier.Identifier id = segment.getIdentifierCollection().getIdentifier(io.github.dsheirer.identifier.IdentifierClass.CONFIGURATION, io.github.dsheirer.identifier.Form.CHANNEL, io.github.dsheirer.identifier.Role.ANY);
+            if (id instanceof io.github.dsheirer.identifier.configuration.ChannelNameConfigurationIdentifier) {
+                channel = ((io.github.dsheirer.identifier.configuration.ChannelNameConfigurationIdentifier)id).getValue();
+            }
+        }
+        org.slf4j.LoggerFactory.getLogger(io.github.dsheirer.log.TwoToneLog.LOGGER_NAME).info("[Channel: {}] [Alias: {}] - [{}]", channel, config.getAlias(), config.getAlias());
+
+        triggerAlertActions(config, segment);
+    }
+
+    private void triggerAlertActions(TwoToneConfiguration config, AudioSegment segment)
     {
         String template = (config.getTemplate() != null && !config.getTemplate().isEmpty()) ? config.getTemplate() : "Dispatch Received: {Alias}";
 

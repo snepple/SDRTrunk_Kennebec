@@ -45,6 +45,12 @@ public class AIPreferenceEditor extends VBox {
         enableAiSwitch.setSelected(mUserPreferences.getAIPreference().isAIEnabled());
         enableAiSwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
             mUserPreferences.getAIPreference().setAIEnabled(newValue);
+            io.github.dsheirer.preference.ai.ToneDiscoveryManager manager =
+                io.github.dsheirer.preference.ai.ToneDiscoveryManager.getInstance();
+            if(manager != null)
+            {
+                manager.syncPlaylistToneDiscovery();
+            }
         });
         
         SettingsCard mainCard = new SettingsCard();
@@ -91,6 +97,12 @@ public class AIPreferenceEditor extends VBox {
         enableToneDiscoverySwitch.setSelected(mUserPreferences.getAIPreference().isAIToneDiscoveryEnabled());
         enableToneDiscoverySwitch.selectedProperty().addListener((observable, oldValue, newValue) -> {
             mUserPreferences.getAIPreference().setAIToneDiscoveryEnabled(newValue);
+            io.github.dsheirer.preference.ai.ToneDiscoveryManager manager =
+                io.github.dsheirer.preference.ai.ToneDiscoveryManager.getInstance();
+            if(manager != null)
+            {
+                manager.syncPlaylistToneDiscovery();
+            }
         });
 
         Button manageIgnoredBtn = new Button("Manage Ignored Tones");

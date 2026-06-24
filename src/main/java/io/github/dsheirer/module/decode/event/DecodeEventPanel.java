@@ -271,8 +271,8 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
 
     /**
      * Receives completed audio transcriptions and attaches each to its decode event so it shows in the
-     * Transcription column.  Correlation is by TO talkgroup id (when known) plus closest start time, since
-     * transcripts arrive asynchronously and are not directly linked to a decode event.
+     * Transcription column.  Correlation uses the audio segment's time span within the call (not just proximity
+     * to the grant timestamp) so multi-segment and longer calls still receive transcripts.
      */
     @Subscribe
     public void handleTranscription(io.github.dsheirer.transcription.TranscriptionEvent event)
@@ -285,51 +285,12 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         final String transcript = event.getTranscript().trim();
         final long timestamp = event.getStartTimestamp();
         final Integer toId = event.getToId();
+        final Integer fromRadioId = event.getFromRadioId();
 
         Platform.runLater(() -> {
-            IDecodeEvent best = null;
-            long bestDelta = Long.MAX_VALUE;
-
-            for(IDecodeEvent decodeEvent : new java.util.ArrayList<IDecodeEvent>(mTable.getItems()))
-            {
-                if(decodeEvent == null)
-                {
-                    continue;
-                }
-
-                //When a TO id is known, require it to match so transcripts don't attach to other channels.
-                if(toId != null)
-                {
-                    boolean toMatches = false;
-
-                    if(decodeEvent.getIdentifierCollection() != null)
-                    {
-                        for(io.github.dsheirer.identifier.Identifier id : decodeEvent.getIdentifierCollection()
-                                .getIdentifiers(io.github.dsheirer.identifier.Role.TO))
-                        {
-                            if(id.getValue() instanceof Number && ((Number)id.getValue()).intValue() == toId)
-                            {
-                                toMatches = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if(!toMatches)
-                    {
-                        continue;
-                    }
-                }
-
-                //Pick the event closest in time to the audio segment start (within a 30 second window).
-                long delta = timestamp > 0 ? Math.abs(decodeEvent.getTimeStart() - timestamp) : 0;
-
-                if(delta < bestDelta && delta <= 30000)
-                {
-                    bestDelta = delta;
-                    best = decodeEvent;
-                }
-            }
+            //Search the global history (all channels) so transcripts attach even when a different channel is selected.
+            IDecodeEvent best = io.github.dsheirer.transcription.TranscriptionCorrelator.findBestMatch(
+                mGlobalEventModel.getItems(), timestamp, toId, fromRadioId);
 
             if(best != null)
             {
@@ -337,6 +298,10 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
                 //segments shows its full text from the beginning rather than only the last-arriving fragment.
                 best.addTranscriptionSegment(timestamp, transcript);
                 mTable.refresh();
+            }
+            else
+            {
+                mLog.debug("No decode event matched transcription at {} (toId={})", timestamp, toId);
             }
         });
     }

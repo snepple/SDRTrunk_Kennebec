@@ -219,6 +219,27 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
         TableColumn<IDecodeEvent, String> transcriptionCol = new TableColumn<>("Transcription");
         transcriptionCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getTranscription()));
         transcriptionCol.setPrefWidth(280);
+        transcriptionCol.setCellFactory(col -> new TableCell<>()
+        {
+            @Override
+            protected void updateItem(String transcription, boolean empty)
+            {
+                super.updateItem(transcription, empty);
+
+                if(empty || transcription == null || transcription.isBlank())
+                {
+                    setText(null);
+                    setTooltip(null);
+                    setWrapText(false);
+                }
+                else
+                {
+                    setText(transcription);
+                    setWrapText(true);
+                    setTooltip(new Tooltip(transcription));
+                }
+            }
+        });
         columns.add(transcriptionCol);
 
         return columns;

@@ -33,14 +33,14 @@ class ToneDiscoveryManagerTest
     void placeholderPreservesTonesAndChannel()
     {
         //154145000 Hz -> 154.1450 MHz in standard channel notation.
-        assertEquals("Unknown Unit (Tones: 1006.9/832.5 on 154.1450)",
+        assertEquals("Pending User Review (Tones: 1006.9/832.5 on 154.1450)",
             ToneDiscoveryManager.buildUnknownPlaceholder(1006.9, 832.5, 154_145_000.0));
     }
 
     @Test
     void placeholderOmitsChannelWhenUnknown()
     {
-        assertEquals("Unknown Unit (Tones: 600.9/707.3)",
+        assertEquals("Pending User Review (Tones: 600.9/707.3)",
             ToneDiscoveryManager.buildUnknownPlaceholder(600.9, 707.3, 0.0));
     }
 
@@ -48,6 +48,6 @@ class ToneDiscoveryManagerTest
     void placeholderHandlesSingleToneLongAPage()
     {
         String placeholder = ToneDiscoveryManager.buildUnknownPlaceholder(1153.0, 0.0, 154_145_000.0);
-        assertTrue(placeholder.startsWith("Unknown Unit (Tones: 1153.0 on 154.1450)"), placeholder);
+        assertTrue(placeholder.startsWith("Pending User Review (Tones: 1153.0 on 154.1450)"), placeholder);
     }
 }

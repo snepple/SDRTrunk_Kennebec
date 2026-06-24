@@ -481,6 +481,38 @@ public class PlaylistManager implements Listener<ChannelEvent>
     }
 
     /**
+     * Indicates whether FFT-based unknown two-tone discovery is enabled for the current playlist.
+     */
+    public boolean isToneDiscoveryEnabled()
+    {
+        return mToneDiscoveryEnabled;
+    }
+
+    /**
+     * Enables or disables FFT-based unknown two-tone discovery and persists the change with the playlist.
+     */
+    public void setToneDiscoveryEnabled(boolean enabled)
+    {
+        mToneDiscoveryEnabled = enabled;
+        schedulePlaylistSave();
+    }
+
+    /**
+     * Keeps playlist FFT discovery aligned with the AI preference toggle.
+     */
+    public void syncToneDiscoveryWithAIPreference()
+    {
+        boolean aiDiscovery = mUserPreferences.getAIPreference().isAIEnabled() &&
+            mUserPreferences.getAIPreference().isAIToneDiscoveryEnabled();
+
+        if(aiDiscovery != mToneDiscoveryEnabled)
+        {
+            mToneDiscoveryEnabled = aiDiscovery;
+            schedulePlaylistSave();
+        }
+    }
+
+    /**
      * Replaces the persisted two-tone detector configurations with the supplied list. This updates the
      * manager's backing list (the source of truth that getCurrentPlaylist() serializes); callers should
      * follow with schedulePlaylistSave() to persist. Note: getCurrentPlaylist() returns a fresh throwaway
