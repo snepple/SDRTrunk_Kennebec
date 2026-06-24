@@ -302,16 +302,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mControllerPanel.addView("logs", mJavaFxWindowManager.getView(ViewIdentifier.LOGS));
             mSpectralPanel = new SpectralDisplayPanel(mPlaylistManager, mSettingsManager, mTunerManager.getDiscoveredTunerModel());
             
-            java.util.prefs.Preferences p = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
-            boolean wizardCompleted = p.getBoolean("sdrtrunk.first.time.wizard.completed", false);
-            if (!wizardCompleted) {
-                // Hide the always-on-top splash before showing the wizard, otherwise the splash
-                // sits on top of the wizard dialog and the user cannot see or interact with it.
-                notifyPreloader(new SDRTrunkPreloader.HideNotification());
-                io.github.dsheirer.gui.wizard.FirstTimeWizard wizard = new io.github.dsheirer.gui.wizard.FirstTimeWizard(mUserPreferences, mJavaFxWindowManager, primaryStage);
-                wizard.showAndWait();
-            }
-
             //Initialize the GUI
             initGUI();
 
@@ -380,6 +370,19 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             //instead of watching a bare/outlined shell fill in.
             primaryStage.setOpacity(0.0);
             primaryStage.show();
+
+            // Show the first-time wizard after the stage has a scene so that JavaFX's
+            // HeavyweightDialog.initOwner() can safely bind to the owner stage's stylesheet list.
+            // Showing it before setScene()/show() causes a NullPointerException inside JavaFX.
+            java.util.prefs.Preferences p = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
+            boolean wizardCompleted = p.getBoolean("sdrtrunk.first.time.wizard.completed", false);
+            if (!wizardCompleted) {
+                // Hide the always-on-top splash before showing the wizard; otherwise the splash
+                // sits on top of the wizard and the user cannot see or interact with it.
+                notifyPreloader(new SDRTrunkPreloader.HideNotification());
+                io.github.dsheirer.gui.wizard.FirstTimeWizard wizard = new io.github.dsheirer.gui.wizard.FirstTimeWizard(mUserPreferences, mJavaFxWindowManager, primaryStage);
+                wizard.showAndWait();
+            }
 
             //Closing the main window triggers the same confirmation as the sidebar Exit, then fully quits the app.
             primaryStage.setOnCloseRequest(event -> {
