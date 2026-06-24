@@ -285,6 +285,11 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         else
         {
             mLog.info("starting main application gui");
+            //The app intentionally keeps running when the main window is temporarily hidden to the tray. Disable
+            //implicit exit before any startup splash/main-window transition so JavaFX never treats a transient
+            //no-visible-window moment as an application shutdown request.
+            Platform.setImplicitExit(false);
+            mLog.info("JavaFX implicit exit disabled for SDRTrunk GUI lifecycle");
 
             mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this::onViewChanged);
             mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
@@ -369,11 +374,16 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             //the splash still covers it.  The window is revealed at full opacity only once the content has actually
             //rendered (see the reveal logic below), so the user goes straight from the splash to a fully-drawn window
             //instead of watching a bare/outlined shell fill in.
+            primaryStage.setOnShown(event -> mLog.info("Main window shown (opacity={}, iconified={})",
+                primaryStage.getOpacity(), primaryStage.isIconified()));
+            primaryStage.setOnHidden(event -> mLog.info("Main window hidden (opacity={}, iconified={})",
+                primaryStage.getOpacity(), primaryStage.isIconified()));
             primaryStage.setOpacity(0.0);
             primaryStage.show();
 
             //Closing the main window triggers the same confirmation as the sidebar Exit, then fully quits the app.
             primaryStage.setOnCloseRequest(event -> {
+                mLog.info("Main window close requested");
                 event.consume();
                 confirmAndExit();
             });
@@ -399,7 +409,24 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 {
                     revealed[0] = true;
                     primaryStage.setOpacity(1.0);
-                    notifyPreloader(new SDRTrunkPreloader.HideNotification());
+                    primaryStage.setIconified(false);
+                    //Let JavaFX/native window state observe the now-visible main stage for one render pulse before
+                    //hiding the preloader. This avoids an implicit-exit race on Windows jpackage launches where the
+                    //splash can be the only visible native window while the main stage transitions from opacity 0.
+                    final javafx.animation.AnimationTimer[] hideSplashOnNextPulse = new javafx.animation.AnimationTimer[1];
+                    hideSplashOnNextPulse[0] = new javafx.animation.AnimationTimer() {
+                        @Override
+                        public void handle(long now)
+                        {
+                            hideSplashOnNextPulse[0].stop();
+                            mLog.info("Hiding startup splash after main window reveal (showing={}, opacity={}, iconified={})",
+                                primaryStage.isShowing(), primaryStage.getOpacity(), primaryStage.isIconified());
+                            notifyPreloader(new SDRTrunkPreloader.HideNotification());
+                            primaryStage.toFront();
+                            primaryStage.requestFocus();
+                        }
+                    };
+                    hideSplashOnNextPulse[0].start();
                 }
             };
 

@@ -126,6 +126,7 @@ public class SDRTrunkPreloader extends Preloader {
         primaryStage.setAlwaysOnTop(true);
         primaryStage.setScene(scene);
         primaryStage.setTitle("SDRTrunk Starting...");
+        primaryStage.setOnHidden(event -> mLog.info("Startup splash hidden"));
         primaryStage.centerOnScreen();
         primaryStage.show();
     }
@@ -145,6 +146,7 @@ public class SDRTrunkPreloader extends Preloader {
             progressLabel.setText(textInfo.getText());
         } else if (info instanceof HideNotification) {
             if (preloaderStage != null) {
+                mLog.info("Startup splash hide requested");
                 preloaderStage.hide();
             }
         }
