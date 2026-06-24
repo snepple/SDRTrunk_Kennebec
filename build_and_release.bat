@@ -248,6 +248,8 @@ for /f "tokens=* delims=ABCDEFGHIJKLMNOPQRSTUVWXYZ." %%V in ("!APP_VER!") do set
 if "!APP_VER!"=="" set "APP_VER=0.0.1"
 
 set "RELEASE_DIR=%ROOT_DIR%\%FOLDER_NAME%\build\releases"
+set "WINDOWS_ZIP_STAGED=0"
+set "WINDOWS_INSTALLER_STAGED=0"
 
 :: ============================================================================
 :: STEP 6: Gradle Init (Compile)
@@ -316,8 +318,13 @@ findstr /C:"BUILD SUCCESSFUL" build_win.log >nul
 if !ERRORLEVEL! EQU 0 (
     echo [OK] Windows runtime package built.
     for %%F in (build\image\*.zip) do (
-        copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-windows-x86_64.zip" >nul
-        echo [OK] Staged: SDRTrunk-!PROJ_VER!-windows-x86_64.zip
+        copy /Y "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-windows-x86_64.zip" >nul
+        if !ERRORLEVEL! EQU 0 (
+            set "WINDOWS_ZIP_STAGED=1"
+            echo [OK] Staged: SDRTrunk-!PROJ_VER!-windows-x86_64.zip
+        ) else (
+            echo [WARNING] Failed to stage Windows portable ZIP: %%~nxF
+        )
     )
 ) else (
     echo [WARNING] Windows runtime build failed. Falling back to distZip...
@@ -326,7 +333,13 @@ if !ERRORLEVEL! EQU 0 (
     type build_fallback.log >> "%LOG_FILE%"
     findstr /C:"BUILD SUCCESSFUL" build_fallback.log >nul || goto ai_triage
     for %%F in (build\distributions\*.zip) do (
-        copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-windows-x86_64.zip" >nul
+        copy /Y "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-windows-x86_64.zip" >nul
+        if !ERRORLEVEL! EQU 0 (
+            set "WINDOWS_ZIP_STAGED=1"
+            echo [OK] Staged: SDRTrunk-!PROJ_VER!-windows-x86_64.zip
+        ) else (
+            echo [WARNING] Failed to stage fallback Windows portable ZIP: %%~nxF
+        )
     )
 )
 
@@ -341,12 +354,22 @@ if "!HAS_JPACKAGE!"=="1" (
     findstr /C:"BUILD SUCCESSFUL" build_installer.log >nul
     if !ERRORLEVEL! EQU 0 (
         for %%F in (build\installer\*.exe) do (
-            copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-windows-installer.exe" >nul
-            echo [OK] Staged: SDRTrunk-!PROJ_VER!-windows-installer.exe
+            copy /Y "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-windows-installer.exe" >nul
+            if !ERRORLEVEL! EQU 0 (
+                set "WINDOWS_INSTALLER_STAGED=1"
+                echo [OK] Staged: SDRTrunk-!PROJ_VER!-windows-installer.exe
+            ) else (
+                echo [WARNING] Failed to stage Windows installer EXE: %%~nxF
+            )
         )
         for %%F in (build\installer\*.msi) do (
-            copy "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-windows-installer.msi" >nul
-            echo [OK] Staged: SDRTrunk-!PROJ_VER!-windows-installer.msi
+            copy /Y "%%F" "!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-windows-installer.msi" >nul
+            if !ERRORLEVEL! EQU 0 (
+                set "WINDOWS_INSTALLER_STAGED=1"
+                echo [OK] Staged: SDRTrunk-!PROJ_VER!-windows-installer.msi
+            ) else (
+                echo [WARNING] Failed to stage Windows installer MSI: %%~nxF
+            )
         )
     ) else (
         echo [WARNING] Native installer creation failed. Portable zip is still available.
@@ -418,11 +441,24 @@ if !ERRORLEVEL! NEQ 0 goto ai_triage
 :: STEP 12: Upload to GitHub Release
 :: ============================================================================
 call :drawProgressBar 90 "Creating GitHub Release..."
+set "RELEASE_BLOCKED=0"
+if "!HAS_JPACKAGE!"=="1" if "!WINDOWS_INSTALLER_STAGED!"=="0" (
+    set "RELEASE_BLOCKED=1"
+    echo [ERROR] Native installer was expected but no installer artifact was staged.
+    echo [ERROR] GitHub Release upload will be skipped to avoid publishing a ZIP-only Windows release.
+    if exist build_installer.log (
+        echo [ERROR] ---- last 60 lines of build_installer.log ----
+        powershell -NoProfile -Command "Get-Content 'build_installer.log' -Tail 60"
+        echo [ERROR] ---------------------------------------------
+    )
+)
 set "ASSET_COUNT=0"
 set "RELEASE_OK=0"
-for %%F in ("!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-*.*") do (
-    if exist "%%~fF" (
-        set /a ASSET_COUNT+=1
+if "!RELEASE_BLOCKED!"=="0" (
+    for %%F in ("!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-*.*") do (
+        if exist "%%~fF" (
+            set /a ASSET_COUNT+=1
+        )
     )
 )
 
@@ -430,9 +466,11 @@ echo.
 echo ==============================================================
 echo   Release Artifacts for !PROJ_VER! - !ASSET_COUNT! file(s)
 echo ==============================================================
-for %%F in ("!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-*.*") do (
-    if exist "%%~fF" (
-        echo   * %%~nxF
+if "!RELEASE_BLOCKED!"=="0" (
+    for %%F in ("!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-*.*") do (
+        if exist "%%~fF" (
+            echo   * %%~nxF
+        )
     )
 )
 echo ==============================================================
@@ -482,11 +520,26 @@ if !ASSET_COUNT! GTR 0 (
 
     if !ERRORLEVEL! EQU 0 (
         set "RELEASE_OK=1"
+        set "FAILED_UPLOADS="
         for %%F in ("!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-*.*") do (
             if exist "%%~fF" (
-                echo [INFO] Uploading %%~nxF...
-                gh release upload !PROJ_VER! "%%~fF" --repo %GH_REPO% --clobber
-                if !ERRORLEVEL! NEQ 0 set "RELEASE_OK=0"
+                set "UPLOAD_OK=0"
+                for /L %%A in (1,1,4) do (
+                    if "!UPLOAD_OK!"=="0" (
+                        echo [INFO] Uploading %%~nxF ^(attempt %%A of 4^)...
+                        gh release upload !PROJ_VER! "%%~fF" --repo %GH_REPO% --clobber
+                        if !ERRORLEVEL! EQU 0 (
+                            set "UPLOAD_OK=1"
+                        ) else (
+                            echo [WARNING] Upload failed for %%~nxF on attempt %%A.
+                            if %%A LSS 4 powershell -NoProfile -Command "Start-Sleep -Seconds ([math]::Pow(2, %%A + 1))"
+                        )
+                    )
+                )
+                if "!UPLOAD_OK!"=="0" (
+                    set "RELEASE_OK=0"
+                    set "FAILED_UPLOADS=!FAILED_UPLOADS! %%~nxF"
+                )
             )
         )
     ) else (
@@ -497,6 +550,9 @@ if !ASSET_COUNT! GTR 0 (
         echo [OK] GitHub Release created successfully!
     ) else (
         echo [WARNING] GitHub Release creation or asset upload failed. Assets are in: !RELEASE_DIR!
+        if not "!FAILED_UPLOADS!"=="" echo [WARNING] Failed uploads:!FAILED_UPLOADS!
+        echo [WARNING] Removing incomplete GitHub Release !PROJ_VER! so users do not see a partial upload.
+        gh release delete !PROJ_VER! --repo %GH_REPO% --yes >nul 2>&1
     )
     del "!RELEASE_DIR!\release_notes.md" >nul 2>&1
 ) else (
