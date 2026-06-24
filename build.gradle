@@ -801,6 +801,7 @@ tasks.register('createInstaller', Exec) {
         }
 
         def cmdList = [jpackageCmd,
+            '--verbose',
             '--type', type,
             '--dest', destDir,
             '--name', 'SDRTrunk',
@@ -831,9 +832,12 @@ tasks.register('createInstaller', Exec) {
                             '--win-dir-chooser',
                             '--win-upgrade-uuid', '60C779DB-E3B4-4D77-BB3B-4ACD206481E3'])
 
-            def wixResDir = file("$buildDir/installer/wix-resources")
-            cmdList.addAll(['--resource-dir', wixResDir.absolutePath])
-            logger.lifecycle("createInstaller: branding via WiX overrides in ${wixResDir}")
+            // WiX branding via --resource-dir is disabled until the exact
+            // overrides.wxi format expected by this JDK's jpackage template is confirmed.
+            // Re-enable after inspecting verbose output from a --verbose run.
+            // def wixResDir = file("$buildDir/installer/wix-resources")
+            // cmdList.addAll(['--resource-dir', wixResDir.absolutePath])
+            // logger.lifecycle("createInstaller: branding via WiX overrides in ${wixResDir}")
 
             jvmArgsWindows.each { arg ->
                 cmdList.addAll(['--java-options', arg])
