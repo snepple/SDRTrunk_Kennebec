@@ -26,6 +26,7 @@ import io.github.dsheirer.util.FileUtil;
 import io.github.dsheirer.util.OSType;
 import io.github.dsheirer.util.ThreadPool;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -185,6 +186,7 @@ public class JmbeCreator
                             processBuilder.directory(extractDir.toFile());
                             processBuilder.command(script.toString(), "build");
                             processBuilder.redirectErrorStream(true);
+                            applyJavaEnvironment(processBuilder);
 
                             try
                             {
@@ -314,6 +316,7 @@ public class JmbeCreator
                         {
                             ProcessBuilder processBuilder = new ProcessBuilder();
                             processBuilder.command(script.toString(), mLibraryPath.toString());
+                            applyJavaEnvironment(processBuilder);
 
                                 try
                                 {
@@ -384,6 +387,50 @@ public class JmbeCreator
 
     }
 
+
+    /**
+     * Points the child Gradle build at the JVM that is currently running SDRTrunk.
+     *
+     * When SDRTrunk runs from the jpackage native installer it uses a bundled runtime, so there is typically no
+     * system-wide {@code JAVA_HOME} and no {@code java} on the PATH - which makes the JMBE {@code gradlew} build abort
+     * with "JAVA_HOME is not set and no 'java' command could be found" (exit code 9009 on Windows). Setting JAVA_HOME
+     * and prepending the runtime's bin directory to PATH for the child process resolves this without requiring the
+     * user to install a separate JDK.
+     */
+    private void applyJavaEnvironment(ProcessBuilder processBuilder)
+    {
+        String javaHome = System.getProperty("java.home");
+
+        if(javaHome == null || javaHome.isBlank())
+        {
+            return;
+        }
+
+        java.util.Map<String,String> env = processBuilder.environment();
+        env.put("JAVA_HOME", javaHome);
+
+        Path binDir = Paths.get(javaHome, "bin");
+
+        //PATH is case-insensitive on Windows but the env map is case-sensitive; update the existing key if present
+        //(commonly "Path" on Windows) so we extend rather than create a duplicate that the OS ignores.
+        String pathKey = "PATH";
+        for(String key : env.keySet())
+        {
+            if(key.equalsIgnoreCase("PATH"))
+            {
+                pathKey = key;
+                break;
+            }
+        }
+
+        String existingPath = env.get(pathKey);
+        String newPath = (existingPath == null || existingPath.isBlank())
+                ? binDir.toString()
+                : binDir + File.pathSeparator + existingPath;
+        env.put(pathKey, newPath);
+
+        printToConsole("Using bundled Java runtime for build: " + javaHome);
+    }
 
     /**
      * Terminates the execution and updates flags to indicate error state
