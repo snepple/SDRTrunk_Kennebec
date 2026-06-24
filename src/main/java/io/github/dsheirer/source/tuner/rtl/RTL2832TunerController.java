@@ -60,6 +60,10 @@ public class RTL2832TunerController extends USBTunerController implements ISampl
     private static final double SIGNAL_LOSS_RATIO = 0.32;              //~10 dB below baseline
     private static final double SIGNAL_RECOVERY_RATIO = 0.6;
     private static final int SIGNAL_LOSS_TRIGGER_COUNT = 12;           //~60 seconds sustained
+    //A level that stays low well past the alert window is the tuner's new operating level (a gain/AGC/band-activity
+    //change), not a disconnected antenna.  After this many sustained-low checks, re-learn the baseline downward so
+    //the detector adapts and stops perpetually re-alerting on a routine RF-level change.
+    private static final int SIGNAL_REBASELINE_TRIGGER_COUNT = SIGNAL_LOSS_TRIGGER_COUNT * 2; //~2 minutes
     private long mSignalMonitorLastCheck = 0;
     private double mSignalFastAverage = 0.0;
     private double mSignalBaseline = 0.0;
@@ -440,6 +444,15 @@ public class RTL2832TunerController extends USBTunerController implements ISampl
                         "Possible Antenna Disconnection",
                         "The broadband RF level on RTL-SDR tuner [" + getTunerType() + "] dropped sharply and " +
                             "has stayed low - check the antenna connection."));
+            }
+            else if(mSignalLossCount >= SIGNAL_REBASELINE_TRIGGER_COUNT)
+            {
+                //The low level has persisted well past the alert window, so treat it as the new operating level
+                //(a gain/AGC/band-activity change rather than a disconnected antenna) and re-learn the baseline
+                //downward toward it (faster than the slow up-learning).  Once the baseline catches up, the !low
+                //branch resumes, clears the loss state, and stops the perpetual re-alerting that made a routine
+                //RF-level change look like a repeated antenna disconnection.
+                mSignalBaseline = mSignalBaseline * 0.9 + level * 0.1;
             }
         }
     }
