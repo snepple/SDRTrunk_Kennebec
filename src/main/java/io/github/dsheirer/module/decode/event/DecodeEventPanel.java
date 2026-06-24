@@ -91,6 +91,16 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
     private DecodeEventModel mGlobalEventModel = new DecodeEventModel();
     private ChannelProcessingManager mChannelProcessingManager;
     private Listener<IDecodeEvent> mGlobalEventListener;
+    //All-channels, time-bounded buffer of recent decode events used purely to correlate asynchronously-arriving
+    //transcripts to their call. This is independent of the visible table's "Max Events" history, so a transcript
+    //still attaches to its event even after that event scrolled out of (was evicted from) the display, and even when
+    //the event belongs to a channel other than the one currently shown. Transcripts are attached to the shared event
+    //object, so they persist wherever that event is still referenced (event history/log).
+    private final java.util.concurrent.ConcurrentLinkedDeque<IDecodeEvent> mTranscriptionCorrelationBuffer =
+            new java.util.concurrent.ConcurrentLinkedDeque<>();
+    //Retain events long enough to outlast slow cloud-STT round-trips (and retries) without growing unbounded.
+    private static final long TRANSCRIPTION_CORRELATION_RETENTION_MS = 5 * 60 * 1000;
+    private static final int TRANSCRIPTION_CORRELATION_MAX = 5000;
 
     private class ActiveModelWrapper extends ClearableHistoryModel<IDecodeEvent> {
         @Override
@@ -141,7 +151,10 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         mUserPreferences = userPreferences;
         mChannelProcessingManager = channelProcessingManager;
 
-        mGlobalEventListener = event -> mGlobalEventModel.receive(event);
+        mGlobalEventListener = event -> {
+            mGlobalEventModel.receive(event);
+            bufferForTranscriptionCorrelation(event);
+        };
         mChannelProcessingManager.addDecodeEventListener(mGlobalEventListener);
         mGlobalEventModel.setHistorySize(mUserPreferences.getNowPlayingPreference().getEventHistorySize());
         mTable = new TableView();
@@ -288,8 +301,11 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         final long frequency = event.getFrequency();
 
         Platform.runLater(() -> {
-            IDecodeEvent best = findBestTranscriptionMatch(new java.util.ArrayList<IDecodeEvent>(mTable.getItems()),
-                timestamp, toId, frequency);
+            //Match against the all-channels correlation buffer (not just the visible table) so the transcript
+            //attaches to its call even if that row was evicted from the display or belongs to another channel.
+            pruneTranscriptionCorrelationBuffer();
+            IDecodeEvent best = findBestTranscriptionMatch(
+                new java.util.ArrayList<IDecodeEvent>(mTranscriptionCorrelationBuffer), timestamp, toId, frequency);
 
             if(best != null)
             {
@@ -299,6 +315,37 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
                 mTable.refresh();
             }
         });
+    }
+
+    /**
+     * Adds an event to the time-bounded transcription-correlation buffer (all channels), pruning old/excess entries.
+     * The same event object also lives in the display model(s), so attaching a transcript here updates it everywhere.
+     */
+    private void bufferForTranscriptionCorrelation(IDecodeEvent event)
+    {
+        if(event == null)
+        {
+            return;
+        }
+
+        mTranscriptionCorrelationBuffer.addLast(event);
+        pruneTranscriptionCorrelationBuffer();
+    }
+
+    /**
+     * Drops events older than the retention window, and caps total size, so the buffer cannot grow without bound.
+     */
+    private void pruneTranscriptionCorrelationBuffer()
+    {
+        long cutoff = System.currentTimeMillis() - TRANSCRIPTION_CORRELATION_RETENTION_MS;
+
+        IDecodeEvent head;
+        while((head = mTranscriptionCorrelationBuffer.peekFirst()) != null &&
+              (head.getTimeStart() < cutoff ||
+               mTranscriptionCorrelationBuffer.size() > TRANSCRIPTION_CORRELATION_MAX))
+        {
+            mTranscriptionCorrelationBuffer.pollFirst();
+        }
     }
 
     /**
