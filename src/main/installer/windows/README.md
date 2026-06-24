@@ -17,11 +17,13 @@ dialog, so the SDRTrunk branding is kept to the opposite, text-free region.
 ## Regenerating the graphics
 
 ```bash
-pip install Pillow
+pip install Pillow CairoSVG
 python3 src/main/installer/windows/generate_installer_graphics.py
 ```
 
-Source art lives in `src/main/resources/images/` (`SDRTrunk_Application_Icon.png`).
+Source art lives in `src/main/resources/images/`. The generator prefers
+`SDRTrunk_Application_Icon.png`, then falls back to rendering
+`SDRTrunk_Application_Icon.svg`.
 
 ## How it is wired into the build
 
@@ -32,9 +34,11 @@ Source art lives in `src/main/resources/images/` (`SDRTrunk_Application_Icon.png
 * `--win-dir-chooser` — enables the full WixUI_InstallDir wizard (welcome /
   license / folder / progress / finish), which is what surfaces these bitmaps.
 * `--win-upgrade-uuid` — a fixed UUID so new versions upgrade cleanly in place.
-* `--resource-dir <build>/installer/wix-resources` — the task writes an
-  `overrides.wxi` there at build time that sets `WixUIBannerBmp` /
-  `WixUIDialogBmp` to absolute paths of the BMPs above.
+* `--icon src/main/resources/images/SDRTrunk.ico` — brands the installer
+  executable and Windows app metadata.
+* `--resource-dir <build>/installer/wix-resources` — the
+  `prepareWindowsInstallerResources` task copies the BMPs there and writes
+  `overrides.wxi`, setting `WixUIBannerBmp` / `WixUIDialogBmp` to those images.
 
 > **First-build note:** the installer only builds on Windows with the WiX
 > Toolset installed, and was not buildable in the dev environment. If a given

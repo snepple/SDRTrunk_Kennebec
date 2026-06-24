@@ -20,12 +20,17 @@ Re-run after changing the source art or text:
     python3 generate_installer_graphics.py
 """
 
+import base64
+import re
+from io import BytesIO
 from pathlib import Path
+
 from PIL import Image, ImageDraw, ImageFont
 
 HERE = Path(__file__).resolve().parent
 IMAGES = HERE.parent.parent / "resources" / "images"     # src/main/resources/images
-ICON = IMAGES / "SDRTrunk_Application_Icon.png"           # clean square mark (500x500)
+ICON_PNG = IMAGES / "SDRTrunk_Application_Icon.png"
+ICON_SVG = IMAGES / "SDRTrunk_Application_Icon.svg"
 
 BANNER = HERE / "sdrtrunk-installer-banner.bmp"
 DIALOG = HERE / "sdrtrunk-installer-dialog.bmp"
@@ -48,8 +53,36 @@ def font(size):
     return ImageFont.load_default()
 
 
-def load_rgba(path):
-    return Image.open(path).convert("RGBA")
+def load_rgba(source):
+    return Image.open(source).convert("RGBA")
+
+
+def render_svg(path):
+    try:
+        import cairosvg
+    except ImportError:
+        return None
+    return load_rgba(BytesIO(cairosvg.svg2png(url=str(path), output_width=500, output_height=500)))
+
+
+def embedded_png(path):
+    match = re.search(r"data:image/png;base64,([^\"']+)", path.read_text(encoding="utf-8"))
+    if not match:
+        return None
+    return load_rgba(BytesIO(base64.b64decode(match.group(1))))
+
+
+def load_icon():
+    if ICON_PNG.exists():
+        return load_rgba(ICON_PNG)
+    if ICON_SVG.exists():
+        rendered = render_svg(ICON_SVG)
+        if rendered is not None:
+            return rendered
+        embedded = embedded_png(ICON_SVG)
+        if embedded is not None:
+            return embedded
+    raise FileNotFoundError(f"Could not load installer source art from {ICON_PNG} or {ICON_SVG}")
 
 
 def flatten(rgba, bg=WHITE):
@@ -124,7 +157,7 @@ def make_dialog(icon, accent):
 
 
 def main():
-    icon = load_rgba(ICON)
+    icon = load_icon()
     accent = dominant_accent(icon)
     b = make_banner(icon, accent)
     d = make_dialog(icon, accent)
