@@ -36,6 +36,7 @@ import io.github.dsheirer.controller.channel.map.ChannelMapModel;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.gui.playlist.IAliasListRefreshListener;
 import io.github.dsheirer.icon.IconModel;
+import io.github.dsheirer.module.decode.nbfm.DecodeConfigNBFM;
 import io.github.dsheirer.module.log.EventLogManager;
 import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.source.tuner.manager.TunerErrorEvent;
@@ -431,6 +432,11 @@ public class PlaylistManager implements Listener<ChannelEvent>
 
             mChannelMapModel.addChannelMaps(playlist.getChannelMaps());
 
+            //One-time migration: turn on the noise-squelch AND-gate for existing tone-filtered NBFM channels so
+            //they get the static-call protection (see DecodeConfigNBFM.isToneRequireNoiseSquelch) without the user
+            //having to re-save each channel. Runs once per installation, before channels are added/auto-started.
+            migrateToneRequireNoiseSquelch(playlist.getChannels());
+
             //Channel model has to be loaded last since it will auto-start channels that are enabled
             mChannelModel.addChannels(playlist.getChannels());
 
@@ -442,6 +448,47 @@ public class PlaylistManager implements Listener<ChannelEvent>
 
             mPlaylistLoading = false;
             io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.playlist.PlaylistLoadedEvent(playlist));
+        }
+    }
+
+    /**
+     * One-time migration that enables the noise-squelch AND-gate (toneRequireNoiseSquelch) on existing tone-filtered
+     * NBFM channels. Earlier builds defaulted this to false, which let brief CTCSS/DCS false-positive matches on
+     * static produce sub-second calls. The default is now true for new channels; this migration applies the same
+     * protection to channels already saved in the user's playlist so they don't have to re-save each one.
+     *
+     * Guarded by a one-shot preference flag so it runs only once per installation and never overrides a value the
+     * user later chooses to turn off.
+     */
+    private void migrateToneRequireNoiseSquelch(List<Channel> channels)
+    {
+        final String MIGRATION_KEY = "migration.toneRequireNoiseSquelch.v1";
+        java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(PlaylistManager.class);
+
+        if(prefs.getBoolean(MIGRATION_KEY, false) || channels == null)
+        {
+            return;
+        }
+
+        int migrated = 0;
+
+        for(Channel channel: channels)
+        {
+            if(channel != null && channel.getDecodeConfiguration() instanceof DecodeConfigNBFM nbfm
+                    && nbfm.hasToneFiltering() && !nbfm.isToneRequireNoiseSquelch())
+            {
+                nbfm.setToneRequireNoiseSquelch(true);
+                migrated++;
+            }
+        }
+
+        prefs.putBoolean(MIGRATION_KEY, true);
+
+        if(migrated > 0)
+        {
+            mLog.info("Migration: enabled noise-squelch AND-gate on {} existing tone-filtered NBFM channel(s) to " +
+                    "suppress sub-second static calls; saving playlist.", migrated);
+            schedulePlaylistSave();
         }
     }
 
