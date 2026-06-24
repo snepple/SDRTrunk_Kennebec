@@ -153,9 +153,14 @@ public class GeographicSchemaGenerator extends Dialog<String> {
             selectState(mChannel.getState());
             hasState = true;
         } else if (mUserPreferences.getRadioReferencePreference().getPreferredStateId() > 0) {
-            String preferredState = String.format("%02d", mUserPreferences.getRadioReferencePreference().getPreferredStateId());
-            selectState(preferredState);
-            hasState = true;
+            //The RadioReference preference stores RR's internal sequential state ID (e.g. Maine = 20), but the
+            //generator's state dropdown is keyed by US FIPS codes (Maine = 23). Convert before selecting so the
+            //correct state is prefilled instead of silently failing to match.
+            String preferredFips = rrStateIdToFips(mUserPreferences.getRadioReferencePreference().getPreferredStateId());
+            if (preferredFips != null) {
+                selectState(preferredFips);
+                hasState = true;
+            }
         }
 
         if (hasState) {
@@ -321,6 +326,76 @@ public class GeographicSchemaGenerator extends Dialog<String> {
             candidate++;
         }
         return conflictingValue;
+    }
+
+    /**
+     * Converts a RadioReference internal state ID into the corresponding US FIPS state code used by this generator's
+     * state dropdown. RadioReference assigns state IDs sequentially in alphabetical order (1 = Alabama, 20 = Maine,
+     * ...), which does not match the FIPS numbering (Maine = 23). Returns null for unknown IDs.
+     *
+     * @param rrStateId RadioReference internal state ID
+     * @return two-digit FIPS state code, or null if the ID is not recognized
+     */
+    public static String rrStateIdToFips(int rrStateId) {
+        return RR_STATE_ID_TO_FIPS.get(rrStateId);
+    }
+
+    private static final Map<Integer, String> RR_STATE_ID_TO_FIPS = buildRrStateIdToFips();
+
+    private static Map<Integer, String> buildRrStateIdToFips() {
+        Map<Integer, String> m = new LinkedHashMap<>();
+        m.put(1, "01");  //Alabama
+        m.put(2, "02");  //Alaska
+        m.put(3, "04");  //Arizona
+        m.put(4, "05");  //Arkansas
+        m.put(5, "06");  //California
+        m.put(6, "08");  //Colorado
+        m.put(7, "09");  //Connecticut
+        m.put(8, "10");  //Delaware
+        m.put(9, "11");  //District of Columbia
+        m.put(10, "12"); //Florida
+        m.put(11, "13"); //Georgia
+        m.put(12, "15"); //Hawaii
+        m.put(13, "16"); //Idaho
+        m.put(14, "17"); //Illinois
+        m.put(15, "18"); //Indiana
+        m.put(16, "19"); //Iowa
+        m.put(17, "20"); //Kansas
+        m.put(18, "21"); //Kentucky
+        m.put(19, "22"); //Louisiana
+        m.put(20, "23"); //Maine
+        m.put(21, "24"); //Maryland
+        m.put(22, "25"); //Massachusetts
+        m.put(23, "26"); //Michigan
+        m.put(24, "27"); //Minnesota
+        m.put(25, "28"); //Mississippi
+        m.put(26, "29"); //Missouri
+        m.put(27, "30"); //Montana
+        m.put(28, "31"); //Nebraska
+        m.put(29, "32"); //Nevada
+        m.put(30, "33"); //New Hampshire
+        m.put(31, "34"); //New Jersey
+        m.put(32, "35"); //New Mexico
+        m.put(33, "36"); //New York
+        m.put(34, "37"); //North Carolina
+        m.put(35, "38"); //North Dakota
+        m.put(36, "39"); //Ohio
+        m.put(37, "40"); //Oklahoma
+        m.put(38, "41"); //Oregon
+        m.put(39, "42"); //Pennsylvania
+        m.put(40, "44"); //Rhode Island
+        m.put(41, "45"); //South Carolina
+        m.put(42, "46"); //South Dakota
+        m.put(43, "47"); //Tennessee
+        m.put(44, "48"); //Texas
+        m.put(45, "49"); //Utah
+        m.put(46, "50"); //Vermont
+        m.put(47, "51"); //Virginia
+        m.put(48, "53"); //Washington
+        m.put(49, "54"); //West Virginia
+        m.put(50, "55"); //Wisconsin
+        m.put(51, "56"); //Wyoming
+        return m;
     }
 
     private static Map<String, String> getStates() {
