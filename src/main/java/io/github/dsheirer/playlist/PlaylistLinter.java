@@ -79,16 +79,16 @@ public class PlaylistLinter
                         "' which does not exist - talkgroup names, priorities and stream assignments will not apply");
                 }
 
-                //Flag channels with no alias list assigned.  An ENABLED auto-start channel with no alias list is
-                //a critical fault: the application throws a NullPointerException at alias.AliasDirectory.getAliasList
-                //during startup and halts.  A non-auto-start channel merely shows raw numeric identifiers.
+                //Flag channels with no alias list assigned.  Without an alias list the channel cannot resolve
+                //talkgroup names, priorities, or stream assignments, so audio will never be routed to Zello
+                //or any other configured stream.
                 if((aliasListName == null || aliasListName.isEmpty()) && hasFrequency(channel))
                 {
                     if(channel.isAutoStart())
                     {
-                        findings.add("Auto-start channel '" + channel.getName() + "' is enabled with no alias list " +
-                            "assigned - this throws a NullPointerException (alias.AliasDirectory.getAliasList) at " +
-                            "startup and halts the application.  Assign an alias list or disable auto-start.");
+                        findings.add("Auto-start channel '" + channel.getName() + "' has no alias list assigned - " +
+                            "talkgroup names will not appear and audio will not be routed to any stream. " +
+                            "Assign an alias list in the channel editor.");
                     }
                     else
                     {

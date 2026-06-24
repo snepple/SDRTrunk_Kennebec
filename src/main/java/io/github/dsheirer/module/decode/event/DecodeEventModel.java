@@ -218,30 +218,72 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
         //AI transcription of the call audio (populated asynchronously when transcription is enabled).
         TableColumn<IDecodeEvent, String> transcriptionCol = new TableColumn<>("Transcription");
         transcriptionCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getTranscription()));
-        transcriptionCol.setCellFactory(col -> new TableCell<>()
-        {
-            @Override
-            protected void updateItem(String value, boolean empty)
+        transcriptionCol.setCellFactory(col -> {
+            TableCell<IDecodeEvent, String> cell = new TableCell<>()
             {
-                super.updateItem(value, empty);
+                @Override
+                protected void updateItem(String value, boolean empty)
+                {
+                    super.updateItem(value, empty);
 
-                if(empty || value == null || value.isBlank())
-                {
-                    setText(null);
-                    setTooltip(null);
+                    if(empty || value == null || value.isBlank())
+                    {
+                        setText(null);
+                        setTooltip(null);
+                    }
+                    else
+                    {
+                        setText(value);
+                        setWrapText(true);
+                        //Wrapping, longer-lived tooltip so long transcripts are readable on hover instead of being
+                        //clipped to a single off-screen line.
+                        Tooltip tooltip = new Tooltip(value);
+                        tooltip.setWrapText(true);
+                        tooltip.setMaxWidth(480);
+                        tooltip.setShowDuration(javafx.util.Duration.seconds(60));
+                        setTooltip(tooltip);
+                    }
                 }
-                else
+            };
+
+            //Double-click a transcription cell to open the full text in a scrollable, copyable dialog - the column
+            //is too narrow to read long multi-sentence transcripts inline.
+            cell.setOnMouseClicked(mouseEvent -> {
+                if(mouseEvent.getClickCount() == 2 && !cell.isEmpty()
+                        && cell.getItem() != null && !cell.getItem().isBlank())
                 {
-                    setText(value);
-                    setWrapText(true);
-                    setTooltip(new Tooltip(value));
+                    showTranscriptionDialog(cell.getItem());
                 }
-            }
+            });
+
+            return cell;
         });
         transcriptionCol.setPrefWidth(280);
         columns.add(transcriptionCol);
 
         return columns;
+    }
+
+    /**
+     * Opens a non-modal dialog displaying the full transcription text in a read-only, word-wrapped, selectable
+     * TextArea so long transcripts can be read and copied.
+     */
+    private static void showTranscriptionDialog(String transcript)
+    {
+        TextArea textArea = new TextArea(transcript);
+        textArea.setEditable(false);
+        textArea.setWrapText(true);
+        textArea.setPrefRowCount(12);
+        textArea.setPrefColumnCount(50);
+
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Transcription");
+        dialog.setHeaderText(null);
+        dialog.getDialogPane().setContent(textArea);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.setResizable(true);
+        dialog.initModality(javafx.stage.Modality.NONE);
+        dialog.show();
     }
 
     /**

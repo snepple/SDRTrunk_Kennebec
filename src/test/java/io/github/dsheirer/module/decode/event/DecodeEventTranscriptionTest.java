@@ -85,7 +85,7 @@ class DecodeEventTranscriptionTest
         when(event.getTimeStart()).thenReturn(1_000L);
         when(event.getTimeEnd()).thenReturn(121_000L);
 
-        IDecodeEvent match = DecodeEventPanel.findBestTranscriptionMatch(List.of(event), 70_000L, null);
+        IDecodeEvent match = DecodeEventPanel.findBestTranscriptionMatch(List.of(event), 70_000L, null, 0L);
 
         assertSame(event, match);
     }
