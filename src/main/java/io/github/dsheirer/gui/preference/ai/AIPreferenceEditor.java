@@ -140,8 +140,8 @@ public class AIPreferenceEditor extends VBox {
         nbfmIntervalCombo.disableProperty().bind(
             enableNbfmAutoOptimizeSwitch.selectedProperty().not().or(nbfmScheduleSwitch.selectedProperty().not()));
 
-        HBox nbfmControls = new HBox(8, enableNbfmAutoOptimizeSwitch, new Label("Auto"), nbfmScheduleSwitch,
-            new Label("every"), nbfmIntervalCombo, new Label("h"));
+        HBox nbfmControls = new HBox(8, new Label("Enable"), enableNbfmAutoOptimizeSwitch, new Label("Auto"),
+            nbfmScheduleSwitch, new Label("every"), nbfmIntervalCombo, new Label("h"));
         nbfmControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         ToggleSwitch gainScheduleSwitch = new ToggleSwitch();
@@ -160,8 +160,8 @@ public class AIPreferenceEditor extends VBox {
         gainIntervalCombo.disableProperty().bind(
             enableGainAdvisorSwitch.selectedProperty().not().or(gainScheduleSwitch.selectedProperty().not()));
 
-        HBox gainControls = new HBox(8, enableGainAdvisorSwitch, new Label("Auto"), gainScheduleSwitch,
-            new Label("every"), gainIntervalCombo, new Label("h"));
+        HBox gainControls = new HBox(8, new Label("Enable"), enableGainAdvisorSwitch, new Label("Auto"),
+            gainScheduleSwitch, new Label("every"), gainIntervalCombo, new Label("h"));
         gainControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         //Squelch calibration is manual (per-channel Calibrate button) by default.  The optional schedule re-runs
@@ -182,8 +182,8 @@ public class AIPreferenceEditor extends VBox {
         squelchIntervalCombo.disableProperty().bind(
             enableSquelchAdvisorSwitch.selectedProperty().not().or(squelchScheduleSwitch.selectedProperty().not()));
 
-        HBox squelchControls = new HBox(8, enableSquelchAdvisorSwitch, new Label("Auto"), squelchScheduleSwitch,
-            new Label("every"), squelchIntervalCombo, new Label("h"));
+        HBox squelchControls = new HBox(8, new Label("Enable"), enableSquelchAdvisorSwitch, new Label("Auto"),
+            squelchScheduleSwitch, new Label("every"), squelchIntervalCombo, new Label("h"));
         squelchControls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         //Simple on/off AI features, each with a plain-English description of what it does.
@@ -211,7 +211,7 @@ public class AIPreferenceEditor extends VBox {
             withDescription(new SettingsRow("Auto-Optimize NBFM Audio Filters", nbfmControls),
                 "Analyzes recent NBFM call audio and tunes that channel's audio filters. Run it manually anytime from a channel; turn on Auto to also re-run it automatically per channel on the selected interval, applying new filter settings without prompting."),
             withDescription(new SettingsRow("Adaptive Gain Advisor", gainControls),
-                "Monitors tuner I/Q signal levels and consults the AI for gain recommendations. Turn on Auto to run the consultation automatically on the selected interval."),
+                "Enable to monitor tuner I/Q signal levels and use the per-tuner Gain Advisor button (manual). Turn on Auto to also run the consultation automatically on the selected interval."),
             withDescription(new SettingsRow("Squelch Advisor", squelchControls),
                 "Enables the per-channel Calibrate Squelch button (manual). Turn on Auto to also re-calibrate squelch automatically on the selected interval, never more often than every 12 hours.")
         );

@@ -44,6 +44,12 @@ public class MemoryScriptUpdater
         String xmxParam = "-Xmx" + gb + "g";
         int updated = 0;
 
+        //Always write the user-home fallback file the launcher start scripts read at runtime (build.gradle appends
+        //logic that applies -Xmx<value>g from <user.home>/SDRTrunk/SDRTrunk.memory). This lives under the user's
+        //home, which is writable without elevation, so the setting still takes effect when the install directory
+        //(e.g. C:\Program Files) is not writable for the jpackage .cfg / launch4j ini below.
+        boolean fallbackWritten = writeMemoryFallbackFile(gb);
+
         for(Path base : candidateBaseDirectories())
         {
             //Gradle / runtime-zip start scripts
@@ -63,14 +69,48 @@ public class MemoryScriptUpdater
 
         if(updated == 0)
         {
-            mLog.warn("Allocated-memory preference set to {} but no writable launcher configuration was found to " +
-                    "apply it. If you launch via the native installer or portable SDRTrunk.exe, the new heap size " +
-                    "may not take effect (the install location may require administrator rights to modify). The " +
-                    "memory script launchers will still pick up the value from ~/SDRTrunk/SDRTrunk.memory.", gb);
+            if(fallbackWritten)
+            {
+                mLog.info("Allocated-memory preference set to {} GB. No in-place launcher configuration was writable " +
+                        "(e.g. an install under Program Files needing elevation), but the value was written to the " +
+                        "user-home fallback file the start scripts read; it will apply on next launch via the start " +
+                        "scripts. If you launch the native installer/portable .exe from a protected folder, run it " +
+                        "from a writable location or as administrator for the change to take effect.", gb);
+            }
+            else
+            {
+                mLog.warn("Allocated-memory preference set to {} GB but no launcher configuration could be written " +
+                        "and the user-home fallback file could not be created. The new heap size may not take effect.", gb);
+            }
         }
         else
         {
-            mLog.info("Applied allocated-memory preference of {} to {} launcher configuration file(s).", gb, updated);
+            mLog.info("Applied allocated-memory preference of {} GB to {} launcher configuration file(s){}.", gb,
+                    updated, fallbackWritten ? " and the user-home fallback file" : "");
+        }
+    }
+
+    /**
+     * Writes the heap size (in GB) to {@code <user.home>/SDRTrunk/SDRTrunk.memory}. The launcher start scripts read
+     * this file at runtime and apply {@code -Xmx<value>g}, so this makes the preference take effect even when the
+     * install directory's launcher configuration is not writable.
+     *
+     * @param gb memory in gigabytes
+     * @return true if the file was written
+     */
+    private static boolean writeMemoryFallbackFile(int gb)
+    {
+        try
+        {
+            Path dir = Paths.get(System.getProperty("user.home"), "SDRTrunk");
+            Files.createDirectories(dir);
+            Files.writeString(dir.resolve("SDRTrunk.memory"), Integer.toString(gb));
+            return true;
+        }
+        catch(IOException e)
+        {
+            mLog.warn("Could not write memory fallback file <user.home>/SDRTrunk/SDRTrunk.memory: {}", e.getMessage());
+            return false;
         }
     }
 

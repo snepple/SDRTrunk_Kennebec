@@ -59,7 +59,10 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
+import io.github.dsheirer.alias.Alias;
+import java.util.List;
 import javafx.scene.control.Alert;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
@@ -115,6 +118,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
     private TextField mNameField;
     private ComboBox<String> mAliasListComboBox;
     private Button mNewAliasListButton;
+    private Button mAddToAliasButton;
     private GridPane mTextFieldPane;
     private VBox mAlertsPane;
     private ToggleSwitch mInactivityAlertEnabledSwitch;
@@ -268,6 +272,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         getNameField().setDisable(disable);
         getAliasListComboBox().setDisable(disable);
         getNewAliasListButton().setDisable(disable);
+        getAddToAliasButton().setDisable(disable);
         getAutoStartSwitch().setDisable(disable);
         if (mChooseImageBtn != null) mChooseImageBtn.setDisable(disable);
 
@@ -975,6 +980,9 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             GridPane.setConstraints(getNewAliasListButton(), 4, row);
             mTextFieldPane.getChildren().add(getNewAliasListButton());
 
+            GridPane.setConstraints(getAddToAliasButton(), 5, row);
+            mTextFieldPane.getChildren().add(getAddToAliasButton());
+
             // Channel Image Row
             Label imageLabel = new Label("Channel Image");
             GridPane.setHalignment(imageLabel, HPos.RIGHT);
@@ -1246,7 +1254,169 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         return mNewAliasListButton;
     }
 
+    /**
+     * Button that adds this channel's talkgroup to one or more aliases in its alias list, so decoded audio is
+     * named/recorded/streamed per those aliases - without having to switch to the Aliases tab and add the talkgroup
+     * identifier by hand.
+     */
+    private Button getAddToAliasButton()
+    {
+        if(mAddToAliasButton == null)
+        {
+            mAddToAliasButton = new Button("Add to Alias…");
+            mAddToAliasButton.setDisable(true);
+            mAddToAliasButton.setTooltip(new Tooltip("Add this channel's talkgroup to one or more aliases so its " +
+                    "audio is named, recorded and streamed according to those aliases."));
+            mAddToAliasButton.setOnAction(event -> showAddToAliasDialog());
+        }
 
+        return mAddToAliasButton;
+    }
+
+    /**
+     * Shows a dialog letting the user add this channel's talkgroup to existing aliases (or a newly created alias) in
+     * the channel's alias list. Existing aliases that already carry the talkgroup are shown checked and disabled.
+     */
+    private void showAddToAliasDialog()
+    {
+        if(getItem() == null)
+        {
+            return;
+        }
+
+        //Save any pending edits first so the talkgroup/alias-list we read reflect what the user sees.
+        Integer talkgroup = getConfiguredTalkgroup();
+        String aliasListName = getAliasListComboBox().getSelectionModel().getSelectedItem();
+        io.github.dsheirer.protocol.Protocol protocol = getDecoderType() != null ? getDecoderType().getProtocol() : null;
+
+        if(talkgroup == null || talkgroup == 0)
+        {
+            showInfo("No talkgroup assigned", "Assign a 'Talkgroup To Assign' value on the Decoder tab first, then " +
+                    "add this channel to an alias.");
+            return;
+        }
+
+        if(aliasListName == null || aliasListName.isEmpty())
+        {
+            showInfo("No alias list selected", "Select (or create) an Alias List for this channel first, then add it " +
+                    "to an alias.");
+            return;
+        }
+
+        if(protocol == null || protocol == io.github.dsheirer.protocol.Protocol.UNKNOWN)
+        {
+            showInfo("Unsupported channel", "This channel type does not support talkgroup-based alias assignment.");
+            return;
+        }
+
+        final int tgValue = talkgroup;
+        final String tgDisplay = Integer.toUnsignedString(tgValue);
+
+        //Existing aliases in this alias list.
+        List<Alias> aliasesInList = new java.util.ArrayList<>();
+        for(Alias alias : mPlaylistManager.getAliasModel().getAliases())
+        {
+            if(aliasListName.equalsIgnoreCase(alias.getAliasListName()))
+            {
+                aliasesInList.add(alias);
+            }
+        }
+        aliasesInList.sort(java.util.Comparator.comparing(a -> a.getName() == null ? "" : a.getName().toLowerCase()));
+
+        Dialog<javafx.scene.control.ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Add Channel to Alias");
+        dialog.setHeaderText("Add talkgroup " + tgDisplay + " (" + protocol + ") to aliases in list '" + aliasListName + "'");
+        io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(dialog.getDialogPane());
+        dialog.getDialogPane().getButtonTypes().addAll(javafx.scene.control.ButtonType.OK, javafx.scene.control.ButtonType.CANCEL);
+
+        VBox content = new VBox(8);
+        content.setPadding(new Insets(10));
+
+        List<CheckBox> aliasChecks = new java.util.ArrayList<>();
+        for(Alias alias : aliasesInList)
+        {
+            boolean alreadyHas = aliasHasTalkgroup(alias, protocol, tgValue);
+            CheckBox cb = new CheckBox(alias.getName() + (alreadyHas ? "  (already linked)" : ""));
+            cb.setUserData(alias);
+            cb.setSelected(alreadyHas);
+            cb.setDisable(alreadyHas);
+            aliasChecks.add(cb);
+            content.getChildren().add(cb);
+        }
+
+        if(aliasChecks.isEmpty())
+        {
+            content.getChildren().add(new Label("No aliases exist yet in this list. Create one below."));
+        }
+
+        content.getChildren().add(new javafx.scene.control.Separator());
+        Label newLabel = new Label("Create a new alias with this talkgroup (optional):");
+        TextField newAliasField = new TextField();
+        newAliasField.setPromptText("New alias name");
+        newAliasField.setTextFormatter(new TextFormatter<String>(new MaxLengthUnaryOperator(50)));
+        content.getChildren().addAll(newLabel, newAliasField);
+
+        dialog.getDialogPane().setContent(new javafx.scene.control.ScrollPane(content));
+
+        Optional<javafx.scene.control.ButtonType> result = dialog.showAndWait();
+
+        if(result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK)
+        {
+            int updated = 0;
+
+            for(CheckBox cb : aliasChecks)
+            {
+                if(cb.isSelected() && !cb.isDisable())
+                {
+                    Alias alias = (Alias)cb.getUserData();
+                    alias.addAliasID(new io.github.dsheirer.alias.id.talkgroup.Talkgroup(protocol, tgValue));
+                    updated++;
+                }
+            }
+
+            String newName = newAliasField.getText() != null ? newAliasField.getText().trim() : "";
+            if(!newName.isEmpty())
+            {
+                Alias newAlias = new Alias(newName);
+                newAlias.setAliasListName(aliasListName);
+                newAlias.addAliasID(new io.github.dsheirer.alias.id.talkgroup.Talkgroup(protocol, tgValue));
+                mPlaylistManager.getAliasModel().addAlias(newAlias);
+                updated++;
+            }
+
+            if(updated > 0)
+            {
+                showInfo("Alias updated", "Added talkgroup " + tgDisplay + " to " + updated + " alias(es). Assign a " +
+                        "stream to those aliases (Aliases > Streaming) to route this channel's audio.");
+            }
+        }
+    }
+
+    /**
+     * Indicates whether the alias already has a talkgroup identifier matching the given protocol and value.
+     */
+    private static boolean aliasHasTalkgroup(Alias alias, io.github.dsheirer.protocol.Protocol protocol, int value)
+    {
+        for(io.github.dsheirer.alias.id.AliasID id : alias.getAliasIdentifiers())
+        {
+            if(id instanceof io.github.dsheirer.alias.id.talkgroup.Talkgroup tg
+                    && tg.getValue() == value && tg.getProtocol() == protocol)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void showInfo(String header, String message)
+    {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
+        alert.setTitle("Add Channel to Alias");
+        alert.setHeaderText(header);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
 
     /**
      * Gets the configured talkgroup value from the editor UI before saving.

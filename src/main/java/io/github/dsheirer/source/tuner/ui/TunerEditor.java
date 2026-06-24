@@ -412,7 +412,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                 VBox panel = new VBox(10);
                 panel.setPadding(new Insets(10));
 
-                String info = getTunerInfo();
+                String info = htmlToPlainText(getTunerInfo());
                 Label infoLabel = new Label(info != null && !info.isEmpty() ? info
                         : "No additional tuner information available.");
                 infoLabel.setWrapText(true);
@@ -433,6 +433,37 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
 
     protected String getTunerInfo() {
         return "";
+    }
+
+    /**
+     * Converts the legacy Swing-style HTML returned by the per-tuner {@link #getTunerInfo()} implementations into
+     * plain text for display in a JavaFX {@link Label}, which (unlike Swing's JLabel) does not render HTML and would
+     * otherwise show the raw markup. Block/line tags become line breaks, remaining tags are stripped, and the few
+     * common HTML entities are decoded.
+     */
+    static String htmlToPlainText(String html)
+    {
+        if(html == null || html.isEmpty())
+        {
+            return html;
+        }
+
+        String text = html
+                .replaceAll("(?i)</h\\d>", "\n")     //close of a heading -> blank line break
+                .replaceAll("(?i)<br\\s*/?>", "\n")  //line break
+                .replaceAll("(?i)</p>", "\n")
+                .replaceAll("(?i)</div>", "\n")
+                .replaceAll("(?i)</tr>", "\n")
+                .replaceAll("<[^>]+>", "");          //strip all remaining tags
+
+        text = text.replace("&nbsp;", " ")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"");
+
+        //Collapse runs of 3+ newlines and trim leading/trailing whitespace for a tidy dialog.
+        return text.replaceAll("\n{3,}", "\n\n").trim();
     }
 
     protected ButtonPanel getButtonPanel()
@@ -809,6 +840,24 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
                 {
                     minFreq = 0;
                     maxFreq = Long.MAX_VALUE;
+                }
+
+                //The advisor only accumulates per-channel I/Q signal levels while the (opt-in, default-off) gain
+                //advisor feature is enabled. If a user clicks the button before enabling it, there is no data and the
+                //advisor reports "no channels reporting". Bootstrap the feature on first click and tell the user to
+                //let traffic accumulate, rather than showing a confusing empty result.
+                if(!mUserPreferences.getAIPreference().isGainAdvisorEnabled())
+                {
+                    mUserPreferences.getAIPreference().setGainAdvisorEnabled(true);
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
+                    alert.setTitle("Adaptive Gain Advisor");
+                    alert.setHeaderText("Gain advisor monitoring enabled");
+                    alert.setContentText("The gain advisor was not yet collecting signal levels, so it has just been "
+                            + "enabled. Let the NBFM channels on this tuner receive traffic for about a minute, then "
+                            + "click Gain Advisor again for a recommendation.");
+                    alert.showAndWait();
+                    return;
                 }
 
                 final String tunerId = (getDiscoveredTuner() != null) ? getDiscoveredTuner().getId() : null;

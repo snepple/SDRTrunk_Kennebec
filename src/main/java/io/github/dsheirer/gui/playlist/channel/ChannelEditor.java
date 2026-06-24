@@ -623,8 +623,11 @@ public class ChannelEditor extends javafx.scene.layout.BorderPane implements IFi
                     } else if (config instanceof io.github.dsheirer.module.decode.analog.DecodeConfigAnalog) {
                         return Integer.toUnsignedString(((io.github.dsheirer.module.decode.analog.DecodeConfigAnalog)config).getTalkgroup());
                     } else if (config instanceof io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25) {
+                        //Use unsigned formatting and a !=0 check (matching the other protocols): a 10-digit
+                        //geographic talkgroup exceeds Integer.MAX_VALUE and is stored as a negative int, so the old
+                        //signed "tg > 0" test treated it as unset and rendered a blank cell.
                         int tg = ((io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25)config).getTalkgroup();
-                        if (tg > 0) return String.valueOf(tg);
+                        if (tg != 0) return Integer.toUnsignedString(tg);
                     } else if (config instanceof io.github.dsheirer.module.decode.am.DecodeConfigAM) {
                         return Integer.toUnsignedString(((io.github.dsheirer.module.decode.am.DecodeConfigAM)config).getTalkgroup());
                     }

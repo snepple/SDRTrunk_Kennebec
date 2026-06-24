@@ -235,7 +235,10 @@ public class DecodeEvent implements IDecodeEvent
         //Key by segment start so multiple segments of one call join in chronological order (preserving the
         //beginning of the message) and re-delivery of the same segment overwrites rather than duplicates.
         mTranscriptionSegments.put(startTimestamp, transcription.trim());
-        mTranscription = String.join(" ", mTranscriptionSegments.values());
+        String joined = String.join(" ", mTranscriptionSegments.values());
+        //Collapse runs of the [unintelligible] placeholder so a multi-segment call with several un-transcribable
+        //segments reads "[unintelligible]" once rather than repeating it; real text between them is preserved.
+        mTranscription = joined.replaceAll("(\\[unintelligible\\])(\\s+\\[unintelligible\\])+", "$1");
     }
 
     /**

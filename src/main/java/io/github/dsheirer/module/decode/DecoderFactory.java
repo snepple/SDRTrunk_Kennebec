@@ -479,6 +479,16 @@ public class DecoderFactory
         modules.add(decoderState);
         AudioModule audioModule = new AudioModule(aliasList, 0, 60000, decodeConfigNBFM.isAudioFilter());
         audioModule.setAudioHangtimeMs(decodeConfigNBFM.getAudioHangtimeMs());
+        //Seed the audio module's identifier collection with the channel's configured TO talkgroup so every audio
+        //segment it produces carries it. The audio module is wired to the channel-metadata identifiers (system,
+        //site, channel name, alias list) but NOT to the decoder state's per-call USER identifiers, so the talkgroup
+        //(needed for alias/stream routing) otherwise never reaches the segment - which is why conventional channels
+        //with a talkgroup assigned still would not stream. Conventional talkgroup is a fixed per-channel value.
+        if(decodeConfigNBFM.getTalkgroup() != 0)
+        {
+            audioModule.getIdentifierCollection().update(
+                    new io.github.dsheirer.module.decode.nbfm.NBFMTalkgroup(decodeConfigNBFM.getTalkgroup()));
+        }
         modules.add(audioModule);
     }
 
@@ -495,7 +505,15 @@ public class DecoderFactory
         {
             modules.add(new AMDecoder(configAM));
             modules.add(new AMDecoderState(channel.getName(), configAM));
-            modules.add(new AudioModule(aliasList, 0, 60000, AUDIO_FILTER_ENABLE));
+            AudioModule amAudioModule = new AudioModule(aliasList, 0, 60000, AUDIO_FILTER_ENABLE);
+            //Seed the audio module with the configured TO talkgroup so every audio segment carries it for alias/stream
+            //routing - same reason as NBFM (the audio module is not wired to the decoder state's USER identifiers).
+            if(configAM.getTalkgroup() != 0)
+            {
+                amAudioModule.getIdentifierCollection().update(
+                        new io.github.dsheirer.module.decode.am.AMTalkgroup(configAM.getTalkgroup()));
+            }
+            modules.add(amAudioModule);
         }
         else
         {

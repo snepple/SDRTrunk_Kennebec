@@ -37,7 +37,14 @@ public class TranscriptionEngine {
     private static final int READ_TIMEOUT_MS = 90_000;
 
     //Skip very short segments (squelch taps, noise bursts) - they cost API money and transcribe poorly
-    private static final int MINIMUM_SAMPLES = 2 * 8000; //2 seconds at 8 kHz
+    //Minimum audio length to send to the STT API. Lowered to 0.8s so short radio calls (acks, unit IDs, brief
+    //dispatches) are still transcribed instead of being silently dropped - a major reason transcripts appeared for
+    //well under half of calls. Calls shorter than this are labeled [unintelligible] rather than skipped (see below).
+    private static final int MINIMUM_SAMPLES = (int)(0.8 * 8000);
+
+    //Sentinel transcript used when a call cannot be transcribed (API returned nothing, or the call was too short to
+    //send) so that EVERY call still receives a transcript entry in the events table rather than appearing blank.
+    public static final String UNINTELLIGIBLE = "[unintelligible]";
 
     //Circuit breaker: after consecutive API failures, stop transcribing for a cooldown period so a
     //failed/expired key or API outage doesn't stall the pipeline or burn quota indefinitely.
@@ -100,9 +107,9 @@ public class TranscriptionEngine {
             totalSamples += buffer.length;
         }
 
-        if (totalSamples < MINIMUM_SAMPLES) {
-            return;
-        }
+        //Too short to send to the API, but it still reached audio output as a call, so emit an [unintelligible]
+        //placeholder (after capturing identifiers below) so the call is not left blank in the events table.
+        final boolean tooShortToTranscribe = totalSamples < MINIMUM_SAMPLES;
 
         // Capture identifier values now - the segment is recycled asynchronously and may not be
         // valid when downstream subscribers process the transcription event.  The FROM radio ID
@@ -157,14 +164,23 @@ public class TranscriptionEngine {
 
         mExecutor.submit(() -> {
             try {
+                //Too short to transcribe: still emit a placeholder so the call has an entry.
+                if (tooShortToTranscribe) {
+                    postTranscription(audioSegment, UNINTELLIGIBLE, finalFromRadioId, finalProtocol,
+                        finalAliasListName, finalStartTimestamp, finalToId, finalFrequency);
+                    return;
+                }
+
                 String engine = aiPreference.getTranscriptionEngine();
                 String transcript = "";
+                boolean attempted = false;
 
                 byte[] wavData = createWavData(audioBuffers);
 
                 if ("GOOGLE".equalsIgnoreCase(engine)) {
                     String apiKey = aiPreference.getGoogleSttApiKey();
                     if (apiKey != null && !apiKey.isEmpty()) {
+                        attempted = true;
                         transcript = transcribeGoogle(wavData, apiKey);
                     } else {
                         mLog.warn("Google STT API Key is empty");
@@ -172,6 +188,7 @@ public class TranscriptionEngine {
                 } else if ("WHISPER".equalsIgnoreCase(engine)) {
                     String apiKey = aiPreference.getWhisperApiKey();
                     if (apiKey != null && !apiKey.isEmpty()) {
+                        attempted = true;
                         transcript = transcribeWhisper(wavData, apiKey);
                     } else {
                         mLog.warn("Whisper API Key is empty");
@@ -180,11 +197,16 @@ public class TranscriptionEngine {
 
                 sConsecutiveFailures.set(0);
 
-                if (transcript != null && !transcript.trim().isEmpty()) {
-                    mLog.info("Transcription completed: " + transcript);
-                    io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
-                        new TranscriptionEvent(audioSegment, transcript, finalFromRadioId, finalProtocol,
-                            finalAliasListName, finalStartTimestamp, finalToId, finalFrequency));
+                //The API succeeded. If it returned text, use it; if it returned nothing (no intelligible speech in
+                //noisy/weak audio), emit [unintelligible] so the call still gets a transcript entry. We only reach
+                //here on success - a genuine API error throws and is handled below, so good audio is never mislabeled
+                //as unintelligible due to a transient outage.
+                if (attempted) {
+                    String result = (transcript != null && !transcript.trim().isEmpty())
+                        ? transcript.trim() : UNINTELLIGIBLE;
+                    mLog.info("Transcription completed: " + result);
+                    postTranscription(audioSegment, result, finalFromRadioId, finalProtocol,
+                        finalAliasListName, finalStartTimestamp, finalToId, finalFrequency);
                 }
             } catch (Exception e) {
                 mLog.error("Error during audio transcription", e);
@@ -199,6 +221,13 @@ public class TranscriptionEngine {
         });
     }
 
+    private static void postTranscription(AudioSegment audioSegment, String transcript, Integer fromRadioId,
+            Protocol protocol, String aliasListName, long startTimestamp, Integer toId, long frequency) {
+        io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
+            new TranscriptionEvent(audioSegment, transcript, fromRadioId, protocol, aliasListName, startTimestamp,
+                toId, frequency));
+    }
+
     private static String transcribeGoogle(byte[] wavData, String apiKey) throws Exception {
         String urlString = "https://speech.googleapis.com/v1/speech:recognize?key=" + apiKey;
         URL url = new URL(urlString);
@@ -210,12 +239,15 @@ public class TranscriptionEngine {
         conn.setDoOutput(true);
 
         String audioBase64 = Base64.getEncoder().encodeToString(wavData);
+        //useEnhanced=true selects Google's enhanced model for the phone_call domain, which is noticeably more accurate
+        //on the narrowband, noisy audio typical of radio traffic. enableAutomaticPunctuation improves readability.
         String jsonPayload = "{" +
                 "\"config\": {" +
                 "\"encoding\":\"LINEAR16\"," +
                 "\"sampleRateHertz\": 8000," +
                 "\"languageCode\": \"en-US\"," +
                 "\"model\":\"phone_call\"," +
+                "\"useEnhanced\":true," +
                 "\"enableAutomaticPunctuation\":true" +
                 "}," +
                 "\"audio\": {" +
@@ -284,6 +316,16 @@ public class TranscriptionEngine {
             os.write(wavData);
             os.write(("\r\n--" + boundary + "\r\n").getBytes("UTF-8"));
             os.write(("Content-Disposition: form-data; name=\"model\"\r\n\r\nwhisper-1\r\n").getBytes("UTF-8"));
+            //Constrain Whisper to English and a deterministic decode (temperature 0) to reduce hallucination on noisy
+            //radio audio, and give it a domain prompt so it favors public-safety dispatch phrasing.
+            os.write(("--" + boundary + "\r\n").getBytes("UTF-8"));
+            os.write(("Content-Disposition: form-data; name=\"language\"\r\n\r\nen\r\n").getBytes("UTF-8"));
+            os.write(("--" + boundary + "\r\n").getBytes("UTF-8"));
+            os.write(("Content-Disposition: form-data; name=\"temperature\"\r\n\r\n0\r\n").getBytes("UTF-8"));
+            os.write(("--" + boundary + "\r\n").getBytes("UTF-8"));
+            os.write(("Content-Disposition: form-data; name=\"prompt\"\r\n\r\n").getBytes("UTF-8"));
+            os.write(("Public-safety radio dispatch: fire, EMS, police units, street addresses, unit numbers, " +
+                    "ten-codes and signals.\r\n").getBytes("UTF-8"));
             os.write(("--" + boundary + "--\r\n").getBytes("UTF-8"));
         }
 
