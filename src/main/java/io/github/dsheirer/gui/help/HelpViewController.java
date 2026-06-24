@@ -93,6 +93,7 @@ public class HelpViewController {
         channelsDecodingNode.getChildren().add(new TreeItem<>("Dmr"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("Native Sequential Paging"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("P25"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("P25 Phase 2 Setup"));
         guidesNode.getChildren().add(channelsDecodingNode);
 
         TreeItem<String> organizationPlaylistsNode = new TreeItem<>("Organization & Playlists");
@@ -114,6 +115,7 @@ public class HelpViewController {
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Two Tone Detect"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Vibrant Streaming Console"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Zello"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Two Tone Aliases Setup"));
         guidesNode.getChildren().add(integrationsStreamingNode);
 
         TreeItem<String> advancedSystemNode = new TreeItem<>("Advanced & System");
@@ -128,6 +130,7 @@ public class HelpViewController {
         advancedSystemNode.getChildren().add(new TreeItem<>("System Requirements"));
         advancedSystemNode.getChildren().add(new TreeItem<>("User Preferences"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Virtual Audio Cable"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Managing System Logs"));
         guidesNode.getChildren().add(advancedSystemNode);
 
         root.getChildren().add(guidesNode);
