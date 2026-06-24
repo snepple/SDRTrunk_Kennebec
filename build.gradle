@@ -724,8 +724,7 @@ tasks.register('prepareWindowsInstallerResources') {
             value.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;")
         }
         new File(wixResDir, "overrides.wxi").text =
-                """<?xml version="1.0" encoding="UTF-8"?>
-<Include>
+                """<Include>
     <WixVariable Id="WixUIBannerBmp" Value="${xmlEscape(bannerOut.absolutePath)}" />
     <WixVariable Id="WixUIDialogBmp" Value="${xmlEscape(dialogOut.absolutePath)}" />
 </Include>
