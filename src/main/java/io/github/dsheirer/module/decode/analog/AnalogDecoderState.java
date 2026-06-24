@@ -78,6 +78,12 @@ public abstract class AnalogDecoderState extends DecoderState implements ISource
             case REQUEST_RESET ->
                     {
                         getIdentifierCollection().update(getChannelNameIdentifier());
+                        //Re-assert the configured TO talkgroup so it is always present in the identifier collection -
+                        //and therefore inherited by every audio segment - independent of call-event timing. For a
+                        //conventional analog channel the talkgroup is a fixed per-channel value, and audio segments
+                        //can be created from buffered/tail audio at moments when no call event is mid-flight; without
+                        //this, the segment carries no TO talkgroup, no alias matches it, and no stream is assigned.
+                        getIdentifierCollection().update(getTalkgroupIdentifier());
                     }
             case START ->
                     {
@@ -190,6 +196,27 @@ public abstract class AnalogDecoderState extends DecoderState implements ISource
     {
         super.start();
         getIdentifierCollection().update(getChannelNameIdentifier());
+        //Seed the configured TO talkgroup at channel start so it is present in the identifier collection (and thus
+        //in every audio segment) from the outset, ensuring alias/stream routing works even for the first call and
+        //for any audio segment created outside an active call-event window.
+        getIdentifierCollection().update(getTalkgroupIdentifier());
+    }
+
+    /**
+     * Resets temporal state at the end of a call. The base implementation removes all USER-class identifiers, which
+     * includes the conventional channel's TO talkgroup. For an analog/conventional channel the talkgroup is a fixed
+     * per-channel value (its identity for alias and stream routing), so we re-assert it immediately after the reset.
+     * This keeps the talkgroup continuously present in the identifier collection - and therefore inherited by every
+     * audio segment, including those created from buffered lead-in or squelch-tail audio between call events - so
+     * alias/stream matching is not silently lost. Without this, tone-gated channels (whose audio can be emitted
+     * around the edges of a call-event window) produced audio segments with no TO talkgroup, no alias match, and no
+     * stream assignment.
+     */
+    @Override
+    protected void resetState()
+    {
+        super.resetState();
+        getIdentifierCollection().update(getTalkgroupIdentifier());
     }
 
     @Override
