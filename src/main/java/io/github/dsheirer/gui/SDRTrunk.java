@@ -289,6 +289,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             //implicit exit before any startup splash/main-window transition so JavaFX never treats a transient
             //no-visible-window moment as an application shutdown request.
             Platform.setImplicitExit(false);
+            try
+            {
 
             mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this::onViewChanged);
             mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
@@ -303,6 +305,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             java.util.prefs.Preferences p = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
             boolean wizardCompleted = p.getBoolean("sdrtrunk.first.time.wizard.completed", false);
             if (!wizardCompleted) {
+                // Hide the always-on-top splash before showing the wizard, otherwise the splash
+                // sits on top of the wizard dialog and the user cannot see or interact with it.
+                notifyPreloader(new SDRTrunkPreloader.HideNotification());
                 io.github.dsheirer.gui.wizard.FirstTimeWizard wizard = new io.github.dsheirer.gui.wizard.FirstTimeWizard(mUserPreferences, mJavaFxWindowManager, primaryStage);
                 wizard.showAndWait();
             }
@@ -553,6 +558,31 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 RestApiWatchdog.start(this, mTunerManager, mPlaylistManager.getChannelProcessingManager(),
                     mPlaylistManager.getBroadcastModel());
             }
+            }
+            catch(Throwable startupError)
+            {
+                mLog.error("Fatal error during GUI startup", startupError);
+                notifyPreloader(new SDRTrunkPreloader.HideNotification());
+                try
+                {
+                    // Write an emergency crash file so the user can find details even without a console.
+                    java.nio.file.Path logDir = mUserPreferences != null
+                        ? mUserPreferences.getDirectoryPreference().getDirectoryApplicationLog()
+                        : java.nio.file.Path.of(System.getProperty("user.home"), "SDRTrunk", "logs");
+                    java.nio.file.Files.createDirectories(logDir);
+                    java.nio.file.Files.writeString(logDir.resolve("startup_crash.txt"),
+                        "SDRTrunk startup failed:\n" + startupError + "\n\nSee sdrtrunk.log for full details.");
+                }
+                catch(Exception ignored) {}
+                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                errorAlert.setTitle("SDRTrunk Startup Error");
+                errorAlert.setHeaderText("SDRTrunk failed to start");
+                errorAlert.setContentText(startupError.getMessage() != null
+                    ? startupError.getMessage()
+                    : startupError.getClass().getSimpleName() + " — see logs/startup_crash.txt for details.");
+                errorAlert.showAndWait();
+                Platform.exit();
+            }
         }
     }
 
@@ -594,6 +624,14 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         {
             mLog.error("Another instance of SDRTrunk is already running - exiting this instance to avoid " +
                 "resource contention. Close the other instance first.");
+            // Show a visible dialog — without this the app silently disappears, which looks like a crash.
+            javax.swing.SwingUtilities.invokeLater(() ->
+                javax.swing.JOptionPane.showMessageDialog(null,
+                    "SDRTrunk is already running.\nClose the existing instance before starting a new one.",
+                    "SDRTrunk Already Running",
+                    javax.swing.JOptionPane.WARNING_MESSAGE));
+            // Give Swing time to show the dialog before the JVM exits.
+            try { Thread.sleep(200); } catch (InterruptedException ignored) {}
             System.exit(0);
         }
 
