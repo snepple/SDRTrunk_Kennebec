@@ -345,7 +345,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 new SettingsRow("Enable Tone Filter", createHelpIcon("When enabled, this channel will only pass audio when the selected tone is detected.\nUse this to reduce false triggering on busy repeaters."), mToneFilterEnabledSwitch),
                 new SettingsRow("Tone Type", createHelpIcon("CTCSS (Continuous Tone-Coded Squelch System):\n  A sub-audible tone below 300 Hz transmitted alongside voice.\n  Also called PL Tone (Private Line) or Sub-Tone.\n\nDCS (Digital-Coded Squelch):\n  A digital bit pattern used instead of a tone.\n  Also called DPL (Digital Private Line)."), mToneTypeCombo, codeBox),
                 new SettingsRow("Min Call Duration (ms)", createHelpIcon("Drops tone matches shorter than this many milliseconds - e.g. brief static\nbursts that momentarily carry the correct tone (the Sidney Fire problem).\nBuffered lead-in audio is released once a call qualifies, so a real call's\nstart is not clipped. 0 disables this (default)."), mToneMinCallDurationSpinner),
-                new SettingsRow("Require Noise Squelch", createHelpIcon("Also require the noise squelch to be open (tone AND carrier).\nWith this on, noisy static that carries the correct tone can't open the\nchannel because its high noise keeps the noise squelch closed.\nLeave OFF (default) for pure tone-squelch, so a mistuned noise squelch\ncan't silence the channel."), mToneRequireNoiseSquelchSwitch)
+                new SettingsRow("Require Noise Squelch", createHelpIcon("Also require the noise squelch to be open (tone AND carrier).\nWith this ON (default), noisy static that briefly fools the tone detector\ncan't open the channel because its high noise keeps the hysteresis-protected\nnoise squelch closed - this is what prevents sub-second static calls and\nmatches upstream behavior.\nTurn OFF only for pure tone-squelch if a mistuned noise squelch is\nsilencing a channel."), mToneRequireNoiseSquelchSwitch)
             );
             content.getChildren().add(toneCard);
 
@@ -1368,7 +1368,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mDcsCodeCombo.setPromptText("Select DCS code");
             updateToneCodeVisibility();
             mToneMinCallDurationSpinner.getValueFactory().setValue(0);
-            mToneRequireNoiseSquelchSwitch.setSelected(false);
+            mToneRequireNoiseSquelchSwitch.setSelected(true);
             mMinCallDurationSpinner.getValueFactory().setValue(0);
 
             // Reset squelch tail controls

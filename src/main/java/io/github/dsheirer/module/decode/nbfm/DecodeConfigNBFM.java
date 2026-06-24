@@ -52,7 +52,10 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     //(e.g. brief static bursts that momentarily carry the tone).  Require-noise-squelch additionally gates audio
     //on the noise squelch being open, so noisy static can't open the channel even when it carries the tone.
     private int mToneMinCallDurationMs = 0;
-    private boolean mToneRequireNoiseSquelch = false;
+    //Defaults to true so tone-filtered channels require the noise squelch open (tone AND carrier), restoring the
+    //upstream behavior where the hysteresis-protected noise squelch always participates in call gating. This prevents
+    //brief CTCSS/DCS false-positive matches on static from instantly producing sub-second calls.
+    private boolean mToneRequireNoiseSquelch = true;
 
     //General minimum call duration (milliseconds) applied to ALL calls regardless of tone filtering.  Calls shorter
     //than this - typically sub-second static bursts that briefly open the squelch - never produce a decode event in
@@ -369,8 +372,10 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     /**
      * Indicates whether a tone-filtered channel additionally requires the noise squelch to be open before audio
      * passes (tone AND carrier).  When true, noisy static that carries the correct tone can't open the channel
-     * because its high noise keeps the noise squelch closed.  Default false, which keeps the pure tone-squelch
-     * behavior (the tone alone gates the channel) so a mistuned noise squelch can't silence the channel.
+     * because its high noise keeps the noise squelch closed.  Defaults to true (tone AND carrier), matching the
+     * upstream behavior where the hysteresis-protected noise squelch is always part of call gating; this is the
+     * structural defense against brief tone false-positives on static. Set false for pure tone-squelch behavior
+     * (the tone alone gates the channel) if a mistuned noise squelch is silencing a channel.
      */
     @JacksonXmlProperty(isAttribute = true, localName = "toneRequireNoiseSquelch")
     public boolean isToneRequireNoiseSquelch()
