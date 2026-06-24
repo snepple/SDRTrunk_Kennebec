@@ -1,6 +1,7 @@
 package io.github.dsheirer.transcription;
 
 import com.google.gson.JsonObject;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,5 +67,23 @@ public class RadioIdNameLearnerTest
     public void returnsNullForNullInput()
     {
         assertNull(RadioIdNameLearner.parseJsonObjectLenient(null));
+    }
+
+    @Test
+    public void recognizesCommonFireAndEmsUnitDesignators()
+    {
+        Map<String, Integer> scores = RadioIdNameLearner.extractScoredCandidates("Quint 3 responding, K9 12 on scene");
+
+        assertTrue(scores.containsKey("Quint 3"));
+        assertTrue(scores.containsKey("K9 12"));
+    }
+
+    @Test
+    public void recognizesDispatchConsoleAsSpeakerWhenCallingAUnit()
+    {
+        Map<String, Integer> scores = RadioIdNameLearner.extractScoredCandidates("County to Engine 4, respond for an alarm");
+
+        assertTrue(scores.containsKey("County"));
+        assertFalse(scores.containsKey("Engine 4"));
     }
 }

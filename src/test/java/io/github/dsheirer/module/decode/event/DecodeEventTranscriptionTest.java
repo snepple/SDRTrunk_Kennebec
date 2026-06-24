@@ -20,8 +20,12 @@
 package io.github.dsheirer.module.decode.event;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -72,5 +76,17 @@ class DecodeEventTranscriptionTest
 
         e.addTranscriptionSegment(3_000L, "  Rescue 1 on scene  ");
         assertEquals("Rescue 1 on scene", e.getTranscription());
+    }
+
+    @Test
+    void transcriptSegmentInsideLongCallMatchesEventInterval()
+    {
+        IDecodeEvent event = mock(IDecodeEvent.class);
+        when(event.getTimeStart()).thenReturn(1_000L);
+        when(event.getTimeEnd()).thenReturn(121_000L);
+
+        IDecodeEvent match = DecodeEventPanel.findBestTranscriptionMatch(List.of(event), 70_000L, null);
+
+        assertSame(event, match);
     }
 }

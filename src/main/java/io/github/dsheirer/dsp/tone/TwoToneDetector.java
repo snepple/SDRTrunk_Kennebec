@@ -135,7 +135,7 @@ public class TwoToneDetector
         if(playlist == null) return;
 
         List<TwoToneConfiguration> configs = playlist.getTwoToneConfigurations();
-        boolean discoveryEnabled = playlist.isToneDiscoveryEnabled();
+        boolean discoveryEnabled = isDiscoveryEnabled(playlist, mPlaylistManager);
 
         if (configs.isEmpty() && !discoveryEnabled)
         {
@@ -153,9 +153,6 @@ public class TwoToneDetector
 
         // To make this fully optimized, we would typically run an FFT or a bank of Goertzel filters
         // For simplicity and since we want a "magical" experience, we'll scan known configurations
-
-        boolean matchedToneAThisBlock = false;
-        boolean matchedToneBThisBlock = false;
 
         //Alias-based routing: a detector only receives this segment's audio when one of its selected aliases resolves
         //on the segment (or when it has no aliases selected, in which case it runs globally for backward compatibility).
@@ -180,7 +177,6 @@ public class TwoToneDetector
             {
                 if (powerA > POWER_THRESHOLD_DB)
                 {
-                    matchedToneAThisBlock = true;
                     if(mCurrentToneA == config.getToneA())
                     {
                         mCurrentToneABlocks++;
@@ -212,7 +208,6 @@ public class TwoToneDetector
             // Tone A detection
             if (powerA > POWER_THRESHOLD_DB)
             {
-                matchedToneAThisBlock = true;
                 if(mCurrentToneA == config.getToneA())
                 {
                     mCurrentToneABlocks++;
@@ -228,7 +223,6 @@ public class TwoToneDetector
             // Tone B detection (only valid if Tone A was previously detected and held)
             else if (powerB > POWER_THRESHOLD_DB && mCurrentToneABlocks >= minToneBlocks && mCurrentToneA == config.getToneA())
             {
-                matchedToneBThisBlock = true;
                 if(mCurrentToneB == config.getToneB())
                 {
                     mCurrentToneBBlocks++;
@@ -255,9 +249,9 @@ public class TwoToneDetector
             }
         }
 
-        // If in discovery mode and we found strong unknown tones (simulated logic for unknown frequencies)
+        // If in discovery mode, look for strong tones with the FFT path even when a configured detector matched.
         // A true discovery mode would require an FFT to find the strongest peak frequency
-        if (discoveryEnabled && !matchedToneAThisBlock && !matchedToneBThisBlock)
+        if (discoveryEnabled)
         {
             if (mFftCounter >= 800 && mSamplesReceived >= FFT_SIZE) {
                 mFftCounter = 0;
@@ -323,6 +317,27 @@ public class TwoToneDetector
                     mDiscoveryToneBBlocks = 0;
                 }
             }
+        }
+    }
+
+    static boolean isDiscoveryEnabled(PlaylistV2 playlist, PlaylistManager playlistManager)
+    {
+        if(playlist != null && playlist.isToneDiscoveryEnabled())
+        {
+            return true;
+        }
+
+        try
+        {
+            return playlistManager != null &&
+                playlistManager.getUserPreferences() != null &&
+                playlistManager.getUserPreferences().getAIPreference() != null &&
+                playlistManager.getUserPreferences().getAIPreference().isAIEnabled() &&
+                playlistManager.getUserPreferences().getAIPreference().isAIToneDiscoveryEnabled();
+        }
+        catch(Exception e)
+        {
+            return false;
         }
     }
 

@@ -34,7 +34,7 @@ public class TranscriptionEngine {
     private static final Logger mLog = LoggerFactory.getLogger(TranscriptionEngine.class);
 
     private static final int CONNECT_TIMEOUT_MS = 10_000;
-    private static final int READ_TIMEOUT_MS = 30_000;
+    private static final int READ_TIMEOUT_MS = 90_000;
 
     //Skip very short segments (squelch taps, noise bursts) - they cost API money and transcribe poorly
     private static final int MINIMUM_SAMPLES = 2 * 8000; //2 seconds at 8 kHz
@@ -203,7 +203,9 @@ public class TranscriptionEngine {
                 "\"config\": {" +
                 "\"encoding\":\"LINEAR16\"," +
                 "\"sampleRateHertz\": 8000," +
-                "\"languageCode\": \"en-US\"" +
+                "\"languageCode\": \"en-US\"," +
+                "\"model\":\"phone_call\"," +
+                "\"enableAutomaticPunctuation\":true" +
                 "}," +
                 "\"audio\": {" +
                 "\"content\": \"" + audioBase64 + "\"" +
