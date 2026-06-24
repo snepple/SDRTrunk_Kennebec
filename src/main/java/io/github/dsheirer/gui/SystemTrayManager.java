@@ -125,6 +125,16 @@ public class SystemTrayManager {
             ContextMenu menu = buildContextMenu();
             menu.show(anchor, screenX, screenY);
             applyTheme(menu);
+
+            // The menu is owned by an off-screen, invisible anchor window, so when it's shown from the AWT tray
+            // click it never grabs OS focus - which means its auto-hide (click elsewhere to dismiss) never fires
+            // and the menu stays open until an item is chosen.  Request focus on the popup once it's realized so a
+            // click outside dismisses it like a normal context menu.
+            Platform.runLater(() -> {
+                if (menu.getScene() != null && menu.getScene().getWindow() != null) {
+                    menu.getScene().getWindow().requestFocus();
+                }
+            });
         } catch (Exception ex) {
             mLog.error("Error showing system tray context menu", ex);
         }
