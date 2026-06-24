@@ -67,13 +67,18 @@ public class DCSDetector
     private static final int LOSS_CHECK_INTERVAL_SAMPLES = 1400;
 
     /**
-     * Minimum ratio of low-band energy (DCS sub-audible range, <200 Hz) to wideband energy
-     * for a DCS detection to be considered valid. Real DCS modulation concentrates energy
-     * below 200 Hz. Broadband digital interference has roughly equal energy across all
-     * frequencies, producing a ratio near 1.0. A ratio threshold of 1.5 means the low band
-     * must have at least 50% more energy density than the wideband average.
+     * Minimum low-band energy fraction (low-frequency energy / total energy) for a DCS detection to be considered
+     * valid.  As computed in {@link #process(float[])} this fraction is bounded to [0, 1]: a real signal that
+     * carries low-frequency content (DCS sits in the sub-audible band) drives it toward 1.0, while broadband
+     * interference - whose energy is dominated by large sample-to-sample changes - drives it toward 0.  A
+     * detection is accepted when the fraction is at least this value, rejecting essentially-broadband bursts.
+     *
+     * NOTE: this was previously 1.5, which is unreachable because the fraction can never exceed 1.0 - so the
+     * quality gate rejected EVERY real DCS detection whenever a signal was present, and DCS-filtered channels
+     * produced no calls at all.  CTCSS uses a separate (frequency-domain) narrowband check and was unaffected,
+     * which is why CTCSS channels worked while DCS channels did not.
      */
-    private static final float DCS_BAND_RATIO_THRESHOLD = 1.5f;
+    private static final float DCS_BAND_RATIO_THRESHOLD = 0.05f;
 
     private final Set<DCSCode> mTargetCodes;
     private final DCSDecoder mDCSDecoder;
