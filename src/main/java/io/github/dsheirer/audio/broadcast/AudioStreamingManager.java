@@ -289,9 +289,8 @@ public class AudioStreamingManager implements Listener<AudioSegment>
             //stream assigned, or the talkgroup value/protocol on the alias does not match what the decoder produced.
             if(mDiagnosedSegments.add(audioSegment))
             {
-                mLog.info("Audio call not streamed - no stream/alias match for its talkgroup. Verify the alias has a " +
-                        "stream assigned (Aliases > Streaming) and that the alias talkgroup value AND protocol exactly " +
-                        "match the channel. Call identifiers: {}",
+                mLog.info("Audio call not streamed - no stream/alias match for its talkgroup. {} Call identifiers: {}",
+                        diagnoseNoStreamReason(audioSegment),
                         audioSegment.getIdentifierCollection() != null
                                 ? audioSegment.getIdentifierCollection().getIdentifiers() : "none");
             }
@@ -371,6 +370,78 @@ public class AudioStreamingManager implements Listener<AudioSegment>
             }
 
             mLastBufferIndex.put(audioSegment, currentSize);
+        }
+    }
+
+    /**
+     * Builds a specific, human-readable explanation for why an audio call produced no broadcast channels, so the log
+     * pinpoints whether the cause is (a) no TO talkgroup, (b) the channel's talkgroup not matching any alias in its
+     * alias list, (c) a matching alias that has no stream assigned, or (d) the channel having no alias list at all.
+     */
+    private String diagnoseNoStreamReason(AudioSegment audioSegment)
+    {
+        try
+        {
+            IdentifierCollection ic = audioSegment.getIdentifierCollection();
+            Identifier to = (ic != null) ? ic.getToIdentifier() : null;
+
+            if(to == null)
+            {
+                return "The call has no TO/talkgroup identifier. NBFM/analog channels must have a 'Talkgroup To Assign' " +
+                        "value set in the channel editor for alias and stream matching to work.";
+            }
+
+            String toDescription;
+            if(to instanceof io.github.dsheirer.identifier.talkgroup.TalkgroupIdentifier tg)
+            {
+                toDescription = "TO talkgroup [" + Integer.toUnsignedString(tg.getValue()) + "] protocol [" +
+                        tg.getProtocol() + "]";
+            }
+            else
+            {
+                toDescription = "TO identifier [" + to + "] (not a talkgroup; form=" + to.getForm() + ")";
+            }
+
+            AliasList aliasList = audioSegment.getAliasList();
+
+            if(aliasList == null || aliasList.getName() == null || aliasList.getName().isEmpty())
+            {
+                return toDescription + " - the channel has no alias list assigned, so no alias/stream can match. " +
+                        "Assign an alias list in the channel editor.";
+            }
+
+            List<Alias> matches = aliasList.getAliases(to);
+
+            if(matches == null || matches.isEmpty())
+            {
+                return toDescription + " - no alias in list [" + aliasList.getName() + "] has a matching talkgroup " +
+                        "value AND protocol. Verify the channel's 'Talkgroup To Assign' exactly equals the alias " +
+                        "talkgroup (both value and protocol, e.g. NBFM vs APCO-25).";
+            }
+
+            boolean anyStream = false;
+            for(Alias alias : matches)
+            {
+                if(!alias.getBroadcastChannels().isEmpty())
+                {
+                    anyStream = true;
+                    break;
+                }
+            }
+
+            if(!anyStream)
+            {
+                return toDescription + " matched alias(es) " + matches + " in list [" + aliasList.getName() +
+                        "], but none of them has a stream assigned. Open the alias > Streaming tab and assign the stream.";
+            }
+
+            //Matched and has a stream but still no broadcast channels on the segment - unexpected; report raw state.
+            return toDescription + " matched alias(es) " + matches + " with a stream assigned, but no broadcast " +
+                    "channel reached the audio segment. This may be a timing/identifier-update issue - please report it.";
+        }
+        catch(Exception e)
+        {
+            return "(diagnosis failed: " + e.getMessage() + ")";
         }
     }
 
