@@ -64,3 +64,7 @@
 **Topic:** 3 New Documentation Guides Added
 **Learning:** Three missing features/concepts from the "What's New" section and core logic (Audio Playback Bar, Streaming Connection Console, and Call Flow Logic) lacked dedicated Markdown guides.
 **Action:** Created `audio-playback-bar.md`, `streaming-connection-console.md`, and `call-flow-logic.md` adhering to the Visual-First Mintlify style, and integrated them into the navigation tree of `HelpViewController.java`.
+## 2026-06-24 - Topic Selection
+**Topic:** 3 New Documentation Guides Added
+**Learning:** Three missing features/concepts from the recent updates (Managing System Logs, P25 Phase 2 Setup, and Two Tone Aliases Setup) lacked dedicated Markdown guides.
+**Action:** Created `managing-system-logs.md`, `p25-phase-2-setup.md`, and `two-tone-aliases-setup.md` adhering to the Visual-First Mintlify style, and integrated them into the navigation tree of `HelpViewController.java`.
