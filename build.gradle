@@ -693,8 +693,51 @@ jmh {
 }
 
 
+tasks.register('prepareWindowsInstallerResources') {
+    group = 'ap-fork'
+    description = 'Prepares WiX resources for the branded Windows installer wizard'
+
+    def brandDir = file("${projectDir}/src/main/installer/windows")
+    def bannerBmp = new File(brandDir, "sdrtrunk-installer-banner.bmp")
+    def dialogBmp = new File(brandDir, "sdrtrunk-installer-dialog.bmp")
+    def wixResDir = file("$buildDir/installer/wix-resources")
+
+    inputs.files(bannerBmp, dialogBmp)
+    outputs.dir(wixResDir)
+
+    doLast {
+        if (!bannerBmp.exists()) {
+            throw new GradleException("Missing Windows installer banner bitmap: ${bannerBmp}")
+        }
+        if (!dialogBmp.exists()) {
+            throw new GradleException("Missing Windows installer dialog bitmap: ${dialogBmp}")
+        }
+
+        wixResDir.mkdirs()
+        def bannerOut = new File(wixResDir, "banner.bmp")
+        def dialogOut = new File(wixResDir, "dialog.bmp")
+
+        copy { from bannerBmp; into wixResDir; rename { 'banner.bmp' } }
+        copy { from dialogBmp; into wixResDir; rename { 'dialog.bmp' } }
+
+        def xmlEscape = { value ->
+            value.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+        }
+        new File(wixResDir, "overrides.wxi").text =
+                """<?xml version="1.0" encoding="UTF-8"?>
+<Include>
+    <WixVariable Id="WixUIBannerBmp" Value="${xmlEscape(bannerOut.absolutePath)}" />
+    <WixVariable Id="WixUIDialogBmp" Value="${xmlEscape(dialogOut.absolutePath)}" />
+</Include>
+"""
+
+        logger.lifecycle("prepareWindowsInstallerResources: wrote branded WiX resources to ${wixResDir}")
+    }
+}
+
+
 tasks.register('createInstaller', Exec) {
-    dependsOn 'runtimeZipCurrent'
+    dependsOn 'runtimeZipCurrent', 'prepareWindowsInstallerResources'
     group = 'ap-fork'
     description = 'Creates a native OS installer using jpackage'
 
@@ -789,30 +832,9 @@ tasks.register('createInstaller', Exec) {
                             '--win-dir-chooser',
                             '--win-upgrade-uuid', '60C779DB-E3B4-4D77-BB3B-4ACD206481E3'])
 
-            // Brand the installer wizard pages with the SDRTrunk banner + welcome
-            // bitmaps. jpackage reads override resources from --resource-dir; an
-            // overrides.wxi there points the WiX UI bitmap variables at our committed
-            // BMPs (24-bit, 493x58 and 493x312). If a future WiX/jpackage version
-            // needs different wiring, 'jpackage --verbose' prints the exact override
-            // resource names it expects; removing --resource-dir falls back to stock.
-            def brandDir = file("${projectDir}/src/main/installer/windows")
-            def bannerBmp = new File(brandDir, "sdrtrunk-installer-banner.bmp")
-            def dialogBmp = new File(brandDir, "sdrtrunk-installer-dialog.bmp")
-            // Copy branding BMPs into the jpackage --resource-dir.
-            // jpackage's built-in WiX UI template auto-picks up banner.bmp (493x58)
-            // and dialog.bmp (493x312) by convention - no overrides.wxi needed
-            // (overrides.wxi caused candle to fail because it was placed outside
-            // the internal JpConfigDir that main.wxs references at compile time).
             def wixResDir = file("$buildDir/installer/wix-resources")
-            wixResDir.mkdirs()
-            if (bannerBmp.exists()) {
-                copy { from bannerBmp; into wixResDir; rename { 'banner.bmp' } }
-            }
-            if (dialogBmp.exists()) {
-                copy { from dialogBmp; into wixResDir; rename { 'dialog.bmp' } }
-            }
             cmdList.addAll(['--resource-dir', wixResDir.absolutePath])
-            logger.lifecycle("createInstaller: branding via BMP files in ${wixResDir}")
+            logger.lifecycle("createInstaller: branding via WiX overrides in ${wixResDir}")
 
             jvmArgsWindows.each { arg ->
                 cmdList.addAll(['--java-options', arg])

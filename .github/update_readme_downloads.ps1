@@ -120,7 +120,11 @@ if (-not (Test-Path -LiteralPath $ReadmePath)) {
     exit 0
 }
 
-$readme = Get-Content -Raw -LiteralPath $ReadmePath
+$fullPath = (Resolve-Path -LiteralPath $ReadmePath).Path
+# Windows PowerShell 5.1 reads UTF-8-without-BOM files as the system ANSI code
+# page unless the encoding is explicit, which mojibakes em dashes/arrows.
+$utf8 = New-Object System.Text.UTF8Encoding -ArgumentList $false, $true
+$readme = [System.IO.File]::ReadAllText($fullPath, $utf8)
 
 $startIdx = $readme.IndexOf($startMarker)
 $endIdx   = $readme.IndexOf($endMarker)
@@ -141,8 +145,6 @@ if ($newContent -eq $readme) {
 }
 
 # Write UTF-8 without BOM to keep the file clean and stable.
-$utf8 = New-Object System.Text.UTF8Encoding($false)
-$fullPath = (Resolve-Path -LiteralPath $ReadmePath).Path
 [System.IO.File]::WriteAllText($fullPath, $newContent, $utf8)
 
 Write-Host "README download links updated to $Version."
