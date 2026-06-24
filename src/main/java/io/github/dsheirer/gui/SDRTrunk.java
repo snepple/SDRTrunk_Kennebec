@@ -289,7 +289,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             //implicit exit before any startup splash/main-window transition so JavaFX never treats a transient
             //no-visible-window moment as an application shutdown request.
             Platform.setImplicitExit(false);
-            mLog.info("JavaFX implicit exit disabled for SDRTrunk GUI lifecycle");
 
             mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this::onViewChanged);
             mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
@@ -374,16 +373,11 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             //the splash still covers it.  The window is revealed at full opacity only once the content has actually
             //rendered (see the reveal logic below), so the user goes straight from the splash to a fully-drawn window
             //instead of watching a bare/outlined shell fill in.
-            primaryStage.setOnShown(event -> mLog.info("Main window shown (opacity={}, iconified={})",
-                primaryStage.getOpacity(), primaryStage.isIconified()));
-            primaryStage.setOnHidden(event -> mLog.info("Main window hidden (opacity={}, iconified={})",
-                primaryStage.getOpacity(), primaryStage.isIconified()));
             primaryStage.setOpacity(0.0);
             primaryStage.show();
 
             //Closing the main window triggers the same confirmation as the sidebar Exit, then fully quits the app.
             primaryStage.setOnCloseRequest(event -> {
-                mLog.info("Main window close requested");
                 event.consume();
                 confirmAndExit();
             });
@@ -419,8 +413,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                         public void handle(long now)
                         {
                             hideSplashOnNextPulse[0].stop();
-                            mLog.info("Hiding startup splash after main window reveal (showing={}, opacity={}, iconified={})",
-                                primaryStage.isShowing(), primaryStage.getOpacity(), primaryStage.isIconified());
                             notifyPreloader(new SDRTrunkPreloader.HideNotification());
                             primaryStage.toFront();
                             primaryStage.requestFocus();
