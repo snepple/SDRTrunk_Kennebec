@@ -66,7 +66,8 @@ public class APCO25TalkgroupFormatter extends AbstractIntegerFormatter
             {
                 case DECIMAL:
                 case FORMATTED:
-                    return identifier.getValue().toString();
+                    //Unsigned: a user-assigned 10-digit geographic ID can exceed Integer.MAX_VALUE.
+                    return Integer.toUnsignedString(identifier.getValue());
                 case HEXADECIMAL:
                     return toHex(identifier.getValue());
                 default:

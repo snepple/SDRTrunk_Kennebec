@@ -22,6 +22,7 @@ package io.github.dsheirer.gui.playlist.radioreference;
 import io.github.dsheirer.controller.channel.Channel;
 import org.controlsfx.control.ToggleSwitch;
 import io.github.dsheirer.eventbus.MyEventBus;
+import io.github.dsheirer.gui.playlist.channel.GeographicSchemaGenerator;
 import io.github.dsheirer.gui.playlist.channel.ViewChannelRequest;
 import io.github.dsheirer.module.decode.DecoderFactory;
 import io.github.dsheirer.module.decode.config.DecodeConfiguration;
@@ -413,8 +414,15 @@ public class FrequencyEditor extends VBox
             Channel channel = new Channel();
             channel.setSystem(system);
             channel.setSite(site);
-            channel.setState(String.valueOf(mUserPreferences.getRadioReferencePreference().getPreferredStateId()));
-            channel.setCounty(String.valueOf(mUserPreferences.getRadioReferencePreference().getPreferredCountyId()));
+            //Store the channel state as a US FIPS code (not RadioReference's internal sequential state ID) so the
+            //talkgroup generator and any downstream geographic logic resolve the correct state. RadioReference uses
+            //Maine = 20 while FIPS uses Maine = 23, so the raw RR ID would silently select the wrong state.
+            String fipsState = GeographicSchemaGenerator.rrStateIdToFips(
+                    mUserPreferences.getRadioReferencePreference().getPreferredStateId());
+            if(fipsState != null)
+            {
+                channel.setState(fipsState);
+            }
             channel.setName(name);
             SourceConfigTuner sourceConfigTuner = new SourceConfigTuner();
             sourceConfigTuner.setFrequency(frequency);

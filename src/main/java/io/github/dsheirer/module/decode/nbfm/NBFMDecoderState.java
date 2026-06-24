@@ -52,6 +52,7 @@ public class NBFMDecoderState extends AnalogDecoderState
     // Tone filter configuration (from DecodeConfigNBFM)
     private boolean mToneFilterEnabled = false;
     private List<ChannelToneFilter> mConfiguredFilters = new ArrayList<>();
+    private int mMinCallDurationMs = 0;
 
     // Current status
     private volatile String mToneStatus = "No tone detected";
@@ -75,6 +76,14 @@ public class NBFMDecoderState extends AnalogDecoderState
         {
             mConfiguredFilters.addAll(decodeConfig.getToneFilters());
         }
+
+        mMinCallDurationMs = decodeConfig.getMinCallDurationMs();
+    }
+
+    @Override
+    protected int getMinCallDurationMs()
+    {
+        return mMinCallDurationMs;
     }
 
     @Override

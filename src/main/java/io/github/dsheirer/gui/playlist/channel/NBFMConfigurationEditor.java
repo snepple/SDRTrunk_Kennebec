@@ -109,6 +109,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private ToggleSwitch mToneFilterEnabledSwitch;
     private ComboBox<ChannelToneFilter.ToneType> mToneTypeCombo;
     private Spinner<Integer> mToneMinCallDurationSpinner;
+    private Spinner<Integer> mMinCallDurationSpinner;
     private ToggleSwitch mToneRequireNoiseSquelchSwitch;
     private ComboBox<CTCSSCode> mCtcssCodeCombo;
     private ComboBox<DCSCode> mDcsCodeCombo;
@@ -231,10 +232,23 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             });
             talkgroupBox.getChildren().add(generateIdButton);
 
+            //General minimum call duration - applies to ALL calls (with or without tone filtering). Calls shorter
+            //than this are discarded so sub-second static bursts never reach the Events table.
+            mMinCallDurationSpinner = new Spinner<>(0, 5000, 0, 100);
+            mMinCallDurationSpinner.setEditable(true);
+            mMinCallDurationSpinner.setPrefWidth(110);
+            mMinCallDurationSpinner.setTooltip(new Tooltip("Discard calls shorter than this (milliseconds). 0 = off."));
+            mMinCallDurationSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> {
+                if(!mLoadingConfiguration) {
+                    modifiedProperty().set(true);
+                }
+            });
+
             SettingsCard decoderCard = new SettingsCard();
             decoderCard.getChildren().addAll(
                 new SettingsRow("Channel Bandwidth", createHelpIcon("NBFM (Narrow-Band FM) channel width determines how much radio spectrum is decoded.\n\u2022 12.5 kHz = Standard narrow-band (most modern radios)\n\u2022 25 kHz = Wide-band (older or commercial radios)\nIf you hear distorted or chopped audio, try the other setting."), getBandwidthButton()),
-                new SettingsRow("Talkgroup To Assign", createHelpIcon("Talkgroup ID: A numeric address used to identify a specific group of radio users.\nFor NBFM channels without trunking, this manually assigns a talkgroup number\nso that alias rules (listen/record/stream) can be applied to this channel's audio.\nLeave blank to use the auto-detected talkgroup (if available)."), talkgroupBox)
+                new SettingsRow("Talkgroup To Assign", createHelpIcon("Talkgroup ID: A numeric address used to identify a specific group of radio users.\nFor NBFM channels without trunking, this manually assigns a talkgroup number\nso that alias rules (listen/record/stream) can be applied to this channel's audio.\nLeave blank to use the auto-detected talkgroup (if available)."), talkgroupBox),
+                new SettingsRow("Min Call Duration (ms)", createHelpIcon("Discards any call shorter than this many milliseconds, so brief sub-second\nstatic bursts never appear in the Events table or get streamed. Applies to\nall calls (with or without a tone filter). This also keeps the limited Events\ntable from filling with static and evicting real calls before their\ntranscriptions arrive. 0 disables this (default)."), mMinCallDurationSpinner)
             );
             content.getChildren().add(decoderCard);
 
@@ -331,7 +345,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 new SettingsRow("Enable Tone Filter", createHelpIcon("When enabled, this channel will only pass audio when the selected tone is detected.\nUse this to reduce false triggering on busy repeaters."), mToneFilterEnabledSwitch),
                 new SettingsRow("Tone Type", createHelpIcon("CTCSS (Continuous Tone-Coded Squelch System):\n  A sub-audible tone below 300 Hz transmitted alongside voice.\n  Also called PL Tone (Private Line) or Sub-Tone.\n\nDCS (Digital-Coded Squelch):\n  A digital bit pattern used instead of a tone.\n  Also called DPL (Digital Private Line)."), mToneTypeCombo, codeBox),
                 new SettingsRow("Min Call Duration (ms)", createHelpIcon("Drops tone matches shorter than this many milliseconds - e.g. brief static\nbursts that momentarily carry the correct tone (the Sidney Fire problem).\nBuffered lead-in audio is released once a call qualifies, so a real call's\nstart is not clipped. 0 disables this (default)."), mToneMinCallDurationSpinner),
-                new SettingsRow("Require Noise Squelch", createHelpIcon("Also require the noise squelch to be open (tone AND carrier).\nWith this on, noisy static that carries the correct tone can't open the\nchannel because its high noise keeps the noise squelch closed.\nLeave OFF (default) for pure tone-squelch, so a mistuned noise squelch\ncan't silence the channel."), mToneRequireNoiseSquelchSwitch)
+                new SettingsRow("Require Noise Squelch", createHelpIcon("Also require the noise squelch to be open (tone AND carrier).\nWith this ON (default), noisy static that briefly fools the tone detector\ncan't open the channel because its high noise keeps the hysteresis-protected\nnoise squelch closed - this is what prevents sub-second static calls and\nmatches upstream behavior.\nTurn OFF only for pure tone-squelch if a mistuned noise squelch is\nsilencing a channel."), mToneRequireNoiseSquelchSwitch)
             );
             content.getChildren().add(toneCard);
 
@@ -1320,6 +1334,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             // Load tone-squelch false-trigger suppression settings
             mToneMinCallDurationSpinner.getValueFactory().setValue(decodeConfigNBFM.getToneMinCallDurationMs());
             mToneRequireNoiseSquelchSwitch.setSelected(decodeConfigNBFM.isToneRequireNoiseSquelch());
+            mMinCallDurationSpinner.getValueFactory().setValue(decodeConfigNBFM.getMinCallDurationMs());
 
             // Load squelch tail settings
             mSquelchTailEnabledSwitch.setSelected(decodeConfigNBFM.isSquelchTailRemovalEnabled());
@@ -1353,7 +1368,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mDcsCodeCombo.setPromptText("Select DCS code");
             updateToneCodeVisibility();
             mToneMinCallDurationSpinner.getValueFactory().setValue(0);
-            mToneRequireNoiseSquelchSwitch.setSelected(false);
+            mToneRequireNoiseSquelchSwitch.setSelected(true);
+            mMinCallDurationSpinner.getValueFactory().setValue(0);
 
             // Reset squelch tail controls
             mSquelchTailEnabledSwitch.setSelected(false);
@@ -1396,6 +1412,20 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             }
         }
         return null;
+    }
+
+    @Override
+    protected void setConfiguredTalkgroup(int value)
+    {
+        //Set via the text formatter so the value (unsigned, possibly 10 digits) is parsed/displayed correctly.
+        if(mTalkgroupTextFormatter != null)
+        {
+            mTalkgroupTextFormatter.setValue(value);
+        }
+        else
+        {
+            getTalkgroupField().setText(Integer.toUnsignedString(value));
+        }
     }
 
     @Override
@@ -1461,6 +1491,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         config.setToneFilters(filters);
         config.setToneMinCallDurationMs(mToneMinCallDurationSpinner.getValue());
         config.setToneRequireNoiseSquelch(mToneRequireNoiseSquelchSwitch.isSelected());
+        config.setMinCallDurationMs(mMinCallDurationSpinner.getValue());
 
         // Save squelch tail settings
         config.setSquelchTailRemovalEnabled(mSquelchTailEnabledSwitch.isSelected());

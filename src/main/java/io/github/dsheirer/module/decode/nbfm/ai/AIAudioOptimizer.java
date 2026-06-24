@@ -62,6 +62,29 @@ public class AIAudioOptimizer {
         }
     }
 
+    /**
+     * Logs a Gemini API call failure at an appropriate level. Expected transient conditions - server overload
+     * (503/UNAVAILABLE), request timeouts, and quota exhaustion (429/RESOURCE_EXHAUSTED) - are routine when calling
+     * an external service and are logged concisely without a stack trace to keep the application log readable. Any
+     * other (unexpected) failure is logged with its full stack trace for diagnosis. The exception is still thrown to
+     * the caller in all cases, so callers retain their own handling/logging.
+     */
+    private static void logApiException(Exception e) {
+        String msg = e.getMessage() == null ? "" : e.getMessage();
+        boolean transientExpected = e instanceof java.net.http.HttpTimeoutException
+                || e instanceof java.net.SocketTimeoutException
+                || msg.contains("503") || msg.contains("UNAVAILABLE")
+                || msg.contains("429") || msg.contains("RESOURCE_EXHAUSTED")
+                || msg.contains("timed out");
+
+        if (transientExpected) {
+            mLog.warn("Gemini API temporarily unavailable: {}", msg.contains("\n") ? msg.substring(0, msg.indexOf('\n')) : msg);
+        }
+        else {
+            mLog.error("Error calling Gemini API: " + msg, e);
+        }
+    }
+
     private String getCacheKey(List<Path> audioFiles) {
         StringBuilder sb = new StringBuilder();
         for (Path path : audioFiles) {
@@ -219,7 +242,7 @@ public class AIAudioOptimizer {
 
         } catch (Exception e) {
             recordApiOutcome(false);
-            mLog.error("Error calling Gemini API: " + e.getMessage(), e);
+            logApiException(e);
             throw new Exception("Error calling Gemini API: " + e.getMessage(), e);
         }
     }
@@ -402,7 +425,7 @@ public class AIAudioOptimizer {
 
         } catch (Exception e) {
             recordApiOutcome(false);
-            mLog.error("Error calling Gemini API: " + e.getMessage(), e);
+            logApiException(e);
             throw new Exception("Error calling Gemini API: " + e.getMessage(), e);
         }
     }

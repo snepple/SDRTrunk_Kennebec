@@ -90,7 +90,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     private ToggleSwitch mIgnoreUnaliasedTalkgroupsButton;
     private ToggleSwitch mNacFilterButton;
     private javafx.scene.control.TextField mNacTextField;
-    private IntegerTextField mTalkgroupTextField;
+    private TextField mTalkgroupTextField;
     private Spinner<Integer> mTrafficChannelPoolSizeSpinner;
     private SegmentedButton mModulationSegmentedButton;
     private ToggleButton mC4FMToggleButton;
@@ -180,8 +180,8 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
                     createHelpIcon("A unique code identifying a specific radio system. This is usually provided by RadioReference and tells the software which network to follow."),
                     getNacFilterButton(), getNacTextField()),
                 new SettingsRow("Talkgroup To Assign",
-                    createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID."),
-                    getTalkgroupTextField())
+                    createHelpIcon("Forces all decoded audio from this channel to use a specific talkgroup ID.\nFor conventional (non-trunked) P25, this lets alias rules (listen/record/stream)\napply to this channel's audio. Supports full 32-bit / 10-digit geographic IDs.\nLeave blank to use the decoded talkgroup."),
+                    getTalkgroupAssignBox())
             );
 
             content.getChildren().addAll(modulationCard, trafficCard, nacCard);
@@ -451,26 +451,35 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
         return mNacTextField;
     }
 
-    private IntegerTextField getTalkgroupTextField()
+    private static final String TALKGROUP_TOOLTIP = "Talkgroup ID override (1 - 4,294,967,295, blank = use decoded)";
+
+    private TextField getTalkgroupTextField()
     {
         if(mTalkgroupTextField == null)
         {
-            mTalkgroupTextField = new IntegerTextField();
+            mTalkgroupTextField = new TextField();
             mTalkgroupTextField.setDisable(true);
-            mTalkgroupTextField.setPrefWidth(80);
+            mTalkgroupTextField.setPrefWidth(110);
             mTalkgroupTextField.setPromptText("e.g. 1001");
-            mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
+            mTalkgroupTextField.setTooltip(new Tooltip(TALKGROUP_TOOLTIP));
+
+            //Digits only. A plain digit filter (rather than IntegerTextField) is used so that 10-digit
+            //geographic IDs that exceed Integer.MAX_VALUE are not rejected or wiped on commit.
+            mTalkgroupTextField.setTextFormatter(new javafx.scene.control.TextFormatter<>(change ->
+                change.getControlNewText().matches("\\d*") ? change : null));
+
             mTalkgroupTextField.textProperty()
                 .addListener((observable, oldValue, newValue) -> {
                     modifiedProperty().set(true);
-                    Integer tg = mTalkgroupTextField.get();
-                    if (tg != null && tg > 0) {
+                    Integer tg = getTalkgroupUnsigned();
+                    if (tg != null && tg != 0) {
+                        String tgText = Integer.toUnsignedString(tg);
                         boolean conflict = false;
                         for (io.github.dsheirer.controller.channel.Channel c : getPlaylistManager().getChannelModel().channelList()) {
                             if (c == getItem()) continue;
                             io.github.dsheirer.module.decode.config.DecodeConfiguration dc = c.getDecodeConfiguration();
                             if (dc instanceof io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25Phase1) {
-                                if (tg.equals(((io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25Phase1) dc).getTalkgroup())) {
+                                if (tgText.equals(Integer.toUnsignedString(((io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25Phase1) dc).getTalkgroup()))) {
                                     conflict = true;
                                     break;
                                 }
@@ -481,16 +490,57 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
                             mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID already assigned to another channel"));
                         } else {
                             mTalkgroupTextField.setStyle("");
-                            mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
+                            mTalkgroupTextField.setTooltip(new Tooltip(TALKGROUP_TOOLTIP));
                         }
                     } else {
                         mTalkgroupTextField.setStyle("");
-                        mTalkgroupTextField.setTooltip(new Tooltip("Talkgroup ID override (1-65535, blank = use decoded)"));
+                        mTalkgroupTextField.setTooltip(new Tooltip(TALKGROUP_TOOLTIP));
                     }
                 });
         }
 
         return mTalkgroupTextField;
+    }
+
+    /**
+     * Talkgroup field paired with a Generate ID button that opens the geographic-schema generator
+     * (same generator used for NBFM) to produce a sequential 10-digit ID for conventional P25.
+     */
+    private HBox getTalkgroupAssignBox()
+    {
+        HBox box = new HBox(5);
+        box.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        box.getChildren().add(getTalkgroupTextField());
+
+        Button generateIdButton = new Button("Generate ID");
+        generateIdButton.getStyleClass().add("flat-button");
+        generateIdButton.setOnAction(event -> {
+            GeographicSchemaGenerator generator = new GeographicSchemaGenerator(getItem(), mUserPreferences,
+                getPlaylistManager(), io.github.dsheirer.protocol.Protocol.APCO25);
+            generator.showAndWait().ifPresent(id -> getTalkgroupTextField().setText(id));
+        });
+        box.getChildren().add(generateIdButton);
+        return box;
+    }
+
+    /**
+     * Parses the talkgroup field as an unsigned 32-bit integer, returning null when empty or invalid.
+     */
+    private Integer getTalkgroupUnsigned()
+    {
+        String text = getTalkgroupTextField().getText();
+        if(text == null || text.isBlank())
+        {
+            return null;
+        }
+        try
+        {
+            return Integer.parseUnsignedInt(text.trim());
+        }
+        catch(NumberFormatException nfe)
+        {
+            return null;
+        }
     }
 
     private Spinner<Integer> getTrafficChannelPoolSizeSpinner()
@@ -549,7 +599,7 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
             getTrafficChannelPoolSizeSpinner().getValueFactory().setValue(decodeConfig.getTrafficChannelPoolSize());
             getNacFilterButton().setSelected(decodeConfig.isNacFilterEnabled());
             int tg = decodeConfig.getTalkgroup();
-            getTalkgroupTextField().setText(tg > 0 ? String.valueOf(tg) : "");
+            getTalkgroupTextField().setText(tg != 0 ? Integer.toUnsignedString(tg) : "");
 
             //Format NAC list for display
             StringBuilder sb = new StringBuilder();
@@ -607,12 +657,18 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
     @Override
     protected Integer getConfiguredTalkgroup()
     {
-        Integer tg = getTalkgroupTextField().get();
-        if(tg != null && tg >= 1 && tg <= 65535)
+        Integer tg = getTalkgroupUnsigned();
+        if(tg != null && tg != 0)
         {
             return tg;
         }
         return null;
+    }
+
+    @Override
+    protected void setConfiguredTalkgroup(int value)
+    {
+        getTalkgroupTextField().setText(Integer.toUnsignedString(value));
     }
 
     @Override
@@ -637,9 +693,9 @@ public class P25P1ConfigurationEditor extends ChannelConfigurationEditor
 
         int originalTalkgroup = config.getTalkgroup();
 
-        //Parse talkgroup text field
-        Integer tg = getTalkgroupTextField().get();
-        if(tg != null && tg >= 1 && tg <= 65535)
+        //Parse talkgroup text field (unsigned - supports full 32-bit / 10-digit geographic IDs)
+        Integer tg = getTalkgroupUnsigned();
+        if(tg != null && tg != 0)
         {
             config.setTalkgroup(tg);
         }

@@ -36,8 +36,9 @@ public enum TalkgroupFormat
 {
     AM("*****", 1, 0xFFFF, "1 to 65,535",
             "AM valid value range is 1-65,535"),
-    APCO25("********", 0, 0xFFFF, "0 to 65,535",
-        "<html>APCO25 talkgroup valid range is 0 to 65,535"),
+    APCO25("**********", 0, -1, "0 to 4,294,967,295",
+        "<html>APCO25 over-the-air talkgroups are 0 to 65,535. Conventional P25 channels may be<br>" +
+        "assigned a full 32-bit / 10-digit geographic ID, so the accepted range is 0 to 4,294,967,295"),
     DMR("********", 0, 0xFFFFFF, "0 to 16,777,215",
         "<html>DMR talkgroup valid range is 0 to 16,777,215"),
     FLEETSYNC("###-####", 0, 0x7FFFFF, "001-0001 to 127-8192",

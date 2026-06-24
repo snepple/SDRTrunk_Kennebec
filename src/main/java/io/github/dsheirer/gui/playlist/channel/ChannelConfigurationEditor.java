@@ -61,6 +61,7 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import org.controlsfx.control.ToggleSwitch;
 import javafx.scene.control.ComboBox;
@@ -1257,6 +1258,16 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
         return null;
     }
 
+    /**
+     * Sets the talkgroup value in the editor UI. Override in subclasses that support talkgroup
+     * assignment so that a suggested alternative talkgroup can be applied on a save conflict.
+     * @param value talkgroup value (interpreted as unsigned)
+     */
+    protected void setConfiguredTalkgroup(int value)
+    {
+        //Default no-op; subclasses with a talkgroup field override this.
+    }
+
     private Button getSaveButton()
     {
         if(mSaveButton == null)
@@ -1289,14 +1300,27 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
                     if(conflictChannel != null)
                     {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "Talkgroup " + newTalkgroup + " is already assigned to channel '" + conflictChannel.toString() + "'.\nPlease choose a different talkgroup to assign.", ButtonType.OK);
+                        int suggested = GeographicSchemaGenerator.suggestAlternative(mPlaylistManager, newTalkgroup);
+                        String conflictTg = Integer.toUnsignedString(newTalkgroup);
+                        String suggestedTg = Integer.toUnsignedString(suggested);
+
+                        ButtonType useSuggested = new ButtonType("Use " + suggestedTg, ButtonBar.ButtonData.OK_DONE);
+                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                            "Talkgroup " + conflictTg + " is already assigned to channel '" + conflictChannel.toString() + "'.\n\n" +
+                            "Suggested available talkgroup: " + suggestedTg + "\n\n" +
+                            "Use the suggested talkgroup, or Cancel to choose your own.",
+                            useSuggested, ButtonType.CANCEL);
+                        io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                         alert.setTitle("Talkgroup Conflict");
-
-
-
                         alert.setHeaderText("Cannot Save Channel Configuration");
                         alert.initOwner((getPlayButton()).getScene().getWindow());
-                        alert.showAndWait();
+
+                        Optional<ButtonType> choice = alert.showAndWait();
+                        if(choice.isPresent() && choice.get() == useSuggested)
+                        {
+                            //Apply the suggestion to the editor field; the user reviews and clicks Save again.
+                            setConfiguredTalkgroup(suggested);
+                        }
                         return;
                     }
                 }
