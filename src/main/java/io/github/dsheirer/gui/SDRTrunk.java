@@ -285,6 +285,10 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         else
         {
             mLog.info("starting main application gui");
+            //The app intentionally keeps running when the main window is temporarily hidden to the tray. Disable
+            //implicit exit before any startup splash/main-window transition so JavaFX never treats a transient
+            //no-visible-window moment as an application shutdown request.
+            Platform.setImplicitExit(false);
 
             mJavaFxWindowManager = new JavaFxWindowManager(mUserPreferences, mTunerManager, mPlaylistManager, this::onViewChanged);
             mSidebarPanel = new io.github.dsheirer.gui.SidebarPanel(this);
@@ -399,7 +403,22 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 {
                     revealed[0] = true;
                     primaryStage.setOpacity(1.0);
-                    notifyPreloader(new SDRTrunkPreloader.HideNotification());
+                    primaryStage.setIconified(false);
+                    //Let JavaFX/native window state observe the now-visible main stage for one render pulse before
+                    //hiding the preloader. This avoids an implicit-exit race on Windows jpackage launches where the
+                    //splash can be the only visible native window while the main stage transitions from opacity 0.
+                    final javafx.animation.AnimationTimer[] hideSplashOnNextPulse = new javafx.animation.AnimationTimer[1];
+                    hideSplashOnNextPulse[0] = new javafx.animation.AnimationTimer() {
+                        @Override
+                        public void handle(long now)
+                        {
+                            hideSplashOnNextPulse[0].stop();
+                            notifyPreloader(new SDRTrunkPreloader.HideNotification());
+                            primaryStage.toFront();
+                            primaryStage.requestFocus();
+                        }
+                    };
+                    hideSplashOnNextPulse[0].start();
                 }
             };
 
