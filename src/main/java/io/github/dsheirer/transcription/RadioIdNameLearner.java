@@ -191,7 +191,8 @@ public class RadioIdNameLearner
             //No FROM radio ID means an analog (NBFM) or unidentified transmission - nothing to name
             if(event.getFromRadioId() == null || event.getProtocol() == null ||
                event.getAliasListName() == null || event.getAliasListName().isEmpty() ||
-               event.getTranscript() == null || event.getTranscript().isBlank())
+               event.getTranscript() == null || event.getTranscript().isBlank() ||
+               TranscriptionEngine.UNINTELLIGIBLE.equals(event.getTranscript().trim()))
             {
                 return;
             }
