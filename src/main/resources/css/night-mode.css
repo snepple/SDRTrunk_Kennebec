@@ -219,6 +219,22 @@
 .wizard-feature-card { -fx-background-color: #1e1e3a; }
 .wizard-feature-title { -fx-text-fill: #e0e0e0; }
 .wizard-feature-subtitle { -fx-text-fill: #8899AA; }
+.wizard-header-box { -fx-background-color: linear-gradient(to bottom, #1e1e3a, #1a1a2e); }
+.wizard-info-box { -fx-background-color: #162040; -fx-border-color: #2a3a5a; }
+.wizard-info-box .label { -fx-text-fill: #c0d0e8; }
+.wizard-warning-box { -fx-background-color: #3a3020; -fx-border-color: #5a4a2a; }
+.wizard-warning-box .label { -fx-text-fill: #e8d8a0; }
+.wizard-step-content .label { -fx-text-fill: #d0d0d0; }
+.wizard-step-content .radio-button { -fx-text-fill: #d0d0d0; }
+.wizard-step-content .radio-button .radio { -fx-background-color: #0f3460; -fx-border-color: #4a6a8a; }
+.wizard-step-content .check-box { -fx-text-fill: #d0d0d0; }
+.wizard-step-content .check-box .box { -fx-background-color: #0f3460; -fx-border-color: #4a6a8a; }
+.wizard-step-content .text-field { -fx-background-color: #0f3460; -fx-text-fill: #e0e0e0; -fx-border-color: #4a6a8a; -fx-prompt-text-fill: #667788; }
+.wizard-step-content .password-field { -fx-background-color: #0f3460; -fx-text-fill: #e0e0e0; -fx-border-color: #4a6a8a; -fx-prompt-text-fill: #667788; }
+.wizard-step-content .combo-box { -fx-background-color: #1e1e3a; -fx-border-color: #4a6a8a; }
+.wizard-step-content .combo-box .list-cell { -fx-text-fill: #e0e0e0; -fx-background-color: #1e1e3a; }
+.wizard-step-content .combo-box .arrow-button { -fx-background-color: #1e1e3a; }
+.wizard-step-content .combo-box .arrow-button .arrow { -fx-background-color: #b0b0b0; }
 
 /* === Channel Details panel (Now Playing) - dark theme === */
 .channel-detail-header { -fx-background-color: #16213e; -fx-border-color: #3a3a5a; }

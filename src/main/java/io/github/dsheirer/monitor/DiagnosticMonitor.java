@@ -129,13 +129,22 @@ public class DiagnosticMonitor
     private void checkForPowerThrottling() {
         if (!mUserAlertedToPowerThrottling && System.getProperty("os.name").toLowerCase().contains("win")) {
             boolean prompted = false;
+            boolean wizardCompleted = false;
             try {
                 java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(io.github.dsheirer.gui.SDRTrunk.class);
                 prompted = prefs.getBoolean("sdrtrunk.diagnostics.powerthrottling.prompted", false);
+                wizardCompleted = prefs.getBoolean("sdrtrunk.first.time.wizard.completed", false);
             } catch (Exception ex) {}
 
             if (prompted) {
                 mUserAlertedToPowerThrottling = true;
+                return;
+            }
+
+            // If the first-time wizard hasn't run yet, skip this dialog — the wizard's
+            // "System Optimizations" step handles the same EcoQoS fix and avoids showing
+            // two overlapping dialogs on first launch.
+            if (!wizardCompleted) {
                 return;
             }
 

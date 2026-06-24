@@ -948,6 +948,36 @@
     -fx-font-weight: bold;
 }
 
+.wizard-header-box {
+    -fx-background-color: linear-gradient(to bottom, #F8F9FB, #FFFFFF);
+}
+
+.wizard-info-box {
+    -fx-background-color: #E8F0FE;
+    -fx-background-radius: 8;
+    -fx-border-color: #C2D8F0;
+    -fx-border-radius: 8;
+}
+
+.wizard-warning-box {
+    -fx-background-color: #FFF3CD;
+    -fx-background-radius: 8;
+    -fx-border-color: #FFE69C;
+    -fx-border-radius: 8;
+}
+
+.wizard-step-content .label {
+    -fx-text-fill: #3A3A3C;
+}
+
+.wizard-step-content .radio-button {
+    -fx-text-fill: #3A3A3C;
+}
+
+.wizard-step-content .check-box {
+    -fx-text-fill: #3A3A3C;
+}
+
 /* === Channel Details panel (Now Playing) - light theme === */
 .channel-detail-header {
     -fx-background-color: #F9F9FB;

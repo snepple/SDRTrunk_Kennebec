@@ -330,7 +330,7 @@ public class FirstTimeWizard
         bar.setAlignment(Pos.CENTER_RIGHT);
         bar.setPadding(new Insets(14, 24, 14, 24));
         bar.getStyleClass().add("wizard-button-bar");
-        bar.setStyle("-fx-background-color: #F2F2F7; -fx-border-color: #E5E5EA transparent transparent transparent; -fx-border-width: 1 0 0 0;");
+
 
         mBackButton = new Button("← Back");
         mBackButton.getStyleClass().addAll("wizard-nav-button");
@@ -466,17 +466,15 @@ public class FirstTimeWizard
         // Header area
         VBox headerBox = new VBox(4);
         headerBox.setPadding(new Insets(28, 32, 16, 32));
-        headerBox.setStyle("-fx-background-color: linear-gradient(to bottom, #F8F9FB, #FFFFFF);");
+        headerBox.getStyleClass().add("wizard-header-box");
 
         Label titleLabel = new Label(title);
         titleLabel.setFont(Font.font("SansSerif", FontWeight.BOLD, 22));
-        titleLabel.setTextFill(Color.web("#1C1C1E"));
         titleLabel.setWrapText(true);
         titleLabel.getStyleClass().add("wizard-step-title");
 
         Label descLabel = new Label(description);
         descLabel.setFont(Font.font("SansSerif", FontWeight.NORMAL, 13));
-        descLabel.setTextFill(Color.web("#8E8E93"));
         descLabel.setWrapText(true);
         descLabel.getStyleClass().add("wizard-step-description");
 
@@ -510,7 +508,7 @@ public class FirstTimeWizard
     {
         HBox box = new HBox(8);
         box.setPadding(new Insets(10, 14, 10, 14));
-        box.setStyle("-fx-background-color: #E8F0FE; -fx-background-radius: 8; -fx-border-color: #C2D8F0; -fx-border-radius: 8;");
+        box.getStyleClass().add("wizard-info-box");
 
         Label iconLabel = new Label(icon);
         iconLabel.setFont(Font.font(16));
@@ -518,7 +516,6 @@ public class FirstTimeWizard
 
         Label textLabel = new Label(text);
         textLabel.setFont(Font.font("SansSerif", FontWeight.NORMAL, 12));
-        textLabel.setTextFill(Color.web("#1C1C1E"));
         textLabel.setWrapText(true);
         HBox.setHgrow(textLabel, Priority.ALWAYS);
 
@@ -533,7 +530,7 @@ public class FirstTimeWizard
     {
         HBox box = new HBox(8);
         box.setPadding(new Insets(10, 14, 10, 14));
-        box.setStyle("-fx-background-color: #FFF3CD; -fx-background-radius: 8; -fx-border-color: #FFE69C; -fx-border-radius: 8;");
+        box.getStyleClass().add("wizard-warning-box");
 
         Label iconLabel = new Label("⚠️");
         iconLabel.setFont(Font.font(16));
@@ -541,7 +538,6 @@ public class FirstTimeWizard
 
         Label textLabel = new Label(text);
         textLabel.setFont(Font.font("SansSerif", FontWeight.NORMAL, 12));
-        textLabel.setTextFill(Color.web("#664D03"));
         textLabel.setWrapText(true);
         HBox.setHgrow(textLabel, Priority.ALWAYS);
 
@@ -563,7 +559,6 @@ public class FirstTimeWizard
 
         Label mainMsg = new Label("Welcome to SDRTrunk Kennebec");
         mainMsg.setFont(Font.font("SansSerif", FontWeight.BOLD, 20));
-        mainMsg.setTextFill(Color.web("#1C1C1E"));
         mainMsg.getStyleClass().add("wizard-step-title");
 
         Label subMsg = new Label(
@@ -573,7 +568,6 @@ public class FirstTimeWizard
             "optimizations, AI features, notifications, recording, and memory.\n\n" +
             "You can skip any step and configure it later in User Preferences.");
         subMsg.setWrapText(true);
-        subMsg.setTextFill(Color.web("#3A3A3C"));
         subMsg.setFont(Font.font("SansSerif", 14));
         subMsg.getStyleClass().add("wizard-step-description");
         subMsg.setMaxWidth(420);
@@ -598,7 +592,7 @@ public class FirstTimeWizard
 
         VBox headerBox = new VBox(4);
         headerBox.setPadding(new Insets(28, 32, 16, 32));
-        headerBox.setStyle("-fx-background-color: linear-gradient(to bottom, #F8F9FB, #FFFFFF);");
+        headerBox.getStyleClass().add("wizard-header-box");
 
         layout.getChildren().add(headerBox);
 
@@ -616,7 +610,7 @@ public class FirstTimeWizard
         VBox card = new VBox(4);
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(12, 16, 12, 16));
-        card.setStyle("-fx-background-color: #F2F2F7; -fx-background-radius: 12;");
+
         card.setPrefWidth(110);
         card.getStyleClass().add("wizard-feature-card");
 
@@ -625,12 +619,10 @@ public class FirstTimeWizard
 
         Label titleLabel = new Label(title);
         titleLabel.setFont(Font.font("SansSerif", FontWeight.BOLD, 12));
-        titleLabel.setTextFill(Color.web("#1C1C1E"));
         titleLabel.getStyleClass().add("wizard-feature-title");
 
         Label subLabel = new Label(subtitle);
         subLabel.setFont(Font.font("SansSerif", 10));
-        subLabel.setTextFill(Color.web("#8E8E93"));
         subLabel.getStyleClass().add("wizard-feature-subtitle");
 
         card.getChildren().addAll(emojiLabel, titleLabel, subLabel);
@@ -1102,7 +1094,6 @@ public class FirstTimeWizard
             "4. Copy the key and paste it in the field above");
         stepsLabel.setWrapText(true);
         stepsLabel.setFont(Font.font("SansSerif", 12));
-        stepsLabel.setTextFill(Color.web("#3A3A3C"));
 
         HBox costBox = createInfoBox("💰",
             "The Gemini API has a generous free tier. For typical SDRTrunk usage " +
@@ -1213,7 +1204,6 @@ public class FirstTimeWizard
             "4. Enter your username and password below");
         stepsLabel.setWrapText(true);
         stepsLabel.setFont(Font.font("SansSerif", 12));
-        stepsLabel.setTextFill(Color.web("#3A3A3C"));
 
         HBox skipBox = createWarningBox(
             "If you skip this step, you can still use SDRTrunk but will need to manually " +
@@ -1304,7 +1294,6 @@ public class FirstTimeWizard
             "5. Add recipients (Chat IDs) later in User Preferences → Notifications");
         stepsLabel.setWrapText(true);
         stepsLabel.setFont(Font.font("SansSerif", 12));
-        stepsLabel.setTextFill(Color.web("#3A3A3C"));
 
         HBox skipBox = createWarningBox(
             "If you skip this step, no external notifications will be sent. You can " +
@@ -1595,7 +1584,6 @@ public class FirstTimeWizard
         {
             Label rowLabel = new Label(row);
             rowLabel.setFont(Font.font("Consolas", 12));
-            rowLabel.setTextFill(Color.web("#3A3A3C"));
             guideTable.getChildren().add(rowLabel);
         }
 
