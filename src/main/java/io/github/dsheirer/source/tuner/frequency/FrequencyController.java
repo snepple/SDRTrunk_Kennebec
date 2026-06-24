@@ -120,7 +120,7 @@ public class FrequencyController
             }
             else
             {
-                mLog.warn("Cannot change sample rate while tuner is is LOCKED state.");
+                mLog.warn("Cannot change sample rate while tuner is in LOCKED state.");
             }
         }
     }
