@@ -69,6 +69,8 @@ public class HelpViewController {
         gettingStartedNode.getChildren().add(new TreeItem<>("Index"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Introduction"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Overview"));
+        gettingStartedNode.getChildren().add(new TreeItem<>("Audio Playback Bar"));
+        gettingStartedNode.getChildren().add(new TreeItem<>("Call Flow Logic"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Quickstart"));
         guidesNode.getChildren().add(gettingStartedNode);
 
@@ -106,6 +108,7 @@ public class HelpViewController {
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Openmhz"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Other Platforms"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Rdio Scanner"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Streaming Connection Console"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Thinline Radio"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Two Tone Detect"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Zello"));
@@ -185,7 +188,7 @@ public class HelpViewController {
             markdown.append("* **Hardware & Decoding Fixes:** Various stability fixes for DMR decoding and SDR hardware tuning.\n");
         } else {
             String fileName = topic.toLowerCase().replace(" & ", "-&-").replace(" ", "-") + ".md";
-            try (java.io.InputStream is = getClass().getResourceAsStream("/docs/" + fileName)) {
+            try (java.io.InputStream is = getClass().getResourceAsStream(getClass().getResourceAsStream("/help/" + fileName) != null ? "/help/" + fileName : "/docs/" + fileName)) {
                 if (is != null) {
                     try (java.util.Scanner s = new java.util.Scanner(is, "UTF-8").useDelimiter("\\A")) {
                         markdown.append(s.hasNext() ? s.next() : "");
