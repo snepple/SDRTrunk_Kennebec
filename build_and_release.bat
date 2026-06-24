@@ -283,6 +283,9 @@ goto clean_retry
 type gradle_out.log >> "%LOG_FILE%"
 
 if not exist "!RELEASE_DIR!" mkdir "!RELEASE_DIR!"
+:: This directory is reused across runs. Clear stale versioned artifacts before staging the
+:: current version so the GitHub upload never includes old builds or an overlong asset list.
+del /q "!RELEASE_DIR!\*.*" >nul 2>&1
 
 :: ============================================================================
 :: STEP 7: C++ Native Library Compilation
@@ -416,18 +419,21 @@ if !ERRORLEVEL! NEQ 0 goto ai_triage
 :: ============================================================================
 call :drawProgressBar 90 "Creating GitHub Release..."
 set "ASSET_COUNT=0"
-set "ASSET_LIST="
-for %%F in ("!RELEASE_DIR!\*.*") do (
-    set /a ASSET_COUNT+=1
-    set "ASSET_LIST=!ASSET_LIST! "%%F""
+set "RELEASE_OK=0"
+for %%F in ("!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-*.*") do (
+    if exist "%%~fF" (
+        set /a ASSET_COUNT+=1
+    )
 )
 
 echo.
 echo ==============================================================
 echo   Release Artifacts for !PROJ_VER! - !ASSET_COUNT! file(s)
 echo ==============================================================
-for %%F in ("!RELEASE_DIR!\*.*") do (
-    echo   * %%~nxF
+for %%F in ("!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-*.*") do (
+    if exist "%%~fF" (
+        echo   * %%~nxF
+    )
 )
 echo ==============================================================
 echo.
@@ -472,12 +478,25 @@ if !ASSET_COUNT! GTR 0 (
     git push origin :refs/tags/!PROJ_VER! >nul 2>&1
 
     echo [INFO] Creating GitHub Release !PROJ_VER! with !ASSET_COUNT! assets...
-    gh release create !PROJ_VER! !ASSET_LIST! --repo %GH_REPO% --title "SDRTrunk Kennebec !PROJ_VER!" --notes-file "!RELEASE_DIR!\release_notes.md"
+    gh release create !PROJ_VER! --repo %GH_REPO% --title "SDRTrunk Kennebec !PROJ_VER!" --notes-file "!RELEASE_DIR!\release_notes.md"
 
     if !ERRORLEVEL! EQU 0 (
+        set "RELEASE_OK=1"
+        for %%F in ("!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-*.*") do (
+            if exist "%%~fF" (
+                echo [INFO] Uploading %%~nxF...
+                gh release upload !PROJ_VER! "%%~fF" --repo %GH_REPO% --clobber
+                if !ERRORLEVEL! NEQ 0 set "RELEASE_OK=0"
+            )
+        )
+    ) else (
+        set "RELEASE_OK=0"
+    )
+
+    if "!RELEASE_OK!"=="1" (
         echo [OK] GitHub Release created successfully!
     ) else (
-        echo [WARNING] GitHub Release creation failed. Assets are in: !RELEASE_DIR!
+        echo [WARNING] GitHub Release creation or asset upload failed. Assets are in: !RELEASE_DIR!
     )
     del "!RELEASE_DIR!\release_notes.md" >nul 2>&1
 ) else (
@@ -491,10 +510,14 @@ call :drawProgressBar 95 "Updating README download links..."
 cd /d "%PROJ_DIR%"
 :: Regenerate the README download-links block (between the DOWNLOADS markers) to point at this
 :: release's assets. The markdown/markers/URLs live in the committed .ps1 to avoid batch escaping.
-powershell -NoProfile -ExecutionPolicy Bypass -File ".github\update_readme_downloads.ps1" -Version "!PROJ_VER!" -Repo "%GH_REPO%" -ReadmePath "README.md"
-git add README.md
-git diff --cached --quiet || git commit -m "Update README download links for release !PROJ_VER!" >nul 2>&1
-git push origin HEAD >nul 2>&1
+if "!RELEASE_OK!"=="1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File ".github\update_readme_downloads.ps1" -Version "!PROJ_VER!" -Repo "%GH_REPO%" -ReadmePath "README.md"
+    git add README.md
+    git diff --cached --quiet || git commit -m "Update README download links for release !PROJ_VER!" >nul 2>&1
+    git push origin HEAD >nul 2>&1
+) else (
+    echo [WARNING] Skipping README download-link update because the GitHub Release upload did not complete.
+)
 
 :: ============================================================================
 :: STEP 14: SUCCESS
@@ -505,11 +528,17 @@ echo ==============================================================
 echo   BUILD SUCCESSFUL - SDRTrunk Kennebec !PROJ_VER!
 echo ==============================================================
 echo.
-echo   Release: https://github.com/%GH_REPO%/releases/tag/!PROJ_VER!
+if "!RELEASE_OK!"=="1" (
+    echo   Release: https://github.com/%GH_REPO%/releases/tag/!PROJ_VER!
+) else (
+    echo   Release: not published - upload failed or no artifacts were staged.
+)
 echo.
 echo   Local artifacts:
-for %%F in ("!RELEASE_DIR!\*.*") do (
-    echo     * %%~nxF
+for %%F in ("!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-*.*") do (
+    if exist "%%~fF" (
+        echo     * %%~nxF
+    )
 )
 echo.
 echo   Local install: %ROOT_DIR%\%FOLDER_NAME%\build\install\sdr-trunk\
