@@ -324,10 +324,13 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
                 "Format: 1 - 65535"));
         mTalkgroupDetails.add(new TalkgroupDetail(Protocol.AM, IntegerFormat.HEXADECIMAL, new HexFormatter(1,0xFFFF),
                 "Format: 1 - FFFF"));
-        mTalkgroupDetails.add(new TalkgroupDetail(Protocol.APCO25, IntegerFormat.DECIMAL, new IntegerFormatter(0,65535),
-                "Format: 0 - 65535"));
-        mTalkgroupDetails.add(new TalkgroupDetail(Protocol.APCO25, IntegerFormat.HEXADECIMAL, new HexFormatter(0,65535),
-                "Format: 0 - FFFF"));
+        //APCO25 over-the-air talkgroups are 0-65535, but conventional P25 channels may be assigned a
+        //full 32-bit / 10-digit geographic ID (matching the NBFM scheme), so the alias editor accepts
+        //the full unsigned range to allow a matching streaming alias to be created.
+        mTalkgroupDetails.add(new TalkgroupDetail(Protocol.APCO25, IntegerFormat.DECIMAL, new IntegerFormatter(0,-1),
+                "Format: 0 - 4,294,967,295"));
+        mTalkgroupDetails.add(new TalkgroupDetail(Protocol.APCO25, IntegerFormat.HEXADECIMAL, new HexFormatter(0,-1),
+                "Format: 0 - FFFFFFFF"));
         mTalkgroupDetails.add(new TalkgroupDetail(Protocol.DMR, IntegerFormat.DECIMAL, new IntegerFormatter(1,0xFFFFFF),
                 "Format: 1 - 16,777,215"));
         mTalkgroupDetails.add(new TalkgroupDetail(Protocol.DMR, IntegerFormat.HEXADECIMAL, new HexFormatter(1,0xFFFFFF),

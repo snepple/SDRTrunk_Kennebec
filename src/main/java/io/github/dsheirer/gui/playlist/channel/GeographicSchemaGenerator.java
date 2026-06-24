@@ -8,6 +8,9 @@ import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.id.AliasID;
 import io.github.dsheirer.alias.id.talkgroup.Talkgroup;
 import io.github.dsheirer.controller.channel.Channel;
+import io.github.dsheirer.module.decode.analog.DecodeConfigAnalog;
+import io.github.dsheirer.module.decode.config.DecodeConfiguration;
+import io.github.dsheirer.module.decode.p25.phase1.DecodeConfigP25;
 import io.github.dsheirer.playlist.PlaylistManager;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.protocol.Protocol;
@@ -16,24 +19,32 @@ import javafx.scene.Cursor;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class GeographicSchemaGenerator extends Dialog<String> {
     private Channel mChannel;
     private UserPreferences mUserPreferences;
     private PlaylistManager mPlaylistManager;
+    private Protocol mProtocol;
     private ComboBox<State> mStateCombo;
     private ComboBox<CountyData.County> mCountyCombo;
     private ComboBox<AgencyType> mAgencyCombo;
     private TextField mPreviewField;
 
     public GeographicSchemaGenerator(Channel channel, UserPreferences userPreferences, PlaylistManager playlistManager) {
+        this(channel, userPreferences, playlistManager, Protocol.NBFM);
+    }
+
+    public GeographicSchemaGenerator(Channel channel, UserPreferences userPreferences, PlaylistManager playlistManager, Protocol protocol) {
         mChannel = channel;
         mUserPreferences = userPreferences;
         mPlaylistManager = playlistManager;
+        mProtocol = (protocol != null) ? protocol : Protocol.NBFM;
 
-        setTitle("Generate NBFM Talkgroup ID");
+        setTitle("Generate " + mProtocol + " Talkgroup ID");
         setHeaderText("Select schema options to generate a sequential 10-digit Geographic ID");
 
         ButtonType confirmButtonType = new ButtonType("Confirm", ButtonBar.ButtonData.OK_DONE);
@@ -216,26 +227,100 @@ public class GeographicSchemaGenerator extends Dialog<String> {
         }
 
         String prefix = state.fips + county + agency.code;
-        int maxSeq = 0;
+        return nextSequentialId(mPlaylistManager, prefix);
+    }
 
-        for (Alias alias : mPlaylistManager.getAliasModel().getAliases()) {
+    /**
+     * Collects every talkgroup value already in use across the playlist - both alias talkgroup
+     * identifiers (any protocol) and channel decode-config assigned talkgroups (NBFM and P25).
+     * Values are returned as unsigned decimal strings so that 10-digit geographic IDs that exceed
+     * Integer.MAX_VALUE are handled correctly.
+     *
+     * Scanning channel configs (not just aliases) is essential: a channel can have an assigned
+     * talkgroup before any alias has been created for it, so an alias-only scan would hand out
+     * duplicate sequence numbers to channels that share the same state/county/agency fields.
+     */
+    private static Set<String> collectUsedTalkgroupStrings(PlaylistManager playlistManager) {
+        Set<String> used = new HashSet<>();
+
+        for (Alias alias : playlistManager.getAliasModel().getAliases()) {
             for (AliasID id : alias.getAliasIdentifiers()) {
-                if (id instanceof Talkgroup && ((Talkgroup) id).getProtocol() == Protocol.NBFM) {
-                    String tgValue = Integer.toUnsignedString(((Talkgroup) id).getValue());
-                    if (tgValue.startsWith(prefix) && tgValue.length() == 10) {
-                        try {
-                            int seq = Integer.parseInt(tgValue.substring(6));
-                            if (seq > maxSeq) {
-                                maxSeq = seq;
-                            }
-                        } catch (NumberFormatException ignored) {}
-                    }
+                if (id instanceof Talkgroup) {
+                    used.add(Integer.toUnsignedString(((Talkgroup) id).getValue()));
                 }
             }
         }
 
-        maxSeq++;
-        return String.format("%s%04d", prefix, maxSeq);
+        for (Channel channel : playlistManager.getChannelModel().getChannels()) {
+            DecodeConfiguration dc = channel.getDecodeConfiguration();
+            if (dc instanceof DecodeConfigAnalog) {
+                int value = ((DecodeConfigAnalog) dc).getTalkgroup();
+                if (value != 0) {
+                    used.add(Integer.toUnsignedString(value));
+                }
+            } else if (dc instanceof DecodeConfigP25) {
+                int value = ((DecodeConfigP25) dc).getTalkgroup();
+                if (value != 0) {
+                    used.add(Integer.toUnsignedString(value));
+                }
+            }
+        }
+
+        return used;
+    }
+
+    /**
+     * Returns the next available sequential 10-digit geographic ID for the given 6-digit prefix
+     * (state[2] + county[3] + agency[1]), scanning all in-use talkgroups so that channels sharing
+     * the same fields receive sequential numbers (e.g. ...0001, ...0002, ...0003).
+     */
+    public static String nextSequentialId(PlaylistManager playlistManager, String prefix) {
+        int maxSeq = 0;
+        for (String tgValue : collectUsedTalkgroupStrings(playlistManager)) {
+            if (tgValue.length() == 10 && tgValue.startsWith(prefix)) {
+                try {
+                    int seq = Integer.parseInt(tgValue.substring(6));
+                    if (seq > maxSeq) {
+                        maxSeq = seq;
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return String.format("%s%04d", prefix, maxSeq + 1);
+    }
+
+    /**
+     * Indicates whether the given talkgroup value (interpreted as unsigned) is already assigned to
+     * an alias or channel in the playlist.
+     */
+    public static boolean isTalkgroupUsed(PlaylistManager playlistManager, int value) {
+        return collectUsedTalkgroupStrings(playlistManager).contains(Integer.toUnsignedString(value));
+    }
+
+    /**
+     * Suggests an available alternative for a conflicting talkgroup. If the conflicting value is a
+     * 10-digit geographic ID, the next sequential value for its prefix is returned; otherwise the
+     * next free integer above the conflicting value is returned.
+     */
+    public static int suggestAlternative(PlaylistManager playlistManager, int conflictingValue) {
+        String s = Integer.toUnsignedString(conflictingValue);
+        if (s.length() == 10) {
+            String prefix = s.substring(0, 6);
+            try {
+                return Integer.parseUnsignedInt(nextSequentialId(playlistManager, prefix));
+            } catch (NumberFormatException ignored) {}
+        }
+
+        Set<String> used = collectUsedTalkgroupStrings(playlistManager);
+        int candidate = conflictingValue + 1;
+        //Walk forward (unsigned) until a free value is found, capping the search to avoid spinning.
+        for (int i = 0; i < 1_000_000; i++) {
+            if (candidate != 0 && !used.contains(Integer.toUnsignedString(candidate))) {
+                return candidate;
+            }
+            candidate++;
+        }
+        return conflictingValue;
     }
 
     private static Map<String, String> getStates() {

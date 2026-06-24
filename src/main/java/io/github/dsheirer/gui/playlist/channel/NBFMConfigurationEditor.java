@@ -1399,6 +1399,20 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     }
 
     @Override
+    protected void setConfiguredTalkgroup(int value)
+    {
+        //Set via the text formatter so the value (unsigned, possibly 10 digits) is parsed/displayed correctly.
+        if(mTalkgroupTextFormatter != null)
+        {
+            mTalkgroupTextFormatter.setValue(value);
+        }
+        else
+        {
+            getTalkgroupField().setText(Integer.toUnsignedString(value));
+        }
+    }
+
+    @Override
     protected void saveDecoderConfiguration()
     {
         DecodeConfigNBFM config;

@@ -160,18 +160,26 @@ public abstract class DecodeConfigP25 extends DecodeConfiguration
         return mTalkgroup;
     }
 
+    /**
+     * Sets the conventional talkgroup override. The value is stored as a full 32-bit unsigned
+     * integer so that user-assigned 10-digit geographic IDs (which exceed Integer.MAX_VALUE) are
+     * preserved. A value of 0 means no override. Over-the-air decoded P25 talkgroups are always
+     * within the standard 16-bit range, so lifting the legacy 65535 clamp does not affect normal
+     * trunked decoding.
+     */
     public void setTalkgroup(int talkgroup)
     {
-        mTalkgroup = Math.max(0, Math.min(talkgroup, 65535));
+        mTalkgroup = talkgroup;
     }
 
     /**
-     * Indicates if a talkgroup override is configured
+     * Indicates if a talkgroup override is configured. Uses != 0 (not > 0) because a 10-digit
+     * geographic ID stored as an unsigned int can have the high bit set and appear negative.
      */
     @JsonIgnore
     public boolean hasTalkgroupOverride()
     {
-        return mTalkgroup > 0;
+        return mTalkgroup != 0;
     }
 
     /**
