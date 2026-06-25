@@ -409,10 +409,12 @@ public class AliasItemEditor extends Editor<Alias>
             Color color = ColorUtil.fromInteger(alias.getColor());
             getColorPicker().setValue(color);
 
-            //Only add non-audio identifiers to the list -- audio identifiers are managed separately
+            //Only add non-audio identifiers to the list -- audio identifiers are managed separately.
+            //Two-tone detector IDs are internal wiring (stored via the Kennebec sidecar) that connect
+            //detectors to aliases — they are not user-facing identifiers and should not appear here.
             for(AliasID aliasID: alias.getAliasIdentifiers())
             {
-                if(!aliasID.isAudioIdentifier())
+                if(!aliasID.isAudioIdentifier() && aliasID.getType() != AliasIDType.TWO_TONE_DETECTOR)
                 {
                     AliasID copy = AliasFactory.copyOf(aliasID);
 
