@@ -112,7 +112,7 @@ public class AIAudioOptimizer {
         mUserPreferences = userPreferences;
         mHttpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
-                .connectTimeout(Duration.ofSeconds(10))
+                .connectTimeout(Duration.ofSeconds(15))
                 .build();
     }
 
@@ -202,7 +202,7 @@ public class AIAudioOptimizer {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(60))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
 
@@ -386,7 +386,7 @@ public class AIAudioOptimizer {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(60))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
 
