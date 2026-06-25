@@ -33,6 +33,9 @@ import io.github.dsheirer.sample.real.IRealBufferListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Provides packaging of demodulated audio sample buffers into audio segments for broadcast to registered listeners.
  * Includes audio packet metadata in constructed audio segments.
@@ -43,6 +46,7 @@ public class AudioModule extends AbstractAudioModule implements ISquelchStateLis
     Listener<float[]>
 {
     private static final Logger mLog = LoggerFactory.getLogger(AudioModule.class);
+    private static final int SAMPLE_RATE = 8000;
     private static float[] sHighPassFilterCoefficients;
     private final boolean mAudioFilterEnable;
 
@@ -76,6 +80,16 @@ public class AudioModule extends AbstractAudioModule implements ISquelchStateLis
     private final SquelchStateListener mSquelchStateListener = new SquelchStateListener();
     private SquelchState mSquelchState = SquelchState.SQUELCH;
     private Identifier mConfiguredTalkgroup;
+
+    //Minimum call duration gating: when > 0, audio is buffered internally until the accumulated duration
+    //exceeds this threshold. If squelch closes before the threshold is reached, the buffered audio is
+    //discarded silently — preventing brief static bursts from being streamed. Once the call qualifies,
+    //all buffered audio is flushed into the audio segment and normal real-time streaming resumes.
+    private int mMinCallDurationMs = 0;
+    private int mMinCallDurationSamples = 0;
+    private List<float[]> mPendingAudioBuffer;
+    private int mPendingAudioSampleCount = 0;
+    private boolean mCallQualified = false;
 
     /**
      * Creates an Audio Module.
@@ -140,6 +154,25 @@ public class AudioModule extends AbstractAudioModule implements ISquelchStateLis
     {
     }
 
+    /**
+     * Sets the minimum call duration in milliseconds. When > 0, audio is buffered until the call
+     * duration exceeds this threshold before being dispatched to the audio segment / streaming.
+     * If squelch closes before the threshold, the buffered audio is discarded, preventing static
+     * bursts from being streamed.
+     *
+     * @param minCallDurationMs minimum duration in milliseconds (0 = disabled, audio flows immediately)
+     */
+    public void setMinCallDurationMs(int minCallDurationMs)
+    {
+        mMinCallDurationMs = Math.max(0, minCallDurationMs);
+        mMinCallDurationSamples = (mMinCallDurationMs * SAMPLE_RATE) / 1000;
+
+        if(mMinCallDurationMs > 0)
+        {
+            mLog.info("Audio min call duration gate set to {}ms ({} samples)", mMinCallDurationMs, mMinCallDurationSamples);
+        }
+    }
+
     @Override
     public Listener<SquelchStateEvent> getSquelchStateListener()
     {
@@ -156,7 +189,34 @@ public class AudioModule extends AbstractAudioModule implements ISquelchStateLis
                 audioBuffer = mHighPassFilter.filter(audioBuffer);
             }
 
-            addAudio(audioBuffer);
+            if(mMinCallDurationMs > 0 && !mCallQualified)
+            {
+                //Buffer audio until the call qualifies
+                if(mPendingAudioBuffer == null)
+                {
+                    mPendingAudioBuffer = new ArrayList<>();
+                }
+                mPendingAudioBuffer.add(audioBuffer);
+                mPendingAudioSampleCount += audioBuffer.length;
+
+                if(mPendingAudioSampleCount >= mMinCallDurationSamples)
+                {
+                    //Call has qualified - flush all buffered audio into the segment
+                    mCallQualified = true;
+                    for(float[] buffered : mPendingAudioBuffer)
+                    {
+                        addAudio(buffered);
+                    }
+                    mPendingAudioBuffer.clear();
+                    mPendingAudioBuffer = null;
+                    mPendingAudioSampleCount = 0;
+                }
+            }
+            else
+            {
+                //Either no min duration configured, or call already qualified - pass audio through
+                addAudio(audioBuffer);
+            }
         }
     }
 
@@ -165,6 +225,26 @@ public class AudioModule extends AbstractAudioModule implements ISquelchStateLis
     {
         //Redirect received reusable buffers to the receive(buffer) method
         return this;
+    }
+
+    /**
+     * Discards any pending (not-yet-qualified) audio buffer. Called when squelch closes before
+     * the call reaches the minimum duration threshold.
+     */
+    private void discardPendingAudio()
+    {
+        if(mPendingAudioBuffer != null)
+        {
+            int discardedMs = (mPendingAudioSampleCount * 1000) / SAMPLE_RATE;
+            if(discardedMs > 0)
+            {
+                mLog.debug("Discarded {}ms of audio (below {}ms min call duration threshold)",
+                        discardedMs, mMinCallDurationMs);
+            }
+            mPendingAudioBuffer.clear();
+            mPendingAudioBuffer = null;
+        }
+        mPendingAudioSampleCount = 0;
     }
 
     /**
@@ -183,7 +263,18 @@ public class AudioModule extends AbstractAudioModule implements ISquelchStateLis
 
                 if(mSquelchState == SquelchState.SQUELCH)
                 {
-                    closeAudioSegment();
+                    if(mMinCallDurationMs > 0 && !mCallQualified)
+                    {
+                        //Call ended before qualifying — discard buffered audio silently
+                        discardPendingAudio();
+                    }
+                    else
+                    {
+                        closeAudioSegment();
+                    }
+
+                    //Reset qualification state for the next call
+                    mCallQualified = false;
                 }
             }
         }
