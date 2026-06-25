@@ -95,6 +95,7 @@ public class TwoToneDetector
     private int mDiscoveryToneABlocks = 0;
     private double mDiscoveryCurrentToneB = 0.0;
     private int mDiscoveryToneBBlocks = 0;
+    private int mDiscoverySilenceCount = 0;
 
     public TwoToneDetector(PlaylistManager playlistManager)
     {
@@ -277,21 +278,24 @@ public class TwoToneDetector
                     }
                 }
 
-                // Require the peak to be at least 15x the average magnitude across all bins.
-                // A pure tone concentrates energy in a narrow peak; broadband noise or voice
-                // spreads energy evenly, producing a low peak-to-average ratio.
+                // Require the peak to be above a magnitude floor AND significantly above the average.
+                // A pure two-tone paging tone concentrates energy in a narrow peak; broadband noise or
+                // voice spreads energy evenly, producing a low peak-to-average ratio.
                 double avgMagnitude = magnitudeSum / binCount;
                 double peakToAvgRatio = (avgMagnitude > 0) ? (maxMagnitude / avgMagnitude) : 0;
 
-                if (maxMagnitude > 50000.0 && peakToAvgRatio > 15.0) { // strong peak AND concentrated energy
+                if (maxMagnitude > 5000.0 && peakToAvgRatio > 8.0) { // strong peak AND concentrated energy
                     double frequency = (double) maxIndex * SAMPLE_RATE / FFT_SIZE;
                     frequency = Math.round(frequency);
                     
+                    //Reset the silence counter whenever a valid tone window is seen.
+                    mDiscoverySilenceCount = 0;
+
                     if (frequency >= 300 && frequency <= 3000) {
                         if (mDiscoveryCurrentToneB > 0) {
                             if (Math.abs(mDiscoveryCurrentToneB - frequency) < 5) {
                                 mDiscoveryToneBBlocks++;
-                                if (mDiscoveryToneBBlocks >= 5) { // 5 * 100ms = 500ms — requires sustained tone
+                                if (mDiscoveryToneBBlocks >= 3) { // 3 * 100ms = 300ms — matches MIN_TONE_DURATION_MS
                                     logDiscovery(mDiscoveryCurrentToneA, mDiscoveryCurrentToneB, segment);
                                     mDiscoveryCurrentToneA = 0;
                                     mDiscoveryToneABlocks = 0;
@@ -306,7 +310,7 @@ public class TwoToneDetector
                             if (Math.abs(mDiscoveryCurrentToneA - frequency) < 5) {
                                 mDiscoveryToneABlocks++;
                             } else {
-                                if (mDiscoveryToneABlocks >= 5) { // 5 consecutive windows = 500ms
+                                if (mDiscoveryToneABlocks >= 3) { // 3 consecutive windows = 300ms
                                     mDiscoveryCurrentToneB = frequency;
                                     mDiscoveryToneBBlocks = 1;
                                 } else {
@@ -320,10 +324,16 @@ public class TwoToneDetector
                         }
                     }
                 } else {
-                    mDiscoveryCurrentToneA = 0;
-                    mDiscoveryToneABlocks = 0;
-                    mDiscoveryCurrentToneB = 0;
-                    mDiscoveryToneBBlocks = 0;
+                    // No strong tone in this 100ms window.  Two-tone paging has a brief gap between
+                    // tone A and tone B, so a single quiet window must NOT reset tone A state.
+                    // Only reset after sustained silence (3+ consecutive non-tone windows = 300ms).
+                    mDiscoverySilenceCount++;
+                    if (mDiscoverySilenceCount >= 3) {
+                        mDiscoveryCurrentToneA = 0;
+                        mDiscoveryToneABlocks = 0;
+                        mDiscoveryCurrentToneB = 0;
+                        mDiscoveryToneBBlocks = 0;
+                    }
                 }
             }
         }

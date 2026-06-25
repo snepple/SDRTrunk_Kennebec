@@ -81,6 +81,7 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
     //the buffers present when a segment is first seen would miss most of a multi-second tone-out and starve discovery.
     //We hold a consumer count on each tracked segment so its audio buffers are not recycled before we finish feeding.
     private final java.util.Map<AudioSegment,Integer> mTwoToneFedIndex = new java.util.concurrent.ConcurrentHashMap<>();
+    private int mTwoToneFilterLogCount = 0;
 
 
     /**
@@ -150,11 +151,39 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
         //
         //Only feed NBFM and AM audio — two-tone paging is an analog modulation scheme and should never run on
         //digital protocol channels (P25, DMR, etc.) where decoded IMBE/AMBE audio would produce spurious detections.
-        if(mTwoToneDetector != null && mUserPreferences.getApplicationPreference().isAudioTwoToneDetectEnabled()
-                && isAnalogAudioSegment(audioSegment))
+        if(mTwoToneDetector != null && mUserPreferences.getApplicationPreference().isAudioTwoToneDetectEnabled())
         {
-            audioSegment.incrementConsumerCount();
-            mTwoToneFedIndex.put(audioSegment, 0);
+            boolean isAnalog = isAnalogAudioSegment(audioSegment);
+            if(isAnalog)
+            {
+                audioSegment.incrementConsumerCount();
+                mTwoToneFedIndex.put(audioSegment, 0);
+            }
+
+            //Diagnostic: log the first few accepted/rejected segments so we can verify NBFM gets through
+            //and P25/DMR are blocked.  Uses a counter to avoid flooding the log.
+            if(mTwoToneFilterLogCount < 20)
+            {
+                mTwoToneFilterLogCount++;
+                String channelName = "?";
+                String decoderTypeName = "?";
+                if(audioSegment.getIdentifierCollection() != null)
+                {
+                    Identifier chId = audioSegment.getIdentifierCollection()
+                            .getIdentifier(IdentifierClass.CONFIGURATION, Form.CHANNEL, Role.ANY);
+                    if(chId != null) channelName = String.valueOf(chId.getValue());
+
+                    Identifier dtId = audioSegment.getIdentifierCollection()
+                            .getIdentifier(IdentifierClass.CONFIGURATION, Form.DECODER_TYPE, Role.ANY);
+                    if(dtId instanceof DecoderTypeConfigurationIdentifier dtci) {
+                        decoderTypeName = dtci.getValue().name();
+                    } else {
+                        decoderTypeName = "(not set)";
+                    }
+                }
+                mLog.info("TwoTone filter: channel={} decoderType={} accepted={}",
+                        channelName, decoderTypeName, isAnalog);
+            }
         }
 
         mNewAudioSegmentQueue.add(audioSegment);
@@ -363,14 +392,14 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
      * DMR AMBE, etc.) is synthesized PCM that can produce spurious frequency peaks the Goertzel
      * and FFT detectors misinterpret as tone sequences.
      *
-     * If the decoder type cannot be determined (e.g. very early in segment life before identifiers
-     * are populated), we conservatively return true so the segment is not silently dropped.
+     * Only returns true when we can positively confirm the segment is NBFM or AM.  If the decoder
+     * type cannot be determined we return false to prevent digital audio from leaking through.
      */
     private static boolean isAnalogAudioSegment(AudioSegment audioSegment)
     {
         if(audioSegment == null || audioSegment.getIdentifierCollection() == null)
         {
-            return true; // conservative fallback
+            return false; // no info — assume digital, don't feed
         }
 
         Identifier decoderId = audioSegment.getIdentifierCollection()
@@ -382,7 +411,7 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
             return dt == DecoderType.NBFM || dt == DecoderType.AM;
         }
 
-        return true; // no decoder type yet — don't drop
+        return false; // no decoder type found — don't feed
     }
 
     public void dispose()
