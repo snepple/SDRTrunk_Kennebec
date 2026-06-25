@@ -54,7 +54,7 @@ import io.github.dsheirer.module.decode.ip.mototrbo.ars.ARSPacket;
 import io.github.dsheirer.module.decode.ip.mototrbo.lrrp.LRRPPacket;
 import io.github.dsheirer.module.decode.ip.udp.UDPPacket;
 import io.github.dsheirer.module.decode.p25.IServiceOptionsProvider;
-import io.github.dsheirer.module.decode.p25.identifier.APCO25Nac;
+
 import io.github.dsheirer.module.decode.p25.identifier.talkgroup.APCO25Talkgroup;
 import io.github.dsheirer.module.decode.p25.P25DecodeEvent;
 import io.github.dsheirer.module.decode.p25.P25TrafficChannelManager;
@@ -195,8 +195,6 @@ public class P25P1DecoderState extends DecoderState implements IChannelEventList
     private final Listener<ChannelEvent> mChannelEventListener;
     private final P25TrafficChannelManager mTrafficChannelManager;
     private ServiceOptions mCurrentServiceOptions;
-    private final List<Integer> mAllowedNACs;
-    private final boolean mNacFilterEnabled;
     private final int mTalkgroupOverride;
 
     /**
@@ -209,8 +207,6 @@ public class P25P1DecoderState extends DecoderState implements IChannelEventList
         mChannel = channel;
         mModulation = ((DecodeConfigP25Phase1)channel.getDecodeConfiguration()).getModulation();
         DecodeConfigP25 baseConfig = (DecodeConfigP25)channel.getDecodeConfiguration();
-        mNacFilterEnabled = baseConfig.isNacFilterEnabled();
-        mAllowedNACs = new ArrayList<>(baseConfig.getAllowedNACs());
         mTalkgroupOverride = baseConfig.getTalkgroup();
         mNetworkConfigurationMonitor = new P25P1NetworkConfigurationMonitor(mModulation);
 
@@ -309,19 +305,6 @@ public class P25P1DecoderState extends DecoderState implements IChannelEventList
         if(iMessage instanceof P25P1Message message)
         {
             getIdentifierCollection().update(message.getNAC());
-
-            // NAC filtering: if enabled and NAC does not match allowed list, skip this message
-            if(mNacFilterEnabled && !mAllowedNACs.isEmpty())
-            {
-                Identifier nacId = message.getNAC();
-                if(nacId instanceof APCO25Nac apco25Nac)
-                {
-                    if(!mAllowedNACs.contains(apco25Nac.getValue()))
-                    {
-                        return;
-                    }
-                }
-            }
 
             switch(message.getDUID())
             {
