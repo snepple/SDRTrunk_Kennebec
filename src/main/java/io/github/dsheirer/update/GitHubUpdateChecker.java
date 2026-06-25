@@ -180,6 +180,8 @@ public class GitHubUpdateChecker
                 }
 
                 new ProcessBuilder(temp.toString()).start();
+                mLog.info("Update installer launched: {} -- scheduling application exit in 2 seconds", temp);
+                scheduleApplicationExit();
                 return true;
             }
         }
@@ -212,6 +214,29 @@ public class GitHubUpdateChecker
         {
             mLog.error("Error opening release page in browser", e);
         }
+    }
+
+    /**
+     * Schedules application exit after a short delay to allow the installer process to start.
+     * Uses System.exit(0) which triggers the JVM's shutdown hooks (SDRTrunk.processShutdown()),
+     * ensuring playlists are saved, channels are stopped, and resources are cleaned up.
+     */
+    private static void scheduleApplicationExit()
+    {
+        Thread exitThread = new Thread(() -> {
+            try
+            {
+                Thread.sleep(2000);
+            }
+            catch(InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
+            mLog.info("Exiting application for installer update...");
+            System.exit(0);
+        }, "update-exit-thread");
+        exitThread.setDaemon(true);
+        exitThread.start();
     }
 
     private static String readStream(InputStream stream)

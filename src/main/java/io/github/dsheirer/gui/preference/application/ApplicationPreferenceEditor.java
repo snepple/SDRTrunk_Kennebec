@@ -356,12 +356,37 @@ public class ApplicationPreferenceEditor extends HBox
                 Object data = downloadUpdateButton.getUserData();
                 if(data instanceof io.github.dsheirer.update.GitHubUpdateChecker.Release release)
                 {
-                    updateResultLabel.setText("Downloading update...");
-                    java.util.concurrent.CompletableFuture.runAsync(() -> {
-                        boolean launched = io.github.dsheirer.update.GitHubUpdateChecker.downloadAndLaunch(release);
-                        javafx.application.Platform.runLater(() -> updateResultLabel.setText(launched ?
-                                "Installer launched - follow its prompts, then restart SDRTrunk." :
-                                "Opened the release page in your browser to download the installer manually."));
+                    //Confirm with the user that the app will close
+                    javafx.scene.control.Alert confirm = new javafx.scene.control.Alert(
+                            javafx.scene.control.Alert.AlertType.CONFIRMATION);
+                    confirm.setTitle("Update SDRTrunk");
+                    confirm.setHeaderText("Download and install update " + release.tag + "?");
+                    confirm.setContentText("The installer will be downloaded and launched. " +
+                            "SDRTrunk will close automatically so the installer can complete.\n\n" +
+                            "Your settings and playlists will be saved before exiting.");
+                    confirm.showAndWait().ifPresent(response -> {
+                        if(response == javafx.scene.control.ButtonType.OK)
+                        {
+                            updateResultLabel.setText("Downloading update... please wait.");
+                            downloadUpdateButton.setDisable(true);
+                            checkUpdatesButton.setDisable(true);
+                            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                                boolean launched = io.github.dsheirer.update.GitHubUpdateChecker.downloadAndLaunch(release);
+                                javafx.application.Platform.runLater(() -> {
+                                    if(launched)
+                                    {
+                                        updateResultLabel.setText("Installer launched — SDRTrunk is closing...");
+                                    }
+                                    else
+                                    {
+                                        updateResultLabel.setText(
+                                                "Opened the release page in your browser to download the installer manually.");
+                                        downloadUpdateButton.setDisable(false);
+                                        checkUpdatesButton.setDisable(false);
+                                    }
+                                });
+                            });
+                        }
                     });
                 }
             });
