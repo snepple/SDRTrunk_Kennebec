@@ -40,6 +40,7 @@ import io.github.dsheirer.audio.broadcast.AbstractAudioBroadcaster;
 import io.github.dsheirer.audio.AudioEvent;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.icon.IconModel;
+import io.github.dsheirer.identifier.Form;
 import io.github.dsheirer.identifier.Identifier;
 import io.github.dsheirer.identifier.IdentifierClass;
 import io.github.dsheirer.identifier.IdentifierCollection;
@@ -96,6 +97,7 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
     private final io.github.dsheirer.playlist.PlaylistManager mPlaylistManager;
     private final TalkgroupFormatPreference mTalkgroupFormatPreference;
     private Identifier mIdentifier;
+    private String mCurrentChannelName;
     private List<Alias> mAliases = Collections.EMPTY_LIST;
     private final Lock mLock = new ReentrantLock();
 
@@ -322,6 +324,7 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         {
             boolean updated = mIdentifier != null;
             mIdentifier = null;
+            mCurrentChannelName = null;
             mAliases = Collections.EMPTY_LIST;
 
             //Hold the lock through the label update
@@ -342,6 +345,13 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
         {
             resetLabels();
             return;
+        }
+
+        //Extract the source channel name from the identifier collection's configuration identifiers
+        Identifier channelNameId = identifierCollection.getIdentifier(IdentifierClass.CONFIGURATION, Form.CHANNEL, Role.ANY);
+        if(channelNameId instanceof io.github.dsheirer.identifier.configuration.ChannelNameConfigurationIdentifier cnci)
+        {
+            mCurrentChannelName = cnci.getValue();
         }
 
         List<Identifier> toIds = identifierCollection.getIdentifiers(IdentifierClass.USER, Role.TO);
@@ -435,12 +445,18 @@ public class AudioChannelPanel extends HBox implements Listener<AudioEvent>, Set
             final javafx.scene.image.Image icon = iconName != null ? mIconModel.getIcon(iconName, 32) : null;
             final String identifierText = identifier;
             final boolean isIdle = (mIdentifier == null && mAliases.isEmpty());
+            final String channelDisplayName = mCurrentChannelName;
 
             Platform.runLater(() -> {
                 if (isIdle) {
                     getStyleClass().remove("audio-channel-panel");
-                } else if (!getStyleClass().contains("audio-channel-panel")) {
-                    getStyleClass().add("audio-channel-panel");
+                    mChannelName.setText(" ");
+                } else {
+                    if (!getStyleClass().contains("audio-channel-panel")) {
+                        getStyleClass().add("audio-channel-panel");
+                    }
+                    //Show the source channel name (e.g. "Sidney FD") in the large label
+                    mChannelName.setText(channelDisplayName != null ? channelDisplayName : identifierText);
                 }
 
                 mIdentifierLabel.setText(identifierText);
