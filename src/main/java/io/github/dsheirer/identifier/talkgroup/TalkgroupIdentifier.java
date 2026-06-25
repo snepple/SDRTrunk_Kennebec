@@ -45,10 +45,14 @@ public abstract class TalkgroupIdentifier extends IntegerIdentifier
         super(value, IdentifierClass.USER, Form.TALKGROUP, role);
     }
 
+    /**
+     * Uses != 0 (not > 0) so that 10-digit geographic talkgroup IDs whose unsigned value
+     * exceeds Integer.MAX_VALUE (and therefore wrap to a negative int) are still valid.
+     */
     @Override
     public boolean isValid()
     {
-        return getValue() > 0;
+        return getValue() != 0;
     }
 
     /**
