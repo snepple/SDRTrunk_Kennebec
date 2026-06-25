@@ -400,6 +400,26 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             getItem().setName(" ");
             getItem().setName(getNameField().getText());
             getItem().setAliasListName(getAliasListComboBox().getSelectionModel().getSelectedItem());
+
+            //Auto-assign the "Default" alias list to NBFM channels that don't have one.
+            //Without an alias list, streaming and alias matching silently fail.
+            if(getDecoderType() == io.github.dsheirer.module.decode.DecoderType.NBFM)
+            {
+                String selected = getItem().getAliasListName();
+                if(selected == null || selected.isBlank())
+                {
+                    String defaultList = io.github.dsheirer.playlist.PlaylistManager.DEFAULT_ALIAS_LIST_NAME;
+                    getItem().setAliasListName(defaultList);
+
+                    //Also select it in the combo box so the UI reflects the auto-assignment
+                    if(!getAliasListComboBox().getItems().contains(defaultList))
+                    {
+                        mPlaylistManager.getAliasModel().addAliasList(defaultList);
+                    }
+                    getAliasListComboBox().getSelectionModel().select(defaultList);
+                }
+            }
+
             getItem().setImagePath(mPendingImagePath);
 
             Integer order = getAutoStartOrderSpinner().getValue();

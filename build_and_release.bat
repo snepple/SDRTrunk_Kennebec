@@ -19,7 +19,29 @@ title SDR Trunk Kennebec - Multi-Platform Builder
 set "GH_REPO=snepple/SDRTrunk_Kennebec"
 set "REPO_URL=https://github.com/%GH_REPO%.git"
 set "FOLDER_NAME=SDRTrunk_Kennebec_Build"
-set "ROOT_DIR=%CD%"
+
+:: ---- PATH DETECTION ----
+:: The script can be launched from INSIDE the build folder (where gradlew.bat lives)
+:: or from the PARENT directory.  Detect which case we're in and set ROOT_DIR + PROJ_DIR
+:: so that every subsequent path reference works correctly either way.
+if exist "%CD%\gradlew.bat" (
+    :: We are inside the build folder itself
+    set "PROJ_DIR=%CD%"
+    :: ROOT_DIR is the parent (one level up)
+    for %%I in ("%CD%\..") do set "ROOT_DIR=%%~fI"
+    echo [OK] Running from inside the build folder.
+) else if exist "%CD%\%FOLDER_NAME%\gradlew.bat" (
+    :: We are in the parent directory that contains the build folder
+    set "ROOT_DIR=%CD%"
+    set "PROJ_DIR=%CD%\%FOLDER_NAME%"
+    echo [OK] Running from the parent directory.
+) else (
+    :: Assume parent layout - clone will happen later
+    set "ROOT_DIR=%CD%"
+    set "PROJ_DIR=%CD%\%FOLDER_NAME%"
+    echo [INFO] Build folder not found yet - will clone.
+)
+
 set "LOG_FILE=%ROOT_DIR%\build_log.txt"
 set "VOLK_BASE=C:\SDR_Deps\include"
 
@@ -41,6 +63,16 @@ echo ==============================================================
 echo   SDR Trunk Kennebec - Multi-Platform Build and Release
 echo ==============================================================
 echo.
+
+:: ---- DISK SPACE CHECK ----
+:: jpackage needs ~2 GB of working space for the runtime image + installer.  Fail early with a
+:: clear message instead of a cryptic FileSystemException deep inside jpackage.
+for /f "tokens=3" %%A in ('dir "%ROOT_DIR%" /-C 2^>nul ^| findstr /C:"bytes free"') do set "FREE_BYTES=%%A"
+set /a FREE_GB=!FREE_BYTES:~0,-9! 2>nul
+if defined FREE_GB if !FREE_GB! LSS 5 (
+    echo [WARNING] Only ~!FREE_GB! GB free disk space. The installer step needs at least 5 GB.
+    echo [WARNING] Consider deleting old releases from sdrtrunk-ap-versions or running Disk Cleanup.
+)
 
 :: ============================================================================
 :: STEP 1: Environment Check
@@ -111,25 +143,24 @@ call :drawProgressBar 10 "Updating Kennebec Fork..."
 :: Kill SDRTrunk window if open
 taskkill /F /FI "WINDOWTITLE eq SDRTrunk*" /T >nul 2>&1
 
-:: Gracefully stop Gradle daemon first
-if exist "%FOLDER_NAME%\gradlew.bat" (
-    cd /d "%ROOT_DIR%\%FOLDER_NAME%" 2>nul
+:: Gracefully stop Gradle daemon first (only in the project directory)
+if exist "%PROJ_DIR%\gradlew.bat" (
+    cd /d "%PROJ_DIR%" 2>nul
     call gradlew.bat --stop >nul 2>&1
     cd /d "%ROOT_DIR%" 2>nul
 )
 
-:: Aggressively kill any remaining Java processes to ensure no file locks interfere with compilation
-taskkill /F /IM java.exe /T >nul 2>&1
-taskkill /F /IM javaw.exe /T >nul 2>&1
+:: Kill SDRTrunk-specific processes but NOT generic java.exe (which would kill IDE/Gradle daemons)
 taskkill /F /IM SDRTrunk.exe /T >nul 2>&1
 taskkill /F /IM sdr-trunk.exe /T >nul 2>&1
 
 :: OPTIMIZATION: Fetch and reset instead of re-cloning to save time & keep Gradle cache
-if not exist "%FOLDER_NAME%" (
-    git clone --progress %REPO_URL% "%FOLDER_NAME%" 2> "%LOG_FILE%"
+if not exist "%PROJ_DIR%\gradlew.bat" (
+    echo [INFO] Build folder not found at "%PROJ_DIR%" - cloning...
+    git clone --progress %REPO_URL% "%PROJ_DIR%" 2> "%LOG_FILE%"
     if !ERRORLEVEL! NEQ 0 goto ai_triage
 ) else (
-    cd /d "%ROOT_DIR%\%FOLDER_NAME%" 2>nul
+    cd /d "%PROJ_DIR%" 2>nul
     git fetch origin master >nul 2>&1
 
     :: Sync the build workspace to origin/master when it is behind. Use 'git reset --hard', which
@@ -155,7 +186,7 @@ if not exist "%FOLDER_NAME%" (
 :: relaunched process so the update can happen at most once per invocation - a locked or
 :: failed copy can therefore never produce an endless update/restart loop.
 if defined SELF_UPDATE_DONE goto :after_self_update
-set "MASTER_BAR=%ROOT_DIR%\%FOLDER_NAME%\build_and_release.bat"
+set "MASTER_BAR=%PROJ_DIR%\build_and_release.bat"
 if not exist "%MASTER_BAR%" goto :after_self_update
 fc /b "%MASTER_BAR%" "%~f0" >nul 2>&1
 if not errorlevel 1 goto :after_self_update
@@ -173,13 +204,12 @@ start "" cmd /c "%UPDATER%"
 exit
 :after_self_update
 
-cd /d "%ROOT_DIR%\%FOLDER_NAME%"
+cd /d "%PROJ_DIR%"
 
 :: Absolute path to the cloned project + its Gradle wrapper. Every Gradle step below re-asserts this
 :: working directory and invokes the wrapper by absolute path, so a restart, a standalone launch folder
 :: (where ROOT_DIR has no gradlew.bat), or a stray cwd change can no longer cause
 :: "'gradlew.bat' is not recognized as an internal or external command".
-set "PROJ_DIR=%ROOT_DIR%\%FOLDER_NAME%"
 set "GRADLEW=%PROJ_DIR%\gradlew.bat"
 if not exist "%GRADLEW%" (
     echo [ERROR] Gradle wrapper not found at "%GRADLEW%".
@@ -247,7 +277,7 @@ set "APP_VER=!PROJ_VER!"
 for /f "tokens=* delims=ABCDEFGHIJKLMNOPQRSTUVWXYZ." %%V in ("!APP_VER!") do set "APP_VER=%%V"
 if "!APP_VER!"=="" set "APP_VER=0.0.1"
 
-set "RELEASE_DIR=%ROOT_DIR%\%FOLDER_NAME%\build\releases"
+set "RELEASE_DIR=%PROJ_DIR%\build\releases"
 set "WINDOWS_ZIP_STAGED=0"
 set "WINDOWS_INSTALLER_STAGED=0"
 
@@ -260,7 +290,7 @@ call :drawProgressBar 25 "Initializing Gradle (compile)..."
 :: (or another AV) holding freshly-written jars open is the most common cause of 'gradle clean'
 :: failing with "New files were found ... a process is still writing to the target directory".
 :: Requires admin; ignored silently if it cannot be applied.
-powershell -NoProfile -Command "try { Add-MpPreference -ExclusionPath '%ROOT_DIR%\%FOLDER_NAME%' -ErrorAction Stop; Write-Host '[OK] Added Windows Defender exclusion for the build workspace.' } catch { Write-Host '[INFO] Could not add a Defender exclusion (run as administrator to enable) - continuing.' }" 2>nul
+powershell -NoProfile -Command "try { Add-MpPreference -ExclusionPath '%PROJ_DIR%' -ErrorAction Stop; Write-Host '[OK] Added Windows Defender exclusion for the build workspace.' } catch { Write-Host '[INFO] Could not add a Defender exclusion (run as administrator to enable) - continuing.' }" 2>nul
 
 :: Clean + compile with automatic retry. If 'clean' cannot delete build\install\sdr-trunk\lib
 :: jars because a process or antivirus is locking them, release the locks and retry.
@@ -295,7 +325,7 @@ del /q "!RELEASE_DIR!\*.*" >nul 2>&1
 call :drawProgressBar 35 "Compiling Native C++ Library..."
 if not exist "src\main\resources\native" mkdir "src\main\resources\native"
 
-set "JNI_RAW=%ROOT_DIR%\%FOLDER_NAME%\build\generated\sources\headers\java\main"
+set "JNI_RAW=%PROJ_DIR%\build\generated\sources\headers\java\main"
 if not exist "!JNI_RAW!" mkdir "!JNI_RAW!"
 for %%I in ("!JNI_RAW!") do set "JNI_GEN=%%~sI"
 for %%I in ("%VOLK_BASE%") do set "V_INC=%%~sI"
@@ -597,11 +627,11 @@ for %%F in ("!RELEASE_DIR!\SDRTrunk-!PROJ_VER!-*.*") do (
     )
 )
 echo.
-echo   Local install: %ROOT_DIR%\%FOLDER_NAME%\build\install\sdr-trunk\
+echo   Local install: %PROJ_DIR%\build\install\sdr-trunk\
 echo ==============================================================
 echo.
 
-cd /d "%ROOT_DIR%\%FOLDER_NAME%"
+cd /d "%PROJ_DIR%"
 for /d %%D in (build\install\*) do (
     if exist "%%D\bin\sdr-trunk.bat" (
         echo [INFO] Launching SDRTrunk...

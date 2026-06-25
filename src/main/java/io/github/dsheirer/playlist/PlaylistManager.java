@@ -78,6 +78,7 @@ public class PlaylistManager implements Listener<ChannelEvent>
     private final static Logger mLog = LoggerFactory.getLogger(PlaylistManager.class);
 
     public static final int PLAYLIST_CURRENT_VERSION = 4;
+    public static final String DEFAULT_ALIAS_LIST_NAME = "Default";
 
     private AliasModel mAliasModel;
     private ChannelMapModel mChannelMapModel = new ChannelMapModel();
@@ -427,6 +428,9 @@ public class PlaylistManager implements Listener<ChannelEvent>
 
             mAliasModel.addAliases(playlist.getAliases());
 
+            //Ensure a "Default" alias list always exists so NBFM channels always have a fallback.
+            //This is a no-op if the list already exists in the playlist.
+            mAliasModel.addAliasList(DEFAULT_ALIAS_LIST_NAME);
 
             mBroadcastModel.addBroadcastConfigurations(playlist.getBroadcastConfigurations());
 
@@ -436,6 +440,10 @@ public class PlaylistManager implements Listener<ChannelEvent>
             //they get the static-call protection (see DecodeConfigNBFM.isToneRequireNoiseSquelch) without the user
             //having to re-save each channel. Runs once per installation, before channels are added/auto-started.
             migrateToneRequireNoiseSquelch(playlist.getChannels());
+
+            //Auto-assign the "Default" alias list to any NBFM channel that doesn't have one.
+            //Without an alias list, streaming and alias matching silently fail.
+            assignDefaultAliasListToNBFM(playlist.getChannels());
 
             //Channel model has to be loaded last since it will auto-start channels that are enabled
             mChannelModel.addChannels(playlist.getChannels());
@@ -492,6 +500,41 @@ public class PlaylistManager implements Listener<ChannelEvent>
         }
     }
 
+    /**
+     * Auto-assigns the "Default" alias list to any NBFM channel that does not already have an
+     * alias list configured.  Without an alias list, streaming and alias-based matching silently
+     * fail, which is a common user configuration oversight.
+     */
+    private void assignDefaultAliasListToNBFM(List<Channel> channels)
+    {
+        if(channels == null)
+        {
+            return;
+        }
+
+        int assigned = 0;
+
+        for(Channel channel : channels)
+        {
+            if(channel != null && channel.getDecodeConfiguration() instanceof DecodeConfigNBFM)
+            {
+                String aliasListName = channel.getAliasListName();
+
+                if(aliasListName == null || aliasListName.isBlank())
+                {
+                    channel.setAliasListName(DEFAULT_ALIAS_LIST_NAME);
+                    assigned++;
+                    mLog.info("Auto-assigned '{}' alias list to NBFM channel '{}' which had no alias list configured",
+                            DEFAULT_ALIAS_LIST_NAME, channel.getName());
+                }
+            }
+        }
+
+        if(assigned > 0)
+        {
+            schedulePlaylistSave();
+        }
+    }
 
     /**
      * User preferences
