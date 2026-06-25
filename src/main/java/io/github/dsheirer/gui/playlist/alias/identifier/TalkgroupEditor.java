@@ -141,9 +141,11 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
                 mTalkgroupField.getEditor().setTextFormatter(mIntegerTextFormatter);
                 mTalkgroupField.setConverter(mIntegerTextFormatter.getValueConverter());
                 mTalkgroupField.setTooltip(new Tooltip(talkgroupDetail.getTooltip()));
-                mIntegerTextFormatter.setValue(value);
-                mIntegerTextFormatter.valueProperty().addListener(mTalkgroupValueChangeListener);
 
+                //Populate the dropdown BEFORE setting the value and attaching the listener.
+                //Previously, getItems().clear() happened AFTER the listener was attached, which
+                //caused JavaFX to fire a null value change → TalkgroupValueChangeListener set
+                //the talkgroup to 0 → "**NOT VALID**".
                 if (getItem().getProtocol() == Protocol.NBFM) {
                     mTalkgroupField.getItems().clear();
                     List<Integer> talkgroups = new ArrayList<>();
@@ -174,6 +176,9 @@ public class TalkgroupEditor extends IdentifierEditor<Talkgroup>
                 } else {
                     mTalkgroupField.getItems().clear();
                 }
+
+                mIntegerTextFormatter.setValue(value);
+                mIntegerTextFormatter.valueProperty().addListener(mTalkgroupValueChangeListener);
             }
             else
             {

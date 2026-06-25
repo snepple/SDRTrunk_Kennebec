@@ -486,8 +486,10 @@ public class DecoderFactory
         //with a talkgroup assigned still would not stream. Conventional talkgroup is a fixed per-channel value.
         if(decodeConfigNBFM.getTalkgroup() != 0)
         {
-            audioModule.getIdentifierCollection().update(
-                    new io.github.dsheirer.module.decode.nbfm.NBFMTalkgroup(decodeConfigNBFM.getTalkgroup()));
+            io.github.dsheirer.identifier.Identifier talkgroup =
+                    new io.github.dsheirer.module.decode.nbfm.NBFMTalkgroup(decodeConfigNBFM.getTalkgroup());
+            audioModule.setConfiguredTalkgroup(talkgroup);
+            audioModule.getIdentifierCollection().update(talkgroup);
         }
         modules.add(audioModule);
     }
@@ -510,8 +512,10 @@ public class DecoderFactory
             //routing - same reason as NBFM (the audio module is not wired to the decoder state's USER identifiers).
             if(configAM.getTalkgroup() != 0)
             {
-                amAudioModule.getIdentifierCollection().update(
-                        new io.github.dsheirer.module.decode.am.AMTalkgroup(configAM.getTalkgroup()));
+                io.github.dsheirer.identifier.Identifier amTalkgroup =
+                        new io.github.dsheirer.module.decode.am.AMTalkgroup(configAM.getTalkgroup());
+                amAudioModule.setConfiguredTalkgroup(amTalkgroup);
+                amAudioModule.getIdentifierCollection().update(amTalkgroup);
             }
             modules.add(amAudioModule);
         }
