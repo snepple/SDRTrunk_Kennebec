@@ -27,6 +27,7 @@ import io.github.dsheirer.dsp.filter.design.FilterDesignException;
 import io.github.dsheirer.dsp.filter.fir.FIRFilterSpecification;
 import io.github.dsheirer.dsp.filter.fir.real.IRealFilter;
 import io.github.dsheirer.dsp.filter.fir.remez.RemezFIRFilterDesigner;
+import io.github.dsheirer.identifier.Identifier;
 import io.github.dsheirer.sample.Listener;
 import io.github.dsheirer.sample.real.IRealBufferListener;
 import org.slf4j.Logger;
@@ -74,6 +75,7 @@ public class AudioModule extends AbstractAudioModule implements ISquelchStateLis
     private final IRealFilter mHighPassFilter = FilterFactory.getRealFilter(sHighPassFilterCoefficients);
     private final SquelchStateListener mSquelchStateListener = new SquelchStateListener();
     private SquelchState mSquelchState = SquelchState.SQUELCH;
+    private Identifier mConfiguredTalkgroup;
 
     /**
      * Creates an Audio Module.
@@ -106,10 +108,31 @@ public class AudioModule extends AbstractAudioModule implements ISquelchStateLis
         return 0;
     }
 
+    /**
+     * Sets a configured talkgroup identifier that will be preserved across reset() calls.
+     * Conventional (NBFM/AM) channels use a fixed per-channel talkgroup for alias/stream
+     * routing. Without this, reset() clears the talkgroup and subsequent audio segments
+     * have no TO identifier, breaking streaming and alias matching.
+     *
+     * @param talkgroup the talkgroup identifier to preserve across resets
+     */
+    public void setConfiguredTalkgroup(Identifier talkgroup)
+    {
+        mConfiguredTalkgroup = talkgroup;
+    }
+
     @Override
     public void reset()
     {
         getIdentifierCollection().clear();
+
+        //Re-seed the configured talkgroup so the next audio segment carries it for alias/stream routing.
+        //Without this, conventional channels lose their talkgroup after each call ends and the next call's
+        //audio segment has no TO identifier, causing "Audio call not streamed - no stream/alias match".
+        if(mConfiguredTalkgroup != null)
+        {
+            getIdentifierCollection().update(mConfiguredTalkgroup);
+        }
     }
 
     @Override
