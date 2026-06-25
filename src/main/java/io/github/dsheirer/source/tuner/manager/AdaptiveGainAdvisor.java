@@ -49,8 +49,8 @@ public class AdaptiveGainAdvisor
     // Minimum sample count before issuing any recommendation (avoids false alarms on startup)
     private static final int MIN_SAMPLES_FOR_ADVICE = 50;
 
-    // AI consultation rate limiting — twice a day to keep Gemini token usage modest
-    private static final long AI_CONSULTATION_INTERVAL_MS = 43_200_000L; // 12 hours
+    // Tracks the last time the scheduled heuristic evaluation ran (separate from AI consultation)
+    private final AtomicLong mLastScheduledEvaluationMs = new AtomicLong(0);
 
     private final ConcurrentHashMap<String, ChannelStats> mChannelStats = new ConcurrentHashMap<>();
     private final ScheduledExecutorService mScheduler;
@@ -92,8 +92,10 @@ public class AdaptiveGainAdvisor
             return t;
         });
 
-        // Evaluate every 5 minutes; first check after 2 minutes to allow statistics to accumulate
-        mScheduler.scheduleAtFixedRate(this::evaluate, 2, 5, TimeUnit.MINUTES);
+        // Check every 5 minutes whether the user's configured interval has elapsed.
+        // The actual evaluation (heuristic logging + optional AI consultation) only fires
+        // when both the schedule toggle is ON and the user-configured interval has passed.
+        mScheduler.scheduleAtFixedRate(this::scheduledTick, 2, 5, TimeUnit.MINUTES);
         mLog.info("AdaptiveGainAdvisor started — monitoring I/Q power levels across active channels");
     }
 
@@ -151,7 +153,13 @@ public class AdaptiveGainAdvisor
     // Internal evaluation
     // -------------------------------------------------------------------------
 
-    private void evaluate()
+    /**
+     * Called every 5 minutes by the scheduler.  Checks whether the user has the scheduled
+     * evaluation toggle ON and whether the user-configured interval (e.g. 12 hours) has
+     * elapsed since the last evaluation.  If both conditions are met, runs the heuristic
+     * evaluation and optional AI consultation.  Otherwise this is a no-op.
+     */
+    private void scheduledTick()
     {
         try
         {
@@ -160,56 +168,88 @@ public class AdaptiveGainAdvisor
                 return;
             }
 
-            int tooHigh = 0;
-            int tooLow  = 0;
-            int optimal = 0;
-
-            for(ChannelStats stats : mChannelStats.values())
+            // Only run the scheduled evaluation when the user has both the advisor AND
+            // the auto-schedule toggle enabled in preferences.
+            if(mUserPreferences == null)
             {
-                if(stats.getSampleCount() < MIN_SAMPLES_FOR_ADVICE)
-                {
-                    continue;
-                }
-
-                double avg = stats.getAveragePowerDbfs();
-
-                if(avg > GAIN_TOO_HIGH_DBFS)
-                {
-                    tooHigh++;
-                    mLog.warn("AdaptiveGain [{}]: signal too strong ({} dBFS avg) — consider reducing tuner gain to avoid ADC clipping",
-                            stats.getChannelName(), String.format("%.1f", avg));
-                }
-                else if(avg < GAIN_TOO_LOW_DBFS)
-                {
-                    tooLow++;
-                    mLog.warn("AdaptiveGain [{}]: signal too weak ({} dBFS avg) — consider increasing tuner gain for better SNR",
-                            stats.getChannelName(), String.format("%.1f", avg));
-                }
-                else
-                {
-                    optimal++;
-                    mLog.debug("AdaptiveGain [{}]: signal level optimal ({} dBFS avg)",
-                            stats.getChannelName(), String.format("%.1f", avg));
-                }
+                return;
             }
 
-            // Summary when there are issues across multiple channels
-            int total = tooHigh + tooLow + optimal;
-            if(total > 0 && (tooHigh > 0 || tooLow > 0))
+            var aiPref = mUserPreferences.getAIPreference();
+            if(!aiPref.isGainAdvisorScheduleEnabled())
             {
-                mLog.info("AdaptiveGain summary: {} channels optimal, {} too strong, {} too weak (of {} monitored)",
-                        optimal, tooHigh, tooLow, total);
+                return;
             }
 
-            // Periodic (twice-daily) AI consultation when AI is available
-            if(shouldConsultAI())
+            // Respect the user-configured interval (default 12 hours)
+            long intervalMs = aiPref.getGainAdvisorIntervalHours() * 60L * 60L * 1000L;
+            long now = System.currentTimeMillis();
+            if((now - mLastScheduledEvaluationMs.get()) < intervalMs)
             {
-                consultGemini();
+                return;
             }
+            mLastScheduledEvaluationMs.set(now);
+
+            evaluate();
         }
         catch(Exception e)
         {
-            mLog.error("AdaptiveGainAdvisor evaluation error", e);
+            mLog.error("AdaptiveGainAdvisor scheduled tick error", e);
+        }
+    }
+
+    /**
+     * Runs the heuristic evaluation: logs per-channel signal level warnings and an aggregate
+     * summary.  Called from the scheduled tick (gated on user preferences) and also available
+     * for manual/on-demand invocations.
+     */
+    private void evaluate()
+    {
+        int tooHigh = 0;
+        int tooLow  = 0;
+        int optimal = 0;
+
+        for(ChannelStats stats : mChannelStats.values())
+        {
+            if(stats.getSampleCount() < MIN_SAMPLES_FOR_ADVICE)
+            {
+                continue;
+            }
+
+            double avg = stats.getAveragePowerDbfs();
+
+            if(avg > GAIN_TOO_HIGH_DBFS)
+            {
+                tooHigh++;
+                mLog.warn("AdaptiveGain [{}]: signal too strong ({} dBFS avg) — consider reducing tuner gain to avoid ADC clipping",
+                        stats.getChannelName(), String.format("%.1f", avg));
+            }
+            else if(avg < GAIN_TOO_LOW_DBFS)
+            {
+                tooLow++;
+                mLog.warn("AdaptiveGain [{}]: signal too weak ({} dBFS avg) — consider increasing tuner gain for better SNR",
+                        stats.getChannelName(), String.format("%.1f", avg));
+            }
+            else
+            {
+                optimal++;
+                mLog.debug("AdaptiveGain [{}]: signal level optimal ({} dBFS avg)",
+                        stats.getChannelName(), String.format("%.1f", avg));
+            }
+        }
+
+        // Summary when there are issues across multiple channels
+        int total = tooHigh + tooLow + optimal;
+        if(total > 0 && (tooHigh > 0 || tooLow > 0))
+        {
+            mLog.info("AdaptiveGain summary: {} channels optimal, {} too strong, {} too weak (of {} monitored)",
+                    optimal, tooHigh, tooLow, total);
+        }
+
+        // AI consultation (when AI is available and configured)
+        if(shouldConsultAI())
+        {
+            consultGemini();
         }
     }
 

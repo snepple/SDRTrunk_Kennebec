@@ -384,14 +384,24 @@ public class CTCSSDetector
     /**
      * Handles detection of a CTCSS tone in the current block.
      * Only reports to the listener if the detected tone is in the allowed (target) set.
+     *
+     * IMPORTANT: mLossCounter is only reset when the TARGET tone is detected. Non-target
+     * detections do NOT reset the loss counter. This prevents broadband interference
+     * (which randomly lights up different CTCSS bins each block) from holding the tone
+     * gate open indefinitely via the holdover mechanism. Without this, digital noise
+     * bursts following a valid transmission could leak through for their entire duration
+     * because mLossCounter would never reach LOSS_COUNT.
      */
     private void handleDetection(CTCSSCode code)
     {
-        mLossCounter = 0;
-
         // Only accept tones that are in our allowed set
         if(!mTargetCodes.contains(code))
         {
+            // NON-TARGET tone detected: do NOT reset mLossCounter.
+            // Broadband noise/digital interference lights up random CTCSS bins each block.
+            // If we reset mLossCounter here, it would never reach LOSS_COUNT, and a prior
+            // target match (held over from a valid transmission) would stay active forever.
+
             // Track confirmed rejections — only notify after same wrong tone seen CONFIRMATION_COUNT times
             if(mDetectedCode == code)
             {
@@ -413,6 +423,9 @@ public class CTCSSDetector
             }
             return;
         }
+
+        // TARGET tone detected — reset loss counter
+        mLossCounter = 0;
 
         if(mDetectedCode == code)
         {
