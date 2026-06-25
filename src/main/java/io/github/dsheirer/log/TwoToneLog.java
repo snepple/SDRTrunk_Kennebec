@@ -91,7 +91,8 @@ public class TwoToneLog
 
             PatternLayoutEncoder encoder = new PatternLayoutEncoder();
             encoder.setContext(loggerContext);
-            encoder.setPattern("%-25(%d{yyyyMMdd HHmmss.SSS}) - %msg%n");
+            //Human-friendly timestamp (e.g. 06/24/2026 20:28:10.021) rather than the compact yyyyMMdd HHmmss form.
+            encoder.setPattern("%-25(%d{MM/dd/yyyy HH:mm:ss.SSS}) - %msg%n");
             encoder.start();
 
             mRollingFileAppender = new RollingFileAppender();

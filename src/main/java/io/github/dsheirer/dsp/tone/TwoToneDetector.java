@@ -68,6 +68,13 @@ public class TwoToneDetector
     private AudioSegment mLastRoutedSegment;
     private java.util.Set<String> mLastApplicableDetectors = java.util.Collections.emptySet();
 
+    // Bounded routing diagnostics.  Logs the first ROUTING_LOG_LIMIT alias-routing decisions so a user can see, per
+    // analog call, which aliases resolved on the segment and therefore which configured detectors were included vs.
+    // silently excluded.  This is the definitive way to confirm whether a detector that "isn't working" is simply
+    // never being routed the audio (its assigned alias did not resolve on the call's talkgroup).
+    private static final int ROUTING_LOG_LIMIT = 60;
+    private int mRoutingLogCount = 0;
+
     // Cached Goertzel filters (keyed by target frequency) and a reused windowing scratch buffer, so tone detection
     // does not allocate a filter (with its window coefficients) and a buffer clone on every 20 ms block.  Accessed
     // only from the single detector processing thread.
@@ -77,12 +84,21 @@ public class TwoToneDetector
     // Discovery tracking
     public static final List<TwoToneDiscoveryLog> DISCOVERY_LOG = new ArrayList<>();
 
-    // State machine for Tone A -> Tone B
-    private double mCurrentToneA = 0.0;
-    private int mCurrentToneABlocks = 0;
-    private double mCurrentToneB = 0.0;
-    private int mCurrentToneBBlocks = 0;
-    private int mGapBlocks = 0;
+    // State machine for Tone A -> Tone B.  This MUST be tracked per-detector: a single shared state machine is
+    // overwritten when more than one configured detector sees its Tone A in the same 20 ms block.  That happens
+    // routinely because two detectors can have nearly-identical Tone A frequencies (e.g. 798.8 Hz and 799.0 Hz),
+    // both of which fall within tolerance of the same transmitted tone.  With shared state each detector reset the
+    // other's block counter every block, so neither ever reached the minimum hold time and NO detector fired.
+    // Keyed by detector name (config.getAlias()); accessed only from the single detector processing thread.
+    private static final class ToneState
+    {
+        double currentToneA = 0.0;
+        int currentToneABlocks = 0;
+        double currentToneB = 0.0;
+        int currentToneBBlocks = 0;
+        int gapBlocks = 0;
+    }
+    private final java.util.Map<String, ToneState> mToneStateByDetector = new java.util.HashMap<>();
     // Per-detector duplicate suppression: maps detector alias → last trigger timestamp (millis)
     private final java.util.Map<String, Long> mLastTriggerTimeByDetector = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -167,6 +183,10 @@ public class TwoToneDetector
             if (!config.isEnabled()) continue;
             if (!applicableDetectors.contains(config.getAlias())) continue;
 
+            //Per-detector tone state so concurrently-tracked detectors cannot clobber each other's progress.
+            String detectorKey = config.getAlias() != null ? config.getAlias() : ("@" + System.identityHashCode(config));
+            ToneState state = mToneStateByDetector.computeIfAbsent(detectorKey, k -> new ToneState());
+
             long freqA = Math.round(config.getToneA());
             long freqB = Math.round(config.getToneB());
             // Use percentage-based tolerance (IAmResponding style) with fallback to absolute Hz
@@ -187,28 +207,28 @@ public class TwoToneDetector
             {
                 if (powerA > POWER_THRESHOLD_DB)
                 {
-                    if(mCurrentToneA == config.getToneA())
+                    if(state.currentToneA == config.getToneA())
                     {
-                        mCurrentToneABlocks++;
+                        state.currentToneABlocks++;
                     }
                     else
                     {
-                        mCurrentToneA = config.getToneA();
-                        mCurrentToneABlocks = 1;
+                        state.currentToneA = config.getToneA();
+                        state.currentToneABlocks = 1;
                     }
 
-                    if(mCurrentToneABlocks == LONG_A_MIN_TONE_BLOCKS)
+                    if(state.currentToneABlocks == LONG_A_MIN_TONE_BLOCKS)
                     {
                         triggerAlertIfMatched(config, segment);
-                        // Do not reset mCurrentToneABlocks to 0 here.
+                        // Do not reset state.currentToneABlocks to 0 here.
                         // Allow it to keep incrementing as long as the tone is present
                         // to prevent multiple triggers for the same continuous long tone.
                     }
                 }
-                else if (mCurrentToneA == config.getToneA())
+                else if (state.currentToneA == config.getToneA())
                 {
-                    mCurrentToneA = 0;
-                    mCurrentToneABlocks = 0;
+                    state.currentToneA = 0;
+                    state.currentToneABlocks = 0;
                 }
                 continue;
             }
@@ -218,58 +238,58 @@ public class TwoToneDetector
             // Tone A detection
             if (powerA > POWER_THRESHOLD_DB)
             {
-                if(mCurrentToneA == config.getToneA())
+                if(state.currentToneA == config.getToneA())
                 {
-                    mCurrentToneABlocks++;
+                    state.currentToneABlocks++;
                 }
                 else
                 {
-                    mCurrentToneA = config.getToneA();
-                    mCurrentToneABlocks = 1;
-                    mCurrentToneB = 0;
-                    mCurrentToneBBlocks = 0;
-                    mGapBlocks = 0;
+                    state.currentToneA = config.getToneA();
+                    state.currentToneABlocks = 1;
+                    state.currentToneB = 0;
+                    state.currentToneBBlocks = 0;
+                    state.gapBlocks = 0;
                 }
             }
             // Tone B detection (only valid if Tone A was previously detected and held long enough)
-            else if (powerB > POWER_THRESHOLD_DB && mCurrentToneABlocks >= minToneABlocks && mCurrentToneA == config.getToneA())
+            else if (powerB > POWER_THRESHOLD_DB && state.currentToneABlocks >= minToneABlocks && state.currentToneA == config.getToneA())
             {
-                if(mCurrentToneB == config.getToneB())
+                if(state.currentToneB == config.getToneB())
                 {
-                    mCurrentToneBBlocks++;
+                    state.currentToneBBlocks++;
                 }
                 else
                 {
-                    mCurrentToneB = config.getToneB();
-                    mCurrentToneBBlocks = 1;
+                    state.currentToneB = config.getToneB();
+                    state.currentToneBBlocks = 1;
                 }
 
 
                 // If B is held long enough, it's a confirmed sequence
-                if(mCurrentToneBBlocks >= minToneBBlocks)
+                if(state.currentToneBBlocks >= minToneBBlocks)
                 {
                     triggerAlertIfMatched(config, segment);
 
                     // Reset to avoid multiple triggers for the same continuous tone
-                    mCurrentToneA = 0;
-                    mCurrentToneABlocks = 0;
-                    mCurrentToneB = 0;
-                    mCurrentToneBBlocks = 0;
-                    mGapBlocks = 0;
+                    state.currentToneA = 0;
+                    state.currentToneABlocks = 0;
+                    state.currentToneB = 0;
+                    state.currentToneBBlocks = 0;
+                    state.gapBlocks = 0;
                 }
 
             }
             // Neither tone A nor tone B detected — count gap blocks between tones
-            else if (mCurrentToneABlocks >= minToneABlocks && mCurrentToneA == config.getToneA()
-                    && mCurrentToneBBlocks == 0)
+            else if (state.currentToneABlocks >= minToneABlocks && state.currentToneA == config.getToneA()
+                    && state.currentToneBBlocks == 0)
             {
-                mGapBlocks++;
+                state.gapBlocks++;
                 // If the gap exceeds the configured tolerance, reset
-                if (mGapBlocks > maxGapBlocks + 5) // +5 blocks (100ms) of grace
+                if (state.gapBlocks > maxGapBlocks + 5) // +5 blocks (100ms) of grace
                 {
-                    mCurrentToneA = 0;
-                    mCurrentToneABlocks = 0;
-                    mGapBlocks = 0;
+                    state.currentToneA = 0;
+                    state.currentToneABlocks = 0;
+                    state.gapBlocks = 0;
                 }
             }
         }
@@ -422,6 +442,39 @@ public class TwoToneDetector
 
         mLastRoutedSegment = segment;
         mLastApplicableDetectors = applicable;
+
+        //Diagnostic: surface the routing decision for the first several calls so a user can confirm whether a detector
+        //that "isn't working" is actually being fed.  Logs the call's channel, the aliases that resolved on it, the
+        //detectors that WILL run, and any configured detectors that were EXCLUDED because their assigned alias did not
+        //resolve on this call (the common cause: the channel's talkgroup does not match the alias's talkgroup).
+        if(mRoutingLogCount < ROUTING_LOG_LIMIT && !configs.isEmpty())
+        {
+            mRoutingLogCount++;
+
+            java.util.List<String> excluded = new java.util.ArrayList<>();
+            for(TwoToneConfiguration config : configs)
+            {
+                if(config.getAlias() != null && config.isEnabled() && !applicable.contains(config.getAlias()))
+                {
+                    excluded.add(config.getAlias());
+                }
+            }
+
+            String channel = "?";
+            if(segment != null)
+            {
+                Identifier chId = segment.getIdentifierCollection()
+                        .getIdentifier(IdentifierClass.CONFIGURATION, Form.CHANNEL, Role.ANY);
+                if(chId instanceof io.github.dsheirer.identifier.configuration.ChannelNameConfigurationIdentifier cnci)
+                {
+                    channel = cnci.getValue();
+                }
+            }
+
+            mLog.info("TwoTone routing [channel={}] resolvedAliasDetectors={} willRun={} excludedNeedAliasMatch={}",
+                    channel, segmentDetectors, applicable, excluded);
+        }
+
         return applicable;
     }
 
