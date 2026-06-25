@@ -280,31 +280,48 @@ public abstract class USBTunerController extends TunerController
     {
         mRunning = false;
 
-        //Spin the shutdown onto a new thread so that we can set a max wait threshold.
+        //Spin the graceful streaming/device shutdown onto a worker thread so that a stuck native libusb call can't
+        //hang the calling (UI/recovery) thread indefinitely.
         Thread t = new Thread(() -> {
             stopStreaming();
             mNativeBufferBroadcaster.clear();
             deviceStop();
         });
-
+        t.setName("sdrtrunk USB tuner shutdown - bus [" + mBus + "] port [" + mPortAddress + "]");
         t.start();
+
+        boolean gracefulShutdownCompleted = false;
 
         try
         {
-            //Wait up to 500 milliseconds for the shutdown to complete ... otherwise interrupt it and finish shutdown
-            t.join(500);
-
-            if(t.isAlive())
-            {
-                mLog.info("Tuner shutdown exceeded 500ms - forcing shutdown");
-                t.interrupt();
-            }
+            //Wait for the graceful shutdown to finish.  This budget must comfortably exceed the internal waits
+            //performed by stopStreaming() (the event-processor thread join of up to 1000ms plus a final 50ms
+            //handle-events pass) so the normal case always completes cleanly.  The join returns as soon as the
+            //worker finishes, so this cap does not slow down a healthy shutdown.
+            t.join(3000);
+            gracefulShutdownCompleted = !t.isAlive();
         }
         catch(InterruptedException ie)
         {
+            Thread.currentThread().interrupt();
         }
 
-        //Release transfers
+        if(!gracefulShutdownCompleted)
+        {
+            //The worker is still inside a native libusb call.  Freeing transfers, closing the handle, or exiting
+            //the context now would race the still-running libusb event loop and corrupt libusb's internal Windows
+            //poll-fd list, aborting the entire application with a "poll_windows.c ... assert(fd != NULL)" failure
+            //(see issue #1253).  Interrupting a thread blocked in a native JNI call does nothing, so the only safe
+            //option is to leak this one device's libusb resources.  The controller instance is discarded by the
+            //caller (DiscoveredTuner.stop() nulls its tuner reference) and never reused, and the application keeps
+            //running.  Leave the libusb fields untouched so the still-running worker can finish without an NPE.
+            mLog.error("USB tuner shutdown did not complete in time [bus:{} port:{}] - leaking libusb resources to " +
+                    "avoid a native poll_windows assertion that would abort the application", mBus, mPortAddress);
+            return;
+        }
+
+        //Graceful shutdown completed - all transfers have been cancelled and returned and the event-processing
+        //thread has stopped, so it is now safe to free the transfers and release the libusb handle and context.
         mTransferManager.freeTransfers();
 
         if(mDeviceHandle != null)
