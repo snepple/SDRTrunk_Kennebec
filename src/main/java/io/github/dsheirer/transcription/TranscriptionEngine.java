@@ -2,6 +2,7 @@ package io.github.dsheirer.transcription;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.github.dsheirer.audio.AudioSegment;
 import io.github.dsheirer.identifier.Form;
@@ -50,6 +51,10 @@ public class TranscriptionEngine {
     //failed/expired key or API outage doesn't stall the pipeline or burn quota indefinitely.
     private static final int FAILURE_THRESHOLD = 3;
     private static final long FAILURE_COOLDOWN_MS = 10 * 60 * 1000;
+    //A persistent failure - an exhausted billing quota or an invalid/expired API key - will NOT clear within the
+    //normal transient cooldown.  Retrying every 10 minutes simply re-fails, floods the log with identical errors and
+    //(for live-balance keys) keeps poking a billing endpoint.  Back off for hours instead and log it once, concisely.
+    private static final long QUOTA_COOLDOWN_MS = 6 * 60 * 60 * 1000;
     private static final AtomicInteger sConsecutiveFailures = new AtomicInteger();
     private static volatile long sDisabledUntil = 0;
 
@@ -208,8 +213,19 @@ public class TranscriptionEngine {
                     postTranscription(audioSegment, result, finalFromRadioId, finalProtocol,
                         finalAliasListName, finalStartTimestamp, finalToId, finalFrequency);
                 }
+            } catch (QuotaExhaustedException qee) {
+                //Persistent billing/credential problem (exhausted quota, invalid/expired key).  It will not resolve
+                //within the normal cooldown, so disable transcription for a long window and log ONE concise warning -
+                //no ERROR, no stack trace - rather than re-failing and re-logging the same trace on every call.
+                sConsecutiveFailures.set(0);
+                sDisabledUntil = System.currentTimeMillis() + QUOTA_COOLDOWN_MS;
+                mLog.warn("Transcription disabled for {} hours - {}", (QUOTA_COOLDOWN_MS / 3600000), qee.getMessage());
             } catch (Exception e) {
-                mLog.error("Error during audio transcription", e);
+                //Transient failure (network blip, read timeout, 5xx, plain rate-limit).  Log concisely; keep the full
+                //stack trace at DEBUG for diagnosis without spamming the normal log.  Trip the circuit breaker after a
+                //few in a row so a short outage doesn't stall the pipeline or burn quota.
+                mLog.warn("Transcription failed: {}", e.toString());
+                mLog.debug("Transcription failure detail", e);
 
                 if (sConsecutiveFailures.incrementAndGet() >= FAILURE_THRESHOLD) {
                     sConsecutiveFailures.set(0);
@@ -288,9 +304,12 @@ public class TranscriptionEngine {
                 } catch (Exception e) {
                     mLog.error("Error parsing Google STT response: " + e.getMessage());
                 }
+            } else if (isPersistentFailure(responseCode, response)) {
+                throw new QuotaExhaustedException("Google STT quota/credential failure (HTTP " + responseCode +
+                        "): " + extractApiErrorMessage(response));
             } else {
-                mLog.error("Google STT API Error: " + response);
-                throw new IOException("Google STT API error response code " + responseCode);
+                throw new IOException("Google STT API error (HTTP " + responseCode + "): " +
+                        extractApiErrorMessage(response));
             }
         }
         return "";
@@ -344,12 +363,75 @@ public class TranscriptionEngine {
                 } catch (Exception e) {
                     mLog.error("Error parsing Whisper response: " + e.getMessage());
                 }
+            } else if (isPersistentFailure(responseCode, response)) {
+                throw new QuotaExhaustedException("Whisper API quota/credential failure (HTTP " + responseCode +
+                        "): " + extractApiErrorMessage(response));
             } else {
-                mLog.error("Whisper API Error: " + response);
-                throw new IOException("Whisper API error response code " + responseCode);
+                throw new IOException("Whisper API error (HTTP " + responseCode + "): " +
+                        extractApiErrorMessage(response));
             }
         }
         return "";
+    }
+
+    /**
+     * Determines whether an HTTP error from an STT provider represents a PERSISTENT condition that will not clear on
+     * its own within the normal transient cooldown - specifically an exhausted billing quota or an invalid/expired
+     * API key. These warrant a long back-off rather than retrying every few minutes.
+     *
+     * Note that a 429 is ambiguous: OpenAI returns it both for a transient rate-limit (resolves on its own) and for an
+     * exhausted/unpaid balance (code "insufficient_quota" - does NOT resolve until the user adds credit). Only the
+     * latter is treated as persistent, so genuine rate-limiting still retries.
+     *
+     * @param responseCode HTTP status code returned by the provider
+     * @param responseBody response body (JSON error payload), may be null
+     * @return true if the failure is persistent (quota/credential), false if it may be transient
+     */
+    private static boolean isPersistentFailure(int responseCode, String responseBody) {
+        if (responseCode == 401 || responseCode == 403) {
+            return true; //invalid/expired key or unauthorized - will not fix itself
+        }
+        if (responseCode == 429 && responseBody != null) {
+            String lower = responseBody.toLowerCase();
+            return lower.contains("insufficient_quota") || lower.contains("billing") ||
+                    (lower.contains("quota") && lower.contains("exceeded"));
+        }
+        return false;
+    }
+
+    /**
+     * Extracts a concise, human-readable message from a provider's JSON error body (OpenAI and Google both nest it
+     * under "error"/"message") so the log shows the cause without dumping the full raw payload.
+     */
+    private static String extractApiErrorMessage(String responseBody) {
+        if (responseBody == null || responseBody.isEmpty()) {
+            return "(no response body)";
+        }
+        try {
+            JsonObject root = new Gson().fromJson(responseBody, JsonObject.class);
+            if (root != null && root.has("error")) {
+                JsonElement error = root.get("error");
+                if (error.isJsonObject() && error.getAsJsonObject().has("message")) {
+                    return error.getAsJsonObject().get("message").getAsString();
+                }
+                if (error.isJsonPrimitive()) {
+                    return error.getAsString();
+                }
+            }
+        } catch (Exception ignore) {
+            //Not JSON (or unexpected shape) - fall through and return the raw body, trimmed.
+        }
+        return responseBody.length() > 300 ? responseBody.substring(0, 300) + "..." : responseBody;
+    }
+
+    /**
+     * Signals a persistent STT failure (exhausted quota or invalid/expired credential) so the caller can apply a long
+     * back-off and a single concise log entry, distinct from transient failures that warrant a short retry cooldown.
+     */
+    private static class QuotaExhaustedException extends IOException {
+        QuotaExhaustedException(String message) {
+            super(message);
+        }
     }
 
     private static byte[] createWavData(java.util.List<float[]> audioBuffers) throws IOException {
