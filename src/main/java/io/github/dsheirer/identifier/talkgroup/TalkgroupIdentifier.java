@@ -56,6 +56,17 @@ public abstract class TalkgroupIdentifier extends IntegerIdentifier
     }
 
     /**
+     * Displays the talkgroup value as an unsigned decimal string so that 10-digit geographic
+     * IDs (whose unsigned value exceeds Integer.MAX_VALUE and therefore wrap to a negative
+     * signed int) are displayed correctly in logs, the Now Playing table, and everywhere else.
+     */
+    @Override
+    public String toString()
+    {
+        return Integer.toUnsignedString(getValue());
+    }
+
+    /**
      * Overrides to compare just the talkgroup value, class, form, role and protocol.  This allows a fully qualified
      * talkgroup identifier to be equivalent to a standard talkgroup identifier for the traffic channel manager.
      */

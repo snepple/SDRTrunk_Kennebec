@@ -264,17 +264,26 @@ public class TwoToneDetector
                 
                 double maxMagnitude = 0;
                 int maxIndex = -1;
+                double magnitudeSum = 0;
+                int binCount = FFT_SIZE / 2 - 1;
                 for (int i = 1; i < FFT_SIZE / 2; i++) {
                     float re = fftBuffer[2 * i];
                     float im = fftBuffer[2 * i + 1];
                     double mag = re * re + im * im;
+                    magnitudeSum += mag;
                     if (mag > maxMagnitude) {
                         maxMagnitude = mag;
                         maxIndex = i;
                     }
                 }
-                
-                if (maxMagnitude > 1000.0) { // relative threshold
+
+                // Require the peak to be at least 15x the average magnitude across all bins.
+                // A pure tone concentrates energy in a narrow peak; broadband noise or voice
+                // spreads energy evenly, producing a low peak-to-average ratio.
+                double avgMagnitude = magnitudeSum / binCount;
+                double peakToAvgRatio = (avgMagnitude > 0) ? (maxMagnitude / avgMagnitude) : 0;
+
+                if (maxMagnitude > 50000.0 && peakToAvgRatio > 15.0) { // strong peak AND concentrated energy
                     double frequency = (double) maxIndex * SAMPLE_RATE / FFT_SIZE;
                     frequency = Math.round(frequency);
                     
@@ -282,7 +291,7 @@ public class TwoToneDetector
                         if (mDiscoveryCurrentToneB > 0) {
                             if (Math.abs(mDiscoveryCurrentToneB - frequency) < 5) {
                                 mDiscoveryToneBBlocks++;
-                                if (mDiscoveryToneBBlocks >= 3) { // 3 * 100ms = 300ms
+                                if (mDiscoveryToneBBlocks >= 5) { // 5 * 100ms = 500ms — requires sustained tone
                                     logDiscovery(mDiscoveryCurrentToneA, mDiscoveryCurrentToneB, segment);
                                     mDiscoveryCurrentToneA = 0;
                                     mDiscoveryToneABlocks = 0;
@@ -297,7 +306,7 @@ public class TwoToneDetector
                             if (Math.abs(mDiscoveryCurrentToneA - frequency) < 5) {
                                 mDiscoveryToneABlocks++;
                             } else {
-                                if (mDiscoveryToneABlocks >= 3) {
+                                if (mDiscoveryToneABlocks >= 5) { // 5 consecutive windows = 500ms
                                     mDiscoveryCurrentToneB = frequency;
                                     mDiscoveryToneBBlocks = 1;
                                 } else {

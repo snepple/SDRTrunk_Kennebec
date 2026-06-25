@@ -49,6 +49,12 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.github.dsheirer.audio.broadcast.mqtt.MqttService;
+import io.github.dsheirer.identifier.Identifier;
+import io.github.dsheirer.identifier.IdentifierClass;
+import io.github.dsheirer.identifier.Form;
+import io.github.dsheirer.identifier.Role;
+import io.github.dsheirer.identifier.configuration.DecoderTypeConfigurationIdentifier;
+import io.github.dsheirer.module.decode.DecoderType;
 
 /**
  * Manages scheduling and playback of audio segments to the local users audio system.
@@ -141,7 +147,11 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
         //Register the segment for incremental two-tone feeding before any playback filtering (duplicate suppression,
         //do-not-monitor) so tone discovery analyses every channel's full audio, not just what gets monitored. Hold a
         //consumer count so the segment's buffers stay valid until we have fed them all.
-        if(mTwoToneDetector != null && mUserPreferences.getApplicationPreference().isAudioTwoToneDetectEnabled())
+        //
+        //Only feed NBFM and AM audio — two-tone paging is an analog modulation scheme and should never run on
+        //digital protocol channels (P25, DMR, etc.) where decoded IMBE/AMBE audio would produce spurious detections.
+        if(mTwoToneDetector != null && mUserPreferences.getApplicationPreference().isAudioTwoToneDetectEnabled()
+                && isAnalogAudioSegment(audioSegment))
         {
             audioSegment.incrementConsumerCount();
             mTwoToneFedIndex.put(audioSegment, 0);
@@ -345,6 +355,34 @@ public class AudioPlaybackManager implements Listener<AudioSegment>, IAudioContr
                 }
             }
         }
+    }
+
+    /**
+     * Returns true if the audio segment originated from an analog (NBFM or AM) channel.
+     * Two-tone paging detection should only run on analog audio — decoded digital audio (P25 IMBE,
+     * DMR AMBE, etc.) is synthesized PCM that can produce spurious frequency peaks the Goertzel
+     * and FFT detectors misinterpret as tone sequences.
+     *
+     * If the decoder type cannot be determined (e.g. very early in segment life before identifiers
+     * are populated), we conservatively return true so the segment is not silently dropped.
+     */
+    private static boolean isAnalogAudioSegment(AudioSegment audioSegment)
+    {
+        if(audioSegment == null || audioSegment.getIdentifierCollection() == null)
+        {
+            return true; // conservative fallback
+        }
+
+        Identifier decoderId = audioSegment.getIdentifierCollection()
+                .getIdentifier(IdentifierClass.CONFIGURATION, Form.DECODER_TYPE, Role.ANY);
+
+        if(decoderId instanceof DecoderTypeConfigurationIdentifier dtci)
+        {
+            DecoderType dt = dtci.getValue();
+            return dt == DecoderType.NBFM || dt == DecoderType.AM;
+        }
+
+        return true; // no decoder type yet — don't drop
     }
 
     public void dispose()
