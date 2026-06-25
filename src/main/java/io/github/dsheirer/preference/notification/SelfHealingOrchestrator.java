@@ -33,6 +33,14 @@ public class SelfHealingOrchestrator {
                 return; // Suppress alert, we are healing
             }
         } else if (alert.getCategory() == AlertCategory.HARDWARE) {
+            //Do NOT attempt a soft reset for antenna disconnection events — a reset cannot fix a
+            //physical disconnection and may disrupt other channels sharing the same tuner.
+            if (alert.getMessage() != null && alert.getMessage().contains("antenna")) {
+                mLog.info("Antenna disconnection detected for fault: {} — skipping soft-reset (not recoverable by reset)", signature);
+                mFilter.processAlert(alert);
+                return;
+            }
+
             if (retries < MAX_RETRIES) {
                 mLog.info("Attempting automated tuner soft-reset for fault: {} (Attempt {}/{})", signature, retries + 1, MAX_RETRIES);
                 performTunerSoftReset();
