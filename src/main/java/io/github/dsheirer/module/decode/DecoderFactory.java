@@ -479,6 +479,14 @@ public class DecoderFactory
         modules.add(decoderState);
         AudioModule audioModule = new AudioModule(aliasList, 0, 60000, decodeConfigNBFM.isAudioFilter());
         audioModule.setAudioHangtimeMs(decodeConfigNBFM.getAudioHangtimeMs());
+        //Wire the general min-call-duration to the audio module so it gates audio streaming too — not just
+        //the Events table. Without this, brief static bursts that open and close the squelch still get
+        //streamed even when the user sets a min call duration. The tone-level gating in NBFMDecoder handles
+        //tone-filtered channels; this catches channels without tone filtering and provides a second safety net.
+        if(decodeConfigNBFM.getMinCallDurationMs() > 0)
+        {
+            audioModule.setMinCallDurationMs(decodeConfigNBFM.getMinCallDurationMs());
+        }
         //Seed the audio module's identifier collection with the channel's configured TO talkgroup so every audio
         //segment it produces carries it. The audio module is wired to the channel-metadata identifiers (system,
         //site, channel name, alias list) but NOT to the decoder state's per-call USER identifiers, so the talkgroup
