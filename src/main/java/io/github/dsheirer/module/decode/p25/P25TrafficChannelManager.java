@@ -874,14 +874,44 @@ public class P25TrafficChannelManager extends TrafficChannelManager implements I
         {
             P25TrafficChannelEventTracker tracker = getTracker(frequency, P25P1Message.TIMESLOT_1);
 
-            //If the tracker is already started, it was for another call.  Close it and recreate the event.
-            if(tracker != null && tracker.isStarted())
+            if(tracker != null)
             {
-                removeTracker(frequency, P25P1Message.TIMESLOT_1);
-                tracker = null;
+                //For conventional P25, rapid TDU→HDU cycles within the same transmission should be
+                //consolidated into a single call event.  If the existing tracker has the same talkgroup
+                //and is not stale (< 2 seconds gap), continue it rather than creating a new event.
+                if(tracker.isComplete() && !tracker.isStale(timestamp) &&
+                   tracker.isSameCallCheckingToOnly(buildIdentifierCollection(talkgroup), timestamp))
+                {
+                    //Re-open the completed tracker by replacing it with a continuation that keeps the
+                    //original start time but extends the duration.
+                    tracker.getEvent().update(timestamp);
+                    //The tracker is complete, so we need a fresh one that references the same event.
+                    P25TrafficChannelEventTracker continuation =
+                        new P25TrafficChannelEventTracker(tracker.getEvent());
+                    continuation.updateDurationTraffic(timestamp);
+                    removeTracker(frequency, P25P1Message.TIMESLOT_1);
+                    addTracker(continuation, frequency, P25P1Message.TIMESLOT_1);
+                    broadcast(continuation);
+                    return;
+                }
+                else if(tracker.isStarted() &&
+                        tracker.isSameCallCheckingToOnly(buildIdentifierCollection(talkgroup), timestamp))
+                {
+                    //Same call still in progress (e.g. mid-superframe HDU repeat) — just extend duration.
+                    tracker.updateDurationTraffic(timestamp);
+                    tracker.addIdentifierIfMissing(talkgroup);
+                    broadcast(tracker);
+                    return;
+                }
+                else if(tracker.isStarted())
+                {
+                    //Different call — close the old tracker and create a new event below.
+                    removeTracker(frequency, P25P1Message.TIMESLOT_1);
+                    tracker = null;
+                }
             }
 
-            if(tracker != null)
+            if(tracker != null && !tracker.isStarted() && !tracker.isComplete())
             {
                 tracker.addIdentifierIfMissing(talkgroup);
             }
@@ -910,6 +940,19 @@ public class P25TrafficChannelManager extends TrafficChannelManager implements I
         {
             mLock.unlock();
         }
+    }
+
+    /**
+     * Builds a minimal IdentifierCollection containing only the supplied talkgroup in the TO role,
+     * for use with {@link P25TrafficChannelEventTracker#isSameCallCheckingToOnly}.
+     * @param talkgroup to wrap
+     * @return identifier collection
+     */
+    private static IdentifierCollection buildIdentifierCollection(Identifier<?> talkgroup)
+    {
+        MutableIdentifierCollection mic = new MutableIdentifierCollection();
+        mic.update(talkgroup);
+        return mic;
     }
 
     /**
