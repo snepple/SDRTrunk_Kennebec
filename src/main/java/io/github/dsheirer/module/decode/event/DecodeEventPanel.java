@@ -39,24 +39,32 @@ import com.google.common.eventbus.Subscribe;
 import io.github.dsheirer.alias.Alias;
 import io.github.dsheirer.alias.AliasList;
 import io.github.dsheirer.alias.AliasModel;
+import io.github.dsheirer.alias.id.radio.Radio;
+import io.github.dsheirer.alias.id.talkgroup.Talkgroup;
 import io.github.dsheirer.channel.IChannelDescriptor;
 import io.github.dsheirer.eventbus.MyEventBus;
 import io.github.dsheirer.filter.Filter;
 import io.github.dsheirer.filter.IFilter;
 import io.github.dsheirer.filter.FilterElement;
 import io.github.dsheirer.filter.FilterSet;
+import io.github.dsheirer.gui.playlist.alias.ViewAliasRequest;
 import io.github.dsheirer.icon.IconModel;
-import io.github.dsheirer.preference.NowPlayingPreference;
 import io.github.dsheirer.identifier.Form;
 import io.github.dsheirer.identifier.Identifier;
 import io.github.dsheirer.identifier.IdentifierCollection;
 import io.github.dsheirer.identifier.Role;
+import io.github.dsheirer.identifier.configuration.AliasListConfigurationIdentifier;
+import io.github.dsheirer.identifier.integer.IntegerIdentifier;
+import io.github.dsheirer.identifier.radio.RadioIdentifier;
+import io.github.dsheirer.identifier.talkgroup.TalkgroupIdentifier;
 import io.github.dsheirer.controller.channel.ChannelProcessingManager;
 import io.github.dsheirer.module.ProcessingChain;
 import io.github.dsheirer.module.decode.event.filter.DecodeEventFilterSet;
+import io.github.dsheirer.preference.NowPlayingPreference;
 import io.github.dsheirer.preference.PreferenceType;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.preference.swing.TableViewColumnWidthMonitor;
+import io.github.dsheirer.protocol.Protocol;
 import io.github.dsheirer.sample.Listener;
 
 import javafx.scene.Node;
@@ -174,6 +182,7 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         //(Previously the table was bound to mActiveModelWrapper, which is never populated with events - the
         //two real models below feed the table - so the table always showed the empty placeholder.)
         mTable.setItems(mGlobalEventModel.getItems());
+        setupRowContextMenu();
         
         Runnable updateHeaderVisibility = () -> {
             boolean singleColumn = mTable.getColumns().size() <= 1;
@@ -222,6 +231,177 @@ public class DecodeEventPanel extends VBox implements Listener<ProcessingChain>
         mFilterSet.register(() -> {
             saveFilterStates(nowPlayingPreference);
             mTable.refresh();
+        });
+    }
+
+    /**
+     * Adds a right-click context menu to the events table rows for creating and editing aliases.
+     * The menu is dynamically rebuilt each time a row is right-clicked, inspecting the event's
+     * FROM/TO identifiers and checking whether aliases already exist for them.
+     */
+    @SuppressWarnings("unchecked")
+    private void setupRowContextMenu()
+    {
+        mTable.setRowFactory(tv -> {
+            TableRow<IDecodeEvent> row = new TableRow<>();
+
+            row.setOnContextMenuRequested(event -> {
+                if(row.isEmpty() || row.getItem() == null)
+                {
+                    return;
+                }
+
+                IDecodeEvent decodeEvent = row.getItem();
+                IdentifierCollection identifiers = decodeEvent.getIdentifierCollection();
+                if(identifiers == null)
+                {
+                    return;
+                }
+
+                ContextMenu contextMenu = new ContextMenu();
+                Protocol protocol = decodeEvent.getProtocol();
+
+                // --- FROM identifiers (typically radio IDs) ---
+                buildAliasMenuItems(contextMenu, identifiers, Role.FROM, "Radio", protocol);
+
+                // --- TO identifiers (typically talkgroups) ---
+                buildAliasMenuItems(contextMenu, identifiers, Role.TO, "Talkgroup", protocol);
+
+                if(!contextMenu.getItems().isEmpty())
+                {
+                    contextMenu.show(row, event.getScreenX(), event.getScreenY());
+                }
+            });
+
+            return row;
+        });
+    }
+
+    /**
+     * Builds context menu items for identifiers of the given role (FROM or TO).
+     * For each identifier found, adds either "Create Alias for ..." or "Edit Alias '...'" depending
+     * on whether an alias already exists for that identifier in the channel's alias list.
+     */
+    private void buildAliasMenuItems(ContextMenu contextMenu, IdentifierCollection identifiers,
+            Role role, String defaultLabel, Protocol protocol)
+    {
+        List<Identifier> roleIdentifiers = identifiers.getIdentifiers(role);
+        if(roleIdentifiers == null || roleIdentifiers.isEmpty())
+        {
+            return;
+        }
+
+        // Resolve the alias list for this channel's configuration
+        AliasList aliasList = mAliasModel.getAliasList(identifiers);
+        String aliasListName = null;
+        AliasListConfigurationIdentifier aliasListConfig = identifiers.getAliasListConfiguration();
+        if(aliasListConfig != null)
+        {
+            aliasListName = aliasListConfig.getValue();
+        }
+
+        for(Identifier identifier : roleIdentifiers)
+        {
+            if(identifier.getForm() != Form.RADIO && identifier.getForm() != Form.TALKGROUP
+                    && identifier.getForm() != Form.PATCH_GROUP)
+            {
+                continue;
+            }
+
+            // Get the integer value for display and alias creation
+            int idValue = 0;
+            if(identifier instanceof IntegerIdentifier intId)
+            {
+                idValue = intId.getValue();
+            }
+            else
+            {
+                continue;
+            }
+
+            String typeLabel = identifier.getForm() == Form.RADIO ? "Radio" :
+                    (identifier.getForm() == Form.PATCH_GROUP ? "Patch Group" : "Talkgroup");
+            String formattedId = mUserPreferences.getTalkgroupFormatPreference().format(identifier);
+
+            // Check if an alias already exists
+            Alias existingAlias = null;
+            if(aliasList != null)
+            {
+                List<Alias> aliases = aliasList.getAliases(identifier);
+                if(aliases != null && !aliases.isEmpty())
+                {
+                    existingAlias = aliases.get(0);
+                }
+            }
+
+            if(existingAlias != null)
+            {
+                // --- Edit existing alias ---
+                final Alias aliasToEdit = existingAlias;
+                MenuItem editItem = new MenuItem("Edit Alias \"" + aliasToEdit.getName() + "\" (" +
+                        typeLabel + " " + formattedId + ")");
+                editItem.setOnAction(e -> {
+                    MyEventBus.getGlobalEventBus().post(new ViewAliasRequest(aliasToEdit));
+                });
+                contextMenu.getItems().add(editItem);
+            }
+            else
+            {
+                // --- Create new alias ---
+                final int finalIdValue = idValue;
+                final String finalAliasListName = aliasListName;
+                final Protocol identifierProtocol = identifier.getProtocol();
+
+                MenuItem createItem = new MenuItem("Create Alias for " + typeLabel + " " + formattedId);
+                createItem.setOnAction(e -> {
+                    createAliasForIdentifier(typeLabel, formattedId, finalIdValue,
+                            identifierProtocol, identifier.getForm(), finalAliasListName);
+                });
+                contextMenu.getItems().add(createItem);
+            }
+        }
+    }
+
+    /**
+     * Creates a new alias with a pre-populated identifier (Radio or Talkgroup) and navigates
+     * to the alias editor for the user to complete.
+     */
+    private void createAliasForIdentifier(String typeLabel, String formattedId, int idValue,
+            Protocol protocol, Form form, String aliasListName)
+    {
+        Alias newAlias = new Alias(typeLabel + " " + formattedId);
+
+        // Set alias list name to match the channel's configured alias list
+        if(aliasListName != null && !aliasListName.isEmpty())
+        {
+            newAlias.setAliasListName(aliasListName);
+        }
+        else
+        {
+            // Fall back to the first available alias list name
+            List<String> aliasListNames = mAliasModel.aliasListNames();
+            if(aliasListNames != null && !aliasListNames.isEmpty())
+            {
+                newAlias.setAliasListName(aliasListNames.get(0));
+            }
+        }
+
+        // Create the appropriate identifier
+        if(form == Form.RADIO)
+        {
+            newAlias.addAliasID(new Radio(protocol, idValue));
+        }
+        else if(form == Form.TALKGROUP || form == Form.PATCH_GROUP)
+        {
+            newAlias.addAliasID(new Talkgroup(protocol, idValue));
+        }
+
+        // Add to the model
+        mAliasModel.addAlias(newAlias);
+
+        // Navigate to the alias editor
+        Platform.runLater(() -> {
+            MyEventBus.getGlobalEventBus().post(new ViewAliasRequest(newAlias));
         });
     }
 
