@@ -68,6 +68,13 @@ public class TwoToneDetector
     private AudioSegment mLastRoutedSegment;
     private java.util.Set<String> mLastApplicableDetectors = java.util.Collections.emptySet();
 
+    // Bounded routing diagnostics.  Logs the first ROUTING_LOG_LIMIT alias-routing decisions so a user can see, per
+    // analog call, which aliases resolved on the segment and therefore which configured detectors were included vs.
+    // silently excluded.  This is the definitive way to confirm whether a detector that "isn't working" is simply
+    // never being routed the audio (its assigned alias did not resolve on the call's talkgroup).
+    private static final int ROUTING_LOG_LIMIT = 60;
+    private int mRoutingLogCount = 0;
+
     // Cached Goertzel filters (keyed by target frequency) and a reused windowing scratch buffer, so tone detection
     // does not allocate a filter (with its window coefficients) and a buffer clone on every 20 ms block.  Accessed
     // only from the single detector processing thread.
@@ -435,6 +442,39 @@ public class TwoToneDetector
 
         mLastRoutedSegment = segment;
         mLastApplicableDetectors = applicable;
+
+        //Diagnostic: surface the routing decision for the first several calls so a user can confirm whether a detector
+        //that "isn't working" is actually being fed.  Logs the call's channel, the aliases that resolved on it, the
+        //detectors that WILL run, and any configured detectors that were EXCLUDED because their assigned alias did not
+        //resolve on this call (the common cause: the channel's talkgroup does not match the alias's talkgroup).
+        if(mRoutingLogCount < ROUTING_LOG_LIMIT && !configs.isEmpty())
+        {
+            mRoutingLogCount++;
+
+            java.util.List<String> excluded = new java.util.ArrayList<>();
+            for(TwoToneConfiguration config : configs)
+            {
+                if(config.getAlias() != null && config.isEnabled() && !applicable.contains(config.getAlias()))
+                {
+                    excluded.add(config.getAlias());
+                }
+            }
+
+            String channel = "?";
+            if(segment != null)
+            {
+                Identifier chId = segment.getIdentifierCollection()
+                        .getIdentifier(IdentifierClass.CONFIGURATION, Form.CHANNEL, Role.ANY);
+                if(chId instanceof io.github.dsheirer.identifier.configuration.ChannelNameConfigurationIdentifier cnci)
+                {
+                    channel = cnci.getValue();
+                }
+            }
+
+            mLog.info("TwoTone routing [channel={}] resolvedAliasDetectors={} willRun={} excludedNeedAliasMatch={}",
+                    channel, segmentDetectors, applicable, excluded);
+        }
+
         return applicable;
     }
 
