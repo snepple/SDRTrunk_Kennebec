@@ -42,6 +42,13 @@ public class TwoToneConfiguration
 
     private DoubleProperty mFrequencyToleranceProperty = new SimpleDoubleProperty(10.0);
     private DoubleProperty mToneDurationMsProperty = new SimpleDoubleProperty(300.0);
+
+    // IAmResponding-style per-tone configuration fields
+    private DoubleProperty mToneALengthSecProperty = new SimpleDoubleProperty(0.6);
+    private DoubleProperty mToneBLengthSecProperty = new SimpleDoubleProperty(0.6);
+    private DoubleProperty mToneGapLengthSecProperty = new SimpleDoubleProperty(0.0);
+    private DoubleProperty mToneToleranceProperty = new SimpleDoubleProperty(0.02);
+    private DoubleProperty mIgnoreDuplicateSecProperty = new SimpleDoubleProperty(60.0);
     
     private BooleanProperty mAutoDiscoveredProperty = new SimpleBooleanProperty(false);
 
@@ -76,6 +83,11 @@ public class TwoToneConfiguration
         copy.setShowNotification(isShowNotification());
         copy.setFrequencyTolerance(getFrequencyTolerance());
         copy.setToneDurationMs(getToneDurationMs());
+        copy.setToneALengthSec(getToneALengthSec());
+        copy.setToneBLengthSec(getToneBLengthSec());
+        copy.setToneGapLengthSec(getToneGapLengthSec());
+        copy.setToneTolerance(getToneTolerance());
+        copy.setIgnoreDuplicateSec(getIgnoreDuplicateSec());
         copy.setAutoDiscovered(isAutoDiscovered());
         copy.setDiscoveryFrequency(getDiscoveryFrequency());
         copy.setDiscoveryTranscript(getDiscoveryTranscript());
@@ -367,6 +379,91 @@ public class TwoToneConfiguration
         return mToneDurationMsProperty;
     }
 
+    @JacksonXmlProperty(isAttribute = true, localName = "toneALengthSec")
+    public double getToneALengthSec()
+    {
+        return mToneALengthSecProperty.get();
+    }
+
+    public void setToneALengthSec(double toneALengthSec)
+    {
+        mToneALengthSecProperty.set(toneALengthSec);
+    }
+
+    @JsonIgnore
+    public DoubleProperty toneALengthSecProperty()
+    {
+        return mToneALengthSecProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "toneBLengthSec")
+    public double getToneBLengthSec()
+    {
+        return mToneBLengthSecProperty.get();
+    }
+
+    public void setToneBLengthSec(double toneBLengthSec)
+    {
+        mToneBLengthSecProperty.set(toneBLengthSec);
+    }
+
+    @JsonIgnore
+    public DoubleProperty toneBLengthSecProperty()
+    {
+        return mToneBLengthSecProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "toneGapLengthSec")
+    public double getToneGapLengthSec()
+    {
+        return mToneGapLengthSecProperty.get();
+    }
+
+    public void setToneGapLengthSec(double toneGapLengthSec)
+    {
+        mToneGapLengthSecProperty.set(toneGapLengthSec);
+    }
+
+    @JsonIgnore
+    public DoubleProperty toneGapLengthSecProperty()
+    {
+        return mToneGapLengthSecProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "toneTolerance")
+    public double getToneTolerance()
+    {
+        return mToneToleranceProperty.get();
+    }
+
+    public void setToneTolerance(double toneTolerance)
+    {
+        mToneToleranceProperty.set(toneTolerance);
+    }
+
+    @JsonIgnore
+    public DoubleProperty toneToleranceProperty()
+    {
+        return mToneToleranceProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "ignoreDuplicateSec")
+    public double getIgnoreDuplicateSec()
+    {
+        return mIgnoreDuplicateSecProperty.get();
+    }
+
+    public void setIgnoreDuplicateSec(double ignoreDuplicateSec)
+    {
+        mIgnoreDuplicateSecProperty.set(ignoreDuplicateSec);
+    }
+
+    @JsonIgnore
+    public DoubleProperty ignoreDuplicateSecProperty()
+    {
+        return mIgnoreDuplicateSecProperty;
+    }
+
     @JacksonXmlProperty(isAttribute = true, localName = "enabled")
     public boolean isEnabled()
     {
@@ -469,10 +566,43 @@ public class TwoToneConfiguration
         return mDiscoveryTranscriptProperty;
     }
 
+    // ---- Convenience methods: prefer new fields, fall back to legacy ----
+
+    @JsonIgnore
+    public double getEffectiveToneADurationMs()
+    {
+        double sec = getToneALengthSec();
+        return sec > 0 ? sec * 1000.0 : getToneDurationMs();
+    }
+
+    @JsonIgnore
+    public double getEffectiveToneBDurationMs()
+    {
+        double sec = getToneBLengthSec();
+        return sec > 0 ? sec * 1000.0 : getToneDurationMs();
+    }
+
+    @JsonIgnore
+    public double getEffectiveToleranceHz(double frequency)
+    {
+        double fractional = getToneTolerance();
+        return fractional > 0 ? frequency * fractional : getFrequencyTolerance();
+    }
+
     public static Callback<TwoToneConfiguration, Observable[]> extractor()
     {
         return (TwoToneConfiguration config) -> new Observable[]{
-            config.aliasProperty(), config.templateProperty(), config.longAToneProperty(), config.zelloChannelProperty(), config.enableMqttPublishProperty(), config.mqttTopicProperty(), config.mqttPayloadProperty(), config.enableZelloAlertProperty(), config.zelloAlertFileProperty(), config.enableZelloTextMessageProperty(), config.frequencyToleranceProperty(), config.toneDurationMsProperty(), config.toneAProperty(), config.toneBProperty(), config.enabledProperty(), config.alertFilePathProperty(), config.showNotificationProperty(), config.autoDiscoveredProperty()
+            config.aliasProperty(), config.templateProperty(), config.longAToneProperty(),
+            config.zelloChannelProperty(), config.enableMqttPublishProperty(),
+            config.mqttTopicProperty(), config.mqttPayloadProperty(),
+            config.enableZelloAlertProperty(), config.zelloAlertFileProperty(),
+            config.enableZelloTextMessageProperty(), config.frequencyToleranceProperty(),
+            config.toneDurationMsProperty(), config.toneAProperty(), config.toneBProperty(),
+            config.enabledProperty(), config.alertFilePathProperty(),
+            config.showNotificationProperty(), config.autoDiscoveredProperty(),
+            config.toneALengthSecProperty(), config.toneBLengthSecProperty(),
+            config.toneGapLengthSecProperty(), config.toneToleranceProperty(),
+            config.ignoreDuplicateSecProperty()
         };
     }
 }

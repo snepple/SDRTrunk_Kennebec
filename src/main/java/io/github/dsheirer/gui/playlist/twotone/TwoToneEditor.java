@@ -261,36 +261,61 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         generalGrid.add(toneBLabel, 0, 4);
         generalGrid.add(toneBField, 1, 4);
 
-        Slider freqTolSlider = new Slider(0, 50, 10);
-        freqTolSlider.setShowTickLabels(true);
-        freqTolSlider.setShowTickMarks(true);
-        freqTolSlider.setMajorTickUnit(10);
-        freqTolSlider.setBlockIncrement(1);
-        Label freqTolValueLabel = new Label("10 Hz");
-        freqTolSlider.valueProperty().addListener((obs, oldVal, newVal) -> freqTolValueLabel.setText(newVal.intValue() + " Hz"));
+        Spinner<Double> toneALengthSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.1, 10.0, 0.6, 0.1));
+        toneALengthSpinner.setEditable(true);
+        toneALengthSpinner.setPrefWidth(120);
 
-        Slider durationSlider = new Slider(100, 2000, 300);
-        durationSlider.setShowTickLabels(true);
-        durationSlider.setShowTickMarks(true);
-        durationSlider.setMajorTickUnit(500);
-        durationSlider.setBlockIncrement(50);
-        Label durationValueLabel = new Label("300 ms");
-        durationSlider.valueProperty().addListener((obs, oldVal, newVal) -> durationValueLabel.setText(newVal.intValue() + " ms"));
+        Spinner<Double> toneBLengthSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.1, 10.0, 0.6, 0.1));
+        toneBLengthSpinner.setEditable(true);
+        toneBLengthSpinner.setPrefWidth(120);
 
-        generalGrid.add(new Label("Freq Tolerance:"), 0, 5);
-        HBox freqTolBox = new HBox(10, freqTolSlider, freqTolValueLabel);
-        generalGrid.add(freqTolBox, 1, 5);
+        Spinner<Double> toneGapLengthSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 5.0, 0.0, 0.05));
+        toneGapLengthSpinner.setEditable(true);
+        toneGapLengthSpinner.setPrefWidth(120);
 
-        generalGrid.add(new Label("Min Duration:"), 0, 6);
-        HBox durationBox = new HBox(10, durationSlider, durationValueLabel);
-        generalGrid.add(durationBox, 1, 6);
+        Spinner<Double> toneToleranceSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.001, 0.10, 0.02, 0.01));
+        toneToleranceSpinner.setEditable(true);
+        toneToleranceSpinner.setPrefWidth(120);
+        Label toneToleranceHelp = new Label("(0.02 = 2%)");
+        toneToleranceHelp.getStyleClass().add("hig-inline-help");
+        toneToleranceSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                toneToleranceHelp.setText(String.format("(%.3f = %.1f%%)", newVal, newVal * 100.0));
+            }
+        });
 
-        generalGrid.add(new Label("Local Alert Audio:"), 0, 7);
-        generalGrid.add(alertFileBox, 1, 7);
-        generalGrid.add(showNotificationCheck, 0, 8, 2, 1);
+        Spinner<Double> ignoreDuplicateSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 300, 60, 5));
+        ignoreDuplicateSpinner.setEditable(true);
+        ignoreDuplicateSpinner.setPrefWidth(120);
+
+        generalGrid.add(new Label("A Tone Length (sec):"), 0, 5);
+        generalGrid.add(toneALengthSpinner, 1, 5);
+
+        Label toneBLengthLabel = new Label("B Tone Length (sec):");
+        generalGrid.add(toneBLengthLabel, 0, 6);
+        generalGrid.add(toneBLengthSpinner, 1, 6);
+
+        Label toneGapLabel = new Label("Tone Gap Length (sec):");
+        generalGrid.add(toneGapLabel, 0, 7);
+        generalGrid.add(toneGapLengthSpinner, 1, 7);
+
+        generalGrid.add(new Label("Tone Tolerance:"), 0, 8);
+        HBox toneToleranceBox = new HBox(10, toneToleranceSpinner, toneToleranceHelp);
+        generalGrid.add(toneToleranceBox, 1, 8);
+
+        generalGrid.add(new Label("Ignore Duplicate (sec):"), 0, 9);
+        generalGrid.add(ignoreDuplicateSpinner, 1, 9);
+
+        generalGrid.add(new Label("Local Alert Audio:"), 0, 10);
+        generalGrid.add(alertFileBox, 1, 10);
+        generalGrid.add(showNotificationCheck, 0, 11, 2, 1);
 
         toneBLabel.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
         toneBField.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
+        toneBLengthLabel.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
+        toneBLengthSpinner.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
+        toneGapLabel.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
+        toneGapLengthSpinner.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
 
         typeSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
             TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
@@ -441,8 +466,11 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.valueProperty().unbindBidirectional(oldVal.zelloAlertFileProperty());
                 templateField.textProperty().unbindBidirectional(oldVal.templateProperty());
                 textMessageCheck.selectedProperty().unbindBidirectional(oldVal.enableZelloTextMessageProperty());
-                freqTolSlider.valueProperty().unbindBidirectional(oldVal.frequencyToleranceProperty());
-                durationSlider.valueProperty().unbindBidirectional(oldVal.toneDurationMsProperty());
+                toneALengthSpinner.getValueFactory().valueProperty().unbindBidirectional(oldVal.toneALengthSecProperty().asObject());
+                toneBLengthSpinner.getValueFactory().valueProperty().unbindBidirectional(oldVal.toneBLengthSecProperty().asObject());
+                toneGapLengthSpinner.getValueFactory().valueProperty().unbindBidirectional(oldVal.toneGapLengthSecProperty().asObject());
+                toneToleranceSpinner.getValueFactory().valueProperty().unbindBidirectional(oldVal.toneToleranceProperty().asObject());
+                ignoreDuplicateSpinner.getValueFactory().valueProperty().unbindBidirectional(oldVal.ignoreDuplicateSecProperty().asObject());
                 enabledCheck.selectedProperty().unbindBidirectional(oldVal.enabledProperty());
                 alertFileCombo.valueProperty().unbindBidirectional(oldVal.alertFilePathProperty());
                 showNotificationCheck.selectedProperty().unbindBidirectional(oldVal.showNotificationProperty());
@@ -492,8 +520,16 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.valueProperty().bindBidirectional(newVal.zelloAlertFileProperty());
                 templateField.textProperty().bindBidirectional(newVal.templateProperty());
                 textMessageCheck.selectedProperty().bindBidirectional(newVal.enableZelloTextMessageProperty());
-                freqTolSlider.valueProperty().bindBidirectional(newVal.frequencyToleranceProperty());
-                durationSlider.valueProperty().bindBidirectional(newVal.toneDurationMsProperty());
+                toneALengthSpinner.getValueFactory().setValue(newVal.getToneALengthSec());
+                toneALengthSpinner.getValueFactory().valueProperty().bindBidirectional(newVal.toneALengthSecProperty().asObject());
+                toneBLengthSpinner.getValueFactory().setValue(newVal.getToneBLengthSec());
+                toneBLengthSpinner.getValueFactory().valueProperty().bindBidirectional(newVal.toneBLengthSecProperty().asObject());
+                toneGapLengthSpinner.getValueFactory().setValue(newVal.getToneGapLengthSec());
+                toneGapLengthSpinner.getValueFactory().valueProperty().bindBidirectional(newVal.toneGapLengthSecProperty().asObject());
+                toneToleranceSpinner.getValueFactory().setValue(newVal.getToneTolerance());
+                toneToleranceSpinner.getValueFactory().valueProperty().bindBidirectional(newVal.toneToleranceProperty().asObject());
+                ignoreDuplicateSpinner.getValueFactory().setValue(newVal.getIgnoreDuplicateSec());
+                ignoreDuplicateSpinner.getValueFactory().valueProperty().bindBidirectional(newVal.ignoreDuplicateSecProperty().asObject());
                 enabledCheck.selectedProperty().bindBidirectional(newVal.enabledProperty());
                 alertFileCombo.valueProperty().bindBidirectional(newVal.alertFilePathProperty());
                 showNotificationCheck.selectedProperty().bindBidirectional(newVal.showNotificationProperty());
@@ -518,8 +554,11 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.getSelectionModel().clearSelection();
                 templateField.clear();
                 textMessageCheck.setSelected(false);
-                freqTolSlider.setValue(10);
-                durationSlider.setValue(300);
+                toneALengthSpinner.getValueFactory().setValue(0.6);
+                toneBLengthSpinner.getValueFactory().setValue(0.6);
+                toneGapLengthSpinner.getValueFactory().setValue(0.0);
+                toneToleranceSpinner.getValueFactory().setValue(0.02);
+                ignoreDuplicateSpinner.getValueFactory().setValue(60.0);
                 enabledCheck.setSelected(false);
                 alertFileCombo.setValue(null);
                 showNotificationCheck.setSelected(false);

@@ -82,6 +82,9 @@ public class TwoToneDetector
     private int mCurrentToneABlocks = 0;
     private double mCurrentToneB = 0.0;
     private int mCurrentToneBBlocks = 0;
+    private int mGapBlocks = 0;
+    // Per-detector duplicate suppression: maps detector alias → last trigger timestamp (millis)
+    private final java.util.Map<String, Long> mLastTriggerTimeByDetector = new java.util.concurrent.ConcurrentHashMap<>();
 
     // FFT Auto-Discovery variables
     private static final int FFT_SIZE = 4096;
@@ -166,13 +169,19 @@ public class TwoToneDetector
 
             long freqA = Math.round(config.getToneA());
             long freqB = Math.round(config.getToneB());
-            double tol = config.getFrequencyTolerance();
-            int minToneBlocks = Math.max(1, (int)(config.getToneDurationMs() / 20));
+            // Use percentage-based tolerance (IAmResponding style) with fallback to absolute Hz
+            double tolA = config.getEffectiveToleranceHz(config.getToneA());
+            double tolB = config.getEffectiveToleranceHz(config.getToneB());
+            // Per-tone durations (IAmResponding style) with fallback to legacy single duration
+            int minToneABlocks = Math.max(1, (int)(config.getEffectiveToneADurationMs() / 20));
+            int minToneBBlocks = Math.max(1, (int)(config.getEffectiveToneBDurationMs() / 20));
+            // Gap tolerance: number of silent blocks allowed between tone A and tone B
+            int maxGapBlocks = Math.max(0, (int)(config.getToneGapLengthSec() * 1000 / 20));
 
             if (freqA <= 0) continue;
             if (!config.isLongATone() && freqB <= 0) continue;
 
-            int powerA = getTolerancePower(buffer, freqA, tol);
+            int powerA = getTolerancePower(buffer, freqA, tolA);
 
             if (config.isLongATone())
             {
@@ -204,7 +213,7 @@ public class TwoToneDetector
                 continue;
             }
 
-            int powerB = getTolerancePower(buffer, freqB, tol);
+            int powerB = getTolerancePower(buffer, freqB, tolB);
 
             // Tone A detection
             if (powerA > POWER_THRESHOLD_DB)
@@ -219,10 +228,11 @@ public class TwoToneDetector
                     mCurrentToneABlocks = 1;
                     mCurrentToneB = 0;
                     mCurrentToneBBlocks = 0;
+                    mGapBlocks = 0;
                 }
             }
-            // Tone B detection (only valid if Tone A was previously detected and held)
-            else if (powerB > POWER_THRESHOLD_DB && mCurrentToneABlocks >= minToneBlocks && mCurrentToneA == config.getToneA())
+            // Tone B detection (only valid if Tone A was previously detected and held long enough)
+            else if (powerB > POWER_THRESHOLD_DB && mCurrentToneABlocks >= minToneABlocks && mCurrentToneA == config.getToneA())
             {
                 if(mCurrentToneB == config.getToneB())
                 {
@@ -236,7 +246,7 @@ public class TwoToneDetector
 
 
                 // If B is held long enough, it's a confirmed sequence
-                if(mCurrentToneBBlocks >= minToneBlocks)
+                if(mCurrentToneBBlocks >= minToneBBlocks)
                 {
                     triggerAlertIfMatched(config, segment);
 
@@ -245,8 +255,22 @@ public class TwoToneDetector
                     mCurrentToneABlocks = 0;
                     mCurrentToneB = 0;
                     mCurrentToneBBlocks = 0;
+                    mGapBlocks = 0;
                 }
 
+            }
+            // Neither tone A nor tone B detected — count gap blocks between tones
+            else if (mCurrentToneABlocks >= minToneABlocks && mCurrentToneA == config.getToneA()
+                    && mCurrentToneBBlocks == 0)
+            {
+                mGapBlocks++;
+                // If the gap exceeds the configured tolerance, reset
+                if (mGapBlocks > maxGapBlocks + 5) // +5 blocks (100ms) of grace
+                {
+                    mCurrentToneA = 0;
+                    mCurrentToneABlocks = 0;
+                    mGapBlocks = 0;
+                }
             }
         }
 
@@ -536,6 +560,19 @@ public class TwoToneDetector
         }
 
         if (shouldTrigger) {
+            // Per-detector duplicate suppression (IAmResponding "Ignore Duplicate Time")
+            double ignoreSec = config.getIgnoreDuplicateSec();
+            if (ignoreSec > 0) {
+                long now = System.currentTimeMillis();
+                Long lastFired = mLastTriggerTimeByDetector.get(config.getAlias());
+                if (lastFired != null && (now - lastFired) < (long)(ignoreSec * 1000)) {
+                    mLog.info("Suppressed duplicate Two-Tone for [{}] — within {}s ignore window",
+                            config.getAlias(), (int)ignoreSec);
+                    return;
+                }
+                mLastTriggerTimeByDetector.put(config.getAlias(), now);
+            }
+
             mLog.info("Two Tone Detected: {} (A:{} B:{})", config.getAlias(), config.getToneA(), config.getToneB());
             triggerAlert(config, segment);
 
