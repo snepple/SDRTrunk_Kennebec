@@ -9,6 +9,8 @@ import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.io.FileOutputStream;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.github.dsheirer.preference.UserPreferences;
@@ -20,6 +22,10 @@ public class AudioBufferManager {
     private static final Logger mLog = LoggerFactory.getLogger(AudioBufferManager.class);
     private static final Pattern FILENAME_CLEANUP_PATTERN = Pattern.compile("[^a-zA-Z0-9.-]");
     private static final int MAX_EVENTS = 5;
+    private static final int AUDIO_SAMPLE_RATE = 8000;
+    private static final int BYTES_PER_FLOAT = Float.BYTES;
+    static final int MAX_EVENT_AUDIO_SECONDS = 30;
+    static final int MAX_EVENT_BYTES = AUDIO_SAMPLE_RATE * BYTES_PER_FLOAT * MAX_EVENT_AUDIO_SECONDS;
     private final LinkedList<List<float[]>> mAudioEvents = new LinkedList<>();
     private List<float[]> mCurrentEvent = null;
     private Path mBufferDir;
@@ -108,8 +114,14 @@ public class AudioBufferManager {
             List<Path> files = stream.filter(path -> path.toString().endsWith(".raw"))
                                      .sorted()
                                      .collect(Collectors.toList());
+            if(files.size() > MAX_EVENTS) {
+                files = files.subList(files.size() - MAX_EVENTS, files.size());
+            }
             for (Path file : files) {
-                byte[] bytes = Files.readAllBytes(file);
+                byte[] bytes = readBoundedRawAudio(file);
+                if(bytes.length == 0) {
+                    continue;
+                }
                 ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
                 List<float[]> event = new ArrayList<>();
                 // Read in chunks of 512 floats (same as Resampler)
@@ -128,6 +140,53 @@ public class AudioBufferManager {
             mLog.error("Error reading AI buffered events", e);
         }
         return events;
+    }
+
+    private byte[] readBoundedRawAudio(Path file) throws IOException {
+        long byteCount = Files.size(file);
+        long alignedByteCount = byteCount - (byteCount % BYTES_PER_FLOAT);
+        if(alignedByteCount <= 0) {
+            return new byte[0];
+        }
+
+        if(alignedByteCount <= MAX_EVENT_BYTES) {
+            byte[] bytes = Files.readAllBytes(file);
+            if(bytes.length == alignedByteCount) {
+                return bytes;
+            }
+
+            byte[] alignedBytes = new byte[(int)alignedByteCount];
+            System.arraycopy(bytes, 0, alignedBytes, 0, alignedBytes.length);
+            return alignedBytes;
+        }
+
+        int bytesToRead = alignToFloatBoundary(MAX_EVENT_BYTES);
+        int headBytes = alignToFloatBoundary(bytesToRead / 2);
+        int tailBytes = bytesToRead - headBytes;
+        byte[] bytes = new byte[bytesToRead];
+
+        try(FileChannel channel = FileChannel.open(file, StandardOpenOption.READ)) {
+            readFully(channel, ByteBuffer.wrap(bytes, 0, headBytes), 0);
+            readFully(channel, ByteBuffer.wrap(bytes, headBytes, tailBytes), alignedByteCount - tailBytes);
+        }
+
+        mLog.debug("AI audio buffer event {} is {} bytes; using first and last {} seconds for analysis",
+                file.getFileName(), byteCount, MAX_EVENT_AUDIO_SECONDS);
+        return bytes;
+    }
+
+    private static int alignToFloatBoundary(int bytes) {
+        return bytes - (bytes % BYTES_PER_FLOAT);
+    }
+
+    private static void readFully(FileChannel channel, ByteBuffer buffer, long position) throws IOException {
+        while(buffer.hasRemaining()) {
+            int read = channel.read(buffer, position);
+            if(read < 0) {
+                break;
+            }
+            position += read;
+        }
     }
 
     public static int getBufferedEventCount(UserPreferences preferences, String channelName) {

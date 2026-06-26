@@ -87,6 +87,7 @@ import javafx.geometry.Pos;
 import javafx.scene.paint.Color;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAudioOptimizer;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAnalysisResult;
+import io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager;
 
 /**
  * Narrow-Band FM channel configuration editor
@@ -1744,43 +1745,91 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
             return;
         }
+
+        Channel channel = getItem();
+        if(channel == null) {
+            mAIOptimizeStatusLabel.setText("No channel selected");
+            mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
+            mAIOptimizeButton.setDisable(true);
+            return;
+        }
+
+        String channelName = channel.getName();
+        DecodeConfigNBFM config = (DecodeConfigNBFM)channel.getDecodeConfiguration();
+        String priorSummary = mUserPreferences.getAIPreference().getNBFMLastOptimizeSummary(channelName);
+
         mAIOptimizeButton.setDisable(true);
-        mAIOptimizeStatusLabel.setText("Analyzing...");
+        mAIOptimizeStatusLabel.setText("Analyzing... This can take up to 60 seconds.");
         mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #0066cc;");
 
-        new Thread(() -> {
+        Thread optimizerThread = new Thread(() -> {
             try {
-                int eventCount = io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager.getBufferedEventCount(mUserPreferences, getItem().getName());
+                int eventCount = AudioBufferManager.getBufferedEventCount(mUserPreferences, channelName);
                 if (eventCount < 5) {
-                    javafx.application.Platform.runLater(() -> {
-                        mAIOptimizeStatusLabel.setText("Needs at least 5 audio events saved for this channel to optimize.");
-                        mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
-                    });
+                    updateAIOptimizeStatus(channel,
+                            "Needs at least 5 audio events saved for this channel to optimize. Found: " + eventCount,
+                            "-fx-text-fill: #cc0000;", false);
                     return;
                 }
 
-                io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager bufferManager = new io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager(mUserPreferences, getItem().getName());
+                AudioBufferManager bufferManager = new AudioBufferManager(mUserPreferences, channelName);
                 java.util.List<java.util.List<float[]>> recent = bufferManager.getBufferedEvents();
+                if(recent.size() < 5) {
+                    updateAIOptimizeStatus(channel,
+                            "Needs at least 5 readable audio events saved for this channel to optimize. Found: " + recent.size(),
+                            "-fx-text-fill: #cc0000;", false);
+                    return;
+                }
 
                 AIAudioOptimizer optimizer = new AIAudioOptimizer(mUserPreferences);
-                DecodeConfigNBFM config = (DecodeConfigNBFM) getItem().getDecodeConfiguration();
-                String priorSummary = mUserPreferences.getAIPreference().getNBFMLastOptimizeSummary(getItem().getName());
                 AIAnalysisResult result = optimizer.analyzeRawAudio(config, recent, priorSummary);
 
-                javafx.application.Platform.runLater(() -> {
-                    showComparisonUI(config, result);
-                    mAIOptimizeStatusLabel.setText("Analysis complete.");
-                    mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #009900;");
-                    mAIOptimizeButton.setDisable(false);
-                });
+                Platform.runLater(() -> showAIOptimizeResult(channel, config, result));
             } catch (Exception e) {
-                javafx.application.Platform.runLater(() -> {
-                    mAIOptimizeStatusLabel.setText("Analysis failed: " + e.getMessage());
-                    mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
-                    mAIOptimizeButton.setDisable(false);
-                });
+                updateAIOptimizeStatus(channel, "Analysis failed: " + formatAIOptimizeException(e),
+                        "-fx-text-fill: #cc0000;", false);
             }
-        }).start();
+        }, "NBFM AI Audio Optimizer");
+        optimizerThread.setDaemon(true);
+        optimizerThread.start();
+    }
+
+    private void showAIOptimizeResult(Channel channel, DecodeConfigNBFM config, AIAnalysisResult result) {
+        if(getItem() != channel) {
+            return;
+        }
+
+        try {
+            showComparisonUI(config, result);
+            mAIOptimizeStatusLabel.setText("Analysis complete.");
+            mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #009900;");
+        } catch(Exception e) {
+            mAIOptimizeStatusLabel.setText("Analysis failed: " + formatAIOptimizeException(e));
+            mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
+        } finally {
+            mAIOptimizeButton.setDisable(false);
+        }
+    }
+
+    private void updateAIOptimizeStatus(Channel channel, String status, String style, boolean disableButton) {
+        Platform.runLater(() -> {
+            if(getItem() != channel) {
+                return;
+            }
+
+            mAIOptimizeStatusLabel.setText(status);
+            mAIOptimizeStatusLabel.setStyle(style);
+            mAIOptimizeButton.setDisable(disableButton);
+        });
+    }
+
+    private static String formatAIOptimizeException(Exception e) {
+        String message = e.getMessage();
+        if(message == null || message.isEmpty()) {
+            return e.getClass().getSimpleName();
+        }
+
+        return message;
     }
     @Override
     public void setItem(Channel channel) {
