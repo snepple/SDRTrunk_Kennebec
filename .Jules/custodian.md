@@ -5,3 +5,6 @@
 ## 2026-05-09 - Mintlify Docs Integrity
 **Finding:** Mintlify uses the `docs` folder for its site generation, while the Help viewer inside the app uses `src/main/resources/docs`.
 **Action:** Do NOT delete `.md` or `.mdx` files in the `docs` directory or `src/main/resources/docs`. They are explicitly required for the Mintlify integration and the embedded help viewer respectively. Do NOT blindly copy `docs/*.mdx` to `src/main/resources/docs/*.md` as the Java help viewer does not support MDX React components. When syncing documentation, adapt the content to standard Markdown.
+## 2026-06-26 - Root Directory Clutter
+**Finding:** Found a generated text log `sdrtrunk ALL LOGS 1923.txt` and a leftover testing markdown file `test_scribe.md` residing in the repository root.
+**Action:** Removed these leftover testing and logging artifacts to maintain a clean root directory structure.
