@@ -154,23 +154,14 @@ public class TunerViewPanel extends VBox {
             return new SimpleStringProperty("");
         });
 
-        TableColumn<DiscoveredTuner, String> stabilityCol = new TableColumn<>("Live Stability");
-        stabilityCol.setCellValueFactory(cellData -> {
-            return new SimpleStringProperty(io.github.dsheirer.source.tuner.manager.AIFrequencyStabilizer.getInstance(mUserPreferences).getStabilityStatus());
-        });
-        //The AI Frequency Stabilizer status is only meaningful when AI features are enabled; hide the
-        //column otherwise (re-evaluated in the periodic refresh below to handle runtime toggles).
-        stabilityCol.setVisible(mUserPreferences.getAIPreference().isAIEnabled());
-
         statusCol.setMinWidth(60);
         nameCol.setMinWidth(80);
         typeCol.setMinWidth(60);
         freqCol.setMinWidth(100);
         channelsCol.setMinWidth(80);
-        stabilityCol.setMinWidth(90);
 
         mTunerTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        mTunerTable.getColumns().addAll(statusCol, nameCol, typeCol, freqCol, channelsCol, stabilityCol);
+        mTunerTable.getColumns().addAll(statusCol, nameCol, typeCol, freqCol, channelsCol);
         mTunerTable.setTableMenuButtonVisible(true);
 
         
@@ -243,14 +234,10 @@ public class TunerViewPanel extends VBox {
         VBox.setVgrow(mSplitPane, Priority.ALWAYS);
         getChildren().add(mSplitPane);
 
-        //The Channels count and Live Stability columns are computed values (not bound to observable
-        //properties), so they don't update when channels start/stop while the app is running. Refresh the
-        //table on a short interval so those columns stay current.
-        final TableColumn<DiscoveredTuner, String> liveStabilityColumn = stabilityCol;
+        //The Channels count column is a computed value (not bound to observable properties), so it doesn't update
+        //when channels start/stop while the app is running. Refresh the table on a short interval so it stays current.
         javafx.animation.Timeline tableRefresh = new javafx.animation.Timeline(
             new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1.5), e -> {
-                //Hide the Live Stability column when AI features are off (the stabilizer can't run).
-                liveStabilityColumn.setVisible(mUserPreferences.getAIPreference().isAIEnabled());
                 mTunerTable.refresh();
                 updateTunerChannelsList();
             }));
