@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -68,36 +69,7 @@ public class GitHubUpdateChecker
                 return null;
             }
 
-            String body = readStream(connection.getInputStream());
-            if(body == null)
-            {
-                return null;
-            }
-
-            JsonObject obj = JsonParser.parseString(body).getAsJsonObject();
-            String tag = obj.has("tag_name") && !obj.get("tag_name").isJsonNull() ? obj.get("tag_name").getAsString() : null;
-            String htmlUrl = obj.has("html_url") && !obj.get("html_url").isJsonNull() ? obj.get("html_url").getAsString() : null;
-            String installerUrl = null;
-            String installerName = null;
-
-            if(obj.has("assets") && obj.get("assets").isJsonArray())
-            {
-                JsonArray assets = obj.getAsJsonArray("assets");
-                for(JsonElement element : assets)
-                {
-                    JsonObject asset = element.getAsJsonObject();
-                    String name = asset.has("name") ? asset.get("name").getAsString() : "";
-                    String lower = name.toLowerCase();
-                    if(lower.endsWith(".exe") || lower.endsWith(".msi"))
-                    {
-                        installerUrl = asset.get("browser_download_url").getAsString();
-                        installerName = name;
-                        break;
-                    }
-                }
-            }
-
-            return new Release(tag, htmlUrl, installerUrl, installerName);
+            return parseRelease(readStream(connection.getInputStream()));
         }
         catch(Exception e)
         {
@@ -175,13 +147,13 @@ public class GitHubUpdateChecker
                 String suffix = release.installerName != null ? release.installerName : "installer.exe";
                 Path temp = Files.createTempFile("sdrtrunk-update-", "-" + suffix.replaceAll("[^A-Za-z0-9._-]", "_"));
 
-                try(InputStream in = new URL(release.installerUrl).openStream())
+                try(InputStream in = openDownloadStream(release.installerUrl))
                 {
                     Files.copy(in, temp, StandardCopyOption.REPLACE_EXISTING);
                 }
 
+                launchWindowsInstaller(temp);
                 WindowsReliabilityManager.markIntentionalExitForUpdate();
-                new ProcessBuilder(temp.toString()).start();
                 mLog.info("Update installer launched: {} -- scheduling application exit in 2 seconds", temp);
                 scheduleApplicationExit();
                 return true;
@@ -195,6 +167,63 @@ public class GitHubUpdateChecker
         //Fallback: open the release page so the user can download manually.
         openBrowser(release.htmlUrl);
         return false;
+    }
+
+    static Release parseRelease(String body)
+    {
+        if(body == null)
+        {
+            return null;
+        }
+
+        JsonObject obj = JsonParser.parseString(body).getAsJsonObject();
+        String tag = obj.has("tag_name") && !obj.get("tag_name").isJsonNull() ? obj.get("tag_name").getAsString() : null;
+        String htmlUrl = obj.has("html_url") && !obj.get("html_url").isJsonNull() ? obj.get("html_url").getAsString() : null;
+        String installerUrl = null;
+        String installerName = null;
+
+        if(obj.has("assets") && obj.get("assets").isJsonArray())
+        {
+            JsonArray assets = obj.getAsJsonArray("assets");
+            for(JsonElement element : assets)
+            {
+                JsonObject asset = element.getAsJsonObject();
+                String name = asset.has("name") ? asset.get("name").getAsString() : "";
+                String lower = name.toLowerCase();
+                if((lower.endsWith(".exe") || lower.endsWith(".msi")) &&
+                        asset.has("browser_download_url") && !asset.get("browser_download_url").isJsonNull())
+                {
+                    installerUrl = asset.get("browser_download_url").getAsString();
+                    installerName = name;
+                    break;
+                }
+            }
+        }
+
+        return new Release(tag, htmlUrl, installerUrl, installerName);
+    }
+
+    private static InputStream openDownloadStream(String downloadUrl) throws Exception
+    {
+        HttpURLConnection connection = (HttpURLConnection)new URL(downloadUrl).openConnection();
+        connection.setInstanceFollowRedirects(true);
+        connection.setRequestProperty("Accept", "application/octet-stream");
+        connection.setRequestProperty("User-Agent", "SDRTrunk-Kennebec-Updater");
+        connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout(READ_TIMEOUT_MS);
+        return connection.getInputStream();
+    }
+
+    private static void launchWindowsInstaller(Path installer) throws Exception
+    {
+        //Use Windows shell semantics so UAC-elevated installers show a consent prompt.  CreateProcess
+        //(ProcessBuilder with the .exe directly) can fail with ERROR_ELEVATION_REQUIRED and fall back to the browser.
+        new ProcessBuilder(getWindowsInstallerLaunchCommand(installer)).start();
+    }
+
+    static List<String> getWindowsInstallerLaunchCommand(Path installer)
+    {
+        return List.of("cmd.exe", "/c", "start \"\" \"" + installer.toAbsolutePath() + "\"");
     }
 
     private static void openBrowser(String url)
