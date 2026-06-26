@@ -451,6 +451,47 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         mqttGrid.add(new Label("MQTT Payload:"), 0, 2);
         mqttGrid.add(payloadArea, 1, 2);
 
+        //Detection History tab: a per-detector, human-readable list of the date/time of every two-tone hit recorded
+        //for the selected detector (most recent first).  Declared here, before the selection listener, so the listener
+        //can refresh it whenever the selected detector changes.
+        ListView<String> historyList = new ListView<>();
+        historyList.setPlaceholder(new Label("No detections recorded yet for this detector."));
+        Label historyCountLabel = new Label();
+        Button refreshHistoryBtn = new Button("Refresh");
+        refreshHistoryBtn.getStyleClass().add("kennebec-toolbar-button");
+        Button clearHistoryBtn = new Button("Clear History");
+        clearHistoryBtn.getStyleClass().add("kennebec-toolbar-button");
+
+        final java.time.format.DateTimeFormatter historyFormatter = java.time.format.DateTimeFormatter
+                .ofPattern("EEE MM/dd/yyyy hh:mm:ss a").withZone(java.time.ZoneId.systemDefault());
+
+        Runnable refreshHistory = () -> {
+            TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
+            historyList.getItems().clear();
+            if(sel != null) {
+                //Snapshot the synchronized list before iterating (it may be appended from the detector thread).
+                List<Long> snapshot = new java.util.ArrayList<>(sel.getDetectionHistory());
+                for(Long ts : snapshot) {
+                    if(ts != null) {
+                        historyList.getItems().add(historyFormatter.format(java.time.Instant.ofEpochMilli(ts)));
+                    }
+                }
+                historyCountLabel.setText(snapshot.size() + (snapshot.size() == 1 ? " detection" : " detections"));
+            } else {
+                historyCountLabel.setText("");
+            }
+        };
+
+        refreshHistoryBtn.setOnAction(e -> refreshHistory.run());
+        clearHistoryBtn.setOnAction(e -> {
+            TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
+            if(sel != null) {
+                sel.clearDetectionHistory();
+                refreshHistory.run();
+                mPlaylistManager.schedulePlaylistSave();
+            }
+        });
+
         SplitPane centerSplitPane = new SplitPane();
         VBox rightPane = new VBox(10);
         rightPane.setPadding(new Insets(10));
@@ -567,6 +608,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 }
             }
             updatePreview.run();
+            refreshHistory.run();
         });
 
         // Basic double conversion listener
@@ -746,7 +788,29 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         aliasTab.setClosable(false);
         aliasTab.setContent(mAliasEditor);
 
-        tabPane.getTabs().addAll(generalTab, zelloTab, mqttTab, aliasTab);
+        Tab historyTab = new Tab("Detection History");
+        historyTab.setClosable(false);
+        VBox historyBox = new VBox(8);
+        historyBox.setPadding(new Insets(10));
+        Label historyHelp = new Label("Date and time of each two-tone detection for this detector (most recent first).");
+        historyHelp.getStyleClass().add("hig-inline-help");
+        Region historySpacer = new Region();
+        HBox.setHgrow(historySpacer, Priority.ALWAYS);
+        HBox historyToolbar = new HBox(10, refreshHistoryBtn, clearHistoryBtn, historySpacer, historyCountLabel);
+        historyToolbar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        VBox.setVgrow(historyList, Priority.ALWAYS);
+        historyBox.getChildren().addAll(historyHelp, historyToolbar, historyList);
+        historyTab.setContent(historyBox);
+
+        tabPane.getTabs().addAll(generalTab, zelloTab, mqttTab, aliasTab, historyTab);
+
+        //Refresh the history whenever the user opens the Detection History tab so newly recorded detections appear
+        //without having to reselect the detector.
+        tabPane.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+            if(nv == historyTab) {
+                refreshHistory.run();
+            }
+        });
 
         rightPane.getChildren().addAll(detailHeader, tabPane);
 

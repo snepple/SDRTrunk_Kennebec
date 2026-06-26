@@ -20,12 +20,16 @@
 package io.github.dsheirer.gui.playlist.streaming;
 
 import io.github.dsheirer.audio.broadcast.BroadcastServerType;
+import io.github.dsheirer.audio.broadcast.zello.ZelloBroadcaster;
 import io.github.dsheirer.audio.broadcast.zello.ZelloConfiguration;
 import io.github.dsheirer.gui.control.IntegerTextField;
 import io.github.dsheirer.playlist.PlaylistManager;
+import io.github.dsheirer.util.ThreadPool;
+import javafx.application.Platform;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -64,6 +68,8 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
     private IntegerTextField mStreamGuardTextField;
     private IntegerTextField mPauseTimeTextField;
     private IntegerTextField mRelaxationTimeTextField;
+    private Button mTestConnectionButton;
+    private Label mTestConnectionResult;
     private GridPane mEditorPane;
 
     /**
@@ -91,6 +97,8 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
         getStreamGuardTextField().setDisable(item == null);
         getPauseTimeTextField().setDisable(item == null);
         getRelaxationTimeTextField().setDisable(item == null);
+        getTestConnectionButton().setDisable(item == null);
+        getTestConnectionResult().setText(null);
 
         if(item != null)
         {
@@ -128,9 +136,12 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
     {
         if(getItem() != null)
         {
-            getItem().setNetworkName(getNetworkNameTextField().getText());
-            getItem().setChannel(getChannelTextField().getText());
-            getItem().setUsername(getUsernameTextField().getText());
+            //Trim the free-text identity fields. Stray leading/trailing whitespace (e.g. a trailing space in a
+            //channel name) does not match the Zello channel and produces a runtime "[3003] channel is not ready"
+            //rejection that is hard to diagnose, so normalize it here at save time.
+            getItem().setNetworkName(trimToNull(getNetworkNameTextField().getText()));
+            getItem().setChannel(trimToNull(getChannelTextField().getText()));
+            getItem().setUsername(trimToNull(getUsernameTextField().getText()));
             getItem().setPassword(getPasswordField().getText());
             getItem().setMaximumRecordingAge(getMaxAgeTextField().get() * 1000);
             getItem().setStreamGuardMs(getStreamGuardTextField().get());
@@ -226,6 +237,13 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             passwordBox.setAlignment(Pos.CENTER_LEFT);
             GridPane.setConstraints(passwordBox, 1, row);
             mEditorPane.getChildren().add(passwordBox);
+
+            // Row: Test Connection button + result message
+            GridPane.setConstraints(getTestConnectionButton(), 1, ++row);
+            mEditorPane.getChildren().add(getTestConnectionButton());
+
+            GridPane.setConstraints(getTestConnectionResult(), 1, ++row, 2, 1);
+            mEditorPane.getChildren().add(getTestConnectionResult());
 
             // Row 6: Max Recording Age
             Label maxAgeLabel = new Label("Max Recording Age (seconds)");
@@ -414,5 +432,86 @@ public class ZelloEditor extends AbstractBroadcastEditor<ZelloConfiguration>
             mRelaxationTimeTextField.textProperty().addListener(mEditorModificationListener);
         }
         return mRelaxationTimeTextField;
+    }
+
+    /**
+     * Label that shows the most recent Test Connection result.
+     */
+    private Label getTestConnectionResult()
+    {
+        if(mTestConnectionResult == null)
+        {
+            mTestConnectionResult = new Label();
+            mTestConnectionResult.setWrapText(true);
+            mTestConnectionResult.setMaxWidth(420);
+        }
+        return mTestConnectionResult;
+    }
+
+    /**
+     * Button that validates the entered network/username/password and confirms the channel comes online, using the
+     * same Zello Work logon path as live streaming.  Runs off the JavaFX thread; the result is shown in an adjacent
+     * label.  This catches the common mistakes - wrong network/credentials, or a mistyped channel name (including
+     * stray spaces) that otherwise surfaces only at runtime as a "[3003] channel is not ready" rejection.
+     */
+    private Button getTestConnectionButton()
+    {
+        if(mTestConnectionButton == null)
+        {
+            mTestConnectionButton = new Button("Test Connection");
+            mTestConnectionButton.setDisable(true);
+            mTestConnectionButton.setOnAction(e -> testConnection());
+        }
+        return mTestConnectionButton;
+    }
+
+    /**
+     * Builds a throwaway configuration from the current (trimmed) field values and runs a Zello logon probe on a
+     * background thread, then displays the outcome.
+     */
+    private void testConnection()
+    {
+        //Snapshot the current field values into a temporary configuration (trimmed, matching what save() stores).
+        ZelloConfiguration test = new ZelloConfiguration();
+        test.setNetworkName(trimToNull(getNetworkNameTextField().getText()));
+        test.setChannel(trimToNull(getChannelTextField().getText()));
+        test.setUsername(trimToNull(getUsernameTextField().getText()));
+        test.setPassword(getPasswordField().getText());
+
+        getTestConnectionButton().setDisable(true);
+        getTestConnectionResult().setText("Testing…");
+
+        ThreadPool.CACHED.submit(() -> {
+            String result;
+            try
+            {
+                result = ZelloBroadcaster.testConnection(test);
+            }
+            catch(Exception ex)
+            {
+                result = "Test failed: " + ex.getMessage();
+            }
+
+            final String message = result;
+            Platform.runLater(() -> {
+                getTestConnectionResult().setText(message);
+                //Re-enable only if a configuration is still loaded in the editor.
+                getTestConnectionButton().setDisable(getItem() == null);
+            });
+        });
+    }
+
+    /**
+     * Trims the value and returns null when the result is empty, so blank fields are stored consistently as null.
+     */
+    private static String trimToNull(String value)
+    {
+        if(value == null)
+        {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

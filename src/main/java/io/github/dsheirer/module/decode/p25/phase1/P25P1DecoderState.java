@@ -948,6 +948,12 @@ public class P25P1DecoderState extends DecoderState implements IChannelEventList
     {
         mTrafficChannelManager.processP1TrafficCallEnd(getCurrentFrequency(), message.getTimestamp(), "TDU:" + message);
         broadcast(new DecoderStateEvent(this, Event.DECODE, State.ACTIVE));
+
+        //Clear the FROM (source radio) identifier now that this transmission has ended.  On a conventional channel the
+        //decoder state persists between back-to-back transmissions (it does not fade/reset), so without this the next
+        //transmission keeps displaying the previous unit's radio ID until its own source link control word decodes
+        //(and shows the wrong unit for the entire call if that transmission never carries a source LCW).
+        getIdentifierCollection().remove(IdentifierClass.USER, Role.FROM);
     }
 
     /**
@@ -967,6 +973,12 @@ public class P25P1DecoderState extends DecoderState implements IChannelEventList
                 mTrafficChannelManager.processP1TrafficCallEnd(getCurrentFrequency(), message.getTimestamp(), "TDULC:" + message);
                 broadcast(new DecoderStateEvent(this, Event.DECODE, State.ACTIVE));
                 processLC(lcw, message.getTimestamp(), true);
+
+                //Clear the FROM (source radio) identifier now that this transmission has ended so the next
+                //transmission on this (conventional) channel does not continue to display the previous unit's radio ID.
+                //Done after processLC so the terminator's final-talker link control is still recorded for the call
+                //end above.
+                getIdentifierCollection().remove(IdentifierClass.USER, Role.FROM);
             }
         }
     }
