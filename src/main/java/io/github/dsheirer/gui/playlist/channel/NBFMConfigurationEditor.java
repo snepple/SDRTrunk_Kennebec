@@ -87,6 +87,7 @@ import javafx.geometry.Pos;
 import javafx.scene.paint.Color;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAudioOptimizer;
 import io.github.dsheirer.module.decode.nbfm.ai.AIAnalysisResult;
+import io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager;
 
 /**
  * Narrow-Band FM channel configuration editor
@@ -430,49 +431,28 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             contentBox.getChildren().add(createLowPassSection());
             contentBox.getChildren().add(new Separator());
 
-            // Progressive Disclosure: Advanced Settings
-            // Collapsed by default to reduce cognitive load for new users.
-            // The most useful control (Low-Pass) is always visible above.
-            VBox advancedContent = new VBox(8);
-            advancedContent.setVisible(false);
-            advancedContent.setManaged(false);
-
             // 2. Hiss Reduction
-            advancedContent.getChildren().add(createHissReductionSection());
-            advancedContent.getChildren().add(new Separator());
+            contentBox.getChildren().add(createHissReductionSection());
+            contentBox.getChildren().add(new Separator());
 
             // 3. Bass Boost
-            advancedContent.getChildren().add(createBassBoostSection());
-            advancedContent.getChildren().add(new Separator());
+            contentBox.getChildren().add(createBassBoostSection());
+            contentBox.getChildren().add(new Separator());
 
             // 4. Voice Enhancement
-            advancedContent.getChildren().add(createVoiceEnhanceSection());
-            advancedContent.getChildren().add(new Separator());
+            contentBox.getChildren().add(createVoiceEnhanceSection());
+            contentBox.getChildren().add(new Separator());
 
             // 5. Squelch Tail
-            advancedContent.getChildren().add(createSquelchTailSection());
-            advancedContent.getChildren().add(new Separator());
+            contentBox.getChildren().add(createSquelchTailSection());
+            contentBox.getChildren().add(new Separator());
 
             // 6. Intelligent Squelch
-            advancedContent.getChildren().add(createSquelchSection());
-            advancedContent.getChildren().add(new Separator());
+            contentBox.getChildren().add(createSquelchSection());
+            contentBox.getChildren().add(new Separator());
 
             // 7. Output Gain
-            advancedContent.getChildren().add(createInputGainSection());
-
-            // Toggle button
-            Button advancedToggle = new Button("\u25B6  Show Advanced Filters");
-            advancedToggle.getStyleClass().add("flat-button");
-            advancedToggle.setStyle("-fx-font-size: 12px; -fx-text-fill: #4f8ef7; -fx-cursor: hand; -fx-background-color: transparent; -fx-border-color: transparent;");
-            advancedToggle.setTooltip(new Tooltip("Expand to access Hiss Reduction, Bass Boost, Voice Enhancement, Squelch, and Output Gain controls."));
-            advancedToggle.setOnAction(ev -> {
-                boolean nowVisible = !advancedContent.isVisible();
-                advancedContent.setVisible(nowVisible);
-                advancedContent.setManaged(nowVisible);
-                advancedToggle.setText(nowVisible ? "\u25BC  Hide Advanced Filters" : "\u25B6  Show Advanced Filters");
-            });
-
-            contentBox.getChildren().addAll(advancedToggle, advancedContent);
+            contentBox.getChildren().add(createInputGainSection());
 
             //All filter controls now exist; track manual edits to pause AI auto-optimization.
             installFilterEditTracking();
@@ -1764,43 +1744,91 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
             return;
         }
+
+        Channel channel = getItem();
+        if(channel == null) {
+            mAIOptimizeStatusLabel.setText("No channel selected");
+            mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
+            mAIOptimizeButton.setDisable(true);
+            return;
+        }
+
+        String channelName = channel.getName();
+        DecodeConfigNBFM config = (DecodeConfigNBFM)channel.getDecodeConfiguration();
+        String priorSummary = mUserPreferences.getAIPreference().getNBFMLastOptimizeSummary(channelName);
+
         mAIOptimizeButton.setDisable(true);
-        mAIOptimizeStatusLabel.setText("Analyzing...");
+        mAIOptimizeStatusLabel.setText("Analyzing... This can take up to 60 seconds.");
         mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #0066cc;");
 
-        new Thread(() -> {
+        Thread optimizerThread = new Thread(() -> {
             try {
-                int eventCount = io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager.getBufferedEventCount(mUserPreferences, getItem().getName());
+                int eventCount = AudioBufferManager.getBufferedEventCount(mUserPreferences, channelName);
                 if (eventCount < 5) {
-                    javafx.application.Platform.runLater(() -> {
-                        mAIOptimizeStatusLabel.setText("Needs at least 5 audio events saved for this channel to optimize.");
-                        mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
-                    });
+                    updateAIOptimizeStatus(channel,
+                            "Needs at least 5 audio events saved for this channel to optimize. Found: " + eventCount,
+                            "-fx-text-fill: #cc0000;", false);
                     return;
                 }
 
-                io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager bufferManager = new io.github.dsheirer.module.decode.nbfm.ai.AudioBufferManager(mUserPreferences, getItem().getName());
+                AudioBufferManager bufferManager = new AudioBufferManager(mUserPreferences, channelName);
                 java.util.List<java.util.List<float[]>> recent = bufferManager.getBufferedEvents();
+                if(recent.size() < 5) {
+                    updateAIOptimizeStatus(channel,
+                            "Needs at least 5 readable audio events saved for this channel to optimize. Found: " + recent.size(),
+                            "-fx-text-fill: #cc0000;", false);
+                    return;
+                }
 
                 AIAudioOptimizer optimizer = new AIAudioOptimizer(mUserPreferences);
-                DecodeConfigNBFM config = (DecodeConfigNBFM) getItem().getDecodeConfiguration();
-                String priorSummary = mUserPreferences.getAIPreference().getNBFMLastOptimizeSummary(getItem().getName());
                 AIAnalysisResult result = optimizer.analyzeRawAudio(config, recent, priorSummary);
 
-                javafx.application.Platform.runLater(() -> {
-                    showComparisonUI(config, result);
-                    mAIOptimizeStatusLabel.setText("Analysis complete.");
-                    mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #009900;");
-                    mAIOptimizeButton.setDisable(false);
-                });
+                Platform.runLater(() -> showAIOptimizeResult(channel, config, result));
             } catch (Exception e) {
-                javafx.application.Platform.runLater(() -> {
-                    mAIOptimizeStatusLabel.setText("Analysis failed: " + e.getMessage());
-                    mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
-                    mAIOptimizeButton.setDisable(false);
-                });
+                updateAIOptimizeStatus(channel, "Analysis failed: " + formatAIOptimizeException(e),
+                        "-fx-text-fill: #cc0000;", false);
             }
-        }).start();
+        }, "NBFM AI Audio Optimizer");
+        optimizerThread.setDaemon(true);
+        optimizerThread.start();
+    }
+
+    private void showAIOptimizeResult(Channel channel, DecodeConfigNBFM config, AIAnalysisResult result) {
+        if(getItem() != channel) {
+            return;
+        }
+
+        try {
+            showComparisonUI(config, result);
+            mAIOptimizeStatusLabel.setText("Analysis complete.");
+            mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #009900;");
+        } catch(Exception e) {
+            mAIOptimizeStatusLabel.setText("Analysis failed: " + formatAIOptimizeException(e));
+            mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #cc0000;");
+        } finally {
+            mAIOptimizeButton.setDisable(false);
+        }
+    }
+
+    private void updateAIOptimizeStatus(Channel channel, String status, String style, boolean disableButton) {
+        Platform.runLater(() -> {
+            if(getItem() != channel) {
+                return;
+            }
+
+            mAIOptimizeStatusLabel.setText(status);
+            mAIOptimizeStatusLabel.setStyle(style);
+            mAIOptimizeButton.setDisable(disableButton);
+        });
+    }
+
+    private static String formatAIOptimizeException(Exception e) {
+        String message = e.getMessage();
+        if(message == null || message.isEmpty()) {
+            return e.getClass().getSimpleName();
+        }
+
+        return message;
     }
     @Override
     public void setItem(Channel channel) {

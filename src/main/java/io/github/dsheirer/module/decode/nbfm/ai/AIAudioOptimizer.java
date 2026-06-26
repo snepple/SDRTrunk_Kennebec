@@ -22,6 +22,7 @@ import java.util.Base64;
 
 public class AIAudioOptimizer {
     private static final Logger mLog = LoggerFactory.getLogger(AIAudioOptimizer.class);
+    private static final int MAX_RAW_AUDIO_EVENTS = 5;
     private final UserPreferences mUserPreferences;
     private final HttpClient mHttpClient;
 
@@ -253,7 +254,12 @@ public class AIAudioOptimizer {
             throw new Exception("Gemini API key is not configured in settings");
         }
 
-        String cacheKey = getRawCacheKey(audioEvents);
+        List<List<float[]>> eventsToAnalyze = audioEvents;
+        if(audioEvents.size() > MAX_RAW_AUDIO_EVENTS) {
+            eventsToAnalyze = audioEvents.subList(audioEvents.size() - MAX_RAW_AUDIO_EVENTS, audioEvents.size());
+        }
+
+        String cacheKey = getRawCacheKey(eventsToAnalyze);
         if (mRawAnalysisCache.containsKey(cacheKey)) {
             mLog.info("Returning cached raw audio analysis result.");
             return mRawAnalysisCache.get(cacheKey);
@@ -358,7 +364,7 @@ public class AIAudioOptimizer {
             textPart.addProperty("text", promptText);
             parts.add(textPart);
 
-            for (List<float[]> event : audioEvents) {
+            for (List<float[]> event : eventsToAnalyze) {
                 //NBFM audio is captured at 8 kHz (DEMODULATED_AUDIO_SAMPLE_RATE). The WAV header must declare the
                 //true rate, otherwise the model interprets every frequency ~6x too high and its frequency-domain
                 //reasoning (speech 300-3000 Hz vs hiss >4000 Hz) is meaningless.
