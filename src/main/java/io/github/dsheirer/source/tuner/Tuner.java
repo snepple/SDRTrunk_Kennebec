@@ -96,12 +96,14 @@ public abstract class Tuner implements ISourceEventProcessor, ITunerErrorListene
             catch(SourceException se)
             {
                 mRunning.set(false);
+                disposeAfterFailedStart();
                 //Rethrow the source exception
                 throw se;
             }
             catch(Exception e)
             {
                 mRunning.set(false);
+                disposeAfterFailedStart();
                 //Wrap any other exceptions in a new source exception
                 mLog.error("Error starting " + getTunerClass() + " tuner", e);
                 throw new SourceException("Unable to start " + getTunerClass() + " tuner", e);
@@ -125,6 +127,11 @@ public abstract class Tuner implements ISourceEventProcessor, ITunerErrorListene
                 mChannelSourceManager = null;
             }
 
+            if(mTunerFrequencyErrorMonitor != null)
+            {
+                mTunerFrequencyErrorMonitor.stop();
+            }
+
             getTunerController().stop();
             getTunerController().dispose();
 
@@ -132,6 +139,61 @@ public abstract class Tuner implements ISourceEventProcessor, ITunerErrorListene
             mTunerFrequencyErrorMonitor = null;
             mTunerErrorListener = null;
         }
+    }
+
+    /**
+     * Cleans up resources allocated by the tuner constructor/controller when startup fails before the tuner reaches
+     * the running state.  The normal stop() path is guarded by mRunning, so failed starts need this explicit cleanup
+     * to avoid leaking controller resources that can keep a USB device busy for the next recovery attempt.
+     */
+    private void disposeAfterFailedStart()
+    {
+        try
+        {
+            if(getChannelSourceManager() != null)
+            {
+                getChannelSourceManager().dispose();
+                mChannelSourceManager = null;
+            }
+        }
+        catch(Exception e)
+        {
+            mLog.debug("Error disposing channel source manager after failed tuner start", e);
+        }
+
+        try
+        {
+            if(mTunerFrequencyErrorMonitor != null)
+            {
+                mTunerFrequencyErrorMonitor.stop();
+            }
+        }
+        catch(Exception e)
+        {
+            mLog.debug("Error stopping tuner frequency monitor after failed tuner start", e);
+        }
+
+        try
+        {
+            getTunerController().stop();
+        }
+        catch(Exception e)
+        {
+            mLog.debug("Error stopping tuner controller after failed tuner start", e);
+        }
+
+        try
+        {
+            getTunerController().dispose();
+        }
+        catch(Exception e)
+        {
+            mLog.debug("Error disposing tuner controller after failed tuner start", e);
+        }
+
+        mTunerEventBroadcaster.clear();
+        mTunerFrequencyErrorMonitor = null;
+        mTunerErrorListener = null;
     }
 
     /**

@@ -331,6 +331,13 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
                 return;
             }
 
+            if(isTemporaryUsbStartupError(errorMessage))
+            {
+                mLog.info("Tuner Startup Error - Initiating Fast Recovery - " + getId() + " Error: " + errorMessage);
+                mRecoveryTask = ThreadPool.SCHEDULED.schedule(new DisconnectRecoveryRunnable(), 5, TimeUnit.SECONDS);
+                return;
+            }
+
             //All other errors (buffer exhaustion, tuner stall, driver/API errors): attempt automatic recovery
             //rather than permanently disabling the tuner.  Restart attempts are cheap, and a transient error
             //should not require a human to restart the application to restore reception.
@@ -344,6 +351,23 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
                 "Please reduce the sample rate of specific tuners on this overloaded bus or move one or more tuners to a different physical USB port on your computer."
             ));
         }
+    }
+
+    /**
+     * Startup open/claim failures are often caused by the previous process or native driver releasing the device a few
+     * seconds after application restart.  Retry these quickly instead of waiting for the generic 3-minute recovery
+     * cadence used for runtime stalls/buffer exhaustion.
+     */
+    private boolean isTemporaryUsbStartupError(String errorMessage)
+    {
+        if(errorMessage == null)
+        {
+            return false;
+        }
+
+        String message = errorMessage.toLowerCase();
+        return message.contains("access denied") || message.contains("in-use by another application") ||
+                message.contains("error_busy");
     }
 
     @Override
@@ -520,28 +544,28 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             long elapsedMillis = System.currentTimeMillis() - mStartTime;
             long elapsedMinutes = TimeUnit.MILLISECONDS.toMinutes(elapsedMillis);
 
-            mLog.info("Attempting device disconnect recovery for " + getId() + " - Elapsed: " + elapsedMinutes + " minutes");
+            mLog.info("Attempting USB tuner fast recovery for " + getId() + " - Elapsed: " + elapsedMinutes + " minutes");
 
             try {
                 restart();
 
                 if (getTunerStatus() == TunerStatus.ENABLED && hasTuner()) {
-                    mLog.info("Successfully recovered disconnected tuner " + getId());
+                    mLog.info("Successfully recovered USB tuner " + getId());
                     io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new TunerRecoveredEvent(DiscoveredTuner.this));
                     return;
                 }
             } catch (Exception e) {
-                mLog.error("Error during disconnect recovery attempt for " + getId(), e);
+                mLog.error("Error during USB tuner fast recovery attempt for " + getId(), e);
             }
 
             if (elapsedMinutes >= 45 && !mLongOutageNotified) {
                 mLongOutageNotified = true;
-                mLog.error("Failed to recover disconnected tuner " + getId() + " after 45 minutes - " +
+                mLog.error("Failed to recover USB tuner " + getId() + " after 45 minutes - " +
                     "recovery will continue every 10 minutes.");
                 MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.health.SystemHealthAlertEvent(
                     io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.HARDWARE,
-                    "Tuner Disconnected",
-                    "Tuner " + getId() + " has been disconnected for over 45 minutes - recovery attempts will " +
+                    "Tuner Unavailable",
+                    "Tuner " + getId() + " has been unavailable for over 45 minutes - recovery attempts will " +
                         "continue every 10 minutes."));
             }
 
@@ -554,7 +578,7 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
                 nextDelay = 600;      //10 minutes
             }
 
-            mLog.warn("Disconnect recovery failed for " + getId() + " - retrying in " + nextDelay + " seconds");
+            mLog.warn("USB tuner fast recovery failed for " + getId() + " - retrying in " + nextDelay + " seconds");
             mRecoveryTask = ThreadPool.SCHEDULED.schedule(this, nextDelay, TimeUnit.SECONDS);
         }
     }
