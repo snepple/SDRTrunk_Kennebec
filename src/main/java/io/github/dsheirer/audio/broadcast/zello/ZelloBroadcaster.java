@@ -832,6 +832,179 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     // Zello Protocol
     // ========================================================================
 
+    /**
+     * Validates a Zello Work configuration by opening a short-lived WebSocket, performing a logon with the
+     * configured network/username/password, and waiting for the channel-status response.  This exercises the exact
+     * same streaming-API logon path used during normal operation, so it catches the common configuration mistakes:
+     * a wrong network name or credentials (logon rejected) and — most usefully — a mistyped channel name or stray
+     * whitespace (logon succeeds but the channel never reports "online").  No admin API key is required.
+     *
+     * Intended to be called off the UI thread (it blocks up to ~12 seconds).  The probe connection is always closed
+     * before returning and never streams audio, so it has no effect on any live broadcaster.
+     *
+     * @param config to test
+     * @return a human-readable result; a successful result starts with "OK".
+     */
+    public static String testConnection(ZelloConfiguration config)
+    {
+        if(config == null)
+        {
+            return "No configuration to test.";
+        }
+
+        final String channel = config.getChannel() != null ? config.getChannel().trim() : "";
+        String network = config.getNetworkName() != null ? config.getNetworkName().trim() : "";
+        String username = config.getUsername() != null ? config.getUsername().trim() : "";
+
+        if(network.isEmpty())
+        {
+            return "Zello Work Network is required.";
+        }
+        if(username.isEmpty())
+        {
+            return "Username is required.";
+        }
+        if(channel.isEmpty())
+        {
+            return "Channel is required.";
+        }
+
+        String wsUrl = config.getWebSocketUrl();
+        if(wsUrl == null)
+        {
+            return "Could not build the Zello Work URL from the network name [" + network + "].";
+        }
+
+        final Gson gson = new Gson();
+        final java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
+        final java.util.concurrent.atomic.AtomicReference<String> result = new java.util.concurrent.atomic.AtomicReference<>(null);
+        final AtomicBoolean loggedOn = new AtomicBoolean(false);
+
+        WebSocket.Listener listener = new WebSocket.Listener()
+        {
+            private final StringBuilder mBuffer = new StringBuilder();
+
+            @Override
+            public void onOpen(WebSocket webSocket)
+            {
+                JsonObject logon = new JsonObject();
+                logon.addProperty("command", "logon");
+                logon.addProperty("seq", 1);
+                com.google.gson.JsonArray channels = new com.google.gson.JsonArray();
+                channels.add(channel);
+                logon.add("channels", channels);
+                logon.addProperty("username", config.getUsername());
+                logon.addProperty("password", config.getPassword());
+                logon.addProperty("platform_name", "Gateway");
+                webSocket.sendText(gson.toJson(logon), true);
+                webSocket.request(1);
+            }
+
+            @Override
+            public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last)
+            {
+                mBuffer.append(data);
+                if(last)
+                {
+                    String message = mBuffer.toString();
+                    mBuffer.setLength(0);
+                    try
+                    {
+                        JsonObject json = JsonParser.parseString(message).getAsJsonObject();
+
+                        if(json.has("error") && !json.has("command"))
+                        {
+                            finish("Login failed: " + json.get("error").getAsString() +
+                                ". Verify the network, username and password.");
+                        }
+                        else if(json.has("command") && "on_channel_status".equals(json.get("command").getAsString()))
+                        {
+                            String status = json.has("status") ? json.get("status").getAsString() : "";
+                            if("online".equals(status))
+                            {
+                                int users = json.has("users_online") ? json.get("users_online").getAsInt() : -1;
+                                finish("OK — logged in and channel '" + channel + "' is online" +
+                                    (users >= 0 ? " (" + users + " user" + (users == 1 ? "" : "s") + " online)." : "."));
+                            }
+                            else
+                            {
+                                finish("Logged in, but channel '" + channel + "' is " +
+                                    (status.isEmpty() ? "not online" : status) +
+                                    ". Check the channel name for exact spelling and stray spaces.");
+                            }
+                        }
+                        else if(json.has("refresh_token") ||
+                            (json.has("success") && json.get("success").getAsBoolean() && !json.has("stream_id")))
+                        {
+                            //Logon accepted; keep waiting for the channel-status message before declaring success.
+                            loggedOn.set(true);
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        //Ignore unparseable frames and keep waiting.
+                    }
+                }
+                webSocket.request(1);
+                return null;
+            }
+
+            @Override
+            public void onError(WebSocket webSocket, Throwable error)
+            {
+                finish("Connection error: " + (error != null ? error.getMessage() : "unknown"));
+            }
+
+            @Override
+            public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason)
+            {
+                finish(loggedOn.get()
+                    ? "Logged in, but the channel never reported status — verify the channel name."
+                    : "Connection closed before login completed (code " + statusCode + ").");
+                return null;
+            }
+
+            private void finish(String r)
+            {
+                if(result.compareAndSet(null, r))
+                {
+                    done.countDown();
+                }
+            }
+        };
+
+        WebSocket webSocket = null;
+        try
+        {
+            webSocket = SHARED_HTTP_CLIENT.newWebSocketBuilder()
+                .buildAsync(URI.create(wsUrl), listener)
+                .join();
+
+            if(!done.await(12, TimeUnit.SECONDS))
+            {
+                result.compareAndSet(null, loggedOn.get()
+                    ? "Logged in, but channel '" + channel + "' did not report status within 12s — verify the channel name."
+                    : "Timed out waiting for a Zello response — check the network name and your connection.");
+            }
+        }
+        catch(Exception e)
+        {
+            Throwable cause = (e.getCause() != null) ? e.getCause() : e;
+            result.compareAndSet(null, "Could not connect: " + cause.getMessage() +
+                ". Verify the Zello Work network name.");
+        }
+        finally
+        {
+            if(webSocket != null)
+            {
+                try { webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "test complete"); } catch(Exception e) { /* ignore */ }
+                try { webSocket.abort(); } catch(Exception e) { /* ignore */ }
+            }
+        }
+
+        return result.get();
+    }
+
     private void sendLogon()
     {
         if(mWebSocket == null) return;
@@ -1055,15 +1228,32 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                     String originCmd = seq > 0 ? mPendingCommands.remove(seq) : null;
                     int bridgeCode = mapBridgeErrorCode(errorMsg);
 
-                    // Stream-related errors (3006/3007): the Zello server expired or
-                    // closed the stream, another user interrupted our transmission, or
-                    // the server refused a brand-new stream attempt. These are all
-                    // transient — clean up, stay CONNECTED, and allow the next transmission.
+                    // Stream-related errors (3003/3006/3007): the Zello server expired or
+                    // closed the stream, another user interrupted our transmission, the
+                    // server refused a brand-new stream attempt, or the channel was not
+                    // ready at the moment we tried to transmit. These are all transient —
+                    // clean up, stay CONNECTED, and allow the next transmission.
+                    //
+                    // "channel is not ready" (3003) in particular is NOT an auth/config
+                    // error: the WebSocket session and logon are valid, the target Zello
+                    // channel just wasn't in the ready/online state when this call's audio
+                    // arrived (e.g. no devices subscribed to that channel at that instant).
+                    // Treating it as a CONFIGURATION_ERROR previously dropped the whole
+                    // broadcaster on every such call, forcing a manual reconnect that then
+                    // failed again the same way. Mark the channel offline so streaming
+                    // resumes automatically once Zello sends the next on_channel_status
+                    // "online" event for it.
+                    if("channel is not ready".equals(errorMsg))
+                    {
+                        mChannelOnline.set(false);
+                    }
+
                     if("invalid stream id".equals(errorMsg)
                         || "failed to stop stream".equals(errorMsg)
                         || "failed to start stream".equals(errorMsg)
                         || "failed to start sending message".equals(errorMsg)
-                        || "failed to stop sending message".equals(errorMsg))
+                        || "failed to stop sending message".equals(errorMsg)
+                        || "channel is not ready".equals(errorMsg))
                     {
                         mLog.debug("{}Zello [{}]: error=\"{}\" seq={} command={}",
                             ch(), bridgeCode, errorMsg, seq, originCmd != null ? originCmd : "unknown");
