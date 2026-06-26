@@ -80,9 +80,6 @@ public class SystemTrayManager {
 
             tray.add(mTrayIcon);
 
-            // Pre-create the invisible owner window the context menu needs so it's ready on first right-click.
-            getAnchorStage();
-
             mAvailable = true;
             mLog.info("System tray icon installed");
         } catch (Exception e) {
@@ -99,13 +96,15 @@ public class SystemTrayManager {
     }
 
     /**
-     * Lazily creates (and keeps showing) a tiny, transparent, off-screen window to act as the owner for the tray
-     * context menu.  A JavaFX popup requires a showing owner window, and the main window may be hidden in the tray.
+     * Lazily creates a tiny off-screen owner window for the tray context menu. A JavaFX popup requires a showing owner
+     * window, and the main window may be hidden in the tray. Keep this stage hidden except while the menu is open so it
+     * does not appear as a phantom Windows taskbar thumbnail.
      */
     private Stage getAnchorStage() {
         if (mAnchorStage == null) {
             mAnchorStage = new Stage();
-            mAnchorStage.initStyle(StageStyle.TRANSPARENT);
+            mAnchorStage.initOwner(mPrimaryStage);
+            mAnchorStage.initStyle(StageStyle.UTILITY);
             mAnchorStage.setScene(new Scene(new Pane(), 1, 1, Color.TRANSPARENT));
             mAnchorStage.setOpacity(0);
             mAnchorStage.setWidth(1);
@@ -113,16 +112,19 @@ public class SystemTrayManager {
             mAnchorStage.setX(-30000);
             mAnchorStage.setY(-30000);
         }
-        if (!mAnchorStage.isShowing()) {
-            mAnchorStage.show();
-        }
         return mAnchorStage;
     }
 
     private void showContextMenu(double screenX, double screenY) {
+        Stage anchor = null;
         try {
-            Stage anchor = getAnchorStage();
+            anchor = getAnchorStage();
+            if(!anchor.isShowing()) {
+                anchor.show();
+            }
+            final Stage menuOwner = anchor;
             ContextMenu menu = buildContextMenu();
+            menu.setOnHidden(event -> menuOwner.hide());
             menu.show(anchor, screenX, screenY);
             applyTheme(menu);
 
@@ -136,6 +138,9 @@ public class SystemTrayManager {
                 }
             });
         } catch (Exception ex) {
+            if(anchor != null && anchor.isShowing()) {
+                anchor.hide();
+            }
             mLog.error("Error showing system tray context menu", ex);
         }
     }
