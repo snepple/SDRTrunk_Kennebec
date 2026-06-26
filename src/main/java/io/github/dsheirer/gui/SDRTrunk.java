@@ -865,7 +865,8 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             }
             else
             {
-                new ChannelAutoStartFrame(mPlaylistManager.getChannelProcessingManager(), channels, mUserPreferences);
+                new ChannelAutoStartFrame(mPlaylistManager.getChannelProcessingManager(), channels, mUserPreferences,
+                    mPrimaryStage);
             }
         }
 
