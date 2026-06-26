@@ -111,6 +111,7 @@ public class DiscoveredUSBTuner extends DiscoveredTuner
             {
                 //Set error message to flag this tuner with error status and invoke stop()
                 setErrorMessage(se.getMessage());
+                mTuner = null;
                 mLog.error("Unable to start tuner [" + getTunerClass() + "] - error: " + getErrorMessage());
             }
         }

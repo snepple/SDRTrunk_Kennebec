@@ -152,10 +152,15 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             if(mEnabled)
             {
                 start();
-                setTunerStatus(TunerStatus.ENABLED);
+
+                if(hasTuner())
+                {
+                    setTunerStatus(TunerStatus.ENABLED);
+                }
             }
             else
             {
+                cancelRecoveryTask();
                 stop();
                 setTunerStatus(TunerStatus.DISABLED);
             }
@@ -382,9 +387,12 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
 
             if(isEnabled())
             {
-                //Change status to enabled so that we can attempt to start, but don't notify listeners yet.
-                setTunerStatus(TunerStatus.ENABLED);
                 start();
+
+                if(hasTuner())
+                {
+                    setTunerStatus(TunerStatus.ENABLED);
+                }
             }
             else
             {
@@ -444,7 +452,7 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             //If the tuner is already enabled at entry, this task has nothing to recover - it is a stale/orphaned
             //schedule.  Cancel it quietly and, crucially, do NOT post a recovered event (which would restart
             //every channel on a perfectly healthy tuner).
-            if (status == TunerStatus.ENABLED) {
+            if (status == TunerStatus.ENABLED && hasTuner()) {
                 cancelRecoveryTask();
                 return;
             }
@@ -455,7 +463,7 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             try {
                 restart();
 
-                if (getTunerStatus() == TunerStatus.ENABLED) {
+                if (getTunerStatus() == TunerStatus.ENABLED && hasTuner()) {
                     mLog.info("Successfully recovered tuner " + getId());
                     cancelRecoveryTask();
                     mRecoveryAttempts.set(0);
@@ -505,7 +513,7 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
 
             //Already enabled at entry means another path recovered the tuner - this chain is stale.  Stop
             //without posting a recovered event so we don't needlessly restart channels on a healthy tuner.
-            if (status == TunerStatus.ENABLED) {
+            if (status == TunerStatus.ENABLED && hasTuner()) {
                 return;
             }
 
@@ -517,7 +525,7 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             try {
                 restart();
 
-                if (getTunerStatus() == TunerStatus.ENABLED) {
+                if (getTunerStatus() == TunerStatus.ENABLED && hasTuner()) {
                     mLog.info("Successfully recovered disconnected tuner " + getId());
                     io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new TunerRecoveredEvent(DiscoveredTuner.this));
                     return;
