@@ -216,10 +216,7 @@ successfully transmitted) within a deadline. This is one generic timer in
 
 `FrequencyErrorCorrectionManager.java:145-156` silently rejects corrections >10 PPM from
 baseline. A tuner with real oscillator drift keeps "running" while decode quality collapses.
-Route persistent out-of-bounds drift into the recovery/notification path. Relatedly,
-`AIFrequencyStabilizer` runs hourly with a 5-call/day Gemini budget
-(`AIFrequencyStabilizer.java:36, 64`) — fine as a trend tool, but it should not be the only drift
-response.
+Route persistent out-of-bounds drift into the recovery/notification path.
 
 ### U-9 (Low): Smart Bandwidth has no rollback
 
