@@ -454,14 +454,14 @@ public class TwoToneDetector
      * preserving the legacy behavior.  Results are cached per audio segment because alias membership is constant for the
      * lifetime of a segment and this is evaluated for every 20 ms audio block.
      */
-    private java.util.Set<String> getApplicableDetectorNames(AudioSegment segment, List<TwoToneConfiguration> configs)
+    java.util.Set<String> getApplicableDetectorNames(AudioSegment segment, List<TwoToneConfiguration> configs)
     {
         if(segment == mLastRoutedSegment)
         {
             return mLastApplicableDetectors;
         }
 
-        java.util.Set<String> segmentDetectors = resolveSegmentDetectorNames(segment);
+        java.util.Set<String> segmentDetectors = resolveSegmentDetectorNamesWithFallback(segment);
         java.util.Set<String> applicable = new java.util.HashSet<>();
 
         for(TwoToneConfiguration config : configs)
@@ -503,22 +503,31 @@ public class TwoToneDetector
                 }
             }
 
-            String channel = "?";
-            if(segment != null)
-            {
-                Identifier chId = segment.getIdentifierCollection()
-                        .getIdentifier(IdentifierClass.CONFIGURATION, Form.CHANNEL, Role.ANY);
-                if(chId instanceof io.github.dsheirer.identifier.configuration.ChannelNameConfigurationIdentifier cnci)
-                {
-                    channel = cnci.getValue();
-                }
-            }
+            String channel = getSegmentChannelName(segment);
 
             mLog.info("TwoTone routing [channel={}] resolvedAliasDetectors={} willRun={} excludedNeedAliasMatch={}",
-                    channel, segmentDetectors, applicable, excluded);
+                    channel != null ? channel : "?", segmentDetectors, applicable, excluded);
         }
 
         return applicable;
+    }
+
+    /**
+     * Resolves detector names from identifiers first.  If conventional analog audio has no TO/talkgroup or tone
+     * identifier, fall back to matching the configured channel name to an alias/detector name in the segment's alias
+     * list.  This keeps alias-scoped detectors from being starved on conventional channels while preserving normal
+     * identifier-based routing whenever it succeeds.
+     */
+    private java.util.Set<String> resolveSegmentDetectorNamesWithFallback(AudioSegment segment)
+    {
+        java.util.Set<String> names = resolveSegmentDetectorNames(segment);
+
+        if(names.isEmpty())
+        {
+            names.addAll(resolveChannelAliasDetectorNames(segment));
+        }
+
+        return names;
     }
 
     /**
@@ -566,6 +575,78 @@ public class TwoToneDetector
         }
 
         return names;
+    }
+
+    /**
+     * Resolves detector names by matching the segment's configured channel name to aliases in the segment's alias list.
+     * This is specifically for conventional analog channels where the call may not contain a TO/talkgroup identifier.
+     */
+    private java.util.Set<String> resolveChannelAliasDetectorNames(AudioSegment segment)
+    {
+        java.util.Set<String> names = new java.util.HashSet<>();
+
+        if(segment == null || segment.getIdentifierCollection() == null)
+        {
+            return names;
+        }
+
+        String channelName = getSegmentChannelName(segment);
+
+        if(channelName == null || channelName.trim().isEmpty())
+        {
+            return names;
+        }
+
+        try
+        {
+            io.github.dsheirer.alias.AliasList aliasList =
+                mPlaylistManager.getAliasModel().getAliasList(segment.getIdentifierCollection());
+
+            if(aliasList != null)
+            {
+                for(Alias alias : aliasList.aliases())
+                {
+                    boolean aliasMatchesChannel = textMatches(alias.getName(), channelName);
+
+                    for(io.github.dsheirer.alias.id.twotone.TwoToneDetectorID detectorId : alias.getTwoToneDetectors())
+                    {
+                        String detectorName = detectorId.getDetectorName();
+
+                        if(detectorName != null && (aliasMatchesChannel || textMatches(detectorName, channelName)))
+                        {
+                            names.add(detectorName);
+                        }
+                    }
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            mLog.error("Error resolving channel alias for two tone detector audio routing", e);
+        }
+
+        return names;
+    }
+
+    private String getSegmentChannelName(AudioSegment segment)
+    {
+        if(segment != null && segment.getIdentifierCollection() != null)
+        {
+            Identifier chId = segment.getIdentifierCollection()
+                    .getIdentifier(IdentifierClass.CONFIGURATION, Form.CHANNEL, Role.ANY);
+
+            if(chId instanceof io.github.dsheirer.identifier.configuration.ChannelNameConfigurationIdentifier cnci)
+            {
+                return cnci.getValue();
+            }
+        }
+
+        return null;
+    }
+
+    private boolean textMatches(String first, String second)
+    {
+        return first != null && second != null && first.trim().equalsIgnoreCase(second.trim());
     }
 
     /**
@@ -621,37 +702,12 @@ public class TwoToneDetector
         boolean shouldTrigger = true;
         // Check alias associations
         if (segment != null) {
-            io.github.dsheirer.alias.AliasList aliasList = mPlaylistManager.getAliasModel().getAliasList(segment.getIdentifierCollection());
-            boolean foundMapping = false;
-            if (aliasList != null) {
-                for (io.github.dsheirer.identifier.Identifier identifier : segment.getIdentifierCollection().getIdentifiers()) {
-                    java.util.List<io.github.dsheirer.alias.Alias> aliases = aliasList.getAliases(identifier);
-                    if (aliases != null) {
-                        for (io.github.dsheirer.alias.Alias alias : aliases) {
-                            if (alias.hasTwoToneDetector(config.getAlias())) {
-                                foundMapping = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (foundMapping) break;
-                }
-            }
-
-            // If we didn't find a mapping on the segment's aliases, we need to see if the config has ANY aliases at all.
-            // If it has aliases configured but they didn't match, we skip.
-            // If it has NO aliases configured, we trigger (global mode).
-            if (!foundMapping) {
-                boolean hasAnyMapping = false;
-                for (io.github.dsheirer.alias.Alias alias : mPlaylistManager.getAliasModel().aliasList()) {
-                    if (alias.hasTwoToneDetector(config.getAlias())) {
-                        hasAnyMapping = true;
-                        break;
-                    }
-                }
-                if (hasAnyMapping) {
-                    shouldTrigger = false;
-                }
+            // If the detector has selected aliases, it can only trigger when the segment resolved to one of them.
+            // Identifier matching is preferred; conventional channels without a TO/talkgroup fall back to channel-name
+            // alias matching via resolveSegmentDetectorNamesWithFallback().
+            if (detectorHasAnyAliasMapping(config.getAlias()) &&
+                    !resolveSegmentDetectorNamesWithFallback(segment).contains(config.getAlias())) {
+                shouldTrigger = false;
             }
         }
 
