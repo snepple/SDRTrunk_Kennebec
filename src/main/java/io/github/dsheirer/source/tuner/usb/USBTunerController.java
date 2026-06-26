@@ -55,6 +55,8 @@ public abstract class USBTunerController extends TunerController
     private static final int USB_BULK_TRANSFER_BUFFER_POOL_SIZE = 8;
     protected static final byte USB_BULK_TRANSFER_ENDPOINT = (byte) 0x81;
     private static final long USB_BULK_TRANSFER_TIMEOUT_MS = 2000l;
+    static final int ZERO_LENGTH_TRANSFER_ERROR_THRESHOLD = 50;
+    static final long ZERO_LENGTH_TRANSFER_ERROR_MIN_DURATION_MS = 60_000L;
 
     protected int mBus;
     protected String mPortAddress;
@@ -81,6 +83,12 @@ public abstract class USBTunerController extends TunerController
     protected void monitorRawSignalLevel(java.nio.ByteBuffer buffer, int length)
     {
         //no-op by default
+    }
+
+    static boolean shouldRestartForZeroLengthTransfers(int consecutiveZeroLengthTransfers, long elapsedMillis)
+    {
+        return consecutiveZeroLengthTransfers >= ZERO_LENGTH_TRANSFER_ERROR_THRESHOLD &&
+                elapsedMillis >= ZERO_LENGTH_TRANSFER_ERROR_MIN_DURATION_MS;
     }
 
     /**
@@ -574,9 +582,6 @@ public abstract class USBTunerController extends TunerController
      */
     class TransferManager implements TransferCallback
     {
-        //Number of consecutive zero-length transfer completions that indicates a stalled/locked-up tuner.
-        private static final int ZERO_LENGTH_TRANSFER_ERROR_THRESHOLD = 50;
-
         //A transient USB I/O burst can momentarily push every transfer buffer into the error queue.  Rather than
         //killing the tuner instantly (which drops every channel using it), we try to drain the error queue with
         //exponential backoff over a short window and only shut down if the buffers stay exhausted.
@@ -591,6 +596,7 @@ public abstract class USBTunerController extends TunerController
         private List<Transfer> mErrorTransfers = new ArrayList<>();
         private int mResubmitFailureLogCount = 0;
         private int mConsecutiveZeroLengthTransfers = 0;
+        private long mFirstZeroLengthTransferTimestamp = 0;
         private final java.util.concurrent.atomic.AtomicBoolean mBufferRecoveryInProgress =
                 new java.util.concurrent.atomic.AtomicBoolean(false);
 
@@ -634,6 +640,12 @@ public abstract class USBTunerController extends TunerController
         private void setAutoResubmitTransfers(boolean resubmit)
         {
             mAutoResubmitTransfers = resubmit;
+
+            if(!resubmit)
+            {
+                mConsecutiveZeroLengthTransfers = 0;
+                mFirstZeroLengthTransferTimestamp = 0;
+            }
         }
 
         /**
@@ -897,19 +909,31 @@ public abstract class USBTunerController extends TunerController
                     {
                         dispatchTransfer(transfer);
                         mConsecutiveZeroLengthTransfers = 0;
+                        mFirstZeroLengthTransferTimestamp = 0;
                         monitorRawSignalLevel(transfer.buffer(), transferLength);
                     }
                     else if(mAutoResubmitTransfers)
                     {
                         //Detect a stalled/locked-up tuner that keeps completing transfers with no sample data.
-                        //Without this, channels continue running with zero signal and reception silently dies.
+                        //Without this, channels continue running with zero signal and reception silently dies.  The
+                        //condition must persist for a minimum wall-clock duration so a burst of rapid empty transfer
+                        //completions during startup/recovery doesn't churn every channel through tuner recovery.
+                        if(mConsecutiveZeroLengthTransfers == 0)
+                        {
+                            mFirstZeroLengthTransferTimestamp = System.currentTimeMillis();
+                        }
+
                         mConsecutiveZeroLengthTransfers++;
 
-                        if(mConsecutiveZeroLengthTransfers >= ZERO_LENGTH_TRANSFER_ERROR_THRESHOLD)
+                        long elapsedMillis = System.currentTimeMillis() - mFirstZeroLengthTransferTimestamp;
+
+                        if(shouldRestartForZeroLengthTransfers(mConsecutiveZeroLengthTransfers, elapsedMillis))
                         {
                             mConsecutiveZeroLengthTransfers = 0;
+                            mFirstZeroLengthTransferTimestamp = 0;
                             mLog.error("USB tuner has completed [" + ZERO_LENGTH_TRANSFER_ERROR_THRESHOLD +
-                                    "] consecutive transfers with no sample data - tuner appears stalled - restarting");
+                                    "] consecutive transfers with no sample data over [" + elapsedMillis +
+                                    "ms] - tuner appears stalled - restarting");
                             ThreadPool.CACHED.submit(() -> setErrorMessage("USB Error - No Sample Data - Tuner Stalled"));
                         }
                     }

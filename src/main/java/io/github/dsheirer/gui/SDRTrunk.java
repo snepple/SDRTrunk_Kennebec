@@ -661,15 +661,12 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
 
         mTwoToneLog = new TwoToneLog(mUserPreferences);
         mTwoToneLog.start();
-        mLog.info("TRACER: Calling UsbMonitorManager");
         UsbMonitorManager.manage(mUserPreferences);
-        mLog.info("TRACER: Calling WindowsReliabilityManager");
         io.github.dsheirer.gui.WindowsReliabilityManager.manage(mUserPreferences);
         
         notifyPreloader(new javafx.application.Preloader.ProgressNotification(0.2));
         notifyPreloader(new SDRTrunkPreloader.TextNotification("Loading SDRPlay API..."));
 
-        mLog.info("TRACER: Calling SDRPlayLibraryHelper");
         //Note: invoke this early in the application lifecycle, before the TunerManager causes the sdrplay classes
         //to be loaded since the jextract auto-generated code attempts to load the library by name and that can fail
         //when the library was not installed into a normal/default location, particularly on windows OS systems.
@@ -678,7 +675,6 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
             mLog.debug("SDRPlay API native library preemptively loaded");
         }
 
-        mLog.info("TRACER: Calling DiagnosticMonitor");
         mResourceMonitor = new ResourceMonitor(mUserPreferences);
 
         ThreadPool.logSettings();
