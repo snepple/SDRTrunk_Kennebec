@@ -36,6 +36,9 @@ import java.util.List;
  */
 public class DecodeConfigNBFM extends DecodeConfigAnalog
 {
+    public static final int DEFAULT_TONE_MIN_CALL_DURATION_MS = 400;
+    public static final int DEFAULT_TONE_FILTERED_MIN_CALL_DURATION_MS = 400;
+
     private boolean mAudioFilter = true;
     private float mSquelchNoiseOpenThreshold = NoiseSquelch.DEFAULT_NOISE_OPEN_THRESHOLD;
     private float mSquelchNoiseCloseThreshold = NoiseSquelch.DEFAULT_NOISE_CLOSE_THRESHOLD;
@@ -296,6 +299,7 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
         if(filter != null)
         {
             mToneFilters.add(filter);
+            applyDefaultToneSquelchSettingsIfConfigured();
         }
     }
 
@@ -319,6 +323,7 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     public void setToneFilterEnabled(boolean enabled)
     {
         mToneFilterEnabled = enabled;
+        applyDefaultToneSquelchSettingsIfConfigured();
     }
 
     /**
@@ -327,7 +332,48 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     @JsonIgnore
     public boolean hasToneFiltering()
     {
-        return mToneFilterEnabled && !mToneFilters.isEmpty();
+        return mToneFilterEnabled && hasValidVoiceToneFilter();
+    }
+
+    /**
+     * Applies conservative defaults for new tone-filtered NBFM channels. These values suppress brief PL/DCS false
+     * positives without overwriting an explicit non-zero duration the user already selected.
+     */
+    public void applyDefaultToneSquelchSettings()
+    {
+        if(mToneMinCallDurationMs <= 0)
+        {
+            mToneMinCallDurationMs = DEFAULT_TONE_MIN_CALL_DURATION_MS;
+        }
+
+        if(mMinCallDurationMs <= 0)
+        {
+            mMinCallDurationMs = DEFAULT_TONE_FILTERED_MIN_CALL_DURATION_MS;
+        }
+    }
+
+    private void applyDefaultToneSquelchSettingsIfConfigured()
+    {
+        if(mToneFilterEnabled && hasValidVoiceToneFilter())
+        {
+            applyDefaultToneSquelchSettings();
+        }
+    }
+
+    private boolean hasValidVoiceToneFilter()
+    {
+        for(ChannelToneFilter filter: mToneFilters)
+        {
+            if(filter != null &&
+                    (filter.getToneType() == ChannelToneFilter.ToneType.CTCSS ||
+                            filter.getToneType() == ChannelToneFilter.ToneType.DCS) &&
+                    filter.isValid())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

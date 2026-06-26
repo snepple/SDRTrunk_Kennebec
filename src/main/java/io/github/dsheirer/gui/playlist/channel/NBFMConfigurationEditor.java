@@ -275,6 +275,9 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
 
             mToneFilterEnabledSwitch = new ToggleSwitch();
             mToneFilterEnabledSwitch.selectedProperty().addListener((obs, ov, nv) -> {
+                if(Boolean.TRUE.equals(nv) && !mLoadingConfiguration) {
+                    applyDefaultToneSquelchSettingsToControls();
+                }
                 if(!mLoadingConfiguration) {
                     modifiedProperty().set(true);
                 }
@@ -325,7 +328,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mToneMinCallDurationSpinner.setEditable(true);
             mToneMinCallDurationSpinner.setPrefWidth(110);
             mToneMinCallDurationSpinner.setTooltip(new Tooltip("Drop tone matches shorter than this (milliseconds). " +
-                    "0 = off."));
+                    "Defaults to 400 ms for new tone-filtered channels. 0 = off."));
             mToneMinCallDurationSpinner.getValueFactory().valueProperty().addListener((obs, ov, nv) -> {
                 if(!mLoadingConfiguration) {
                     modifiedProperty().set(true);
@@ -344,7 +347,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             toneCard.getChildren().addAll(
                 new SettingsRow("Enable Tone Filter", createHelpIcon("When enabled, this channel will only pass audio when the selected tone is detected.\nUse this to reduce false triggering on busy repeaters."), mToneFilterEnabledSwitch),
                 new SettingsRow("Tone Type", createHelpIcon("CTCSS (Continuous Tone-Coded Squelch System):\n  A sub-audible tone below 300 Hz transmitted alongside voice.\n  Also called PL Tone (Private Line) or Sub-Tone.\n\nDCS (Digital-Coded Squelch):\n  A digital bit pattern used instead of a tone.\n  Also called DPL (Digital Private Line)."), mToneTypeCombo, codeBox),
-                new SettingsRow("Min Call Duration (ms)", createHelpIcon("Drops tone matches shorter than this many milliseconds - e.g. brief static\nbursts that momentarily carry the correct tone (the Sidney Fire problem).\nBuffered lead-in audio is released once a call qualifies, so a real call's\nstart is not clipped. 0 disables this (default)."), mToneMinCallDurationSpinner),
+                new SettingsRow("Min Call Duration (ms)", createHelpIcon("Drops tone matches shorter than this many milliseconds - e.g. brief static\nbursts that momentarily carry the correct tone (the Sidney Fire problem).\nBuffered lead-in audio is released once a call qualifies, so a real call's\nstart is not clipped. New tone-filtered channels default to 400 ms; 0 disables this."), mToneMinCallDurationSpinner),
                 new SettingsRow("Require Noise Squelch", createHelpIcon("Also require the noise squelch to be open (tone AND carrier).\nWith this ON (default), noisy static that briefly fools the tone detector\ncan't open the channel because its high noise keeps the hysteresis-protected\nnoise squelch closed - this is what prevents sub-second static calls and\nmatches upstream behavior.\nTurn OFF only for pure tone-squelch if a mistuned noise squelch is\nsilencing a channel."), mToneRequireNoiseSquelchSwitch)
             );
             content.getChildren().add(toneCard);
@@ -356,6 +359,23 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             mToneFilterPane = mToneFilterPaneSp;
         }
         return mToneFilterPane;
+    }
+
+    private void applyDefaultToneSquelchSettingsToControls()
+    {
+        mToneRequireNoiseSquelchSwitch.setSelected(true);
+
+        if(mToneMinCallDurationSpinner != null &&
+                (mToneMinCallDurationSpinner.getValue() == null || mToneMinCallDurationSpinner.getValue() <= 0))
+        {
+            mToneMinCallDurationSpinner.getValueFactory().setValue(DecodeConfigNBFM.DEFAULT_TONE_MIN_CALL_DURATION_MS);
+        }
+
+        if(mMinCallDurationSpinner != null &&
+                (mMinCallDurationSpinner.getValue() == null || mMinCallDurationSpinner.getValue() <= 0))
+        {
+            mMinCallDurationSpinner.getValueFactory().setValue(DecodeConfigNBFM.DEFAULT_TONE_FILTERED_MIN_CALL_DURATION_MS);
+        }
     }
 
     private void updateToneCodeVisibility()
