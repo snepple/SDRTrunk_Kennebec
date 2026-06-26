@@ -644,7 +644,9 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mPlayButton.setMaxHeight(Double.MAX_VALUE);
             mPlayButton.setDisable(true);
             mPlayButton.setOnAction((ActionEvent event) -> {
-                if(getItem() != null)
+                final Channel channel = getItem();
+
+                if(channel != null)
                 {
                     if(modifiedProperty().get())
                     {
@@ -663,7 +665,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
 
                     if(requiresJmbeLibrarySetup() &&
                        mUserPreferences.getJmbeLibraryPreference().getAlertIfMissingLibraryRequired() &&
-                       !getItem().processingProperty().get())
+                       !channel.processingProperty().get())
                     {
                         String content = "The decoder for this channel configuration requires the (optional) JMBE " +
                             "library to produce audio and the JMBE library is not currently setup.  Do you want to " +
@@ -700,16 +702,16 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                         }
                     }
 
-                    if(!getItem().processingProperty().get())
+                    if(!channel.processingProperty().get())
                     {
                         ThreadPool.CACHED.execute(() -> {
                             try
                             {
-                                mPlaylistManager.getChannelProcessingManager().start(getItem());
+                                mPlaylistManager.getChannelProcessingManager().start(channel);
                             }
                             catch(ChannelException ce)
                             {
-                                mLog.error("Error starting channel [" + getItem().getName() + "] - " + ce.getMessage());
+                                mLog.error("Error starting channel [" + channel.getName() + "] - " + ce.getMessage());
 
                                 Platform.runLater(() -> {
                                     Alert alert = new Alert(Alert.AlertType.ERROR, "Error: " + ce.getMessage(), ButtonType.OK);
@@ -726,11 +728,11 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                         ThreadPool.CACHED.execute(() -> {
                             try
                             {
-                                mPlaylistManager.getChannelProcessingManager().stop(getItem());
+                                mPlaylistManager.getChannelProcessingManager().stop(channel);
                             }
                             catch(ChannelException ce)
                             {
-                                mLog.error("Error stopping channel [" + getItem().getName() + "] - " + ce.getMessage());
+                                mLog.error("Error stopping channel [" + channel.getName() + "] - " + ce.getMessage());
 
                                 Platform.runLater(() -> {
                                     Alert alert = new Alert(Alert.AlertType.ERROR, "Error: " + ce.getMessage(), ButtonType.OK);
@@ -1467,13 +1469,19 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
             mSaveButton.setMaxWidth(Double.MAX_VALUE);
             mSaveButton.disableProperty().bind(modifiedProperty().not());
             mSaveButton.setOnAction(event -> {
+                final Channel editedChannel = getItem();
+                if(editedChannel == null)
+                {
+                    return;
+                }
+
                 Integer newTalkgroup = getConfiguredTalkgroup();
                 if(newTalkgroup != null && newTalkgroup > 0)
                 {
                     Channel conflictChannel = null;
                     for(Channel c : mPlaylistManager.getChannelModel().channelList())
                     {
-                        if(c == getItem()) continue; // Skip current channel
+                        if(c == editedChannel) continue; // Skip current channel
                         io.github.dsheirer.module.decode.config.DecodeConfiguration dc = c.getDecodeConfiguration();
                         if(dc instanceof DecodeConfigP25)
                         {
@@ -1525,7 +1533,7 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                     save();
                 }
 
-                if(getItem().isProcessing())
+                if(editedChannel.isProcessing())
                 {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Would you like to restart the channel?", ButtonType.YES, ButtonType.NO); io.github.dsheirer.gui.theme.ThemeManager.applyCurrentTheme(alert.getDialogPane());
                     alert.setTitle("Restart Channel?");
@@ -1537,12 +1545,11 @@ public abstract class ChannelConfigurationEditor extends Editor<Channel>
                     {
                         //Restart on a background thread - channel stop/start rebuilds the processing chain
                         //and must not run on the FX thread or the UI freezes during the restart.
-                        final Channel restartChannel = getItem();
                         ThreadPool.CACHED.execute(() -> {
                             try
                             {
-                                mPlaylistManager.getChannelProcessingManager().stop(restartChannel);
-                                mPlaylistManager.getChannelProcessingManager().start(restartChannel);
+                                mPlaylistManager.getChannelProcessingManager().stop(editedChannel);
+                                mPlaylistManager.getChannelProcessingManager().start(editedChannel);
                             }
                             catch(ChannelException se)
                             {

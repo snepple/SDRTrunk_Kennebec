@@ -45,7 +45,6 @@ public class PassThroughSourceManager extends ChannelSourceManager
 {
     private final static Logger mLog = LoggerFactory.getLogger(PassThroughSourceManager.class);
     private TunerController mTunerController;
-    private SortedSet<TunerChannel> mTunerChannels = new TreeSet<>();
     private List<TunerChannelSource> mTunerChannelSources = new CopyOnWriteArrayList<>();
     private boolean mRunning = true;
 
@@ -58,8 +57,8 @@ public class PassThroughSourceManager extends ChannelSourceManager
     public String getStateDescription()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("Pass-Through Channel Source Manager Providing [").append(mTunerChannels.size()).append("] Channels");
-        for(TunerChannel channel: mTunerChannels)
+        sb.append("Pass-Through Channel Source Manager Providing [").append(mTunerChannelSources.size()).append("] Channels");
+        for(TunerChannel channel: getTunerChannels())
         {
             sb.append("\n\tChannel: ").append(channel);
         }
@@ -83,13 +82,20 @@ public class PassThroughSourceManager extends ChannelSourceManager
     @Override
     public SortedSet<TunerChannel> getTunerChannels()
     {
-        return mTunerChannels;
+        SortedSet<TunerChannel> tunerChannels = new TreeSet<>();
+
+        for(TunerChannelSource channelSource: mTunerChannelSources)
+        {
+            tunerChannels.add(channelSource.getTunerChannel());
+        }
+
+        return tunerChannels;
     }
 
     @Override
     public int getTunerChannelCount()
     {
-        return mTunerChannels.size();
+        return mTunerChannelSources.size();
     }
 
     @Override
@@ -110,7 +116,6 @@ public class PassThroughSourceManager extends ChannelSourceManager
             PassThroughChannelSource channelSource = new PassThroughChannelSource(new SourceEventProxy(),
                     mTunerController, tunerChannel, threadName);
 
-            mTunerChannels.add(tunerChannel);
             mTunerChannelSources.add(channelSource);
             source = channelSource;
         }
@@ -131,7 +136,7 @@ public class PassThroughSourceManager extends ChannelSourceManager
                 if(event.hasSource() && event.getSource() instanceof PassThroughChannelSource)
                 {
                     mTunerController.addBufferListener((PassThroughChannelSource)event.getSource());
-                    broadcast(SourceEvent.channelCountChange(mTunerChannels.size()));
+                    broadcast(SourceEvent.channelCountChange(getTunerChannelCount()));
                 }
                 break;
             case REQUEST_STOP_SAMPLE_STREAM:
@@ -139,9 +144,8 @@ public class PassThroughSourceManager extends ChannelSourceManager
                 {
                     PassThroughChannelSource source = (PassThroughChannelSource)event.getSource();
                     mTunerController.removeBufferListener(source);
-                    mTunerChannels.remove(source.getTunerChannel());
                     mTunerChannelSources.remove(source);
-                    broadcast(SourceEvent.channelCountChange(mTunerChannels.size()));
+                    broadcast(SourceEvent.channelCountChange(getTunerChannelCount()));
                 }
                 break;
         }

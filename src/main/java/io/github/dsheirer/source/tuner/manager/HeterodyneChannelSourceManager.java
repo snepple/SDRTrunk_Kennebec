@@ -49,7 +49,6 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
     private final static int DELAY_BUFFER_DURATION_MILLISECONDS = 2000;
 
     private List<HalfBandTunerChannelSource> mChannelSources = new CopyOnWriteArrayList<>();
-    private SortedSet<TunerChannel> mTunerChannels = new TreeSet<>();
     private TunerController mTunerController;
     private ChannelSourceEventProcessor mChannelSourceEventProcessor = new ChannelSourceEventProcessor();
     private NativeSampleDelayBuffer mSampleDelayBuffer;
@@ -69,7 +68,7 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
         {
             mProcessingLock.lock();
             StringBuilder sb = new StringBuilder();
-            sb.append("Heterodyne Channel Source Manager Providing [").append(mTunerChannels.size()).append("] Channels");
+            sb.append("Heterodyne Channel Source Manager Providing [").append(mChannelSources.size()).append("] Channels");
             sb.append("\n\tTuner Controller Frequency: ").append(mTunerController.getFrequency());
             for(HalfBandTunerChannelSource channelSource : mChannelSources)
             {
@@ -115,7 +114,7 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
         try
         {
             mProcessingLock.lock();
-            return new TreeSet<>(mTunerChannels);
+            return getTunerChannelsFromSources();
         }
         finally
         {
@@ -129,7 +128,7 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
         try
         {
             mProcessingLock.lock();
-            return mTunerChannels.size();
+            return mChannelSources.size();
         }
         finally
         {
@@ -153,7 +152,7 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
                 return null;
             }
 
-            if(CenterFrequencyCalculator.canTune(tunerChannel, mTunerController, mTunerChannels))
+            if(CenterFrequencyCalculator.canTune(tunerChannel, mTunerController, getTunerChannelsFromSources()))
             {
                 try
                 {
@@ -167,8 +166,7 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
                     //Set the current tuner frequency
                     tunerChannelSource.setFrequency(mTunerController.getFrequency());
 
-                    //Add to the channel list and update the tuner center frequency as needed
-                    mTunerChannels.add(tunerChannel);
+                    //Update the tuner center frequency as needed for the active source list.
                     updateTunerFrequency();
 
                     //Lock the tuner controller frequency and sample rate
@@ -237,6 +235,18 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
                 }
             }
         }
+    }
+
+    private SortedSet<TunerChannel> getTunerChannelsFromSources()
+    {
+        SortedSet<TunerChannel> tunerChannels = new TreeSet<>();
+
+        for(HalfBandTunerChannelSource channelSource: mChannelSources)
+        {
+            tunerChannels.add(channelSource.getTunerChannel());
+        }
+
+        return tunerChannels;
     }
 
     @Override
@@ -375,7 +385,6 @@ public class HeterodyneChannelSourceManager extends ChannelSourceManager
                             mSampleDelayBuffer.removeListener(halfBandSource);
                             stopDelayBuffer();
                             mChannelSources.remove(halfBandSource);
-                            mTunerChannels.remove(halfBandSource.getTunerChannel());
                             halfBandSource.dispose();
 
                             //Unlock the tuner controller if there are no more channels
