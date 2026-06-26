@@ -566,6 +566,67 @@ public class TwoToneConfiguration
         return mDiscoveryTranscriptProperty;
     }
 
+    //Detection history: epoch-millis timestamps of each time this detector fired, most-recent first.  Bounded to the
+    //most recent MAX_DETECTION_HISTORY entries and persisted with the playlist (serialized as repeated
+    //<detectionEntry> elements) so the history survives application restarts.  The list is synchronized because it is
+    //appended from the detector processing thread while the JavaFX thread reads it for display.
+    private static final int MAX_DETECTION_HISTORY = 200;
+    private final List<Long> mDetectionHistory = java.util.Collections.synchronizedList(new ArrayList<>());
+
+    @JacksonXmlProperty(isAttribute = false, localName = "detectionEntry")
+    public List<Long> getDetectionHistory()
+    {
+        //Return a snapshot copy so serialization (and UI reads) cannot throw a ConcurrentModificationException while
+        //the detector thread appends a new detection.  Deserialization populates the list via setDetectionHistory().
+        synchronized(mDetectionHistory)
+        {
+            return new ArrayList<>(mDetectionHistory);
+        }
+    }
+
+    public void setDetectionHistory(List<Long> detectionHistory)
+    {
+        synchronized(mDetectionHistory)
+        {
+            mDetectionHistory.clear();
+
+            if(detectionHistory != null)
+            {
+                mDetectionHistory.addAll(detectionHistory);
+            }
+        }
+    }
+
+    /**
+     * Records a two-tone detection event for this detector.  The timestamp is inserted at the head of the history so
+     * the most recent detection is always first, and the list is trimmed to the most recent MAX_DETECTION_HISTORY
+     * entries.  Thread-safe: called from the detector processing thread while the UI thread may read the list.
+     * @param epochMillis the detection time, in epoch milliseconds (e.g. System.currentTimeMillis())
+     */
+    public void recordDetection(long epochMillis)
+    {
+        synchronized(mDetectionHistory)
+        {
+            mDetectionHistory.add(0, epochMillis);
+
+            while(mDetectionHistory.size() > MAX_DETECTION_HISTORY)
+            {
+                mDetectionHistory.remove(mDetectionHistory.size() - 1);
+            }
+        }
+    }
+
+    /**
+     * Clears all recorded detection history for this detector.
+     */
+    public void clearDetectionHistory()
+    {
+        synchronized(mDetectionHistory)
+        {
+            mDetectionHistory.clear();
+        }
+    }
+
     // ---- Convenience methods: prefer new fields, fall back to legacy ----
 
     @JsonIgnore

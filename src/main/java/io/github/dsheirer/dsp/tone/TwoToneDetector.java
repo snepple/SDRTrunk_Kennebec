@@ -670,6 +670,17 @@ public class TwoToneDetector
             }
 
             mLog.info("Two Tone Detected: {} (A:{} B:{})", config.getAlias(), config.getToneA(), config.getToneB());
+
+            //Record this detection in the detector's persisted, per-detector history (most-recent first) so the user
+            //can review the date/time of every two-tone hit for this detector in the editor's Detection History tab.
+            //schedulePlaylistSave() is debounced (coalesces to one write every 2s) so the history survives restarts.
+            config.recordDetection(System.currentTimeMillis());
+
+            if(mPlaylistManager != null)
+            {
+                mPlaylistManager.schedulePlaylistSave();
+            }
+
             triggerAlert(config, segment);
 
             String channel = "Unknown";
