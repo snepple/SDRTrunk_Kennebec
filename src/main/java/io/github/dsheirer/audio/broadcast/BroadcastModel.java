@@ -25,6 +25,8 @@ import javafx.geometry.*;
 
 import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.alias.id.broadcast.BroadcastChannel;
+import io.github.dsheirer.audio.broadcast.zello.ZelloConfiguration;
+import io.github.dsheirer.audio.broadcast.zello.ZelloConsumerConfiguration;
 import io.github.dsheirer.icon.IconModel;
 import io.github.dsheirer.preference.UserPreferences;
 import io.github.dsheirer.properties.SystemProperties;
@@ -89,6 +91,15 @@ public class BroadcastModel implements Listener<AudioRecording>
     private static final long BROADCASTER_START_STAGGER_MS = 250;
     private final java.util.concurrent.atomic.AtomicLong mNextBroadcasterStartTime =
         new java.util.concurrent.atomic.AtomicLong(0);
+
+    // Zello documents a limit of 10 new WebSocket connections per minute per IP.  Batch cold-start connections
+    // at 9/min (1s spacing within a batch, 60s pause between batches of 9) so large playlists don't trigger
+    // rate-limit rejections.
+    private static final int ZELLO_MAX_CONNECTIONS_PER_MINUTE = 9;
+    private static final long ZELLO_STARTUP_STAGGER_MS = 1_000L;
+    private static final long ZELLO_CONNECTION_BATCH_PAUSE_MS = 60_000L;
+    private final java.util.concurrent.atomic.AtomicInteger mZelloStartupSlot =
+        new java.util.concurrent.atomic.AtomicInteger(0);
     private Broadcaster<BroadcastEvent> mBroadcastEventBroadcaster = new Broadcaster<>();
     private BroadcastEventListener mBroadcastEventListener = new BroadcastEventListener();
     private UserPreferences mUserPreferences;
@@ -339,6 +350,18 @@ public class BroadcastModel implements Listener<AudioRecording>
     }
 
     /**
+     * Returns the cold-start delay (ms) for the nth Zello connection, batching at
+     * {@link #ZELLO_MAX_CONNECTIONS_PER_MINUTE} per minute with a {@link #ZELLO_CONNECTION_BATCH_PAUSE_MS} gap
+     * between batches to respect Zello's documented 10 connections/min/IP limit.
+     */
+    private static long computeZelloStartupDelayMs(int slot)
+    {
+        int batch = slot / ZELLO_MAX_CONNECTIONS_PER_MINUTE;
+        int positionInBatch = slot % ZELLO_MAX_CONNECTIONS_PER_MINUTE;
+        return (batch * ZELLO_CONNECTION_BATCH_PAUSE_MS) + (positionInBatch * ZELLO_STARTUP_STAGGER_MS);
+    }
+
+    /**
      * Creates a new broadcaster for the broadcast configuration and adds it to the model
      */
     private void createBroadcaster(BroadcastConfiguration broadcastConfiguration)
@@ -371,10 +394,20 @@ public class BroadcastModel implements Listener<AudioRecording>
                 broadcast(new BroadcastEvent(audioBroadcaster, BroadcastEvent.Event.BROADCASTER_ADD));
 
                 //Stagger the start so simultaneous startup of many streams doesn't bombard the network/CPU at once.
-                long now = System.currentTimeMillis();
-                long slot = mNextBroadcasterStartTime.updateAndGet(prev -> Math.max(now, prev) + BROADCASTER_START_STAGGER_MS)
-                        - BROADCASTER_START_STAGGER_MS;
-                long delay = Math.max(0, slot - now);
+                //Zello imposes a 10 new connections/min/IP limit, so rate-limit Zello cold-starts separately.
+                long delay;
+                if(broadcastConfiguration instanceof ZelloConfiguration ||
+                   broadcastConfiguration instanceof ZelloConsumerConfiguration)
+                {
+                    delay = computeZelloStartupDelayMs(mZelloStartupSlot.getAndIncrement());
+                }
+                else
+                {
+                    long now = System.currentTimeMillis();
+                    long slot = mNextBroadcasterStartTime.updateAndGet(prev -> Math.max(now, prev) + BROADCASTER_START_STAGGER_MS)
+                            - BROADCASTER_START_STAGGER_MS;
+                    delay = Math.max(0, slot - now);
+                }
 
                 if(delay <= 0)
                 {

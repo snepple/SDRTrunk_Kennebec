@@ -1101,6 +1101,9 @@ public class ZelloConsumerBroadcaster extends AbstractAudioBroadcaster<ZelloCons
                         updateStreamErrorDetail("[3006] " + error);
                         mCurrentStreamId.set(-2);
                         mStreamActive.set(false);
+                        // Apply the stream guard after a failed start so "channel busy" and similar
+                        // transient rejections don't trigger back-to-back start_stream attempts.
+                        mLastStreamStopTime = System.currentTimeMillis();
                     }
                 }
             }
