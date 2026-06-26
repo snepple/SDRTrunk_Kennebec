@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.dsheirer.gui.WindowsReliabilityManager;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -179,6 +180,7 @@ public class GitHubUpdateChecker
                     Files.copy(in, temp, StandardCopyOption.REPLACE_EXISTING);
                 }
 
+                WindowsReliabilityManager.markIntentionalExitForUpdate();
                 new ProcessBuilder(temp.toString()).start();
                 mLog.info("Update installer launched: {} -- scheduling application exit in 2 seconds", temp);
                 scheduleApplicationExit();
