@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiscoveredTunerRecoveryTest
 {
@@ -48,6 +49,25 @@ class DiscoveredTunerRecoveryTest
         }
     }
 
+    @Test
+    void accessDeniedStartupErrorUsesFastRecovery() throws Exception
+    {
+        RecoveringTuner tuner = new RecoveringTuner();
+
+        try
+        {
+            tuner.setErrorMessage("access denied - if using linux, blacklist the default driver and/or install udev rules");
+
+            ScheduledFuture<?> recoveryTask = getRecoveryTask(tuner);
+            assertEquals(TunerStatus.RECOVERING, tuner.getTunerStatus());
+            assertTrue(recoveryTask.getDelay(TimeUnit.SECONDS) <= 5);
+        }
+        finally
+        {
+            cancelRecoveryTask(tuner);
+        }
+    }
+
     private static void setPrivateField(DiscoveredTuner tuner, String fieldName, Object value) throws Exception
     {
         Field field = DiscoveredTuner.class.getDeclaredField(fieldName);
@@ -64,6 +84,13 @@ class DiscoveredTunerRecoveryTest
         {
             scheduledFuture.cancel(false);
         }
+    }
+
+    private static ScheduledFuture<?> getRecoveryTask(DiscoveredTuner tuner) throws Exception
+    {
+        Field field = DiscoveredTuner.class.getDeclaredField("mRecoveryTask");
+        field.setAccessible(true);
+        return (ScheduledFuture<?>)field.get(tuner);
     }
 
     private static class RecoveringTuner extends DiscoveredTuner
