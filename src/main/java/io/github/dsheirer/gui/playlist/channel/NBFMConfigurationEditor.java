@@ -411,49 +411,28 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
             contentBox.getChildren().add(createLowPassSection());
             contentBox.getChildren().add(new Separator());
 
-            // Progressive Disclosure: Advanced Settings
-            // Collapsed by default to reduce cognitive load for new users.
-            // The most useful control (Low-Pass) is always visible above.
-            VBox advancedContent = new VBox(8);
-            advancedContent.setVisible(false);
-            advancedContent.setManaged(false);
-
             // 2. Hiss Reduction
-            advancedContent.getChildren().add(createHissReductionSection());
-            advancedContent.getChildren().add(new Separator());
+            contentBox.getChildren().add(createHissReductionSection());
+            contentBox.getChildren().add(new Separator());
 
             // 3. Bass Boost
-            advancedContent.getChildren().add(createBassBoostSection());
-            advancedContent.getChildren().add(new Separator());
+            contentBox.getChildren().add(createBassBoostSection());
+            contentBox.getChildren().add(new Separator());
 
             // 4. Voice Enhancement
-            advancedContent.getChildren().add(createVoiceEnhanceSection());
-            advancedContent.getChildren().add(new Separator());
+            contentBox.getChildren().add(createVoiceEnhanceSection());
+            contentBox.getChildren().add(new Separator());
 
             // 5. Squelch Tail
-            advancedContent.getChildren().add(createSquelchTailSection());
-            advancedContent.getChildren().add(new Separator());
+            contentBox.getChildren().add(createSquelchTailSection());
+            contentBox.getChildren().add(new Separator());
 
             // 6. Intelligent Squelch
-            advancedContent.getChildren().add(createSquelchSection());
-            advancedContent.getChildren().add(new Separator());
+            contentBox.getChildren().add(createSquelchSection());
+            contentBox.getChildren().add(new Separator());
 
             // 7. Output Gain
-            advancedContent.getChildren().add(createInputGainSection());
-
-            // Toggle button
-            Button advancedToggle = new Button("\u25B6  Show Advanced Filters");
-            advancedToggle.getStyleClass().add("flat-button");
-            advancedToggle.setStyle("-fx-font-size: 12px; -fx-text-fill: #4f8ef7; -fx-cursor: hand; -fx-background-color: transparent; -fx-border-color: transparent;");
-            advancedToggle.setTooltip(new Tooltip("Expand to access Hiss Reduction, Bass Boost, Voice Enhancement, Squelch, and Output Gain controls."));
-            advancedToggle.setOnAction(ev -> {
-                boolean nowVisible = !advancedContent.isVisible();
-                advancedContent.setVisible(nowVisible);
-                advancedContent.setManaged(nowVisible);
-                advancedToggle.setText(nowVisible ? "\u25BC  Hide Advanced Filters" : "\u25B6  Show Advanced Filters");
-            });
-
-            contentBox.getChildren().addAll(advancedToggle, advancedContent);
+            contentBox.getChildren().add(createInputGainSection());
 
             //All filter controls now exist; track manual edits to pause AI auto-optimization.
             installFilterEditTracking();
