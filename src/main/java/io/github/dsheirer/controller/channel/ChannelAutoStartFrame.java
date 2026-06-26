@@ -46,7 +46,9 @@ import javafx.scene.control.TableView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
@@ -88,6 +90,7 @@ public class ChannelAutoStartFrame
      */
 
     private Stage mStage;
+    private Window mOwner;
     private Label mCountdownLabel;
     private Button mStartButton;
     private Button mCancelButton;
@@ -96,12 +99,25 @@ public class ChannelAutoStartFrame
 
     public ChannelAutoStartFrame(Listener<ChannelEvent> listener, List<Channel> channels, UserPreferences preferences)
     {
+        this(listener, channels, preferences, null);
+    }
+
+    public ChannelAutoStartFrame(Listener<ChannelEvent> listener, List<Channel> channels, UserPreferences preferences,
+                                 Window owner)
+    {
         mChannelEventListener = listener;
         mChannels = channels;
+        mOwner = owner;
 
         Platform.runLater(() -> {
             mStage = new Stage();
             mStage.setTitle("Channel Auto-Start Manager");
+
+            if(mOwner != null)
+            {
+                mStage.initOwner(mOwner);
+                mStage.initModality(Modality.WINDOW_MODAL);
+            }
 
             VBox root = new VBox(10);
             root.setPadding(new Insets(10));
@@ -144,6 +160,14 @@ public class ChannelAutoStartFrame
             Scene scene = new Scene(root, 400, 300);
             mStage.setScene(scene);
 
+            if(mOwner != null)
+            {
+                mStage.setOnShown(e -> {
+                    mStage.toFront();
+                    mStage.requestFocus();
+                });
+            }
+
             mStage.setOnCloseRequest(e -> {
                 mLog.info("Channel auto-start canceled by user - window closed");
                 if (mCountdownTimeline != null) mCountdownTimeline.stop();
@@ -151,6 +175,7 @@ public class ChannelAutoStartFrame
 
             mStage.show();
             mStage.toFront();
+            mStage.requestFocus();
 
             mAutoStartTimeoutSeconds = preferences.getApplicationPreference().getChannelAutoStartTimeout();
 
