@@ -160,12 +160,27 @@ public class WindowsReliabilityManager {
     }
 
     public static void stopWatchdog() {
+        writeGracefulExitMarker("exit");
+    }
+
+    /**
+     * Marks the current shutdown as intentional because an updater/installer is about to run.  The watchdog process
+     * treats this the same as any graceful exit and will not relaunch SDRTrunk while the installer needs the
+     * application files unlocked.
+     */
+    public static void markIntentionalExitForUpdate()
+    {
+        writeGracefulExitMarker("update");
+    }
+
+    private static void writeGracefulExitMarker(String reason)
+    {
         if (!isWindows10OrNewer()) {
             return;
         }
         try {
             Path exitFile = Paths.get(resolveMarkerDir(), GRACEFUL_EXIT_FILE);
-            Files.writeString(exitFile, "exit");
+            Files.writeString(exitFile, reason);
         } catch (IOException e) {
             mLog.warn("Failed to write graceful exit file", e);
         }
