@@ -288,6 +288,7 @@ public abstract class USBTunerController extends TunerController
             deviceStop();
         });
         t.setName("sdrtrunk USB tuner shutdown - bus [" + mBus + "] port [" + mPortAddress + "]");
+        t.setDaemon(true);
         t.start();
 
         boolean gracefulShutdownCompleted = false;
@@ -979,6 +980,7 @@ public abstract class USBTunerController extends TunerController
                 mProcessing = true;
                 mThread = new Thread(this);
                 mThread.setName("sdrtrunk USB tuner - bus [" + mBus + "] port [" + mPortAddress + "]");
+                mThread.setDaemon(true);
                 mThread.setPriority(Thread.MAX_PRIORITY);
                 mThread.start();
             }

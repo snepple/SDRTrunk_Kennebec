@@ -28,11 +28,42 @@ class DiscoveredTunerRecoveryTest
         assertFalse(tuner.hasTuner());
     }
 
+    @Test
+    void failedEnableDoesNotPublishEnabledStatus() throws Exception
+    {
+        RecoveringTuner tuner = new RecoveringTuner();
+
+        tuner.setEnabled(false);
+        tuner.setEnabled(true);
+
+        try
+        {
+            assertEquals(1, tuner.getStartAttempts());
+            assertEquals(TunerStatus.RECOVERING, tuner.getTunerStatus());
+            assertFalse(tuner.hasTuner());
+        }
+        finally
+        {
+            cancelRecoveryTask(tuner);
+        }
+    }
+
     private static void setPrivateField(DiscoveredTuner tuner, String fieldName, Object value) throws Exception
     {
         Field field = DiscoveredTuner.class.getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(tuner, value);
+    }
+
+    private static void cancelRecoveryTask(DiscoveredTuner tuner) throws Exception
+    {
+        Field field = DiscoveredTuner.class.getDeclaredField("mRecoveryTask");
+        field.setAccessible(true);
+
+        if(field.get(tuner) instanceof ScheduledFuture<?> scheduledFuture)
+        {
+            scheduledFuture.cancel(false);
+        }
     }
 
     private static class RecoveringTuner extends DiscoveredTuner

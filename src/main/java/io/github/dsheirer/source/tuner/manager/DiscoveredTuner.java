@@ -152,10 +152,15 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             if(mEnabled)
             {
                 start();
-                setTunerStatus(TunerStatus.ENABLED);
+
+                if(hasTuner())
+                {
+                    setTunerStatus(TunerStatus.ENABLED);
+                }
             }
             else
             {
+                cancelRecoveryTask();
                 stop();
                 setTunerStatus(TunerStatus.DISABLED);
             }
