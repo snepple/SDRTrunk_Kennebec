@@ -81,6 +81,22 @@ public class TwoToneDetector
     private final java.util.HashMap<Long, GoertzelFilter> mGoertzelFilters = new java.util.HashMap<>();
     private final float[] mGoertzelScratch = new float[BLOCK_SIZE];
 
+    // Per-segment audio re-blocking accumulator.  Decoder audio arrives in 512-sample blocks (NBFM/AM RealResampler
+    // output) but the detector analyses fixed BLOCK_SIZE (160-sample) blocks, so processAudio() carries each segment's
+    // sub-block remainder here until enough samples accumulate for the next analysis block.  Bounded LRU (eldest idle
+    // call's tiny remainder is evicted) so a long-running session cannot leak AudioSegment references.  Accessed only
+    // from the single audio-manager thread that calls processAudio().
+    private static final int MAX_ACCUMULATOR_SEGMENTS = 64;
+    private final java.util.Map<AudioSegment, float[]> mAccumulatorBySegment =
+        new java.util.LinkedHashMap<>(16, 0.75f, true)
+        {
+            @Override
+            protected boolean removeEldestEntry(java.util.Map.Entry<AudioSegment, float[]> eldest)
+            {
+                return size() > MAX_ACCUMULATOR_SEGMENTS;
+            }
+        };
+
     // Discovery tracking
     public static final List<TwoToneDiscoveryLog> DISCOVERY_LOG = new ArrayList<>();
 
@@ -173,9 +189,52 @@ public class TwoToneDetector
 
     public void processAudio(float[] buffer, AudioSegment segment)
     {
-        if(buffer != null && buffer.length == BLOCK_SIZE)
+        if(buffer == null || buffer.length == 0)
         {
-            mAudioQueue.offer(new AudioBufferWrapper(buffer.clone(), segment));
+            return;
+        }
+
+        //Re-block the incoming audio into the detector's fixed BLOCK_SIZE (160-sample / 20 ms @ 8 kHz) analysis
+        //blocks.  The NBFM/AM decoders emit audio in 512-sample blocks (RealResampler output length), so requiring an
+        //exact 160-sample buffer here previously dropped EVERY buffer and no detector ever ran.  Any remainder
+        //(< BLOCK_SIZE) is carried per-segment so audio from different concurrent calls is never mixed into one
+        //analysis block.  Called only from the single audio-manager thread, so the accumulator map needs no locking.
+        float[] leftover = mAccumulatorBySegment.get(segment);
+        int leftoverLen = (leftover != null) ? leftover.length : 0;
+        int total = leftoverLen + buffer.length;
+
+        if(total < BLOCK_SIZE)
+        {
+            //Not enough for a full analysis block yet - grow the per-segment remainder and wait for more audio.
+            float[] grown = new float[total];
+            if(leftoverLen > 0) System.arraycopy(leftover, 0, grown, 0, leftoverLen);
+            System.arraycopy(buffer, 0, grown, leftoverLen, buffer.length);
+            mAccumulatorBySegment.put(segment, grown);
+            return;
+        }
+
+        float[] combined = new float[total];
+        if(leftoverLen > 0) System.arraycopy(leftover, 0, combined, 0, leftoverLen);
+        System.arraycopy(buffer, 0, combined, leftoverLen, buffer.length);
+
+        int fullBlocks = total / BLOCK_SIZE;
+        for(int b = 0; b < fullBlocks; b++)
+        {
+            float[] block = new float[BLOCK_SIZE];
+            System.arraycopy(combined, b * BLOCK_SIZE, block, 0, BLOCK_SIZE);
+            mAudioQueue.offer(new AudioBufferWrapper(block, segment));
+        }
+
+        int remainder = total % BLOCK_SIZE;
+        if(remainder > 0)
+        {
+            float[] rem = new float[remainder];
+            System.arraycopy(combined, fullBlocks * BLOCK_SIZE, rem, 0, remainder);
+            mAccumulatorBySegment.put(segment, rem);
+        }
+        else
+        {
+            mAccumulatorBySegment.remove(segment);
         }
     }
 
