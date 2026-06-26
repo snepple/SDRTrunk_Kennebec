@@ -102,19 +102,49 @@ public class TwoToneDetector
     // Per-detector duplicate suppression: maps detector alias → last trigger timestamp (millis)
     private final java.util.Map<String, Long> mLastTriggerTimeByDetector = new java.util.concurrent.ConcurrentHashMap<>();
 
-    // FFT Auto-Discovery variables
+    // FFT Auto-Discovery.  Like the configured-detector state above, this MUST be tracked per-call: the ring buffer
+    // and tone-progress fields were previously shared instance fields, so when several analog channels were active
+    // at once their audio interleaved into one ring buffer and the FFT never saw a clean isolated tone.  On a busy
+    // multi-channel system that silences discovery entirely (no UNRECOGNIZED/matches lines despite real tone-outs).
+    // Each call (AudioSegment) now gets its own ring buffer and tone state.  The FFT instance itself is stateless
+    // across calls (it transforms the array passed to realForward) so a single shared instance is fine.  Accessed
+    // only from the single detector processing thread.
     private static final int FFT_SIZE = 4096;
-    private final float[] mRingBuffer = new float[FFT_SIZE];
-    private int mRingIndex = 0;
-    private int mSamplesReceived = 0;
-    private int mFftCounter = 0;
-    private FloatFFT_1D mFft = new FloatFFT_1D(FFT_SIZE);
+    private final FloatFFT_1D mFft = new FloatFFT_1D(FFT_SIZE);
 
-    private double mDiscoveryCurrentToneA = 0.0;
-    private int mDiscoveryToneABlocks = 0;
-    private double mDiscoveryCurrentToneB = 0.0;
-    private int mDiscoveryToneBBlocks = 0;
-    private int mDiscoverySilenceCount = 0;
+    private static final class DiscoveryState
+    {
+        final float[] ringBuffer = new float[FFT_SIZE];
+        int ringIndex = 0;
+        int samplesReceived = 0;
+        int fftCounter = 0;
+        double currentToneA = 0.0;
+        int toneABlocks = 0;
+        double currentToneB = 0.0;
+        int toneBBlocks = 0;
+        int silenceCount = 0;
+    }
+
+    // Bounded LRU map of per-call discovery state.  Capacity comfortably exceeds the number of simultaneously active
+    // analog channels; the eldest idle entry is evicted when exceeded (a re-activated call just restarts discovery).
+    private static final int MAX_DISCOVERY_SEGMENTS = 64;
+    private final java.util.Map<AudioSegment, DiscoveryState> mDiscoveryStateBySegment =
+        new java.util.LinkedHashMap<>(16, 0.75f, true)
+        {
+            @Override
+            protected boolean removeEldestEntry(java.util.Map.Entry<AudioSegment, DiscoveryState> eldest)
+            {
+                return size() > MAX_DISCOVERY_SEGMENTS;
+            }
+        };
+
+    // Bounded diagnostic: logs the first DISCOVERY_FFT_LOG_LIMIT FFT windows the discovery path evaluates, with the
+    // observed peak frequency, peak magnitude, and peak-to-average ratio, plus whether it cleared the detection floors
+    // (magnitude > 5000 AND ratio > 8).  This confirms the detector is running on real audio and reveals whether the
+    // absolute magnitude floor is too high for weak signals (the AdaptiveGain advisor reports most channels well below
+    // optimal level), in which case the floor can be lowered or made relative.
+    private static final int DISCOVERY_FFT_LOG_LIMIT = 40;
+    private int mDiscoveryFftLogCount = 0;
 
     public TwoToneDetector(PlaylistManager playlistManager)
     {
@@ -162,12 +192,17 @@ public class TwoToneDetector
             return; // Nothing to do
         }
 
-        if (discoveryEnabled) {
+        //Per-call discovery state (a null segment cannot be tracked, so discovery is skipped for it).
+        DiscoveryState discovery = (discoveryEnabled && segment != null)
+                ? mDiscoveryStateBySegment.computeIfAbsent(segment, s -> new DiscoveryState())
+                : null;
+
+        if (discovery != null) {
             for (int i = 0; i < buffer.length; i++) {
-                mRingBuffer[mRingIndex] = buffer[i];
-                mRingIndex = (mRingIndex + 1) % FFT_SIZE;
-                mSamplesReceived++;
-                mFftCounter++;
+                discovery.ringBuffer[discovery.ringIndex] = buffer[i];
+                discovery.ringIndex = (discovery.ringIndex + 1) % FFT_SIZE;
+                discovery.samplesReceived++;
+                discovery.fftCounter++;
             }
         }
 
@@ -296,15 +331,15 @@ public class TwoToneDetector
 
         // If in discovery mode, look for strong tones with the FFT path even when a configured detector matched.
         // A true discovery mode would require an FFT to find the strongest peak frequency
-        if (discoveryEnabled)
+        if (discovery != null)
         {
-            if (mFftCounter >= 800 && mSamplesReceived >= FFT_SIZE) {
-                mFftCounter = 0;
+            if (discovery.fftCounter >= 800 && discovery.samplesReceived >= FFT_SIZE) {
+                discovery.fftCounter = 0;
                 float[] fftBuffer = new float[FFT_SIZE];
                 for (int i = 0; i < FFT_SIZE; i++) {
-                    fftBuffer[i] = mRingBuffer[(mRingIndex + i) % FFT_SIZE];
+                    fftBuffer[i] = discovery.ringBuffer[(discovery.ringIndex + i) % FFT_SIZE];
                 }
-                
+
                 mFft.realForward(fftBuffer);
                 
                 double maxMagnitude = 0;
@@ -328,55 +363,63 @@ public class TwoToneDetector
                 double avgMagnitude = magnitudeSum / binCount;
                 double peakToAvgRatio = (avgMagnitude > 0) ? (maxMagnitude / avgMagnitude) : 0;
 
+                if (mDiscoveryFftLogCount < DISCOVERY_FFT_LOG_LIMIT) {
+                    mDiscoveryFftLogCount++;
+                    double peakFreq = (maxIndex > 0) ? Math.round((double) maxIndex * SAMPLE_RATE / FFT_SIZE) : 0;
+                    mLog.info("TwoTone discovery FFT: peakFreq={}Hz peakMag={} ratio={} passesFloors={} (need mag>5000 AND ratio>8)",
+                            peakFreq, String.format("%.0f", maxMagnitude), String.format("%.1f", peakToAvgRatio),
+                            (maxMagnitude > 5000.0 && peakToAvgRatio > 8.0));
+                }
+
                 if (maxMagnitude > 5000.0 && peakToAvgRatio > 8.0) { // strong peak AND concentrated energy
                     double frequency = (double) maxIndex * SAMPLE_RATE / FFT_SIZE;
                     frequency = Math.round(frequency);
                     
                     //Reset the silence counter whenever a valid tone window is seen.
-                    mDiscoverySilenceCount = 0;
+                    discovery.silenceCount = 0;
 
                     if (frequency >= 300 && frequency <= 3000) {
-                        if (mDiscoveryCurrentToneB > 0) {
-                            if (Math.abs(mDiscoveryCurrentToneB - frequency) < 5) {
-                                mDiscoveryToneBBlocks++;
-                                if (mDiscoveryToneBBlocks >= 3) { // 3 * 100ms = 300ms — matches MIN_TONE_DURATION_MS
-                                    logDiscovery(mDiscoveryCurrentToneA, mDiscoveryCurrentToneB, segment);
-                                    mDiscoveryCurrentToneA = 0;
-                                    mDiscoveryToneABlocks = 0;
-                                    mDiscoveryCurrentToneB = 0;
-                                    mDiscoveryToneBBlocks = 0;
+                        if (discovery.currentToneB > 0) {
+                            if (Math.abs(discovery.currentToneB - frequency) < 5) {
+                                discovery.toneBBlocks++;
+                                if (discovery.toneBBlocks >= 3) { // 3 * 100ms = 300ms — matches MIN_TONE_DURATION_MS
+                                    logDiscovery(discovery.currentToneA, discovery.currentToneB, segment);
+                                    discovery.currentToneA = 0;
+                                    discovery.toneABlocks = 0;
+                                    discovery.currentToneB = 0;
+                                    discovery.toneBBlocks = 0;
                                 }
                             } else {
-                                mDiscoveryCurrentToneB = 0;
-                                mDiscoveryToneBBlocks = 0;
+                                discovery.currentToneB = 0;
+                                discovery.toneBBlocks = 0;
                             }
-                        } else if (mDiscoveryCurrentToneA > 0) {
-                            if (Math.abs(mDiscoveryCurrentToneA - frequency) < 5) {
-                                mDiscoveryToneABlocks++;
+                        } else if (discovery.currentToneA > 0) {
+                            if (Math.abs(discovery.currentToneA - frequency) < 5) {
+                                discovery.toneABlocks++;
                             } else {
-                                if (mDiscoveryToneABlocks >= 3) { // 3 consecutive windows = 300ms
-                                    mDiscoveryCurrentToneB = frequency;
-                                    mDiscoveryToneBBlocks = 1;
+                                if (discovery.toneABlocks >= 3) { // 3 consecutive windows = 300ms
+                                    discovery.currentToneB = frequency;
+                                    discovery.toneBBlocks = 1;
                                 } else {
-                                    mDiscoveryCurrentToneA = frequency;
-                                    mDiscoveryToneABlocks = 1;
+                                    discovery.currentToneA = frequency;
+                                    discovery.toneABlocks = 1;
                                 }
                             }
                         } else {
-                            mDiscoveryCurrentToneA = frequency;
-                            mDiscoveryToneABlocks = 1;
+                            discovery.currentToneA = frequency;
+                            discovery.toneABlocks = 1;
                         }
                     }
                 } else {
                     // No strong tone in this 100ms window.  Two-tone paging has a brief gap between
                     // tone A and tone B, so a single quiet window must NOT reset tone A state.
                     // Only reset after sustained silence (3+ consecutive non-tone windows = 300ms).
-                    mDiscoverySilenceCount++;
-                    if (mDiscoverySilenceCount >= 3) {
-                        mDiscoveryCurrentToneA = 0;
-                        mDiscoveryToneABlocks = 0;
-                        mDiscoveryCurrentToneB = 0;
-                        mDiscoveryToneBBlocks = 0;
+                    discovery.silenceCount++;
+                    if (discovery.silenceCount >= 3) {
+                        discovery.currentToneA = 0;
+                        discovery.toneABlocks = 0;
+                        discovery.currentToneB = 0;
+                        discovery.toneBBlocks = 0;
                     }
                 }
             }
