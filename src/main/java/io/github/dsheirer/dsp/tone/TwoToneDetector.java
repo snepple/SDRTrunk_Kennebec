@@ -55,6 +55,19 @@ public class TwoToneDetector
     private static final int LONG_A_MIN_TONE_BLOCKS = LONG_A_MIN_TONE_DURATION_MS / 20;
 
     private static final int POWER_THRESHOLD_DB = 10; // Simple threshold, tune as needed
+    //Dominance check: a 20ms Goertzel block only resolves ~100Hz, so a strong off-target tone (or broadband voice)
+    //can raise the in-band power above POWER_THRESHOLD_DB even though the real energy is elsewhere (e.g. a 450Hz tone
+    //leaks ~19dB into a 349Hz detector and falsely triggered it).  A tone only counts if no off-target probe exceeds
+    //the target power by more than DOMINANCE_MARGIN_DB.  Validated to reject the 450->349 case while keeping real
+    //on-frequency tones and correctly separating close A/B page tones (e.g. 1669/1530).
+    private static final int DOMINANCE_MARGIN_DB = 6;
+    private static final long[] DOMINANCE_PROBE_OFFSETS_HZ = {70, 140};
+    //Discovery quality floors: real paging tones concentrate energy in a narrow peak (very high peak-to-average);
+    //voice/noise spreads it.  The ratio floor was raised from 8 to reject voice formants that produced spurious
+    //candidates, and discovered A/B must differ by at least this many Hz so a single drifting formant is not split
+    //into a bogus A-then-B pair.
+    private static final double DISCOVERY_MIN_PEAK_TO_AVG = 12.0;
+    private static final double DISCOVERY_MIN_AB_SEPARATION_HZ = 20.0;
 
     private final ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
     private final LinkedTransferQueue<AudioBufferWrapper> mAudioQueue = new LinkedTransferQueue<>();
@@ -299,11 +312,11 @@ public class TwoToneDetector
             if (freqA <= 0) continue;
             if (!config.isLongATone() && freqB <= 0) continue;
 
-            int powerA = getTolerancePower(buffer, freqA, tolA);
+            boolean toneAPresent = isDominantTone(buffer, freqA, tolA);
 
             if (config.isLongATone())
             {
-                if (powerA > POWER_THRESHOLD_DB)
+                if (toneAPresent)
                 {
                     if(state.currentToneA == config.getToneA())
                     {
@@ -315,7 +328,9 @@ public class TwoToneDetector
                         state.currentToneABlocks = 1;
                     }
 
-                    if(state.currentToneABlocks == LONG_A_MIN_TONE_BLOCKS)
+                    //Use the detector's configured A-tone length (floored at 500ms by minToneABlocks) rather than a
+                    //hardcoded 2s, so the single-long-tone hold respects the per-detector field.
+                    if(state.currentToneABlocks == minToneABlocks)
                     {
                         triggerAlertIfMatched(config, segment);
                         // Do not reset state.currentToneABlocks to 0 here.
@@ -331,10 +346,10 @@ public class TwoToneDetector
                 continue;
             }
 
-            int powerB = getTolerancePower(buffer, freqB, tolB);
+            boolean toneBPresent = isDominantTone(buffer, freqB, tolB);
 
             // Tone A detection
-            if (powerA > POWER_THRESHOLD_DB)
+            if (toneAPresent)
             {
                 if(state.currentToneA == config.getToneA())
                 {
@@ -350,7 +365,7 @@ public class TwoToneDetector
                 }
             }
             // Tone B detection (only valid if Tone A was previously detected and held long enough)
-            else if (powerB > POWER_THRESHOLD_DB && state.currentToneABlocks >= minToneABlocks && state.currentToneA == config.getToneA())
+            else if (toneBPresent && state.currentToneABlocks >= minToneABlocks && state.currentToneA == config.getToneA())
             {
                 if(state.currentToneB == config.getToneB())
                 {
@@ -429,12 +444,13 @@ public class TwoToneDetector
                 if (mDiscoveryFftLogCount < DISCOVERY_FFT_LOG_LIMIT) {
                     mDiscoveryFftLogCount++;
                     double peakFreq = (maxIndex > 0) ? Math.round((double) maxIndex * SAMPLE_RATE / FFT_SIZE) : 0;
-                    mLog.info("TwoTone discovery FFT: peakFreq={}Hz peakMag={} ratio={} passesFloors={} (need mag>5000 AND ratio>8)",
+                    mLog.info("TwoTone discovery FFT: peakFreq={}Hz peakMag={} ratio={} passesFloors={} (need mag>5000 AND ratio>{})",
                             peakFreq, String.format("%.0f", maxMagnitude), String.format("%.1f", peakToAvgRatio),
-                            (maxMagnitude > 5000.0 && peakToAvgRatio > 8.0));
+                            (maxMagnitude > 5000.0 && peakToAvgRatio > DISCOVERY_MIN_PEAK_TO_AVG),
+                            String.format("%.0f", DISCOVERY_MIN_PEAK_TO_AVG));
                 }
 
-                if (maxMagnitude > 5000.0 && peakToAvgRatio > 8.0) { // strong peak AND concentrated energy
+                if (maxMagnitude > 5000.0 && peakToAvgRatio > DISCOVERY_MIN_PEAK_TO_AVG) { // strong peak AND concentrated energy
                     double frequency = (double) maxIndex * SAMPLE_RATE / FFT_SIZE;
                     frequency = Math.round(frequency);
                     
@@ -459,14 +475,16 @@ public class TwoToneDetector
                         } else if (discovery.currentToneA > 0) {
                             if (Math.abs(discovery.currentToneA - frequency) < 5) {
                                 discovery.toneABlocks++;
+                            } else if (discovery.toneABlocks >= 3 &&
+                                    Math.abs(discovery.currentToneA - frequency) >= DISCOVERY_MIN_AB_SEPARATION_HZ) {
+                                // Tone A was held long enough and this is a genuinely different frequency: treat it as
+                                // Tone B.  Requiring a minimum A/B separation prevents a single drifting formant from
+                                // being split into a bogus A-then-B candidate.
+                                discovery.currentToneB = frequency;
+                                discovery.toneBBlocks = 1;
                             } else {
-                                if (discovery.toneABlocks >= 3) { // 3 consecutive windows = 300ms
-                                    discovery.currentToneB = frequency;
-                                    discovery.toneBBlocks = 1;
-                                } else {
-                                    discovery.currentToneA = frequency;
-                                    discovery.toneABlocks = 1;
-                                }
+                                discovery.currentToneA = frequency;
+                                discovery.toneABlocks = 1;
                             }
                         } else {
                             discovery.currentToneA = frequency;
@@ -757,6 +775,30 @@ public class TwoToneDetector
 
         System.arraycopy(buffer, 0, mGoertzelScratch, 0, BLOCK_SIZE);
         return filter.getPower(mGoertzelScratch);
+    }
+
+    /**
+     * Returns true if the configured tone is genuinely present AND dominant, i.e. not merely spectral leakage from a
+     * stronger nearby tone or broadband voice.  Because the 20ms Goertzel block only resolves ~100Hz, a strong tone
+     * up to ~100Hz away (or voice energy) can push the in-band power above POWER_THRESHOLD_DB; this rejects that by
+     * requiring no off-target probe frequency to exceed the target power by more than DOMINANCE_MARGIN_DB.
+     */
+    private boolean isDominantTone(float[] buffer, long freq, double tol)
+    {
+        int target = getTolerancePower(buffer, freq, tol);
+
+        if(target <= POWER_THRESHOLD_DB)
+        {
+            return false;
+        }
+
+        for(long offset : DOMINANCE_PROBE_OFFSETS_HZ)
+        {
+            if(powerAt(buffer, freq - offset) > target + DOMINANCE_MARGIN_DB) return false;
+            if(powerAt(buffer, freq + offset) > target + DOMINANCE_MARGIN_DB) return false;
+        }
+
+        return true;
     }
 
 
