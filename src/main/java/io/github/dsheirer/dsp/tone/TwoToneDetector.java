@@ -904,42 +904,21 @@ public class TwoToneDetector
                     }
                 }
                 
+                boolean isMp3 = path.toLowerCase().endsWith(".mp3");
+
                 if (resource != null) {
-                    if (path.toLowerCase().endsWith(".mp3")) {
-                        final java.net.URL finalResource = resource;
-                        javafx.application.Platform.runLater(() -> {
-                            try {
-                                javafx.scene.media.Media media = new javafx.scene.media.Media(finalResource.toURI().toString());
-                                javafx.scene.media.MediaPlayer mediaPlayer = new javafx.scene.media.MediaPlayer(media);
-                                mediaPlayer.play();
-                            } catch (Exception ex) {
-                                mLog.error("Error playing mp3 alert", ex);
-                            }
-                        });
+                    if (isMp3) {
+                        playAlertMp3(resource.toURI().toString());
                     } else {
-                        javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(resource);
-                        javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
-                        clip.open(ais);
-                        clip.start();
+                        playAlertClip(javax.sound.sampled.AudioSystem.getAudioInputStream(resource));
                     }
                 } else {
                     java.io.File file = new java.io.File(path);
                     if (file.exists()) {
-                        if (path.toLowerCase().endsWith(".mp3")) {
-                            javafx.application.Platform.runLater(() -> {
-                                try {
-                                    javafx.scene.media.Media media = new javafx.scene.media.Media(file.toURI().toString());
-                                    javafx.scene.media.MediaPlayer mediaPlayer = new javafx.scene.media.MediaPlayer(media);
-                                    mediaPlayer.play();
-                                } catch (Exception ex) {
-                                    mLog.error("Error playing mp3 alert", ex);
-                                }
-                            });
+                        if (isMp3) {
+                            playAlertMp3(file.toURI().toString());
                         } else {
-                            javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(file);
-                            javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
-                            clip.open(ais);
-                            clip.start();
+                            playAlertClip(javax.sound.sampled.AudioSystem.getAudioInputStream(file));
                         }
                     } else {
                         mLog.error("Could not find alert audio file or resource: " + path);
@@ -948,6 +927,50 @@ public class TwoToneDetector
             } catch (Exception ex) {
                 mLog.error("Error playing local alert audio: " + config.getAlertFilePath(), ex);
             }
+        }
+    }
+
+    //Strong references to in-flight local alert players/clips so the JavaFX MediaPlayer and javax Clip are not
+    //garbage-collected mid-playback.  A local variable becomes GC-eligible as soon as the method/lambda returns, which
+    //caused local audio alerts to be cut off or not play at all (unreliable local audio alert).  Each entry removes
+    //itself when playback ends.
+    private final java.util.Set<Object> mActiveAlertPlayers = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /** Plays an mp3 alert via JavaFX MediaPlayer on the FX thread, retaining a strong reference until it finishes. */
+    private void playAlertMp3(String mediaUri) {
+        javafx.application.Platform.runLater(() -> {
+            try {
+                javafx.scene.media.Media media = new javafx.scene.media.Media(mediaUri);
+                javafx.scene.media.MediaPlayer player = new javafx.scene.media.MediaPlayer(media);
+                mActiveAlertPlayers.add(player);
+                Runnable release = () -> {
+                    mActiveAlertPlayers.remove(player);
+                    try { player.dispose(); } catch (Exception ignored) {}
+                };
+                player.setOnEndOfMedia(release);
+                player.setOnError(release);
+                player.play();
+            } catch (Exception ex) {
+                mLog.error("Error playing mp3 alert", ex);
+            }
+        });
+    }
+
+    /** Plays a sampled (e.g. WAV) alert clip, retaining a strong reference until playback stops. */
+    private void playAlertClip(javax.sound.sampled.AudioInputStream ais) {
+        try {
+            javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
+            clip.open(ais);
+            mActiveAlertPlayers.add(clip);
+            clip.addLineListener(ev -> {
+                if (ev.getType() == javax.sound.sampled.LineEvent.Type.STOP) {
+                    mActiveAlertPlayers.remove(clip);
+                    try { clip.close(); } catch (Exception ignored) {}
+                }
+            });
+            clip.start();
+        } catch (Exception ex) {
+            mLog.error("Error playing local alert clip", ex);
         }
     }
 
