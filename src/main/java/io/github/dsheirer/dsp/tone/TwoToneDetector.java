@@ -94,6 +94,52 @@ public class TwoToneDetector
     private final java.util.HashMap<Long, GoertzelFilter> mGoertzelFilters = new java.util.HashMap<>();
     private final float[] mGoertzelScratch = new float[BLOCK_SIZE];
 
+    // Longer analysis window (~100ms) for tone frequency discrimination.  A 20ms block only resolves ~100Hz; 100ms
+    // resolves ~10Hz, approaching the 2% tolerance so close tones (e.g. 349 vs 387) can be told apart and off-target
+    // tones/voice no longer leak across.  Separate cached Goertzel filters and scratch buffer at this window size.
+    static final int ANALYSIS_WINDOW_SAMPLES = 800; // 100ms @ 8kHz
+    private static final int MAX_ANALYSIS_SEGMENTS = 64;
+    private final java.util.HashMap<Long, GoertzelFilter> mAnalysisGoertzelFilters = new java.util.HashMap<>();
+    private final float[] mAnalysisScratch = new float[ANALYSIS_WINDOW_SAMPLES];
+
+    // Per-segment rolling analysis window (newest samples at the end).  Per-segment so interleaved audio from
+    // concurrent channels is never mixed into one measurement.  Bounded LRU to avoid leaking AudioSegment references.
+    private static final class AnalysisWindow
+    {
+        final float[] buffer = new float[ANALYSIS_WINDOW_SAMPLES];
+        int filled = 0;
+
+        void append(float[] block)
+        {
+            int n = block.length;
+            if(n >= ANALYSIS_WINDOW_SAMPLES)
+            {
+                System.arraycopy(block, n - ANALYSIS_WINDOW_SAMPLES, buffer, 0, ANALYSIS_WINDOW_SAMPLES);
+                filled = ANALYSIS_WINDOW_SAMPLES;
+            }
+            else
+            {
+                System.arraycopy(buffer, n, buffer, 0, ANALYSIS_WINDOW_SAMPLES - n); // shift older samples left
+                System.arraycopy(block, 0, buffer, ANALYSIS_WINDOW_SAMPLES - n, n);   // append newest at the end
+                filled = Math.min(ANALYSIS_WINDOW_SAMPLES, filled + n);
+            }
+        }
+
+        boolean isFull()
+        {
+            return filled >= ANALYSIS_WINDOW_SAMPLES;
+        }
+    }
+    private final java.util.Map<AudioSegment, AnalysisWindow> mAnalysisWindowBySegment =
+        new java.util.LinkedHashMap<>(16, 0.75f, true)
+        {
+            @Override
+            protected boolean removeEldestEntry(java.util.Map.Entry<AudioSegment, AnalysisWindow> eldest)
+            {
+                return size() > MAX_ANALYSIS_SEGMENTS;
+            }
+        };
+
     // Per-segment audio re-blocking accumulator.  Decoder audio arrives in 512-sample blocks (NBFM/AM RealResampler
     // output) but the detector analyses fixed BLOCK_SIZE (160-sample) blocks, so processAudio() carries each segment's
     // sub-block remainder here until enough samples accumulate for the next analysis block.  Bounded LRU (eldest idle
@@ -285,6 +331,22 @@ public class TwoToneDetector
         //on the segment (or when it has no aliases selected, in which case it runs globally for backward compatibility).
         java.util.Set<String> applicableDetectors = getApplicableDetectorNames(segment, configs);
 
+        //Maintain a rolling ~100ms analysis window per segment so tone power/dominance is measured over enough samples
+        //to actually resolve the configured frequency (a single 20ms block only resolves ~100Hz; 100ms resolves
+        //~10Hz, approaching the 2% tolerance and letting close tones like 349 vs 387 be distinguished).  The state
+        //machine still advances once per 20ms block; only the frequency measurement uses the longer window.  Until the
+        //window fills, fall back to the 20ms block so short calls are not missed at onset.
+        float[] analysisBuffer = buffer;
+        if(segment != null)
+        {
+            AnalysisWindow aw = mAnalysisWindowBySegment.computeIfAbsent(segment, s -> new AnalysisWindow());
+            aw.append(buffer);
+            if(aw.isFull())
+            {
+                analysisBuffer = aw.buffer;
+            }
+        }
+
         for(TwoToneConfiguration config : configs)
         {
             if (!config.isEnabled()) continue;
@@ -312,7 +374,7 @@ public class TwoToneDetector
             if (freqA <= 0) continue;
             if (!config.isLongATone() && freqB <= 0) continue;
 
-            boolean toneAPresent = isDominantTone(buffer, freqA, tolA);
+            boolean toneAPresent = isDominantTone(analysisBuffer, freqA, tolA);
 
             if (config.isLongATone())
             {
@@ -346,7 +408,7 @@ public class TwoToneDetector
                 continue;
             }
 
-            boolean toneBPresent = isDominantTone(buffer, freqB, tolB);
+            boolean toneBPresent = isDominantTone(analysisBuffer, freqB, tolB);
 
             // Tone A detection
             if (toneAPresent)
@@ -762,19 +824,26 @@ public class TwoToneDetector
      * reused scratch buffer rather than cloning the caller's buffer on every call.
      */
     private int powerAt(float[] buffer, long freq) {
-        if (buffer.length != BLOCK_SIZE) {
-            //Fall back to a one-off filter for an unexpected buffer size rather than corrupting the scratch buffer.
+        //Select the cached filter + scratch matching the buffer length (20ms block or the ~100ms analysis window).
+        final java.util.HashMap<Long, GoertzelFilter> cache;
+        final float[] scratch;
+        if (buffer.length == BLOCK_SIZE) {
+            cache = mGoertzelFilters; scratch = mGoertzelScratch;
+        } else if (buffer.length == ANALYSIS_WINDOW_SAMPLES) {
+            cache = mAnalysisGoertzelFilters; scratch = mAnalysisScratch;
+        } else {
+            //Fall back to a one-off filter for an unexpected buffer size rather than corrupting a scratch buffer.
             return new GoertzelFilter(SAMPLE_RATE, freq, buffer.length, WindowType.BLACKMAN).getPower(buffer.clone());
         }
 
-        GoertzelFilter filter = mGoertzelFilters.get(freq);
+        GoertzelFilter filter = cache.get(freq);
         if (filter == null) {
-            filter = new GoertzelFilter(SAMPLE_RATE, freq, BLOCK_SIZE, WindowType.BLACKMAN);
-            mGoertzelFilters.put(freq, filter);
+            filter = new GoertzelFilter(SAMPLE_RATE, freq, buffer.length, WindowType.BLACKMAN);
+            cache.put(freq, filter);
         }
 
-        System.arraycopy(buffer, 0, mGoertzelScratch, 0, BLOCK_SIZE);
-        return filter.getPower(mGoertzelScratch);
+        System.arraycopy(buffer, 0, scratch, 0, buffer.length);
+        return filter.getPower(scratch);
     }
 
     /**
