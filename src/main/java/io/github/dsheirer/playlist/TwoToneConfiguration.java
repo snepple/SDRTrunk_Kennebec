@@ -43,9 +43,20 @@ public class TwoToneConfiguration
     private DoubleProperty mFrequencyToleranceProperty = new SimpleDoubleProperty(10.0);
     private DoubleProperty mToneDurationMsProperty = new SimpleDoubleProperty(300.0);
 
+    //Default minimum tone hold durations (the editable per-detector field values).  A tone must be held for at least
+    //this long to count, which mitigates voice triggering / false positives: human speech is highly harmonic but
+    //cannot hold a constant fundamental for these durations.  Tuned for standard QCII timing: a ~1.0s Tone A -> 0.6s
+    //minimum, a ~3.0s Tone B -> 1.5s minimum, and an ~8.0s single long tone (group call) -> 4.5s minimum.  Users can
+    //change these per detector; MINIMUM_TONE_DURATION_FLOOR_MS is enforced by the detector so no tone is ever gated
+    //below 500ms.
+    public static final double DEFAULT_TONE_A_LENGTH_SEC = 0.6;   //600 ms
+    public static final double DEFAULT_TONE_B_LENGTH_SEC = 1.5;   //1500 ms
+    public static final double DEFAULT_LONG_TONE_LENGTH_SEC = 4.5; //4500 ms (single long/group-call tone)
+    public static final double MINIMUM_TONE_DURATION_FLOOR_MS = 500.0;
+
     // IAmResponding-style per-tone configuration fields
-    private DoubleProperty mToneALengthSecProperty = new SimpleDoubleProperty(0.6);
-    private DoubleProperty mToneBLengthSecProperty = new SimpleDoubleProperty(0.6);
+    private DoubleProperty mToneALengthSecProperty = new SimpleDoubleProperty(DEFAULT_TONE_A_LENGTH_SEC);
+    private DoubleProperty mToneBLengthSecProperty = new SimpleDoubleProperty(DEFAULT_TONE_B_LENGTH_SEC);
     private DoubleProperty mToneGapLengthSecProperty = new SimpleDoubleProperty(0.0);
     private DoubleProperty mToneToleranceProperty = new SimpleDoubleProperty(0.02);
     private DoubleProperty mIgnoreDuplicateSecProperty = new SimpleDoubleProperty(60.0);
@@ -572,6 +583,11 @@ public class TwoToneConfiguration
     //appended from the detector processing thread while the JavaFX thread reads it for display.
     private static final int MAX_DETECTION_HISTORY = 200;
     private final List<Long> mDetectionHistory = java.util.Collections.synchronizedList(new ArrayList<>());
+    //Channel/alias name each detection was heard on, head-aligned with mDetectionHistory (index 0 = most recent) and
+    //guarded by the same monitor (mDetectionHistory).  Serialized as repeated <detectionChannelEntry> elements.
+    //Playlists saved before this field have no channel entries, so older detections simply display with no channel;
+    //getDetectionChannel(index) returns "" when an entry predates this field.
+    private final List<String> mDetectionChannels = new ArrayList<>();
 
     @JacksonXmlProperty(isAttribute = false, localName = "detectionEntry")
     public List<Long> getDetectionHistory()
@@ -597,23 +613,74 @@ public class TwoToneConfiguration
         }
     }
 
+    @JacksonXmlProperty(isAttribute = false, localName = "detectionChannelEntry")
+    public List<String> getDetectionChannels()
+    {
+        synchronized(mDetectionHistory)
+        {
+            return new ArrayList<>(mDetectionChannels);
+        }
+    }
+
+    public void setDetectionChannels(List<String> detectionChannels)
+    {
+        synchronized(mDetectionHistory)
+        {
+            mDetectionChannels.clear();
+
+            if(detectionChannels != null)
+            {
+                mDetectionChannels.addAll(detectionChannels);
+            }
+        }
+    }
+
     /**
-     * Records a two-tone detection event for this detector.  The timestamp is inserted at the head of the history so
-     * the most recent detection is always first, and the list is trimmed to the most recent MAX_DETECTION_HISTORY
-     * entries.  Thread-safe: called from the detector processing thread while the UI thread may read the list.
-     * @param epochMillis the detection time, in epoch milliseconds (e.g. System.currentTimeMillis())
+     * Returns the channel/alias name for the detection at the given history index, or "" if unknown (e.g. an entry
+     * recorded before channel history was tracked).
      */
-    public void recordDetection(long epochMillis)
+    @JsonIgnore
+    public String getDetectionChannel(int index)
+    {
+        synchronized(mDetectionHistory)
+        {
+            return (index >= 0 && index < mDetectionChannels.size()) ? mDetectionChannels.get(index) : "";
+        }
+    }
+
+    /**
+     * Records a two-tone detection event for this detector.  The timestamp and channel name are inserted at the head
+     * so the most recent detection is always first, and both lists are trimmed to the most recent
+     * MAX_DETECTION_HISTORY entries.  Thread-safe: called from the detector processing thread while the UI thread may
+     * read the lists.
+     * @param epochMillis the detection time, in epoch milliseconds (e.g. System.currentTimeMillis())
+     * @param channelName the channel/alias name the tones were heard on (null/empty if unknown)
+     */
+    public void recordDetection(long epochMillis, String channelName)
     {
         synchronized(mDetectionHistory)
         {
             mDetectionHistory.add(0, epochMillis);
+            mDetectionChannels.add(0, channelName != null ? channelName : "");
 
             while(mDetectionHistory.size() > MAX_DETECTION_HISTORY)
             {
                 mDetectionHistory.remove(mDetectionHistory.size() - 1);
             }
+            while(mDetectionChannels.size() > MAX_DETECTION_HISTORY)
+            {
+                mDetectionChannels.remove(mDetectionChannels.size() - 1);
+            }
         }
+    }
+
+    /**
+     * Backward-compatible overload for callers that do not know the channel name.
+     * @param epochMillis the detection time, in epoch milliseconds
+     */
+    public void recordDetection(long epochMillis)
+    {
+        recordDetection(epochMillis, null);
     }
 
     /**
@@ -624,6 +691,7 @@ public class TwoToneConfiguration
         synchronized(mDetectionHistory)
         {
             mDetectionHistory.clear();
+            mDetectionChannels.clear();
         }
     }
 

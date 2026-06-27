@@ -286,9 +286,13 @@ public class TwoToneDetector
             // Use percentage-based tolerance (IAmResponding style) with fallback to absolute Hz
             double tolA = config.getEffectiveToleranceHz(config.getToneA());
             double tolB = config.getEffectiveToleranceHz(config.getToneB());
-            // Per-tone durations (IAmResponding style) with fallback to legacy single duration
-            int minToneABlocks = Math.max(1, (int)(config.getEffectiveToneADurationMs() / 20));
-            int minToneBBlocks = Math.max(1, (int)(config.getEffectiveToneBDurationMs() / 20));
+            // Per-tone durations (IAmResponding style) with fallback to legacy single duration.  Enforce an absolute
+            // minimum hold of MINIMUM_TONE_DURATION_FLOOR_MS so a tone is never gated below 500ms - this mitigates
+            // voice triggering / false positives even if a detector is configured with a very short length.
+            double minToneAMs = Math.max(TwoToneConfiguration.MINIMUM_TONE_DURATION_FLOOR_MS, config.getEffectiveToneADurationMs());
+            double minToneBMs = Math.max(TwoToneConfiguration.MINIMUM_TONE_DURATION_FLOOR_MS, config.getEffectiveToneBDurationMs());
+            int minToneABlocks = Math.max(1, (int)(minToneAMs / 20));
+            int minToneBBlocks = Math.max(1, (int)(minToneBMs / 20));
             // Gap tolerance: number of silent blocks allowed between tone A and tone B
             int maxGapBlocks = Math.max(0, (int)(config.getToneGapLengthSec() * 1000 / 20));
 
@@ -787,9 +791,9 @@ public class TwoToneDetector
             mLog.info("Two Tone Detected: {} (A:{} B:{})", config.getAlias(), config.getToneA(), config.getToneB());
 
             //Record this detection in the detector's persisted, per-detector history (most-recent first) so the user
-            //can review the date/time of every two-tone hit for this detector in the editor's Detection History tab.
-            //schedulePlaylistSave() is debounced (coalesces to one write every 2s) so the history survives restarts.
-            config.recordDetection(System.currentTimeMillis());
+            //can review the date/time and channel of every two-tone hit for this detector in the editor's Detection
+            //History tab.  schedulePlaylistSave() is debounced (coalesces to one write every 2s) so it survives restarts.
+            config.recordDetection(System.currentTimeMillis(), getSegmentChannelName(segment));
 
             if(mPlaylistManager != null)
             {
@@ -996,8 +1000,10 @@ public class TwoToneDetector
         }
 
         if (!exists) {
-            // Emit event for AI Tone Discovery Manager
-            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new ToneDiscoveredEvent(toneA, toneB, segment, channelFrequency));
+            // Emit event for AI Tone Discovery Manager, including the channel name so an AI-created detector can be
+            // named for / record where the tones were heard.
+            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
+                    new ToneDiscoveredEvent(toneA, toneB, segment, channelFrequency, getSegmentChannelName(segment)));
         }
         
         String channel = "Unknown";

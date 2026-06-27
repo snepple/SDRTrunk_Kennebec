@@ -166,7 +166,7 @@ public class ToneDiscoveryManager {
 
         if (shouldFinalizeUnknown(toneKey, observations)) {
             finalizeDetector(event.getToneA(), event.getToneB(), toneKey, null,
-                event.getChannelFrequency(), null);
+                event.getChannelFrequency(), null, event.getChannelName());
             return;
         }
 
@@ -316,7 +316,7 @@ public class ToneDiscoveryManager {
 
                     if (agencies.size() >= CONFIDENCE_THRESHOLD) {
                         finalizeDetector(event.getToneA(), event.getToneB(), toneKey, agencies,
-                            event.getChannelFrequency(), transcript);
+                            event.getChannelFrequency(), transcript, event.getChannelName());
                     } else {
                         saveState();
                     }
@@ -326,7 +326,7 @@ public class ToneDiscoveryManager {
                     int observations = mState.getObservationCounts().getOrDefault(toneKey, 0);
                     if (shouldFinalizeUnknown(toneKey, observations)) {
                         finalizeDetector(event.getToneA(), event.getToneB(), toneKey, null,
-                            event.getChannelFrequency(), transcript);
+                            event.getChannelFrequency(), transcript, event.getChannelName());
                     } else {
                         saveState();
                     }
@@ -342,7 +342,7 @@ public class ToneDiscoveryManager {
      * the tone data (graceful degradation).
      */
     private void finalizeDetector(double toneA, double toneB, String toneKey, List<String> agencies,
-                                  double channelFrequency, String transcript) {
+                                  double channelFrequency, String transcript, String channelName) {
         //Snap to the nearest standard matrix frequency to avoid marginally varying duplicates and present clean values.
         double snappedA = ToneStandards.snap(toneA);
         double snappedB = toneB > 0 ? ToneStandards.snap(toneB) : toneB;
@@ -364,23 +364,37 @@ public class ToneDiscoveryManager {
                     resolvedName = entry.getKey();
                 }
             }
-            displayName = "[AI] " + resolvedName;
+            //Include the channel the tones were heard on in the draft name so the user can tell where it came from.
+            displayName = "[AI] " + resolvedName +
+                    (channelName != null && !channelName.isBlank() ? " (" + channelName.trim() + ")" : "");
         } else {
-            resolvedName = buildUnknownPlaceholder(snappedA, snappedB, channelFrequency);
+            resolvedName = buildUnknownPlaceholder(snappedA, snappedB, channelFrequency, channelName);
             displayName = "[AI] " + resolvedName;
         }
 
         mLog.info("AI Tone Discovery: Finalizing detector for tone " + toneKey + " as [" + resolvedName + "]");
 
+        boolean longTone = snappedB <= 0;
+
         TwoToneConfiguration newConfig = new TwoToneConfiguration();
         newConfig.setToneA(snappedA);
         newConfig.setToneB(snappedB);
-        newConfig.setLongATone(snappedB <= 0);
+        newConfig.setLongATone(longTone);
+        //Seed sensible default minimum tone hold durations so a freshly AI-created detector mitigates voice
+        //triggering out of the box (the user can change these): a single long/group-call tone defaults longer.
+        if(longTone) {
+            newConfig.setToneALengthSec(TwoToneConfiguration.DEFAULT_LONG_TONE_LENGTH_SEC);
+        } else {
+            newConfig.setToneALengthSec(TwoToneConfiguration.DEFAULT_TONE_A_LENGTH_SEC);
+            newConfig.setToneBLengthSec(TwoToneConfiguration.DEFAULT_TONE_B_LENGTH_SEC);
+        }
         newConfig.setAlias(displayName);
         newConfig.setEnabled(false); // User must review
         newConfig.setAutoDiscovered(true);
         newConfig.setDiscoveryFrequency(channelFrequency);
         newConfig.setDiscoveryTranscript(transcript != null ? transcript.trim() : "");
+        //Seed the detection history with this discovery so the editor's history tab shows when/where it was heard.
+        newConfig.recordDetection(System.currentTimeMillis(), channelName);
 
         runOnFxThread(() -> {
             try {
@@ -416,6 +430,10 @@ public class ToneDiscoveryManager {
      * confident unit name could be extracted, e.g. {@code "Pending User Review (Tones: 1006.9/832.5 on 154.1450)"}.
      */
     static String buildUnknownPlaceholder(double toneA, double toneB, double channelFrequency) {
+        return buildUnknownPlaceholder(toneA, toneB, channelFrequency, null);
+    }
+
+    static String buildUnknownPlaceholder(double toneA, double toneB, double channelFrequency, String channelName) {
         StringBuilder sb = new StringBuilder("Pending User Review (Tones: ");
         sb.append(formatTone(toneA));
 
@@ -423,7 +441,11 @@ public class ToneDiscoveryManager {
             sb.append('/').append(formatTone(toneB));
         }
 
-        if (channelFrequency > 0) {
+        //Prefer the human-readable channel name; fall back to the RF frequency when the name is unknown.
+        if (channelName != null && !channelName.isBlank()) {
+            sb.append(" on ").append(channelName.trim());
+        }
+        else if (channelFrequency > 0) {
             //channelFrequency is in Hz; present as MHz to match standard channel notation.
             sb.append(String.format(" on %.4f", channelFrequency / 1_000_000.0));
         }

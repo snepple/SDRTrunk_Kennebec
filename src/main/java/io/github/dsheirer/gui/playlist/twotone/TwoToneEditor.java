@@ -497,9 +497,13 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             if(sel != null) {
                 //Snapshot the synchronized list before iterating (it may be appended from the detector thread).
                 List<Long> snapshot = new java.util.ArrayList<>(sel.getDetectionHistory());
-                for(Long ts : snapshot) {
+                for(int i = 0; i < snapshot.size(); i++) {
+                    Long ts = snapshot.get(i);
                     if(ts != null) {
-                        historyList.getItems().add(historyFormatter.format(java.time.Instant.ofEpochMilli(ts)));
+                        String when = historyFormatter.format(java.time.Instant.ofEpochMilli(ts));
+                        String channel = sel.getDetectionChannel(i);
+                        historyList.getItems().add((channel != null && !channel.isEmpty())
+                                ? when + "  —  " + channel : when);
                     }
                 }
                 historyCountLabel.setText(snapshot.size() + (snapshot.size() == 1 ? " detection" : " detections"));
