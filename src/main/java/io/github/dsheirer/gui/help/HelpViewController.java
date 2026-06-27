@@ -120,6 +120,8 @@ public class HelpViewController {
 
         TreeItem<String> advancedSystemNode = new TreeItem<>("Advanced & System");
         advancedSystemNode.getChildren().add(new TreeItem<>("Audio Recordings"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Audio Transcriptions"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Gpu Acceleration"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Diagnostics"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Application Watchdog"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Gemini Ai"));

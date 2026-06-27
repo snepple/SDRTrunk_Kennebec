@@ -72,3 +72,7 @@
 **Topic:** 3 New Documentation Guides Added
 **Learning:** Three existing missing features/concepts from the recent updates (Audio Recordings, Zello Integration, and Virtual Audio Cable) lacked Mintlify-styled "Visual First" Markdown guides.
 **Action:** Created `audio-recordings.md`, `zello.md`, and `virtual-audio-cable.md` adhering to the Visual-First Mintlify style and correctly mapped them to the `HelpViewController.java` navigation tree via the `help/` directory.
+## 2026-06-27 - Topic Selection
+**Topic:** 3 New Documentation Guides Added
+**Learning:** Three existing missing features/concepts from the recent updates (Audio Transcriptions, GPU Acceleration, and Diagnostics) lacked Mintlify-styled "Visual First" Markdown guides.
+**Action:** Created `audio-transcriptions.md` and `gpu-acceleration.md`, and rewrote `diagnostics.md` adhering to the Visual-First Mintlify style and correctly mapped them to the `HelpViewController.java` navigation tree via the `help/` directory.
