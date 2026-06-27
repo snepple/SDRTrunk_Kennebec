@@ -163,6 +163,16 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     private volatile long mLastAudioReceivedTime = 0;
     private final AtomicBoolean mInjectingPreDispatch = new AtomicBoolean(false);
 
+    //Two-tone alerts (text and/or pre-dispatch tone) that fired while the channel was not yet online are held here
+    //and flushed once it comes online, so a tone-out during a reconnect/kick is not silently dropped (the reliability
+    //problem where Zello text/audio alerts only fired sometimes).  Bounded, and each entry has a short TTL so a stale
+    //alert never fires long after the event.
+    private static final long PENDING_ALERT_TTL_MS = 45_000;
+    private static final int MAX_PENDING_ALERTS = 20;
+    private record PendingZelloAlert(String text, String audioFile, long expiresAtMs) {}
+    private final java.util.concurrent.ConcurrentLinkedQueue<PendingZelloAlert> mPendingAlerts =
+            new java.util.concurrent.ConcurrentLinkedQueue<>();
+
     private RealResampler mResampler;
     private OpusEncoder mOpusEncoder;
     private short[] mResampleBuffer = new short[ZELLO_FRAME_SIZE_SAMPLES];
@@ -426,7 +436,13 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
 
     public void sendTextMessage(String text)
     {
-        if(mWebSocket == null || !mConnected.get()) return;
+        if(mWebSocket == null || !mConnected.get())
+        {
+            //Not connected (connecting/reconnecting/kicked): hold the alert and flush it when the channel comes
+            //online, rather than silently dropping a tone-out alert during connection churn.
+            queuePendingAlert(new PendingZelloAlert(text, null, System.currentTimeMillis() + PENDING_ALERT_TTL_MS));
+            return;
+        }
         try
         {
             JsonObject cmd = new JsonObject();
@@ -448,6 +464,13 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     public void injectPreDispatchAudio(String filename)
     {
         if (filename == null || filename.isEmpty()) return;
+
+        if(!mConnected.get() || !mChannelOnline.get())
+        {
+            //Channel not ready: starting a stream would bail, so hold the tone and flush it when online.
+            queuePendingAlert(new PendingZelloAlert(null, filename, System.currentTimeMillis() + PENDING_ALERT_TTL_MS));
+            return;
+        }
 
         ThreadPool.CACHED.submit(() -> {
             if (!mStreamActive.get()) {
@@ -498,6 +521,49 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                 mInjectingPreDispatch.set(false);
             }
         });
+    }
+
+    /**
+     * Holds a two-tone alert that could not be sent because the channel was not yet online, to be flushed when it
+     * comes online.  Bounded (oldest dropped past the cap) so a long outage cannot accumulate alerts without limit.
+     */
+    private void queuePendingAlert(PendingZelloAlert alert)
+    {
+        while(mPendingAlerts.size() >= MAX_PENDING_ALERTS)
+        {
+            mPendingAlerts.poll();
+        }
+        mPendingAlerts.add(alert);
+        mLog.info("{}Zello not ready - queued two-tone alert to send when the channel comes online", ch());
+    }
+
+    /**
+     * Sends any queued two-tone alerts now that the channel is online, discarding any that have exceeded their TTL.
+     * Invoked on the channel-online transition.  Safe because send paths now succeed (connected + online), so they
+     * do not re-queue.
+     */
+    private void flushPendingAlerts()
+    {
+        long now = System.currentTimeMillis();
+        PendingZelloAlert alert;
+
+        while((alert = mPendingAlerts.poll()) != null)
+        {
+            if(alert.expiresAtMs() < now)
+            {
+                mLog.info("{}Discarding stale queued two-tone alert (older than {}s)", ch(), PENDING_ALERT_TTL_MS / 1000);
+                continue;
+            }
+
+            if(alert.text() != null)
+            {
+                sendTextMessage(alert.text());
+            }
+            if(alert.audioFile() != null)
+            {
+                injectPreDispatchAudio(alert.audioFile());
+            }
+        }
     }
 
     private synchronized void processAudioQueue()
@@ -1346,6 +1412,8 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                                 setBroadcastState(BroadcastState.CONNECTED);
                                 startKeepalive();
                                 mLog.info("{}Zello connected", ch());
+                                //Flush any two-tone alerts that fired while the channel was offline/reconnecting.
+                                flushPendingAlerts();
                             }
                         }
                         else
