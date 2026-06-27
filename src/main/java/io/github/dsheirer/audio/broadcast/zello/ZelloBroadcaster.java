@@ -191,8 +191,21 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     /** Returns the configured channel name for log identification */
     private String ch()
     {
+        String c = channelName();
+        return (c != null && !c.isEmpty()) ? "[" + c + "] " : "";
+    }
+
+    /**
+     * The configured Zello channel name, trimmed of accidental leading/trailing whitespace.  A trailing space (easy
+     * to introduce when typing/pasting the channel) makes the Zello server reject the channel with 3003 "channel is
+     * not ready", so the channel never comes online and NOTHING streams.  All channel names sent to the server go
+     * through here so such whitespace can never silently break streaming.
+     */
+    private String channelName()
+    {
         ZelloConfiguration config = getBroadcastConfiguration();
-        return config != null && config.getChannel() != null ? "[" + config.getChannel() + "] " : "";
+        String c = (config != null) ? config.getChannel() : null;
+        return (c != null) ? c.trim() : null;
     }
 
     @Override
@@ -450,7 +463,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
             int seq = mSequence.getAndIncrement();
             cmd.addProperty("seq", seq);
             mPendingCommands.put(seq, "send_text_message");
-            cmd.addProperty("channel", getBroadcastConfiguration().getChannel());
+            cmd.addProperty("channel", channelName());
             cmd.addProperty("text", text);
             mWebSocket.sendText(mGson.toJson(cmd), true);
             mLog.info("{}Sent Zello text message", ch());
@@ -1133,7 +1146,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         logon.addProperty("seq", seq);
         mPendingCommands.put(seq, "logon");
         com.google.gson.JsonArray channels = new com.google.gson.JsonArray();
-        channels.add(config.getChannel());
+        channels.add(channelName());
         logon.add("channels", channels);
         logon.addProperty("username", config.getUsername());
         logon.addProperty("password", config.getPassword());
@@ -1157,7 +1170,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         int seq = mSequence.getAndIncrement();
         cmd.addProperty("seq", seq);
         mPendingCommands.put(seq, "start_stream");
-        cmd.addProperty("channel", config.getChannel());
+        cmd.addProperty("channel", channelName());
         cmd.addProperty("type", "audio");
         cmd.addProperty("codec", "opus");
         cmd.addProperty("codec_header", CODEC_HEADER_B64);
@@ -1175,7 +1188,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         cmd.addProperty("seq", seq);
         mPendingCommands.put(seq, "stop_stream(id=" + streamId + ")");
         cmd.addProperty("stream_id", streamId);
-        cmd.addProperty("channel", config.getChannel());
+        cmd.addProperty("channel", channelName());
         mWebSocket.sendText(mGson.toJson(cmd), true);
     }
 
