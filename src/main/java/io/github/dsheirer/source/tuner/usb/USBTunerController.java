@@ -843,8 +843,13 @@ public abstract class USBTunerController extends TunerController
          * Note: this should only be invoked after the LibUsb event processing thread has been stopped so that the
          * transfer buffers are in a stable (submitted vs callback) state and we can then flip their cancel state and
          * then finish processing the timeout events under the control of a single (shutdown) thread.
+         *
+         * Synchronized on the same monitor as submitTransfer()/drainErrorTransfers() so a still-running buffer
+         * recovery pass cannot iterate or resubmit the transfer collections while shutdown is cancelling them
+         * (which would otherwise throw ConcurrentModificationException and could submit a transfer that is about
+         * to be freed - a native use-after-free that aborts the JVM).
          */
-        private void cancelTransfers()
+        private synchronized void cancelTransfers()
         {
             for(Transfer transfer: mInProgressTransfers)
             {
@@ -858,8 +863,13 @@ public abstract class USBTunerController extends TunerController
 
         /**
          * Frees/disposes allocated USB transfer buffers.
+         *
+         * Synchronized on the same monitor as submitTransfer()/drainErrorTransfers() so the native transfer
+         * buffers can never be freed while a buffer recovery pass is still resubmitting them.  Once this method
+         * sets mAvailableTransfers to null, drainErrorTransfers() (which re-checks under the same lock) treats the
+         * device as gone and stops touching the freed transfers.
          */
-        private void freeTransfers()
+        private synchronized void freeTransfers()
         {
             if(mAvailableTransfers != null)
             {
@@ -886,12 +896,21 @@ public abstract class USBTunerController extends TunerController
         {
             mInProgressTransfers.remove(transfer);
 
-            if(mErrorTransfers.contains(transfer))
+            //Remove under the TransferManager monitor: a concurrent buffer recovery pass (drainErrorTransfers)
+            //or a submit may be iterating/mutating mErrorTransfers on another thread, so an unsynchronized
+            //contains()/remove() here risks ConcurrentModificationException and list corruption.
+            boolean wasErrorTransfer;
+
+            synchronized(this)
+            {
+                wasErrorTransfer = mErrorTransfers.remove(transfer);
+            }
+
+            if(wasErrorTransfer)
             {
                 mLog.warn("USB transfer [" + transfer + "] that was being tracked as an error transfer, has just been " +
                         "delivered as completed with transfer status [" + LibUsb.errorName(transfer.status()) +
                         "] - removing it from the transfer error queue");
-                mErrorTransfers.remove(transfer);
             }
 
             switch(transfer.status())

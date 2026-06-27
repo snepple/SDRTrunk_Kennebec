@@ -150,6 +150,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private TextField mHoldTimeField;
     private javafx.scene.control.Button mAIOptimizeButton;
     private Label mAIOptimizeStatusLabel;
+    //Indeterminate progress bar shown while the AI analysis is running so the user knows it is working.
+    private javafx.scene.control.ProgressBar mAIOptimizeProgressBar;
 
     private boolean mLoadingConfiguration = false;
     //True only while AI-suggested values are being applied programmatically, so that does not get
@@ -424,6 +426,17 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 mAIOptimizeStatusLabel.setWrapText(true);
                 GridPane.setConstraints(mAIOptimizeStatusLabel, 1, 0);
                 aiPane.getChildren().add(mAIOptimizeStatusLabel);
+
+                //Indeterminate progress bar (row 1, spanning both columns) shown only while analysis runs.  Kept
+                //un-managed when hidden so it does not reserve vertical space in the pane.
+                mAIOptimizeProgressBar = new javafx.scene.control.ProgressBar();
+                mAIOptimizeProgressBar.setMaxWidth(Double.MAX_VALUE);
+                mAIOptimizeProgressBar.setVisible(false);
+                mAIOptimizeProgressBar.setManaged(false);
+                GridPane.setConstraints(mAIOptimizeProgressBar, 0, 1);
+                GridPane.setColumnSpan(mAIOptimizeProgressBar, 2);
+                aiPane.getChildren().add(mAIOptimizeProgressBar);
+
                 contentBox.getChildren().addAll(aiPane, new Separator());
             }
 
@@ -1625,37 +1638,93 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
     private void showComparisonUI(DecodeConfigNBFM config, AIAnalysisResult result) {
         javafx.scene.control.Dialog<Boolean> dialog = new javafx.scene.control.Dialog<>();
         dialog.setTitle("AI DSP Optimization");
-        dialog.setHeaderText(result.getExplanation());
+        dialog.setHeaderText("Review the recommended NBFM audio filter changes");
+        dialog.setResizable(true);
 
-        javafx.scene.control.ButtonType acceptButtonType = new javafx.scene.control.ButtonType("Accept All", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(acceptButtonType, javafx.scene.control.ButtonType.CANCEL);
+        //Show the dialog as a window-modal child of the editor's window so it always appears on top of the
+        //application window instead of falling behind it (the previous dialog had no owner).
+        javafx.stage.Window owner = (mAIOptimizeButton != null && mAIOptimizeButton.getScene() != null)
+                ? mAIOptimizeButton.getScene().getWindow() : null;
+        if(owner != null) {
+            dialog.initOwner(owner);
+            dialog.initModality(javafx.stage.Modality.WINDOW_MODAL);
+        }
+
+        javafx.scene.control.ButtonType acceptButtonType = new javafx.scene.control.ButtonType("Accept",
+                javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        javafx.scene.control.ButtonType rejectButtonType = new javafx.scene.control.ButtonType("Reject",
+                javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(acceptButtonType, rejectButtonType);
+
+        //Explanation of what the AI recommends and why, wrapped to a fixed width so the dialog stays a readable
+        //box instead of stretching into a single row across (and off) the screen.
+        VBox content = new VBox(12);
+        content.setPadding(new Insets(15, 15, 10, 15));
+        content.setMaxWidth(560);
+        content.setPrefWidth(560);
+
+        if(result.getExplanation() != null && !result.getExplanation().isBlank()) {
+            Label explanation = new Label(result.getExplanation());
+            explanation.setWrapText(true);
+            explanation.setMaxWidth(530);
+            content.getChildren().add(explanation);
+        }
+        if(result.getIssuesFound() != null && !result.getIssuesFound().isBlank()) {
+            Label issues = new Label("Issues found: " + result.getIssuesFound());
+            issues.setWrapText(true);
+            issues.setMaxWidth(530);
+            issues.setStyle("-fx-text-fill: #555555;");
+            content.getChildren().add(issues);
+        }
 
         GridPane grid = new GridPane();
         grid.setHgap(20);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
+        grid.setVgap(8);
+        grid.setPadding(new Insets(5, 5, 5, 0));
 
-        grid.add(new Label("Setting"), 0, 0);
-        grid.add(new Label("Current"), 1, 0);
-        grid.add(new Label("Suggested"), 2, 0);
+        Label settingHeader = new Label("Setting");
+        Label currentHeader = new Label("Current");
+        Label suggestedHeader = new Label("Suggested");
+        settingHeader.setStyle("-fx-font-weight: bold;");
+        currentHeader.setStyle("-fx-font-weight: bold;");
+        suggestedHeader.setStyle("-fx-font-weight: bold;");
+        grid.add(settingHeader, 0, 0);
+        grid.add(currentHeader, 1, 0);
+        grid.add(suggestedHeader, 2, 0);
 
-        grid.add(new Label("Low Pass Enabled"), 0, 1);
-        grid.add(new Label(String.valueOf(config.isLowPassEnabled())), 1, 1);
-        grid.add(new Label(String.valueOf(result.isLowPassEnabled())), 2, 1);
+        int[] row = {1};
+        addComparisonRow(grid, row, "Low Pass Filter", fmtBool(config.isLowPassEnabled()), fmtBool(result.isLowPassEnabled()));
+        addComparisonRow(grid, row, "Low Pass Cutoff", fmtHz(config.getLowPassCutoff()), fmtHz(result.getLowPassCutoff()));
+        addComparisonRow(grid, row, "Hiss Reduction", fmtBool(config.isHissReductionEnabled()), fmtBool(result.isHissReductionEnabled()));
+        addComparisonRow(grid, row, "Hiss Reduction Amount", fmtDb(config.getHissReductionDb()), fmtDb(result.getHissReductionDb()));
+        addComparisonRow(grid, row, "Hiss Reduction Corner", fmtHz(config.getHissReductionCornerHz()), fmtHz(result.getHissReductionCorner()));
+        addComparisonRow(grid, row, "Bass Boost", fmtBool(config.isBassBoostEnabled()), fmtBool(result.isBassBoostEnabled()));
+        addComparisonRow(grid, row, "Bass Boost Amount", fmtDb(config.getBassBoostDb()), fmtDb(result.getBassBoostDb()));
+        addComparisonRow(grid, row, "Noise Gate", fmtBool(config.isNoiseGateEnabled()), fmtBool(result.isNoiseGateEnabled()));
+        addComparisonRow(grid, row, "Noise Gate Threshold", fmtPct(config.getNoiseGateThreshold()), fmtPct(result.getNoiseGateThreshold()));
+        addComparisonRow(grid, row, "Noise Gate Reduction", fmtPct(config.getNoiseGateReduction() * 100.0), fmtPct(result.getNoiseGateReduction() * 100.0));
+        addComparisonRow(grid, row, "Noise Gate Hold", fmtMs(config.getNoiseGateHoldTime()), fmtMs(result.getNoiseGateHoldTime()));
+        addComparisonRow(grid, row, "Squelch Tail Removal", fmtBool(config.isSquelchTailRemovalEnabled()), fmtBool(result.isSquelchTailRemovalEnabled()));
+        addComparisonRow(grid, row, "Squelch Tail Length", fmtMs(config.getSquelchTailRemovalMs()), fmtMs(result.getSquelchTailRemovalMs()));
+        addComparisonRow(grid, row, "Squelch Head Length", fmtMs(config.getSquelchHeadRemovalMs()), fmtMs(result.getSquelchHeadRemovalMs()));
 
-        grid.add(new Label("Low Pass Cutoff"), 0, 2);
-        grid.add(new Label(String.valueOf(config.getLowPassCutoff())), 1, 2);
-        grid.add(new Label(String.valueOf(result.getLowPassCutoff())), 2, 2);
+        content.getChildren().add(grid);
 
-        grid.add(new Label("Hiss Reduction"), 0, 3);
-        grid.add(new Label(String.valueOf(config.isHissReductionEnabled())), 1, 3);
-        grid.add(new Label(String.valueOf(result.isHissReductionEnabled())), 2, 3);
+        //Wrap in a scroll pane with a capped height so a long explanation never grows the dialog off-screen.
+        javafx.scene.control.ScrollPane scroll = new javafx.scene.control.ScrollPane(content);
+        scroll.setFitToWidth(true);
+        scroll.setPrefViewportHeight(460);
+        scroll.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
+        dialog.getDialogPane().setContent(scroll);
+        dialog.getDialogPane().setPrefWidth(600);
 
-        grid.add(new Label("Noise Gate Enabled"), 0, 4);
-        grid.add(new Label(String.valueOf(config.isNoiseGateEnabled())), 1, 4);
-        grid.add(new Label(String.valueOf(result.isNoiseGateEnabled())), 2, 4);
-
-        dialog.getDialogPane().setContent(grid);
+        //Bring the dialog to the front once shown, as a belt-and-suspenders guarantee it is visible/on top.
+        dialog.setOnShown(ev -> {
+            javafx.stage.Window w = dialog.getDialogPane().getScene().getWindow();
+            if(w instanceof javafx.stage.Stage) {
+                ((javafx.stage.Stage) w).toFront();
+            }
+        });
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == acceptButtonType) {
@@ -1690,6 +1759,49 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 recordManualOptimizationSummary(result);
             }
         });
+    }
+
+    /**
+     * Adds a "Setting / Current / Suggested" row to the comparison grid, highlighting the row in blue/bold when the
+     * suggested value differs from the current value so changes are easy to spot.
+     */
+    private void addComparisonRow(GridPane grid, int[] row, String setting, String current, String suggested) {
+        Label settingLabel = new Label(setting);
+        Label currentLabel = new Label(current);
+        Label suggestedLabel = new Label(suggested);
+
+        if(!java.util.Objects.equals(current, suggested)) {
+            settingLabel.setStyle("-fx-font-weight: bold;");
+            suggestedLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #0066cc;");
+        }
+        else {
+            suggestedLabel.setStyle("-fx-text-fill: #777777;");
+        }
+
+        grid.add(settingLabel, 0, row[0]);
+        grid.add(currentLabel, 1, row[0]);
+        grid.add(suggestedLabel, 2, row[0]);
+        row[0]++;
+    }
+
+    private static String fmtBool(boolean value) {
+        return value ? "Enabled" : "Disabled";
+    }
+
+    private static String fmtHz(double value) {
+        return Math.round(value) + " Hz";
+    }
+
+    private static String fmtDb(double value) {
+        return String.format("%.1f dB", value);
+    }
+
+    private static String fmtPct(double value) {
+        return String.format("%.0f%%", value);
+    }
+
+    private static String fmtMs(int value) {
+        return value + " ms";
     }
 
     /**
@@ -1758,8 +1870,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         String priorSummary = mUserPreferences.getAIPreference().getNBFMLastOptimizeSummary(channelName);
 
         mAIOptimizeButton.setDisable(true);
-        mAIOptimizeStatusLabel.setText("Analyzing... This can take up to 60 seconds.");
-        mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #0066cc;");
+        showAIOptimizeProgress();
+        setAIOptimizePhase(channel, "Loading saved audio events for this channel…");
 
         Thread optimizerThread = new Thread(() -> {
             try {
@@ -1771,6 +1883,7 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                     return;
                 }
 
+                setAIOptimizePhase(channel, "Reading " + eventCount + " audio events…");
                 AudioBufferManager bufferManager = new AudioBufferManager(mUserPreferences, channelName);
                 java.util.List<java.util.List<float[]>> recent = bufferManager.getBufferedEvents();
                 if(recent.size() < 5) {
@@ -1780,9 +1893,11 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                     return;
                 }
 
+                setAIOptimizePhase(channel, "Analyzing audio with Gemini AI… this can take up to 60 seconds.");
                 AIAudioOptimizer optimizer = new AIAudioOptimizer(mUserPreferences);
                 AIAnalysisResult result = optimizer.analyzeRawAudio(config, recent, priorSummary);
 
+                setAIOptimizePhase(channel, "Preparing recommended filter changes…");
                 Platform.runLater(() -> showAIOptimizeResult(channel, config, result));
             } catch (Exception e) {
                 updateAIOptimizeStatus(channel, "Analysis failed: " + formatAIOptimizeException(e),
@@ -1797,6 +1912,8 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
         if(getItem() != channel) {
             return;
         }
+
+        hideAIOptimizeProgress();
 
         try {
             showComparisonUI(config, result);
@@ -1816,10 +1933,46 @@ public class NBFMConfigurationEditor extends ChannelConfigurationEditor
                 return;
             }
 
+            hideAIOptimizeProgress();
             mAIOptimizeStatusLabel.setText(status);
             mAIOptimizeStatusLabel.setStyle(style);
             mAIOptimizeButton.setDisable(disableButton);
         });
+    }
+
+    /**
+     * Updates the status label with the current analysis phase (blue, in-progress styling).  Safe to call from a
+     * background thread; marshals onto the JavaFX thread and ignores updates if the user switched channels.
+     */
+    private void setAIOptimizePhase(Channel channel, String phase) {
+        Platform.runLater(() -> {
+            if(getItem() != channel || mAIOptimizeStatusLabel == null) {
+                return;
+            }
+            mAIOptimizeStatusLabel.setText(phase);
+            mAIOptimizeStatusLabel.setStyle("-fx-text-fill: #0066cc;");
+        });
+    }
+
+    /**
+     * Shows the indeterminate progress bar while the AI analysis runs.  Must be called on the JavaFX thread.
+     */
+    private void showAIOptimizeProgress() {
+        if(mAIOptimizeProgressBar != null) {
+            mAIOptimizeProgressBar.setProgress(javafx.scene.control.ProgressBar.INDETERMINATE_PROGRESS);
+            mAIOptimizeProgressBar.setManaged(true);
+            mAIOptimizeProgressBar.setVisible(true);
+        }
+    }
+
+    /**
+     * Hides the progress bar once analysis finishes (success or failure).  Must be called on the JavaFX thread.
+     */
+    private void hideAIOptimizeProgress() {
+        if(mAIOptimizeProgressBar != null) {
+            mAIOptimizeProgressBar.setVisible(false);
+            mAIOptimizeProgressBar.setManaged(false);
+        }
     }
 
     private static String formatAIOptimizeException(Exception e) {

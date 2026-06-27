@@ -141,7 +141,21 @@ public class DCSDecoder extends Decoder implements IRealBufferListener, Listener
             {
                 System.arraycopy(mResidual, 0, buffer, 0, mResidual.length);
                 System.arraycopy(filtered, 0, buffer, mResidual.length, filtered.length);
-                System.arraycopy(filtered, filtered.length - OVERLAP, mResidual, 0, OVERLAP);
+
+                //Update the residual with the trailing OVERLAP samples to carry into the next block.  Short audio
+                //blocks (e.g. squelch-tail or end-of-transmission fragments) can be smaller than OVERLAP, so retain
+                //the tail of the prior residual and append the new samples rather than indexing before the start of
+                //the filtered array (which previously threw ArrayIndexOutOfBoundsException for negative offsets).
+                if(filtered.length >= OVERLAP)
+                {
+                    System.arraycopy(filtered, filtered.length - OVERLAP, mResidual, 0, OVERLAP);
+                }
+                else
+                {
+                    int retained = OVERLAP - filtered.length;
+                    System.arraycopy(mResidual, OVERLAP - retained, mResidual, 0, retained);
+                    System.arraycopy(filtered, 0, mResidual, retained, filtered.length);
+                }
 
                 for(int bufferPointer = 0; bufferPointer < samples.length; bufferPointer++)
                 {
