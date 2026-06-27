@@ -288,6 +288,32 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         ignoreDuplicateSpinner.setEditable(true);
         ignoreDuplicateSpinner.setPrefWidth(120);
 
+        //Editable JavaFX spinners do NOT commit text typed into the editor to the spinner value (and therefore to any
+        //bound model property) unless the user presses Enter.  Without this, edits to the tone length / gap /
+        //tolerance / ignore-duplicate fields appeared to take but were lost when switching detectors, because the
+        //bound TwoToneConfiguration property was never updated.  This helper parses and commits the editor text
+        //(clamped to the factory range); it is invoked on focus loss below and again before switching the selected
+        //detector so in-progress edits are always persisted.
+        java.util.function.Consumer<Spinner<Double>> commitSpinner = sp -> {
+            if(sp == null || sp.getEditor() == null || sp.getValueFactory() == null) return;
+            String text = sp.getEditor().getText();
+            if(text == null || text.isBlank()) return;
+            try {
+                double value = Double.parseDouble(text.trim());
+                if(sp.getValueFactory() instanceof SpinnerValueFactory.DoubleSpinnerValueFactory df) {
+                    value = Math.max(df.getMin(), Math.min(df.getMax(), value));
+                }
+                sp.getValueFactory().setValue(value);
+            } catch(NumberFormatException nfe) {
+                //Ignore invalid input; keep the last committed value.
+            }
+        };
+
+        for(Spinner<Double> sp : java.util.List.of(toneALengthSpinner, toneBLengthSpinner, toneGapLengthSpinner,
+                toneToleranceSpinner, ignoreDuplicateSpinner)) {
+            sp.focusedProperty().addListener((o, was, isNow) -> { if(!isNow) commitSpinner.accept(sp); });
+        }
+
         generalGrid.add(new Label("A Tone Length (sec):"), 0, 5);
         generalGrid.add(toneALengthSpinner, 1, 5);
 
@@ -499,6 +525,14 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             if(mAliasEditor != null) mAliasEditor.setTwoToneConfiguration(newVal);
 
             if (oldVal != null) {
+                //Flush any in-progress spinner text edits to the model (via the active bindings) before unbinding,
+                //so switching detectors does not discard typed tone-length / tolerance / gap / ignore values.
+                commitSpinner.accept(toneALengthSpinner);
+                commitSpinner.accept(toneBLengthSpinner);
+                commitSpinner.accept(toneGapLengthSpinner);
+                commitSpinner.accept(toneToleranceSpinner);
+                commitSpinner.accept(ignoreDuplicateSpinner);
+
                 aliasField.textProperty().unbindBidirectional(oldVal.aliasProperty());
                 mqttCheck.selectedProperty().unbindBidirectional(oldVal.enableMqttPublishProperty());
                 topicField.textProperty().unbindBidirectional(oldVal.mqttTopicProperty());
