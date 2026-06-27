@@ -78,6 +78,22 @@ public class AudioStreamingManager implements Listener<AudioSegment>
     private java.util.Set<AudioSegment> mDiagnosedSegments =
             java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
 
+    //sdrtrunk decoded audio is 8 kHz mono.
+    private static final double AUDIO_SAMPLE_RATE_HZ = 8000.0;
+    //Real-time stream min-duration gate: when set > 0, a real-time stream is not opened until this much squelch-open
+    //audio has accumulated for the segment.  This prevents ultra-short openings (noise/static bursts on a weak
+    //channel, e.g. Sidney FD) from pushing static to listeners and from churning the broadcaster with rapid
+    //start/stop cycles (which also triggers "channel is not ready" deferrals).  No audio is lost: forwarding starts
+    //from buffer index 0, so the buffered audio is flushed when the stream opens - the start is just delayed by the
+    //gate window, and openings shorter than the gate never open a stream.
+    //
+    //DEFAULT 0 (disabled): the gate is global (affects every stream), so enabling it would also delay/suppress
+    //legitimate short transmissions on all channels.  It is therefore opt-in via the system property; for a single
+    //static-prone channel, prefer the per-channel mitigations (tuner gain, CTCSS/DCS tone squelch, noise-squelch
+    //threshold, minimum call duration).  Enable globally with, e.g., -Dsdrtrunk.realtime.stream.min.duration.ms=700
+    private static final long MIN_REALTIME_STREAM_DURATION_MS =
+            Long.getLong("sdrtrunk.realtime.stream.min.duration.ms", 0L);
+
     /**
      * Constructs an instance
      * @param listener to receive completed audio recordings
@@ -297,6 +313,15 @@ public class AudioStreamingManager implements Listener<AudioSegment>
             return;
         }
 
+        //Min-duration gate: wait until enough audio has accumulated before opening the stream so brief noise/static
+        //bursts never start one.  Only applies before the stream has been opened; once open, audio always flows.
+        if(MIN_REALTIME_STREAM_DURATION_MS > 0 &&
+                !mRealTimeStreams.containsKey(audioSegment) &&
+                accumulatedAudioMs(audioSegment) < MIN_REALTIME_STREAM_DURATION_MS)
+        {
+            return;
+        }
+
         // Start real-time streams for newly arrived segments
         if(!mRealTimeStreams.containsKey(audioSegment))
         {
@@ -371,6 +396,38 @@ public class AudioStreamingManager implements Listener<AudioSegment>
 
             mLastBufferIndex.put(audioSegment, currentSize);
         }
+    }
+
+    /**
+     * Computes how many milliseconds of audio have accumulated for the segment so far, used by the real-time stream
+     * min-duration gate.  Iterates by index against a size snapshot so concurrent growth from the decode thread can't
+     * throw.  Audio is 8 kHz mono, so duration(ms) = samples / 8.
+     * @param segment whose buffered audio is measured
+     * @return accumulated audio duration in milliseconds
+     */
+    private double accumulatedAudioMs(AudioSegment segment)
+    {
+        List<float[]> buffers = segment.getAudioBuffers();
+
+        if(buffers == null)
+        {
+            return 0;
+        }
+
+        long samples = 0;
+        int size = buffers.size();
+
+        for(int i = 0; i < size; i++)
+        {
+            float[] b = segment.getAudioBuffer(i);
+
+            if(b != null)
+            {
+                samples += b.length;
+            }
+        }
+
+        return (samples / AUDIO_SAMPLE_RATE_HZ) * 1000.0;
     }
 
     /**
