@@ -277,20 +277,38 @@ public class P25P1DecoderState extends DecoderState implements IChannelEventList
 
     // talkgroup override helper below
     /**
-     * Applies talkgroup override if configured. Replaces any TO-role talkgroup identifier
-     * with the configured override value. Returns the original list if no override (0).
+     * Applies the configured "Talkgroup To Assign" override.  Replaces any TO-role talkgroup identifier with the
+     * configured override value, and - if the call carried no TO-role talkgroup at all - ADDS one so the call still
+     * has a TO identifier.  Returns the original list if no override is configured (0).
+     *
+     * Adding (not just replacing) is required for conventional P25 calls whose signalling does not include a group
+     * talkgroup: previously such calls reached the audio pipeline with no TO identifier, so alias/stream matching
+     * found nothing ("no TO/talkgroup identifier") and the call was neither streamed nor alias-routed despite a
+     * Talkgroup To Assign being configured on the channel.
      */
     private List<Identifier> applyTalkgroupOverride(List<Identifier> identifiers)
     {
         if(mTalkgroupOverride != 0 && identifiers != null)
         {
+            boolean hasToTalkgroup = false;
+
             for(int i = 0; i < identifiers.size(); i++)
             {
                 Identifier id = identifiers.get(i);
                 if(id instanceof APCO25Talkgroup && id.getRole() == Role.TO)
                 {
                     identifiers.set(i, APCO25Talkgroup.create(mTalkgroupOverride));
+                    hasToTalkgroup = true;
                 }
+            }
+
+            if(!hasToTalkgroup)
+            {
+                //Copy into a guaranteed-mutable list before adding, since the source list may be fixed-size.
+                //APCO25Talkgroup.create() produces a Role.TO identifier.
+                List<Identifier> augmented = new java.util.ArrayList<>(identifiers);
+                augmented.add(APCO25Talkgroup.create(mTalkgroupOverride));
+                return augmented;
             }
         }
         return identifiers;

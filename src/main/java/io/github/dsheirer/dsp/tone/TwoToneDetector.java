@@ -286,9 +286,13 @@ public class TwoToneDetector
             // Use percentage-based tolerance (IAmResponding style) with fallback to absolute Hz
             double tolA = config.getEffectiveToleranceHz(config.getToneA());
             double tolB = config.getEffectiveToleranceHz(config.getToneB());
-            // Per-tone durations (IAmResponding style) with fallback to legacy single duration
-            int minToneABlocks = Math.max(1, (int)(config.getEffectiveToneADurationMs() / 20));
-            int minToneBBlocks = Math.max(1, (int)(config.getEffectiveToneBDurationMs() / 20));
+            // Per-tone durations (IAmResponding style) with fallback to legacy single duration.  Enforce an absolute
+            // minimum hold of MINIMUM_TONE_DURATION_FLOOR_MS so a tone is never gated below 500ms - this mitigates
+            // voice triggering / false positives even if a detector is configured with a very short length.
+            double minToneAMs = Math.max(TwoToneConfiguration.MINIMUM_TONE_DURATION_FLOOR_MS, config.getEffectiveToneADurationMs());
+            double minToneBMs = Math.max(TwoToneConfiguration.MINIMUM_TONE_DURATION_FLOOR_MS, config.getEffectiveToneBDurationMs());
+            int minToneABlocks = Math.max(1, (int)(minToneAMs / 20));
+            int minToneBBlocks = Math.max(1, (int)(minToneBMs / 20));
             // Gap tolerance: number of silent blocks allowed between tone A and tone B
             int maxGapBlocks = Math.max(0, (int)(config.getToneGapLengthSec() * 1000 / 20));
 
@@ -787,9 +791,9 @@ public class TwoToneDetector
             mLog.info("Two Tone Detected: {} (A:{} B:{})", config.getAlias(), config.getToneA(), config.getToneB());
 
             //Record this detection in the detector's persisted, per-detector history (most-recent first) so the user
-            //can review the date/time of every two-tone hit for this detector in the editor's Detection History tab.
-            //schedulePlaylistSave() is debounced (coalesces to one write every 2s) so the history survives restarts.
-            config.recordDetection(System.currentTimeMillis());
+            //can review the date/time and channel of every two-tone hit for this detector in the editor's Detection
+            //History tab.  schedulePlaylistSave() is debounced (coalesces to one write every 2s) so it survives restarts.
+            config.recordDetection(System.currentTimeMillis(), getSegmentChannelName(segment));
 
             if(mPlaylistManager != null)
             {
@@ -900,42 +904,21 @@ public class TwoToneDetector
                     }
                 }
                 
+                boolean isMp3 = path.toLowerCase().endsWith(".mp3");
+
                 if (resource != null) {
-                    if (path.toLowerCase().endsWith(".mp3")) {
-                        final java.net.URL finalResource = resource;
-                        javafx.application.Platform.runLater(() -> {
-                            try {
-                                javafx.scene.media.Media media = new javafx.scene.media.Media(finalResource.toURI().toString());
-                                javafx.scene.media.MediaPlayer mediaPlayer = new javafx.scene.media.MediaPlayer(media);
-                                mediaPlayer.play();
-                            } catch (Exception ex) {
-                                mLog.error("Error playing mp3 alert", ex);
-                            }
-                        });
+                    if (isMp3) {
+                        playAlertMp3(resource.toURI().toString());
                     } else {
-                        javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(resource);
-                        javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
-                        clip.open(ais);
-                        clip.start();
+                        playAlertClip(javax.sound.sampled.AudioSystem.getAudioInputStream(resource));
                     }
                 } else {
                     java.io.File file = new java.io.File(path);
                     if (file.exists()) {
-                        if (path.toLowerCase().endsWith(".mp3")) {
-                            javafx.application.Platform.runLater(() -> {
-                                try {
-                                    javafx.scene.media.Media media = new javafx.scene.media.Media(file.toURI().toString());
-                                    javafx.scene.media.MediaPlayer mediaPlayer = new javafx.scene.media.MediaPlayer(media);
-                                    mediaPlayer.play();
-                                } catch (Exception ex) {
-                                    mLog.error("Error playing mp3 alert", ex);
-                                }
-                            });
+                        if (isMp3) {
+                            playAlertMp3(file.toURI().toString());
                         } else {
-                            javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(file);
-                            javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
-                            clip.open(ais);
-                            clip.start();
+                            playAlertClip(javax.sound.sampled.AudioSystem.getAudioInputStream(file));
                         }
                     } else {
                         mLog.error("Could not find alert audio file or resource: " + path);
@@ -944,6 +927,50 @@ public class TwoToneDetector
             } catch (Exception ex) {
                 mLog.error("Error playing local alert audio: " + config.getAlertFilePath(), ex);
             }
+        }
+    }
+
+    //Strong references to in-flight local alert players/clips so the JavaFX MediaPlayer and javax Clip are not
+    //garbage-collected mid-playback.  A local variable becomes GC-eligible as soon as the method/lambda returns, which
+    //caused local audio alerts to be cut off or not play at all (unreliable local audio alert).  Each entry removes
+    //itself when playback ends.
+    private final java.util.Set<Object> mActiveAlertPlayers = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /** Plays an mp3 alert via JavaFX MediaPlayer on the FX thread, retaining a strong reference until it finishes. */
+    private void playAlertMp3(String mediaUri) {
+        javafx.application.Platform.runLater(() -> {
+            try {
+                javafx.scene.media.Media media = new javafx.scene.media.Media(mediaUri);
+                javafx.scene.media.MediaPlayer player = new javafx.scene.media.MediaPlayer(media);
+                mActiveAlertPlayers.add(player);
+                Runnable release = () -> {
+                    mActiveAlertPlayers.remove(player);
+                    try { player.dispose(); } catch (Exception ignored) {}
+                };
+                player.setOnEndOfMedia(release);
+                player.setOnError(release);
+                player.play();
+            } catch (Exception ex) {
+                mLog.error("Error playing mp3 alert", ex);
+            }
+        });
+    }
+
+    /** Plays a sampled (e.g. WAV) alert clip, retaining a strong reference until playback stops. */
+    private void playAlertClip(javax.sound.sampled.AudioInputStream ais) {
+        try {
+            javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
+            clip.open(ais);
+            mActiveAlertPlayers.add(clip);
+            clip.addLineListener(ev -> {
+                if (ev.getType() == javax.sound.sampled.LineEvent.Type.STOP) {
+                    mActiveAlertPlayers.remove(clip);
+                    try { clip.close(); } catch (Exception ignored) {}
+                }
+            });
+            clip.start();
+        } catch (Exception ex) {
+            mLog.error("Error playing local alert clip", ex);
         }
     }
 
@@ -996,8 +1023,10 @@ public class TwoToneDetector
         }
 
         if (!exists) {
-            // Emit event for AI Tone Discovery Manager
-            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new ToneDiscoveredEvent(toneA, toneB, segment, channelFrequency));
+            // Emit event for AI Tone Discovery Manager, including the channel name so an AI-created detector can be
+            // named for / record where the tones were heard.
+            io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(
+                    new ToneDiscoveredEvent(toneA, toneB, segment, channelFrequency, getSegmentChannelName(segment)));
         }
         
         String channel = "Unknown";

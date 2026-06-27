@@ -26,6 +26,8 @@ import io.github.dsheirer.alias.AliasModel;
 import io.github.dsheirer.audio.broadcast.AbstractAudioBroadcaster;
 import io.github.dsheirer.audio.broadcast.AudioRecording;
 import io.github.dsheirer.audio.broadcast.BroadcastEvent;
+import io.github.dsheirer.eventbus.MyEventBus;
+import io.github.dsheirer.health.SystemHealthAlertEvent;
 import io.github.dsheirer.audio.broadcast.BroadcastState;
 import io.github.dsheirer.audio.broadcast.IRealTimeAudioBroadcaster;
 import io.github.dsheirer.audio.convert.InputAudioFormat;
@@ -151,6 +153,13 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
     private final LinkedTransferQueue<float[]> mAudioQueue = new LinkedTransferQueue<>();
     private ScheduledFuture<?> mEncoderFuture;
     private ScheduledFuture<?> mRelaxationFuture; // delayed stop for relaxation_time hold-over
+    //Opus frames encoded after start_stream but before the server assigns the stream_id are held here and flushed
+    //once the id arrives, instead of being dropped - otherwise the first ~100-300ms of every call is clipped on the
+    //Zello stream (local playback is a separate path and is unaffected, which matched the reported symptom).
+    //Bounded so a start_stream that is never acknowledged cannot grow memory without limit. Accessed only under the
+    //instance monitor (processAudioQueue/encodeAndSendFrame/start/stop are all synchronized on this).
+    private static final int MAX_PENDING_OPUS_FRAMES = 50; // ~3s at 60ms frames
+    private final java.util.ArrayDeque<byte[]> mPendingOpusFrames = new java.util.ArrayDeque<>();
     private volatile long mLastAudioReceivedTime = 0;
     private final AtomicBoolean mInjectingPreDispatch = new AtomicBoolean(false);
 
@@ -292,6 +301,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         mCurrentStreamId.set(-1);
         mResampleBufferPos = 0;
         mAudioQueue.clear();
+        mPendingOpusFrames.clear();
 
         mResampler = new RealResampler(8000.0, ZELLO_SAMPLE_RATE, 16000, ZELLO_FRAME_SIZE_SAMPLES);
         mResampler.setListener(resampled -> {
@@ -391,6 +401,8 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
             broadcast(new BroadcastEvent(this, BroadcastEvent.Event.BROADCASTER_STREAMED_COUNT_CHANGE));
         }
 
+        //Discard any frames still buffered from an unacknowledged handshake so they can't leak into the next stream.
+        mPendingOpusFrames.clear();
         mCurrentStreamId.set(-1);
         mResampleBufferPos = 0;
         mAudioQueue.clear();
@@ -515,8 +527,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
 
     private void encodeAndSendFrame()
     {
-        long streamId = mCurrentStreamId.get();
-        if(streamId <= 0 || mOpusEncoder == null) return;
+        if(mOpusEncoder == null) return;
 
         // Reject sends if the WebSocket session has changed since this stream started
         if(mStreamSessionEpoch != mSessionEpoch.get())
@@ -536,7 +547,33 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
             {
                 byte[] opusFrame = new byte[encoded];
                 System.arraycopy(mOpusOutputBuffer, 0, opusFrame, 0, encoded);
-                sendAudioPacket(streamId, opusFrame);
+
+                long streamId = mCurrentStreamId.get();
+
+                if(streamId > 0)
+                {
+                    //Flush any frames captured during the start_stream handshake first (in order) so the start of
+                    //the call is preserved, then send the current frame.
+                    if(!mPendingOpusFrames.isEmpty())
+                    {
+                        byte[] pending;
+                        while((pending = mPendingOpusFrames.poll()) != null)
+                        {
+                            sendAudioPacket(streamId, pending);
+                        }
+                    }
+                    sendAudioPacket(streamId, opusFrame);
+                }
+                else if(streamId == -1)
+                {
+                    //start_stream handshake still in flight (stream_id not yet assigned). Buffer the encoded frames
+                    //rather than dropping them so the beginning of the call is not clipped on the Zello stream.
+                    if(mPendingOpusFrames.size() < MAX_PENDING_OPUS_FRAMES)
+                    {
+                        mPendingOpusFrames.add(opusFrame);
+                    }
+                }
+                //streamId == -2 (start_stream failed) or 0: drop the frame.
             }
         }
         catch(Exception | AssertionError e)
@@ -707,7 +744,22 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
                 return;
             }
             long backoff = KICKED_BACKOFF_MS * (1L << Math.min(kickCount, 4)); // exponential: 60s, 120s, 240s...
-            mLog.warn("{}Zello kicked - backing off {}s ({}/{})", ch(), backoff / 1000, kickCount + 1, MAX_KICKED_RETRIES);
+            mLog.warn("{}Zello 'kicked' by the server (attempt {}/{}) - backing off {}s. This almost always means the " +
+                    "SAME Zello account is logged in somewhere else (another device/app, or two streams configured with " +
+                    "the same account). While kicked, calls to this channel are NOT streamed. Fix: use a unique Zello " +
+                    "account per stream.", ch(), kickCount + 1, MAX_KICKED_RETRIES, backoff / 1000);
+
+            //Surface a user-visible health alert (rate-limited by SystemHealthMonitor) so the cause of missed/
+            //non-streaming calls is obvious rather than buried in the log.
+            ZelloConfiguration cfg = getBroadcastConfiguration();
+            String streamName = (cfg != null && cfg.getChannel() != null) ? cfg.getChannel() : "(unknown)";
+            MyEventBus.getGlobalEventBus().post(new SystemHealthAlertEvent(
+                    SystemHealthAlertEvent.AlertType.INTEGRATION,
+                    "Zello Account Kicked",
+                    "Zello stream [" + streamName + "] was kicked - the same Zello account is most likely logged in " +
+                    "elsewhere. Calls are not being streamed to this channel until it reconnects. Use a unique Zello " +
+                    "account per stream to resolve."));
+
             scheduleReconnectWithDelay(backoff);
         }
         else
