@@ -132,6 +132,7 @@ public class HelpViewController {
         advancedSystemNode.getChildren().add(new TreeItem<>("System Requirements"));
         advancedSystemNode.getChildren().add(new TreeItem<>("User Preferences"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Virtual Audio Cable"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Natural Scrolling"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Managing System Logs"));
         guidesNode.getChildren().add(advancedSystemNode);
 
