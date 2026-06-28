@@ -190,7 +190,7 @@ public abstract class USBTunerController extends TunerController
 
         if(status != LibUsb.SUCCESS)
         {
-            mDeviceDescriptor = null;
+            releaseAfterFailedStart(false);
             throw new SourceException("Can't obtain tuner's device descriptor - " + LibUsb.errorName(status));
         }
 
@@ -203,18 +203,14 @@ public abstract class USBTunerController extends TunerController
 
         if(status == LibUsb.ERROR_ACCESS)
         {
-            mDeviceHandle = null;
-            mDeviceDescriptor = null;
-
             mLog.error("Access to USB tuner denied [bus:{} port:{} - {}] - (windows) reinstall zadig driver or (linux) blacklist driver and/or check udev rules", mBus, mPortAddress, LibUsb.errorName(status));
+            releaseAfterFailedStart(false); //open failed - no handle to close, but release the libusb context
             throw new SourceException("access denied - if using linux, blacklist the default driver and/or install udev rules");
         }
         else if(status != LibUsb.SUCCESS)
         {
-            mDeviceHandle = null;
-            mDeviceDescriptor = null;
-
             mLog.error("Can't open USB tuner [bus:{} port:{} - {}] - check driver or Linux udev rules", mBus, mPortAddress, LibUsb.errorName(status));
+            releaseAfterFailedStart(false); //open failed - no handle to close, but release the libusb context
             throw new SourceException("Can't open USB tuner - reinstall driver? - " + LibUsb.errorName(status));
         }
 
@@ -228,8 +224,7 @@ public abstract class USBTunerController extends TunerController
             if(status != LibUsb.SUCCESS)
             {
                 mLog.error("Unable to detach kernel driver for USB tuner device - bus:" + mBus + " port:" + mPortAddress);
-                mDeviceHandle = null;
-                mDeviceDescriptor = null;
+                releaseAfterFailedStart(true); //handle was opened - close it and release the context
                 throw new SourceException("Can't detach kernel driver");
             }
         }
@@ -240,14 +235,12 @@ public abstract class USBTunerController extends TunerController
         if(status == LibUsb.ERROR_BUSY)
         {
             mLog.error("Unable to set USB configuration on tuner - device is busy (in use by another application)");
-            mDeviceHandle = null;
-            mDeviceDescriptor = null;
+            releaseAfterFailedStart(true);
             throw new SourceException("USB tuner is in-use by another application");
         }
         else if(status != LibUsb.SUCCESS)
         {
-            mDeviceHandle = null;
-            mDeviceDescriptor = null;
+            releaseAfterFailedStart(true);
             throw new SourceException("Can't set configuration (ie reset) on the USB tuner - " + LibUsb.errorName(status));
         }
 
@@ -256,14 +249,12 @@ public abstract class USBTunerController extends TunerController
 
         if(status == LibUsb.ERROR_BUSY)
         {
-            mDeviceHandle = null;
-            mDeviceDescriptor = null;
+            releaseAfterFailedStart(true);
             throw new SourceException("USB tuner is in-use by another application");
         }
         else if(status != LibUsb.SUCCESS)
         {
-            mDeviceHandle = null;
-            mDeviceDescriptor = null;
+            releaseAfterFailedStart(true);
             throw new SourceException("Can't claim interface on USB tuner - " + LibUsb.errorName(status));
         }
 
@@ -277,7 +268,35 @@ public abstract class USBTunerController extends TunerController
         catch(Exception se)
         {
             mRunning = false;
+            releaseAfterFailedStart(true);
             throw se;
+        }
+    }
+
+    /**
+     * Releases the libusb resources acquired during a failed start() so a failing tuner (e.g. a device that keeps
+     * returning LIBUSB_ERROR_ACCESS on every 5-second fast-recovery attempt) does not leak a libusb context - and,
+     * on post-open failures, the device handle - on every attempt.  That accumulation of un-exited contexts is a
+     * known aggravator of the native libusb Windows poll_windows assertion (assert(fd != NULL)) that aborts the
+     * whole process.  The context is exited and the field nulled; a later stop() on this (discarded) controller is
+     * null-guarded so it cannot double-exit, and the recovery path always creates a fresh controller for the next
+     * attempt.  Safe here because start() failed before any streaming/event-processing thread was started.
+     * @param closeHandle true if the device handle was successfully opened and must be closed.
+     */
+    private void releaseAfterFailedStart(boolean closeHandle)
+    {
+        if(closeHandle && mDeviceHandle != null)
+        {
+            try { LibUsb.close(mDeviceHandle); } catch(Exception e) { /* best-effort */ }
+        }
+
+        mDeviceHandle = null;
+        mDeviceDescriptor = null;
+
+        if(mDeviceContext != null)
+        {
+            try { LibUsb.exit(mDeviceContext); } catch(Exception e) { /* best-effort */ }
+            mDeviceContext = null;
         }
     }
 
@@ -342,8 +361,13 @@ public abstract class USBTunerController extends TunerController
             mDeviceDescriptor = null;
         }
 
-        LibUsb.exit(mDeviceContext);
-        mDeviceContext = null;
+        //Null-guarded: a failed start() may have already exited and nulled the context (releaseAfterFailedStart),
+        //and exiting it again would be a double libusb_exit that can itself abort the process.
+        if(mDeviceContext != null)
+        {
+            LibUsb.exit(mDeviceContext);
+            mDeviceContext = null;
+        }
     }
 
     /**
