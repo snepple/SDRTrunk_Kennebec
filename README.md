@@ -4,6 +4,41 @@
 
 > **Lineage at a glance:** [DSheirer/sdrtrunk](https://github.com/DSheirer/sdrtrunk) (original) → [actionpagezello/sdrtrunk](https://github.com/actionpagezello/sdrtrunk) (upstream fork) → **SDRTrunk Kennebec** (this project). The core decoding, DSP, and trunking engine is the work of those upstream projects — see [Credits, Lineage & License](#credits-lineage--license).
 
+## 🆕 Recent Updates
+
+
+
+### 🚀 Features & UX
+
+* **Right-click Aliasing:** Added the ability to quickly create or edit aliases directly from the events table via right-click.
+
+* **Improved UI Stability:** Hidden the tray context menu anchor window to prevent visual clutter.
+
+* **Cleaner Installer Workflow:** Suppressed watchdog restart during installer updates and ensured the auto-start dialog is kept above the main window.
+
+* **Default Alias List:** Added a default alias list and hid two-tone IDs from the alias editor for a cleaner workflow.
+
+
+
+### 🛡️ Reliability & Fixes
+
+* **Upstream Syncs:** Synced multiple patches from upstream including Zello startup rate limiting and stream-failure cooldowns.
+
+* **Duplicate Frequency Handling:** Fixed duplicate-frequency channel identity handling to prevent collisions.
+
+* **AI Optimizer & Stability Fixes:** Addressed an AI optimizer timeout issue and resolved a Zello streaming crash.
+
+* **Tuner & Watchdog Stability:** Removed an unstable tuner live feature and fixed update watchdog restart behavior.
+
+
+
+### ✍️ Documentation
+
+* **New Guides:** Added comprehensive documentation for Audio Transcriptions, GPU Acceleration, and Diagnostics Guides.
+
+* **README Download Links:** Updated README download links for the latest release.
+
+
 ---
 
 ## What is SDRTrunk?
