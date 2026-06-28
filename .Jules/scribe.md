@@ -76,3 +76,7 @@
 **Topic:** 3 New Documentation Guides Added
 **Learning:** Three existing missing features/concepts from the recent updates (Audio Transcriptions, GPU Acceleration, and Diagnostics) lacked Mintlify-styled "Visual First" Markdown guides.
 **Action:** Created `audio-transcriptions.md` and `gpu-acceleration.md`, and rewrote `diagnostics.md` adhering to the Visual-First Mintlify style and correctly mapped them to the `HelpViewController.java` navigation tree via the `help/` directory.
+## 2026-06-28 - Topic Selection
+**Topic:** 3 New Documentation Guides Added
+**Learning:** Three existing missing features/concepts from the recent updates (Channel Images, Tuner Waterfall Collapse, and Natural Scrolling) lacked Mintlify-styled "Visual First" Markdown guides in the help section.
+**Action:** Created `channel-images.md`, `tuner-waterfall-collapse.md`, and `natural-scrolling.md` adhering to the Visual-First Mintlify style and mapped them to the navigation tree via the `help/` directory.
