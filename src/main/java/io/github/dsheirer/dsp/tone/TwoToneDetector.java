@@ -331,22 +331,6 @@ public class TwoToneDetector
         //on the segment (or when it has no aliases selected, in which case it runs globally for backward compatibility).
         java.util.Set<String> applicableDetectors = getApplicableDetectorNames(segment, configs);
 
-        //Maintain a rolling ~100ms analysis window per segment so tone power/dominance is measured over enough samples
-        //to actually resolve the configured frequency (a single 20ms block only resolves ~100Hz; 100ms resolves
-        //~10Hz, approaching the 2% tolerance and letting close tones like 349 vs 387 be distinguished).  The state
-        //machine still advances once per 20ms block; only the frequency measurement uses the longer window.  Until the
-        //window fills, fall back to the 20ms block so short calls are not missed at onset.
-        float[] analysisBuffer = buffer;
-        if(segment != null)
-        {
-            AnalysisWindow aw = mAnalysisWindowBySegment.computeIfAbsent(segment, s -> new AnalysisWindow());
-            aw.append(buffer);
-            if(aw.isFull())
-            {
-                analysisBuffer = aw.buffer;
-            }
-        }
-
         for(TwoToneConfiguration config : configs)
         {
             if (!config.isEnabled()) continue;
@@ -374,11 +358,11 @@ public class TwoToneDetector
             if (freqA <= 0) continue;
             if (!config.isLongATone() && freqB <= 0) continue;
 
-            boolean toneAPresent = isDominantTone(analysisBuffer, freqA, tolA);
+            int powerA = getTolerancePower(buffer, freqA, tolA);
 
             if (config.isLongATone())
             {
-                if (toneAPresent)
+                if (powerA > POWER_THRESHOLD_DB)
                 {
                     if(state.currentToneA == config.getToneA())
                     {
@@ -390,9 +374,7 @@ public class TwoToneDetector
                         state.currentToneABlocks = 1;
                     }
 
-                    //Use the detector's configured A-tone length (floored at 500ms by minToneABlocks) rather than a
-                    //hardcoded 2s, so the single-long-tone hold respects the per-detector field.
-                    if(state.currentToneABlocks == minToneABlocks)
+                    if(state.currentToneABlocks == LONG_A_MIN_TONE_BLOCKS)
                     {
                         triggerAlertIfMatched(config, segment);
                         // Do not reset state.currentToneABlocks to 0 here.
@@ -408,10 +390,10 @@ public class TwoToneDetector
                 continue;
             }
 
-            boolean toneBPresent = isDominantTone(analysisBuffer, freqB, tolB);
+            int powerB = getTolerancePower(buffer, freqB, tolB);
 
             // Tone A detection
-            if (toneAPresent)
+            if (powerA > POWER_THRESHOLD_DB)
             {
                 if(state.currentToneA == config.getToneA())
                 {
@@ -427,7 +409,7 @@ public class TwoToneDetector
                 }
             }
             // Tone B detection (only valid if Tone A was previously detected and held long enough)
-            else if (toneBPresent && state.currentToneABlocks >= minToneABlocks && state.currentToneA == config.getToneA())
+            else if (powerB > POWER_THRESHOLD_DB && state.currentToneABlocks >= minToneABlocks && state.currentToneA == config.getToneA())
             {
                 if(state.currentToneB == config.getToneB())
                 {
