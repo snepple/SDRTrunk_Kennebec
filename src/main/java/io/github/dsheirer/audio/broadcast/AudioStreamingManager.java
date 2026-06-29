@@ -94,6 +94,46 @@ public class AudioStreamingManager implements Listener<AudioSegment>
     private static final long MIN_REALTIME_STREAM_DURATION_MS =
             Long.getLong("sdrtrunk.realtime.stream.min.duration.ms", 0L);
 
+    //Deferred-call replay: a real-time stream (e.g. Zello) can be momentarily not-ready when a call completes -
+    //connecting/reconnecting after an app restart, recovering from a dropped connection, or the channel not yet
+    //online.  Such a call is otherwise lost silently (it is never queued, so it doesn't show in the aged-off or
+    //error counters - only the channel's "received" count moves, which is why received > streamed).  Instead of
+    //dropping it, the completed call's audio is held briefly and replayed to the broadcaster once it becomes ready,
+    //so a reconnect window no longer loses calls.  Replayed calls flow through the normal start/stop stream path, so
+    //they also count in the stream's Streamed/Uploaded total.
+    //
+    //Enabled by default; disable with -Dsdrtrunk.realtime.deferred.replay.disabled=true.  TTL bounds how late a call
+    //may be replayed (default 120s) so nothing is delivered so far behind live that it misleads listeners.
+    private static final boolean DEFERRED_REPLAY_ENABLED =
+            !Boolean.getBoolean("sdrtrunk.realtime.deferred.replay.disabled");
+    private static final long DEFERRED_REPLAY_TTL_MS =
+            Long.getLong("sdrtrunk.realtime.deferred.replay.ttl.ms", 120000L);
+    private static final int MAX_DEFERRED_REPLAYS = 50;
+
+    //Completed real-time calls that could not be streamed because the broadcaster was not ready, awaiting replay.
+    //Accessed only from the single audio-streaming dispatch thread (capture and flush both run there).
+    private final java.util.ArrayDeque<DeferredCall> mDeferredCalls = new java.util.ArrayDeque<>();
+
+    /**
+     * A completed call that could not be streamed in real time because its broadcaster was not ready, held for replay.
+     */
+    private static class DeferredCall
+    {
+        private final String mBroadcastChannelName;
+        private final List<float[]> mAudio;
+        private final IdentifierCollection mIdentifiers;
+        private final long mExpiresAt;
+
+        private DeferredCall(String broadcastChannelName, List<float[]> audio, IdentifierCollection identifiers,
+                             long expiresAt)
+        {
+            mBroadcastChannelName = broadcastChannelName;
+            mAudio = audio;
+            mIdentifiers = identifiers;
+            mExpiresAt = expiresAt;
+        }
+    }
+
     /**
      * Constructs an instance
      * @param listener to receive completed audio recordings
@@ -185,6 +225,7 @@ public class AudioStreamingManager implements Listener<AudioSegment>
         mRealTimeStreams.clear();
         mLastBufferIndex.clear();
         mDiagnosedSegments.clear();
+        mDeferredCalls.clear();
     }
 
     /**
@@ -279,11 +320,167 @@ public class AudioStreamingManager implements Listener<AudioSegment>
                     }
                 }
 
+                    //If the call completed without ever being streamed to a real-time broadcaster that was simply
+                    //not ready (connecting/reconnecting/offline), capture its audio for replay when the broadcaster
+                    //recovers, rather than losing it silently.
+                    captureDeferredCallIfNeeded(audioSegment);
+
                     audioSegment.decrementConsumerCount();
                     stopRealTimeStreams(audioSegment);
                 }
             }
         }
+
+        flushDeferredCalls();
+    }
+
+    /**
+     * Captures a completed call's audio for later replay when, at completion, one or more of its real-time
+     * broadcasters never streamed it because the broadcaster was not ready.  Only real-time (e.g. Zello) broadcasters
+     * are considered - recording-based broadcasters have their own queue/age-off handling.  Calls that did not pass
+     * the min-duration gate are not captured (their suppression is intentional).
+     */
+    private void captureDeferredCallIfNeeded(AudioSegment audioSegment)
+    {
+        if(!DEFERRED_REPLAY_ENABLED || mBroadcastModel == null || !audioSegment.hasBroadcastChannels())
+        {
+            return;
+        }
+
+        //Respect the min-duration gate: a call too short to open a stream was intentionally suppressed.
+        if(accumulatedAudioMs(audioSegment) < Math.max(MIN_REALTIME_STREAM_DURATION_MS, 1))
+        {
+            return;
+        }
+
+        List<IRealTimeAudioBroadcaster> alreadyStreamed = mRealTimeStreams.get(audioSegment);
+        List<float[]> capturedAudio = null;
+        IdentifierCollection capturedIdentifiers = null;
+
+        for(BroadcastChannel broadcastChannel : audioSegment.getBroadcastChannels())
+        {
+            AbstractAudioBroadcaster<?> broadcaster = mBroadcastModel.getBroadcaster(broadcastChannel.getChannelName());
+
+            if(!(broadcaster instanceof IRealTimeAudioBroadcaster rtb))
+            {
+                continue; //non-real-time broadcasters route via the recording path with their own age-off handling
+            }
+
+            //Skip broadcasters we actually streamed this call to.
+            if(alreadyStreamed != null && alreadyStreamed.contains(rtb))
+            {
+                continue;
+            }
+
+            //Copy the audio once (shared, read-only) across however many broadcasters missed this call.
+            if(capturedAudio == null)
+            {
+                capturedAudio = copyAudioBuffers(audioSegment);
+
+                if(capturedAudio.isEmpty())
+                {
+                    return; //nothing to replay
+                }
+
+                capturedIdentifiers = audioSegment.getIdentifierCollection() != null
+                        ? new IdentifierCollection(audioSegment.getIdentifierCollection().getIdentifiers())
+                        : null;
+            }
+
+            //Bound the queue: drop the oldest pending replay if at capacity.
+            while(mDeferredCalls.size() >= MAX_DEFERRED_REPLAYS)
+            {
+                mDeferredCalls.pollFirst();
+            }
+
+            mDeferredCalls.offerLast(new DeferredCall(broadcastChannel.getChannelName(), capturedAudio,
+                    capturedIdentifiers, System.currentTimeMillis() + DEFERRED_REPLAY_TTL_MS));
+            mLog.info("Audio call to stream [{}] held for replay - broadcaster was not ready when the call completed",
+                    broadcastChannel.getChannelName());
+        }
+    }
+
+    /**
+     * Replays any held deferred calls whose broadcaster is now ready, and discards any that have exceeded their TTL.
+     * Runs once per processing cycle on the dispatch thread.  A replay uses the normal start/forward/stop stream
+     * path, so it also increments the stream's Streamed/Uploaded counter.
+     */
+    private void flushDeferredCalls()
+    {
+        if(mDeferredCalls.isEmpty())
+        {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        Iterator<DeferredCall> it = mDeferredCalls.iterator();
+
+        while(it.hasNext())
+        {
+            DeferredCall deferred = it.next();
+
+            if(deferred.mExpiresAt <= now)
+            {
+                it.remove();
+                mLog.info("Discarding held call for stream [{}] - not replayed within {} ms",
+                        deferred.mBroadcastChannelName, DEFERRED_REPLAY_TTL_MS);
+                continue;
+            }
+
+            AbstractAudioBroadcaster<?> broadcaster = mBroadcastModel != null
+                    ? mBroadcastModel.getBroadcaster(deferred.mBroadcastChannelName) : null;
+
+            if(broadcaster instanceof IRealTimeAudioBroadcaster rtb && rtb.isRealTimeReady())
+            {
+                try
+                {
+                    rtb.startRealTimeStream(deferred.mIdentifiers != null
+                            ? new IdentifierCollection(deferred.mIdentifiers.getIdentifiers()) : null);
+
+                    for(float[] buffer : deferred.mAudio)
+                    {
+                        rtb.receiveRealTimeAudio(buffer);
+                    }
+
+                    rtb.stopRealTimeStream();
+                    mLog.info("Replayed held call to stream [{}]", deferred.mBroadcastChannelName);
+                }
+                catch(Exception e)
+                {
+                    mLog.error("Error replaying held call to stream [{}]", deferred.mBroadcastChannelName, e);
+                }
+
+                it.remove();
+            }
+            //else: broadcaster still not ready (or a live/replay stream is active) - try again next cycle.
+        }
+    }
+
+    /**
+     * Snapshots the segment's audio buffers into a private, read-only list so the audio survives after the segment's
+     * consumer count is decremented and it is recycled.
+     */
+    private List<float[]> copyAudioBuffers(AudioSegment audioSegment)
+    {
+        List<float[]> copy = new ArrayList<>();
+        List<float[]> buffers = audioSegment.getAudioBuffers();
+
+        if(buffers != null)
+        {
+            int size = buffers.size();
+
+            for(int i = 0; i < size; i++)
+            {
+                float[] b = audioSegment.getAudioBuffer(i);
+
+                if(b != null)
+                {
+                    copy.add(b.clone());
+                }
+            }
+        }
+
+        return copy;
     }
 
     /**
