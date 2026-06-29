@@ -79,6 +79,7 @@ public class TunerManager implements IDiscoveredTunerStatusListener
     private final Context mLibUsbApplicationContext = new Context();
     private boolean mLibUsbInitialized = false;
     private SDRplay mSDRplay;
+    private final TunerFaultTracker mTunerFaultTracker;
 
     /**
      * Constructs an instance
@@ -89,6 +90,7 @@ public class TunerManager implements IDiscoveredTunerStatusListener
         mUserPreferences = userPreferences;
         mTunerConfigurationManager = new TunerConfigurationManager(userPreferences);
         mDiscoveredTunerModel = new DiscoveredTunerModel(mTunerConfigurationManager);
+        mTunerFaultTracker = new TunerFaultTracker(userPreferences.getDirectoryPreference().getDirectoryConfiguration());
     }
 
     /**
@@ -340,21 +342,92 @@ public class TunerManager implements IDiscoveredTunerStatusListener
     private void startAndConfigureTuner(DiscoveredTuner discoveredTuner)
     {
         discoveredTuner.addTunerStatusListener(this);
+        String tunerId = discoveredTuner.getId();
 
         //Set the tuner to disabled if the user has previously blacklisted the tuner
         if(mTunerConfigurationManager.isDisabled(discoveredTuner))
         {
-            discoveredTuner.setEnabled(false);
-            mLog.info("Tuner: " + discoveredTuner + " - Added / Disabled");
+            //If we are the ones who disabled it (auto-quarantine), remind the user - the device is connected again
+            //but is still skipped, and tell them why and how to re-enable it.  Otherwise it was disabled by the user.
+            if(mTunerFaultTracker.isQuarantined(tunerId))
+            {
+                String when = formatTimestamp(mTunerFaultTracker.getQuarantineTime(tunerId));
+                String reason = mTunerFaultTracker.getQuarantineReason(tunerId);
+                mLog.warn("Tuner: {} - still QUARANTINED (auto-disabled {}). Reason: {} It remains disabled and is " +
+                        "being skipped. Re-enable it in the Tuners view once the device/driver/USB port is fixed.",
+                        discoveredTuner, when, reason);
+                discoveredTuner.setEnabled(false);
+
+                MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.health.SystemHealthAlertEvent(
+                        io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.HARDWARE,
+                        "Tuner Still Quarantined",
+                        "Tuner " + discoveredTuner.getId() + " is connected but remains automatically disabled. It was " +
+                                "quarantined " + when + " because " + reason + " Re-enable it in the Tuners view once " +
+                                "the device/driver or USB port is fixed."));
+            }
+            else
+            {
+                discoveredTuner.setEnabled(false);
+                mLog.info("Tuner: " + discoveredTuner + " - Added / Disabled");
+            }
+        }
+        //Quarantine: this device has crashed/hung the application during start() at least the threshold number of
+        //times.  Starting it again would risk another native libusb assertion that hangs the whole application, so
+        //it is disabled (persisted) and skipped to keep the application and the other tuners running.  The user can
+        //re-enable it in the Tuners view once the device/driver is fixed.
+        else if(mTunerFaultTracker.shouldQuarantine(tunerId))
+        {
+            int crashCount = mTunerFaultTracker.getCrashCount(tunerId);
+            String reason = "it crashed the application " + crashCount + " times while starting (a native USB driver " +
+                    "fault that cannot be recovered in-process).";
+            mLog.error("Tuner: {} - QUARANTINED: {} It has been auto-disabled and skipped so the application and other " +
+                    "tuners keep running. Fix the device/driver (or USB port/cable), then re-enable it in the Tuners view.",
+                    discoveredTuner, reason);
+            mTunerFaultTracker.markQuarantined(tunerId, crashCount, reason);
+            discoveredTuner.setEnabled(false);  //persisted as disabled via the tuner configuration manager
+
+            MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.health.SystemHealthAlertEvent(
+                    io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.HARDWARE,
+                    "Tuner Quarantined After Repeated Crashes",
+                    "Tuner " + discoveredTuner.getId() + " has been automatically disabled because " + reason +
+                            " The application and other tuners will keep running. Fix the device/driver or USB port, " +
+                            "then re-enable it in the Tuners view."));
         }
         else
         {
             mLog.info("Tuner: " + discoveredTuner + " - Added / Starting ...");
-            //Attempt to start the discovered tuner and determine the tuner type
-            tunerStatusUpdated(discoveredTuner, TunerStatus.DISABLED, TunerStatus.ENABLED);
+            //Mark a pending start so that, if this device trips a native libusb assertion that hangs/aborts the
+            //application, the next launch can attribute the crash to this tuner and eventually quarantine it.
+            mTunerFaultTracker.beginStartAttempt(tunerId);
+            try
+            {
+                //Attempt to start the discovered tuner and determine the tuner type
+                tunerStatusUpdated(discoveredTuner, TunerStatus.DISABLED, TunerStatus.ENABLED);
+            }
+            finally
+            {
+                //Reached only if start() returned without crashing the JVM (success or a handled error); clear the
+                //pending marker so the crash cannot be misattributed.
+                mTunerFaultTracker.endStartAttempt(tunerId, discoveredTuner.hasTuner());
+            }
         }
 
         mDiscoveredTunerModel.addDiscoveredTuner(discoveredTuner);
+    }
+
+    /**
+     * Formats an epoch-millisecond timestamp for user-facing quarantine messages, or "previously" if unknown.
+     */
+    private static String formatTimestamp(long epochMillis)
+    {
+        if(epochMillis <= 0)
+        {
+            return "previously";
+        }
+
+        return "on " + java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                .withZone(java.time.ZoneId.systemDefault())
+                .format(java.time.Instant.ofEpochMilli(epochMillis));
     }
 
     /**
@@ -461,6 +534,13 @@ public class TunerManager implements IDiscoveredTunerStatusListener
         if(current == TunerStatus.ENABLED)
         {
             discoveredTuner.start();
+
+            //A successful (re)start clears any quarantine/crash record so a recovered or user-re-enabled device gets
+            //a clean slate and is no longer reported as quarantined.
+            if(discoveredTuner.hasTuner())
+            {
+                mTunerFaultTracker.clearQuarantineAndCrashHistory(discoveredTuner.getId());
+            }
         }
 
         //Special handling for RSPduo to auto-update enabled state for slave device when configured for master/slave operation
