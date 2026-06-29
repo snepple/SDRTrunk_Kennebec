@@ -19,6 +19,7 @@
 
 package io.github.dsheirer.audio.broadcast;
 
+import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -114,20 +115,55 @@ public class ConfiguredBroadcast
      */
     public void setAudioBroadcaster(AbstractAudioBroadcaster audioBroadcaster)
     {
-        mBroadcastState.unbind();
-        mLastBadBroadcastState.unbind();
-        mLastErrorDetail.unbind();
         mAudioBroadcaster = audioBroadcaster;
 
-        if(audioBroadcaster != null)
+        //Binding/unbinding these properties fires JavaFX change events whose listeners mutate the Streaming Status
+        //table's ObservableList.  This method is called from a background thread (e.g. the delayed broadcaster
+        //startup / reconnect path), and mutating a JavaFX ObservableList off the Application Thread corrupts its
+        //internal change state - observed as a "ListChangeBuilder.compress IndexOutOfBoundsException" that aborts the
+        //runnable during a Zello reconnect storm.  Marshal the bind/unbind onto the FX thread (running inline when
+        //the FX toolkit isn't available, e.g. headless mode, where there is no UI list to corrupt).
+        final AbstractAudioBroadcaster broadcaster = audioBroadcaster;
+        runOnFxThread(() -> {
+            mBroadcastState.unbind();
+            mLastBadBroadcastState.unbind();
+            mLastErrorDetail.unbind();
+
+            if(broadcaster != null)
+            {
+                mBroadcastState.bind(broadcaster.broadcastStateProperty());
+                mLastBadBroadcastState.bind(broadcaster.lastBadBroadcastStateProperty());
+                mLastErrorDetail.bind(broadcaster.lastErrorDetailProperty());
+            }
+            else
+            {
+                updateBroadcastState();
+            }
+        });
+    }
+
+    /**
+     * Runs the JavaFX property/list mutation on the JavaFX Application Thread.  Runs inline when already on that
+     * thread, and also inline when the JavaFX toolkit is not running (headless mode), where there is no UI list to
+     * protect.
+     */
+    private static void runOnFxThread(Runnable runnable)
+    {
+        if(Platform.isFxApplicationThread())
         {
-            mBroadcastState.bind(mAudioBroadcaster.broadcastStateProperty());
-            mLastBadBroadcastState.bind(mAudioBroadcaster.lastBadBroadcastStateProperty());
-            mLastErrorDetail.bind(mAudioBroadcaster.lastErrorDetailProperty());
+            runnable.run();
         }
         else
         {
-            updateBroadcastState();
+            try
+            {
+                Platform.runLater(runnable);
+            }
+            catch(IllegalStateException toolkitNotRunning)
+            {
+                //JavaFX toolkit not started (headless) - safe to run inline.
+                runnable.run();
+            }
         }
     }
 
