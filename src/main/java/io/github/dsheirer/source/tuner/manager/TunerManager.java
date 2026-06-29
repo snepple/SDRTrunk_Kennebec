@@ -79,6 +79,7 @@ public class TunerManager implements IDiscoveredTunerStatusListener
     private final Context mLibUsbApplicationContext = new Context();
     private boolean mLibUsbInitialized = false;
     private SDRplay mSDRplay;
+    private final TunerFaultTracker mTunerFaultTracker;
 
     /**
      * Constructs an instance
@@ -89,6 +90,7 @@ public class TunerManager implements IDiscoveredTunerStatusListener
         mUserPreferences = userPreferences;
         mTunerConfigurationManager = new TunerConfigurationManager(userPreferences);
         mDiscoveredTunerModel = new DiscoveredTunerModel(mTunerConfigurationManager);
+        mTunerFaultTracker = new TunerFaultTracker(userPreferences.getDirectoryPreference().getDirectoryConfiguration());
     }
 
     /**
@@ -340,6 +342,7 @@ public class TunerManager implements IDiscoveredTunerStatusListener
     private void startAndConfigureTuner(DiscoveredTuner discoveredTuner)
     {
         discoveredTuner.addTunerStatusListener(this);
+        String tunerId = discoveredTuner.getId();
 
         //Set the tuner to disabled if the user has previously blacklisted the tuner
         if(mTunerConfigurationManager.isDisabled(discoveredTuner))
@@ -347,11 +350,43 @@ public class TunerManager implements IDiscoveredTunerStatusListener
             discoveredTuner.setEnabled(false);
             mLog.info("Tuner: " + discoveredTuner + " - Added / Disabled");
         }
+        //Quarantine: this device has crashed/hung the application during start() at least the threshold number of
+        //times.  Starting it again would risk another native libusb assertion that hangs the whole application, so
+        //it is disabled (persisted) and skipped to keep the application and the other tuners running.  The user can
+        //re-enable it in the Tuners view once the device/driver is fixed.
+        else if(mTunerFaultTracker.shouldQuarantine(tunerId))
+        {
+            mLog.error("Tuner: {} - QUARANTINED after {} repeated application crashes during start - skipping it so the " +
+                    "application and other tuners keep running. Fix the device/driver (or USB port/cable), then " +
+                    "re-enable this tuner in the Tuners view to try it again.",
+                    discoveredTuner, mTunerFaultTracker.getCrashCount(tunerId));
+            discoveredTuner.setEnabled(false);  //persisted as disabled via the tuner configuration manager
+            mTunerFaultTracker.clearCrashHistory(tunerId);  //it's disabled now; reset so a future re-enable starts fresh
+
+            MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.health.SystemHealthAlertEvent(
+                    io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.HARDWARE,
+                    "Tuner Disabled After Repeated Crashes",
+                    "Tuner " + discoveredTuner.getId() + " repeatedly crashed the application while starting and has " +
+                            "been automatically disabled so the application and other tuners keep running. Fix the " +
+                            "device/driver or USB port, then re-enable it in the Tuners view."));
+        }
         else
         {
             mLog.info("Tuner: " + discoveredTuner + " - Added / Starting ...");
-            //Attempt to start the discovered tuner and determine the tuner type
-            tunerStatusUpdated(discoveredTuner, TunerStatus.DISABLED, TunerStatus.ENABLED);
+            //Mark a pending start so that, if this device trips a native libusb assertion that hangs/aborts the
+            //application, the next launch can attribute the crash to this tuner and eventually quarantine it.
+            mTunerFaultTracker.beginStartAttempt(tunerId);
+            try
+            {
+                //Attempt to start the discovered tuner and determine the tuner type
+                tunerStatusUpdated(discoveredTuner, TunerStatus.DISABLED, TunerStatus.ENABLED);
+            }
+            finally
+            {
+                //Reached only if start() returned without crashing the JVM (success or a handled error); clear the
+                //pending marker so the crash cannot be misattributed.
+                mTunerFaultTracker.endStartAttempt(tunerId, discoveredTuner.hasTuner());
+            }
         }
 
         mDiscoveredTunerModel.addDiscoveredTuner(discoveredTuner);
