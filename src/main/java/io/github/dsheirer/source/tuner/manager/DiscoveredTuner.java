@@ -523,8 +523,18 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
      * requiring an application restart.
      */
     private class DisconnectRecoveryRunnable implements Runnable {
+        //Base of the exponential backoff and the ceiling it climbs to while still inside the early window.  A
+        //LIBUSB_ERROR_ACCESS (wrong/again driver, device claimed elsewhere) never clears in a few seconds, so each
+        //native open/init/exit attempt against the wedged device is pure churn - and that churn is exactly what
+        //trips the libusb poll_windows assertion that aborts the whole process.  Backing off turns ~180 native
+        //attempts in the first 15 minutes into roughly a dozen, which is the only lever we have from Java to keep
+        //the native layer from asserting on a device that simply won't open.
+        private static final long BASE_DELAY_SECONDS = 5;
+        private static final long EARLY_MAX_DELAY_SECONDS = 300;   //5 minutes
+
         private long mStartTime = System.currentTimeMillis();
         private boolean mLongOutageNotified = false;
+        private int mConsecutiveFailures = 0;
 
         @Override
         public void run() {
@@ -551,12 +561,15 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
 
                 if (getTunerStatus() == TunerStatus.ENABLED && hasTuner()) {
                     mLog.info("Successfully recovered USB tuner " + getId());
+                    mConsecutiveFailures = 0;
                     io.github.dsheirer.eventbus.MyEventBus.getGlobalEventBus().post(new TunerRecoveredEvent(DiscoveredTuner.this));
                     return;
                 }
             } catch (Exception e) {
                 mLog.error("Error during USB tuner fast recovery attempt for " + getId(), e);
             }
+
+            mConsecutiveFailures++;
 
             if (elapsedMinutes >= 45 && !mLongOutageNotified) {
                 mLongOutageNotified = true;
@@ -570,10 +583,12 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             }
 
             long nextDelay;
-            if (elapsedMinutes < 15) {
-                nextDelay = 5;        //5 seconds
-            } else if (elapsedMinutes < 45) {
-                nextDelay = 300;      //5 minutes
+            if (elapsedMinutes < 45) {
+                //Exponential backoff (5, 10, 20, 40, 80, 160, capped at 300s) so a persistently-failing device is
+                //retried a handful of times instead of every 5 seconds.  A genuinely transient error (replug, prior
+                //process releasing the handle) still recovers within the first one or two short delays.
+                long backoff = BASE_DELAY_SECONDS << Math.min(mConsecutiveFailures - 1, 16);
+                nextDelay = Math.min(Math.max(backoff, BASE_DELAY_SECONDS), EARLY_MAX_DELAY_SECONDS);
             } else {
                 nextDelay = 600;      //10 minutes
             }
