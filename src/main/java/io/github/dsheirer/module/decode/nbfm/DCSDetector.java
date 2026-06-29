@@ -258,6 +258,11 @@ public class DCSDetector
 
                     if(mConfirmationCounter >= CONFIRMATION_COUNT && mListener != null)
                     {
+                        //Logged at INFO once per call (on the confirmation transition) so a polarity/code mismatch is
+                        //visible: if calls are present but the decoded code is the opposite polarity (e.g. D vs I) of
+                        //the configured target, this is why a DCS channel "receives nothing".
+                        LOGGER.info("DCS call REJECTED - decoded code [{}] is not in the channel's allowed set {}",
+                                code, mTargetCodes);
                         mListener.dcsRejected(code);
                     }
                 }
@@ -281,6 +286,9 @@ public class DCSDetector
 
                 if(mConfirmationCounter >= CONFIRMATION_COUNT && mListener != null)
                 {
+                    //Logged once per call on the confirmation transition (not every cycle) so DCS reception is
+                    //visible in the log without spamming.
+                    LOGGER.info("DCS call ACCEPTED - decoded code [{}] matches the channel's allowed set", code);
                     mListener.dcsDetected(code);
                 }
             }

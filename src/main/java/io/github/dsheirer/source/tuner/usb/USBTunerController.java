@@ -623,6 +623,11 @@ public abstract class USBTunerController extends TunerController
         private long mFirstZeroLengthTransferTimestamp = 0;
         private final java.util.concurrent.atomic.AtomicBoolean mBufferRecoveryInProgress =
                 new java.util.concurrent.atomic.AtomicBoolean(false);
+        //Set by drainErrorTransfers() when a recovery resubmit returns a hard device fault (IO/NO_DEVICE/PIPE).
+        //A device that fails every buffer with LIBUSB_ERROR_IO is not coming back this pass; continuing to resubmit
+        //into it is pure native churn that aggravates the libusb Windows poll_windows assertion, so the recovery
+        //loop bails out and shuts the tuner down cleanly instead of hammering it for the full backoff window.
+        private volatile boolean mDeviceHardFaultDetected = false;
 
         /**
          * Creates USB Transfers to carry the streaming sample data.  Transfer buffers are backed by native memory
@@ -780,6 +785,8 @@ public abstract class USBTunerController extends TunerController
                 return; //a recovery pass is already running
             }
 
+            mDeviceHardFaultDetected = false;
+
             mLog.warn("All USB transfer buffers are temporarily in the error queue - attempting recovery with backoff " +
                     "before shutting down the tuner");
 
@@ -812,11 +819,24 @@ public abstract class USBTunerController extends TunerController
                             return;
                         }
 
+                        if(mDeviceHardFaultDetected)
+                        {
+                            //Every buffer is failing with a hard device fault (LIBUSB_ERROR_IO / NO_DEVICE / PIPE).
+                            //Stop resubmitting now rather than continuing to drive native I/O into a faulted device
+                            //for the rest of the backoff window - that churn is what trips the poll_windows assertion.
+                            mLog.error("USB tuner device hard-faulted during buffer recovery after [" + attempt +
+                                    "] attempt(s) - shutting down USB tuner to avoid native USB churn");
+                            break;
+                        }
+
                         backoff = Math.min(backoff * 2, BUFFER_RECOVERY_MAX_BACKOFF_MS);
                     }
 
-                    mLog.error("USB transfer buffers remained exhausted after [" + MAX_BUFFER_RECOVERY_ATTEMPTS +
-                            "] recovery attempts - shutting down USB tuner");
+                    if(!mDeviceHardFaultDetected)
+                    {
+                        mLog.error("USB transfer buffers remained exhausted after [" + MAX_BUFFER_RECOVERY_ATTEMPTS +
+                                "] recovery attempts - shutting down USB tuner");
+                    }
                     setErrorMessage("USB Error - Transfer Buffers Exhausted");
                 }
                 finally
@@ -839,6 +859,8 @@ public abstract class USBTunerController extends TunerController
             }
 
             java.util.Iterator<Transfer> it = mErrorTransfers.iterator();
+            boolean anyRecovered = false;
+            boolean anyIoFault = false;
 
             while(it.hasNext())
             {
@@ -849,13 +871,29 @@ public abstract class USBTunerController extends TunerController
                 {
                     it.remove();
                     mInProgressTransfers.add(transfer);
+                    anyRecovered = true;
                 }
                 else if(status == LibUsb.ERROR_NO_DEVICE || status == LibUsb.ERROR_PIPE)
                 {
                     //Device physically gone - let the disconnect path handle it; recovery can't help.
+                    mDeviceHardFaultDetected = true;
                     return false;
                 }
+                else if(status == LibUsb.ERROR_IO)
+                {
+                    //Physical I/O failure on the endpoint.  Record it; if the whole queue fails this way with nothing
+                    //recovering, the device has hard-faulted (e.g. a failing dongle/hub) and we stop resubmitting.
+                    anyIoFault = true;
+                }
                 //else: leave it queued and try again on the next recovery attempt
+            }
+
+            //Every buffer still queued and at least one returned a physical I/O error with none recovering: the
+            //device is not coming back on its own.  Flag a hard fault so the recovery loop shuts the tuner down now
+            //instead of continuing to push native submits into a faulted device.
+            if(!anyRecovered && anyIoFault && mErrorTransfers.size() >= mAvailableTransfers.size())
+            {
+                mDeviceHardFaultDetected = true;
             }
 
             return mErrorTransfers.size() < mAvailableTransfers.size();
