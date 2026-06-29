@@ -49,9 +49,9 @@ public class TwoToneConfiguration
     //minimum, a ~3.0s Tone B -> 1.5s minimum, and an ~8.0s single long tone (group call) -> 4.5s minimum.  Users can
     //change these per detector; MINIMUM_TONE_DURATION_FLOOR_MS is enforced by the detector so no tone is ever gated
     //below 500ms.
-    public static final double DEFAULT_TONE_A_LENGTH_SEC = 0.6;   //600 ms
-    public static final double DEFAULT_TONE_B_LENGTH_SEC = 1.5;   //1500 ms
-    public static final double DEFAULT_LONG_TONE_LENGTH_SEC = 4.5; //4500 ms (single long/group-call tone)
+    public static final double DEFAULT_TONE_A_LENGTH_SEC = 0.6;   //two-tone A default
+    public static final double DEFAULT_TONE_B_LENGTH_SEC = 1.5;   //two-tone B default
+    public static final double DEFAULT_LONG_TONE_LENGTH_SEC = 2.0; //single long-tone A default
     public static final double MINIMUM_TONE_DURATION_FLOOR_MS = 500.0;
 
     // IAmResponding-style per-tone configuration fields

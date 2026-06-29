@@ -343,6 +343,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         toneGapLabel.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
         toneGapLengthSpinner.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
 
+        //True while a detector is being loaded into the form, so the type-change listener below does not overwrite a
+        //saved tone length with the type's default value.
+        final boolean[] loadingSelection = {false};
         typeSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
             TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
             if (sel != null && newVal != null) {
@@ -351,6 +354,16 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 if (isLong) {
                     toneBField.getEditor().clear();
                     sel.setToneB(0.0);
+                }
+                //On a user-initiated type change (not while loading a detector), prefill the tone-length default for
+                //the chosen type: long single tone -> 2.0s; two-tone -> A 0.6s / B 1.5s.
+                if (!loadingSelection[0]) {
+                    if (isLong) {
+                        toneALengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_LONG_TONE_LENGTH_SEC);
+                    } else {
+                        toneALengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_TONE_A_LENGTH_SEC);
+                        toneBLengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_TONE_B_LENGTH_SEC);
+                    }
                 }
             }
         });
@@ -531,11 +544,15 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             if (oldVal != null) {
                 //Flush any in-progress spinner text edits to the model (via the active bindings) before unbinding,
                 //so switching detectors does not discard typed tone-length / tolerance / gap / ignore values.
+                //Commit any in-progress editor text, then write the spinner values straight to the model before
+                //switching detectors, so typed tone-length / gap / tolerance / ignore values are never lost.
                 commitSpinner.accept(toneALengthSpinner);
                 commitSpinner.accept(toneBLengthSpinner);
                 commitSpinner.accept(toneGapLengthSpinner);
                 commitSpinner.accept(toneToleranceSpinner);
                 commitSpinner.accept(ignoreDuplicateSpinner);
+                persistSpinnerValues(oldVal, toneALengthSpinner, toneBLengthSpinner, toneGapLengthSpinner,
+                        toneToleranceSpinner, ignoreDuplicateSpinner);
 
                 aliasField.textProperty().unbindBidirectional(oldVal.aliasProperty());
                 mqttCheck.selectedProperty().unbindBidirectional(oldVal.enableMqttPublishProperty());
@@ -545,11 +562,6 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.valueProperty().unbindBidirectional(oldVal.zelloAlertFileProperty());
                 templateField.textProperty().unbindBidirectional(oldVal.templateProperty());
                 textMessageCheck.selectedProperty().unbindBidirectional(oldVal.enableZelloTextMessageProperty());
-                toneALengthSpinner.getValueFactory().valueProperty().unbindBidirectional(oldVal.toneALengthSecProperty().asObject());
-                toneBLengthSpinner.getValueFactory().valueProperty().unbindBidirectional(oldVal.toneBLengthSecProperty().asObject());
-                toneGapLengthSpinner.getValueFactory().valueProperty().unbindBidirectional(oldVal.toneGapLengthSecProperty().asObject());
-                toneToleranceSpinner.getValueFactory().valueProperty().unbindBidirectional(oldVal.toneToleranceProperty().asObject());
-                ignoreDuplicateSpinner.getValueFactory().valueProperty().unbindBidirectional(oldVal.ignoreDuplicateSecProperty().asObject());
                 enabledCheck.selectedProperty().unbindBidirectional(oldVal.enabledProperty());
                 alertFileCombo.valueProperty().unbindBidirectional(oldVal.alertFilePathProperty());
                 showNotificationCheck.selectedProperty().unbindBidirectional(oldVal.showNotificationProperty());
@@ -566,6 +578,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 }
             }
             if (newVal != null) {
+                //Suppress the type-change listener's default prefill while loading a saved detector, so its stored
+                //tone lengths are not overwritten by the type's defaults.
+                loadingSelection[0] = true;
                 aliasField.textProperty().bindBidirectional(newVal.aliasProperty());
                 if (newVal.isLongATone()) {
                     typeSelector.getSelectionModel().select("Long A Tone Only");
@@ -599,16 +614,17 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.valueProperty().bindBidirectional(newVal.zelloAlertFileProperty());
                 templateField.textProperty().bindBidirectional(newVal.templateProperty());
                 textMessageCheck.selectedProperty().bindBidirectional(newVal.enableZelloTextMessageProperty());
+                //Load the detector's values into the spinners.  No bidirectional binding: DoubleProperty.asObject()
+                //returns a fresh wrapper each call, so the unbind on switch never worked and the bindings accumulated
+                //(editing/selecting could overwrite previously-viewed detectors).  Values are written back explicitly
+                //on switch-away and on Save instead.
                 toneALengthSpinner.getValueFactory().setValue(newVal.getToneALengthSec());
-                toneALengthSpinner.getValueFactory().valueProperty().bindBidirectional(newVal.toneALengthSecProperty().asObject());
                 toneBLengthSpinner.getValueFactory().setValue(newVal.getToneBLengthSec());
-                toneBLengthSpinner.getValueFactory().valueProperty().bindBidirectional(newVal.toneBLengthSecProperty().asObject());
                 toneGapLengthSpinner.getValueFactory().setValue(newVal.getToneGapLengthSec());
-                toneGapLengthSpinner.getValueFactory().valueProperty().bindBidirectional(newVal.toneGapLengthSecProperty().asObject());
                 toneToleranceSpinner.getValueFactory().setValue(newVal.getToneTolerance());
-                toneToleranceSpinner.getValueFactory().valueProperty().bindBidirectional(newVal.toneToleranceProperty().asObject());
                 ignoreDuplicateSpinner.getValueFactory().setValue(newVal.getIgnoreDuplicateSec());
-                ignoreDuplicateSpinner.getValueFactory().valueProperty().bindBidirectional(newVal.ignoreDuplicateSecProperty().asObject());
+                //Finished loading the saved detector; re-enable the type-change default prefill for user edits.
+                loadingSelection[0] = false;
                 enabledCheck.selectedProperty().bindBidirectional(newVal.enabledProperty());
                 alertFileCombo.valueProperty().bindBidirectional(newVal.alertFilePathProperty());
                 showNotificationCheck.selectedProperty().bindBidirectional(newVal.showNotificationProperty());
@@ -633,8 +649,8 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.getSelectionModel().clearSelection();
                 templateField.clear();
                 textMessageCheck.setSelected(false);
-                toneALengthSpinner.getValueFactory().setValue(0.6);
-                toneBLengthSpinner.getValueFactory().setValue(0.6);
+                toneALengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_TONE_A_LENGTH_SEC);
+                toneBLengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_TONE_B_LENGTH_SEC);
                 toneGapLengthSpinner.getValueFactory().setValue(0.0);
                 toneToleranceSpinner.getValueFactory().setValue(0.02);
                 ignoreDuplicateSpinner.getValueFactory().setValue(60.0);
@@ -789,6 +805,18 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         Button saveBtn = new Button("Save Settings");
         saveBtn.getStyleClass().add("kennebec-toolbar-button-primary");
         saveBtn.setOnAction(e -> {
+            //Commit any in-progress spinner editor text and write the spinner values to the selected detector before
+            //saving, so tone-length / gap / tolerance / ignore edits are reliably persisted.
+            TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
+            if(sel != null) {
+                commitSpinner.accept(toneALengthSpinner);
+                commitSpinner.accept(toneBLengthSpinner);
+                commitSpinner.accept(toneGapLengthSpinner);
+                commitSpinner.accept(toneToleranceSpinner);
+                commitSpinner.accept(ignoreDuplicateSpinner);
+                persistSpinnerValues(sel, toneALengthSpinner, toneBLengthSpinner, toneGapLengthSpinner,
+                        toneToleranceSpinner, ignoreDuplicateSpinner);
+            }
             mPlaylistManager.schedulePlaylistSave();
             mTableView.refresh();
         });
@@ -860,6 +888,25 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         }
         setCenter(centerSplitPane);
     }
+
+    /**
+     * Writes the editable spinner values (tone A/B length, gap, tolerance, ignore-duplicate) straight to the given
+     * detector.  These fields are persisted explicitly rather than through a JavaFX bidirectional binding, because
+     * DoubleProperty.asObject() returns a fresh wrapper on each call which made the bindings unreliable and unable to
+     * unbind on detector switch.
+     */
+    private static void persistSpinnerValues(TwoToneConfiguration config,
+            Spinner<Double> toneALength, Spinner<Double> toneBLength, Spinner<Double> toneGapLength,
+            Spinner<Double> toneTolerance, Spinner<Double> ignoreDuplicate)
+    {
+        if(config == null) return;
+        if(toneALength.getValue() != null) config.setToneALengthSec(toneALength.getValue());
+        if(toneBLength.getValue() != null) config.setToneBLengthSec(toneBLength.getValue());
+        if(toneGapLength.getValue() != null) config.setToneGapLengthSec(toneGapLength.getValue());
+        if(toneTolerance.getValue() != null) config.setToneTolerance(toneTolerance.getValue());
+        if(ignoreDuplicate.getValue() != null) config.setIgnoreDuplicateSec(ignoreDuplicate.getValue());
+    }
+
     private void syncToPlaylist() {
         //Write to the PlaylistManager's backing list (the source of truth). getCurrentPlaylist() returns a
         //fresh throwaway PlaylistV2 each call, so the previous getCurrentPlaylist().setTwoToneConfigurations()
