@@ -561,6 +561,9 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 RestApiWatchdog.start(this, mTunerManager, mPlaylistManager.getChannelProcessingManager(),
                     mPlaylistManager.getBroadcastModel());
             }
+
+            //Now that the main window exists, let a second launch raise it to the foreground.
+            SingleInstanceManager.setFocusHandler(this::showMainWindow);
             }
             catch(Throwable startupError)
             {
@@ -1038,6 +1041,7 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
         }
         if(mApplicationLog != null) mApplicationLog.stop();
         if(mTwoToneLog != null) mTwoToneLog.stop();
+        SingleInstanceManager.release();
     }
 
     /**
@@ -1101,6 +1105,13 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 mPrimaryStage.setIconified(false);
                 mPrimaryStage.toFront();
                 mPrimaryStage.requestFocus();
+
+                //On Windows a plain toFront() frequently fails to steal the foreground from another application
+                //(e.g. the Explorer window the user double-clicked the .exe from).  Briefly toggling always-on-top
+                //forces the OS to raise and focus the window, then restores normal stacking.
+                boolean wasAlwaysOnTop = mPrimaryStage.isAlwaysOnTop();
+                mPrimaryStage.setAlwaysOnTop(true);
+                mPrimaryStage.setAlwaysOnTop(wasAlwaysOnTop);
             }
         });
     }
@@ -1396,6 +1407,13 @@ public class SDRTrunk extends Application implements Listener<TunerEvent>, io.gi
                 headless = true;
                 break;
             }
+        }
+
+        //Enforce a single running instance.  If another instance is already running, it has been signaled to bring
+        //its window to the foreground and this duplicate launch exits immediately (before any heavy startup).
+        if(!SingleInstanceManager.acquireLockOrSignalRunningInstance())
+        {
+            System.exit(0);
         }
 
         if(headless)
