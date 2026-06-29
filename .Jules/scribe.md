@@ -80,3 +80,7 @@
 **Topic:** 3 New Documentation Guides Added
 **Learning:** Three existing missing features/concepts from the recent updates (Channel Images, Tuner Waterfall Collapse, and Natural Scrolling) lacked Mintlify-styled "Visual First" Markdown guides in the help section.
 **Action:** Created `channel-images.md`, `tuner-waterfall-collapse.md`, and `natural-scrolling.md` adhering to the Visual-First Mintlify style and mapped them to the navigation tree via the `help/` directory.
+## 2026-06-29 - Topic Selection
+**Topic:** 3 New Documentation Guides Added
+**Learning:** Three missing features from the "What's New" section (NBFM AI Optimizer, System Health Notifications, and Geographic ID Generator) lacked Mintlify-styled "Visual First" Markdown guides.
+**Action:** Created `nbfm-ai-optimizer.md`, `system-health-notifications.md`, and `geographic-id-generator.md` adhering to the Visual-First Mintlify style and mapped them to the navigation tree via the `help/` directory.

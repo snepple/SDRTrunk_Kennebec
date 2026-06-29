@@ -94,6 +94,8 @@ public class HelpViewController {
         channelsDecodingNode.getChildren().add(new TreeItem<>("Native Sequential Paging"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("P25"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("P25 Phase 2 Setup"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Nbfm Ai Optimizer"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Geographic Id Generator"));
         guidesNode.getChildren().add(channelsDecodingNode);
 
         TreeItem<String> organizationPlaylistsNode = new TreeItem<>("Organization & Playlists");
@@ -134,6 +136,7 @@ public class HelpViewController {
         advancedSystemNode.getChildren().add(new TreeItem<>("Virtual Audio Cable"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Natural Scrolling"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Managing System Logs"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("System Health Notifications"));
         guidesNode.getChildren().add(advancedSystemNode);
 
         root.getChildren().add(guidesNode);
