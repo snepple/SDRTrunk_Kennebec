@@ -488,7 +488,7 @@ public class TwoToneDetector
                 if (mDiscoveryFftLogCount < DISCOVERY_FFT_LOG_LIMIT) {
                     mDiscoveryFftLogCount++;
                     double peakFreq = (maxIndex > 0) ? Math.round((double) maxIndex * SAMPLE_RATE / FFT_SIZE) : 0;
-                    mLog.info("TwoTone discovery FFT: peakFreq={}Hz peakMag={} ratio={} passesFloors={} (need mag>5000 AND ratio>{})",
+                    mLog.debug("TwoTone discovery FFT: peakFreq={}Hz peakMag={} ratio={} passesFloors={} (need mag>5000 AND ratio>{})",
                             peakFreq, String.format("%.0f", maxMagnitude), String.format("%.1f", peakToAvgRatio),
                             (maxMagnitude > 5000.0 && peakToAvgRatio > DISCOVERY_MIN_PEAK_TO_AVG),
                             String.format("%.0f", DISCOVERY_MIN_PEAK_TO_AVG));
