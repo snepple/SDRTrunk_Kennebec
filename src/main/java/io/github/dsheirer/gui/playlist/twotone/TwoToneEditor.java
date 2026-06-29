@@ -343,6 +343,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         toneGapLabel.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
         toneGapLengthSpinner.disableProperty().bind(Bindings.equal(typeSelector.valueProperty(), "Long A Tone Only"));
 
+        //True while a detector is being loaded into the form, so the type-change listener below does not overwrite a
+        //saved tone length with the type's default value.
+        final boolean[] loadingSelection = {false};
         typeSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
             TwoToneConfiguration sel = mTableView.getSelectionModel().getSelectedItem();
             if (sel != null && newVal != null) {
@@ -351,6 +354,16 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 if (isLong) {
                     toneBField.getEditor().clear();
                     sel.setToneB(0.0);
+                }
+                //On a user-initiated type change (not while loading a detector), prefill the tone-length default for
+                //the chosen type: long single tone -> 2.0s; two-tone -> A 0.6s / B 1.5s.
+                if (!loadingSelection[0]) {
+                    if (isLong) {
+                        toneALengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_LONG_TONE_LENGTH_SEC);
+                    } else {
+                        toneALengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_TONE_A_LENGTH_SEC);
+                        toneBLengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_TONE_B_LENGTH_SEC);
+                    }
                 }
             }
         });
@@ -565,6 +578,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 }
             }
             if (newVal != null) {
+                //Suppress the type-change listener's default prefill while loading a saved detector, so its stored
+                //tone lengths are not overwritten by the type's defaults.
+                loadingSelection[0] = true;
                 aliasField.textProperty().bindBidirectional(newVal.aliasProperty());
                 if (newVal.isLongATone()) {
                     typeSelector.getSelectionModel().select("Long A Tone Only");
@@ -607,6 +623,8 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 toneGapLengthSpinner.getValueFactory().setValue(newVal.getToneGapLengthSec());
                 toneToleranceSpinner.getValueFactory().setValue(newVal.getToneTolerance());
                 ignoreDuplicateSpinner.getValueFactory().setValue(newVal.getIgnoreDuplicateSec());
+                //Finished loading the saved detector; re-enable the type-change default prefill for user edits.
+                loadingSelection[0] = false;
                 enabledCheck.selectedProperty().bindBidirectional(newVal.enabledProperty());
                 alertFileCombo.valueProperty().bindBidirectional(newVal.alertFilePathProperty());
                 showNotificationCheck.selectedProperty().bindBidirectional(newVal.showNotificationProperty());
@@ -631,8 +649,8 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.getSelectionModel().clearSelection();
                 templateField.clear();
                 textMessageCheck.setSelected(false);
-                toneALengthSpinner.getValueFactory().setValue(0.6);
-                toneBLengthSpinner.getValueFactory().setValue(0.6);
+                toneALengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_TONE_A_LENGTH_SEC);
+                toneBLengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_TONE_B_LENGTH_SEC);
                 toneGapLengthSpinner.getValueFactory().setValue(0.0);
                 toneToleranceSpinner.getValueFactory().setValue(0.02);
                 ignoreDuplicateSpinner.getValueFactory().setValue(60.0);
