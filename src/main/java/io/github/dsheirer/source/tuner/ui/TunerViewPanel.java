@@ -247,7 +247,8 @@ public class TunerViewPanel extends VBox {
 
     /**
      * Updates the "channels playing on selected tuner" list with the names of channels whose active tuner
-     * matches the currently-selected tuner.
+     * matches the currently-selected tuner.  Matching uses the unique tuner ID (e.g., bus:port address)
+     * rather than the display name to avoid false matches when multiple tuners share a friendly name.
      */
     private void updateTunerChannelsList() {
         if (mTunerChannelsList == null) {
@@ -258,11 +259,11 @@ public class TunerViewPanel extends VBox {
         DiscoveredTuner selected = mTunerTable.getSelectionModel().getSelectedItem();
 
         if (selected != null && mPlaylistManager != null && mPlaylistManager.getChannelModel() != null) {
-            String tunerName = selected.getName();
+            String tunerId = selected.getId();
 
-            if (tunerName != null && !tunerName.isEmpty()) {
+            if (tunerId != null && !tunerId.isEmpty()) {
                 for (Channel channel : mPlaylistManager.getChannelModel().getChannels()) {
-                    if (tunerName.equals(channel.activeTunerNameProperty().get())) {
+                    if (tunerId.equals(channel.activeTunerIdProperty().get())) {
                         names.add(channel.getName());
                     }
                 }

@@ -435,6 +435,7 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
                 Platform.runLater(() -> {
                     channel.setProcessing(false);
                     channel.activeTunerNameProperty().set("");
+                    channel.activeTunerIdProperty().set("");
                 });
             }
 
@@ -589,7 +590,10 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
                         if (dt.hasTuner() && dt.getTuner().getChannelSourceManager().getTunerChannels().contains(tcs.getTunerChannel())) {
                             //Use the DiscoveredTuner name (friendly name when set) so the channel's Tuner
                             //column matches the tuner list's Name column.
-                            Platform.runLater(() -> channel.activeTunerNameProperty().set(dt.getName()));
+                            Platform.runLater(() -> {
+                                channel.activeTunerNameProperty().set(dt.getName());
+                                channel.activeTunerIdProperty().set(dt.getId());
+                            });
                             //Remember which tuner this channel is running on so it can be restarted if the
                             //tuner later errors and recovers.
                             mChannelTunerIdMap.put(channel, dt.getId());
@@ -710,6 +714,7 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
             {
                 channel.setProcessing(false);
                 channel.activeTunerNameProperty().set("");
+                channel.activeTunerIdProperty().set("");
             }
             else
             {
@@ -724,6 +729,7 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
                         {
                             channel.setProcessing(false);
                 channel.activeTunerNameProperty().set("");
+                channel.activeTunerIdProperty().set("");
                         }
                         catch(Exception e)
                         {
@@ -736,6 +742,7 @@ public class ChannelProcessingManager implements Listener<ChannelEvent>
                 {
                     channel.setProcessing(false);
                 channel.activeTunerNameProperty().set("");
+                channel.activeTunerIdProperty().set("");
                 }
             }
 
