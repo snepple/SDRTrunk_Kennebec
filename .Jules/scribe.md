@@ -84,3 +84,7 @@
 **Topic:** 3 New Documentation Guides Added
 **Learning:** Three missing features from the "What's New" section (NBFM AI Optimizer, System Health Notifications, and Geographic ID Generator) lacked Mintlify-styled "Visual First" Markdown guides.
 **Action:** Created `nbfm-ai-optimizer.md`, `system-health-notifications.md`, and `geographic-id-generator.md` adhering to the Visual-First Mintlify style and mapped them to the navigation tree via the `help/` directory.
+## 2026-06-30 - Topic Selection
+**Topic:** 3 New Documentation Guides Added
+**Learning:** Three missing features from the "What's New" section (Persistent Layouts, Alphabetical Sorting, and Waterfall Muting) lacked Mintlify-styled "Visual First" Markdown guides in the help section.
+**Action:** Created `persistent-layouts.md`, `alphabetical-sorting.md`, and `waterfall-muting.md` adhering to the Visual-First Mintlify style and mapped them to the navigation tree via the `help/` directory.
