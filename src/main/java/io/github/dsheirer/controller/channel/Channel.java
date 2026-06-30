@@ -92,6 +92,7 @@ public class Channel extends Configuration implements Listener<SourceEvent>
 
     private BooleanProperty mProcessing = new SimpleBooleanProperty();
     private StringProperty mActiveTunerName = new SimpleStringProperty();
+    private StringProperty mActiveTunerId = new SimpleStringProperty();
     private BooleanProperty mAutoStart = new SimpleBooleanProperty();
     private ObjectProperty<Integer> mAutoStartOrder = new SimpleObjectProperty<>();
     private boolean mSelected;
@@ -338,6 +339,15 @@ public class Channel extends Configuration implements Listener<SourceEvent>
     public StringProperty activeTunerNameProperty()
     {
         return mActiveTunerName;
+    }
+
+    /**
+     * Active tuner unique ID property (e.g., bus:port address). Used for robust channel-to-tuner
+     * matching that does not depend on the user-visible display name.
+     */
+    public StringProperty activeTunerIdProperty()
+    {
+        return mActiveTunerId;
     }
 
     /**

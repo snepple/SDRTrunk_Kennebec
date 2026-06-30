@@ -83,11 +83,62 @@ public class TunerConfigurationManager implements IDiscoveredTunerStatusListener
                 TunerConfigurationState state = objectMapper.readValue(configPath.toFile(), TunerConfigurationState.class);
                 mDisabledTunerList.addAll(state.getDisabledTuners());
                 mTunerConfigurations.addAll(state.getTunerConfigurations());
+                deduplicateFriendlyNames();
             }
             catch(IOException ioe)
             {
                 mLog.error("Error loading tuner configuration file", ioe);
             }
+        }
+    }
+
+    /**
+     * Detects and resolves duplicate friendly names among tuner configurations loaded from disk.
+     * When two or more configs share the same non-empty friendly name, a numeric suffix is appended
+     * to the duplicates (e.g., "Airspy 2" becomes "Airspy 2 (2)") and the corrected state is saved.
+     *
+     * This repairs configurations affected by a prior bug where known-good profile cloning copied
+     * the donor's friendly name to new tuners of the same type.
+     */
+    private void deduplicateFriendlyNames()
+    {
+        java.util.Map<String, List<TunerConfiguration>> nameGroups = new java.util.HashMap<>();
+        boolean changed = false;
+
+        for(TunerConfiguration config : mTunerConfigurations)
+        {
+            String name = config.getFriendlyName();
+
+            if(name != null && !name.trim().isEmpty())
+            {
+                nameGroups.computeIfAbsent(name.trim(), k -> new ArrayList<>()).add(config);
+            }
+        }
+
+        for(java.util.Map.Entry<String, List<TunerConfiguration>> entry : nameGroups.entrySet())
+        {
+            List<TunerConfiguration> group = entry.getValue();
+
+            if(group.size() > 1)
+            {
+                mLog.warn("Found " + group.size() + " tuner configurations sharing friendly name [" +
+                    entry.getKey() + "] - appending suffixes to resolve duplicates");
+
+                // Keep the first one as-is, append suffix to the rest
+                for(int i = 1; i < group.size(); i++)
+                {
+                    String newName = entry.getKey() + " (" + (i + 1) + ")";
+                    mLog.info("Renaming tuner [" + group.get(i).getUniqueID() + "] from [" +
+                        entry.getKey() + "] to [" + newName + "]");
+                    group.get(i).setFriendlyName(newName);
+                    changed = true;
+                }
+            }
+        }
+
+        if(changed)
+        {
+            saveConfigurations();
         }
     }
 
@@ -343,6 +394,7 @@ public class TunerConfigurationManager implements IDiscoveredTunerStatusListener
                 ObjectMapper mapper = new ObjectMapper();
                 TunerConfiguration clone = mapper.readValue(mapper.writeValueAsBytes(donor), donor.getClass());
                 clone.setUniqueID(uniqueID);
+                clone.setFriendlyName(null); // Don't inherit donor's display name — each tuner needs its own
                 mLog.info("New tuner [" + uniqueID + "] - cloned known-good " + type +
                     " configuration from tuner [" + donor.getUniqueID() + "]");
                 addTunerConfiguration(clone);
