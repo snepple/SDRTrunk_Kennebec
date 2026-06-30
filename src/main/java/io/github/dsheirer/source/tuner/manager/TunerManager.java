@@ -306,6 +306,15 @@ public class TunerManager implements IDiscoveredTunerStatusListener
                 mLog.error("LibUsb - error during USB device discovery", e);
             }
 
+            //Pre-register ALL discovered tuner IDs before processing any of them.  This ensures that
+            //getTunerConfiguration()'s orphan detection has a complete picture of which bus:port IDs are
+            //currently in use, preventing tuner A from incorrectly adopting tuner B's config when both
+            //are of the same type but their bus:port IDs swapped.
+            for(DiscoveredUSBTuner preReg: discoveredUSBTuners)
+            {
+                mTunerConfigurationManager.registerDiscoveredTunerId(preReg.getId());
+            }
+
             for(DiscoveredUSBTuner discoveredUSBTuner: discoveredUSBTuners)
             {
                 addUsbTuner(discoveredUSBTuner);
