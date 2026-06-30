@@ -88,6 +88,11 @@ public class TwoToneDetector
     private static final int ROUTING_LOG_LIMIT = 60;
     private int mRoutingLogCount = 0;
 
+    // Rate-limited Goertzel power diagnostics.  Logs the first GOERTZEL_DIAG_LIMIT power readings per detector
+    // whenever a tone is above threshold, so we can confirm the power normalization is producing correct values.
+    private static final int GOERTZEL_DIAG_LIMIT = 10;
+    private final java.util.HashMap<String, Integer> mGoertzelDiagCount = new java.util.HashMap<>();
+
     // Cached Goertzel filters (keyed by target frequency) and a reused windowing scratch buffer, so tone detection
     // does not allocate a filter (with its window coefficients) and a buffer clone on every 20 ms block.  Accessed
     // only from the single detector processing thread.
@@ -394,9 +399,54 @@ public class TwoToneDetector
 
             int powerB = getTolerancePower(buffer, freqB, tolB);
 
-            // Tone A detection
-            if (powerA > POWER_THRESHOLD_DB)
+            // Diagnostic: log Goertzel power levels for this detector (rate-limited per detector)
+            Integer diagCount = mGoertzelDiagCount.getOrDefault(detectorKey, 0);
+            if (diagCount < GOERTZEL_DIAG_LIMIT && (powerA > POWER_THRESHOLD_DB || powerB > POWER_THRESHOLD_DB))
             {
+                mGoertzelDiagCount.put(detectorKey, diagCount + 1);
+                mLog.info("Goertzel [{}] A:{} Hz pwr={} dB, B:{} Hz pwr={} dB (threshold={}) state: toneABlocks={}/{} toneBBlocks={}/{} gap={}",
+                    config.getAlias(), freqA, powerA, freqB, powerB, POWER_THRESHOLD_DB,
+                    state.currentToneABlocks, minToneABlocks, state.currentToneBBlocks, minToneBBlocks, state.gapBlocks);
+            }
+
+            // --- Tone detection with dominance arbitration ---
+            // The old mutually-exclusive if/else structure prevented Tone B from ever being detected when Tone A's
+            // Goertzel bin still showed power above threshold.  This is common when Tone B is a harmonic of Tone A
+            // (e.g. Sidney Fire: A=799Hz, B=1598Hz = 2×A), because spectral leakage from B bleeds into the A bin.
+            //
+            // Fix: when BOTH tones show power above threshold, the stronger one wins.  When only one shows power,
+            // that one is used.  When neither shows power, count gap blocks if we're between A and B.
+            boolean aAboveThreshold = powerA > POWER_THRESHOLD_DB;
+            boolean bAboveThreshold = powerB > POWER_THRESHOLD_DB;
+            boolean toneADominant = false;
+            boolean toneBDominant = false;
+
+            if (aAboveThreshold && bAboveThreshold)
+            {
+                // Both show power — the stronger one wins.
+                if (powerA >= powerB)
+                {
+                    toneADominant = true;
+                }
+                else
+                {
+                    toneBDominant = true;
+                }
+            }
+            else if (aAboveThreshold)
+            {
+                toneADominant = true;
+            }
+            else if (bAboveThreshold)
+            {
+                toneBDominant = true;
+            }
+
+            // Tone A counting
+            if (toneADominant && state.currentToneBBlocks == 0)
+            {
+                // Only count Tone A blocks if we haven't started counting Tone B yet
+                // (prevents re-detecting A after B has started)
                 if(state.currentToneA == config.getToneA())
                 {
                     state.currentToneABlocks++;
@@ -410,8 +460,8 @@ public class TwoToneDetector
                     state.gapBlocks = 0;
                 }
             }
-            // Tone B detection (only valid if Tone A was previously detected and held long enough)
-            else if (powerB > POWER_THRESHOLD_DB && state.currentToneABlocks >= minToneABlocks && state.currentToneA == config.getToneA())
+            // Tone B counting (only valid if Tone A was previously detected and held long enough)
+            else if (toneBDominant && state.currentToneABlocks >= minToneABlocks && state.currentToneA == config.getToneA())
             {
                 if(state.currentToneB == config.getToneB())
                 {
@@ -422,7 +472,6 @@ public class TwoToneDetector
                     state.currentToneB = config.getToneB();
                     state.currentToneBBlocks = 1;
                 }
-
 
                 // If B is held long enough, it's a confirmed sequence
                 if(state.currentToneBBlocks >= minToneBBlocks)
@@ -436,9 +485,8 @@ public class TwoToneDetector
                     state.currentToneBBlocks = 0;
                     state.gapBlocks = 0;
                 }
-
             }
-            // Neither tone A nor tone B detected — count gap blocks between tones
+            // Neither tone dominant — count gap blocks between tones
             else if (state.currentToneABlocks >= minToneABlocks && state.currentToneA == config.getToneA()
                     && state.currentToneBBlocks == 0)
             {

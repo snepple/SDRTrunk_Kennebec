@@ -98,12 +98,25 @@ public class GoertzelFilter
             s_prev = s;
         }
 
-        //power = s_prev2 * s_prev2 + s_prev * s_prev - coeff * s_prev * s_prev2 ;
-
         double magnitude = (s_prev2 * s_prev2) + (s_prev * s_prev) - (mCoefficient * s_prev * s_prev2);
-        int binZero = getBinZeroPower(samples);
 
-        return (int)(20 * Math.log10(magnitude / binZero));
+        // Normalize against total signal energy (sum of squares) instead of the DC bin.
+        // The original code divided by getBinZeroPower() (sum of sample values), which approaches
+        // zero for windowed AC signals (tones), causing division by zero, NaN (Java casts to 0),
+        // or wildly inflated dB values.  Sum-of-squares is always positive and scales correctly
+        // with signal amplitude.
+        double energy = 0.0D;
+        for(float sample : samples)
+        {
+            energy += (double)sample * sample;
+        }
+
+        if(energy < 1e-10 || magnitude <= 0)
+        {
+            return -100; // silence / no signal
+        }
+
+        return (int)(10 * Math.log10(magnitude / energy));
 
     }
 
