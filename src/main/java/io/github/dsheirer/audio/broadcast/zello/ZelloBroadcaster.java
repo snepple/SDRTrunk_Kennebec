@@ -492,9 +492,13 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
 
             mInjectingPreDispatch.set(true);
             try {
-                java.net.URL resource = ZelloBroadcaster.class.getResource("/audio/" + filename);
+                // Built-in alert sounds are in /audio/thinline/; try there first, then /audio/ as fallback.
+                java.net.URL resource = ZelloBroadcaster.class.getResource("/audio/thinline/" + filename);
                 if (resource == null) {
-                    mLog.error("{}Could not find audio resource: /audio/{}", ch(), filename);
+                    resource = ZelloBroadcaster.class.getResource("/audio/" + filename);
+                }
+                if (resource == null) {
+                    mLog.error("{}Could not find audio resource: /audio/thinline/{} or /audio/{}", ch(), filename, filename);
                     return;
                 }
 
