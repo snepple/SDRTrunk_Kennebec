@@ -54,6 +54,9 @@ public class TunerConfigurationManager implements IDiscoveredTunerStatusListener
     private List<TunerConfiguration> mTunerConfigurations = new ArrayList<>();
     private AtomicBoolean mSavePending = new AtomicBoolean();
     private Lock mLock = new ReentrantLock();
+    //Tracks the IDs of all currently-discovered tuners so that getTunerConfiguration() can identify
+    //"orphaned" configs whose bus:port changed between restarts.
+    private java.util.Set<String> mDiscoveredTunerIds = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     /**
      * Constructs an instance and loads the save configuration state.
@@ -83,7 +86,10 @@ public class TunerConfigurationManager implements IDiscoveredTunerStatusListener
                 TunerConfigurationState state = objectMapper.readValue(configPath.toFile(), TunerConfigurationState.class);
                 mDisabledTunerList.addAll(state.getDisabledTuners());
                 mTunerConfigurations.addAll(state.getTunerConfigurations());
-                deduplicateFriendlyNames();
+                //Note: deduplicateFriendlyNames() removed from startup path.  The root cause of duplicate
+                //names (orphaned configs from volatile bus:port IDs) is now fixed in getTunerConfiguration().
+                //Running dedup every startup was itself destructive — it permanently renamed configs and the
+                //suffixed names became new duplicates on subsequent restarts, causing progressive name inflation.
             }
             catch(IOException ioe)
             {
@@ -207,6 +213,9 @@ public class TunerConfigurationManager implements IDiscoveredTunerStatusListener
     @Override
     public void tunerStatusUpdated(DiscoveredTuner discoveredTuner, TunerStatus previous, TunerStatus current)
     {
+        //Always register the discovered ID so orphan detection in getTunerConfiguration() is accurate.
+        registerDiscoveredTunerId(discoveredTuner.getId());
+
         if(current == TunerStatus.DISABLED)
         {
             addDisabledTuner(discoveredTuner);
@@ -230,6 +239,18 @@ public class TunerConfigurationManager implements IDiscoveredTunerStatusListener
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Registers a discovered tuner's ID so that {@link #getTunerConfiguration} can distinguish orphaned configs
+     * (whose bus:port changed) from configs belonging to a different physical tuner of the same type.
+     */
+    public void registerDiscoveredTunerId(String id)
+    {
+        if(id != null)
+        {
+            mDiscoveredTunerIds.add(id);
         }
     }
 
@@ -369,10 +390,28 @@ public class TunerConfigurationManager implements IDiscoveredTunerStatusListener
     /**
      * Provides an existing or creates a new tuner configuration for the specified tuner type and unique ID value.
      *
+     * USB bus:port addresses are volatile — they can change when the host enumerates devices in a different order,
+     * or when a tuner is plugged into a different USB port.  The prior implementation treated every bus:port change
+     * as a "new" tuner and cloned the donor config, creating an orphaned entry with the old bus:port ID.  Over many
+     * restarts these orphans accumulated and caused {@link #deduplicateFriendlyNames()} to append ever-growing
+     * numeric suffixes ("Airspy 2 (2)", "Airspy 2 (3)", ...).
+     *
+     * The fix:
+     * <ol>
+     *   <li>Try an exact uniqueID match first (fast path, no bus:port change).</li>
+     *   <li>If that fails, find an "orphaned" config of the same TunerType whose uniqueID doesn't match any
+     *       currently-discovered tuner.  Adopt it by updating its uniqueID to the new bus:port value.  This is
+     *       almost certainly the same physical tuner on a different bus/port.</li>
+     *   <li>Only clone from a donor (profile cloning) if no orphan of that type exists — i.e., it really is a
+     *       brand-new tuner that has never been configured.</li>
+     *   <li>Factory defaults as last resort.</li>
+     * </ol>
+     *
      * Note: this method is not thread-safe.
      */
     public TunerConfiguration getTunerConfiguration(TunerType type, String uniqueID )
     {
+        //1. Exact match on TunerType + uniqueID (fast path, no bus:port change).
         Optional<TunerConfiguration> optional = mTunerConfigurations.stream().filter(config -> config.getTunerType().equals(type) &&
                 config.getUniqueID().equalsIgnoreCase(uniqueID)).findFirst();
 
@@ -381,7 +420,33 @@ public class TunerConfigurationManager implements IDiscoveredTunerStatusListener
             return optional.get();
         }
 
-        //Known-good profile cloning: when a new tuner of a type we already have a configuration for
+        //2. Adopt an orphaned config: same TunerType, but its uniqueID doesn't match any currently-discovered
+        //   tuner.  This handles the common case where a tuner's USB bus:port changed between restarts.
+        //   Collect all currently-discovered tuner IDs so we can tell which saved configs are "orphaned."
+        java.util.Set<String> discoveredIds = new java.util.HashSet<>();
+        for(String id : mDiscoveredTunerIds)
+        {
+            discoveredIds.add(id.toLowerCase());
+        }
+
+        //Find all same-type configs whose uniqueID is NOT in the set of discovered tuner IDs.
+        List<TunerConfiguration> orphans = mTunerConfigurations.stream()
+            .filter(config -> config.getTunerType().equals(type))
+            .filter(config -> !discoveredIds.contains(config.getUniqueID().toLowerCase()))
+            .toList();
+
+        if(!orphans.isEmpty())
+        {
+            //Take the first orphan and update its uniqueID to match the new bus:port.
+            TunerConfiguration orphan = orphans.get(0);
+            mLog.info("Tuner [" + uniqueID + "] matched orphaned config [" + orphan.getUniqueID() +
+                "] (same type: " + type + ") - adopting with updated ID (USB bus:port likely changed)");
+            orphan.setUniqueID(uniqueID);
+            saveConfigurations();
+            return orphan;
+        }
+
+        //3. Known-good profile cloning: when a new tuner of a type we already have a configuration for
         //is plugged in, clone the existing (presumably tuned/working) configuration instead of
         //starting from factory defaults - gain, PPM and sample rate carry over automatically.
         TunerConfiguration donor = mTunerConfigurations.stream()

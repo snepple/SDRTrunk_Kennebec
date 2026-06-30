@@ -327,8 +327,10 @@ public class TwoToneDetector
         // To make this fully optimized, we would typically run an FFT or a bank of Goertzel filters
         // For simplicity and since we want a "magical" experience, we'll scan known configurations
 
-        //Alias-based routing: a detector only receives this segment's audio when one of its selected aliases resolves
-        //on the segment (or when it has no aliases selected, in which case it runs globally for backward compatibility).
+        //Alias-based routing: a detector only receives this segment's audio when one of its selected aliases
+        //resolves on the segment (or when it has no aliases selected, in which case it runs globally for backward
+        //compatibility).  resolveSegmentDetectorNames() now searches ALL alias lists — not just the channel's
+        //configured list — so a detector in alias list "Somerset" is visible even when the channel uses "Kennebec".
         java.util.Set<String> applicableDetectors = getApplicableDetectorNames(segment, configs);
 
         for(TwoToneConfiguration config : configs)
@@ -656,7 +658,12 @@ public class TwoToneDetector
     }
 
     /**
-     * Resolves the set of two-tone detector names referenced by the alias(es) that match the segment's identifiers.
+     * Resolves detector names from identifiers by searching ALL aliases globally, not just the channel's
+     * configured alias list.  A detector's alias can live in any alias list (e.g. "Somerset") while the
+     * channel may use a different list (e.g. "Kennebec").  The old code called
+     * {@code getAliasList(segment.getIdentifierCollection())} which only returned aliases from the channel's
+     * list, causing cross-list detector aliases to be invisible and never trigger.  This now matches the
+     * scope of {@link #detectorHasAnyAliasMapping(String)} which also searches all aliases globally.
      */
     private java.util.Set<String> resolveSegmentDetectorNames(AudioSegment segment)
     {
@@ -669,24 +676,38 @@ public class TwoToneDetector
 
         try
         {
-            io.github.dsheirer.alias.AliasList aliasList =
-                mPlaylistManager.getAliasModel().getAliasList(segment.getIdentifierCollection());
-
-            if(aliasList != null)
+            //Collect all distinct alias list names so we can search across all of them.
+            java.util.Set<String> aliasListNames = new java.util.HashSet<>();
+            for(Alias alias : mPlaylistManager.getAliasModel().aliasList())
             {
-                for(Identifier identifier : segment.getIdentifierCollection().getIdentifiers())
+                if(alias.hasList())
                 {
-                    List<Alias> aliases = aliasList.getAliases(identifier);
+                    aliasListNames.add(alias.getAliasListName());
+                }
+            }
 
-                    if(aliases != null)
+            //Search each alias list for aliases matching this segment's identifiers.
+            for(String listName : aliasListNames)
+            {
+                io.github.dsheirer.alias.AliasList aliasList =
+                    mPlaylistManager.getAliasModel().getAliasList(listName);
+
+                if(aliasList != null)
+                {
+                    for(Identifier identifier : segment.getIdentifierCollection().getIdentifiers())
                     {
-                        for(Alias alias : aliases)
+                        List<Alias> aliases = aliasList.getAliases(identifier);
+
+                        if(aliases != null)
                         {
-                            for(io.github.dsheirer.alias.id.twotone.TwoToneDetectorID detectorId : alias.getTwoToneDetectors())
+                            for(Alias alias : aliases)
                             {
-                                if(detectorId.getDetectorName() != null)
+                                for(io.github.dsheirer.alias.id.twotone.TwoToneDetectorID detectorId : alias.getTwoToneDetectors())
                                 {
-                                    names.add(detectorId.getDetectorName());
+                                    if(detectorId.getDetectorName() != null)
+                                    {
+                                        names.add(detectorId.getDetectorName());
+                                    }
                                 }
                             }
                         }
@@ -856,11 +877,10 @@ public class TwoToneDetector
     private void triggerAlertIfMatched(TwoToneConfiguration config, AudioSegment segment)
     {
         boolean shouldTrigger = true;
-        // Check alias associations
+        //Alias routing check: if the detector has selected aliases, it can only trigger when the segment
+        //resolved to one of them.  resolveSegmentDetectorNames() now searches ALL alias lists so cross-list
+        //aliases (e.g. detector in "Somerset", channel in "Kennebec") are correctly resolved.
         if (segment != null) {
-            // If the detector has selected aliases, it can only trigger when the segment resolved to one of them.
-            // Identifier matching is preferred; conventional channels without a TO/talkgroup fall back to channel-name
-            // alias matching via resolveSegmentDetectorNamesWithFallback().
             if (detectorHasAnyAliasMapping(config.getAlias()) &&
                     !resolveSegmentDetectorNamesWithFallback(segment).contains(config.getAlias())) {
                 shouldTrigger = false;
@@ -951,10 +971,10 @@ public class TwoToneDetector
 
         MyEventBus.getGlobalEventBus().post(new TwoToneDetectedEvent(channel, text, config.isShowNotification()));
 
-        if (mAntiFloodFilter != null && !mAntiFloodFilter.checkAndRecord("TWOTONE:" + alias)) {
-            mLog.info("Suppressed duplicate Two-Tone Zello alert for alias: {}", alias);
-            return;
-        }
+        //AntiFloodFilter removed from two-tone path: the per-detector ignoreDuplicateSec (configured in each
+        //detector's settings) already provides precise duplicate suppression.  The global AntiFloodFilter had
+        //15–60 minute escalating cooldowns that are far too aggressive for fire/EMS paging, where multiple
+        //dispatches per hour are normal and every alert must be sent.
 
         boolean sendText = config.isEnableZelloTextMessage();
         boolean sendTone = config.isEnableZelloAlert() && config.getZelloAlertFile() != null &&

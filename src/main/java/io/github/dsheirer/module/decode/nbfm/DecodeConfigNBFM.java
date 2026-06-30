@@ -97,11 +97,19 @@ public class DecodeConfigNBFM extends DecodeConfigAnalog
     private boolean mAiAutoOptimizeOptedOut = false;
     private boolean mSquelchManuallyAdjusted = false;
 
+    //NBFM-specific default hangtime: 500ms gives conventional channels enough time for remaining audio buffers to
+    //flush after squelch closes.  With the inherited default of 0ms, audio segments close instantly when squelch
+    //closes, cutting off dispatch voice audio that follows two-tone paging sequences.  Existing channels with an
+    //explicit hangtime value in their saved config are unaffected (Jackson sets the field from the saved XML value
+    //after construction).
+    public static final int DEFAULT_NBFM_AUDIO_HANGTIME_MS = 500;
+
     /**
      * Constructs an instance
      */
     public DecodeConfigNBFM()
     {
+        setAudioHangtimeMs(DEFAULT_NBFM_AUDIO_HANGTIME_MS);
     }
 
     @JacksonXmlProperty(isAttribute = true, localName = "type", namespace = "http://www.w3.org/2001/XMLSchema-instance")
