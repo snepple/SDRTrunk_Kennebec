@@ -82,6 +82,7 @@ public class HelpViewController {
         hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Self Healing"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Waterfall Collapse"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Waterfall Audio Controls"));
+        hardwareTunersNode.getChildren().add(new TreeItem<>("Waterfall Muting"));
         guidesNode.getChildren().add(hardwareTunersNode);
 
         TreeItem<String> channelsDecodingNode = new TreeItem<>("Channels & Decoding");
@@ -100,6 +101,7 @@ public class HelpViewController {
 
         TreeItem<String> organizationPlaylistsNode = new TreeItem<>("Organization & Playlists");
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Aliases Talkgroups"));
+        organizationPlaylistsNode.getChildren().add(new TreeItem<>("Alphabetical Sorting"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Channel Images"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Playlist Editor"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Radio Reference"));
@@ -129,6 +131,7 @@ public class HelpViewController {
         advancedSystemNode.getChildren().add(new TreeItem<>("Gemini Ai"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Ignore Unwanted Talkgroups"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Inactivity Monitoring"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Persistent Layouts"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Notifications"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Smart Bandwidth"));
         advancedSystemNode.getChildren().add(new TreeItem<>("System Requirements"));
