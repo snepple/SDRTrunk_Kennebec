@@ -88,3 +88,7 @@
 **Topic:** 3 New Documentation Guides Added
 **Learning:** Three missing features from the "What's New" section (Persistent Layouts, Alphabetical Sorting, and Waterfall Muting) lacked Mintlify-styled "Visual First" Markdown guides in the help section.
 **Action:** Created `persistent-layouts.md`, `alphabetical-sorting.md`, and `waterfall-muting.md` adhering to the Visual-First Mintlify style and mapped them to the navigation tree via the `help/` directory.
+## 2026-07-01 - Topic Selection
+**Topic:** 3 New Documentation Guides Added
+**Learning:** Three missing features/concepts from the recent updates (MQTT Integration, Tuner Self Healing, and OpenMHz Streaming) lacked Mintlify-styled "Visual First" Markdown guides.
+**Action:** Created `mqtt.md`, `tuner-self-healing.md`, and `openmhz.md` adhering to the Visual-First Mintlify style and mapped them to the navigation tree via the help/ directory.
