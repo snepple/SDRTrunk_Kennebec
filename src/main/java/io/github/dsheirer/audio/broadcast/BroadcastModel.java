@@ -437,13 +437,27 @@ public class BroadcastModel implements Listener<AudioRecording>
                     delay = Math.max(0, slot - now);
                 }
 
+                //Only start if this broadcaster is still the active one for its configuration when the (possibly
+                //staggered/delayed) start finally runs.  Cloning or editing a stream fires CONFIGURATION_ADD and then
+                //CONFIGURATION_CHANGE in quick succession: the first broadcaster is deleted and replaced, but its
+                //start() may already be queued behind the Zello startup stagger.  Without this guard the superseded
+                //broadcaster still connects, producing two concurrent logons on the same account and a self-inflicted
+                //Zello "kicked" that stops streaming for that channel.
+                final ConfiguredBroadcast startTarget = configuredBroadcast;
+                final Runnable guardedStart = () -> {
+                    if(startTarget.getAudioBroadcaster() == audioBroadcaster)
+                    {
+                        audioBroadcaster.start();
+                    }
+                };
+
                 if(delay <= 0)
                 {
-                    ThreadPool.CACHED.submit(audioBroadcaster::start);
+                    ThreadPool.CACHED.submit(guardedStart);
                 }
                 else
                 {
-                    ThreadPool.SCHEDULED.schedule(audioBroadcaster::start, delay, TimeUnit.MILLISECONDS);
+                    ThreadPool.SCHEDULED.schedule(guardedStart, delay, TimeUnit.MILLISECONDS);
                 }
             }
         }
