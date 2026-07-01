@@ -127,6 +127,7 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
                 setText((empty || value == null || value == 0L) ? null : mFormat.format(new Date(value)));
             }
         });
+        timeCol.setPrefWidth(160);
         columns.add(timeCol);
 
         //Duration - mm:ss.s
@@ -150,19 +151,29 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
                 }
             }
         });
+        durationCol.setPrefWidth(75);
         columns.add(durationCol);
 
         TableColumn<IDecodeEvent, String> eventCol = new TableColumn<>("Event");
         eventCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getEventType().getLabel()));
+        eventCol.setPrefWidth(60);
         columns.add(eventCol);
 
         //From identifier (radio id) and its alias
-        columns.add(identifierColumn("From", Role.FROM, userPreferences));
-        columns.add(aliasColumn("Alias", Role.FROM, aliasModel));
+        TableColumn<IDecodeEvent, ?> fromCol = identifierColumn("From", Role.FROM, userPreferences);
+        fromCol.setPrefWidth(80);
+        columns.add(fromCol);
+        TableColumn<IDecodeEvent, ?> fromAliasCol = aliasColumn("Alias", Role.FROM, aliasModel);
+        fromAliasCol.setPrefWidth(100);
+        columns.add(fromAliasCol);
 
         //To identifier (talkgroup id) and its alias
-        columns.add(identifierColumn("To", Role.TO, userPreferences));
-        columns.add(aliasColumn("Alias", Role.TO, aliasModel));
+        TableColumn<IDecodeEvent, ?> toCol = identifierColumn("To", Role.TO, userPreferences);
+        toCol.setPrefWidth(80);
+        columns.add(toCol);
+        TableColumn<IDecodeEvent, ?> toAliasCol = aliasColumn("Alias", Role.TO, aliasModel);
+        toAliasCol.setPrefWidth(100);
+        columns.add(toAliasCol);
 
         TableColumn<IDecodeEvent, String> channelCol = new TableColumn<>("Channel");
         channelCol.setCellValueFactory(cellData -> {
@@ -186,6 +197,7 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
             }
             return new javafx.beans.property.ReadOnlyObjectWrapper<>(value);
         });
+        channelCol.setPrefWidth(80);
         columns.add(channelCol);
 
         //Frequency - downlink frequency in MHz
@@ -209,10 +221,12 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
                 }
             }
         });
+        freqCol.setPrefWidth(90);
         columns.add(freqCol);
 
         TableColumn<IDecodeEvent, String> detailsCol = new TableColumn<>("Details");
         detailsCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getDetails()));
+        detailsCol.setPrefWidth(100);
         columns.add(detailsCol);
 
         //AI transcription of the call audio (populated asynchronously when transcription is enabled).
