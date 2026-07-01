@@ -652,10 +652,7 @@ public class TwoToneDetector
             {
                 applicable.add(name); //An alias selected for this detector resolved on the segment
             }
-            else if(!detectorHasAnyAliasMapping(name))
-            {
-                applicable.add(name); //No aliases selected for this detector -> global (legacy) behavior
-            }
+            //Detectors without alias mappings are NOT added — alias restriction is required.
         }
 
         mLastRoutedSegment = segment;
@@ -669,19 +666,27 @@ public class TwoToneDetector
         {
             mRoutingLogCount++;
 
-            java.util.List<String> excluded = new java.util.ArrayList<>();
+            java.util.List<String> excludedNoMatch = new java.util.ArrayList<>();
+            java.util.List<String> excludedNoAlias = new java.util.ArrayList<>();
             for(TwoToneConfiguration config : configs)
             {
                 if(config.getAlias() != null && config.isEnabled() && !applicable.contains(config.getAlias()))
                 {
-                    excluded.add(config.getAlias());
+                    if(!detectorHasAnyAliasMapping(config.getAlias()))
+                    {
+                        excludedNoAlias.add(config.getAlias());
+                    }
+                    else
+                    {
+                        excludedNoMatch.add(config.getAlias());
+                    }
                 }
             }
 
             String channel = getSegmentChannelName(segment);
 
-            mLog.info("TwoTone routing [channel={}] resolvedAliasDetectors={} willRun={} excludedNeedAliasMatch={}",
-                    channel != null ? channel : "?", segmentDetectors, applicable, excluded);
+            mLog.info("TwoTone routing [channel={}] resolvedAliasDetectors={} willRun={} excludedNeedAliasMatch={} excludedNoAlias={}",
+                    channel != null ? channel : "?", segmentDetectors, applicable, excludedNoMatch, excludedNoAlias);
         }
 
         return applicable;
@@ -925,12 +930,18 @@ public class TwoToneDetector
     private void triggerAlertIfMatched(TwoToneConfiguration config, AudioSegment segment)
     {
         boolean shouldTrigger = true;
-        //Alias routing check: if the detector has selected aliases, it can only trigger when the segment
-        //resolved to one of them.  resolveSegmentDetectorNames() now searches ALL alias lists so cross-list
-        //aliases (e.g. detector in "Somerset", channel in "Kennebec") are correctly resolved.
+        //Alias routing check: detectors MUST have an alias mapping to trigger.  If the detector has
+        //selected aliases, it can only trigger when the segment resolved to one of them.
         if (segment != null) {
-            if (detectorHasAnyAliasMapping(config.getAlias()) &&
+            if (!detectorHasAnyAliasMapping(config.getAlias()) ||
                     !resolveSegmentDetectorNamesWithFallback(segment).contains(config.getAlias())) {
+                shouldTrigger = false;
+            }
+        }
+        else
+        {
+            //No segment context — require alias mapping to exist (can't verify match without segment)
+            if (!detectorHasAnyAliasMapping(config.getAlias())) {
                 shouldTrigger = false;
             }
         }
