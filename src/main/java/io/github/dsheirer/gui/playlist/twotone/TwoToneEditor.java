@@ -28,6 +28,10 @@ import io.github.dsheirer.audio.broadcast.BroadcastConfiguration;
 import io.github.dsheirer.audio.broadcast.BroadcastServerType;
 import javafx.collections.ListChangeListener;
 import org.controlsfx.control.CheckComboBox;
+import javafx.geometry.Pos;
+import javafx.scene.paint.Color;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 import org.controlsfx.control.SegmentedButton;
 
 
@@ -102,6 +106,35 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         TableColumn<TwoToneConfiguration, Boolean> enabledCol = new TableColumn<>("Enabled");
         enabledCol.setId("enabled");
         enabledCol.setCellValueFactory(new PropertyValueFactory<>("enabled"));
+        enabledCol.setCellFactory(param -> {
+            TableCell<TwoToneConfiguration, Boolean> tableCell = new TableCell<>()
+            {
+                private IconNode iconNode;
+
+                @Override
+                protected void updateItem(Boolean item, boolean empty)
+                {
+                    super.updateItem(item, empty);
+                    setAlignment(Pos.CENTER);
+                    setText(null);
+
+                    if(empty || item == null || !item)
+                    {
+                        setGraphic(null);
+                    }
+                    else
+                    {
+                        if(iconNode == null)
+                        {
+                            iconNode = new IconNode(FontAwesome.CHECK);
+                            iconNode.setFill(Color.GREEN);
+                        }
+                        setGraphic(iconNode);
+                    }
+                }
+            };
+            return tableCell;
+        });
 
 
         TableColumn<TwoToneConfiguration, String> aliasCol = new TableColumn<>("Name");
@@ -135,6 +168,35 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         TableColumn<TwoToneConfiguration, Boolean> mqttCol = new TableColumn<>("MQTT Enabled");
         mqttCol.setId("mqtt");
         mqttCol.setCellValueFactory(new PropertyValueFactory<>("enableMqttPublish"));
+        mqttCol.setCellFactory(param -> {
+            TableCell<TwoToneConfiguration, Boolean> tableCell = new TableCell<>()
+            {
+                private IconNode iconNode;
+
+                @Override
+                protected void updateItem(Boolean item, boolean empty)
+                {
+                    super.updateItem(item, empty);
+                    setAlignment(Pos.CENTER);
+                    setText(null);
+
+                    if(empty || item == null || !item)
+                    {
+                        setGraphic(null);
+                    }
+                    else
+                    {
+                        if(iconNode == null)
+                        {
+                            iconNode = new IconNode(FontAwesome.CHECK);
+                            iconNode.setFill(Color.GREEN);
+                        }
+                        setGraphic(iconNode);
+                    }
+                }
+            };
+            return tableCell;
+        });
 
         mTableView.getColumns().addAll(enabledCol, aliasCol, toneACol, toneBCol, mqttCol);
         mTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
