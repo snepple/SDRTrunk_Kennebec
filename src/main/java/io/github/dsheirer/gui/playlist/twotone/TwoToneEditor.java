@@ -75,6 +75,15 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         "settle_alert.wav", "simple.wav", "smoke_alarm.wav", "startup.wav", "tone.wav"
     );
 
+    //Additional built-in alert tones (8kHz mono WAV) stored in /audio/ — Minitor V pager tone-outs plus plectron/
+    //pager alert tones.  Offered for both the local alert audio and the Zello alert tone so users can pick a
+    //familiar pager tone.
+    public static final List<String> ADDED_ALERT_SOUNDS = java.util.Arrays.asList(
+        "Minitor5_Tone1.wav", "Minitor5_Tone2.wav", "Minitor5_Tone3.wav",
+        "Minitor5_Tone4.wav", "Minitor5_Tone5.wav",
+        "A0.wav", "A1.wav", "A2.wav", "A4.wav", "plectronalert.wav"
+    );
+
     static {
         Set<Double> allFreqs = new TreeSet<>();
         for (double d : MOTOROLA_QCII) allFreqs.add(d);
@@ -287,6 +296,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         alertFileCombo.setEditable(true);
         alertFileCombo.getItems().add("");
         alertFileCombo.getItems().addAll(THINLINE_SOUNDS);
+        alertFileCombo.getItems().addAll(ADDED_ALERT_SOUNDS);
         alertFileCombo.getItems().add("Custom File...");
 
         Button browseAlertBtn = new Button("Browse...");
@@ -478,6 +488,7 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
             "medical_pager.mp3",
             "minitor_v_alert_tone.mp3"
         );
+        alertToneCombo.getItems().addAll(ADDED_ALERT_SOUNDS);
         alertToneCombo.getItems().addAll(THINLINE_SOUNDS);
 
         java.util.function.BiConsumer<String, Button> playPreview = (selectedFile, btn) -> {
