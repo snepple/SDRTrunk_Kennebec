@@ -32,10 +32,10 @@ SDRTrunk Kennebec understands many different radio "languages":
 
 The Kennebec version takes the original SDRTrunk app and makes it much easier to use, especially if you want to leave it running 24/7 or send your audio to your phone.
 
-* **Beautiful Interface:**A modern look with dark mode and simple menus.
-* **AI Features:**Smart features that automatically clean up bad audio or summarize calls.
-* **Easy Streaming:**Send your audio directly to apps like Zello or Broadcastify.
-* **Self-Healing:**If your USB antenna crashes, Kennebec can automatically restart it without you needing to do anything.
+* **Beautiful Interface:** A modern look with dark mode and simple menus.
+* **AI Features:** Smart features that automatically clean up bad audio or summarize calls.
+* **Easy Streaming:** Send your audio directly to apps like Zello or Broadcastify.
+* **Self-Healing:** If your USB antenna crashes, Kennebec can automatically restart it without you needing to do anything.
 
 ## Where to go next?
 Ready to dive in? Check out our [Quickstart Guide](quickstart.md)!

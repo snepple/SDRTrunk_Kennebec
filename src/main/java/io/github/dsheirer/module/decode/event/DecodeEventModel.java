@@ -156,6 +156,7 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
 
         TableColumn<IDecodeEvent, String> eventCol = new TableColumn<>("Event");
         eventCol.setCellValueFactory(cellData -> new javafx.beans.property.ReadOnlyObjectWrapper<>(cellData.getValue().getEventType().getLabel()));
+        eventCol.setComparator(io.github.dsheirer.util.NaturalOrderComparator.INSTANCE);
         eventCol.setPrefWidth(60);
         columns.add(eventCol);
 
@@ -197,6 +198,8 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
             }
             return new javafx.beans.property.ReadOnlyObjectWrapper<>(value);
         });
+        //Channel labels frequently embed site/channel numbers, so sort them in natural order (2 before 10).
+        channelCol.setComparator(io.github.dsheirer.util.NaturalOrderComparator.INSTANCE);
         channelCol.setPrefWidth(80);
         columns.add(channelCol);
 
@@ -220,6 +223,12 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
                     setText(frequency > 0 ? mFrequencyFormat.format(frequency / 1e6d) : null);
                 }
             }
+        });
+        //Sort by the actual downlink frequency value rather than the descriptor's default (string) ordering.
+        freqCol.setComparator((d1, d2) -> {
+            long f1 = d1 == null ? -1L : d1.getDownlinkFrequency();
+            long f2 = d2 == null ? -1L : d2.getDownlinkFrequency();
+            return Long.compare(f1, f2);
         });
         freqCol.setPrefWidth(90);
         columns.add(freqCol);
@@ -319,7 +328,58 @@ public class DecodeEventModel extends ClearableHistoryModel<IDecodeEvent> implem
                         formatIdentifiers(collection.getIdentifiers(role), userPreferences));
             }
         });
+        //Talkgroup/radio ids are numeric - sort by their value so 2 sorts before 10.  Fall back to natural-order
+        //text comparison of the displayed value when a row has no numeric identifier for this role.
+        column.setComparator((c1, c2) -> {
+            Long v1 = firstNumericIdentifier(c1, role);
+            Long v2 = firstNumericIdentifier(c2, role);
+
+            if(v1 != null && v2 != null)
+            {
+                return Long.compare(v1, v2);
+            }
+            if(v1 != null)
+            {
+                return -1;
+            }
+            if(v2 != null)
+            {
+                return 1;
+            }
+
+            String t1 = c1 == null ? null : formatIdentifiers(c1.getIdentifiers(role), userPreferences);
+            String t2 = c2 == null ? null : formatIdentifiers(c2.getIdentifiers(role), userPreferences);
+            return io.github.dsheirer.util.NaturalOrderComparator.INSTANCE.compare(t1, t2);
+        });
         return column;
+    }
+
+    /**
+     * Returns the value of the first numeric identifier (talkgroup / radio id) for the given role in the collection,
+     * or null when none is present.  Used to sort identifier columns by number rather than by rendered text.
+     */
+    private static Long firstNumericIdentifier(IdentifierCollection collection, Role role)
+    {
+        if(collection == null)
+        {
+            return null;
+        }
+
+        List<Identifier> identifiers = collection.getIdentifiers(role);
+        if(identifiers == null)
+        {
+            return null;
+        }
+
+        for(Identifier identifier : identifiers)
+        {
+            if(identifier.getValue() instanceof Number number)
+            {
+                return number.longValue();
+            }
+        }
+
+        return null;
     }
 
     /**

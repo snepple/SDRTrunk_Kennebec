@@ -23,9 +23,9 @@ flowchart TD
 
 ## The Benefits
 
-* **Less Computer Strain:**By only capturing exactly what is needed, your computer doesn't have to process empty spectrum, keeping things fast and cool.
-* **Zero Math:**You don't have to calculate center frequencies or sample rates. Just add your channels and Kennebec handles the math behind the scenes.
-* **Increased Reliability:**Optimized bandwidth means fewer buffer overruns and clearer audio.
+* **Less Computer Strain:** By only capturing exactly what is needed, your computer doesn't have to process empty spectrum, keeping things fast and cool.
+* **Zero Math:** You don't have to calculate center frequencies or sample rates. Just add your channels and Kennebec handles the math behind the scenes.
+* **Increased Reliability:** Optimized bandwidth means fewer buffer overruns and clearer audio.
 
 > **Tip:**
 > Smart Bandwidth is an automatic, behind-the-scenes optimization engine. It is enabled automatically for most supported tuners (like RTL-SDR and Airspy) out of the box!

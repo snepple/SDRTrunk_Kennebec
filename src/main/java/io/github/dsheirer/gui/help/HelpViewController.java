@@ -52,11 +52,8 @@ public class HelpViewController {
             }
         });
 
-        contentWebView.getEngine().loadContent(
-                "<html><head>" + getCssStyle() + "</head><body>" +
-                        "<h1>Welcome to SDRTrunk Help</h1>" +
-                        "<p>Select a topic from the left to view details.</p></body></html>"
-        );
+        // Show the landing page (index.md) on first open so a new user has a starting point.
+        renderMarkdown(getMarkdownContent("Index"));
     }
 
     private void createNodes(TreeItem<String> root) {
@@ -65,81 +62,87 @@ public class HelpViewController {
         TreeItem<String> guidesNode = new TreeItem<>("Guides & Documentation");
         guidesNode.setExpanded(true);
 
+        // Getting Started — orientation for a brand-new user, in the order they should read it.
         TreeItem<String> gettingStartedNode = new TreeItem<>("Getting Started");
-        gettingStartedNode.getChildren().add(new TreeItem<>("Index"));
+        gettingStartedNode.setExpanded(true);
         gettingStartedNode.getChildren().add(new TreeItem<>("Introduction"));
-        gettingStartedNode.getChildren().add(new TreeItem<>("Overview"));
-        gettingStartedNode.getChildren().add(new TreeItem<>("Audio Playback Bar"));
-        gettingStartedNode.getChildren().add(new TreeItem<>("Call Flow Logic"));
         gettingStartedNode.getChildren().add(new TreeItem<>("Quickstart"));
+        gettingStartedNode.getChildren().add(new TreeItem<>("Call Flow Logic"));
+        gettingStartedNode.getChildren().add(new TreeItem<>("Audio Playback Bar"));
         guidesNode.getChildren().add(gettingStartedNode);
 
+        // Hardware & Tuners — pick a device, read the spectrum, keep it healthy.
         TreeItem<String> hardwareTunersNode = new TreeItem<>("Hardware & Tuners");
-        hardwareTunersNode.getChildren().add(new TreeItem<>("Airspy Hackrf"));
-        hardwareTunersNode.getChildren().add(new TreeItem<>("Rtl Sdr"));
-        hardwareTunersNode.getChildren().add(new TreeItem<>("Spectrum & Waterfall"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Supported Tuners"));
-        hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Self Healing"));
-        hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Waterfall Collapse"));
+        hardwareTunersNode.getChildren().add(new TreeItem<>("Rtl Sdr"));
+        hardwareTunersNode.getChildren().add(new TreeItem<>("Airspy Hackrf"));
+        hardwareTunersNode.getChildren().add(new TreeItem<>("Spectrum & Waterfall"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Waterfall Audio Controls"));
         hardwareTunersNode.getChildren().add(new TreeItem<>("Waterfall Muting"));
+        hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Waterfall Collapse"));
+        hardwareTunersNode.getChildren().add(new TreeItem<>("Tuner Self Healing"));
         guidesNode.getChildren().add(hardwareTunersNode);
 
+        // Channels & Decoding — core protocols first, then audio-quality tuning.
         TreeItem<String> channelsDecodingNode = new TreeItem<>("Channels & Decoding");
-        channelsDecodingNode.getChildren().add(new TreeItem<>("Analog Hiss Reduction"));
-        channelsDecodingNode.getChildren().add(new TreeItem<>("Anti Clipping"));
-        channelsDecodingNode.getChildren().add(new TreeItem<>("P25 Audio Enhancements"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("Analog"));
-        channelsDecodingNode.getChildren().add(new TreeItem<>("Ctcss Dcs Nac Filtering"));
-        channelsDecodingNode.getChildren().add(new TreeItem<>("Dmr"));
-        channelsDecodingNode.getChildren().add(new TreeItem<>("Native Sequential Paging"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("P25"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("P25 Phase 2 Setup"));
-        channelsDecodingNode.getChildren().add(new TreeItem<>("Nbfm Ai Optimizer"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Dmr"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Ctcss Dcs Nac Filtering"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Native Sequential Paging"));
         channelsDecodingNode.getChildren().add(new TreeItem<>("Geographic Id Generator"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Analog Hiss Reduction"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Nbfm Ai Optimizer"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("Anti Clipping"));
+        channelsDecodingNode.getChildren().add(new TreeItem<>("P25 Audio Enhancements"));
         guidesNode.getChildren().add(channelsDecodingNode);
 
+        // Organization & Playlists — build and name your monitoring setup.
         TreeItem<String> organizationPlaylistsNode = new TreeItem<>("Organization & Playlists");
-        organizationPlaylistsNode.getChildren().add(new TreeItem<>("Aliases Talkgroups"));
-        organizationPlaylistsNode.getChildren().add(new TreeItem<>("Alphabetical Sorting"));
-        organizationPlaylistsNode.getChildren().add(new TreeItem<>("Channel Images"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Playlist Editor"));
+        organizationPlaylistsNode.getChildren().add(new TreeItem<>("Aliases Talkgroups"));
         organizationPlaylistsNode.getChildren().add(new TreeItem<>("Radio Reference"));
+        organizationPlaylistsNode.getChildren().add(new TreeItem<>("Channel Images"));
+        organizationPlaylistsNode.getChildren().add(new TreeItem<>("Alphabetical Sorting"));
         guidesNode.getChildren().add(organizationPlaylistsNode);
 
+        // Integrations & Streaming — send audio out. Streaming overview first, then platforms and paging.
         TreeItem<String> integrationsStreamingNode = new TreeItem<>("Integrations & Streaming");
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Overview"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Broadcastify"));
-        integrationsStreamingNode.getChildren().add(new TreeItem<>("Iamresponding"));
-        integrationsStreamingNode.getChildren().add(new TreeItem<>("Mqtt"));
-        integrationsStreamingNode.getChildren().add(new TreeItem<>("Openmhz"));
-        integrationsStreamingNode.getChildren().add(new TreeItem<>("Other Platforms"));
-        integrationsStreamingNode.getChildren().add(new TreeItem<>("Rdio Scanner"));
-        integrationsStreamingNode.getChildren().add(new TreeItem<>("Streaming Connection Console"));
-        integrationsStreamingNode.getChildren().add(new TreeItem<>("Thinline Radio"));
-        integrationsStreamingNode.getChildren().add(new TreeItem<>("Two Tone Detect"));
-        integrationsStreamingNode.getChildren().add(new TreeItem<>("Vibrant Streaming Console"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Zello"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Rdio Scanner"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Openmhz"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Thinline Radio"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Iamresponding"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Other Platforms"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Two Tone Detect"));
         integrationsStreamingNode.getChildren().add(new TreeItem<>("Two Tone Aliases Setup"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Mqtt"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Streaming Connection Console"));
+        integrationsStreamingNode.getChildren().add(new TreeItem<>("Vibrant Streaming Console"));
         guidesNode.getChildren().add(integrationsStreamingNode);
 
+        // Advanced & System — setup, preferences, monitoring, and power-user features.
         TreeItem<String> advancedSystemNode = new TreeItem<>("Advanced & System");
-        advancedSystemNode.getChildren().add(new TreeItem<>("Audio Recordings"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Audio Transcriptions"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Gpu Acceleration"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Diagnostics"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Application Watchdog"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Gemini Ai"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Ignore Unwanted Talkgroups"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Inactivity Monitoring"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Persistent Layouts"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Notifications"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Smart Bandwidth"));
         advancedSystemNode.getChildren().add(new TreeItem<>("System Requirements"));
         advancedSystemNode.getChildren().add(new TreeItem<>("User Preferences"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Notifications"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("System Health Notifications"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Inactivity Monitoring"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Application Watchdog"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Diagnostics"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Managing System Logs"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Audio Recordings"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Audio Transcriptions"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Gemini Ai"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Gpu Acceleration"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Smart Bandwidth"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Ignore Unwanted Talkgroups"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Virtual Audio Cable"));
         advancedSystemNode.getChildren().add(new TreeItem<>("Natural Scrolling"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("Managing System Logs"));
-        advancedSystemNode.getChildren().add(new TreeItem<>("System Health Notifications"));
+        advancedSystemNode.getChildren().add(new TreeItem<>("Persistent Layouts"));
         guidesNode.getChildren().add(advancedSystemNode);
 
         root.getChildren().add(guidesNode);
@@ -320,17 +323,28 @@ public class HelpViewController {
     }
 
     private void updateContent(String topic) {
-        if (topic.equals("Knowledge Base") || topic.equals("Guides & Documentation")) {
-            contentWebView.getEngine().loadContent(
-                    "<html><head>" + getCssStyle() + "</head><body>" +
-                            "<h1>" + topic + "</h1>" +
-                            "<p>Select a sub-topic from the left to view details.</p></body></html>"
-            );
-            return;
+        // The tree root shows the landing page; every other node (including category headers)
+        // resolves to its own markdown file.
+        String body = topic.equals("Knowledge Base")
+                ? getMarkdownContent("Index")
+                : getMarkdownContent(topic);
+
+        renderMarkdown(prependTitleIfNeeded(topic, body));
+    }
+
+    /**
+     * Adds the topic as an H1 only when the document does not already start with one,
+     * so pages are not shown with two stacked titles.
+     */
+    private String prependTitleIfNeeded(String topic, String body) {
+        String trimmed = body.stripLeading();
+        if (trimmed.startsWith("# ") || topic.equals("Knowledge Base")) {
+            return body;
         }
+        return "# " + topic + "\n\n" + body;
+    }
 
-        String markdown = "# " + topic + "\n\n" + getMarkdownContent(topic);
-
+    private void renderMarkdown(String markdown) {
         Parser parser = Parser.builder().extensions(List.of(TablesExtension.create())).build();
         Node document = parser.parse(markdown);
         HtmlRenderer renderer = HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();

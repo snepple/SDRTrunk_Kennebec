@@ -128,6 +128,14 @@ public class ChannelMetadataPanel extends VBox
         //Activity column removed (low-value sparkline). The idle->active polling that powers the Received
         //count is retained in setupActivityPolling().
 
+        //These columns are all String-valued but several hold numbers (Frequency, Received count, To/From ids).
+        //Sort them in natural order so multi-digit numbers order by value (2 before 10) instead of lexically.
+        for(TableColumn<ChannelMetadata, String> column : List.of(stateCol, channelCol, freqCol, receivedCol,
+                toCol, fromCol, tunerCol))
+        {
+            column.setComparator(io.github.dsheirer.util.NaturalOrderComparator.INSTANCE);
+        }
+
         mTable.getColumns().addAll(stateCol, channelCol, freqCol, receivedCol, toCol, fromCol, tunerCol);
         mTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         mTable.setTableMenuButtonVisible(true);

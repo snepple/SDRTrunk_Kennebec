@@ -37,7 +37,9 @@ public class ConfiguredBroadcast
 {
     private final static Logger mLog = LoggerFactory.getLogger(ConfiguredBroadcast.class);
     private BroadcastConfiguration mBroadcastConfiguration;
-    private AbstractAudioBroadcaster mAudioBroadcaster;
+    //Written on the config/edit thread, read on the pooled thread that runs a broadcaster's deferred start(), so it
+    //must be volatile for that guard to observe the current broadcaster (see BroadcastModel.createBroadcaster).
+    private volatile AbstractAudioBroadcaster mAudioBroadcaster;
     private ObjectProperty<BroadcastState> mBroadcastState = new SimpleObjectProperty<>();
     private ObjectProperty<BroadcastState> mLastBadBroadcastState = new SimpleObjectProperty<>();
     private StringProperty mLastErrorDetail = new SimpleStringProperty();
