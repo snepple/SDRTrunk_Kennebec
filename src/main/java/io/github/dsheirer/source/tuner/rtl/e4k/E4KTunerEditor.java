@@ -158,9 +158,19 @@ public class E4KTunerEditor extends TunerEditor<RTL2832Tuner, E4KTunerConfigurat
         gainGrid.setVgap(4);
         gainGrid.add(new Label("Master:"), 0, 0);
         gainGrid.add(getMasterGainCombo(), 1, 0);
-        gainGrid.add(new Label("Mixer:"), 0, 1);
+
+        javafx.scene.control.Button mixerHelp = createHelpIcon("?");
+        mixerHelp.setTooltip(new javafx.scene.control.Tooltip("Mixer Gain: Amplifies the signal while converting it to a lower frequency for processing.\nHelps with weak signals but can cause distortion if set too high."));
+        javafx.scene.layout.HBox mixerBox = new javafx.scene.layout.HBox(4, new Label("Mixer:"), mixerHelp);
+        mixerBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        gainGrid.add(mixerBox, 0, 1);
         gainGrid.add(getMixerGainCombo(), 1, 1);
-        gainGrid.add(new Label("LNA:"), 0, 2);
+
+        javafx.scene.control.Button lnaHelp = createHelpIcon("?");
+        lnaHelp.setTooltip(new javafx.scene.control.Tooltip("Low Noise Amplifier (LNA): Boosts weak radio signals right at the antenna input.\nIncrease for distant stations, but lower it if the waterfall display becomes solid bright (overloaded)."));
+        javafx.scene.layout.HBox lnaBox = new javafx.scene.layout.HBox(4, new Label("LNA:"), lnaHelp);
+        lnaBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        gainGrid.add(lnaBox, 0, 2);
         gainGrid.add(getLNAGainCombo(), 1, 2);
         getChildren().add(gainGrid);
 
