@@ -92,14 +92,18 @@ public class BroadcastModel implements Listener<AudioRecording>
     private final java.util.concurrent.atomic.AtomicLong mNextBroadcasterStartTime =
         new java.util.concurrent.atomic.AtomicLong(0);
 
-    // Zello documents a limit of 10 new WebSocket connections per minute per IP.  Batch cold-start connections
-    // at 9/min (1s spacing within a batch, 60s pause between batches of 9) so large playlists don't trigger
-    // rate-limit rejections.
+    // Zello documents a limit of 10 new WebSocket connections per minute per IP.  A sliding-window rate limiter
+    // keeps Zello connection starts to at most ZELLO_MAX_CONNECTIONS_PER_MINUTE within any rolling
+    // ZELLO_CONNECTION_WINDOW_MS, with ZELLO_STARTUP_STAGGER_MS minimum spacing between consecutive starts, so a
+    // large playlist cold-start doesn't spike CPU/GC or trip the rate limit.  Unlike a monotonic counter, the window
+    // self-empties when idle, so a single-stream repair (watchdog auto-repair / config change) after a quiet period
+    // starts immediately instead of inheriting an ever-growing cold-start backlog.
     private static final int ZELLO_MAX_CONNECTIONS_PER_MINUTE = 9;
     private static final long ZELLO_STARTUP_STAGGER_MS = 1_000L;
-    private static final long ZELLO_CONNECTION_BATCH_PAUSE_MS = 60_000L;
-    private final java.util.concurrent.atomic.AtomicInteger mZelloStartupSlot =
-        new java.util.concurrent.atomic.AtomicInteger(0);
+    private static final long ZELLO_CONNECTION_WINDOW_MS = 60_000L;
+    //Scheduled absolute start times (ms) of recent/pending Zello connections, used by the sliding-window limiter.
+    //Guarded by the instance monitor via computeZelloStartupDelayMs().
+    private final java.util.ArrayList<Long> mZelloConnectionSchedule = new java.util.ArrayList<>();
     private Broadcaster<BroadcastEvent> mBroadcastEventBroadcaster = new Broadcaster<>();
     private BroadcastEventListener mBroadcastEventListener = new BroadcastEventListener();
     private UserPreferences mUserPreferences;
@@ -350,15 +354,39 @@ public class BroadcastModel implements Listener<AudioRecording>
     }
 
     /**
-     * Returns the cold-start delay (ms) for the nth Zello connection, batching at
-     * {@link #ZELLO_MAX_CONNECTIONS_PER_MINUTE} per minute with a {@link #ZELLO_CONNECTION_BATCH_PAUSE_MS} gap
-     * between batches to respect Zello's documented 10 connections/min/IP limit.
+     * Returns the delay (ms) to wait before starting the next Zello connection, using a sliding-window rate limiter:
+     * at most {@link #ZELLO_MAX_CONNECTIONS_PER_MINUTE} connection starts within any rolling
+     * {@link #ZELLO_CONNECTION_WINDOW_MS}, and at least {@link #ZELLO_STARTUP_STAGGER_MS} between consecutive starts.
+     * This respects Zello's documented 10 connections/min/IP limit during a bulk cold-start while self-resetting when
+     * idle, so a lone stream repair after a quiet period starts immediately rather than inheriting a growing backlog
+     * (the cause of watchdog-repaired Zello streams sitting in READY for minutes without reconnecting).
      */
-    private static long computeZelloStartupDelayMs(int slot)
+    private synchronized long computeZelloStartupDelayMs()
     {
-        int batch = slot / ZELLO_MAX_CONNECTIONS_PER_MINUTE;
-        int positionInBatch = slot % ZELLO_MAX_CONNECTIONS_PER_MINUTE;
-        return (batch * ZELLO_CONNECTION_BATCH_PAUSE_MS) + (positionInBatch * ZELLO_STARTUP_STAGGER_MS);
+        long now = System.currentTimeMillis();
+
+        //Drop connections that have fully aged out of the rolling window.
+        mZelloConnectionSchedule.removeIf(scheduledMs -> scheduledMs <= now - ZELLO_CONNECTION_WINDOW_MS);
+
+        long startAt = now;
+
+        //Minimum spacing from the most recently scheduled start.
+        if(!mZelloConnectionSchedule.isEmpty())
+        {
+            long lastScheduled = mZelloConnectionSchedule.get(mZelloConnectionSchedule.size() - 1);
+            startAt = Math.max(startAt, lastScheduled + ZELLO_STARTUP_STAGGER_MS);
+        }
+
+        //Rolling-window cap: if the window is already full, wait until the oldest in-window start ages out.
+        if(mZelloConnectionSchedule.size() >= ZELLO_MAX_CONNECTIONS_PER_MINUTE)
+        {
+            long agingOut =
+                mZelloConnectionSchedule.get(mZelloConnectionSchedule.size() - ZELLO_MAX_CONNECTIONS_PER_MINUTE);
+            startAt = Math.max(startAt, agingOut + ZELLO_CONNECTION_WINDOW_MS);
+        }
+
+        mZelloConnectionSchedule.add(startAt);
+        return startAt - now;
     }
 
     /**
@@ -399,7 +427,7 @@ public class BroadcastModel implements Listener<AudioRecording>
                 if(broadcastConfiguration instanceof ZelloConfiguration ||
                    broadcastConfiguration instanceof ZelloConsumerConfiguration)
                 {
-                    delay = computeZelloStartupDelayMs(mZelloStartupSlot.getAndIncrement());
+                    delay = computeZelloStartupDelayMs();
                 }
                 else
                 {
