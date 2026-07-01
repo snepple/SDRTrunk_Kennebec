@@ -455,13 +455,22 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
     }
 
     /**
-     * Periodic tuner recovery task.  Attempts a restart every 3 minutes.  After 5 failed attempts it slows to a
-     * 10-minute retry cadence and posts a system health alert, but never permanently gives up - an unattended
-     * system should continue trying to restore reception indefinitely.
+     * Periodic tuner recovery task.  Uses a three-tier retry strategy:
+     *
+     * Tier 1 (Fast):     Attempts 1–5   → every 3 minutes, full logging
+     * Tier 2 (Slow):     Attempts 6–30  → every 10 minutes, full logging
+     * Tier 3 (Watchdog): Attempts 31+   → every 30 minutes, log every 10th attempt only
+     *
+     * The tuner never permanently gives up — an unattended system should continue trying to restore
+     * reception indefinitely — but the watchdog tier minimizes log noise and resource usage for
+     * persistently failed hardware.
      */
     private class RecoveryRunnable implements Runnable {
         private static final int SLOW_MODE_ATTEMPT_THRESHOLD = 5;
         private static final long SLOW_MODE_INTERVAL_SECONDS = 600;
+        private static final int WATCHDOG_ATTEMPT_THRESHOLD = 30;
+        private static final long WATCHDOG_INTERVAL_SECONDS = 1800;
+        private static final int WATCHDOG_LOG_INTERVAL = 10;
 
         @Override
         public void run() {
@@ -482,13 +491,21 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             }
 
             int attempt = mRecoveryAttempts.incrementAndGet();
-            mLog.info("Attempting tuner recovery for " + getId() + " - Attempt " + attempt);
+
+            //In watchdog mode, only log every Nth attempt to reduce noise
+            boolean inWatchdogMode = attempt > WATCHDOG_ATTEMPT_THRESHOLD;
+            boolean shouldLog = !inWatchdogMode || (attempt % WATCHDOG_LOG_INTERVAL == 0);
+
+            if (shouldLog) {
+                mLog.info("Attempting tuner recovery for " + getId() + " - Attempt " + attempt +
+                    (inWatchdogMode ? " (watchdog mode)" : ""));
+            }
 
             try {
                 restart();
 
                 if (getTunerStatus() == TunerStatus.ENABLED && hasTuner()) {
-                    mLog.info("Successfully recovered tuner " + getId());
+                    mLog.info("Successfully recovered tuner " + getId() + " after " + attempt + " attempts");
                     cancelRecoveryTask();
                     mRecoveryAttempts.set(0);
                     MyEventBus.getGlobalEventBus().post(new TunerRecoveredEvent(DiscoveredTuner.this));
@@ -508,11 +525,32 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
                         mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(this, SLOW_MODE_INTERVAL_SECONDS,
                             SLOW_MODE_INTERVAL_SECONDS, TimeUnit.SECONDS);
                     }
-                } else {
+                } else if (attempt == WATCHDOG_ATTEMPT_THRESHOLD) {
+                    mLog.warn("Tuner " + getId() + " has failed " + attempt +
+                        " recovery attempts - entering watchdog mode (every " + (WATCHDOG_INTERVAL_SECONDS / 60) +
+                        " minutes, logging every " + WATCHDOG_LOG_INTERVAL + " attempts).");
+                    MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.health.SystemHealthAlertEvent(
+                        io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.HARDWARE,
+                        "Tuner Recovery Watchdog",
+                        "Tuner " + getId() + " has failed " + attempt + " consecutive recovery attempts [" +
+                            getErrorMessage() + "]. The device may be physically disconnected or permanently " +
+                            "failed. Recovery will continue in watchdog mode every " +
+                            (WATCHDOG_INTERVAL_SECONDS / 60) + " minutes."));
+
+                    synchronized(mRecoveryLock) {
+                        if (mRecoveryTask != null) {
+                            mRecoveryTask.cancel(false);
+                        }
+                        mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(this, WATCHDOG_INTERVAL_SECONDS,
+                            WATCHDOG_INTERVAL_SECONDS, TimeUnit.SECONDS);
+                    }
+                } else if (shouldLog) {
                     mLog.warn("Tuner recovery attempt " + attempt + " failed for " + getId());
                 }
             } catch (Exception e) {
-                mLog.error("Error during tuner recovery attempt " + attempt + " for " + getId(), e);
+                if (shouldLog) {
+                    mLog.error("Error during tuner recovery attempt " + attempt + " for " + getId(), e);
+                }
             }
         }
     }
