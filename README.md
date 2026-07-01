@@ -197,13 +197,13 @@ This project is licensed under the **GNU General Public License v3.0**, the same
 <!-- This section is regenerated automatically by build_and_release.bat after each GitHub release. Do not edit by hand. -->
 ## Download the Latest Release
 
-Not sure what to download? Here is a quick guide to getting started with **SDRTrunk Kennebec (v00.169)**:
+Not sure what to download? Here is a quick guide to getting started with **SDRTrunk Kennebec (v00.170)**:
 
 - **Windows Users (Recommended)**: Download the Native Windows Installer. This is the easiest way to install and manage SDRTrunk on Windows.
-  - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.169/SDRTrunk-00.169-windows-installer.exe)
+  - [Download Windows Installer (.exe)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.170/SDRTrunk-00.170-windows-installer.exe)
   - **Note**: Because this is an open-source project without a paid code signing certificate, Windows SmartScreen may show an "Unknown Publisher" warning. To proceed, click **"More info"**, then click **"Run anyway"**.
 - **Advanced Windows Users**: Download the Portable ZIP if you prefer to run the application without installing it.
-  - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.169/SDRTrunk-00.169-windows-x86_64.zip)
+  - [Download Windows Portable ZIP (.zip)](https://github.com/snepple/SDRTrunk_Kennebec/releases/download/00.170/SDRTrunk-00.170-windows-x86_64.zip)
 
-*(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/00.169))*
+*(View all release assets and notes on the [Releases Page](https://github.com/snepple/SDRTrunk_Kennebec/releases/tag/00.170))*
 <!-- DOWNLOADS:END -->
