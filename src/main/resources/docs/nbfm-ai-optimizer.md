@@ -20,9 +20,9 @@ The AI Optimizer is a robot window-washer!
 
 ## The Benefits
 
-* **Less Ear Fatigue:**Listening to static for hours can give you a headache. The AI makes long scanning sessions much more pleasant.
-* **Revive Weak Signals:**Calls that were previously too scratchy to understand can often become perfectly readable.
-* **Better Streams:**If you stream your audio to the internet (like Broadcastify), your listeners will appreciate the high-quality, professional-sounding feed.
+* **Less Ear Fatigue:** Listening to static for hours can give you a headache. The AI makes long scanning sessions much more pleasant.
+* **Revive Weak Signals:** Calls that were previously too scratchy to understand can often become perfectly readable.
+* **Better Streams:** If you stream your audio to the internet (like Broadcastify), your listeners will appreciate the high-quality, professional-sounding feed.
 
 ## How to Enable the AI Optimizer
 

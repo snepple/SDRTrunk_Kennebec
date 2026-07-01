@@ -41,9 +41,9 @@ SDRTrunk Kennebec will immediately connect. If your internet blips, it will auto
 
 Want to know if your stream is working? Go to **View** > **Broadcaster Status**. You'll see a simple status for every stream:
 
-* **Connected:**Everything is running smoothly!
-* **Disconnected:**It can't reach the internet. Check your wifi or passwords.
-* **Error:**Something went wrong (check the logs for a clue).
+* **Connected:** Everything is running smoothly!
+* **Disconnected:** It can't reach the internet. Check your wifi or passwords.
+* **Error:** Something went wrong (check the logs for a clue).
 
 > **Tip:**
 > Setting up streaming for the first time? Check our specific guides for platforms like [ThinLine Radio](thinline-radio.md) or [IAmResponding](iamresponding.md) for more details!

@@ -18,9 +18,9 @@ When a police officer or dispatcher speaks:
 
 ## Why Use Transcriptions?
 
-* **Easy Searching:**Trying to find a specific call? You can search your logs for words like "Fire" or "Main Street" instead of listening to hours of audio.
-* **Accessibility:**Great for users who are hard of hearing or scanning in a noisy room.
-* **Streaming Text:**When sending calls to platforms like Rdio Scanner, the text is uploaded alongside the audio!
+* **Easy Searching:** Trying to find a specific call? You can search your logs for words like "Fire" or "Main Street" instead of listening to hours of audio.
+* **Accessibility:** Great for users who are hard of hearing or scanning in a noisy room.
+* **Streaming Text:** When sending calls to platforms like Rdio Scanner, the text is uploaded alongside the audio!
 
 ## How to Turn it On
 
