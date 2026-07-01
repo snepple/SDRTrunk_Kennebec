@@ -245,3 +245,15 @@
 .channel-detail-text .content { -fx-background-color: transparent; }
 .channel-detail-scroll, .channel-detail-scroll > .viewport { -fx-background-color: transparent; }
 .channel-detail-section { -fx-font-weight: bold; }
+
+/* History Management Panel (Events tab toolbar) — dark overrides */
+.history-toolbar {
+    -fx-background-color: #1a1a2e !important;
+    -fx-border-color: transparent transparent #0f3460 transparent !important;
+}
+.history-label {
+    -fx-text-fill: #e0e0e0 !important;
+}
+.history-value-label {
+    -fx-text-fill: #e0e0e0 !important;
+}

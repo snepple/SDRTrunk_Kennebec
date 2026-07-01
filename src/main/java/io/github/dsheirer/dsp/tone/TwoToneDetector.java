@@ -68,6 +68,15 @@ public class TwoToneDetector
     //into a bogus A-then-B pair.
     private static final double DISCOVERY_MIN_PEAK_TO_AVG = 12.0;
     private static final double DISCOVERY_MIN_AB_SEPARATION_HZ = 20.0;
+    //Discovery minimum tone durations.  Each FFT block is 100ms (800 samples at 8kHz).  Real paging tones are
+    //sustained pure tones (1–3+ seconds each); voice formants drift in frequency and rarely sustain the exact
+    //same peak (within 5 Hz) for more than a few hundred milliseconds.  Requiring Tone A to hold for 1 second
+    //and Tone B for 3 seconds eliminates virtually all voice-based false discoveries without missing real pages.
+    private static final int DISCOVERY_MIN_TONE_A_BLOCKS = 10;  // 1 second  (10 * 100ms)
+    private static final int DISCOVERY_MIN_TONE_B_BLOCKS = 30;  // 3 seconds (30 * 100ms)
+    //Single-tone ("Long A") pages: a sustained tone with no B transition.  Must be longer than the A+B
+    //combined minimum to avoid triggering on the A portion of a two-tone page before B arrives.
+    private static final int DISCOVERY_MIN_LONG_A_BLOCKS = 40;  // 4 seconds (40 * 100ms)
 
     private final ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
     private final LinkedTransferQueue<AudioBufferWrapper> mAudioQueue = new LinkedTransferQueue<>();
@@ -555,7 +564,7 @@ public class TwoToneDetector
                         if (discovery.currentToneB > 0) {
                             if (Math.abs(discovery.currentToneB - frequency) < 5) {
                                 discovery.toneBBlocks++;
-                                if (discovery.toneBBlocks >= 3) { // 3 * 100ms = 300ms — matches MIN_TONE_DURATION_MS
+                                if (discovery.toneBBlocks >= DISCOVERY_MIN_TONE_B_BLOCKS) {
                                     logDiscovery(discovery.currentToneA, discovery.currentToneB, segment);
                                     discovery.currentToneA = 0;
                                     discovery.toneABlocks = 0;
@@ -569,7 +578,14 @@ public class TwoToneDetector
                         } else if (discovery.currentToneA > 0) {
                             if (Math.abs(discovery.currentToneA - frequency) < 5) {
                                 discovery.toneABlocks++;
-                            } else if (discovery.toneABlocks >= 3 &&
+                                //Long A (single-tone) detection: if Tone A has been held for 4+ seconds
+                                //without transitioning to Tone B, this is a single-tone page.
+                                if (discovery.toneABlocks == DISCOVERY_MIN_LONG_A_BLOCKS) {
+                                    logDiscovery(discovery.currentToneA, 0, segment);
+                                    //Don't reset — let it keep incrementing so we don't re-trigger on the
+                                    //same sustained tone (same pattern as configured long A detector).
+                                }
+                            } else if (discovery.toneABlocks >= DISCOVERY_MIN_TONE_A_BLOCKS &&
                                     Math.abs(discovery.currentToneA - frequency) >= DISCOVERY_MIN_AB_SEPARATION_HZ) {
                                 // Tone A was held long enough and this is a genuinely different frequency: treat it as
                                 // Tone B.  Requiring a minimum A/B separation prevents a single drifting formant from
@@ -652,10 +668,7 @@ public class TwoToneDetector
             {
                 applicable.add(name); //An alias selected for this detector resolved on the segment
             }
-            else if(!detectorHasAnyAliasMapping(name))
-            {
-                applicable.add(name); //No aliases selected for this detector -> global (legacy) behavior
-            }
+            //Detectors without alias mappings are NOT added — alias restriction is required.
         }
 
         mLastRoutedSegment = segment;
@@ -669,19 +682,27 @@ public class TwoToneDetector
         {
             mRoutingLogCount++;
 
-            java.util.List<String> excluded = new java.util.ArrayList<>();
+            java.util.List<String> excludedNoMatch = new java.util.ArrayList<>();
+            java.util.List<String> excludedNoAlias = new java.util.ArrayList<>();
             for(TwoToneConfiguration config : configs)
             {
                 if(config.getAlias() != null && config.isEnabled() && !applicable.contains(config.getAlias()))
                 {
-                    excluded.add(config.getAlias());
+                    if(!detectorHasAnyAliasMapping(config.getAlias()))
+                    {
+                        excludedNoAlias.add(config.getAlias());
+                    }
+                    else
+                    {
+                        excludedNoMatch.add(config.getAlias());
+                    }
                 }
             }
 
             String channel = getSegmentChannelName(segment);
 
-            mLog.info("TwoTone routing [channel={}] resolvedAliasDetectors={} willRun={} excludedNeedAliasMatch={}",
-                    channel != null ? channel : "?", segmentDetectors, applicable, excluded);
+            mLog.info("TwoTone routing [channel={}] resolvedAliasDetectors={} willRun={} excludedNeedAliasMatch={} excludedNoAlias={}",
+                    channel != null ? channel : "?", segmentDetectors, applicable, excludedNoMatch, excludedNoAlias);
         }
 
         return applicable;
@@ -925,12 +946,18 @@ public class TwoToneDetector
     private void triggerAlertIfMatched(TwoToneConfiguration config, AudioSegment segment)
     {
         boolean shouldTrigger = true;
-        //Alias routing check: if the detector has selected aliases, it can only trigger when the segment
-        //resolved to one of them.  resolveSegmentDetectorNames() now searches ALL alias lists so cross-list
-        //aliases (e.g. detector in "Somerset", channel in "Kennebec") are correctly resolved.
+        //Alias routing check: detectors MUST have an alias mapping to trigger.  If the detector has
+        //selected aliases, it can only trigger when the segment resolved to one of them.
         if (segment != null) {
-            if (detectorHasAnyAliasMapping(config.getAlias()) &&
+            if (!detectorHasAnyAliasMapping(config.getAlias()) ||
                     !resolveSegmentDetectorNamesWithFallback(segment).contains(config.getAlias())) {
+                shouldTrigger = false;
+            }
+        }
+        else
+        {
+            //No segment context — require alias mapping to exist (can't verify match without segment)
+            if (!detectorHasAnyAliasMapping(config.getAlias())) {
                 shouldTrigger = false;
             }
         }
@@ -1027,9 +1054,25 @@ public class TwoToneDetector
         boolean sendText = config.isEnableZelloTextMessage();
         boolean sendTone = config.isEnableZelloAlert() && config.getZelloAlertFile() != null &&
                 !config.getZelloAlertFile().isEmpty();
+        boolean sendChannelAlert = config.isEnableZelloChannelAlert();
 
-        if(sendText || sendTone)
+        if(sendText || sendTone || sendChannelAlert)
         {
+            //Build the channel alert text from the detector's template using the same shortcodes
+            String channelAlertText = null;
+            if(sendChannelAlert)
+            {
+                channelAlertText = config.getZelloChannelAlertText() != null
+                        ? config.getZelloChannelAlertText() : "Dispatch Received: {Alias}";
+                channelAlertText = channelAlertText
+                        .replace("%ALIAS%", config.getAlias() != null ? config.getAlias() : "Unknown")
+                        .replace("{Alias}", config.getAlias() != null ? config.getAlias() : "Unknown")
+                        .replace("{Channel Name}", channel != null ? channel : "Unknown")
+                        .replace("{Frequency}", frequency)
+                        .replace("{Timestamp}", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                                .format(new java.util.Date()));
+            }
+
             for(String streamName : config.getEffectiveZelloChannels())
             {
                 ZelloBroadcaster broadcaster = getZelloBroadcaster(streamName);
@@ -1050,6 +1093,10 @@ public class TwoToneDetector
                 if(sendTone)
                 {
                     broadcaster.injectPreDispatchAudio(config.getZelloAlertFile());
+                }
+                if(sendChannelAlert)
+                {
+                    broadcaster.sendChannelAlert(channelAlertText);
                 }
             }
         }
@@ -1159,7 +1206,12 @@ public class TwoToneDetector
 
     private void logDiscovery(double toneA, double toneB, AudioSegment segment)
     {
-        mLog.info(String.format("Discovery: Detected unknown two-tone sequence: Tone A: %.1f Hz, Tone B: %.1f Hz", toneA, toneB));
+        boolean isLongA = toneB <= 0;
+        if (isLongA) {
+            mLog.info(String.format("Discovery: Detected unknown long tone (single-tone page): Tone A: %.1f Hz", toneA));
+        } else {
+            mLog.info(String.format("Discovery: Detected unknown two-tone sequence: Tone A: %.1f Hz, Tone B: %.1f Hz", toneA, toneB));
+        }
         
         boolean exists = false;
         for (TwoToneConfiguration config : mPlaylistManager.getTwoToneConfigurations()) {
@@ -1200,11 +1252,12 @@ public class TwoToneDetector
         //Log every detected two-tone sequence - recognized or not - with its tones and channel, so the user can see
         //discovery is working even for tones that won't be auto-added (auto-add requires repeated occurrences).
         org.slf4j.LoggerFactory.getLogger(io.github.dsheirer.log.TwoToneLog.LOGGER_NAME).info(
-                "[Channel: {}] [{} MHz] Tone A: {} Hz, Tone B: {} Hz - {}",
+                "[Channel: {}] [{} MHz] {} - {}",
                 channel,
                 channelFrequency > 0 ? String.format("%.4f", channelFrequency / 1.0E6) : "?",
-                String.format("%.1f", toneA),
-                String.format("%.1f", toneB),
+                isLongA
+                    ? String.format("Long Tone A: %.1f Hz (single-tone page)", toneA)
+                    : String.format("Tone A: %.1f Hz, Tone B: %.1f Hz", toneA, toneB),
                 exists ? "matches existing detector" : "UNRECOGNIZED (candidate for new detector)");
     }
 

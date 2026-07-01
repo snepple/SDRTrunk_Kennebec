@@ -28,6 +28,10 @@ import io.github.dsheirer.audio.broadcast.BroadcastConfiguration;
 import io.github.dsheirer.audio.broadcast.BroadcastServerType;
 import javafx.collections.ListChangeListener;
 import org.controlsfx.control.CheckComboBox;
+import javafx.geometry.Pos;
+import javafx.scene.paint.Color;
+import jiconfont.icons.font_awesome.FontAwesome;
+import jiconfont.javafx.IconNode;
 import org.controlsfx.control.SegmentedButton;
 
 
@@ -102,6 +106,35 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         TableColumn<TwoToneConfiguration, Boolean> enabledCol = new TableColumn<>("Enabled");
         enabledCol.setId("enabled");
         enabledCol.setCellValueFactory(new PropertyValueFactory<>("enabled"));
+        enabledCol.setCellFactory(param -> {
+            TableCell<TwoToneConfiguration, Boolean> tableCell = new TableCell<>()
+            {
+                private IconNode iconNode;
+
+                @Override
+                protected void updateItem(Boolean item, boolean empty)
+                {
+                    super.updateItem(item, empty);
+                    setAlignment(Pos.CENTER);
+                    setText(null);
+
+                    if(empty || item == null || !item)
+                    {
+                        setGraphic(null);
+                    }
+                    else
+                    {
+                        if(iconNode == null)
+                        {
+                            iconNode = new IconNode(FontAwesome.CHECK);
+                            iconNode.setFill(Color.GREEN);
+                        }
+                        setGraphic(iconNode);
+                    }
+                }
+            };
+            return tableCell;
+        });
 
 
         TableColumn<TwoToneConfiguration, String> aliasCol = new TableColumn<>("Name");
@@ -135,6 +168,35 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         TableColumn<TwoToneConfiguration, Boolean> mqttCol = new TableColumn<>("MQTT Enabled");
         mqttCol.setId("mqtt");
         mqttCol.setCellValueFactory(new PropertyValueFactory<>("enableMqttPublish"));
+        mqttCol.setCellFactory(param -> {
+            TableCell<TwoToneConfiguration, Boolean> tableCell = new TableCell<>()
+            {
+                private IconNode iconNode;
+
+                @Override
+                protected void updateItem(Boolean item, boolean empty)
+                {
+                    super.updateItem(item, empty);
+                    setAlignment(Pos.CENTER);
+                    setText(null);
+
+                    if(empty || item == null || !item)
+                    {
+                        setGraphic(null);
+                    }
+                    else
+                    {
+                        if(iconNode == null)
+                        {
+                            iconNode = new IconNode(FontAwesome.CHECK);
+                            iconNode.setFill(Color.GREEN);
+                        }
+                        setGraphic(iconNode);
+                    }
+                }
+            };
+            return tableCell;
+        });
 
         mTableView.getColumns().addAll(enabledCol, aliasCol, toneACol, toneBCol, mqttCol);
         mTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
@@ -465,6 +527,41 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         fieldsInfo.visibleProperty().bind(textMessageCheck.selectedProperty());
         fieldsInfo.managedProperty().bind(textMessageCheck.selectedProperty());
 
+        //Channel Alert controls — mirrors the text message controls with its own template
+        CheckBox channelAlertCheck = new CheckBox("Enable Channel Alert");
+        Label channelAlertInfo = new Label("Sends a high-priority Zello Channel Alert (audible beeps + persistent notification).");
+        channelAlertInfo.getStyleClass().add("hig-inline-help");
+        TextField channelAlertTemplateField = new TextField();
+        Label channelAlertFieldsInfo = new Label("Available Fields: {Alias}, {Channel Name}, {Frequency}, {Timestamp}");
+        channelAlertFieldsInfo.getStyleClass().add("hig-inline-help");
+
+        HBox channelAlertPreviewBox = new HBox(5);
+        Label channelAlertPreviewLabel = new Label("Preview:");
+        Label channelAlertPreviewText = new Label();
+        channelAlertPreviewText.setStyle("-fx-font-style: italic;");
+        channelAlertPreviewBox.getChildren().addAll(channelAlertPreviewLabel, channelAlertPreviewText);
+
+        Runnable updateChannelAlertPreview = () -> {
+            String tmpl = channelAlertTemplateField.getText() != null && !channelAlertTemplateField.getText().isEmpty()
+                    ? channelAlertTemplateField.getText() : "Dispatch Received: {Alias}";
+            String al = aliasField.getText() != null && !aliasField.getText().isEmpty() ? aliasField.getText() : "Unknown";
+            List<String> cc = zelloField.getCheckModel().getCheckedItems();
+            String ch = (cc != null && !cc.isEmpty()) ? cc.get(0) : "Unknown";
+            String fr = "154.145";
+            String ts = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date());
+            channelAlertPreviewText.setText(tmpl.replace("%ALIAS%", al).replace("{Alias}", al)
+                    .replace("{Channel Name}", ch).replace("{Frequency}", fr).replace("{Timestamp}", ts));
+        };
+
+        channelAlertTemplateField.textProperty().addListener((obs, o, n) -> updateChannelAlertPreview.run());
+        aliasField.textProperty().addListener((obs, o, n) -> updateChannelAlertPreview.run());
+
+        channelAlertTemplateField.disableProperty().bind(channelAlertCheck.selectedProperty().not());
+        channelAlertPreviewBox.visibleProperty().bind(channelAlertCheck.selectedProperty());
+        channelAlertPreviewBox.managedProperty().bind(channelAlertCheck.selectedProperty());
+        channelAlertFieldsInfo.visibleProperty().bind(channelAlertCheck.selectedProperty());
+        channelAlertFieldsInfo.managedProperty().bind(channelAlertCheck.selectedProperty());
+
         GridPane zelloGrid = new GridPane();
         zelloGrid.setHgap(10);
         zelloGrid.setVgap(8);
@@ -480,6 +577,12 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
         zelloGrid.add(new Label("Alert Tone File:"), 0, 6);
         zelloGrid.add(alertToneCombo, 1, 6);
         zelloGrid.add(previewBtn, 2, 6);
+        zelloGrid.add(channelAlertCheck, 0, 7);
+        zelloGrid.add(channelAlertInfo, 1, 7);
+        zelloGrid.add(new Label("Alert Text:"), 0, 8);
+        zelloGrid.add(channelAlertTemplateField, 1, 8);
+        zelloGrid.add(channelAlertFieldsInfo, 1, 9);
+        zelloGrid.add(channelAlertPreviewBox, 1, 10);
 
         GridPane mqttGrid = new GridPane();
         mqttGrid.setHgap(10);
@@ -562,6 +665,8 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.valueProperty().unbindBidirectional(oldVal.zelloAlertFileProperty());
                 templateField.textProperty().unbindBidirectional(oldVal.templateProperty());
                 textMessageCheck.selectedProperty().unbindBidirectional(oldVal.enableZelloTextMessageProperty());
+                channelAlertCheck.selectedProperty().unbindBidirectional(oldVal.enableZelloChannelAlertProperty());
+                channelAlertTemplateField.textProperty().unbindBidirectional(oldVal.zelloChannelAlertTextProperty());
                 enabledCheck.selectedProperty().unbindBidirectional(oldVal.enabledProperty());
                 alertFileCombo.valueProperty().unbindBidirectional(oldVal.alertFilePathProperty());
                 showNotificationCheck.selectedProperty().unbindBidirectional(oldVal.showNotificationProperty());
@@ -614,6 +719,9 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.valueProperty().bindBidirectional(newVal.zelloAlertFileProperty());
                 templateField.textProperty().bindBidirectional(newVal.templateProperty());
                 textMessageCheck.selectedProperty().bindBidirectional(newVal.enableZelloTextMessageProperty());
+                channelAlertCheck.selectedProperty().bindBidirectional(newVal.enableZelloChannelAlertProperty());
+                channelAlertTemplateField.textProperty().bindBidirectional(newVal.zelloChannelAlertTextProperty());
+                updateChannelAlertPreview.run();
                 //Load the detector's values into the spinners.  No bidirectional binding: DoubleProperty.asObject()
                 //returns a fresh wrapper each call, so the unbind on switch never worked and the bindings accumulated
                 //(editing/selecting could overwrite previously-viewed detectors).  Values are written back explicitly
@@ -649,6 +757,8 @@ public class TwoToneEditor extends javafx.scene.layout.BorderPane
                 alertToneCombo.getSelectionModel().clearSelection();
                 templateField.clear();
                 textMessageCheck.setSelected(false);
+                channelAlertCheck.setSelected(false);
+                channelAlertTemplateField.clear();
                 toneALengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_TONE_A_LENGTH_SEC);
                 toneBLengthSpinner.getValueFactory().setValue(TwoToneConfiguration.DEFAULT_TONE_B_LENGTH_SEC);
                 toneGapLengthSpinner.getValueFactory().setValue(0.0);

@@ -35,6 +35,8 @@ public class TwoToneConfiguration
     private BooleanProperty mEnableZelloAlertProperty = new SimpleBooleanProperty(false);
     private StringProperty mZelloAlertFileProperty = new SimpleStringProperty("");
     private BooleanProperty mEnableZelloTextMessageProperty = new SimpleBooleanProperty(true);
+    private BooleanProperty mEnableZelloChannelAlertProperty = new SimpleBooleanProperty(false);
+    private StringProperty mZelloChannelAlertTextProperty = new SimpleStringProperty("Dispatch Received: {Alias}");
 
     private BooleanProperty mEnabledProperty = new SimpleBooleanProperty(true);
     private StringProperty mAlertFilePathProperty = new SimpleStringProperty("");
@@ -89,6 +91,8 @@ public class TwoToneConfiguration
         copy.setEnableZelloAlert(isEnableZelloAlert());
         copy.setZelloAlertFile(getZelloAlertFile());
         copy.setEnableZelloTextMessage(isEnableZelloTextMessage());
+        copy.setEnableZelloChannelAlert(isEnableZelloChannelAlert());
+        copy.setZelloChannelAlertText(getZelloChannelAlertText());
         copy.setEnabled(isEnabled());
         copy.setAlertFilePath(getAlertFilePath());
         copy.setShowNotification(isShowNotification());
@@ -354,6 +358,40 @@ public class TwoToneConfiguration
     public BooleanProperty enableZelloTextMessageProperty()
     {
         return mEnableZelloTextMessageProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "enableZelloChannelAlert")
+    public boolean isEnableZelloChannelAlert()
+    {
+        return mEnableZelloChannelAlertProperty.get();
+    }
+
+    public void setEnableZelloChannelAlert(boolean enable)
+    {
+        mEnableZelloChannelAlertProperty.set(enable);
+    }
+
+    @JsonIgnore
+    public BooleanProperty enableZelloChannelAlertProperty()
+    {
+        return mEnableZelloChannelAlertProperty;
+    }
+
+    @JacksonXmlProperty(isAttribute = true, localName = "zelloChannelAlertText")
+    public String getZelloChannelAlertText()
+    {
+        return mZelloChannelAlertTextProperty.get();
+    }
+
+    public void setZelloChannelAlertText(String text)
+    {
+        mZelloChannelAlertTextProperty.set(text);
+    }
+
+    @JsonIgnore
+    public StringProperty zelloChannelAlertTextProperty()
+    {
+        return mZelloChannelAlertTextProperty;
     }
 
     @JacksonXmlProperty(isAttribute = true, localName = "frequencyTolerance")
@@ -725,7 +763,8 @@ public class TwoToneConfiguration
             config.zelloChannelProperty(), config.enableMqttPublishProperty(),
             config.mqttTopicProperty(), config.mqttPayloadProperty(),
             config.enableZelloAlertProperty(), config.zelloAlertFileProperty(),
-            config.enableZelloTextMessageProperty(), config.frequencyToleranceProperty(),
+            config.enableZelloTextMessageProperty(), config.enableZelloChannelAlertProperty(),
+            config.zelloChannelAlertTextProperty(), config.frequencyToleranceProperty(),
             config.toneDurationMsProperty(), config.toneAProperty(), config.toneBProperty(),
             config.enabledProperty(), config.alertFilePathProperty(),
             config.showNotificationProperty(), config.autoDiscoveredProperty(),

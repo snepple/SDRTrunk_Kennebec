@@ -90,6 +90,8 @@ public class ChannelMetadataPanel extends VBox
                 }
             }
         });
+        stateCol.setPrefWidth(65);
+        stateCol.setMinWidth(50);
         
         TableColumn<ChannelMetadata, String> channelCol = new TableColumn<>("Channel");
         channelCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
@@ -100,18 +102,22 @@ public class ChannelMetadataPanel extends VBox
         TableColumn<ChannelMetadata, String> freqCol = new TableColumn<>("Frequency");
         freqCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
             formatFrequencyMhz(cellData.getValue())));
+        freqCol.setPrefWidth(90);
 
         TableColumn<ChannelMetadata, String> receivedCol = new TableColumn<>("Received");
         receivedCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
             String.valueOf(mReceivedCount.getOrDefault(cellData.getValue(), 0))));
+        receivedCol.setPrefWidth(70);
 
         TableColumn<ChannelMetadata, String> toCol = new TableColumn<>("To");
         toCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
             cellData.getValue().hasToIdentifier() ? cellData.getValue().getToIdentifier().toString() : ""));
+        toCol.setPrefWidth(90);
 
         TableColumn<ChannelMetadata, String> fromCol = new TableColumn<>("From");
         fromCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
             cellData.getValue().hasFromIdentifier() ? cellData.getValue().getFromIdentifier().toString() : ""));
+        fromCol.setPrefWidth(90);
 
         //Tuner the channel is playing through (friendly name when set).  Resolved via the channel's
         //activeTunerName; kept current by the 500ms refresh in setupActivityPolling().
@@ -123,6 +129,7 @@ public class ChannelMetadataPanel extends VBox
         //count is retained in setupActivityPolling().
 
         mTable.getColumns().addAll(stateCol, channelCol, freqCol, receivedCol, toCol, fromCol, tunerCol);
+        mTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         mTable.setTableMenuButtonVisible(true);
 
         setupRowContextMenu();
