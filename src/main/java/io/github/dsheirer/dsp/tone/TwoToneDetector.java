@@ -1038,9 +1038,25 @@ public class TwoToneDetector
         boolean sendText = config.isEnableZelloTextMessage();
         boolean sendTone = config.isEnableZelloAlert() && config.getZelloAlertFile() != null &&
                 !config.getZelloAlertFile().isEmpty();
+        boolean sendChannelAlert = config.isEnableZelloChannelAlert();
 
-        if(sendText || sendTone)
+        if(sendText || sendTone || sendChannelAlert)
         {
+            //Build the channel alert text from the detector's template using the same shortcodes
+            String channelAlertText = null;
+            if(sendChannelAlert)
+            {
+                channelAlertText = config.getZelloChannelAlertText() != null
+                        ? config.getZelloChannelAlertText() : "Dispatch Received: {Alias}";
+                channelAlertText = channelAlertText
+                        .replace("%ALIAS%", config.getAlias() != null ? config.getAlias() : "Unknown")
+                        .replace("{Alias}", config.getAlias() != null ? config.getAlias() : "Unknown")
+                        .replace("{Channel Name}", channel != null ? channel : "Unknown")
+                        .replace("{Frequency}", frequency)
+                        .replace("{Timestamp}", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                                .format(new java.util.Date()));
+            }
+
             for(String streamName : config.getEffectiveZelloChannels())
             {
                 ZelloBroadcaster broadcaster = getZelloBroadcaster(streamName);
@@ -1061,6 +1077,10 @@ public class TwoToneDetector
                 if(sendTone)
                 {
                     broadcaster.injectPreDispatchAudio(config.getZelloAlertFile());
+                }
+                if(sendChannelAlert)
+                {
+                    broadcaster.sendChannelAlert(channelAlertText);
                 }
             }
         }

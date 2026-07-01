@@ -474,6 +474,38 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         }
     }
 
+    /**
+     * Sends a Zello Channel Alert — a high-priority notification that triggers audible beeps and
+     * persistent notifications on all channel members' devices.  Uses the Zello Work WebSocket
+     * {@code send_alert} command with the same JSON structure as {@link #sendTextMessage(String)}.
+     *
+     * @param text the alert text to display in the channel alert notification
+     */
+    public void sendChannelAlert(String text)
+    {
+        if(mWebSocket == null || !mConnected.get())
+        {
+            mLog.warn("{}Cannot send Zello channel alert — not connected", ch());
+            return;
+        }
+        try
+        {
+            JsonObject cmd = new JsonObject();
+            cmd.addProperty("command", "send_alert");
+            int seq = mSequence.getAndIncrement();
+            cmd.addProperty("seq", seq);
+            mPendingCommands.put(seq, "send_alert");
+            cmd.addProperty("channel", channelName());
+            cmd.addProperty("text", text);
+            mWebSocket.sendText(mGson.toJson(cmd), true);
+            mLog.info("{}Sent Zello channel alert: {}", ch(), text);
+        }
+        catch(Exception e)
+        {
+            mLog.error("{}Error sending Zello channel alert", ch(), e);
+        }
+    }
+
     public void injectPreDispatchAudio(String filename)
     {
         if (filename == null || filename.isEmpty()) return;
