@@ -53,6 +53,18 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
     //schedule a recovery task (the earlier was orphaned and kept restarting channels every 3 minutes forever).
     private final Object mRecoveryLock = new Object();
 
+    //Tracks how often this tuner enters a *new* recovery cycle.  Each individual stall recovers (restart succeeds),
+    //resets mRecoveryAttempts, then the same flaky device stalls again minutes later - so the per-cycle tiering never
+    //escalates and the tuner churns its channels indefinitely.  When cycles recur within the window below we escalate
+    //to a longer cooldown and raise one hardware alert, instead of restarting (and restarting every channel) on a
+    //~1-3 minute loop for a device that is most likely physically failing.
+    private static final long RECURRING_ERROR_WINDOW_MS = 10 * 60 * 1000L;
+    private static final int RECURRING_ERROR_THRESHOLD = 3;
+    private static final long RECURRING_ERROR_COOLDOWN_SECONDS = 600;
+    private long mLastRecoveryCycleStartMs = 0;
+    private int mRecurringErrorCount = 0;
+    private boolean mRecurringErrorAlertSent = false;
+
     /**
      * Tuner Class
      */
@@ -341,8 +353,51 @@ public abstract class DiscoveredTuner implements ITunerErrorListener
             //All other errors (buffer exhaustion, tuner stall, driver/API errors): attempt automatic recovery
             //rather than permanently disabling the tuner.  Restart attempts are cheap, and a transient error
             //should not require a human to restart the application to restore reception.
-            mLog.info("Tuner Error - Initiating Recovery - " + getId() + " Error: " + errorMessage);
-            mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(new RecoveryRunnable(), 180, 180, TimeUnit.SECONDS);
+
+            //Count how often this tuner opens a new recovery cycle.  A device that keeps stalling and "recovering"
+            //(each restart works, then it stalls again minutes later) would otherwise restart itself - and every
+            //channel on it - on a tight loop forever, because each cycle resets the per-cycle attempt tiering.
+            long now = System.currentTimeMillis();
+            if(mLastRecoveryCycleStartMs > 0 && (now - mLastRecoveryCycleStartMs) <= RECURRING_ERROR_WINDOW_MS)
+            {
+                mRecurringErrorCount++;
+            }
+            else
+            {
+                mRecurringErrorCount = 1;
+                mRecurringErrorAlertSent = false;
+            }
+            mLastRecoveryCycleStartMs = now;
+
+            long recoveryIntervalSeconds = 180;
+            if(mRecurringErrorCount >= RECURRING_ERROR_THRESHOLD)
+            {
+                //Persistent flapping: back off to a long cooldown so we stop hammering the device (and churning its
+                //channels), and surface one clear hardware alert pointing at the likely root cause.
+                recoveryIntervalSeconds = RECURRING_ERROR_COOLDOWN_SECONDS;
+                mLog.warn("Tuner " + getId() + " has entered recovery " + mRecurringErrorCount + " times within " +
+                        (RECURRING_ERROR_WINDOW_MS / 60000) + " minutes [" + errorMessage + "] - backing off to every " +
+                        (RECURRING_ERROR_COOLDOWN_SECONDS / 60) + " minutes. This usually indicates failing hardware, " +
+                        "a bad USB port/cable, or insufficient bus power.");
+
+                if(!mRecurringErrorAlertSent)
+                {
+                    mRecurringErrorAlertSent = true;
+                    MyEventBus.getGlobalEventBus().post(new io.github.dsheirer.health.SystemHealthAlertEvent(
+                            io.github.dsheirer.health.SystemHealthAlertEvent.AlertType.HARDWARE,
+                            "Tuner Repeatedly Failing",
+                            "Tuner " + getId() + " keeps stalling and recovering [" + errorMessage + "]. Recovery is " +
+                            "now backed off to every " + (RECURRING_ERROR_COOLDOWN_SECONDS / 60) + " minutes to stop " +
+                            "restarting its channels on a loop. Check the device, its USB port/cable, and bus power."));
+                }
+            }
+            else
+            {
+                mLog.info("Tuner Error - Initiating Recovery - " + getId() + " Error: " + errorMessage);
+            }
+
+            mRecoveryTask = ThreadPool.SCHEDULED.scheduleAtFixedRate(new RecoveryRunnable(), recoveryIntervalSeconds,
+                    recoveryIntervalSeconds, TimeUnit.SECONDS);
         }
 
         if ("USB Error - Transfer Buffers Exhausted".equals(errorMessage) && this instanceof DiscoveredUSBTuner) {

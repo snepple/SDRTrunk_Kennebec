@@ -641,8 +641,23 @@ public class AudioStreamingManager implements Listener<AudioSegment>
 
             if(to == null)
             {
-                return "The call has no TO/talkgroup identifier. NBFM/analog channels must have a 'Talkgroup To Assign' " +
-                        "value set in the channel editor for alias and stream matching to work.";
+                io.github.dsheirer.protocol.Protocol protocol = callProtocol(ic);
+
+                //Analog (NBFM/AM) channels carry no talkgroup over the air, so the operator must set one in the channel
+                //editor.  Digital protocols (DMR/P25/etc.) DO carry talkgroups, so a missing one means this particular
+                //transmission had none (a direct/data or non-voice call) - telling the user to set 'Talkgroup To Assign'
+                //would be wrong for those.
+                if(protocol == io.github.dsheirer.protocol.Protocol.NBFM ||
+                        protocol == io.github.dsheirer.protocol.Protocol.AM)
+                {
+                    return "The call has no TO/talkgroup identifier. NBFM/analog channels must have a 'Talkgroup To " +
+                            "Assign' value set in the channel editor for alias and stream matching to work.";
+                }
+
+                return "The call has no TO/talkgroup identifier" +
+                        (protocol != io.github.dsheirer.protocol.Protocol.UNKNOWN ? " (" + protocol + ")" : "") +
+                        " - this transmission carried no talkgroup (for example a direct/data or non-voice call), so " +
+                        "there is nothing to match against an alias or stream.";
             }
 
             String toDescription;
@@ -697,6 +712,27 @@ public class AudioStreamingManager implements Listener<AudioSegment>
         {
             return "(diagnosis failed: " + e.getMessage() + ")";
         }
+    }
+
+    /**
+     * Best-effort determination of the protocol a call was decoded with, used only to tailor the "not streamed"
+     * diagnostic message.  Returns the first identifier's concrete protocol, or UNKNOWN when none is available.
+     */
+    private static io.github.dsheirer.protocol.Protocol callProtocol(IdentifierCollection ic)
+    {
+        if(ic != null)
+        {
+            for(Identifier identifier : ic.getIdentifiers())
+            {
+                io.github.dsheirer.protocol.Protocol protocol = identifier.getProtocol();
+                if(protocol != null && protocol != io.github.dsheirer.protocol.Protocol.UNKNOWN)
+                {
+                    return protocol;
+                }
+            }
+        }
+
+        return io.github.dsheirer.protocol.Protocol.UNKNOWN;
     }
 
     /**
