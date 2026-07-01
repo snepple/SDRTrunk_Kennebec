@@ -627,7 +627,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         }
         catch(Exception | AssertionError e)
         {
-            mLog.debug("{}Error processing audio queue (non-fatal): {}", ch(), e.getMessage());
+            mLog.debug("{}Error processing audio queue (non-fatal): {}", ch(), describeThrowable(e));
         }
     }
 
@@ -693,7 +693,7 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         }
         catch(Exception | AssertionError e)
         {
-            mLog.debug("{}Opus encoding error (non-fatal): {}", ch(), e.getMessage());
+            mLog.debug("{}Opus encoding error (non-fatal): {}", ch(), describeThrowable(e));
 
             // Re-initialize the encoder to prevent cascading failures on subsequent frames
             try
@@ -720,12 +720,29 @@ public class ZelloBroadcaster extends AbstractAudioBroadcaster<ZelloConfiguratio
         }
         catch(Exception | AssertionError e)
         {
-            mLog.debug("{}Opus flush error (non-fatal): {}", ch(), e.getMessage());
+            mLog.debug("{}Opus flush error (non-fatal): {}", ch(), describeThrowable(e));
         }
         finally
         {
             mResampleBufferPos = 0;
         }
+    }
+
+    /**
+     * Describes a throwable for logging.  Many encoder failures are NullPointerExceptions or AssertionErrors with no
+     * message, which logged as a bare "null"; fall back to the exception type so the log identifies what actually
+     * failed.
+     */
+    private static String describeThrowable(Throwable t)
+    {
+        if(t == null)
+        {
+            return "unknown";
+        }
+
+        String message = t.getMessage();
+        return (message != null && !message.isEmpty()) ? (t.getClass().getSimpleName() + ": " + message)
+                : t.getClass().getSimpleName();
     }
 
     private void initOpusEncoder() throws Exception
