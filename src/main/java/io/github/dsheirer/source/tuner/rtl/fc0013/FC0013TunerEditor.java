@@ -154,7 +154,12 @@ public class FC0013TunerEditor extends TunerEditor<RTL2832Tuner, FC0013TunerConf
         GridPane gainGrid = new GridPane();
         gainGrid.setHgap(10);
         gainGrid.setVgap(4);
-        gainGrid.add(new Label("LNA:"), 0, 0);
+
+        javafx.scene.control.Button lnaHelp = createHelpIcon("?");
+        lnaHelp.setTooltip(new javafx.scene.control.Tooltip("Low Noise Amplifier (LNA): Boosts weak radio signals right at the antenna input.\nIncrease for distant stations, but lower it if the waterfall display becomes solid bright (overloaded)."));
+        javafx.scene.layout.HBox lnaBox = new javafx.scene.layout.HBox(4, new Label("LNA:"), lnaHelp);
+        lnaBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        gainGrid.add(lnaBox, 0, 0);
         gainGrid.add(getLNAGainCombo(), 1, 0);
         getChildren().add(gainGrid);
     }

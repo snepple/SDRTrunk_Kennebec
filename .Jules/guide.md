@@ -39,3 +39,6 @@
 ## 2026-06-18 - Added Beginner-Friendly Tooltips for Jargon Hotspots
 **Learning:** Replaced technical definitions for SDR jargon (NAC, LNA, PPM) with user-friendly explanations.
 **Action:** Updated tooltips in NacEditor, R8xTunerEditor, E4KTunerEditor, and TunerEditor to better describe the 'Why' behind SDR configurations.
+## 2026-07-01 - Added Tooltips to Tuner Hardware Gain Stages
+**Learning:** Hardware gain stages (LNA, Mixer, VGA) can be cryptic to beginners. While "Gain" implies volume, the distinction between LNA (at the antenna), Mixer (during frequency conversion), and VGA (pre-digitization) is crucial for tuning out noise vs amplifying signals.
+**Action:** Added `createHelpIcon` tooltips to the LNA, Mixer, and VGA combo boxes in `R8xTunerEditor`, `E4KTunerEditor`, and `FC0013TunerEditor` to explain their specific roles in plain language.

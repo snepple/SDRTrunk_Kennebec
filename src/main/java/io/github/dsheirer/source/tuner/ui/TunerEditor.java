@@ -1408,7 +1408,7 @@ public abstract class TunerEditor<T extends Tuner,C extends TunerConfiguration> 
 //         }
 //     }
 // 
-    private Button createHelpIcon(String text) {
+    protected Button createHelpIcon(String text) {
         Button button = new Button(text);
         button.setPadding(new javafx.geometry.Insets(0, 2, 0, 2));
         // button.setFocusPainted(false);

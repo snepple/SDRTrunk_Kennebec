@@ -168,11 +168,26 @@ public class R8xTunerEditor extends TunerEditor<RTL2832Tuner, R8xTunerConfigurat
         gainGrid.setVgap(4);
         gainGrid.add(new Label("Master:"), 0, 0);
         gainGrid.add(getMasterGainCombo(), 1, 0);
-        gainGrid.add(new Label("Mixer:"), 0, 1);
+
+        javafx.scene.control.Button mixerHelp = createHelpIcon("?");
+        mixerHelp.setTooltip(new javafx.scene.control.Tooltip("Mixer Gain: Amplifies the signal while converting it to a lower frequency for processing.\nHelps with weak signals but can cause distortion if set too high."));
+        HBox mixerBox = new HBox(4, new Label("Mixer:"), mixerHelp);
+        mixerBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        gainGrid.add(mixerBox, 0, 1);
         gainGrid.add(getMixerGainCombo(), 1, 1);
-        gainGrid.add(new Label("LNA:"), 0, 2);
+
+        javafx.scene.control.Button lnaHelp = createHelpIcon("?");
+        lnaHelp.setTooltip(new javafx.scene.control.Tooltip("Low Noise Amplifier (LNA): Boosts weak radio signals right at the antenna input.\nIncrease for distant stations, but lower it if the waterfall display becomes solid bright (overloaded)."));
+        HBox lnaBox = new HBox(4, new Label("LNA:"), lnaHelp);
+        lnaBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        gainGrid.add(lnaBox, 0, 2);
         gainGrid.add(getLNAGainCombo(), 1, 2);
-        gainGrid.add(new Label("VGA:"), 0, 3);
+
+        javafx.scene.control.Button vgaHelp = createHelpIcon("?");
+        vgaHelp.setTooltip(new javafx.scene.control.Tooltip("Variable Gain Amplifier (VGA): Fine-tunes the amplified signal just before it is digitized.\nUse this to balance strong and weak signals."));
+        HBox vgaBox = new HBox(4, new Label("VGA:"), vgaHelp);
+        vgaBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        gainGrid.add(vgaBox, 0, 3);
         gainGrid.add(getVGAGainCombo(), 1, 3);
         getChildren().addAll(gainLabel, gainGrid);
     }
