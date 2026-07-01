@@ -74,6 +74,9 @@ public class TwoToneDetector
     //and Tone B for 3 seconds eliminates virtually all voice-based false discoveries without missing real pages.
     private static final int DISCOVERY_MIN_TONE_A_BLOCKS = 10;  // 1 second  (10 * 100ms)
     private static final int DISCOVERY_MIN_TONE_B_BLOCKS = 30;  // 3 seconds (30 * 100ms)
+    //Single-tone ("Long A") pages: a sustained tone with no B transition.  Must be longer than the A+B
+    //combined minimum to avoid triggering on the A portion of a two-tone page before B arrives.
+    private static final int DISCOVERY_MIN_LONG_A_BLOCKS = 40;  // 4 seconds (40 * 100ms)
 
     private final ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
     private final LinkedTransferQueue<AudioBufferWrapper> mAudioQueue = new LinkedTransferQueue<>();
@@ -575,6 +578,13 @@ public class TwoToneDetector
                         } else if (discovery.currentToneA > 0) {
                             if (Math.abs(discovery.currentToneA - frequency) < 5) {
                                 discovery.toneABlocks++;
+                                //Long A (single-tone) detection: if Tone A has been held for 4+ seconds
+                                //without transitioning to Tone B, this is a single-tone page.
+                                if (discovery.toneABlocks == DISCOVERY_MIN_LONG_A_BLOCKS) {
+                                    logDiscovery(discovery.currentToneA, 0, segment);
+                                    //Don't reset — let it keep incrementing so we don't re-trigger on the
+                                    //same sustained tone (same pattern as configured long A detector).
+                                }
                             } else if (discovery.toneABlocks >= DISCOVERY_MIN_TONE_A_BLOCKS &&
                                     Math.abs(discovery.currentToneA - frequency) >= DISCOVERY_MIN_AB_SEPARATION_HZ) {
                                 // Tone A was held long enough and this is a genuinely different frequency: treat it as
@@ -1196,7 +1206,12 @@ public class TwoToneDetector
 
     private void logDiscovery(double toneA, double toneB, AudioSegment segment)
     {
-        mLog.info(String.format("Discovery: Detected unknown two-tone sequence: Tone A: %.1f Hz, Tone B: %.1f Hz", toneA, toneB));
+        boolean isLongA = toneB <= 0;
+        if (isLongA) {
+            mLog.info(String.format("Discovery: Detected unknown long tone (single-tone page): Tone A: %.1f Hz", toneA));
+        } else {
+            mLog.info(String.format("Discovery: Detected unknown two-tone sequence: Tone A: %.1f Hz, Tone B: %.1f Hz", toneA, toneB));
+        }
         
         boolean exists = false;
         for (TwoToneConfiguration config : mPlaylistManager.getTwoToneConfigurations()) {
@@ -1237,11 +1252,12 @@ public class TwoToneDetector
         //Log every detected two-tone sequence - recognized or not - with its tones and channel, so the user can see
         //discovery is working even for tones that won't be auto-added (auto-add requires repeated occurrences).
         org.slf4j.LoggerFactory.getLogger(io.github.dsheirer.log.TwoToneLog.LOGGER_NAME).info(
-                "[Channel: {}] [{} MHz] Tone A: {} Hz, Tone B: {} Hz - {}",
+                "[Channel: {}] [{} MHz] {} - {}",
                 channel,
                 channelFrequency > 0 ? String.format("%.4f", channelFrequency / 1.0E6) : "?",
-                String.format("%.1f", toneA),
-                String.format("%.1f", toneB),
+                isLongA
+                    ? String.format("Long Tone A: %.1f Hz (single-tone page)", toneA)
+                    : String.format("Tone A: %.1f Hz, Tone B: %.1f Hz", toneA, toneB),
                 exists ? "matches existing detector" : "UNRECOGNIZED (candidate for new detector)");
     }
 
