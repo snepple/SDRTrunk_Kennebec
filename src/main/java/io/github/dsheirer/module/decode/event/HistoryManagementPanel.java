@@ -111,7 +111,7 @@ public class HistoryManagementPanel<T> extends javafx.scene.layout.StackPane
         HBox root = new HBox(8);
         root.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         root.setPadding(new javafx.geometry.Insets(4, 10, 4, 10));
-        root.setStyle("-fx-background-color: #F9F9FB; -fx-border-color: transparent transparent #E5E5EA transparent; -fx-border-width: 0 0 1 0;");
+        root.getStyleClass().add("history-toolbar");
         
         Button filterButton = new Button("_Filter");
         filterButton.setMnemonicParsing(true);
@@ -130,7 +130,7 @@ public class HistoryManagementPanel<T> extends javafx.scene.layout.StackPane
         clearButton.setOnAction(e -> handleClearClick());
         
         Label historyLabel = new Label("Max Events:");
-        historyLabel.setStyle("-fx-text-fill: #48484A; -fx-font-weight: bold; -fx-font-size: 12px;");
+        historyLabel.getStyleClass().add("history-label");
         historyLabel.setTooltip(new javafx.scene.control.Tooltip("Maximum number of events to retain in the history buffer"));
         
         Slider historySlider = new Slider(0, 5000, mModel.getHistorySize());
@@ -143,7 +143,7 @@ public class HistoryManagementPanel<T> extends javafx.scene.layout.StackPane
         
         Label historyValueLabel = new Label(String.valueOf(mModel.getHistorySize()));
         historyValueLabel.setPrefWidth(50);
-        historyValueLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
+        historyValueLabel.getStyleClass().add("history-value-label");
         
         historySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
             int size = newVal.intValue();

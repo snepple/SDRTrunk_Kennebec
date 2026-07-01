@@ -1011,3 +1011,19 @@
 .channel-detail-text .content { -fx-background-color: transparent; }
 .channel-detail-scroll, .channel-detail-scroll > .viewport { -fx-background-color: transparent; }
 .channel-detail-section { -fx-font-weight: bold; }
+
+/* History Management Panel (Events tab toolbar) */
+.history-toolbar {
+    -fx-background-color: #F9F9FB;
+    -fx-border-color: transparent transparent #E5E5EA transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.history-label {
+    -fx-text-fill: #48484A;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+.history-value-label {
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
