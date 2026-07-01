@@ -68,6 +68,12 @@ public class TwoToneDetector
     //into a bogus A-then-B pair.
     private static final double DISCOVERY_MIN_PEAK_TO_AVG = 12.0;
     private static final double DISCOVERY_MIN_AB_SEPARATION_HZ = 20.0;
+    //Discovery minimum tone durations.  Each FFT block is 100ms (800 samples at 8kHz).  Real paging tones are
+    //sustained pure tones (1–3+ seconds each); voice formants drift in frequency and rarely sustain the exact
+    //same peak (within 5 Hz) for more than a few hundred milliseconds.  Requiring Tone A to hold for 1 second
+    //and Tone B for 3 seconds eliminates virtually all voice-based false discoveries without missing real pages.
+    private static final int DISCOVERY_MIN_TONE_A_BLOCKS = 10;  // 1 second  (10 * 100ms)
+    private static final int DISCOVERY_MIN_TONE_B_BLOCKS = 30;  // 3 seconds (30 * 100ms)
 
     private final ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
     private final LinkedTransferQueue<AudioBufferWrapper> mAudioQueue = new LinkedTransferQueue<>();
@@ -555,7 +561,7 @@ public class TwoToneDetector
                         if (discovery.currentToneB > 0) {
                             if (Math.abs(discovery.currentToneB - frequency) < 5) {
                                 discovery.toneBBlocks++;
-                                if (discovery.toneBBlocks >= 3) { // 3 * 100ms = 300ms — matches MIN_TONE_DURATION_MS
+                                if (discovery.toneBBlocks >= DISCOVERY_MIN_TONE_B_BLOCKS) {
                                     logDiscovery(discovery.currentToneA, discovery.currentToneB, segment);
                                     discovery.currentToneA = 0;
                                     discovery.toneABlocks = 0;
@@ -569,7 +575,7 @@ public class TwoToneDetector
                         } else if (discovery.currentToneA > 0) {
                             if (Math.abs(discovery.currentToneA - frequency) < 5) {
                                 discovery.toneABlocks++;
-                            } else if (discovery.toneABlocks >= 3 &&
+                            } else if (discovery.toneABlocks >= DISCOVERY_MIN_TONE_A_BLOCKS &&
                                     Math.abs(discovery.currentToneA - frequency) >= DISCOVERY_MIN_AB_SEPARATION_HZ) {
                                 // Tone A was held long enough and this is a genuinely different frequency: treat it as
                                 // Tone B.  Requiring a minimum A/B separation prevents a single drifting formant from
