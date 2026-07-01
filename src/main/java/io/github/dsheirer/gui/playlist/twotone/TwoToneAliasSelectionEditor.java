@@ -23,6 +23,8 @@
 package io.github.dsheirer.gui.playlist.twotone;
 
 import io.github.dsheirer.alias.Alias;
+import io.github.dsheirer.alias.id.AliasID;
+import io.github.dsheirer.alias.id.AliasIDType;
 import io.github.dsheirer.alias.id.twotone.TwoToneDetectorID;
 import io.github.dsheirer.playlist.TwoToneConfiguration;
 import io.github.dsheirer.playlist.PlaylistManager;
@@ -441,6 +443,13 @@ public class TwoToneAliasSelectionEditor extends VBox
                 return false;
             }
 
+            //Hide aliases that have no talkgroup/channel identifiers — they are radio IDs (or
+            //other non-channel identifiers) and cannot route a detector to a specific channel.
+            if(!hasChannelIdentifier(alias))
+            {
+                return false;
+            }
+
             if(mFilterText == null)
             {
                 return true;
@@ -461,6 +470,26 @@ public class TwoToneAliasSelectionEditor extends VBox
                 return true;
             }
 
+            return false;
+        }
+
+        /**
+         * Checks if an alias has at least one talkgroup/channel identifier that can tie it to a
+         * monitored channel for two-tone detector routing.  Aliases with only radio IDs, ESNs,
+         * or other non-channel identifiers are not useful for routing.
+         */
+        private boolean hasChannelIdentifier(Alias alias)
+        {
+            for(AliasID id : alias.getAliasIdentifiers())
+            {
+                AliasIDType type = id.getType();
+                if(type == AliasIDType.TALKGROUP ||
+                   type == AliasIDType.TALKGROUP_RANGE ||
+                   type == AliasIDType.P25_FULLY_QUALIFIED_TALKGROUP)
+                {
+                    return true;
+                }
+            }
             return false;
         }
     }
