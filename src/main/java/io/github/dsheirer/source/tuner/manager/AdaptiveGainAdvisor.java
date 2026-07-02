@@ -46,6 +46,12 @@ public class AdaptiveGainAdvisor
     private static final double GAIN_OPTIMAL_MIN   = -25.0;
     private static final double GAIN_OPTIMAL_MAX   = -6.0;
 
+    //A channel must show at least this much peak-above-noise-floor before we treat it as having carried a real
+    //signal.  Gain verdicts are based on the PEAK level (an actual transmission), not the average - which on a mostly
+    //idle conventional channel is just the noise floor and previously caused every channel to be mislabeled
+    //"too weak".  Channels that never rise this far above their own noise floor are reported as idle, not weak.
+    private static final double SIGNAL_PRESENCE_SNR_DB = 6.0;
+
     // Minimum sample count before issuing any recommendation (avoids false alarms on startup)
     private static final int MIN_SAMPLES_FOR_ADVICE = 50;
 
@@ -208,6 +214,7 @@ public class AdaptiveGainAdvisor
         int tooHigh = 0;
         int tooLow  = 0;
         int optimal = 0;
+        int idle    = 0;
 
         for(ChannelStats stats : mChannelStats.values())
         {
@@ -216,34 +223,47 @@ public class AdaptiveGainAdvisor
                 continue;
             }
 
-            double avg = stats.getAveragePowerDbfs();
+            //Judge gain from the PEAK level (a real transmission) and the peak-over-noise-floor SNR, not the
+            //idle-inclusive average.  On a conventional channel the average is dominated by silence and always
+            //reads far below the ADC band, which previously flagged every channel "too weak".
+            double peak  = stats.getMaxPowerDbfs();
+            double floor = stats.getMinPowerDbfs();
+            double snr   = peak - floor;
 
-            if(avg > GAIN_TOO_HIGH_DBFS)
+            if(snr < SIGNAL_PRESENCE_SNR_DB)
+            {
+                //No transmission ever rose meaningfully above the noise floor - the channel was effectively idle,
+                //so there is no signal whose level we can judge.  Don't mislabel the noise floor as a weak signal.
+                idle++;
+                mLog.debug("AdaptiveGain [{}]: idle — no signal above noise floor (peak {} dBFS, floor {} dBFS)",
+                        stats.getChannelName(), String.format("%.1f", peak), String.format("%.1f", floor));
+            }
+            else if(peak > GAIN_TOO_HIGH_DBFS)
             {
                 tooHigh++;
-                mLog.warn("AdaptiveGain [{}]: signal too strong ({} dBFS avg) — consider reducing tuner gain to avoid ADC clipping",
-                        stats.getChannelName(), String.format("%.1f", avg));
+                mLog.warn("AdaptiveGain [{}]: signal too strong (peak {} dBFS) — consider reducing tuner gain to avoid ADC clipping",
+                        stats.getChannelName(), String.format("%.1f", peak));
             }
-            else if(avg < GAIN_TOO_LOW_DBFS)
+            else if(peak < GAIN_TOO_LOW_DBFS)
             {
                 tooLow++;
-                mLog.warn("AdaptiveGain [{}]: signal too weak ({} dBFS avg) — consider increasing tuner gain for better SNR",
-                        stats.getChannelName(), String.format("%.1f", avg));
+                mLog.warn("AdaptiveGain [{}]: signal weak (peak {} dBFS, ~{} dB SNR) — consider increasing tuner gain for better SNR",
+                        stats.getChannelName(), String.format("%.1f", peak), String.format("%.0f", snr));
             }
             else
             {
                 optimal++;
-                mLog.debug("AdaptiveGain [{}]: signal level optimal ({} dBFS avg)",
-                        stats.getChannelName(), String.format("%.1f", avg));
+                mLog.debug("AdaptiveGain [{}]: signal level optimal (peak {} dBFS, ~{} dB SNR)",
+                        stats.getChannelName(), String.format("%.1f", peak), String.format("%.0f", snr));
             }
         }
 
-        // Summary when there are issues across multiple channels
-        int total = tooHigh + tooLow + optimal;
-        if(total > 0 && (tooHigh > 0 || tooLow > 0))
+        // Summary when there are issues across channels that actually carried signal
+        int withSignal = tooHigh + tooLow + optimal;
+        if(withSignal > 0 && (tooHigh > 0 || tooLow > 0))
         {
-            mLog.info("AdaptiveGain summary: {} channels optimal, {} too strong, {} too weak (of {} monitored)",
-                    optimal, tooHigh, tooLow, total);
+            mLog.info("AdaptiveGain summary: {} optimal, {} too strong, {} weak, {} idle (of {} channels with signal)",
+                    optimal, tooHigh, tooLow, idle, withSignal);
         }
 
         // AI consultation (when AI is available and configured)
@@ -404,41 +424,50 @@ public class AdaptiveGainAdvisor
     private String buildHeuristicSummary(int minSamples, java.util.function.Predicate<ChannelStats> filter)
     {
         StringBuilder sb = new StringBuilder();
-        int tooHigh = 0, tooLow = 0, optimal = 0;
+        int tooHigh = 0, tooLow = 0, optimal = 0, idle = 0;
         for(ChannelStats stats : mChannelStats.values())
         {
             if(stats.getSampleCount() < minSamples || !filter.test(stats))
             {
                 continue;
             }
+            //Verdicts are based on the peak transmission level and its SNR over the noise floor, not the idle-inclusive
+            //average (which on a quiet conventional channel is just the noise floor).
             double avg = stats.getAveragePowerDbfs();
-            double snrEstimate = stats.getMaxPowerDbfs() - stats.getMinPowerDbfs();
+            double peak = stats.getMaxPowerDbfs();
+            double floor = stats.getMinPowerDbfs();
+            double snrEstimate = peak - floor;
             String verdict;
-            if(avg > GAIN_TOO_HIGH_DBFS) { verdict = "too strong — reduce gain"; tooHigh++; }
-            else if(avg < GAIN_TOO_LOW_DBFS) { verdict = "too weak — increase gain"; tooLow++; }
+            if(snrEstimate < SIGNAL_PRESENCE_SNR_DB) { verdict = "idle — no signal above noise floor"; idle++; }
+            else if(peak > GAIN_TOO_HIGH_DBFS) { verdict = "too strong — reduce gain"; tooHigh++; }
+            else if(peak < GAIN_TOO_LOW_DBFS) { verdict = "weak — increase gain"; tooLow++; }
             else { verdict = "optimal"; optimal++; }
-            sb.append(String.format("• %s: %.1f dBFS avg, peak %.1f, floor %.1f, ~%.0f dB SNR — %s%n",
-                    stats.getChannelName(), avg, stats.getMaxPowerDbfs(), stats.getMinPowerDbfs(),
-                    snrEstimate, verdict));
+            sb.append(String.format("• %s: peak %.1f dBFS, floor %.1f, ~%.0f dB SNR, %.1f avg — %s%n",
+                    stats.getChannelName(), peak, floor, snrEstimate, avg, verdict));
         }
 
         String headline;
-        if(tooHigh > 0 && tooLow == 0)
+        if(tooHigh == 0 && tooLow == 0 && optimal == 0)
         {
-            headline = "Overall: signals are running hot. Lower the tuner gain to keep peaks below -3 dBFS.";
+            headline = "Overall: no channels have carried a signal above their noise floor yet — nothing to judge. " +
+                    "Gain advice appears once channels receive traffic.";
+        }
+        else if(tooHigh > 0 && tooLow == 0)
+        {
+            headline = "Overall: signal peaks are running hot. Lower the tuner gain to keep peaks below -3 dBFS.";
         }
         else if(tooLow > 0 && tooHigh == 0)
         {
-            headline = "Overall: signals are weak. Raise the tuner gain to improve SNR (aim for -25 to -6 dBFS).";
+            headline = "Overall: signal peaks are weak. Raise the tuner gain to improve SNR (aim to keep peaks below -3 dBFS).";
         }
         else if(tooHigh > 0 && tooLow > 0)
         {
-            headline = "Overall: mixed levels across channels on this tuner. Since all channels share one hardware " +
+            headline = "Overall: mixed peak levels across channels on this tuner. Since all channels share one hardware " +
                     "gain, pick a setting that keeps the strongest channel below -3 dBFS without burying the weakest.";
         }
         else
         {
-            headline = "Overall: all monitored channels are within the optimal -25 to -6 dBFS range. No change needed.";
+            headline = "Overall: signal peaks on all active channels are within range. No change needed.";
         }
 
         return headline + "\n\nPer-channel detail:\n" + sb.toString().trim();
