@@ -903,30 +903,25 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
             mAudioWatchdog.feedIQData(samples.i());
         }
 
-        // Sample I/Q power every IQ_SAMPLE_INTERVAL-th buffer to drive the Signal Power meter (always,
-        // via NOTIFICATION_CHANNEL_POWER) and the AdaptiveGainAdvisor (only when that feature is enabled).
-        if(++mIQSampleCounter >= IQ_SAMPLE_INTERVAL)
+        // Sample I/Q power every IQ_SAMPLE_INTERVAL-th buffer.  The AdaptiveGainAdvisor uses the WIDEBAND channel
+        // power (the whole channelizer slice, approximating what the ADC/front-end sees); the Signal Power meter is
+        // driven separately from the IN-BAND power measured after the baseband filter below, so it reflects the actual
+        // narrowband signal instead of the near-constant wideband noise floor (which made the meter appear frozen).
+        boolean samplePowerThisBuffer = (++mIQSampleCounter >= IQ_SAMPLE_INTERVAL);
+        if(samplePowerThisBuffer)
         {
             mIQSampleCounter = 0;
-            float[] rawI = samples.i();
-            float[] rawQ = samples.q();
-            double sumSquared = 0.0;
-            for(int idx = 0; idx < rawI.length; idx++)
-            {
-                sumSquared += rawI[idx] * (double)rawI[idx] + rawQ[idx] * (double)rawQ[idx];
-            }
-            double power = sumSquared / rawI.length;
-            double powerDbfs = 10.0 * Math.log10(Math.max(power, 1e-20));
-
-            //Publish channel power so the Signal Power meter updates for NBFM channels (matches AMDecoder).
-            Listener<SourceEvent> sourceEventListener = mSourceEventListener;
-            if(sourceEventListener != null)
-            {
-                sourceEventListener.receive(SourceEvent.channelPowerLevel(null, powerDbfs));
-            }
 
             if(mUserPreferences.getAIPreference().isGainAdvisorEnabled())
             {
+                float[] rawI = samples.i();
+                float[] rawQ = samples.q();
+                double sumSquared = 0.0;
+                for(int idx = 0; idx < rawI.length; idx++)
+                {
+                    sumSquared += rawI[idx] * (double)rawI[idx] + rawQ[idx] * (double)rawQ[idx];
+                }
+                double powerDbfs = 10.0 * Math.log10(Math.max(sumSquared / rawI.length, 1e-20));
                 AdaptiveGainAdvisor.getInstance(mUserPreferences).reportSignalLevel(mChannelName, mChannelFrequency, powerDbfs);
             }
         }
@@ -936,6 +931,24 @@ public class NBFMDecoder extends SquelchControlDecoder implements ISourceEventLi
 
         float[] filteredI = mIBasebandFilter.filter(decimatedI);
         float[] filteredQ = mQBasebandFilter.filter(decimatedQ);
+
+        //Publish the in-band channel power (post-baseband-filter) so the Signal Power meter tracks the actual
+        //narrowband signal: it sits near the in-band noise floor when idle and rises clearly during a transmission,
+        //instead of showing the static wideband noise floor.
+        if(samplePowerThisBuffer)
+        {
+            Listener<SourceEvent> sourceEventListener = mSourceEventListener;
+            if(sourceEventListener != null && filteredI.length > 0)
+            {
+                double sumSquared = 0.0;
+                for(int idx = 0; idx < filteredI.length; idx++)
+                {
+                    sumSquared += filteredI[idx] * (double)filteredI[idx] + filteredQ[idx] * (double)filteredQ[idx];
+                }
+                double inBandDbfs = 10.0 * Math.log10(Math.max(sumSquared / filteredI.length, 1e-20));
+                sourceEventListener.receive(SourceEvent.channelPowerLevel(null, inBandDbfs));
+            }
+        }
 
         float[] demodulated = mDemodulator.demodulate(filteredI, filteredQ);
 
